@@ -1,0 +1,109 @@
+:root {
+	--bg: #04070d;
+	--panel: rgba(10, 16, 28, 0.72);
+	--panel-border: rgba(140, 170, 230, 0.16);
+	--ink: #e8eefc;
+	--ink-dim: #93a3c4;
+	--ink-faint: #6a7899;
+	--accent: #ffd479;
+	--accent-dim: #8c7440;
+	--experimental: #7ee0a8;
+	--documented: #7bb8ff;
+	--inferred: #c8a2ff;
+	--invented: #ff9c7a;
+	--radius: 10px;
+	color-scheme: dark;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+	background: var(--bg);
+	color: var(--ink);
+	font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+	font-size: 14px;
+	line-height: 1.5;
+	-webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+	margin: 0;
+	font-weight: 600;
+	letter-spacing: -0.01em;
+}
+
+button,
+select,
+input,
+textarea {
+	font: inherit;
+	color: inherit;
+}
+
+button {
+	cursor: pointer;
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid var(--panel-border);
+	border-radius: var(--radius);
+	padding: 0.5rem 0.85rem;
+	transition: background 120ms ease, border-color 120ms ease, transform 80ms ease;
+}
+
+button:hover:not(:disabled) {
+	background: rgba(255, 255, 255, 0.11);
+	border-color: rgba(190, 210, 255, 0.3);
+}
+
+button:active:not(:disabled) {
+	transform: translateY(1px);
+}
+
+button:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+button.primary {
+	background: linear-gradient(180deg, rgba(255, 212, 121, 0.95), rgba(226, 168, 62, 0.9));
+	border-color: rgba(255, 226, 168, 0.5);
+	color: #241a06;
+	font-weight: 600;
+}
+
+select,
+input[type='text'],
+textarea {
+	width: 100%;
+	background: rgba(4, 8, 16, 0.7);
+	border: 1px solid var(--panel-border);
+	border-radius: var(--radius);
+	padding: 0.45rem 0.6rem;
+}
+
+input[type='range'] {
+	width: 100%;
+	accent-color: var(--accent);
+}
+
+textarea {
+	resize: vertical;
+	min-height: 4.5rem;
+}
+
+a {
+	color: var(--accent);
+}
+
+code,
+.mono {
+	font-family: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
+	font-size: 0.85em;
+}

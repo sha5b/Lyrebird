@@ -1,0 +1,54 @@
+{
+ "builtAt": "2026-07-28T10:05:06+00:00",
+ "pipeline": "birdy-pipeline",
+ "contract": "docs/08-implementation.md v1",
+ "inventoryVersion": 1,
+ "points": 4287,
+ "pointsDropped": 0,
+ "clusters": 44,
+ "dims": 28,
+ "seed": 0,
+ "umap": {
+  "nComponents": 3,
+  "nNeighbors": 15,
+  "minDist": 0.8,
+  "metric": "cosine",
+  "randomState": 0,
+  "inputSpace": "standardised 28-d descriptors"
+ },
+ "kmeans": {
+  "k": 44,
+  "nInit": 10,
+  "randomState": 0,
+  "inputSpace": "standardised 28-d descriptors"
+ },
+ "positions": {
+  "format": "little-endian float32, 3*n, xyz",
+  "bytes": 51444,
+  "normalisation": "centred on the bbox midpoint, scaled so max|coord| = 1"
+ },
+ "durationSeconds": [
+  0.0414,
+  1.8649
+ ],
+ "clusterPurity": 0.9067,
+ "meanRadius": 0.7556,
+ "files": [
+  "manifest.json",
+  "inventory.json",
+  "syrinx-calibration.json",
+  "feature-space.json",
+  "positions.f32",
+  "points.json",
+  "centroids.json"
+ ],
+ "source": "synthetic",
+ "audioDir": null,
+ "variantsPerSyllable": 96,
+ "variantsPerSong": 3,
+ "betaClamp": [
+  0.15,
+  16.0
+ ],
+ "envelopeAsOutputGain": true
+}

@@ -6,7 +6,9 @@ generate scientifically-grounded synthetic bird voices with a choosable vocabula
 support multiple birds, and visualize everything as an audio-reactive 3D embedding
 galaxy that jumps with tone and melody.
 
-Status: research only, no code. Date: 2026-07-28.
+Status: built. The research below is the basis; `08-implementation.md` is the contract the
+code actually implements, and it is normative — the Python pipeline and the browser engine
+both follow it. Date: 2026-07-28.
 
 ## Documents
 
@@ -26,3 +28,6 @@ Status: research only, no code. Date: 2026-07-28.
 6. [`06-architecture.md`](06-architecture.md) — proposed SvelteKit architecture,
    risk register, build order.
 7. [`07-references.md`](07-references.md) — key papers, repos, datasets, tools.
+8. [`08-implementation.md`](08-implementation.md) — **the contract**: the syrinx model and
+   its measured parameter space, the shared 28-d feature extractor, the generated asset
+   formats, and the honesty rule. Both halves of the codebase implement this document.
