@@ -8,6 +8,7 @@
 		loadAssets,
 		songSyllables,
 		speciesById,
+		syllableCoverage,
 		type ClusterLookup
 	} from '$lib/data/assets';
 	import { BirdyEngine, type ScheduledSyllable } from '$lib/audio/engine';
@@ -117,6 +118,36 @@
 	);
 	const songs = $derived(currentSpecies?.songs ?? []);
 	const currentSong = $derived(songs.find((s) => s.id === songId) ?? songs[0]);
+
+	/**
+	 * How much of the selected call the galaxy can actually place.
+	 *
+	 * A syllable only wins a cluster if enough of its renders land together, and on this
+	 * corpus many do not — so a call can be perfectly playable and still have no thread, or
+	 * a thread that skips half its notes. The cluster lookup returns -1 for those and the
+	 * trajectory drops them, which is the honest answer and an invisible one. This is what
+	 * makes it visible: a call whose notes are all unplaced should say so, not look like a
+	 * renderer that failed.
+	 */
+	const songCoverage = $derived.by(() => {
+		if (!assets || !clusters || !currentSpecies || !currentSong) return null;
+		const resolved = songSyllables(currentSpecies, currentSong.id);
+		if (!resolved?.syllables.length) return null;
+		return syllableCoverage(
+			clusters,
+			currentSpecies.id,
+			resolved.syllables.map((s) => s.id)
+		);
+	});
+	/** The same question for the whole repertoire, which is what a selection lights up. */
+	const repertoireCoverage = $derived.by(() => {
+		if (!clusters || !currentSpecies) return null;
+		return syllableCoverage(
+			clusters,
+			currentSpecies.id,
+			currentSpecies.syllables.map((s) => s.id)
+		);
+	});
 	/** -1 during a global chorus: every species is equally the subject. */
 	const focus = $derived(
 		chorus === 'global' ? -1 : (speciesIndex?.get(currentSpecies?.id ?? '') ?? -1)
@@ -1083,6 +1114,37 @@ uv run birdy-pipeline build</pre>
 									measured grammar. <b>Chorus</b> holds three of them answering each other.
 								{/if}
 							</p>
+							<!--
+								Where this call is, and is not, in the galaxy. A syllable only has a
+								position if enough of its renders clustered together, so a call can be
+								perfectly playable and have no thread at all — which without this line
+								looks like the picture is broken rather than like the corpus is thin.
+							-->
+							{#if songCoverage && songCoverage.placed < songCoverage.total}
+								<p class="note faint">
+									{#if songCoverage.placed === 0}
+										None of this call's {songCoverage.total} syllables were fitted to a cluster in
+										this build, so it draws no thread. It still plays — the synthesis does not
+										need the galaxy — but the corpus has nowhere to put it.
+									{:else if songCoverage.placed === 1}
+										One of this call's {songCoverage.total} syllables has a place in the galaxy, and
+										a thread needs two, so this one draws none. It still plays.
+									{:else}
+										<b class="mono">{songCoverage.placed}/{songCoverage.total}</b> of this call's syllables
+										have a place in the galaxy; the thread joins those and skips the rest rather
+										than guessing at them.
+									{/if}
+								</p>
+							{/if}
+							{#if repertoireCoverage && repertoireCoverage.placed < repertoireCoverage.total}
+								<p class="note faint">
+									Selecting this bird lights all of its points, and only
+									<b class="mono">{repertoireCoverage.placed}</b> of its
+									<b class="mono">{repertoireCoverage.total}</b> syllables can be sung into one.
+									The rest of the accent is harvested field audio and fitted types with no route
+									back to a note.
+								</p>
+							{/if}
 						{:else}
 							<p class="note">
 								{#if layout === 'species'}
