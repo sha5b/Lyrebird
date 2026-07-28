@@ -399,12 +399,28 @@ npm run demo:wav          # writes listenable wavs to app/out/wav
 `verify:features` is the one that matters most: it crosses the language boundary. A high
 hit rate means the two ODE implementations, the two MFCC implementations and the
 standardisation statistics all agree. Drift shows up here rather than as a galaxy that
-quietly lights the wrong clusters. Current: **25/44 exact, 26/44 same species** — down
-from 35/44, and the drop is the price of the learned inventory rather than drift. The
-galaxy went from 44 clusters to 176 when the fitted types joined the documented ones, so
-a rendered `cuck` now competes with a tawny owl's `L01` fitted to real audio that happens
-to resemble it. Build without the fitted types (the checkbox in the Learn tab, or plain
-`--inventory ../data/inventory.json`) and the old figure comes back.
+quietly lights the wrong clusters. Current: **35/44 exact, 36/44 same species** on a
+384-cluster build carrying 284 types.
+
+**An earlier version of this section read 25/44 and blamed the learned inventory, and that
+diagnosis was wrong.** The cost was not competition between a rendered `cuck` and some
+fitted `L01`; it was that `cuck` had no cluster at all. `K_CAP` clamped the cluster count
+below the number of types, and the count itself only ever asked for one cluster per type —
+ignoring that the 20,000 harvested points need clusters too, and take them first. So the
+named types shared what was left: 128 of 308 ended up with no cluster carrying their name,
+and `cuculus_canorus` lost *both* of its documented calls. Nothing reported this. Purity
+scores the points that have a cluster; the projection metrics never look; and in the app
+`clusterIndexFor` correctly returns -1 rather than guessing, so a cuckoo simply sang with
+no node to light, no trajectory to draw and no label to show, which reads as a broken app.
+
+Two changes fixed it, and both are measured rather than argued. The cluster count now asks
+for one per named type **plus** `sqrt(n/2)` for the points that have no type, and KMeans is
+seeded with each type's own centre rather than by kmeans++ — which spends its seeds on the
+"recorded or synthesised" axis and lets two similar calls of one bird start life sharing a
+seed. Every build now prints `type coverage` and writes it to `manifest.json` with the
+offenders named, so this failure can never again be silent. On the current corpus coverage
+is **282/284**, cluster purity went **41.3 % → 59.7 %**, and cross-species confusions
+halved.
 
 `uv run birdy-pipeline verify` checks the generated assets, including that the per-point
 feature rows are unit vectors and still separate their own cluster from the rest — a

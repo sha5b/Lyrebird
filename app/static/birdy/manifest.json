@@ -1,127 +1,97 @@
 {
- "builtAt": "2026-07-28T19:32:50+00:00",
+ "builtAt": "2026-07-28T20:19:52+00:00",
  "pipeline": "birdy-pipeline",
  "contract": "docs/08-implementation.md v1",
  "inventoryVersion": 1,
  "inventorySource": {
   "path": "../data/learned-inventory.json",
   "name": "learned-inventory.json",
-  "writtenAt": "2026-07-28T19:12:58+00:00",
+  "writtenAt": "2026-07-28T20:17:16+00:00",
   "species": 12,
-  "syllables": 124
+  "syllables": 284
  },
  "typeCoverage": {
-  "types": 124,
-  "withCluster": 124,
-  "orphans": [],
-  "share": 1.0
+  "types": 284,
+  "withCluster": 282,
+  "orphans": [
+   "cuculus_canorus/L13",
+   "poecile_atricapillus/L21"
+  ],
+  "share": 0.993
  },
  "clusterPlan": {
-  "k": 224,
-  "types": 124,
+  "k": 384,
+  "types": 284,
   "unlabelledPoints": 20093,
   "allowance": 100,
-  "wanted": 224,
+  "wanted": 384,
   "capped": false,
   "cap": 1024,
-  "seededTypes": 124
+  "seededTypes": 284
  },
- "points": 31997,
+ "points": 47357,
  "pointsDropped": 0,
- "clusters": 224,
+ "clusters": 384,
  "dims": 28,
  "seed": 0,
  "projection": "cmds",
  "projectionParams": {
   "eigenvalues": [
-   173.208937893634,
-   79.55921643162962,
-   59.986914279818144
+   171.41121873695892,
+   81.31102677238977,
+   72.057554318441
   ],
   "varianceRatio": [
-   0.2494176840180516,
-   0.1145638079996407,
-   0.08638005297538127
+   0.24873642908664148,
+   0.11799119447233536,
+   0.10456339370289518
   ],
-  "negativeEigenvalueMass": 0.3859414705016937,
+  "negativeEigenvalueMass": 0.3705714077886949,
   "landmarks": 800,
   "mode": "landmark",
   "metric": "cosine"
  },
  "faithfulness": {
-  "pearson": 0.7621,
-  "spearman": 0.7512,
-  "pairs": 199994,
+  "pearson": 0.7691,
+  "spearman": 0.7536,
+  "pairs": 199992,
   "definition": "correlation between 28-d cosine distance and 3D euclidean distance over random point pairs; 1.0 = distances fully meaningful"
  },
  "knnAgreement": {
   "k": 10,
-  "value": 0.4366,
+  "value": 0.5582,
   "definition": "share of a point's 3D k nearest neighbours sharing its type"
  },
  "tearing": {
-  "measured": 221,
-  "torn": 2,
-  "severe": 2,
-  "median": 2.073,
-  "worstGap": 0.489,
+  "measured": 373,
+  "torn": 4,
+  "severe": 0,
+  "median": 2.19,
+  "worstGap": 0.358,
   "definition": "clusters this projection draws in two places at once, so their centroid \u2014 where the label, the trajectory and the wave all go \u2014 lands between two blobs instead of on the points; splitting a single blob scores ~2, so 2 is the null and 'torn' counts above 5"
  },
  "projectionComparison": {
-  "umap": {
-   "faithfulness": {
-    "pearson": 0.2673,
-    "spearman": 0.2679,
-    "pairs": 199994
-   },
-   "knnAgreement": 0.6785,
-   "purity": 0.4785,
-   "meanRadius": 0.6146,
-   "params": {
-    "nNeighbors": 15,
-    "minDist": 0.25,
-    "metric": "cosine"
-   }
-  },
-  "pca": {
-   "faithfulness": {
-    "pearson": 0.4779,
-    "spearman": 0.4839,
-    "pairs": 199994
-   },
-   "knnAgreement": 0.4436,
-   "purity": 0.4785,
-   "meanRadius": 0.8415,
-   "params": {
-    "varianceRatio": [
-     0.27751747158156825,
-     0.11083059499133115,
-     0.08552934170892539
-    ],
-    "varianceRatioTotal": 0.4738774082818248
-   }
-  },
   "cmds": {
    "faithfulness": {
-    "pearson": 0.7621,
-    "spearman": 0.7512,
-    "pairs": 199994
+    "pearson": 0.7691,
+    "spearman": 0.7536,
+    "pairs": 199992
    },
-   "knnAgreement": 0.4366,
-   "purity": 0.4785,
-   "meanRadius": 0.7988,
+   "knnAgreement": 0.5582,
+   "purity": 0.5974,
+   "meanRadius": 0.8045,
    "params": {
     "eigenvalues": [
-     173.208937893634,
-     79.55921643162962,
-     59.986914279818144
+     171.41121873695892,
+     81.31102677238977,
+     72.057554318441
     ],
     "varianceRatio": [
-     0.2494176840180516,
-     0.1145638079996407,
-     0.08638005297538127
+     0.24873642908664148,
+     0.11799119447233536,
+     0.10456339370289518
     ],
-    "negativeEigenvalueMass": 0.3859414705016937,
+    "negativeEigenvalueMass": 0.3705714077886949,
     "landmarks": 800,
     "mode": "landmark",
     "metric": "cosine"
@@ -130,22 +100,22 @@
  },
  "clustering": "kmeans",
  "kmeans": {
-  "k": 224,
+  "k": 384,
   "nInit": 10,
   "randomState": 0,
   "inputSpace": "standardised 28-d descriptors"
  },
  "positions": {
   "format": "little-endian float32, 3*n, xyz",
-  "bytes": 383964,
+  "bytes": 568284,
   "normalisation": "centred on the bbox midpoint, scaled so max|coord| = 1"
  },
  "pointFeatures": {
   "format": "little-endian float32, 8*n, row-major",
-  "bytes": 1023904,
+  "bytes": 1515424,
   "dims": 8,
   "space": "PCA of the standardised 28-d descriptors, rows unit-normalised",
-  "varianceRatioTotal": 0.7453,
+  "varianceRatioTotal": 0.7806,
   "purpose": "per-point render response only; the reported match still uses the 28-d centroid vectors"
  },
  "functionClasses": {
@@ -207,41 +177,40 @@
    ]
   },
   "counts": {
-   "unclassified": 178,
+   "unclassified": 339,
    "structural": 24,
    "alarm": 9,
    "territorial": 7,
    "contact": 4,
-   "recruitment": 1,
-   "courtship": 1
+   "recruitment": 1
   }
  },
  "sourceMix": {
+  "synthetic": 27264,
   "field": 20000,
-  "synthetic": 11904,
   "synthetic-song": 93
  },
  "speciesMix": {
-  "parus_minor": 3267,
-  "poecile_atricapillus": 3229,
-  "luscinia_megarhynchos": 3130,
-  "turdus_merula": 3032,
-  "troglodytes_troglodytes": 2936,
-  "cuculus_canorus": 2935,
-  "horornis_diphone": 2880,
-  "zosterops_japonicus": 2880,
-  "strix_aluco": 2784,
-  "perisoreus_infaustus": 2446,
+  "parus_minor": 4803,
+  "poecile_atricapillus": 4765,
+  "luscinia_megarhynchos": 4666,
+  "turdus_merula": 4568,
+  "troglodytes_troglodytes": 4472,
+  "cuculus_canorus": 4471,
+  "horornis_diphone": 4416,
+  "zosterops_japonicus": 4416,
+  "strix_aluco": 4320,
+  "perisoreus_infaustus": 3982,
   "lonchura_striata": 1992,
   "taeniopygia_guttata": 486
  },
  "durationSeconds": [
-  0.027,
-  1.8649
+  0.0246,
+  2.081
  ],
- "clusterPurity": 0.4785,
+ "clusterPurity": 0.5974,
  "unassigned": 0,
- "meanRadius": 0.7988,
+ "meanRadius": 0.8045,
  "files": [
   "manifest.json",
   "inventory.json",
@@ -259,11 +228,11 @@
  "harvest": {
   "store": "out/harvest",
   "points": 20000,
-  "recordings": 837,
-  "descriptorsSeen": 51027,
+  "recordings": 884,
+  "descriptorsSeen": 54427,
   "sampleDrift": {
-   "meanDrift": 0.0634,
-   "stdRatio": 0.9931
+   "meanDrift": 0.0631,
+   "stdRatio": 0.9913
   }
  },
  "betaClamp": [

@@ -1033,6 +1033,15 @@
 	const faithfulness = $derived(
 		(assets?.manifest as { faithfulness?: { pearson?: number } } | undefined)?.faithfulness?.pearson
 	);
+	/**
+	 * How many clusters carry a syllable name — which is how many the app can respond in.
+	 *
+	 * Counted from the centroids rather than read from `manifest.typeCoverage`, so it is also
+	 * right for an asset set built before that field existed.
+	 */
+	const namedTypes = $derived(
+		assets ? assets.centroids.items.filter((c) => c.syllableId).length : 0
+	);
 	const pinned = $derived(
 		pinnedCluster >= 0 ? (assets?.centroids.items[pinnedCluster] ?? null) : null
 	);
@@ -1302,6 +1311,22 @@ uv run birdy-pipeline build</pre>
 							</ul>
 						{/if}
 					</div>
+				{:else if namedTypes === 0}
+					<!--
+						A galaxy built from field audio alone has no cluster carrying a syllable name,
+						and every response in this interface goes through one: the trajectory, the node
+						tag, the reported match. So the app sings, the cloud drifts, and nothing else
+						happens — which looks exactly like a bug and was reported as one. It is a
+						property of the build, and the build now records it, so the panel can say which
+						of the two it is instead of leaving a silent picture to be interpreted.
+					-->
+					<p class="note">
+						<strong>This galaxy cannot respond.</strong> It was built from field audio only,
+						so not one of its {assets.centroids.k} clusters carries a syllable name — there is
+						nothing for a sung phrase to light, label or draw a path through. Rebuild with the
+						rendered inventory included (<span class="mono">Learn → build</span>, or
+						<span class="mono">--source synthetic --harvest-store …</span>).
+					</p>
 				{:else}
 					<p class="note faint">
 						Sing something, or turn on the microphone. Clusters flare where the sound lands in

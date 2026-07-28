@@ -1104,6 +1104,22 @@ def build_galaxy(
                 + (f", +{len(orphans) - 12} more" if len(orphans) > 12 else ""),
                 file=sys.stderr,
             )
+        if not named_types:
+            # **A galaxy with no named type cannot answer the app's own voice.** Every
+            # response in the interface goes through a cluster that carries a
+            # `(speciesId, syllableId)`: the trajectory a phrase draws, the tag that names
+            # what lit, the match the reading panel reports. A corpus of field audio alone
+            # has none, so the app sings, the picture drifts, and nothing else happens — which
+            # is indistinguishable from the app being broken and was reported as exactly that.
+            # `--source harvest` is a legitimate thing to build; it is not a legitimate thing
+            # to build *silently*.
+            print(
+                "  WARNING: not one cluster carries a syllable name, so nothing this app "
+                "sings can light a knot, draw a trajectory or be labelled. That is what a "
+                "field-audio-only corpus gives you. Include the rendered inventory "
+                "(--source synthetic --harvest-store ...) for a galaxy the app can respond in.",
+                file=sys.stderr,
+            )
 
     # --- write the asset set (8.3) ---
     # The frozen frame, so later audio can be added to this galaxy rather than replacing
