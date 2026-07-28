@@ -159,13 +159,20 @@ export interface Centroids {
 	items: Centroid[];
 }
 
+/**
+ * What the build wrote and how. Only the fields the client actually reads are named —
+ * `builtAt` is the one that matters, because it is the stamp a rebuild changes and
+ * therefore what tells a running app that its galaxy is out of date.
+ */
 export interface Manifest {
-	version: number;
-	generated: string;
+	builtAt: string;
 	source: string;
-	counts: Record<string, number>;
-	files: Record<string, string>;
-	params: Record<string, unknown>;
+	points: number;
+	clusters: number;
+	sourceMix?: Record<string, number>;
+	projection?: string;
+	files?: Record<string, string>;
+	[key: string]: unknown;
 }
 
 /** Everything the client needs, fetched once at startup. */

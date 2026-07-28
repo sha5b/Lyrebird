@@ -61,9 +61,18 @@ function normaliseFeatureSpace(raw: FeatureSpace & NestedFeatureSpace): FeatureS
 	return space;
 }
 
-async function getJson<T>(path: string, fetcher: typeof fetch): Promise<T> {
-	const url = `${base}/${ROOT}/${path}`;
-	const res = await fetcher(url);
+/**
+ * `bust` is appended as a query string so a rebuild can be picked up without a reload.
+ * The files are written in place by the pipeline and every one of them has to come from
+ * the *same* build — a cached `points.json` beside a fresh `positions.f32` is a galaxy
+ * whose metadata describes someone else's points.
+ */
+function assetUrl(path: string, bust: string): string {
+	return `${base}/${ROOT}/${path}${bust ? `?v=${encodeURIComponent(bust)}` : ''}`;
+}
+
+async function getJson<T>(path: string, fetcher: typeof fetch, bust = ''): Promise<T> {
+	const res = await fetcher(assetUrl(path, bust));
 	if (!res.ok) throw new AssetsMissingError(path);
 	return (await res.json()) as T;
 }
@@ -72,25 +81,31 @@ async function getJson<T>(path: string, fetcher: typeof fetch): Promise<T> {
  * Loads the generated galaxy + inventory. The pipeline is the only writer of these
  * files, so a missing one means the offline stage has not been run yet.
  */
-export async function loadAssets(fetcher: typeof fetch = fetch): Promise<BirdyAssets> {
-	const manifest = await getJson<Manifest>('manifest.json', fetcher);
+export async function loadAssets(
+	fetcher: typeof fetch = fetch,
+	bust = ''
+): Promise<BirdyAssets> {
+	const manifest = await getJson<Manifest>('manifest.json', fetcher, bust);
+	// Everything after the manifest is fetched under that build's own stamp, so a reload
+	// triggered by a rebuild cannot mix two builds together.
+	const stamp = bust || manifest.builtAt || '';
 	const [inventory, rawFeatureSpace, points, centroids] = await Promise.all([
-		getJson<Inventory>('inventory.json', fetcher),
-		getJson<FeatureSpace & NestedFeatureSpace>('feature-space.json', fetcher),
-		getJson<PointCloudMeta>('points.json', fetcher),
-		getJson<Centroids>('centroids.json', fetcher)
+		getJson<Inventory>('inventory.json', fetcher, stamp),
+		getJson<FeatureSpace & NestedFeatureSpace>('feature-space.json', fetcher, stamp),
+		getJson<PointCloudMeta>('points.json', fetcher, stamp),
+		getJson<Centroids>('centroids.json', fetcher, stamp)
 	]);
 	const featureSpace = normaliseFeatureSpace(rawFeatureSpace);
 
 	// The calibration table only refines the synth; the analytic fallback covers its absence.
 	let calibration: SyrinxCalibration | null = null;
 	try {
-		calibration = await getJson<SyrinxCalibration>('syrinx-calibration.json', fetcher);
+		calibration = await getJson<SyrinxCalibration>('syrinx-calibration.json', fetcher, stamp);
 	} catch {
 		calibration = null;
 	}
 
-	const posRes = await fetcher(`${base}/${ROOT}/positions.f32`);
+	const posRes = await fetcher(assetUrl('positions.f32', stamp));
 	if (!posRes.ok) throw new AssetsMissingError('positions.f32');
 	const positions = new Float32Array(await posRes.arrayBuffer());
 
@@ -100,7 +115,12 @@ export async function loadAssets(fetcher: typeof fetch = fetch): Promise<BirdyAs
 		);
 	}
 
-	const { pointFeatures, pointFeatureDims } = await loadPointFeatures(points.n, centroids, fetcher);
+	const { pointFeatures, pointFeatureDims } = await loadPointFeatures(
+		points.n,
+		centroids,
+		fetcher,
+		stamp
+	);
 
 	return {
 		manifest,
@@ -126,12 +146,13 @@ export async function loadAssets(fetcher: typeof fetch = fetch): Promise<BirdyAs
 async function loadPointFeatures(
 	n: number,
 	centroids: Centroids,
-	fetcher: typeof fetch
+	fetcher: typeof fetch,
+	bust = ''
 ): Promise<{ pointFeatures: Float32Array | null; pointFeatureDims: number }> {
 	const dims = centroids.items[0]?.featuresLo?.length ?? 0;
 	if (!dims) return { pointFeatures: null, pointFeatureDims: 0 };
 	try {
-		const res = await fetcher(`${base}/${ROOT}/point-features.f32`);
+		const res = await fetcher(assetUrl('point-features.f32', bust));
 		if (!res.ok) return { pointFeatures: null, pointFeatureDims: 0 };
 		const data = new Float32Array(await res.arrayBuffer());
 		if (data.length !== n * dims) {

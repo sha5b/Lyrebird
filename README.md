@@ -43,6 +43,16 @@ app/                  SvelteKit + TypeScript: realtime synthesis, mic analysis, 
 
 ## The galaxy
 
+The app opens with **no bird selected**: nothing is dimmed, the whole corpus is the
+subject, and the camera fits all of it. One camera rule covers everything after that —
+it frames the most specific thing you have chosen, and flies there when that changes.
+Pick a bird and it fits the region that bird's clusters occupy; pin a node and it fits
+that node; pick a phrase out of the history and it fits the phrase. The fit is to the
+85th percentile of the reach rather than the furthest member, because a species is not a
+region in the acoustic layout — two of its calls sound like some other bird's and sit
+across the cloud — and fitting to the maximum would frame those two strays and show you
+the whole galaxy again.
+
 The shipped galaxy is **31,328 points in 176 clusters**: 11,328 clips rendered from the
 inventory, and 20,000 descriptors of real xeno-canto audio from 434 recordings across
 twelve species. One cluster per syllable type — the 44 authored ones and the 132 fitted
@@ -287,10 +297,14 @@ code, so exposing it on a network would be handing out remote execution.
 The running app still needs no backend. This is a developer-facing process for driving
 the offline stage; the built site never talks to it.
 
-**The galaxy is static while the app runs.** Clustering, the projection and the
-per-point feature space are all computed offline and loaded once. Harvesting and
-learning change what the *next* build produces — they do not reshape the cloud live.
-After a rebuild, reload the page.
+**A build re-places every point at once**, and there is no way around that: clustering,
+the projection and the per-point feature space are all computed over the whole corpus, so
+a syllable learned a minute ago has no position until the build that places every other
+point again. What the app does do is remove the step after it. Each build stamps
+`manifest.json` with `builtAt`; the Learn tab compares that stamp with the one the
+running session loaded, and when they differ it re-fetches the assets under that stamp
+and swaps the galaxy, the inventory and the voices in place. New nodes, new birds and
+new syntax appear without a page reload.
 
 Then the app:
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import Galaxy from '$lib/galaxy/Galaxy.svelte';
 	import {
 		buildClusterLookup,
@@ -48,7 +48,9 @@
 	let perPointMeasured = $state(false);
 
 	let tab = $state<'sing' | 'words' | 'listen' | 'learn'>('sing');
-	let speciesId = $state('parus_minor');
+	// Empty on purpose: the app opens on the whole corpus rather than on one bird, and
+	// the camera frames all of it. Choosing a bird is what narrows the view.
+	let speciesId = $state('');
 	let songId = $state('abc_d');
 	let text = $state('danger — come here');
 	let distance = $state(0.15);
@@ -94,7 +96,7 @@
 	const clusters = $derived<ClusterLookup | null>(assets ? buildClusterLookup(assets.centroids) : null);
 	const speciesIndex = $derived(assets ? buildSpeciesIndex(assets) : null);
 	const species = $derived(assets?.inventory.species ?? []);
-	const currentSpecies = $derived(species.find((s) => s.id === speciesId) ?? species[0]);
+	const currentSpecies = $derived(species.find((s) => s.id === speciesId) ?? null);
 	// Deterministic, so the bird you audition keeps its voice for the whole session.
 	const soloVoice = $derived(
 		currentSpecies ? createIndividual(currentSpecies.id, 0, currentSpecies.common) : null
@@ -122,10 +124,32 @@
 		!coloured ? COLOUR_MONO : layout === 'meaning' ? COLOUR_MEANING : COLOUR_RESPONSE
 	);
 
-	/** The clusters of the phrase picked out of the history: what the camera flies to. */
-	const frameNodes = $derived(
-		selectedSung === null ? [] : (history.find((h) => h.id === selectedSung)?.nodes ?? [])
-	);
+	/** Cluster ids per species, for framing a whole repertoire at once. */
+	const clustersOfSpecies = $derived.by(() => {
+		const map = new Map<string, number[]>();
+		assets?.centroids.items.forEach((c, i) => {
+			const list = map.get(c.speciesId);
+			if (list) list.push(i);
+			else map.set(c.speciesId, [i]);
+		});
+		return map;
+	});
+	const allClusters = $derived(assets ? assets.centroids.items.map((_, i) => i) : []);
+
+	/**
+	 * What the camera holds in frame, most specific first: a phrase picked out of the
+	 * history, a pinned node, the selected bird's whole repertoire, or — with nothing
+	 * selected, which is how the app opens — the entire galaxy.
+	 */
+	const frameNodes = $derived.by(() => {
+		if (selectedSung !== null) {
+			const nodes = history.find((h) => h.id === selectedSung)?.nodes;
+			if (nodes?.length) return nodes;
+		}
+		if (pinnedCluster >= 0) return [pinnedCluster];
+		if (currentSpecies) return clustersOfSpecies.get(currentSpecies.id) ?? allClusters;
+		return allClusters;
+	});
 
 	onMount(() => {
 		loadAssets()
@@ -140,6 +164,65 @@
 			listener?.stop();
 			engine?.dispose();
 		};
+	});
+
+	/**
+	 * Picks up a rebuild without a page reload: new nodes, new birds, new syntax appear
+	 * in the running app.
+	 *
+	 * It is a *reload*, not a live stream, and the difference is the pipeline's, not the
+	 * interface's: clustering, the projection and the per-point feature space are all
+	 * computed over the whole corpus at once, so a syllable learned at 14:02 does not have
+	 * a position until the build that places every other point again. What this does is
+	 * remove the manual step between that build finishing and seeing it — the Learn tab
+	 * notices the manifest's stamp change and swaps the galaxy under you.
+	 *
+	 * The engine is rebuilt with it, because the inventory it synthesises from is part of
+	 * the same asset set; carrying the old one over would leave the app singing syllables
+	 * that no longer have nodes.
+	 */
+	let galaxyVersion = $state(0);
+	let reloading = $state(false);
+	async function reloadGalaxy(stamp: string) {
+		if (reloading) return;
+		reloading = true;
+		const wasSinging = chorus;
+		const hadMic = micOn;
+		try {
+			const loaded = await loadAssets(fetch, stamp);
+			listener?.stop();
+			engine?.dispose();
+			listener = null;
+			engine = null;
+			micOn = false;
+			reading = null;
+			history = [];
+			selectedSung = null;
+			pinnedCluster = -1;
+			assets = loaded;
+			signal = createSignal(loaded.centroids.items.length, loaded.points.n);
+			galaxyVersion += 1;
+			// Only if audio was already running: `enter` needs a user gesture the first time,
+			// and by here there has been one. It restores the whole-corpus chorus itself.
+			chorus = 'off';
+			if (wasSinging !== 'off' || hadMic) {
+				await enter();
+				if (wasSinging === 'solo') setChorus('solo');
+			}
+		} catch (err) {
+			loadError = err instanceof Error ? err.message : String(err);
+		} finally {
+			reloading = false;
+		}
+	}
+
+	$effect(() => {
+		// The pipeline reports the build it has on disk; the assets carry the one in the
+		// browser. When they differ, this session is looking at a galaxy that no longer
+		// exists.
+		const built = pipelineStatus?.built?.builtAt;
+		const loaded = assets?.manifest?.builtAt;
+		if (built && loaded && built !== loaded && !jobRunning) untrack(() => reloadGalaxy(built));
 	});
 
 	/** Audio can only start from a user gesture, so the whole audio side begins here. */
@@ -573,6 +656,7 @@ uv run birdy-pipeline build</pre>
 		</header>
 
 		<div class="stage-wrap">
+			{#key galaxyVersion}
 			<Galaxy
 				{assets}
 				{signal}
@@ -588,6 +672,7 @@ uv run birdy-pipeline build</pre>
 				frame={frameNodes}
 				onpick={pickCluster}
 			/>
+			{/key}
 
 			<!-- Display settings belong on the thing they change, not in the tab strip. -->
 			<div class="viewctl" class:open={viewOpen}>
@@ -765,13 +850,6 @@ uv run birdy-pipeline build</pre>
 						<p class="accent">“{lastPhrase.gloss}”</p>
 						<p class="note">{lastPhrase.function}</p>
 						<p class="note faint">{lastPhrase.note}</p>
-						{#if nowSinging.length}
-							<div class="chips">
-								{#each nowSinging as item (item.at)}
-									<span class="chip">{item.label}</span>
-								{/each}
-							</div>
-						{/if}
 						{#if lastPhrase.refs.length}
 							<ul class="refs">
 								{#each citationsFor(assets.inventory, lastPhrase.refs) as ref (ref)}
@@ -811,6 +889,7 @@ uv run birdy-pipeline build</pre>
 								<span class="swatch" style:background={speciesColour}></span>
 							</span>
 							<select bind:value={speciesId}>
+								<option value="">no bird — the whole galaxy</option>
 								{#each species as s (s.id)}
 									<option value={s.id}>{s.common}</option>
 								{/each}
@@ -818,6 +897,12 @@ uv run birdy-pipeline build</pre>
 						</label>
 						{#if currentSpecies}
 							<p class="note">{currentSpecies.summary}</p>
+						{:else}
+							<p class="note">
+								Nothing selected, so nothing is dimmed and the camera holds the whole corpus.
+								Choosing a bird narrows the labels to its repertoire and flies to the region its
+								clusters occupy.
+							</p>
 						{/if}
 						<label class="field">
 							<span class="lbl">Call or song</span>
@@ -828,8 +913,10 @@ uv run birdy-pipeline build</pre>
 							</select>
 						</label>
 						<div class="row">
-							<button class="primary" disabled={!engine} onclick={sing}>Sing it</button>
-							<button disabled={!engine} onclick={singImprovisation}>Improvise</button>
+							<button class="primary" disabled={!engine || !currentSong} onclick={sing}>Sing it</button>
+							<button disabled={!engine || !currentSpecies} onclick={singImprovisation}>
+								Improvise
+							</button>
 						</div>
 					</section>
 
@@ -1175,9 +1262,21 @@ uv run birdy-pipeline serve</pre>
 										pipeline.build({ useLearned: buildUseLearned, includeHarvest: true })
 									)}>Rebuild</button
 							>
+							{#if pipelineStatus.built.exists}
+								<dl class="facts mono">
+									<div><dt>points</dt><dd>{pipelineStatus.built.points ?? '—'}</dd></div>
+									<div><dt>clusters</dt><dd>{pipelineStatus.built.clusters ?? '—'}</dd></div>
+								</dl>
+							{/if}
 							<p class="note faint">
-								The galaxy is computed offline and loaded once, so it does not change while the app
-								runs. Rebuilding rewrites the assets; reload the page to see the new clusters.
+								{#if reloading}
+									Loading the new galaxy…
+								{:else}
+									A build re-places every point at once — a syllable learned a minute ago has no
+									position until then — but you do not have to reload the page for it: when the
+									build finishes, this tab notices the new stamp and swaps the galaxy, the
+									inventory and the voices under you.
+								{/if}
 							</p>
 						</section>
 
