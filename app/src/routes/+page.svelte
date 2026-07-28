@@ -114,16 +114,19 @@
 	 * Listening distance as a viewing scale. Close is large and near, far is small and
 	 * distant, so the slider moves the picture the same way it moves the filters.
 	 *
-	 * The floor is what the middle of the slider used to give, not what its bottom did.
-	 * The old range started at 0.9, and down there the cloud contracted to a ball a few
-	 * centimetres across in which every island sat on top of every other — the arrangement
-	 * was still correct and completely unreadable. A scale that destroys the structure is
-	 * not a viewing distance, so the bottom of the slider now begins where the picture is
-	 * still legible and the range runs 2.33 to 6.0 rather than 0.9 to 6.0.
+	 * The whole range has moved up twice now, both times for the same reason: below a
+	 * certain scale the islands sit on top of each other and the arrangement, though still
+	 * correct, is unreadable. A scale that destroys the structure is not a viewing
+	 * distance. The bottom of the slider is now roughly where the *top* of it used to be
+	 * and the top is double that, so the run is 5.6 to 12.0 where it was originally
+	 * 0.9 to 6.0. Anchored at 0.1 rather than 0: the slider's very bottom is a limit
+	 * nobody sits at, and pinning the useful end of the scale to it wasted a third of the
+	 * travel.
 	 */
-	const SPREAD_MIN = 2.33;
-	const SPREAD_MAX = 6.0;
-	const spread = $derived(SPREAD_MIN * Math.exp(Math.log(SPREAD_MAX / SPREAD_MIN) * distance));
+	const SPREAD_AT_LOW = 6.0;
+	const SPREAD_AT_FULL = 12.0;
+	const SPREAD_RATE = Math.log(SPREAD_AT_FULL / SPREAD_AT_LOW) / 0.9;
+	const spread = $derived(SPREAD_AT_LOW * Math.exp(SPREAD_RATE * (distance - 0.1)));
 
 	/**
 	 * One switch, not a list of schemes. The arrangement already says what the grouping
@@ -361,18 +364,35 @@
 	}
 
 	/** Every song this species sings, as the faint backdrop behind the selected one. */
-	function showContext(speciesId: string) {
-		if (!assets || !clusters || !listener) return;
-		const species = speciesById(assets.inventory, speciesId);
-		if (!species) return;
-		listener.setContext(
-			species.songs.map((song) => {
-				const resolved = songSyllables(species, song.id);
-				return resolved
-					? resolved.syllables.map((syl) => clusterIndexFor(clusters, speciesId, syl.id))
-					: [];
-			})
-		);
+	/** Every song one bird sings, as paths through the cloud. */
+	function songPathsOf(id: string): number[][] {
+		if (!assets || !clusters) return [];
+		const bird = speciesById(assets.inventory, id);
+		if (!bird) return [];
+		return bird.songs.map((song) => {
+			const resolved = songSyllables(bird, song.id);
+			return resolved
+				? resolved.syllables.map((syl) => clusterIndexFor(clusters, id, syl.id))
+				: [];
+		});
+	}
+
+	/**
+	 * The faint backdrop of songs behind the live ones.
+	 *
+	 * Passing no bird draws every bird's, rather than nothing. "All birds" is a selection
+	 * like any other and should behave like one — the backdrop is how you see which
+	 * transitions a repertoire reuses, and at the whole-corpus scale it is how you see
+	 * that the aviary has a shape at all. Leaving it empty made the entry that shows the
+	 * most look like the entry that shows the least.
+	 */
+	function showContext(id: string) {
+		if (!listener) return;
+		if (id) {
+			listener.setContext(songPathsOf(id));
+			return;
+		}
+		listener.setContext(species.flatMap((s) => songPathsOf(s.id)));
 	}
 
 	function sing() {
@@ -475,7 +495,7 @@
 			return;
 		}
 		if (chorus === 'global') {
-			listener?.setContext([]);
+			showContext('');
 			contextSpecies = null;
 			// The whole aviary is the subject, so nothing should still be claiming to be
 			// it: clearing the bird also releases the camera back to the entire galaxy,
@@ -928,60 +948,83 @@ uv run birdy-pipeline build</pre>
 								<span class="swatch" style:background={speciesColour}></span>
 							</span>
 							<select bind:value={speciesId}>
-								<option value="">no bird — the whole galaxy</option>
+								<option value="">all birds</option>
 								{#each species as s (s.id)}
 									<option value={s.id}>{s.common}</option>
 								{/each}
 							</select>
 						</label>
+						<!--
+							"All birds" is a place in the list, not an absence of one, so it gets the same
+							shape as every other entry: a description, a thing to play, and the transport.
+							The old version left the call menu sitting there empty — a control with no
+							options, for a selection that has no single call — and put the aviary chorus in
+							a separate block that only ever applied to this one case. Folding the chorus in
+							as the action of "all birds" makes the panel say the same thing whichever entry
+							is chosen, and removes the button that could contradict the selection.
+						-->
 						{#if currentSpecies}
 							<p class="note">{currentSpecies.summary}</p>
+							<label class="field">
+								<span class="lbl">Call or song</span>
+								<select bind:value={songId}>
+									{#each songs as s (s.id)}
+										<option value={s.id}>{s.label} — {s.gloss}</option>
+									{/each}
+								</select>
+							</label>
+							<!--
+								Two rows, not four buttons across. Four never fitted the panel and the
+								last of them was pushed past its right edge, which is why the chorus
+								looked like it did nothing: it was still there, just not clickable.
+							-->
+							<div class="row">
+								<button class="primary" disabled={!engine || !currentSong} onclick={sing}>
+									Sing it
+								</button>
+								<button disabled={!engine} onclick={singImprovisation}>Improvise</button>
+							</div>
+							<div class="row">
+								<button class:on={chorus === 'solo'} disabled={!engine} onclick={() => setChorus('solo')}>
+									Chorus
+								</button>
+								<button disabled={!engine} onclick={silence}>Stop</button>
+							</div>
+							<p class="note">
+								{#if chorus === 'solo'}
+									{currentSpecies.common} only, three individuals answering each other. Held on a
+									Poisson schedule: each voice keeps its pitch, timing and position for as long
+									as it runs.
+								{:else}
+									<b>Sing it</b> plays the chosen call once. <b>Improvise</b> walks this bird's
+									measured grammar. <b>Chorus</b> holds three of them answering each other.
+								{/if}
+							</p>
 						{:else}
 							<p class="note">
-								Nothing selected, so nothing is dimmed and the camera holds the whole corpus.
-								Choosing a bird narrows the labels to its repertoire and flies to the region its
-								clusters occupy.
+								The whole corpus, nothing dimmed and the camera holding all of it. Choosing a
+								bird narrows the labels to its repertoire and flies to the region its clusters
+								occupy.
+							</p>
+							<div class="row">
+								<button
+									class="primary"
+									class:on={chorus === 'global'}
+									disabled={!engine}
+									onclick={() => setChorus('global')}
+								>
+									Chorus
+								</button>
+								<button disabled={!engine} onclick={silence}>Stop</button>
+							</div>
+							<p class="note">
+								Every species at once, each drawing its own trajectory as it sings. Held on a
+								Poisson schedule: each voice keeps its pitch, timing and position for as long as
+								it runs.
 							</p>
 						{/if}
-						<label class="field">
-							<span class="lbl">Call or song</span>
-							<select bind:value={songId}>
-								{#each songs as s (s.id)}
-									<option value={s.id}>{s.label} — {s.gloss}</option>
-								{/each}
-							</select>
-						</label>
-						<div class="row">
-							<button class="primary" disabled={!engine || !currentSong} onclick={sing}>Sing it</button>
-							<button disabled={!engine || !currentSpecies} onclick={singImprovisation}>
-								Improvise
-							</button>
-						</div>
 					</section>
 
-					<section class="block">
-						<h3 class="blocktitle">Chorus</h3>
-						<div class="row">
-							<button class:on={chorus === 'solo'} disabled={!engine} onclick={() => setChorus('solo')}>
-								This bird
-							</button>
-							<button class:on={chorus === 'global'} disabled={!engine} onclick={() => setChorus('global')}>
-								All species
-							</button>
-							<button disabled={!engine} onclick={silence}>Stop</button>
-						</div>
-						<p class="note">
-							{#if chorus === 'global'}
-								Every species at once. The selection is set aside — each bird draws its own
-								trajectory as it sings.
-							{:else if chorus === 'solo'}
-								{currentSpecies?.common} only, three individuals answering each other.
-							{:else}
-								Held individual voices on a Poisson schedule: each bird keeps its pitch, timing
-								and position for as long as it runs.
-							{/if}
-						</p>
-					</section>
 
 					<section class="block">
 						<div class="sliders">
@@ -1698,10 +1741,15 @@ uv run birdy-pipeline serve</pre>
 	.row {
 		display: flex;
 		gap: 0.4rem;
+		/* Wrap rather than overflow. `flex: 1` on a nowrap button only distributes space
+		   that exists; past three buttons the labels are wider than the panel and the last
+		   one leaves the panel entirely, where it is invisible and unclickable. */
+		flex-wrap: wrap;
 	}
 
 	.row > button {
-		flex: 1;
+		flex: 1 1 6.5rem;
+		min-width: 0;
 		white-space: nowrap;
 	}
 

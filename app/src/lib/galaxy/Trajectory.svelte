@@ -49,7 +49,9 @@
 	});
 
 	const progress = new Float32Array(MAX_PATHS).fill(-1);
+	/** What is drawn: eased toward `wanted`, so nothing ever cuts. */
 	const alpha = new Float32Array(MAX_PATHS);
+	const wanted = new Float32Array(MAX_PATHS);
 	const pathColour = Array.from({ length: MAX_PATHS }, () => new THREE.Color('#8595ae'));
 	const palette = speciesPalette();
 	const speciesIndex = untrack(() => buildSpeciesIndex(assets));
@@ -120,7 +122,7 @@
 		geometry.computeBoundingSphere();
 	}
 
-	useTask(() => {
+	useTask((delta) => {
 		// Rebuild when the set of paths changes, and on every frame of a rearrangement —
 		// otherwise the threads stay behind while the knots they connect move away.
 		if (signal.pathsVersion !== builtVersion || view.version !== builtLayout) {
@@ -140,14 +142,26 @@
 		// chorus worth watching — while a single selected phrase stays at full strength.
 		const active = Math.min(MAX_PATHS, signal.paths.length);
 		const crowd = active <= 1 ? 1 : Math.pow(active, -0.55);
+		wanted.fill(0);
 		signal.paths.slice(0, MAX_PATHS).forEach((path, i) => {
 			progress[i] = path.progress;
-			alpha[i] = path.alpha * crowd;
+			wanted[i] = path.alpha * crowd;
 			const slot = speciesIndex.get(path.speciesId);
 			pathColour[i].set(
 				mono || slot === undefined ? MONO_HOT : palette.hot[slot % palette.hot.length]
 			);
 		});
+
+		// Weight is eased rather than assigned, so a thread never steps in brightness —
+		// the crowd factor changes the moment another bird starts, and without this every
+		// existing thread jumps darker on that frame. Removal is faded upstream, in the
+		// listener: once a path leaves the list its geometry is gone from this buffer and
+		// there is nothing left here to fade.
+		const ease = Math.min(1, delta * 6);
+		for (let i = 0; i < MAX_PATHS; i++) {
+			alpha[i] += (wanted[i] - alpha[i]) * ease;
+			if (alpha[i] < 0.002) alpha[i] = 0;
+		}
 	});
 
 	$effect(() => () => {

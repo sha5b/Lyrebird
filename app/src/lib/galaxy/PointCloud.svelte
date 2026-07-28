@@ -76,20 +76,28 @@
 	);
 	const targetAttribute = new THREE.BufferAttribute(target, 3).setUsage(THREE.DynamicDrawUsage);
 
+	/**
+	 * Per-point phase offsets. Kept out here because the CPU has to reproduce the shader's
+	 * per-point transition progress when a rearrangement is interrupted.
+	 */
+	const seeds = untrack(() => {
+		const s = new Float32Array(assets.points.n);
+		for (let i = 0; i < s.length; i++) s[i] = ((i * 2654435761) % 1000) / 1000;
+		return s;
+	});
+
 	const geometry = untrack(() => {
 		const g = new THREE.BufferGeometry();
 		g.setAttribute('position', positionAttribute);
 		g.setAttribute('aTarget', targetAttribute);
 		const cluster = new Float32Array(assets.points.n);
-		const seed = new Float32Array(assets.points.n);
+		const seed = seeds;
 		const species = new Float32Array(assets.points.n);
 		const claim = new Float32Array(assets.points.n);
 		const speciesIndex = buildSpeciesIndex(assets);
 		const claimOf = claimOfCluster;
 		for (let i = 0; i < assets.points.n; i++) {
 			cluster[i] = assets.points.clusterId[i] ?? 0;
-			// deterministic per-point phase offset, so the pulse is not synchronised
-			seed[i] = ((i * 2654435761) % 1000) / 1000;
 			species[i] = speciesIndex.get(assets.points.speciesId[i] ?? '') ?? -1;
 			claim[i] = claimOf[cluster[i]] ?? CLAIM_NONE;
 		}
@@ -187,17 +195,66 @@
 	let fromLayout: LayoutId = 'acoustic';
 	let toLayout: LayoutId = 'acoustic';
 
+	/**
+	 * Put every point exactly on its arrangement and forget the transition.
+	 *
+	 * A rearrangement is the one thing here that leaves the cloud in a state the data does
+	 * not describe: mid-morph, a point is somewhere on the line between where it was and
+	 * where it belongs. That is fine while it lasts and wrong the instant it stops, and it
+	 * showed as long radial streaks — points strung out along their own paths toward the
+	 * island layouts, which fan out from the centre — that never resolved. Landing the
+	 * buffer on the target and dropping `uMorph` back to zero means the resting state is
+	 * always a real arrangement, whatever happened during the move.
+	 */
+	/**
+	 * Where the centroids were when the current transition started.
+	 *
+	 * It cannot be `layouts[fromLayout].centroids`, and that mismatch is what pulled the
+	 * tags off their knots. Interrupting a rearrangement freezes the *points* wherever
+	 * they had got to and starts them again from there, but the centroid lerp went on
+	 * reading the layout they had left — so for the whole of the next move the labels, the
+	 * trajectory threads and the grid strikes were all interpolating from a place the
+	 * cloud was no longer at. Everything that asks "where is cluster N" reads this array,
+	 * so they only agree if it starts where the points did.
+	 */
+	const fromCentroids = untrack(() => Float32Array.from(view.centroids));
+
+	function settle(id: LayoutId) {
+		current.set(layouts[id].positions);
+		target.set(layouts[id].positions);
+		positionAttribute.needsUpdate = true;
+		targetAttribute.needsUpdate = true;
+		material.uniforms.uMorph.value = 0;
+		view.centroids.set(layouts[id].centroids);
+		fromCentroids.set(layouts[id].centroids);
+		view.version++;
+		view.morphing = false;
+		fromLayout = id;
+		toLayout = id;
+		morph = 1;
+	}
+
 	$effect(() => {
 		if (layout === toLayout) return;
 		// Freeze wherever the cloud is right now and start again from there, so
-		// interrupting a rearrangement half way does not snap.
+		// interrupting a rearrangement half way does not snap. The freeze has to reproduce
+		// what the *shader* is drawing, per point: it eases the progress and then gives
+		// every point its own share of it, so reading back a single linear `morph` put the
+		// whole cloud somewhere it had never been and the interruption jumped.
 		const a = layouts[fromLayout].positions;
 		const b = layouts[toLayout].positions;
-		const t = Math.min(1, morph);
-		for (let i = 0; i < current.length; i++) current[i] = a[i] + (b[i] - a[i]) * t;
+		const eased = Math.min(1, morph) * Math.min(1, morph) * (3 - 2 * Math.min(1, morph));
+		for (let i = 0; i < current.length; i++) {
+			const seed = seeds[(i / 3) | 0];
+			const t = Math.min(1, eased * (0.75 + 0.5 * seed));
+			current[i] = a[i] + (b[i] - a[i]) * t;
+		}
 		target.set(layouts[layout].positions);
 		positionAttribute.needsUpdate = true;
 		targetAttribute.needsUpdate = true;
+		material.uniforms.uMorph.value = 0;
+		// The knots restart from wherever they are on screen, exactly as the points do.
+		fromCentroids.set(view.centroids);
 		fromLayout = toLayout;
 		toLayout = layout;
 		morph = 0;
@@ -291,7 +348,10 @@
 		// would be mush rather than two crossing shells.
 		const best = signal.best;
 		if (best >= 0 && best !== lastLaunch && signal.level > 0.04) {
-			launch(best, Math.min(0.055, 0.02 + signal.level * 0.06));
+			// Deliberately small. A front is meant to be read as movement, and displacement
+			// large enough to see in a still frame is large enough to smear a knot into a
+			// streak — which stops being animation and starts being a wrong position.
+			launch(best, Math.min(0.03, 0.012 + signal.level * 0.035));
 		}
 		if (best !== lastLaunch) lastLaunch = best;
 
@@ -326,18 +386,22 @@
 
 		if (morph < 1) {
 			morph = Math.min(1, morph + delta / MORPH_SECONDS);
-			// smoothstep, so it eases out of the old arrangement and into the new one
-			const eased = morph * morph * (3 - 2 * morph);
-			u.uMorph.value = eased;
-			// The centroids travel with their points. Forty-four lerps a frame, against
-			// the four thousand the GPU is doing anyway.
-			const a = layouts[fromLayout].centroids;
-			const b = layouts[toLayout].centroids;
-			for (let i = 0; i < view.centroids.length; i++) {
-				view.centroids[i] = a[i] + (b[i] - a[i]) * eased;
+			if (morph >= 1) {
+				// Arrived: write the arrangement into the buffer rather than leaving the
+				// cloud described as "all the way along a transition". See `settle`.
+				settle(toLayout);
+			} else {
+				// smoothstep, so it eases out of the old arrangement and into the new one
+				const eased = morph * morph * (3 - 2 * morph);
+				u.uMorph.value = eased;
+				// The centroids travel with their points, from where they actually were.
+				const b = layouts[toLayout].centroids;
+				for (let i = 0; i < view.centroids.length; i++) {
+					view.centroids[i] = fromCentroids[i] + (b[i] - fromCentroids[i]) * eased;
+				}
+				view.version++;
+				view.morphing = true;
 			}
-			view.version++;
-			view.morphing = morph < 1;
 		}
 		u.uLevel.value = signal.level;
 		u.uHighlight.value = signal.best;

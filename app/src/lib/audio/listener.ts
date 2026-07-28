@@ -170,9 +170,22 @@ export class Listener {
 		this.signal.contextVersion++;
 	}
 
+	/**
+	 * Retire every thread, letting them fade rather than cutting them.
+	 *
+	 * Switching bird, changing the chorus or rearranging the cloud all end up here, and
+	 * dropping the array outright made a dozen lines vanish between two frames — which
+	 * reads as a glitch rather than as a change. Marking them finished hands them to the
+	 * same decay a phrase gets when it stops being sung, so they thin out over about a
+	 * second and `advancePaths` collects them.
+	 */
 	clearPaths(): void {
 		this.preview = null;
-		this.live = [];
+		for (const path of this.live) {
+			path.progress = -1;
+			path.started = true;
+			path.times = null;
+		}
 		this.publishPaths();
 	}
 

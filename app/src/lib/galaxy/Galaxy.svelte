@@ -6,9 +6,9 @@
 	import type { OrbitControls as OrbitControlsInstance } from 'three/examples/jsm/controls/OrbitControls.js';
 	import type { BirdyAssets } from '$lib/data/types';
 	import { COLOUR_MONO } from './shaders';
-	import Cage from './Cage.svelte';
 	import ContextPaths from './ContextPaths.svelte';
 	import Framing from './Framing.svelte';
+	import GridBurst from './GridBurst.svelte';
 	import NodeLabels from './NodeLabels.svelte';
 	import NodeProjector from './NodeProjector.svelte';
 	import PointCloud from './PointCloud.svelte';
@@ -129,7 +129,7 @@
 			has to apply to all of them or the lines and the tags drift off their points.
 		-->
 		<Spinner {spin} {speed} scale={spread} bind:group={cloud}>
-			<Cage />
+			<GridBurst {signal} {view} />
 			<ContextPaths {assets} {signal} {view} />
 			<PointCloud {assets} {signal} {pointSize} {focus} {colourMode} {speed} {layout} {view} />
 			<Trajectory {assets} {signal} {view} mono={colourMode === COLOUR_MONO} />

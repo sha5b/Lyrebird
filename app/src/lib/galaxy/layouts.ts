@@ -141,6 +141,51 @@ function grouped(
 	};
 }
 
+/**
+ * How much each knot is opened out around its own centre, for legibility.
+ *
+ * A cluster's mean radius in the shipped projection is about 0.117 of the box, and at the
+ * framing that holds the whole corpus that is a few dozen pixels — a blob whose internal
+ * arrangement is invisible, so you can see *that* forty points responded but not *how*
+ * they are distributed. Pushing each point away from its own centroid gives the knot room
+ * to show its shape.
+ *
+ * This is a display transform and it is worth being clear about what it does and does not
+ * change. It preserves each cluster's centre exactly — an expansion about the mean leaves
+ * the mean where it was, so labels, threads and grid strikes all still land on their knots
+ * — and it preserves the *relative* arrangement inside a knot, which is the shape it is
+ * there to reveal. What it does distort is the distance between a point and its
+ * neighbours in another cluster. Nothing reads those: matching, clustering and the
+ * per-point response all happen in the 28-d space, and the projection's distance
+ * faithfulness is measured and reported before this is applied.
+ */
+const CLUSTER_SPACING = 1.45;
+
+function expandClusters(
+	positions: Float32Array,
+	clusterId: number[],
+	k: number,
+	factor: number
+): Float32Array {
+	if (factor === 1) return positions;
+	const centres = centroidsOf(positions, clusterId, k);
+	const out = new Float32Array(positions.length);
+	for (let i = 0; i < clusterId.length; i++) {
+		const c = clusterId[i];
+		if (c < 0 || c >= k) {
+			out[i * 3] = positions[i * 3];
+			out[i * 3 + 1] = positions[i * 3 + 1];
+			out[i * 3 + 2] = positions[i * 3 + 2];
+			continue;
+		}
+		for (let a = 0; a < 3; a++) {
+			const centre = centres[c * 3 + a];
+			out[i * 3 + a] = centre + (positions[i * 3 + a] - centre) * factor;
+		}
+	}
+	return out;
+}
+
 export function buildLayouts(
 	assets: BirdyAssets,
 	speciesIndex: Map<string, number>,
@@ -157,10 +202,21 @@ export function buildLayouts(
 		claimOf[i] = claimOfCluster[assets.points.clusterId[i]] ?? CLAIM_COUNT - 1;
 	}
 
+	const acoustic = expandClusters(
+		assets.positions,
+		assets.points.clusterId,
+		assets.centroids.k,
+		CLUSTER_SPACING
+	);
+
 	return {
 		acoustic: {
-			positions: assets.positions,
-			centroids: Float32Array.from(assets.centroids.items.flatMap((c) => c.position))
+			positions: acoustic,
+			// Recomputed from the expanded positions rather than taken from the manifest.
+			// They are the same to within rounding — expanding about the mean preserves the
+			// mean — but deriving them from what is actually drawn means the tags cannot
+			// drift if that ever stops being true.
+			centroids: centroidsOf(acoustic, assets.points.clusterId, assets.centroids.k)
 		},
 		// Tighter and further apart for twelve groups than for three. The centres go out
 		// further than the groups are wide on purpose: the whole point of the rearrangement
