@@ -57,7 +57,9 @@
 	let recording = $state(false);
 	let recordings = $state<{ url: string; name: string }[]>([]);
 	let viewOpen = $state(false);
-	let pointSize = $state(6);
+	// Particles are marks, not blobs. At 6 the cloud reads as poster paint once the
+	// camera holds the whole corpus; 3 keeps thirty thousand of them countable.
+	let pointSize = $state(3);
 	let spin = $state(true);
 	let showLabels = $state(true);
 	let tempo = $state(1);
@@ -187,22 +189,34 @@
 	const spread = $derived(SPREAD_AT_LOW * Math.exp(SPREAD_RATE * (distance - 0.1)));
 
 	/**
-	 * Choosing a bird ends the whole-aviary chorus, which is the other half of the rule
-	 * that starting one clears the bird.
+	 * Choosing a bird hands it the chorus, and releasing it hands the chorus back.
 	 *
-	 * Without it the two states contradict each other and the contradiction is invisible.
-	 * The aviary opens singing, `focus` is deliberately -1 for the duration — during a
-	 * global chorus no species is more the subject than any other — so picking a bird
-	 * from the list changed the labels and the camera while leaving every point in the
-	 * corpus at exactly the same weight. The selection looked ignored, and there was
-	 * nothing on screen to say why.
+	 * The whole-aviary chorus and a chosen bird contradict each other, and the
+	 * contradiction used to be invisible: `focus` is deliberately -1 during a global
+	 * chorus — no species is more the subject than any other — so picking a bird changed
+	 * the labels and the camera while leaving every point at the same weight, and the
+	 * selection looked ignored. The old rule silenced the aviary and left you with a
+	 * chosen bird and nothing to hear. Starting *its* chorus instead is the answer to the
+	 * same contradiction: the subject changes, the aviary does not go quiet.
+	 *
+	 * Guarded on the current mode because `setChorus` toggles — calling it with the mode
+	 * that is already running is how you stop it, which would make selecting a bird that
+	 * is already singing switch it off.
 	 */
 	let lastSpeciesChoice = $state('');
 	$effect(() => {
 		const chosen = speciesId;
 		if (chosen === lastSpeciesChoice) return;
 		lastSpeciesChoice = chosen;
-		if (chosen && untrack(() => chorus) === 'global') untrack(() => setChorus('off'));
+		untrack(() => {
+			if (!engine) return;
+			if (chosen) {
+				if (chorus !== 'solo') setChorus('solo');
+				else refreshSelection();
+			} else if (chorus === 'solo') {
+				setChorus('off');
+			}
+		});
 	});
 
 	// Selecting a bird arranges by sound, releasing it goes back to the twelve islands —
@@ -520,6 +534,25 @@
 	}
 
 	/**
+	 * Everything that touches one node: the songs that pass through it and the measured
+	 * transitions into and out of it.
+	 *
+	 * Clicking a knot asks a narrower question than choosing a bird does — not "where does
+	 * this bird live" but "what does *this* sound connect to" — and drawing the bird's
+	 * whole backdrop answers the wider one on top of it, which buries the answer in forty
+	 * other threads. Restricting the backdrop to the segments that actually touch the
+	 * picked node leaves the connection visible on its own.
+	 */
+	function nodePathsOf(id: string, cluster: number): number[][] {
+		const touching = (path: number[]) => path.includes(cluster);
+		const songs = songPathsOf(id)
+			.map((p) => p.filter((n) => n >= 0))
+			.filter((p) => p.length > 1 && touching(p));
+		const grammar = grammarPathsOf(id).filter(touching);
+		return [...songs, ...grammar];
+	}
+
+	/**
 	 * The faint backdrop of songs behind the live ones.
 	 *
 	 * Passing no bird draws every bird's, rather than nothing. "All birds" is a selection
@@ -530,6 +563,16 @@
 	 */
 	function showContext(id: string) {
 		if (!listener) return;
+		// A pinned node narrows the backdrop to itself, and it has to be decided *here*
+		// rather than at the click, because half a dozen things refresh the context — the
+		// chorus starting, the song changing, the selection settling — and any of them
+		// would otherwise paint the bird's whole repertoire back over the one node you
+		// asked about.
+		const pinnedOf = assets?.centroids.items[pinnedCluster];
+		if (pinnedCluster >= 0 && pinnedOf && (!id || pinnedOf.speciesId === id)) {
+			listener.setContext(nodePathsOf(pinnedOf.speciesId, pinnedCluster));
+			return;
+		}
 		if (id) {
 			listener.setContext([...songPathsOf(id), ...grammarPathsOf(id)]);
 			return;
@@ -691,7 +734,16 @@
 		}
 	}
 
-	/** Clicking a node's tag jumps the selection to whatever that cluster is. */
+	/**
+	 * Clicking a node's tag makes that cluster the subject: its bird is selected, its
+	 * bird's voice starts, and the backdrop narrows to the threads that touch this one
+	 * knot.
+	 *
+	 * Selecting the species is what hands it the accent and the chorus — that happens in
+	 * the effect watching `speciesId`, one tick later — so the context is refreshed here
+	 * *and* recomputed there through `showContext`, which now reads the pin. Clicking the
+	 * same node again unpins it and the bird's whole repertoire comes back.
+	 */
 	function pickCluster(index: number) {
 		if (!assets) return;
 		pinnedCluster = pinnedCluster === index ? -1 : index;
@@ -701,6 +753,7 @@
 			speciesId = centroid.speciesId;
 			if (tab === 'listen') tab = 'sing';
 		}
+		showContext(centroid.speciesId);
 	}
 
 	// --- the optional local pipeline control surface ---
@@ -925,7 +978,7 @@ uv run birdy-pipeline build</pre>
 								-->
 								<p class="note faint">
 									{#if layout === 'acoustic'}
-										Distance is acoustic distance — the ruler says how much.
+										Distance is acoustic distance.
 									{:else if layout === 'species'}
 										One island per bird. Distance is arrangement, not measurement.
 									{:else}

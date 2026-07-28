@@ -508,6 +508,14 @@ export const trajectoryPointsVertexShader = /* glsl */ `
 	uniform vec3 uPathColour[${MAX_PATHS}];
 	uniform float uPixelRatio;
 	uniform float uSizeScale;
+	/**
+	 * The cloud's particle size, so a bead is quoted against the marks it runs between.
+	 * It used to be two bare constants, which meant turning the particles down to 3 left
+	 * the beads at the size they were tuned for at 6 and the thread became a string of
+	 * boulders between specks. The ratios below reproduce the old 2.6 and 7.0 exactly at
+	 * a particle size of 6.
+	 */
+	uniform float uPointSize;
 
 	varying float vIndex;
 	varying float vPeak;
@@ -531,7 +539,8 @@ export const trajectoryPointsVertexShader = /* glsl */ `
 		// under true 1/z the beads shrank twice as fast as the knots they run between, so
 		// backing off to hold the whole galaxy left visible nodes joined by nothing.
 		float persp = pow(uSizeScale / max(0.001, -mv.z), 0.7);
-		gl_PointSize = clamp((2.6 + vPeak * 7.0) * uPixelRatio * persp, 2.0, 64.0);
+		float bead = uPointSize * (0.433 + vPeak * 1.167);
+		gl_PointSize = clamp(bead * uPixelRatio * persp, 2.0, 64.0);
 	}
 `;
 

@@ -40,7 +40,7 @@
 	let {
 		assets,
 		signal,
-		pointSize = 7,
+		pointSize = 3,
 		focus = -1,
 		speed = 1,
 		layout = 'acoustic',

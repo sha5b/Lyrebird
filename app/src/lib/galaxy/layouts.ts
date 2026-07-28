@@ -78,12 +78,89 @@ function groupCentres(count: number, radius: number): [number, number, number][]
 	return out;
 }
 
-function centroidsOf(positions: Float32Array, clusterId: number[], k: number): Float32Array {
+/**
+ * Where each cluster's knot sits: the mean of its points.
+ *
+ * **With a grouping, the mean is taken over the cluster's biggest group only, and that
+ * qualification is the whole correctness of the grouped layouts.**
+ *
+ * A cluster is fitted in the 28-d acoustic space, and species is a property of the
+ * *point*, not of the cluster — so a cluster routinely holds points from several birds.
+ * On the shipped corpus 147 of 176 clusters do, covering 94 % of all points, and some
+ * span eleven species. Rearranging by bird therefore scatters one cluster's members
+ * across up to eleven islands, and a plain mean of all of them lands in the empty space
+ * between the islands rather than on any of the points it is supposed to name.
+ *
+ * That is not a rounding error. Measured before this: 106 of 176 tags had no member point
+ * within 0.1 units, the median tag was 0.178 from the nearest point it named, and for the
+ * median cluster *none* of its points fell within 0.15 of its own label. Every trajectory
+ * thread and every grid strike reads the same array, so all of them terminated in the
+ * void — lines to nowhere, ending on nothing.
+ *
+ * Averaging the modal group instead puts the knot inside the island where most of the
+ * cluster is actually drawn, which is also the island the pipeline named it after:
+ * `label_cluster` picks the majority species too, so the tag and its text now agree. The
+ * Meaning layout is unaffected either way, because a claim is a property of the cluster,
+ * so all of its points always share one group.
+ */
+function centroidsOf(
+	positions: Float32Array,
+	clusterId: number[],
+	k: number,
+	groupOf?: number[],
+	groupCount = 0,
+	/**
+	 * The group each cluster *claims* to belong to, which for the Bird layout is the
+	 * species written on its tag. Preferred over the modal group wherever the cluster has
+	 * any members there at all.
+	 *
+	 * The two disagree for 23 of the shipped corpus's clusters, because the pipeline names
+	 * a cluster after the majority (species, syllable, song) triple while the modal group
+	 * is the majority species alone. Following the modal group there would put a tag
+	 * reading "Japanese great tit — B note" inside the chickadee island, and send 15 of
+	 * this bird's threads out of its own island to reach it — the same lines-to-nowhere
+	 * complaint in a new form. Following the claim keeps a tag, its text, and every thread
+	 * that ends on it in one place.
+	 */
+	claimedGroup?: Int32Array
+): Float32Array {
+	// Which group each cluster is drawn in. Without a grouping every point counts, which
+	// is the plain mean the acoustic layout wants.
+	let home: Int32Array | null = null;
+	if (groupOf && groupCount > 0) {
+		const tally = new Uint32Array(k * groupCount);
+		for (let i = 0; i < clusterId.length; i++) {
+			const c = clusterId[i];
+			const g = groupOf[i];
+			if (c < 0 || c >= k || g < 0 || g >= groupCount) continue;
+			tally[c * groupCount + g]++;
+		}
+		home = new Int32Array(k).fill(-1);
+		for (let c = 0; c < k; c++) {
+			const claimed = claimedGroup?.[c] ?? -1;
+			// The claim only wins if the cluster actually has points there; a tag has to sit
+			// on something.
+			if (claimed >= 0 && claimed < groupCount && tally[c * groupCount + claimed] > 0) {
+				home[c] = claimed;
+				continue;
+			}
+			let best = 0;
+			for (let g = 0; g < groupCount; g++) {
+				const n = tally[c * groupCount + g];
+				if (n > best) {
+					best = n;
+					home[c] = g;
+				}
+			}
+		}
+	}
+
 	const sums = new Float64Array(k * 3);
 	const counts = new Uint32Array(k);
 	for (let i = 0; i < clusterId.length; i++) {
 		const c = clusterId[i];
 		if (c < 0 || c >= k) continue;
+		if (home && groupOf && home[c] >= 0 && groupOf[i] !== home[c]) continue;
 		sums[c * 3] += positions[i * 3];
 		sums[c * 3 + 1] += positions[i * 3 + 1];
 		sums[c * 3 + 2] += positions[i * 3 + 2];
@@ -112,7 +189,9 @@ function grouped(
 	groupOf: number[],
 	groupCount: number,
 	radius = 0.72,
-	shrink = 0.42
+	shrink = 0.42,
+	/** Per cluster, the group its tag claims. See `centroidsOf`. */
+	claimedGroup?: Int32Array
 ): Layout {
 	const n = assets.points.n;
 	const source = assets.positions;
@@ -149,7 +228,14 @@ function grouped(
 	}
 	return {
 		positions,
-		centroids: centroidsOf(positions, assets.points.clusterId, assets.centroids.k)
+		centroids: centroidsOf(
+			positions,
+			assets.points.clusterId,
+			assets.centroids.k,
+			groupOf,
+			groupCount,
+			claimedGroup
+		)
 	};
 }
 
@@ -210,6 +296,12 @@ export function buildLayouts(
 	for (let i = 0; i < n; i++) {
 		claimOf[i] = claimOfCluster[assets.points.clusterId[i]] ?? CLAIM_COUNT - 1;
 	}
+	// The island each cluster's tag belongs in: the bird it is named after, and — for the
+	// Meaning layout — the claim it is filed under, which every one of its points shares.
+	const claimedSpecies = Int32Array.from(
+		assets.centroids.items.map((c) => speciesIndex.get(c.speciesId) ?? -1)
+	);
+	const claimedClaim = Int32Array.from(claimOfCluster);
 
 	const acoustic = expandClusters(
 		assets.positions,
@@ -231,7 +323,14 @@ export function buildLayouts(
 		// further than the groups are wide on purpose: the whole point of the rearrangement
 		// is that you can see which species tore apart, and that is only visible if the
 		// islands clear each other.
-		species: grouped(assets, speciesOf, Math.max(1, speciesIndex.size), 0.92, 0.28),
+		species: grouped(
+			assets,
+			speciesOf,
+			Math.max(1, speciesIndex.size),
+			0.92,
+			0.28,
+			claimedSpecies
+		),
 		// Further out and tighter than the four groups would suggest, because the four are
 		// wildly unequal in *spread* as well as in size. The six clusters that claim a
 		// social meaning are scattered right across the acoustic layout — they are the same
@@ -241,6 +340,6 @@ export function buildLayouts(
 		// corpus falls in each group, and an island that bleeds into the next one cannot
 		// make it. Every island shrinks by the same factor, so their relative spread, which
 		// is the other thing worth reading, survives.
-		meaning: grouped(assets, claimOf, CLAIM_COUNT, 0.88, 0.42)
+		meaning: grouped(assets, claimOf, CLAIM_COUNT, 0.88, 0.42, claimedClaim)
 	};
 }

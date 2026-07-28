@@ -22,9 +22,11 @@
 		view: LayoutView;
 		/** The scale the whole group is drawn at, from the listening distance. */
 		spread?: number;
+		/** The cloud's particle size; the beads are quoted against it. */
+		pointSize?: number;
 	}
 
-	let { assets, signal, view, spread = 1 }: Props = $props();
+	let { assets, signal, view, spread = 1, pointSize = 3 }: Props = $props();
 
 	/** Samples per segment: enough that the travelling highlight moves smoothly. */
 	const SUBDIVISIONS = 14;
@@ -97,6 +99,7 @@
 			uAlpha: { value: beadAlpha },
 			uColdColor: { value: new THREE.Color(ACCENT) },
 			uPixelRatio: { value: typeof window === 'undefined' ? 1 : Math.min(2, window.devicePixelRatio) },
+			uPointSize: { value: untrack(() => pointSize) },
 			// Rewritten from `spread`, exactly as the cloud's is; see the note in the bead
 			// vertex shader for why the two cannot differ.
 			uSizeScale: { value: SIZE_REFERENCE }
@@ -110,6 +113,10 @@
 	// not follow the same law comes loose from the knots it runs between.
 	$effect(() => {
 		beadMaterial.uniforms.uSizeScale.value = SIZE_REFERENCE * spread;
+	});
+
+	$effect(() => {
+		beadMaterial.uniforms.uPointSize.value = pointSize;
 	});
 
 	let builtVersion = -1;
