@@ -446,6 +446,57 @@ def faithfulness(
     }
 
 
+def torn_clusters(pos: np.ndarray, cluster_id: np.ndarray, k: int) -> dict[str, Any]:
+    """How many clusters the projection draws in two places at once.
+
+    **The failure this catches is worse than an unfaithful distance and it is invisible in
+    every other metric on the page.** A projection is free to rearrange the space, but the
+    app draws one node per cluster: a label at the centroid, a trajectory between
+    centroids, a wave from the centroid. All of that assumes a cluster is *somewhere*. If
+    the embedding puts half of a cluster's points on one side of the galaxy and half on
+    the other, the centroid lands in the empty space between them, the tag sits on
+    nothing, and one sound lights two knots a box-width apart.
+
+    Measured by splitting each cluster's own points in two in 3D and comparing the gap
+    between the halves against their own spread. Splitting a single blob always yields a
+    ratio near 2, so 2 is the null and only larger values mean anything. Measured on the
+    same corpus: UMAP tore 95 of 166 clusters past 5 and 65 past 8, with gaps up to 1.2 of
+    the box; cMDS tore 3 and 2, worst gap 0.49, median ratio 2.06.
+
+    Purity does not see this — it is computed on cluster membership, which the projection
+    never touches. Faithfulness does not see it either: it correlates *random pairs*, and
+    a handful of torn clusters barely move a 200k-pair correlation.
+    """
+    ratios: list[float] = []
+    worst_gap = 0.0
+    for c in range(k):
+        members = pos[cluster_id == c]
+        if len(members) < 12:
+            continue
+        km = KMeans(n_clusters=2, n_init=4, random_state=0).fit(members)
+        a = members[km.labels_ == 0]
+        b = members[km.labels_ == 1]
+        if len(a) < 3 or len(b) < 3:
+            continue
+        gap = float(np.linalg.norm(a.mean(axis=0) - b.mean(axis=0)))
+        spread = 0.5 * (
+            float(np.linalg.norm(a - a.mean(axis=0), axis=1).mean())
+            + float(np.linalg.norm(b - b.mean(axis=0), axis=1).mean())
+        )
+        ratios.append(gap / max(spread, 1.0e-9))
+        worst_gap = max(worst_gap, gap)
+    if not ratios:
+        return {"measured": 0, "torn": 0, "severe": 0, "median": 0.0, "worstGap": 0.0}
+    r = np.asarray(ratios)
+    return {
+        "measured": int(r.size),
+        "torn": int((r > 5).sum()),
+        "severe": int((r > 8).sum()),
+        "median": round(float(np.median(r)), 3),
+        "worstGap": round(worst_gap, 3),
+    }
+
+
 def knn_label_agreement(
     pos: np.ndarray, labels: Sequence[Any], k: int = KNN_AGREEMENT_K
 ) -> float:
@@ -478,7 +529,7 @@ def _purity(cluster_id: np.ndarray, types: Sequence[Any], k: int) -> float:
 def _print_projection_table(results: dict[str, dict[str, Any]], chosen: str) -> None:
     print("", file=sys.stderr)
     print(
-        "  projection   pearson  spearman   purity  knn10   meanR   notes",
+        "  projection   pearson  spearman   purity  knn10   meanR    torn   notes",
         file=sys.stderr,
     )
     for method, r in results.items():
@@ -493,10 +544,11 @@ def _print_projection_table(results: dict[str, dict[str, Any]], chosen: str) -> 
             note = f"min_dist {info['minDist']}"
         mark = " <- shipped" if method == chosen else ""
         f = r["faithfulness"]
+        t = r["tearing"]
         print(
             f"  {method:11} {f['pearson']:8.3f} {f['spearman']:9.3f} "
             f"{r['purity'] * 100:7.1f}% {r['knnAgreement'] * 100:5.1f}% "
-            f"{r['meanRadius']:7.3f}   {note}{mark}",
+            f"{r['meanRadius']:7.3f} {t['torn']:4d}/{t['measured']:<4d} {note}{mark}",
             file=sys.stderr,
         )
     print(
@@ -724,6 +776,7 @@ def build_galaxy(
             "knnAgreement": round(knn_label_agreement(candidate, type_of), 4),
             "purity": round(_purity(cluster_id, type_of, k_final), 4),
             "meanRadius": round(float(np.mean(np.linalg.norm(candidate, axis=1))), 4),
+            "tearing": torn_clusters(candidate, cluster_id, k_final),
         }
 
     if verbose:
@@ -900,6 +953,15 @@ def build_galaxy(
             "k": KNN_AGREEMENT_K,
             "value": round(float(chosen["knnAgreement"]), 4),
             "definition": "share of a point's 3D k nearest neighbours sharing its type",
+        },
+        "tearing": {
+            **chosen["tearing"],
+            "definition": (
+                "clusters this projection draws in two places at once, so their centroid "
+                "— where the label, the trajectory and the wave all go — lands between "
+                "two blobs instead of on the points; splitting a single blob scores ~2, "
+                "so 2 is the null and 'torn' counts above 5"
+            ),
         },
         "projectionComparison": {
             method: {

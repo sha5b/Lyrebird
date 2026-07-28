@@ -142,25 +142,21 @@ function grouped(
 }
 
 /**
- * How much each knot is scaled about its own centre, for legibility.
+ * Scale applied to each knot about its own centre. **1 means the projection is drawn as
+ * it is, and that is the right default.**
  *
- * Below 1 it draws the knots tighter than the projection puts them. A cluster of 64
- * renders of one syllable comes out of UMAP as an elongated streak, and at the framing
- * that holds the whole corpus those streaks are the dominant shape on screen — long
- * enough to run into each other and to read as structure between clusters rather than
- * within one. Halving them turns each into a compact node, which is what the rest of the
- * interface treats a cluster as.
+ * This exists because the knots looked long and it seemed reasonable to shorten them. It
+ * is not reasonable. Scaling a cluster about its centre keeps the centre and the internal
+ * *arrangement*, so the arithmetic is harmless, but the thing the shape was carrying is
+ * its extent — how tightly 64 renders of one syllable agree, how far a field cluster
+ * sprawls. Halving that drew every knot as a tight dot of the same size and the corpus
+ * stopped having a form: the difference between a taut cluster and a loose one, which is
+ * real and measured, was gone.
  *
- * This is a display transform and it is worth being clear about what it does and does not
- * change. It preserves each cluster's centre exactly — a scaling about the mean leaves the
- * mean where it was, so labels, threads and grid strikes all still land on their knots —
- * and it preserves the *relative* arrangement inside a knot, so a knot's shape is still
- * its shape, just smaller. What it distorts is the distance between a point and points in
- * another cluster. Nothing reads those: matching, clustering and the per-point response
- * all happen in the 28-d space, and the projection's distance faithfulness is measured
- * and reported on the untransformed positions.
+ * Kept as a named constant rather than deleted so the reasoning survives with it. Anything
+ * other than 1 is a lie about how much the members of a cluster agree.
  */
-const CLUSTER_SPACING = 0.5;
+const CLUSTER_SPACING = 1;
 
 function expandClusters(
 	positions: Float32Array,

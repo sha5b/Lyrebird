@@ -1,5 +1,5 @@
 {
- "builtAt": "2026-07-28T15:46:42+00:00",
+ "builtAt": "2026-07-28T15:55:01+00:00",
  "pipeline": "birdy-pipeline",
  "contract": "docs/08-implementation.md v1",
  "inventoryVersion": 1,
@@ -8,22 +8,41 @@
  "clusters": 176,
  "dims": 28,
  "seed": 0,
- "projection": "umap",
+ "projection": "cmds",
  "projectionParams": {
-  "nNeighbors": 15,
-  "minDist": 0.25,
+  "eigenvalues": [
+   176.81313077762735,
+   83.07883497122809,
+   55.930784298244994
+  ],
+  "varianceRatio": [
+   0.25296157726417123,
+   0.11885855444764754,
+   0.08001860128533182
+  ],
+  "negativeEigenvalueMass": 0.3849420549484139,
+  "landmarks": 800,
+  "mode": "landmark",
   "metric": "cosine"
  },
  "faithfulness": {
-  "pearson": 0.277,
-  "spearman": 0.2731,
+  "pearson": 0.7573,
+  "spearman": 0.7456,
   "pairs": 199989,
   "definition": "correlation between 28-d cosine distance and 3D euclidean distance over random point pairs; 1.0 = distances fully meaningful"
  },
  "knnAgreement": {
   "k": 10,
-  "value": 0.7303,
+  "value": 0.4291,
   "definition": "share of a point's 3D k nearest neighbours sharing its type"
+ },
+ "tearing": {
+  "measured": 172,
+  "torn": 3,
+  "severe": 2,
+  "median": 2.06,
+  "worstGap": 0.494,
+  "definition": "clusters this projection draws in two places at once, so their centroid \u2014 where the label, the trajectory and the wave all go \u2014 lands between two blobs instead of on the points; splitting a single blob scores ~2, so 2 is the null and 'torn' counts above 5"
  },
  "projectionComparison": {
   "umap": {
@@ -196,7 +215,7 @@
   1.8649
  ],
  "clusterPurity": 0.3426,
- "meanRadius": 0.5953,
+ "meanRadius": 0.8221,
  "files": [
   "manifest.json",
   "inventory.json",

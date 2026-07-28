@@ -103,11 +103,38 @@ distance, Pearson and Spearman.
 Measured on the shipped corpus (31,328 points — 11,328 rendered, 20,000 harvested —
 176 clusters, seed 0):
 
-| projection | Pearson | Spearman | purity | 3D kNN agreement | notes |
-|---|---|---|---|---|---|
-| **`umap` (`min_dist` 0.25, shipped)** | 0.300 | 0.296 | 35.4 % | **73.0 %** | neighbourhoods only |
-| `pca` | 0.485 | 0.484 | 35.4 % | 44.0 % | variance 29/12/9 % |
-| `cmds` (default) | **0.752** | **0.740** | 35.4 % | 43.4 % | variance 26/12/8 %, negative eigenvalue mass 38 % |
+| projection | Pearson | Spearman | purity | 3D kNN | **torn clusters** | notes |
+|---|---|---|---|---|---|---|
+| `umap` (`min_dist` 0.25) | 0.277 | 0.273 | 34.3 % | **73.0 %** | **95 of 166 (57 %)** | neighbourhoods only |
+| `pca` | 0.485 | 0.484 | 34.3 % | 44.0 % | — | variance 29/12/9 % |
+| **`cmds` (default, shipped)** | **0.757** | **0.746** | 34.3 % | 43.4 % | **3 of 172 (2 %)** | variance 26/12/8 %, negative eigenvalue mass 38 % |
+
+### Why not UMAP, in one column
+
+The last column is the one that settled it, and it is the only metric here that catches
+the failure. **UMAP draws 95 of 166 clusters in two separate places**, 65 of them
+severely, with the halves of one great tit cluster ending up 0.99 of a box width apart.
+cMDS tears 3, worst gap 0.49, median ratio 2.06 — which is exactly the null, since
+force-splitting a single blob always scores about 2.
+
+This matters more than distance faithfulness because of what the app draws. There is one
+node per cluster: a label at the centroid, a trajectory between centroids, a wave
+expanding from a centroid. Every one of those assumes a cluster is *somewhere*. When a
+cluster is two blobs a box-width apart, its centroid is in the empty space between them —
+so the tag sits on nothing, the thread connects to nothing, and one sound lights two knots
+on opposite sides of the galaxy while behaving as a single thing, because it is one.
+
+Nothing else on this page sees it. Purity is computed on cluster membership, which the
+projection never touches, so it is identical for all three. Faithfulness correlates
+*random pairs*, and a few dozen torn clusters barely move a 200,000-pair correlation.
+`torn_clusters` is measured on every build now and stored in `manifest.json`, so this
+cannot come back quietly.
+
+UMAP was chosen earlier for looking like it had more structure, and some of that structure
+was an artefact: islands that were halves of clusters rather than groups of them. It is
+still available with `--projection umap` and still produces a valid asset set, and its 73 %
+kNN agreement is genuinely the best of the three — it is a good projection for asking
+"what is near this point" and a bad one for a view built on cluster identity.
 
 The purity is 35.4 % rather than the 90.7 % a synthetic-only build reports, and that is
 the corpus, not the clustering: two thirds of these points are seconds of field audio
@@ -158,20 +185,23 @@ full double-centred matrix is decomposed exactly (`numpy.linalg.eigh`, about 7 s
 points); above it, and so on the shipped build, it switches to landmark MDS with 800
 landmarks and says so in the log and in `manifest.json`.
 
-**The trade-off, stated plainly, and the choice has changed.** UMAP scores best on kNN
-agreement (73.0 %) and worst on distance faithfulness (0.300) because it exaggerates
-separation: it guarantees only that neighbours stay neighbours, so *gaps between distant
-clusters are not interpretable*. cMDS gives the most honest distances (0.752) and a
-picture that is a near-featureless ball — the knots overlap so completely that at the
-framing which holds the whole corpus you cannot see there are knots at all.
+**The trade-off, stated plainly.** UMAP scores best on kNN agreement (73.0 %) and worst on
+distance faithfulness (0.277) because it exaggerates separation: it guarantees only that
+neighbours stay neighbours, so gaps between distant clusters are not interpretable — and,
+as the column above shows, neither are gaps *within* one. cMDS gives the most honest
+distances (0.757) and keeps clusters intact, at the cost of a denser picture: it reads as
+one connected mass with internal filaments rather than a field of islands.
 
-The shipped build is now **UMAP**, on the ground that a viewer who cannot see the
-structure cannot be helped by the fact that the distances between the parts they cannot
-see are accurate. Two things keep this honest rather than merely prettier: the trade is
-recorded here and in `manifest.json` with both correlations, and no part of the interface
-quotes a distance. Nothing in the app reads a position — matching, clustering and the
-per-point response all happen in the 28-d space. `--projection cmds` still produces a
-valid asset set for anyone who wants the faithful-distance version.
+The shipped build is **cMDS**, and it is honest on both counts that matter. No part of the
+interface quotes a distance anyway — matching, clustering and the per-point response all
+happen in the 28-d space — but the interface does assume a cluster has a location, and
+that assumption has to hold.
+
+Two display settings keep the dense picture legible without distorting it: `--separation`
+moves whole clusters apart as rigid bodies (a stated distortion, measured after it runs),
+and `normalise_positions` scales each axis by its own 99.5th percentile so the third axis
+is visible rather than squashed. Both are applied before the faithfulness measurement, so
+the number in the table is the number that ships.
 
 Neither linear projection is degenerate: cMDS spreads its variance 26/12/8 % over the
 three axes, so the cloud is a genuine volume rather than a line.
