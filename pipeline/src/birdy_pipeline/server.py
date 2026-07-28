@@ -274,6 +274,9 @@ class Pipeline:
             types=types,
             should_stop=lambda: job.cancelled,
             invert=invert,
+            # So a refit keeps the ids the last one used. Without this every pass renamed
+            # every learned syllable and the galaxy's labels stopped meaning anything.
+            prior=learn.previous_fit(self.learned_path),
         )
         if not document["species"]:
             raise RuntimeError("no species had enough observations to fit")

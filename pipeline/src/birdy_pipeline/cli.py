@@ -439,6 +439,10 @@ def cmd_learn(args: argparse.Namespace) -> int:
         types=args.types,
         seed=args.seed,
         invert=not args.no_invert,
+        # Inherit the ids the last fit used, so `L03` keeps naming the same sound. See
+        # `learn.assign_ids`: renumbering was why a refitted bird sang something new and lit
+        # a cluster that had been fitted to something else.
+        prior=learn.previous_fit(Path(args.out)),
     )
     if not document["species"]:
         log("no species had enough observations to fit — harvest more recordings")

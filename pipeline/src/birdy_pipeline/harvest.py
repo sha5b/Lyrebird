@@ -486,17 +486,43 @@ class XenoCanto:
         with urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT) as res:
             return json.loads(res.read().decode("utf-8"))
 
-    def search(self, query: str, max_pages: int = 3) -> Iterator[dict[str, Any]]:
-        page = 1
-        while page <= max_pages:
-            url = f"{XC_API}?{urllib.parse.urlencode({'query': query, 'key': self.key, 'page': page})}"
+    # A search that times out is a slow server, not a broken pipeline.
+    #
+    # **This is what killed the loop.** `_get` has a timeout, `search` caught `HTTPError`
+    # and nothing else, so a single slow response raised `TimeoutError` out of the generator,
+    # out of `harvest_xeno_canto`, and out of the job — sixty seconds into a run that was
+    # meant to continue until stopped. One unlucky request should cost one species' page, not
+    # the session, and a bad key should still fail loudly on the first try, which is why the
+    # HTTP errors below are not retried.
+    SEARCH_ATTEMPTS = 3
+    SEARCH_BACKOFF_S = 2.0
+
+    def _search_page(self, url: str, query: str) -> dict[str, Any] | None:
+        for attempt in range(1, self.SEARCH_ATTEMPTS + 1):
             try:
-                data = self._get(url)
+                return self._get(url)
             except urllib.error.HTTPError as exc:
                 raise RuntimeError(
                     f"xeno-canto returned {exc.code} for {query!r}"
                     + (" — check the API key" if exc.code in (401, 403) else "")
                 ) from None
+            except (TimeoutError, OSError, ValueError) as exc:
+                # OSError covers URLError and socket errors; ValueError covers a truncated
+                # body that will not parse as JSON.
+                if attempt == self.SEARCH_ATTEMPTS:
+                    log(f"skip {query}: {type(exc).__name__}: {exc} after {attempt} tries")
+                    return None
+                log(f"retrying {query}: {type(exc).__name__}: {exc}")
+                time.sleep(self.SEARCH_BACKOFF_S * attempt)
+        return None
+
+    def search(self, query: str, max_pages: int = 3) -> Iterator[dict[str, Any]]:
+        page = 1
+        while page <= max_pages:
+            url = f"{XC_API}?{urllib.parse.urlencode({'query': query, 'key': self.key, 'page': page})}"
+            data = self._search_page(url, query)
+            if data is None:
+                return
             recordings = data.get("recordings", [])
             if not recordings:
                 return

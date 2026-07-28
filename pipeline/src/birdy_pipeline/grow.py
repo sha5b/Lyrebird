@@ -320,10 +320,37 @@ def extend_build(
     # drew the new marks and an app that could not sing them: no voice, no songs, no
     # grammar, and a species dropdown that never grew an entry. Copying the inventory
     # alongside costs one file write and is what makes "learn while it runs" mean anything.
+    #
+    # It only travels when the ids still line up. A grown galaxy keeps the clusters the build
+    # fitted, and those clusters are labelled with syllable ids; shipping an inventory whose
+    # ids have moved on would leave the app singing a syllable whose name belongs to a
+    # cluster fitted to a different sound — audibly new, invisible in the cloud, which is the
+    # exact failure this copy exists to prevent. `learn.assign_ids` now keeps ids stable, so
+    # in the ordinary case this check passes; when it does not, the honest answer is that
+    # only a rebuild can take the new repertoire in, and it says so.
     inventory_copied = False
     if inventory_path is not None and Path(inventory_path).exists():
-        shutil.copyfile(Path(inventory_path), out_dir / "inventory.json")
-        inventory_copied = True
+        candidate = json.loads(Path(inventory_path).read_text(encoding="utf-8"))
+        offered = {
+            (sp["id"], syl["id"])
+            for sp in candidate.get("species", [])
+            for syl in sp.get("syllables", [])
+        }
+        labelled = {
+            (c["speciesId"], c["syllableId"]) for c in items if c.get("syllableId")
+        }
+        orphaned = labelled - offered
+        if orphaned:
+            print(
+                f"not copying {Path(inventory_path).name}: {len(orphaned)} of the galaxy's "
+                f"labelled clusters name syllables it no longer contains "
+                f"({', '.join(f'{s}/{y}' for s, y in sorted(orphaned)[:4])}...). "
+                "The points are grown; the repertoire needs a rebuild.",
+                file=sys.stderr,
+            )
+        else:
+            shutil.copyfile(Path(inventory_path), out_dir / "inventory.json")
+            inventory_copied = True
 
     manifest.update(
         {

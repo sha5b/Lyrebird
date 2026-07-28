@@ -30,6 +30,7 @@ labelled `unlabelled`: real acoustics, no documented function.
 from __future__ import annotations
 
 import json
+import math
 import sys
 from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass, field
@@ -388,9 +389,16 @@ class LearnedType:
 
 
 def fit_types(
-    observations: Sequence[SyllableObservation], k: int, seed: int = 0
+    observations: Sequence[SyllableObservation],
+    k: int,
+    seed: int = 0,
+    previous: dict[str, dict[str, Any]] | None = None,
 ) -> list[LearnedType]:
-    """Cluster one species' observations and take the median of each cluster."""
+    """Cluster one species' observations and take the median of each cluster.
+
+    `previous` is the species' fitted syllables from the last run, keyed by id, so a refit
+    can inherit its ids instead of renumbering — see `assign_ids`.
+    """
     x = np.stack([_observation_vector(o) for o in observations])
     x = (x - x.mean(axis=0)) / np.maximum(x.std(axis=0), 1e-6)
     k = max(1, min(k, len(observations)))
@@ -436,15 +444,84 @@ def fit_types(
 
     # order by median pitch so L00 is the lowest type, which makes the ids readable
     types.sort(key=lambda t: syrinx.f0_reference(t.syllable["contour"]))
-    for rank, t in enumerate(types):
-        new_id = f"L{rank:02d}"
+    assign_ids(types, previous)
+    return types
+
+
+def _id_key(syllable: dict[str, Any]) -> tuple[float, float]:
+    """Where a type sits, for matching one fit's types against another's."""
+    return (
+        math.log2(max(20.0, syrinx.f0_reference(syllable["contour"]))),
+        math.log2(max(0.005, float(syllable.get("dur", 0.1)))),
+    )
+
+
+# How far a refitted type may move and still be considered the same type. In octaves of
+# pitch and octaves of duration, added: a third of an octave in each is generous for a
+# median that has absorbed a few more recordings and tight enough that two genuinely
+# different calls of one bird cannot swap identities.
+ID_MATCH_TOLERANCE = 0.66
+
+
+def assign_ids(types: list[LearnedType], previous: dict[str, dict[str, Any]] | None) -> None:
+    """Give each fitted type an id, keeping the one it had in the previous fit.
+
+    **An id that changes meaning between runs is worse than no id.** These were assigned by
+    rank: sort the types by pitch, number them `L00` upward. Refit after another twenty
+    recordings, one type's median moves, the order changes, and every id from there on names
+    a different syllable than it did an hour ago — while the grammar written beside them, the
+    trajectory paths built from them and the clusters labelled with them all still refer to
+    the old meaning. The visible symptom is a bird singing something audibly new that lights
+    nothing in the galaxy, because the id it sang under belongs to a cluster fitted to a
+    different sound.
+
+    So a refit inherits: each new type takes the id of the nearest type in the previous fit,
+    matched on pitch and duration and only within `ID_MATCH_TOLERANCE`, greedily from the
+    closest pair outward. Types with no acceptable match are genuinely new and get fresh ids
+    after the highest one already used, so an id is never silently recycled onto a different
+    sound. With no previous fit it falls back to numbering by rank, which is where all of
+    these came from.
+    """
+    if previous:
+        pairs: list[tuple[float, int, str]] = []
+        for i, t in enumerate(types):
+            f0_new, dur_new = _id_key(t.syllable)
+            for pid, syl in previous.items():
+                f0_old, dur_old = _id_key(syl)
+                cost = abs(f0_new - f0_old) + abs(dur_new - dur_old)
+                if cost <= ID_MATCH_TOLERANCE:
+                    pairs.append((cost, i, pid))
+        pairs.sort()
+        taken_new: set[int] = set()
+        taken_old: set[str] = set()
+        assigned: dict[int, str] = {}
+        for cost, i, pid in pairs:
+            if i in taken_new or pid in taken_old:
+                continue
+            assigned[i] = pid
+            taken_new.add(i)
+            taken_old.add(pid)
+    else:
+        assigned = {}
+        taken_old = set()
+
+    used = {int(pid[1:]) for pid in previous or {} if pid[1:].isdigit()}
+    used |= {int(pid[1:]) for pid in assigned.values() if pid[1:].isdigit()}
+    next_free = (max(used) + 1) if used else 0
+    for i, t in enumerate(types):
+        if i in assigned:
+            new_id = assigned[i]
+        elif previous:
+            new_id = f"L{next_free:02d}"
+            next_free += 1
+        else:
+            new_id = f"L{i:02d}"
         t.id = new_id
         t.syllable["id"] = new_id
         t.syllable["label"] = (
             f"learned {new_id} · {syrinx.f0_reference(t.syllable['contour']):.0f} Hz · "
             f"{t.syllable['dur'] * 1000:.0f} ms"
         )
-    return types
 
 
 # --- can the model actually sing it? -----------------------------------------------
@@ -682,6 +759,7 @@ def learn_species(
     verbose: bool = True,
     frame: tuple[np.ndarray, np.ndarray] | None = None,
     invert: bool = True,
+    previous: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any] | None:
     """Fitted syllables + a measured grammar for one species, or None if too little data."""
     if len(observations) < MIN_OBSERVATIONS:
@@ -691,7 +769,7 @@ def learn_species(
         return None
 
     k = max(2, min(types, len(observations) // OBS_PER_TYPE))
-    fitted = fit_types(observations, k, seed=seed)
+    fitted = fit_types(observations, k, seed=seed, previous=previous)
 
     index = {id(o): i for i, o in enumerate(observations)}
     type_of = {index[id(o)]: t.id for t in fitted for o in t.members}
@@ -782,6 +860,29 @@ def learn_species(
     }
 
 
+def previous_fit(path: Path) -> dict[str, dict[str, dict[str, Any]]]:
+    """The fitted syllables of an already-written inventory, per species and keyed by id.
+
+    Only the `L`-prefixed ones: the authored syllables keep their own ids by definition and
+    a refit never touches them. Missing or unreadable file means "no previous fit", which is
+    the correct answer for a first run and the safe one for a corrupted file.
+    """
+    try:
+        doc = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    out: dict[str, dict[str, dict[str, Any]]] = {}
+    for sp in doc.get("species", []):
+        fitted = {
+            syl["id"]: syl
+            for syl in sp.get("syllables", [])
+            if str(syl.get("id", "")).startswith("L")
+        }
+        if fitted:
+            out[sp["id"]] = fitted
+    return out
+
+
 def build_learned_inventory(
     observations: Iterable[SyllableObservation],
     inventory: dict[str, Any],
@@ -792,12 +893,17 @@ def build_learned_inventory(
     verbose: bool = True,
     should_stop: Callable[[], bool] | None = None,
     invert: bool = True,
+    prior: dict[str, dict[str, dict[str, Any]]] | None = None,
 ) -> dict[str, Any]:
     """A full inventory document in the schema of `data/inventory.json`.
 
     It can be fed straight back into `build --inventory`, so the app renders learned
     syllables through the same path as the hand-authored ones — and shows the same
     honesty labels next to them.
+
+    `prior` is the previous fit's learned syllables, per species and keyed by id, so a refit
+    keeps its ids rather than renumbering them. `previous_fit` builds it from a written
+    inventory. Passing nothing means "this is the first fit", which renumbers.
     """
     grouped: dict[str, list[SyllableObservation]] = defaultdict(list)
     for o in observations:
@@ -821,6 +927,7 @@ def build_learned_inventory(
         learned = learn_species(
             species_id, grouped[species_id], descriptors, calibration,
             types=types, seed=seed, verbose=verbose, frame=frame, invert=invert,
+            previous=(prior or {}).get(species_id),
         )
         if learned is None:
             continue
