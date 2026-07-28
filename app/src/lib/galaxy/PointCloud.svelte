@@ -107,6 +107,8 @@
 		fragmentShader,
 		uniforms: {
 			uActivation: { value: new Float32Array(clusterCount) },
+			uSung: { value: new Float32Array(clusterCount) },
+			uNeutralHot: { value: new THREE.Color(MONO_HOT) },
 			uTime: { value: 0 },
 			uLevel: { value: 0 },
 			uPointSize: { value: untrack(() => pointSize) },
@@ -120,7 +122,7 @@
 			uFocus: { value: -1 },
 			// Enough that an unselected species still reads as part of the same corpus,
 			// little enough that the selected one is unmistakably the subject.
-			uFocusDim: { value: 0.16 },
+			uFocusDim: { value: 0.12 },
 			uOpacity: { value: 1 },
 			uMode: { value: COLOUR_RESPONSE },
 			// Filled in every frame from the camera's distance to the cloud; the initial
@@ -341,6 +343,8 @@
 		u.uHighlight.value = signal.best;
 		const target = u.uActivation.value as Float32Array;
 		target.set(signal.activations.subarray(0, target.length));
+		const sung = u.uSung.value as Float32Array;
+		sung.set(signal.sung.subarray(0, sung.length));
 
 		activation.set(signal.pointActivation.subarray(0, activation.length));
 		activationAttribute.needsUpdate = true;

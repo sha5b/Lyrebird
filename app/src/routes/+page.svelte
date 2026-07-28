@@ -136,6 +136,25 @@
 		!coloured ? COLOUR_MONO : layout === 'meaning' ? COLOUR_MEANING : COLOUR_RESPONSE
 	);
 
+	/**
+	 * Choosing a bird ends the whole-aviary chorus, which is the other half of the rule
+	 * that starting one clears the bird.
+	 *
+	 * Without it the two states contradict each other and the contradiction is invisible.
+	 * The aviary opens singing, `focus` is deliberately -1 for the duration — during a
+	 * global chorus no species is more the subject than any other — so picking a bird
+	 * from the list changed the labels and the camera while leaving every point in the
+	 * corpus at exactly the same weight. The selection looked ignored, and there was
+	 * nothing on screen to say why.
+	 */
+	let lastSpeciesChoice = $state('');
+	$effect(() => {
+		const chosen = speciesId;
+		if (chosen === lastSpeciesChoice) return;
+		lastSpeciesChoice = chosen;
+		if (chosen && untrack(() => chorus) === 'global') untrack(() => setChorus('off'));
+	});
+
 	/** Cluster ids per species, for framing a whole repertoire at once. */
 	const clustersOfSpecies = $derived.by(() => {
 		const map = new Map<string, number[]>();

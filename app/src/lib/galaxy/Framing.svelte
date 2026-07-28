@@ -83,8 +83,13 @@
 	 * Twelve nodes or fewer is a phrase or a small repertoire and every one of them
 	 * matters; beyond that it is a bird's whole output and the job is to find where it
 	 * mostly lives.
+	 *
+	 * Framing *everything* is the exception and has to be excluded by name. "Show me the
+	 * whole galaxy" means the whole galaxy — cropping to where the corpus mostly is would
+	 * cut off the outlying islands, which are the part of a UMAP layout most worth seeing.
 	 */
-	function reachQuantile(count: number): number {
+	function reachQuantile(count: number, total: number): number {
+		if (total > 0 && count >= total * 0.9) return 0.97;
 		if (count <= 4) return 1;
 		if (count <= 12) return 0.85;
 		return 0.55;
@@ -123,7 +128,7 @@
 			reaches.push(Math.sqrt(dx * dx + dy * dy + dz * dz));
 		}
 		reaches.sort((a, b) => a - b);
-		const q = reachQuantile(reaches.length);
+		const q = reachQuantile(reaches.length, view.centroids.length / 3);
 		const reach =
 			reaches[Math.min(reaches.length - 1, Math.floor((reaches.length - 1) * q))] * POINT_MARGIN;
 		// The centroids are in the group's own space: it is rotating and scaled, so the

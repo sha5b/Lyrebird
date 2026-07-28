@@ -6,6 +6,7 @@
 	import type { OrbitControls as OrbitControlsInstance } from 'three/examples/jsm/controls/OrbitControls.js';
 	import type { BirdyAssets } from '$lib/data/types';
 	import { COLOUR_MONO } from './shaders';
+	import Cage from './Cage.svelte';
 	import ContextPaths from './ContextPaths.svelte';
 	import Framing from './Framing.svelte';
 	import NodeLabels from './NodeLabels.svelte';
@@ -98,7 +99,13 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="stage" {onpointerdown} {onpointerup}>
 	<Canvas>
-		<T.PerspectiveCamera makeDefault position={[0, 0.35, 2.6]} fov={55} near={0.01} far={400}>
+		<!--
+			Opened from above the equator rather than on it. At the old near-level elevation
+			the ground plane was edge-on and collapsed to a line, so the one reference that
+			was supposed to establish the volume showed nothing; a three-quarter view gives
+			its lines somewhere to converge and the corpus somewhere to sit.
+		-->
+		<T.PerspectiveCamera makeDefault position={[0.5, 1.15, 2.4]} fov={55} near={0.01} far={400}>
 			<!--
 				The reach has to cover the whole distance range: at the far end the cloud is
 				several times its own radius across, and a camera that cannot back away from
@@ -122,6 +129,7 @@
 			has to apply to all of them or the lines and the tags drift off their points.
 		-->
 		<Spinner {spin} {speed} scale={spread} bind:group={cloud}>
+			<Cage />
 			<ContextPaths {assets} {signal} {view} />
 			<PointCloud {assets} {signal} {pointSize} {focus} {colourMode} {speed} {layout} {view} />
 			<Trajectory {assets} {signal} {view} mono={colourMode === COLOUR_MONO} />
@@ -151,17 +159,17 @@
 		position: absolute;
 		inset: 0;
 		background: var(--paper);
-		/* A faint engineering grid, so the cloud is read against a measured field rather
-		   than floating in nothing. Two scales: a fine one and a decade one. */
+		/* Only the decade grid survives here, at a fraction of its old weight. The
+		   measured field the cloud is read against is now the 3D cage inside the scene,
+		   which turns with it; this is just enough tone on the paper that the window does
+		   not read as a void, and it must stay well under the cage or the flat lattice
+		   wins the depth argument again. */
 		background-image:
-			linear-gradient(var(--grid-fine) 1px, transparent 1px),
-			linear-gradient(90deg, var(--grid-fine) 1px, transparent 1px),
 			linear-gradient(var(--grid-coarse) 1px, transparent 1px),
 			linear-gradient(90deg, var(--grid-coarse) 1px, transparent 1px);
 		background-size:
-			24px 24px,
-			24px 24px,
 			120px 120px,
 			120px 120px;
+		opacity: 1;
 	}
 </style>

@@ -111,6 +111,8 @@ export function vertexShader(clusterCount: number): string {
 		attribute vec3 aTarget;
 
 		uniform float uActivation[${Math.max(1, clusterCount)}];
+		/** 1 where this cluster is the note being sung, 0 where it merely resembles it. */
+		uniform float uSung[${Math.max(1, clusterCount)}];
 		uniform float uTime;
 		uniform float uLevel;
 		uniform float uPointSize;
@@ -138,6 +140,7 @@ export function vertexShader(clusterCount: number): string {
 		varying float vSpecies;
 		varying float vDepth;
 		varying float vChosen;
+		varying float vSung;
 
 		void main() {
 			int index = int(aCluster + 0.5);
@@ -146,6 +149,7 @@ export function vertexShader(clusterCount: number): string {
 			// even when nothing is being matched against it.
 			float act = clamp(max(aAct, uActivation[index] * 0.25), 0.0, 1.0);
 			vAct = act;
+			vSung = uSung[index];
 			vSeed = aSeed;
 			vClaim = aClaim;
 			vSpecies = aSpecies;
@@ -251,6 +255,8 @@ export const fragmentShader = /* glsl */ `
 	uniform vec3 uRest[${PALETTE_SLOTS}];
 	uniform vec3 uHot[${PALETTE_SLOTS}];
 	uniform vec3 uSurface;
+	/** Where a *resembling* cluster's response lands, in place of its category colour. */
+	uniform vec3 uNeutralHot;
 	uniform float uOpacity;
 	uniform float uMode;
 	/** Live pitch, 0..1 over the corpus's range. Shapes the gradient inside each mark. */
@@ -271,6 +277,7 @@ export const fragmentShader = /* glsl */ `
 	varying float vSpecies;
 	varying float vDepth;
 	varying float vChosen;
+	varying float vSung;
 
 	void main() {
 		vec2 uv = gl_PointCoord - 0.5;
@@ -317,7 +324,29 @@ export const fragmentShader = /* glsl */ `
 		// hue, so identity never moves and intensity always does. The whole 0..1 range is
 		// used: a steeper curve made everything above about half look identical, which is
 		// what made an active knot read as one flat colour.
-		vec3 colour = mix(rest, hot, clamp(vAct, 0.0, 1.0));
+		// **Source and resemblance are not the same claim, so they are not the same ink.**
+		//
+		// The category colour — this bird, or this claim of meaning — belongs to the note
+		// that is actually sounding. A cluster that merely resembles it walks toward a
+		// neutral dark instead, so a phrase reads as one coloured thread with a grey field
+		// of relatives around it. Rendered identically, as they were, five species' hues
+		// lighting at once looked like five birds singing rather than one bird and its
+		// four nearest neighbours in the corpus — which is the relation the view exists to
+		// show, and the opposite of what it appeared to say.
+		//
+		// Nothing is hidden by this: the resembling clusters light exactly as brightly as
+		// before, and the reading panel still names them. Only the hue is withheld, and
+		// only from the clusters that did not earn it.
+		vec3 end = mix(uNeutralHot, hot, clamp(vSung, 0.0, 1.0));
+
+		// A chosen bird's points start part-way along their own ramp even at rest, so the
+		// selection is a darker set of marks rather than the same marks in a thinner
+		// crowd. Dimming everyone else was not enough on its own: a bird owns forty of a
+		// hundred and seventy-six clusters scattered right across the layout, so with only
+		// the dim you could see the threads joining its nodes without being able to point
+		// at a single mark and say that one belongs to it.
+		vec3 base = mix(rest, end, 0.34 * vChosen);
+		vec3 colour = mix(base, end, clamp(vAct, 0.0, 1.0));
 
 		// A ring of the surface colour around anything that is responding. This is the
 		// standard remedy for overlapping marks, and it is what stops a lit knot from
@@ -379,6 +408,23 @@ export interface LivePath {
 export interface VisualSignal {
 	activations: Float32Array;
 	/**
+	 * Per cluster, 1 where a note is *being sung right now* and 0 where the cluster is
+	 * merely responding to it.
+	 *
+	 * These are two different claims and the picture used to make them identically. When
+	 * Birdy sings a Bengalese finch syllable, the scheduled node lights because we know
+	 * it is that note, and a handful of clusters belonging to other birds light because
+	 * they sound like it. Drawn the same way, in their own species hues, the galaxy
+	 * appeared to say that a finch and a chickadee were both singing.
+	 *
+	 * They are not the same and the difference is the whole content of the view: one is
+	 * ground truth, the other is the acoustic relation you came here to see. The shader
+	 * gives the sung node its category colour and renders resemblance in neutral ink, so
+	 * the picture reads "this is the note, and these are the parts of the corpus it
+	 * resembles" instead of "these birds are singing".
+	 */
+	sung: Float32Array;
+	/**
 	 * Per-point response, 0..1. Written every frame by the listener, read straight into
 	 * a GPU attribute; never reallocated, so the renderer can hold the same buffer.
 	 */
@@ -407,6 +453,7 @@ export interface VisualSignal {
 export function createSignal(clusterCount: number, pointCount = 0): VisualSignal {
 	return {
 		activations: new Float32Array(Math.max(1, clusterCount)),
+		sung: new Float32Array(Math.max(1, clusterCount)),
 		pointActivation: new Float32Array(Math.max(1, pointCount)),
 		level: 0,
 		f0: 0,

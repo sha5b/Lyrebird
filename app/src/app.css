@@ -10,7 +10,9 @@
 	--rule: #d8dee7;
 	--rule-strong: #b9c2ce;
 	--grid-fine: rgba(15, 23, 42, 0.035);
-	--grid-coarse: rgba(15, 23, 42, 0.06);
+	/* Halved: the flat window grid is now a backdrop to the 3D cage rather than the
+	   spatial reference itself, and at its old weight it read as the stronger of the two. */
+	--grid-coarse: rgba(15, 23, 42, 0.03);
 
 	--ink: #10161f;
 	--ink-dim: #52606f;

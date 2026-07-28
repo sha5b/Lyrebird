@@ -268,6 +268,11 @@ export class Listener {
 		// of a feature-window later. Listening still relies on the tracker above.
 		const singing = this.advancePaths();
 
+		// Rebuilt from scratch each frame: a note that has finished is no longer being
+		// sung, and a stale flag would leave a cluster wearing its species colour long
+		// after it stopped being the source.
+		this.signal.sung.fill(0);
+
 		if (singing) {
 			// The matched activations stay visible but are damped: the analysis window spans
 			// ~0.7 s, so it lights every cluster of a short phrase at once, which blurs the
@@ -344,6 +349,9 @@ export class Listener {
 				const pulse = Math.exp(-(offset * offset));
 				if (pulse > 0.01) {
 					this.signal.activations[node] = Math.max(this.signal.activations[node], pulse);
+					// This one we *know*, so it is marked as sung rather than matched — see
+					// the note on `sung` in shaders.ts for why the two must look different.
+					this.signal.sung[node] = Math.max(this.signal.sung[node], pulse);
 				}
 			});
 			const current = path.nodes[Math.round(path.progress)];
