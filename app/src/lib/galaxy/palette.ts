@@ -100,12 +100,17 @@ function maxChroma(l: number, hDeg: number): number {
 /** Slots in the shader's palette uniforms. Species beyond this reuse a hue. */
 export const PALETTE_SLOTS = 16;
 
-const REST_L = 0.82;
-const REST_C = 0.062;
-const HOT_C = 0.17;
-const HOT_L_MIN = 0.46;
-const HOT_L_MAX = 0.74;
-const HOT_L_PREFERRED = 0.58;
+// Pastel on both ends. The resting tint is barely more than tinted paper; the
+// responding one is a soft colour rather than a saturated one, because the corpus is
+// 4287 overlapping marks and anything heavier stacks into poster paint. Separation is
+// carried by the *step* between the two, by size, and by the ring — not by loading up
+// the chroma.
+const REST_L = 0.9;
+const REST_C = 0.042;
+const HOT_C = 0.135;
+const HOT_L_MIN = 0.55;
+const HOT_L_MAX = 0.8;
+const HOT_L_PREFERRED = 0.68;
 /** Where the hue wheel starts. 35° puts a warm ochre first, which suits a paper ground. */
 const HUE_START = 35;
 
@@ -145,9 +150,7 @@ function hotLightness(hDeg: number): number {
  * two tiers, so no pair relies on hue alone.
  */
 const HUE_COUNT = 6;
-// The darkest tier stops at 0.50: below that sRGB runs out of chroma for the cool hues
-// and they collapse toward grey, which loses more than the extra lightness gains.
-const TIERS = [0.74, 0.61, 0.5];
+const TIERS = [0.79, 0.69, 0.59];
 
 export function speciesPalette(): { rest: string[]; hot: string[] } {
 	const rest: string[] = [];
@@ -170,4 +173,10 @@ export function speciesPalette(): { rest: string[]; hot: string[] } {
 export const CLAIM_HOT = ['#2a78d6', '#eb6834', '#1baf7a'];
 
 /** Pale companions to the above, mixed toward the paper rather than desaturated. */
-export const CLAIM_REST = ['#bcd3f2', '#f6cdba', '#b4e5d3'];
+export const CLAIM_REST = ['#d7e5f8', '#fae0d2', '#d2efe4'];
+
+/**
+ * Softer steps of the same three hues, for marks that sit over the cloud — trajectory
+ * threads, label rules — where the full categorical colour would shout.
+ */
+export const CLAIM_SOFT = ['#5b95df', '#ef8d63', '#4dc59a'];

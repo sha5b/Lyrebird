@@ -74,6 +74,7 @@ export function vertexShader(clusterCount: number): string {
 		attribute float aAct;
 		attribute float aSpecies;
 		attribute float aClaim;
+		attribute vec3 aTarget;
 
 		uniform float uActivation[${Math.max(1, clusterCount)}];
 		uniform float uTime;
@@ -84,6 +85,7 @@ export function vertexShader(clusterCount: number): string {
 		uniform float uSizeScale;
 		uniform float uFocus;
 		uniform float uFocusDim;
+		uniform float uMorph;
 
 		varying float vAct;
 		varying float vSeed;
@@ -103,20 +105,28 @@ export function vertexShader(clusterCount: number): string {
 			vSpecies = aSpecies;
 			vFocus = (uFocus < 0.0 || abs(uFocus - aSpecies) < 0.5) ? 1.0 : uFocusDim;
 
+			// Rearranging between layouts. Each point takes its own slightly different
+			// share of the transition, so the cloud flows apart and back together instead
+			// of sliding as one rigid body — you can follow individual points across.
+			float lead = mix(0.75, 1.25, aSeed);
+			vec3 base = mix(position, aTarget, clamp(uMorph * lead, 0.0, 1.0));
+
 			// Active points breathe outward and jump with the input level — the "it jumps"
 			// behaviour of the reference visualisation, now per point rather than per knot.
 			float pulse = act * (0.5 + 0.5 * sin(uTime * 9.0 + aSeed * 6.2831853));
-			vec3 p = position + normalize(position + vec3(1e-4)) * pulse * 0.07;
+			vec3 p = base + normalize(base + vec3(1e-4)) * pulse * 0.07;
 			p.y += pulse * 0.06 * (0.5 + uLevel * 4.0);
 
 			vec4 mv = modelViewMatrix * vec4(p, 1.0);
 			gl_Position = projectionMatrix * mv;
 
-			// Modest growth: past about 2x an active knot fuses into one solid disc and the
-			// per-point response it is there to show disappears. Most of the signal is
-			// carried by the colour and the separating ring instead.
-			float size = uPointSize * (1.0 + act * 1.6);
-			if (abs(uHighlight - aCluster) < 0.5) size *= 1.4;
+			// Growth follows the live level as well as the activation, and each point takes
+			// its own share of it. Inflating every member by the same fixed amount is what
+			// made a lit knot read as one swollen disc: it has to breathe with the sound,
+			// and unevenly, or the per-point response is invisible in the size channel too.
+			float grow = act * (0.35 + 0.9 * uLevel) * (0.5 + 1.0 * aSeed);
+			float size = uPointSize * (1.0 + grow);
+			if (abs(uHighlight - aCluster) < 0.5) size *= 1.15;
 			// uPointSize is in pixels at the default camera distance (uSizeScale), which
 			// keeps the cloud readable: the corpus is normalised to |coord| <= 1, so the
 			// usual large perspective constant turns every point into a screen-wide blob.
@@ -258,27 +268,32 @@ export const trajectoryVertexShader = /* glsl */ `
 
 	uniform float uProgress[${MAX_PATHS}];
 	uniform float uAlpha[${MAX_PATHS}];
+	uniform vec3 uPathColour[${MAX_PATHS}];
 
 	varying float vIndex;
 	varying float vProgress;
 	varying float vAlpha;
+	varying vec3 vColour;
 
 	void main() {
 		int p = int(aPath + 0.5);
 		vIndex = aIndex;
 		vProgress = uProgress[p];
 		vAlpha = uAlpha[p];
+		// Each thread wears the colour of the bird singing it, so a chorus of six reads
+		// as six birds rather than six identical wires.
+		vColour = uPathColour[p];
 		gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 	}
 `;
 
 export const trajectoryFragmentShader = /* glsl */ `
 	uniform vec3 uColdColor;
-	uniform vec3 uHotColor;
 
 	varying float vIndex;
 	varying float vProgress;
 	varying float vAlpha;
+	varying vec3 vColour;
 
 	void main() {
 		bool singing = vProgress >= 0.0;
@@ -288,7 +303,7 @@ export const trajectoryFragmentShader = /* glsl */ `
 		float peak = singing ? exp(-pow((vIndex - vProgress) / 0.45, 2.0)) : 0.0;
 
 		float base = 0.45 + 0.35 * passed;
-		vec3 colour = mix(uColdColor, uHotColor, clamp(peak, 0.0, 1.0));
+		vec3 colour = mix(uColdColor, vColour, clamp(0.35 + peak, 0.0, 1.0));
 		gl_FragColor = vec4(colour, clamp(vAlpha * (base + peak * 0.6), 0.0, 1.0));
 	}
 `;
@@ -304,6 +319,7 @@ export const trajectoryPointsVertexShader = /* glsl */ `
 
 	uniform float uProgress[${MAX_PATHS}];
 	uniform float uAlpha[${MAX_PATHS}];
+	uniform vec3 uPathColour[${MAX_PATHS}];
 	uniform float uPixelRatio;
 	uniform float uSizeScale;
 
@@ -311,12 +327,14 @@ export const trajectoryPointsVertexShader = /* glsl */ `
 	varying float vPeak;
 	varying float vProgress;
 	varying float vAlpha;
+	varying vec3 vColour;
 
 	void main() {
 		int p = int(aPath + 0.5);
 		vIndex = aIndex;
 		vProgress = uProgress[p];
 		vAlpha = uAlpha[p];
+		vColour = uPathColour[p];
 		bool singing = vProgress >= 0.0;
 		vPeak = singing ? exp(-pow((aIndex - vProgress) / 0.45, 2.0)) : 0.0;
 
@@ -332,12 +350,12 @@ export const trajectoryPointsVertexShader = /* glsl */ `
 
 export const trajectoryPointsFragmentShader = /* glsl */ `
 	uniform vec3 uColdColor;
-	uniform vec3 uHotColor;
 
 	varying float vIndex;
 	varying float vPeak;
 	varying float vProgress;
 	varying float vAlpha;
+	varying vec3 vColour;
 
 	void main() {
 		vec2 uv = gl_PointCoord - 0.5;
@@ -347,7 +365,7 @@ export const trajectoryPointsFragmentShader = /* glsl */ `
 
 		bool singing = vProgress >= 0.0;
 		float passed = singing ? step(vIndex, vProgress) : 1.0;
-		vec3 colour = mix(uColdColor, uHotColor, clamp(vPeak, 0.0, 1.0));
+		vec3 colour = mix(uColdColor, vColour, clamp(0.35 + vPeak, 0.0, 1.0));
 		float alpha = vAlpha * core * (0.35 + 0.25 * passed + vPeak * 0.8);
 		gl_FragColor = vec4(colour, clamp(alpha, 0.0, 1.0));
 	}

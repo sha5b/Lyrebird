@@ -64,8 +64,33 @@ rather than one diagram being redrawn.
 
 **Distance** is one control over two things: it drives air absorption and reverb in the
 audio, and the viewing scale in the picture, so a bird across the field is further away
-in both. **Tempo** slows the drift, the pulse and the chorus together, for when the
-whole thing moves faster than you can read it.
+in both. **Tempo** slows the whole aviary — the drift, the pulse, how long each syllable
+lasts and how often a bird starts. It stretches time and nothing else: pitch comes from
+a syllable's contour and length from its `dur`, so unlike a tape slowing down, a bird
+slowed here keeps its pitch and simply sings longer. Trill and vibrato rates are divided
+by the same factor, or a slowed call stops sounding like itself.
+
+**What has been sung** runs along the bottom of the view, newest against the reading
+panel and older ones extending left until they clip. A chorus goes past faster than
+anyone can read; clicking an entry draws that phrase's path back onto the galaxy and
+selects its bird, and clicking empty space clears it.
+
+### Rearranging
+
+Colour can say which points are the same bird. It cannot make you *see* it, because the
+points do not move — and the acoustic layout answers "what sounds like what", not "which
+of these are the same bird".
+
+**Arrange** does move them. Each grouped layout keeps every point's offset from its own
+group's centre and pushes the centres apart, so a group's internal shape survives the
+journey and you can follow individual points across it. Two species that overlapped
+acoustically visibly tear apart; a species that was already one knot barely moves. That
+contrast is the information, and it is not available from a recolour.
+
+Trajectory threads, context paths and node labels all read the same moving centroids, so
+they stay welded to their knots through the transition. Nothing about the clustering, the
+matching or the descriptors changes — it is a rearrangement of where the marks are drawn,
+and *Sound* is always one click away.
 
 ### Nothing matching has to look like nothing matching
 

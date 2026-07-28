@@ -84,6 +84,16 @@ export class BirdyEngine {
 	private population: Individual[] = [];
 	private readonly frameBuffer: Float32Array<ArrayBuffer>;
 
+	/**
+	 * Time-scale for everything scheduled: syllable durations, the gaps between them and
+	 * the chorus's arrival rate. Below 1 the aviary slows down.
+	 *
+	 * It stretches time and nothing else. In the syrinx model a syllable's pitch comes
+	 * from its contour and its length from `dur`, so the two are independent — unlike a
+	 * tape slowing down, a bird slowed here keeps its pitch and simply sings longer.
+	 */
+	tempo = 1;
+
 	state: EngineState = { voices: 0, f0: 0, level: 0 };
 	onState: ((state: EngineState) => void) | null = null;
 	/**
@@ -189,8 +199,24 @@ export class BirdyEngine {
 
 	playSyllable(syllable: Syllable, options: PlayOptions = {}): number {
 		const at = options.at ?? this.ctx.currentTime + 0.05;
+		const voiced = options.voice
+			? applyVoice(syllable, options.voice)
+			: jitterSyllable(syllable, options.jitter ?? 0);
+		// Vibrato and AM are rates, so they have to be divided by the same factor the
+		// duration is multiplied by, or a slowed syllable keeps its original trill speed
+		// and stops sounding like the same call.
+		const scale = Math.max(0.05, this.tempo);
 		const shaped = toPlain(
-			options.voice ? applyVoice(syllable, options.voice) : jitterSyllable(syllable, options.jitter ?? 0)
+			scale === 1
+				? voiced
+				: {
+						...voiced,
+						dur: voiced.dur / scale,
+						am: voiced.am ? voiced.am * scale : voiced.am,
+						vib: voiced.vib
+							? { rate: voiced.vib.rate * scale, depth: voiced.vib.depth }
+							: undefined
+					}
 		);
 		// pan travels with the note and is applied per voice inside the worklet, so
 		// overlapping birds keep their own positions
@@ -208,10 +234,11 @@ export class BirdyEngine {
 	playSequence(syllables: Syllable[], gaps: number[], options: PlayOptions = {}): ScheduledSyllable[] {
 		let cursor = options.at ?? this.ctx.currentTime + 0.08;
 		const scheduled: ScheduledSyllable[] = [];
+		const scale = Math.max(0.05, this.tempo);
 		syllables.forEach((syllable, i) => {
 			const dur = this.playSyllable(syllable, { ...options, at: cursor });
 			scheduled.push({ syllableId: syllable.id, label: syllable.label, at: cursor, dur });
-			cursor += dur + (gaps[i] ?? 0.06);
+			cursor += dur + (gaps[i] ?? 0.06) / scale;
 		});
 		return scheduled;
 	}

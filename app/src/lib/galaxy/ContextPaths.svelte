@@ -3,14 +3,17 @@
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
 	import type { BirdyAssets } from '$lib/data/types';
+	import type { LayoutView } from './layouts';
 	import type { VisualSignal } from './shaders';
 
 	interface Props {
 		assets: BirdyAssets;
 		signal: VisualSignal;
+		/** Where the centroids are right now; moves while the cloud rearranges. */
+		view: LayoutView;
 	}
 
-	let { assets, signal }: Props = $props();
+	let { assets, signal, view }: Props = $props();
 
 	const centroids = untrack(() => assets.centroids.items);
 
@@ -28,15 +31,19 @@
 	});
 
 	let builtVersion = -1;
+	let builtLayout = -1;
 
 	function rebuild(paths: number[][]): void {
 		const points: number[] = [];
 		for (const path of paths) {
 			const nodes = path.filter((i) => i >= 0 && i < centroids.length);
 			for (let n = 0; n < nodes.length - 1; n++) {
-				const a = centroids[nodes[n]].position;
-				const b = centroids[nodes[n + 1]].position;
-				points.push(a[0], a[1], a[2], b[0], b[1], b[2]);
+				const a = nodes[n] * 3;
+				const b = nodes[n + 1] * 3;
+				points.push(
+					view.centroids[a], view.centroids[a + 1], view.centroids[a + 2],
+					view.centroids[b], view.centroids[b + 1], view.centroids[b + 2]
+				);
 			}
 		}
 		geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
@@ -44,8 +51,9 @@
 	}
 
 	useTask(() => {
-		if (signal.contextVersion !== builtVersion) {
+		if (signal.contextVersion !== builtVersion || view.version !== builtLayout) {
 			builtVersion = signal.contextVersion;
+			builtLayout = view.version;
 			rebuild(signal.context);
 		}
 	});

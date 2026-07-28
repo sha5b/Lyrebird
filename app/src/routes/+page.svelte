@@ -23,6 +23,7 @@
 		type VisualSignal
 	} from '$lib/galaxy/shaders';
 	import { speciesPalette } from '$lib/galaxy/palette';
+	import type { LayoutId } from '$lib/galaxy/layouts';
 	import { PipelineClient, type PipelineStatus } from '$lib/data/pipeline';
 	import type { BirdyAssets } from '$lib/data/types';
 
@@ -68,7 +69,26 @@
 	let nowSinging = $state<ScheduledSyllable[]>([]);
 	let voices = $state(0);
 	let pinnedCluster = $state(-1);
-	let chorusVoices = $state<{ label: string; speciesId: string; at: number }[]>([]);
+	let layout = $state<LayoutId>('acoustic');
+
+	/**
+	 * What has been sung, newest first. The strip along the bottom is the only record of
+	 * a chorus: songs come and go faster than anyone can read the reading panel, and
+	 * without it there is no way to go back to the one you just heard.
+	 */
+	interface Sung {
+		id: number;
+		speciesId: string;
+		common: string;
+		label: string;
+		voice: string;
+		nodes: number[];
+	}
+	let history = $state<Sung[]>([]);
+	let selectedSung = $state<number | null>(null);
+	let sungCounter = 0;
+	/** Enough to overflow any window; the strip clips the rest at the far end. */
+	const HISTORY_CAP = 24;
 
 	const clusters = $derived<ClusterLookup | null>(assets ? buildClusterLookup(assets.centroids) : null);
 	const speciesIndex = $derived(assets ? buildSpeciesIndex(assets) : null);
@@ -118,10 +138,10 @@
 			};
 			// The chorus schedules its own songs, so the picture follows the engine rather
 			// than the menus: whatever sings next draws its own trajectory.
-			created.onScheduled = ({ speciesId: singing, scheduled, voice }) => {
+			created.onScheduled = ({ speciesId: singing, songId, scheduled, voice }) => {
 				singer = voice?.label ?? null;
-				noteSinger(singing, voice?.label ?? singing);
 				addLive(singing, scheduled, voice?.label ?? '');
+				recordSung(singing, songId, scheduled, voice?.label ?? '');
 				if (chorus !== 'global' && singing !== contextSpecies) {
 					contextSpecies = singing;
 					showContext(singing);
@@ -152,11 +172,50 @@
 		}
 	}
 
-	function noteSinger(id: string, label: string) {
-		const now = performance.now() / 1000;
-		chorusVoices = [...chorusVoices.filter((v) => now - v.at < 6), { label, speciesId: id, at: now }].slice(
-			-8
-		);
+	/** Adds a sung phrase to the strip along the bottom. */
+	function recordSung(
+		id: string,
+		songId: string,
+		scheduled: ScheduledSyllable[],
+		voice: string
+	) {
+		if (!assets || !clusters || !scheduled.length) return;
+		const sp = speciesById(assets.inventory, id);
+		history = [
+			{
+				id: ++sungCounter,
+				speciesId: id,
+				common: sp?.common ?? id,
+				label: sp?.songs.find((s) => s.id === songId)?.label ?? songId,
+				voice,
+				nodes: scheduled
+					.map((s) => clusterIndexFor(clusters!, id, s.syllableId))
+					.filter((n) => n >= 0)
+			},
+			...history
+		].slice(0, HISTORY_CAP);
+	}
+
+	/**
+	 * Selecting a past phrase draws its path as a static thread and focuses its bird, so
+	 * you can go back to something you heard go past. Selecting it again, or clicking
+	 * empty space in the view, clears it.
+	 */
+	function selectSung(entry: Sung) {
+		if (selectedSung === entry.id) {
+			clearSelection();
+			return;
+		}
+		selectedSung = entry.id;
+		speciesId = entry.speciesId;
+		listener?.setPreview(entry.nodes, entry.speciesId, entry.label);
+	}
+
+	function clearSelection() {
+		if (selectedSung === null && pinnedCluster < 0) return;
+		selectedSung = null;
+		pinnedCluster = -1;
+		refreshSelection();
 	}
 
 	/** Adds the trajectory a phrase takes through the galaxy, in time with the audio. */
@@ -279,7 +338,6 @@
 		chorus = chorus === mode ? 'off' : mode;
 		engine.stopAmbient();
 		listener?.clearPaths();
-		chorusVoices = [];
 		if (chorus === 'off') {
 			contextSpecies = null;
 			refreshSelection();
@@ -304,13 +362,14 @@
 		engine?.panic();
 		chorus = 'off';
 		listener?.clearPaths();
-		chorusVoices = [];
 		contextSpecies = null;
 		refreshSelection();
 	}
 
 	/** Redraws the selected call's thread and its species backdrop. */
 	function refreshSelection() {
+		// A phrase picked out of the history owns the preview thread until it is cleared.
+		if (selectedSung !== null) return;
 		if (!assets || !currentSpecies || !currentSong || !listener || chorus === 'global') return;
 		const resolved = songSyllables(currentSpecies, currentSong.id);
 		if (resolved) {
@@ -394,9 +453,12 @@
 		}
 	});
 	$effect(() => {
-		// a solo chorus follows the selection and the tempo
+		// Tempo is one control over the whole aviary: the drift, the pulse, how long each
+		// syllable lasts and how often a bird starts. Restarting the scheduler is what
+		// applies the new arrival rate.
 		const id = currentSpecies?.id;
 		const rate = tempo;
+		if (engine) engine.tempo = rate;
 		if (chorus === 'solo' && engine && id) engine.startAmbient([id], 12 * rate, 3);
 		if (chorus === 'global' && engine) {
 			engine.startAmbient(species.map((s) => s.id), 22 * rate, 2);
@@ -422,12 +484,13 @@
 		pinnedCluster >= 0 ? (assets?.centroids.items[pinnedCluster] ?? null) : null
 	);
 	const palette = speciesPalette();
+	function speciesColourOf(id: string): string {
+		const slot = speciesIndex?.get(id);
+		return slot === undefined ? 'var(--ink-faint)' : palette.hot[slot % palette.hot.length];
+	}
 	// The hue of the *selected* bird, which is not the same as the focused one: during a
 	// global chorus nothing is focused, but the selection still has a colour in the cloud.
-	const speciesColour = $derived.by(() => {
-		const slot = speciesIndex?.get(currentSpecies?.id ?? '');
-		return slot === undefined ? 'var(--ink-faint)' : palette.hot[slot % palette.hot.length];
-	});
+	const speciesColour = $derived(speciesColourOf(currentSpecies?.id ?? ''));
 </script>
 
 <svelte:head>
@@ -493,7 +556,9 @@ uv run birdy-pipeline build</pre>
 				speed={tempo}
 				labels={showLabels}
 				pinned={pinnedCluster}
+				{layout}
 				onpick={pickCluster}
+				onbackground={clearSelection}
 			/>
 
 			<!-- Display settings belong on the thing they change, not in the tab strip. -->
@@ -527,10 +592,28 @@ uv run birdy-pipeline build</pre>
 								onclick={() => (colourMode = COLOUR_MEANING)}>Meaning</button
 							>
 						</div>
+						<h3 class="blocktitle">Arrange</h3>
+						<div class="segmented">
+							<button class:on={layout === 'acoustic'} onclick={() => (layout = 'acoustic')}>
+								Sound
+							</button>
+							<button class:on={layout === 'species'} onclick={() => (layout = 'species')}>
+								Bird
+							</button>
+							<button class:on={layout === 'meaning'} onclick={() => (layout = 'meaning')}>
+								Meaning
+							</button>
+						</div>
 						<p class="note faint">
-							{colourMode === COLOUR_MEANING
-								? 'One colour per claim class. Three, because that is how many stay separable.'
-								: 'One colour per bird, pale at rest and saturated where the sound lands.'}
+							{#if layout === 'acoustic'}
+								Points sit where they sound. Distance is acoustic distance.
+							{:else if layout === 'species'}
+								Regrouped by bird, each keeping its own shape. Watch which species tore apart
+								on the way here — those were the ones overlapping acoustically.
+							{:else}
+								Regrouped by how much meaning is claimed. Position no longer means acoustic
+								similarity.
+							{/if}
 						</p>
 						<label class="field">
 							<span class="lbl">Point size <b class="mono">{pointSize.toFixed(1)}</b></span>
@@ -556,6 +639,28 @@ uv run birdy-pipeline build</pre>
 							<span class="swatch" style:background={entry.hex}></span>
 							<b>{entry.label}</b> — {entry.hint}
 						</span>
+					{/each}
+				</div>
+			{/if}
+
+			{#if history.length}
+				<!--
+					Newest sits against the reading panel and the run extends left, clipping at
+					the far end: what just happened is where your eye already is.
+				-->
+				<div class="history">
+					{#each history as entry (entry.id)}
+						<button
+							class="sung"
+							class:on={selectedSung === entry.id}
+							style:--accent={speciesColourOf(entry.speciesId)}
+							onclick={() => selectSung(entry)}
+							title="{entry.common} — {entry.label}{entry.voice ? ` · ${entry.voice}` : ''}"
+						>
+							<span class="swatch"></span>
+							<span class="sung-name">{entry.common}</span>
+							<span class="sung-label mono">{entry.label}</span>
+						</button>
 					{/each}
 				</div>
 			{/if}
@@ -697,13 +802,6 @@ uv run birdy-pipeline build</pre>
 								and position for as long as it runs.
 							{/if}
 						</p>
-						{#if chorusVoices.length}
-							<div class="chips">
-								{#each chorusVoices.slice(-6) as v (v.at)}
-									<span class="chip">{v.label}</span>
-								{/each}
-							</div>
-						{/if}
 					</section>
 
 					<section class="block">
@@ -1586,6 +1684,63 @@ uv run birdy-pipeline serve</pre>
 		color: var(--signal);
 		text-decoration: underline;
 		font-size: inherit;
+	}
+
+	/* --- what has been sung --- */
+
+	.history {
+		position: absolute;
+		bottom: 1rem;
+		left: 1rem;
+		/* stops where the reading panel starts, and clips at the left */
+		right: calc(21rem + 2rem);
+		z-index: 2;
+		display: flex;
+		flex-direction: row-reverse;
+		justify-content: flex-start;
+		gap: 0.3rem;
+		overflow: hidden;
+		mask-image: linear-gradient(to right, transparent, #000 3rem);
+		pointer-events: none;
+	}
+
+	.sung {
+		flex: none;
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.25rem 0.5rem;
+		max-width: 12rem;
+		pointer-events: auto;
+		background: color-mix(in srgb, var(--paper-raised) 92%, transparent);
+		border-color: var(--rule);
+	}
+
+	.sung.on {
+		border-color: var(--accent);
+		background: var(--paper-raised);
+	}
+
+	.sung .swatch {
+		flex: none;
+		width: 7px;
+		height: 7px;
+		border-radius: 2px;
+		background: var(--accent);
+	}
+
+	.sung-name {
+		font-size: 0.68rem;
+		color: var(--ink);
+		white-space: nowrap;
+	}
+
+	.sung-label {
+		font-size: 0.62rem;
+		color: var(--ink-faint);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	/* --- legend --- */

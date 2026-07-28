@@ -13,6 +13,8 @@
 	import * as THREE from 'three';
 	import { buildSpeciesIndex } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
+	import { speciesPalette } from './palette';
+	import type { LayoutView } from './layouts';
 	import type { VisualSignal } from './shaders';
 
 	interface Props {
@@ -24,9 +26,11 @@
 		focus?: number;
 		/** Cluster whose label stays expanded regardless of activation, or -1. */
 		pinned?: number;
+		/** Where the centroids are right now; moves while the cloud rearranges. */
+		view: LayoutView;
 	}
 
-	let { assets, signal, elements, focus = -1, pinned = -1 }: Props = $props();
+	let { assets, signal, elements, focus = -1, pinned = -1, view }: Props = $props();
 
 	const { camera, size } = useThrelte();
 
@@ -35,10 +39,18 @@
 		const index = buildSpeciesIndex(assets);
 		return centroids.map((c) => index.get(c.speciesId) ?? -1);
 	});
+	// A label's rule and figures wear its own bird's colour, so a tag and the knot it
+	// points at are obviously the same thing.
+	const accentOf = untrack(() => {
+		const palette = speciesPalette();
+		return speciesOf.map((s) =>
+			s < 0 ? 'var(--signal)' : palette.hot[s % palette.hot.length]
+		);
+	});
 
 	let anchor = $state<THREE.Object3D | undefined>();
 
-	const world = centroids.map((c) => new THREE.Vector3(...c.position));
+	const world = centroids.map(() => new THREE.Vector3());
 	const projected = centroids.map(() => new THREE.Vector3());
 	const order: number[] = centroids.map((_, i) => i);
 	/** Smoothed activation per node, so a label does not strobe on a noisy frame. */
@@ -69,6 +81,8 @@
 		const matrix = anchor.matrixWorld;
 
 		for (let i = 0; i < centroids.length; i++) {
+			// read from the shared view, so a tag stays on its knot through a rearrangement
+			world[i].set(view.centroids[i * 3], view.centroids[i * 3 + 1], view.centroids[i * 3 + 2]);
 			projected[i].copy(world[i]).applyMatrix4(matrix).project(cam);
 			const act = signal.activations[i] ?? 0;
 			shown[i] = shown[i] * 0.8 + act * 0.2;
@@ -120,6 +134,7 @@
 			node.style.zIndex = String(Math.round((1 - (p.z + 1) / 2) * 1000) + (hot ? 2000 : 0));
 			node.style.setProperty('--hot', open ? '1' : '0');
 			node.style.setProperty('--act', shown[i].toFixed(3));
+			node.style.setProperty('--accent', accentOf[i]);
 
 			// The one piece of text that changes while running. Written only when the
 			// rounded percentage actually moves, and only for a label that is open.

@@ -131,7 +131,7 @@
 		padding: 0.15rem 0.4rem;
 		max-width: 15rem;
 		border-left: 1px solid
-			color-mix(in srgb, var(--signal) calc(var(--hot, 0) * 100%), var(--rule));
+			color-mix(in srgb, var(--accent, var(--signal)) calc(var(--hot, 0) * 100%), var(--rule));
 		background: color-mix(
 			in srgb,
 			var(--paper) calc(78% + var(--hot, 0) * 16%),
@@ -193,7 +193,7 @@
 		display: block;
 		height: 100%;
 		width: calc(var(--act, 0) * 100%);
-		background: var(--signal);
+		background: var(--accent, var(--signal));
 	}
 
 	.figures {
@@ -205,7 +205,7 @@
 	}
 
 	.figures .match {
-		color: var(--signal);
+		color: var(--accent, var(--signal));
 	}
 
 	.figures .conf {

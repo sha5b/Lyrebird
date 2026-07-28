@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { Canvas, T } from '@threlte/core';
 	import { OrbitControls } from '@threlte/extras';
 	import type { BirdyAssets } from '$lib/data/types';
@@ -8,6 +9,7 @@
 	import PointCloud from './PointCloud.svelte';
 	import Spinner from './Spinner.svelte';
 	import Trajectory from './Trajectory.svelte';
+	import { createLayoutView, type LayoutId } from './layouts';
 	import type { VisualSignal } from './shaders';
 
 	interface Props {
@@ -25,7 +27,11 @@
 		spread?: number;
 		/** Multiplies every animation rate. */
 		speed?: number;
+		/** Which arrangement to show; changing it animates the cloud into the new one. */
+		layout?: LayoutId;
 		onpick?: (cluster: number) => void;
+		/** Fired on a click that hit no node, so the page can clear its selection. */
+		onbackground?: () => void;
 	}
 
 	let {
@@ -39,16 +45,34 @@
 		colourMode = 0,
 		spread = 1,
 		speed = 1,
-		onpick
+		layout = 'acoustic',
+		onpick,
+		onbackground
 	}: Props = $props();
 
 	// Plain array, deliberately not reactive: NodeLabels writes the elements into it and
 	// NodeProjector moves them every frame. Routing that through Svelte state would mean
 	// thousands of proxy writes a second to position some text.
 	const labelElements: (HTMLElement | null)[] = [];
+	// The corpus does not change while this is mounted, so the view is sized once.
+	const view = untrack(() => createLayoutView(assets));
+
+	// A click that is not a drag and did not land on a node clears the selection. The
+	// distance test is what keeps orbiting the camera from counting as a click.
+	let downAt: { x: number; y: number } | null = null;
+	function onpointerdown(e: PointerEvent) {
+		downAt = { x: e.clientX, y: e.clientY };
+	}
+	function onpointerup(e: PointerEvent) {
+		if (!downAt) return;
+		const moved = Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y);
+		downAt = null;
+		if (moved < 4) onbackground?.();
+	}
 </script>
 
-<div class="stage">
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div class="stage" {onpointerdown} {onpointerup}>
 	<Canvas>
 		<T.PerspectiveCamera makeDefault position={[0, 0.35, 2.6]} fov={55} near={0.01} far={100}>
 			<OrbitControls
@@ -67,11 +91,11 @@
 			has to apply to all of them or the lines and the tags drift off their points.
 		-->
 		<Spinner {spin} {speed} scale={spread}>
-			<ContextPaths {assets} {signal} />
-			<PointCloud {assets} {signal} {pointSize} {focus} {colourMode} {speed} />
-			<Trajectory {assets} {signal} />
+			<ContextPaths {assets} {signal} {view} />
+			<PointCloud {assets} {signal} {pointSize} {focus} {colourMode} {speed} {layout} {view} />
+			<Trajectory {assets} {signal} {view} />
 			{#if labels}
-				<NodeProjector {assets} {signal} elements={labelElements} {focus} {pinned} />
+				<NodeProjector {assets} {signal} elements={labelElements} {focus} {pinned} {view} />
 			{/if}
 		</Spinner>
 	</Canvas>

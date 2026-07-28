@@ -2,7 +2,10 @@
 	import { T, useTask } from '@threlte/core';
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
+	import { buildSpeciesIndex } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
+	import { speciesPalette } from './palette';
+	import type { LayoutView } from './layouts';
 	import {
 		MAX_PATHS,
 		trajectoryFragmentShader,
@@ -15,9 +18,11 @@
 	interface Props {
 		assets: BirdyAssets;
 		signal: VisualSignal;
+		/** Where the centroids are right now; moves while the cloud rearranges. */
+		view: LayoutView;
 	}
 
-	let { assets, signal }: Props = $props();
+	let { assets, signal, view }: Props = $props();
 
 	/** Samples per segment: enough that the travelling highlight moves smoothly. */
 	const SUBDIVISIONS = 14;
@@ -43,12 +48,15 @@
 
 	const progress = new Float32Array(MAX_PATHS).fill(-1);
 	const alpha = new Float32Array(MAX_PATHS);
+	const pathColour = Array.from({ length: MAX_PATHS }, () => new THREE.Color('#8595ae'));
+	const palette = speciesPalette();
+	const speciesIndex = untrack(() => buildSpeciesIndex(assets));
 
 	const shared = () => ({
 		uProgress: { value: progress },
 		uAlpha: { value: alpha },
-		uColdColor: { value: new THREE.Color('#6b7a94') },
-		uHotColor: { value: new THREE.Color('#e2600d') }
+		uPathColour: { value: pathColour },
+		uColdColor: { value: new THREE.Color('#9aa6b8') }
 	});
 
 	const material = new THREE.ShaderMaterial({
@@ -74,6 +82,7 @@
 	});
 
 	let builtVersion = -1;
+	let builtLayout = -1;
 
 	/** Lays every active path out as a run of short segments between cluster centroids. */
 	function rebuild(paths: VisualSignal['paths']): void {
@@ -82,8 +91,10 @@
 			const nodes = path.nodes.filter((i) => i >= 0 && i < centroids.length).slice(0, MAX_NODES);
 			if (nodes.length < 2) return;
 			for (let n = 0; n < nodes.length - 1; n++) {
-				const a = centroids[nodes[n]].position;
-				const b = centroids[nodes[n + 1]].position;
+				const ai = nodes[n] * 3;
+				const bi = nodes[n + 1] * 3;
+				const a = [view.centroids[ai], view.centroids[ai + 1], view.centroids[ai + 2]];
+				const b = [view.centroids[bi], view.centroids[bi + 1], view.centroids[bi + 2]];
 				for (let s = 0; s < SUBDIVISIONS; s++) {
 					// each subdivision contributes both of its endpoints, which is what
 					// LineSegments expects and what keeps one path from joining the next
@@ -106,8 +117,11 @@
 	}
 
 	useTask(() => {
-		if (signal.pathsVersion !== builtVersion) {
+		// Rebuild when the set of paths changes, and on every frame of a rearrangement —
+		// otherwise the threads stay behind while the knots they connect move away.
+		if (signal.pathsVersion !== builtVersion || view.version !== builtLayout) {
 			builtVersion = signal.pathsVersion;
+			builtLayout = view.version;
 			rebuild(signal.paths);
 		}
 		progress.fill(-1);
@@ -115,6 +129,10 @@
 		signal.paths.slice(0, MAX_PATHS).forEach((path, i) => {
 			progress[i] = path.progress;
 			alpha[i] = path.alpha;
+			const slot = speciesIndex.get(path.speciesId);
+			pathColour[i].set(
+				slot === undefined ? '#8595ae' : palette.hot[slot % palette.hot.length]
+			);
 		});
 	});
 
