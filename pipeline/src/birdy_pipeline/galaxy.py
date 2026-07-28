@@ -224,7 +224,17 @@ def _landmark_mds(
     mean_sq = d_all.mean(axis=0)
     pos = -0.5 * (d_all - mean_sq[None, :]) @ l_pinv.T
     pos[idx] = pos_lm
-    info = {**info, "landmarks": m}
+    # The three arrays a later extension needs to place a point in this same frame
+    # without disturbing anything already in it. See grow.py.
+    info = {
+        **info,
+        "landmarks": m,
+        "basis": {
+            "landmarks": u[idx],
+            "lPinv": l_pinv,
+            "meanSq": mean_sq,
+        },
+    }
     return pos, info
 
 
@@ -299,11 +309,13 @@ def project(
 POSITION_QUANTILE = 99.5
 #: How far cluster centres are pushed apart, relative to the knots' own size.
 DEFAULT_SEPARATION = 1.6
+#: Where the tail compressor starts. Named because an extension has to reuse it.
+SOFT_LIMIT_KNEE = 0.86
 
 
 def separate_clusters(
     pos: np.ndarray, cluster_id: np.ndarray, k: int, factor: float
-) -> np.ndarray:
+) -> tuple[np.ndarray, np.ndarray]:
     """Push the knots apart without changing their shape, so the cloud has gaps in it.
 
     Every point moves by the same vector as the rest of its cluster — its centre times
@@ -318,7 +330,7 @@ def separate_clusters(
     faithfulness figure the manifest reports is the one that ships.
     """
     if factor <= 1.0:
-        return pos
+        return pos, np.zeros((k, pos.shape[1]))
     centres = np.zeros((k, pos.shape[1]))
     counts = np.zeros(k)
     for i, c in enumerate(cluster_id):
@@ -326,13 +338,13 @@ def separate_clusters(
             centres[c] += pos[i]
             counts[c] += 1
     centres /= np.maximum(counts, 1)[:, None]
-    shift = centres[np.clip(cluster_id, 0, k - 1)] * (factor - 1.0)
-    return pos + shift
+    per_cluster = centres * (factor - 1.0)
+    return pos + per_cluster[np.clip(cluster_id, 0, k - 1)], per_cluster
 
 
 
 
-def _soft_limit(out: np.ndarray, knee: float = 0.86) -> np.ndarray:
+def _soft_limit(out: np.ndarray, knee: float = SOFT_LIMIT_KNEE) -> np.ndarray:
     """Compress the tail into the box instead of clipping it against the wall.
 
     Clipping is what the contract's ``max|coord| == 1`` used to be enforced with, and it
@@ -368,7 +380,9 @@ def _soft_limit(out: np.ndarray, knee: float = 0.86) -> np.ndarray:
     return out
 
 
-def normalise_positions(pos: np.ndarray, per_axis: bool = True) -> tuple[np.ndarray, float]:
+def normalise_positions(
+    pos: np.ndarray, per_axis: bool = True
+) -> tuple[np.ndarray, float, dict[str, np.ndarray | float]]:
     """Centre, scale the *bulk* to fill the box, clamp the tail to it (8.3).
 
     `per_axis` scales each of the three axes by its own quantile rather than by one
@@ -393,14 +407,24 @@ def normalise_positions(pos: np.ndarray, per_axis: bool = True) -> tuple[np.ndar
     The contract's invariant (`max|coord| == 1`) still holds, which is what `verify`
     checks and what the camera framing assumes.
     """
-    out = pos - 0.5 * (pos.max(axis=0) + pos.min(axis=0))
+    centre = 0.5 * (pos.max(axis=0) + pos.min(axis=0))
+    out = pos - centre
     extent = float(np.max(np.abs(out)))
     if per_axis:
         scale = np.percentile(np.abs(out), POSITION_QUANTILE, axis=0)
     else:
         scale = np.full(out.shape[1], np.percentile(np.abs(out), POSITION_QUANTILE))
     scale = np.where(scale > 0.0, scale, max(extent, 1.0e-9))
-    return _soft_limit(out / scale), extent
+    scaled = out / scale
+    # The three numbers a later extension has to reuse rather than re-fit: without them
+    # every point already drawn would move the moment anything was added. See grow.py.
+    frame = {
+        "centre": centre,
+        "scale": scale,
+        "knee": SOFT_LIMIT_KNEE,
+        "peak": np.abs(scaled).max(axis=0),
+    }
+    return _soft_limit(scaled), extent, frame
 
 
 # --- how meaningful are the distances? --------------------------------------------
@@ -785,10 +809,13 @@ def build_galaxy(
     results: dict[str, dict[str, Any]] = {}
     for method in wanted:
         raw, info = project(z, method, seed=seed, min_dist=min_dist, verbose=verbose)
+        # Held aside rather than left in `info`, which is serialised into the manifest as
+        # projectionParams — these are megabytes of float arrays, not metadata.
+        basis_parts = info.pop("basis", None)
         if not np.all(np.isfinite(raw)):
             raise RuntimeError(f"projection {method} produced non-finite positions")
-        spaced = separate_clusters(raw, cluster_id, k_final, separation)
-        candidate, candidate_extent = normalise_positions(spaced)
+        spaced, cluster_shift = separate_clusters(raw, cluster_id, k_final, separation)
+        candidate, candidate_extent, frame = normalise_positions(spaced)
         results[method] = {
             "positions": candidate,
             "extent": candidate_extent,
@@ -798,6 +825,9 @@ def build_galaxy(
             "purity": round(_purity(cluster_id, type_of, k_final), 4),
             "meanRadius": round(float(np.mean(np.linalg.norm(candidate, axis=1))), 4),
             "tearing": torn_clusters(candidate, cluster_id, k_final),
+            "clusterShift": cluster_shift,
+            "frame": frame,
+            "basisParts": basis_parts,
         }
 
     if verbose:
@@ -859,6 +889,28 @@ def build_galaxy(
         counts.append(int(sel.size))
 
     # --- write the asset set (8.3) ---
+    # The frozen frame, so later audio can be added to this galaxy rather than replacing
+    # it. Only cMDS carries one: UMAP and PCA have no out-of-sample extension that keeps
+    # the existing points still, so a build with either of those can only ever be rebuilt.
+    basis_parts = chosen.get("basisParts")
+    if basis_parts is not None:
+        from .grow import ProjectionBasis
+
+        ProjectionBasis(
+            landmarks=basis_parts["landmarks"],
+            l_pinv=basis_parts["lPinv"],
+            mean_sq=basis_parts["meanSq"],
+            cluster_shift=chosen["clusterShift"],
+            centre=np.asarray(chosen["frame"]["centre"]),
+            scale=np.asarray(chosen["frame"]["scale"]),
+            knee=float(chosen["frame"]["knee"]),
+            peak=np.asarray(chosen["frame"]["peak"]),
+            mean=mean,
+            std=std,
+        ).save(out_dir)
+        if verbose:
+            print(f"wrote {out_dir / 'projection-basis.json'}", file=sys.stderr)
+
     (out_dir / "positions.f32").write_bytes(
         pos.astype("<f4", copy=False).ravel(order="C").tobytes()
     )
