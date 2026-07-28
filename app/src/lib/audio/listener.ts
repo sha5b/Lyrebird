@@ -21,6 +21,9 @@ export class Listener {
 	private onsetTimes: number[] = [];
 	private wasActive = false;
 
+	/** Scheduled syllable windows in AudioContext time, when a phrase is playing. */
+	private pathTimes: { start: number; end: number }[] | null = null;
+
 	reading: Reading;
 	onReading: ((reading: Reading) => void) | null = null;
 	/**
@@ -54,6 +57,64 @@ export class Listener {
 			this.tracker.similarity,
 			{ active: false }
 		);
+	}
+
+	/**
+	 * Sets the trajectory through the galaxy.
+	 *
+	 * With `times`, the path animates: a travelling highlight follows the schedule, so the
+	 * galaxy lights each cluster exactly as its syllable sounds. Without them the path is
+	 * drawn as a faint thread — that is what a selected-but-unplayed call looks like.
+	 * Nodes the corpus does not know (index < 0) are dropped along with their times.
+	 */
+	setPath(nodes: number[], times: { start: number; end: number }[] | null = null): void {
+		const keptNodes: number[] = [];
+		const keptTimes: { start: number; end: number }[] = [];
+		nodes.forEach((node, i) => {
+			if (node < 0) return;
+			keptNodes.push(node);
+			if (times?.[i]) keptTimes.push(times[i]);
+		});
+		this.signal.path = keptNodes;
+		this.signal.pathVersion++;
+		this.pathTimes = times && keptTimes.length === keptNodes.length ? keptTimes : null;
+		this.signal.pathProgress = -1;
+		this.signal.pathAlpha = keptNodes.length > 1 ? 1 : 0;
+	}
+
+	clearPath(): void {
+		this.signal.path = [];
+		this.signal.pathVersion++;
+		this.signal.pathProgress = -1;
+		this.signal.pathAlpha = 0;
+		this.pathTimes = null;
+	}
+
+	/**
+	 * Position along the path right now, in node units, or -1 once the phrase is over.
+	 * Between two syllables it keeps moving through the gap so the highlight travels along
+	 * the connecting line instead of jumping.
+	 */
+	private advancePath(now: number): number {
+		const times = this.pathTimes;
+		if (!times || !times.length) return -1;
+		if (now < times[0].start) return 0;
+		const last = times[times.length - 1];
+		if (now > last.end + 0.25) {
+			// leave the path on screen as a faint completed thread
+			this.pathTimes = null;
+			return -1;
+		}
+		for (let i = 0; i < times.length; i++) {
+			const { start, end } = times[i];
+			if (now <= end) {
+				if (now >= start) return i + (now - start) / Math.max(1e-4, end - start);
+				const prevEnd = times[i - 1]?.end ?? start;
+				const gap = Math.max(1e-4, start - prevEnd);
+				return i - 1 + Math.min(1, (now - prevEnd) / gap);
+			}
+		}
+		return times.length - 1;
 	}
 
 	start(): void {
@@ -99,6 +160,30 @@ export class Listener {
 		} else {
 			this.tracker.decay();
 			this.signal.activations.set(this.tracker.activations);
+		}
+
+		// While Birdy sings, it knows the score, so the trajectory is driven by the schedule
+		// rather than by matching — the cluster lights exactly on the note instead of a
+		// feature-window later. Listening still relies on the tracker above.
+		const progress = this.advancePath(this.engine.ctx.currentTime);
+		this.signal.pathProgress = progress;
+		if (progress >= 0) {
+			// The matched activations stay visible but are damped: the analysis window spans
+			// ~0.7 s, so it lights every cluster of a short phrase at once, which blurs the
+			// order. Damping them lets the scheduled node read as "this syllable, now".
+			for (let i = 0; i < this.signal.activations.length; i++) this.signal.activations[i] *= 0.3;
+			this.signal.path.forEach((node, i) => {
+				const offset = (progress - i) / 0.5;
+				const pulse = Math.exp(-(offset * offset));
+				if (pulse > 0.01) {
+					this.signal.activations[node] = Math.max(this.signal.activations[node], pulse);
+				}
+			});
+			const current = this.signal.path[Math.round(progress)];
+			if (current !== undefined) this.signal.best = current;
+		} else if (this.signal.pathAlpha > 0 && !this.pathTimes) {
+			// fade the finished path down to a faint thread, then leave it
+			this.signal.pathAlpha = Math.max(0.45, this.signal.pathAlpha - 0.02);
 		}
 
 		if (now - this.lastMeters > 0.05) {

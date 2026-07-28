@@ -3,6 +3,8 @@
 	import { OrbitControls } from '@threlte/extras';
 	import type { BirdyAssets } from '$lib/data/types';
 	import PointCloud from './PointCloud.svelte';
+	import Spinner from './Spinner.svelte';
+	import Trajectory from './Trajectory.svelte';
 	import type { VisualSignal } from './shaders';
 
 	interface Props {
@@ -29,7 +31,14 @@
 		</T.PerspectiveCamera>
 
 		<T.AmbientLight intensity={0.4} />
-		<PointCloud {assets} {signal} {pointSize} {spin} />
+		<!--
+			The cloud and the trajectory share one group: the rotation has to apply to both
+			or the line drifts off the points it connects.
+		-->
+		<Spinner {spin}>
+			<PointCloud {assets} {signal} {pointSize} />
+			<Trajectory {assets} {signal} />
+		</Spinner>
 	</Canvas>
 </div>
 
@@ -37,7 +46,6 @@
 	.stage {
 		position: absolute;
 		inset: 0;
-		background:
-			radial-gradient(circle at 50% 40%, #10182c 0%, #060911 60%, #03050a 100%);
+		background: radial-gradient(circle at 50% 40%, #10182c 0%, #060911 60%, #03050a 100%);
 	}
 </style>

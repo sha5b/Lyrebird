@@ -124,3 +124,37 @@ export function songSyllables(species: Species, songId: string) {
 export function formatRefs(inventory: Inventory, refs: string[]): string[] {
 	return refs.map((r) => inventory.refs[r] ?? r);
 }
+
+/**
+ * Which galaxy cluster a syllable belongs to. Built once, because a phrase has to be
+ * turned into a path through the cloud on every selection.
+ */
+export interface ClusterLookup {
+	bySyllable: Map<string, number>;
+	bySpecies: Map<string, number>;
+}
+
+export function buildClusterLookup(centroids: Centroids): ClusterLookup {
+	const bySyllable = new Map<string, number>();
+	const bySpecies = new Map<string, number>();
+	centroids.items.forEach((item, index) => {
+		if (item.syllableId && !bySyllable.has(`${item.speciesId}/${item.syllableId}`)) {
+			bySyllable.set(`${item.speciesId}/${item.syllableId}`, index);
+		}
+		if (!bySpecies.has(item.speciesId)) bySpecies.set(item.speciesId, index);
+	});
+	return { bySyllable, bySpecies };
+}
+
+/**
+ * Cluster index for a syllable, falling back to any cluster of the same species. Returns
+ * -1 when the corpus knows nothing about it — a syllable can be missing if the galaxy was
+ * built from a different inventory.
+ */
+export function clusterIndexFor(
+	lookup: ClusterLookup,
+	speciesId: string,
+	syllableId: string
+): number {
+	return lookup.bySyllable.get(`${speciesId}/${syllableId}`) ?? lookup.bySpecies.get(speciesId) ?? -1;
+}

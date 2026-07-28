@@ -9,10 +9,9 @@
 		assets: BirdyAssets;
 		signal: VisualSignal;
 		pointSize?: number;
-		spin?: boolean;
 	}
 
-	let { assets, signal, pointSize = 7, spin = true }: Props = $props();
+	let { assets, signal, pointSize = 7 }: Props = $props();
 
 	// The corpus never changes while the component is alive, so the buffers are built once
 	// from the initial props rather than tracked.
@@ -57,8 +56,6 @@
 		material.uniforms.uPointSize.value = pointSize;
 	});
 
-	let group = $state<THREE.Group | undefined>();
-
 	useTask((delta) => {
 		const u = material.uniforms;
 		u.uTime.value += delta;
@@ -66,7 +63,6 @@
 		u.uHighlight.value = signal.best;
 		const target = u.uActivation.value as Float32Array;
 		target.set(signal.activations.subarray(0, target.length));
-		if (spin && group) group.rotation.y += delta * 0.035;
 	});
 
 	$effect(() => () => {
@@ -75,6 +71,4 @@
 	});
 </script>
 
-<T.Group bind:ref={group}>
-	<T.Points {geometry} {material} frustumCulled={false} />
-</T.Group>
+<T.Points {geometry} {material} frustumCulled={false} />

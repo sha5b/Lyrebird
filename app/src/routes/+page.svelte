@@ -1,7 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Galaxy from '$lib/galaxy/Galaxy.svelte';
-	import { loadAssets } from '$lib/data/assets';
+	import {
+		buildClusterLookup,
+		clusterIndexFor,
+		loadAssets,
+		songSyllables,
+		type ClusterLookup
+	} from '$lib/data/assets';
 	import { BirdyEngine, type ScheduledSyllable } from '$lib/audio/engine';
 	import { Listener } from '$lib/audio/listener';
 	import { compilePhrase, improvise, type Phrase } from '$lib/lang/grammar';
@@ -40,6 +46,7 @@
 	let nowSinging = $state<ScheduledSyllable[]>([]);
 	let voices = $state(0);
 
+	const clusters = $derived<ClusterLookup | null>(assets ? buildClusterLookup(assets.centroids) : null);
 	const species = $derived(assets?.inventory.species ?? []);
 	const currentSpecies = $derived(species.find((s) => s.id === speciesId) ?? species[0]);
 	const songs = $derived(currentSpecies?.songs ?? []);
@@ -91,9 +98,25 @@
 		}
 	}
 
+	/** Lights the trajectory the phrase takes through the galaxy, in time with the audio. */
+	function showPath(speciesId: string, scheduled: ScheduledSyllable[]) {
+		if (!clusters || !listener) return;
+		listener.setPath(
+			scheduled.map((s) => clusterIndexFor(clusters, speciesId, s.syllableId)),
+			scheduled.map((s) => ({ start: s.at, end: s.at + s.dur }))
+		);
+	}
+
+	/** The same trajectory without timing: what a selected-but-unplayed call looks like. */
+	function previewPath(speciesId: string, syllableIds: string[]) {
+		if (!clusters || !listener) return;
+		listener.setPath(syllableIds.map((id) => clusterIndexFor(clusters, speciesId, id)));
+	}
+
 	function sing() {
 		if (!engine || !currentSpecies || !currentSong) return;
 		nowSinging = engine.playSong(currentSpecies.id, currentSong.id, { jitter: 0.5, distance });
+		showPath(currentSpecies.id, nowSinging);
 		lastPhrase = {
 			speciesId: currentSpecies.id,
 			label: currentSong.label,
@@ -113,6 +136,7 @@
 		if (!engine || !phrase) return;
 		lastPhrase = phrase;
 		nowSinging = engine.playSequence(phrase.syllables, phrase.gaps, { jitter: 0.35, distance });
+		showPath(phrase.speciesId, nowSinging);
 	}
 
 	function singWords() {
@@ -179,6 +203,14 @@
 		if (currentSpecies && !currentSpecies.songs.some((s) => s.id === songId)) {
 			songId = currentSpecies.songs[0]?.id ?? '';
 		}
+	});
+
+	$effect(() => {
+		// selecting a different call redraws its path, so the shape of a phrase is visible
+		// before you play it
+		if (!assets || !currentSpecies || !currentSong || !listener) return;
+		const resolved = songSyllables(currentSpecies, currentSong.id);
+		if (resolved) previewPath(currentSpecies.id, resolved.syllables.map((s) => s.id));
 	});
 
 	const preview = $derived(
