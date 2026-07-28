@@ -676,6 +676,50 @@ def _sample_bout(grammar: dict[str, Any], syllable_ids: Sequence[str], limit: in
     return sequence
 
 
+def merge_learned_inventory(base: dict[str, Any], learned: dict[str, Any]) -> dict[str, Any]:
+    """The hand-authored inventory with each species' learned types appended to it.
+
+    A learned-only document is honest but lossy: every documented function goes with it,
+    including the three that playback experiments actually established (§8.5). Since the
+    learned ids are `L00`, `L01`, … and no authored syllable is named that way, the two
+    repertoires can sit in one species without colliding — the documented calls keep
+    their citations and confidence, the learned types arrive as `unlabelled`, and the
+    interface already draws that distinction.
+
+    The measured grammar comes across as-is. It only ever mentions learned ids, so
+    improvising from it cannot silently put a documented syllable in a sequence nobody
+    observed.
+    """
+    fitted = {sp["id"]: sp for sp in learned.get("species", [])}
+    species_out: list[dict[str, Any]] = []
+    for base_sp in base.get("species", []):
+        sp = dict(base_sp)
+        add = fitted.pop(sp["id"], None)
+        if add:
+            sp["syllables"] = list(sp.get("syllables", [])) + list(add.get("syllables", []))
+            sp["songs"] = list(sp.get("songs", [])) + list(add.get("songs", []))
+            if add.get("grammar"):
+                sp["grammar"] = add["grammar"]
+            sp["learnedFrom"] = add.get("summary", "")
+        species_out.append(sp)
+    # A species that was harvested but is not in the authored inventory keeps its
+    # learned-only entry rather than being dropped.
+    species_out.extend(fitted.values())
+
+    return {
+        "version": int(base.get("version", 1)),
+        "note": (
+            base.get("note", "")
+            + "  Extended with syllable types fitted to field recordings: their ids start "
+            "with `L`, they carry the cosine between their resynthesis and the audio "
+            "they came from, and none of them has a documented function."
+        ).strip(),
+        "refs": dict(base.get("refs", {})),
+        "banks": {**base.get("banks", {}), **learned.get("banks", {})},
+        "species": species_out,
+    }
+
+
 def write_learned_inventory(path: Path, document: dict[str, Any]) -> None:
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     Path(path).write_text(json.dumps(document, indent=1), encoding="utf-8")

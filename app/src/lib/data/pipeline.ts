@@ -112,7 +112,11 @@ export class PipelineClient {
 		return this.call<{ job: JobStatus }>('/api/harvest', options);
 	}
 
-	learn(options: { types?: number }) {
+	/**
+	 * `learnedOnly` writes the fitted repertoire on its own. The default writes it next
+	 * to the documented calls, which is what keeps the citations in the app.
+	 */
+	learn(options: { types?: number; learnedOnly?: boolean }) {
 		return this.call<{ job: JobStatus }>('/api/learn', options);
 	}
 

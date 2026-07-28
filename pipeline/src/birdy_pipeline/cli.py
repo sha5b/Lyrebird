@@ -340,7 +340,12 @@ def cmd_learn(args: argparse.Namespace) -> int:
         return 2
 
     out = Path(args.out)
-    learn.write_learned_inventory(out, document)
+    if args.learned_only:
+        learn.write_learned_inventory(out, document)
+    else:
+        # The default keeps the documented calls and adds the fitted ones next to them,
+        # so building from this file does not cost the app its citations.
+        learn.write_learned_inventory(out, learn.merge_learned_inventory(inventory, document))
 
     total = sum(len(sp["syllables"]) for sp in document["species"])
     cosines = [
@@ -351,7 +356,8 @@ def cmd_learn(args: argparse.Namespace) -> int:
     ]
     log("")
     log(f"wrote {out}: {len(document['species'])} species, {total} learned syllable types "
-        f"({time.time() - t0:.1f}s)")
+        f"({time.time() - t0:.1f}s)"
+        + ("" if args.learned_only else ", alongside the documented inventory"))
     if cosines:
         log(f"resynthesis cosine to the source audio: median {np.median(cosines):.3f}, "
             f"worst {min(cosines):.3f} over {len(cosines)} types")
@@ -665,6 +671,9 @@ def build_parser() -> argparse.ArgumentParser:
                      help="used for species names and citations, never overwritten")
     lrn.add_argument("--calibration-dir", default=str(DEFAULT_OUT),
                      help="where syrinx-calibration.json lives")
+    lrn.add_argument("--learned-only", action="store_true",
+                     help="write only the fitted repertoire, dropping every documented "
+                          "function; the default merges it into the authored inventory")
     lrn.add_argument("--seed", type=int, default=0)
     lrn.set_defaults(func=cmd_learn)
 

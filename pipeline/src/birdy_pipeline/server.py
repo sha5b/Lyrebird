@@ -126,6 +126,9 @@ class Pipeline:
                 for s in sp.get("syllables", [])
                 if s.get("learned", {}).get("resynthesisCosine")
             ]
+            # The file may be merged (documented calls kept, fitted types appended) or
+            # learned-only, so a species is only reported once it has fitted types, and
+            # the bout is looked up by id rather than by position.
             learned = {
                 "exists": True,
                 "path": str(self.learned_path),
@@ -133,11 +136,16 @@ class Pipeline:
                     {
                         "id": sp["id"],
                         "common": sp.get("common", sp["id"]),
-                        "types": len(sp.get("syllables", [])),
+                        "types": sum(1 for s in sp.get("syllables", []) if s.get("learned")),
                         "states": len(sp.get("grammar", {}).get("transitions", {})),
-                        "bout": sp.get("songs", [{}])[0].get("sequence", []),
+                        "bout": next(
+                            (s.get("sequence", []) for s in sp.get("songs", [])
+                             if s.get("id") == "learned_bout"),
+                            [],
+                        ),
                     }
                     for sp in doc.get("species", [])
+                    if any(s.get("learned") for s in sp.get("syllables", []))
                 ],
                 "medianCosine": round(sorted(cosines)[len(cosines) // 2], 4) if cosines else None,
                 "worstCosine": round(min(cosines), 4) if cosines else None,
@@ -230,6 +238,7 @@ class Pipeline:
 
     def learn(self, body: dict[str, Any]) -> dict[str, Any]:
         types = int(body.get("types", learn.DEFAULT_TYPES))
+        learned_only = bool(body.get("learnedOnly"))
 
         def run(job: Job) -> None:
             store = harvest.HarvestStore(self.store_path)
@@ -237,9 +246,10 @@ class Pipeline:
                 raise RuntimeError("no syllable observations yet — harvest first")
             from .cli import ensure_calibration
 
+            inventory = load_inventory(self.inventory_path)
             document = learn.build_learned_inventory(
                 store.syllables,
-                load_inventory(self.inventory_path),
+                inventory,
                 ensure_calibration(self.out_path),
                 descriptors={
                     rid: harvest.np.asarray(row, dtype=float)
@@ -249,10 +259,14 @@ class Pipeline:
             )
             if not document["species"]:
                 raise RuntimeError("no species had enough observations to fit")
-            learn.write_learned_inventory(self.learned_path, document)
+            learn.write_learned_inventory(
+                self.learned_path,
+                document if learned_only else learn.merge_learned_inventory(inventory, document),
+            )
             harvest.log(f"wrote {self.learned_path}")
 
-        return self.start("learn", f"{types} types per species", run)
+        detail = f"{types} types per species"
+        return self.start("learn", detail + (" (learned only)" if learned_only else ""), run)
 
     def ingest(self, audio: bytes, species_id: str, name: str) -> dict[str, Any]:
         """Fold one recording made in the browser into the store.

@@ -410,16 +410,25 @@
 	let learnTypes = $state(8);
 	let buildUseLearned = $state(true);
 
+	/** Seconds spent waiting for a control process that is not answering yet. */
+	let pipelineWaited = $state(0);
+	/** How long the dev server's autostart is given before the tab blames it. */
+	const PIPELINE_START_GRACE_S = 12;
+
 	async function refreshPipeline() {
 		pipelineStatus = await pipeline.status();
 		pipelineChecked = true;
+		pipelineWaited = pipelineStatus ? 0 : pipelineWaited + 1.5;
 	}
 
 	$effect(() => {
 		if (tab !== 'learn') return;
+		pipelineWaited = 0;
 		refreshPipeline();
 		// Poll while the tab is open: a harvest run takes minutes and its log is the only
-		// honest progress indicator. Cleared as soon as the tab closes.
+		// honest progress indicator. It is also what picks up the control process the dev
+		// server starts in the background, which takes a few seconds to compile its
+		// kernels. Cleared as soon as the tab closes.
 		const id = setInterval(refreshPipeline, 1500);
 		return () => clearInterval(id);
 	});
@@ -962,16 +971,26 @@ uv run birdy-pipeline build</pre>
 						<h3 class="blocktitle">Pipeline</h3>
 						{#if !pipelineChecked}
 							<p class="note faint mono">checking…</p>
+						{:else if !pipelineStatus && pipelineWaited < PIPELINE_START_GRACE_S}
+							<p class="note">
+								Starting the control process… <span class="mono faint"
+									>{pipelineWaited.toFixed(0)}s</span
+								>
+							</p>
+							<p class="note faint">
+								The dev server launches it in the background; the first start compiles the
+								oscillator kernels, which takes a few seconds.
+							</p>
 						{:else if !pipelineStatus}
 							<p class="note">
-								Learning runs the offline Python pipeline, so it needs its control process. The
-								galaxy itself needs no backend and is unaffected.
+								Learning runs the offline Python pipeline, so it needs its control process, and
+								the dev server could not start one — usually because <span class="mono">uv</span>
+								is not on its PATH. Start it yourself and this tab picks it up within a second or
+								two. The galaxy itself needs no backend and is unaffected.
 							</p>
 							<pre class="mono">cd pipeline
 uv run birdy-pipeline serve</pre>
-							<p class="note faint">
-								Binds to 127.0.0.1 only. This tab picks it up within a second or two.
-							</p>
+							<p class="note faint">Binds to 127.0.0.1 only.</p>
 							<button onclick={refreshPipeline}>Check again</button>
 						{:else}
 							<dl class="facts mono">
@@ -1091,13 +1110,18 @@ uv run birdy-pipeline serve</pre>
 							{:else}
 								<p class="note faint">Nothing fitted yet. Harvest some recordings first.</p>
 							{/if}
+							<p class="note faint">
+								Fitted types are written next to the documented calls, not instead of them:
+								their ids start with <span class="mono">L</span>, they carry no function, and
+								every documented call keeps its citation.
+							</p>
 						</section>
 
 						<section class="block">
 							<h3 class="blocktitle">Rebuild the galaxy</h3>
 							<label class="check">
 								<input type="checkbox" bind:checked={buildUseLearned} disabled={!pipelineStatus.learned.exists} />
-								Use the learned inventory
+								Include the syllables fitted to real recordings
 							</label>
 							<button
 								class="wide"

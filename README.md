@@ -181,8 +181,8 @@ The shipped galaxy is rendered from the hand-authored inventory. Two further com
 grow it from field audio without ever holding more than one recording at a time:
 
 ```bash
-export XC_API_KEY=...                                  # xeno-canto v3 key
-uv run birdy-pipeline harvest --per-species 20         # stream in, keep a bounded sample
+cp .env.example .env && $EDITOR .env                   # your xeno-canto v3 key
+uv run birdy-pipeline harvest --per-species 40         # stream in, keep a bounded sample
 uv run birdy-pipeline learn                            # fit syllables + syntax, verify them
 uv run birdy-pipeline build --inventory ../data/learned-inventory.json \
                             --harvest-store out/harvest
@@ -200,15 +200,33 @@ within a recording gives a first-order grammar, which is what lets Birdy compose
 no bird sang in a syntax measured from birds that did. Those phrases are labelled
 *invented*; their syllables are labelled *field recording*.
 
+Still nothing is sampled. The recordings are the *measurement*, not the material: what
+survives one is a few dozen numbers per syllable — duration, level, attack, an F0
+contour, modulation depths, a timbre class — and the note you hear afterwards is
+integrated from the oscillator, as every note in Birdy is. That is the route the
+research names for "record a real bird, then re-sing it synthetically"
+([`docs/04-synthetic-bird-voices.md`](docs/04-synthetic-bird-voices.md) §4.2, Boari
+et al. 2015), and the resynthesis cosine printed next to each fitted syllable is how
+you know whether the model really caught the bird.
+
+`learn` writes the fitted types **next to** the documented ones rather than instead of
+them: fitted ids start with `L`, carry `unlabelled` confidence and no function, and
+every playback-verified call keeps its citation. `--learned-only` writes the fitted
+repertoire on its own.
+
 Every harvested recording's recordist and licence is written to `CREDITS.md` in the
 store. xeno-canto recordings are individually licensed and CC-BY-NC-SA is common.
 See [`pipeline/README.md`](pipeline/README.md) for the details.
 
 ### Driving it from the interface instead
 
-```bash
-cd pipeline && uv run birdy-pipeline serve
-```
+`npm run dev` starts the control process for you — a Vite plugin
+([`app/vite-plugin-pipeline.ts`](app/vite-plugin-pipeline.ts)) runs
+`uv run birdy-pipeline serve` in the background, hands its job log to Vite's output and
+kills it when the dev server stops. If something already answers on the port it is left
+alone, and if `uv` is missing dev keeps serving and the Learn tab says how to start the
+process yourself. `BIRDY_PIPELINE=0` turns the autostart off; `BIRDY_PIPELINE_PORT`
+moves it.
 
 The app's **Learn** tab picks that up and gives you the same three operations with the
 store's figures in front of you and the job's log streaming back. It binds to
@@ -216,8 +234,7 @@ store's figures in front of you and the job's log streaming back. It binds to
 code, so exposing it on a network would be handing out remote execution.
 
 The running app still needs no backend. This is a developer-facing process for driving
-the offline stage; without it the Learn tab says how to start it and everything else is
-unaffected.
+the offline stage; the built site never talks to it.
 
 **The galaxy is static while the app runs.** Clustering, the projection and the
 per-point feature space are all computed offline and loaded once. Harvesting and

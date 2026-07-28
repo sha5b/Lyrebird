@@ -273,6 +273,14 @@ A syllable can pass one and fail the other: a buzz whose pitch is right but whos
 texture is not, or a clean whistle a semitone flat. A type the model cannot reproduce
 says so in the file instead of shipping as though it could.
 
+`learn` writes its result into `data/learned-inventory.json` **merged onto the
+hand-authored inventory**: the documented calls stay exactly as they are, with their
+functions, confidences and citations, and the fitted types are appended to their
+species. Fitted ids are `L00`, `L01`, … so they cannot collide with an authored id, and
+the measured grammar only ever mentions them — improvising from it cannot put a
+documented syllable into a sequence nobody observed. `--learned-only` writes the fitted
+repertoire on its own, which is the old behaviour and throws every citation away.
+
 Because the observations keep their order within their recording, typing them also turns
 each recording into a string of type ids, and counting the transitions gives a
 first-order grammar in exactly the shape `app/src/lib/lang/grammar.ts` already
@@ -286,6 +294,11 @@ meaning.
 ```bash
 uv run birdy-pipeline serve            # http://127.0.0.1:8781
 ```
+
+`npm run dev` in `app/` already starts this for you and stops it again on exit
+(`app/vite-plugin-pipeline.ts`), so the command above is for running it by hand — with
+your own `--port`, or without a dev server at all. A hand-started process wins: the
+plugin never spawns a second one if the port already answers.
 
 Harvest, learn and rebuild, driven from the app's **Learn** tab, with the store's
 figures on screen and the job's stderr streaming back so progress is the real log rather
