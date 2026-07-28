@@ -249,17 +249,43 @@ function cosine(a: Float32Array | number[], b: Float32Array | number[]): number 
  * node while nothing was playing.
  *
  * These two numbers turn the relative measure into an absolute one, and they come from
- * the corpus rather than from taste. Measured on the shipped assets:
+ * the corpus rather than from taste. Re-measured against the shipped assets by
+ * `birdy-pipeline thresholds`, on 2000 of the 31,653 harvested field syllables:
  *
- *   - a real corpus clip sits at cosine 0.94..0.99 to its own centroid (p10 = 0.952)
- *   - white noise reaches 0.485, room tone 0.480, a 1 kHz hum 0.705
+ *   p1 0.509 · p5 0.605 · p10 0.654 · p25 0.728 · p50 0.801 · max 0.992
  *
- * So the floor sits above everything that is not birdsong and below every genuine
- * member. Between the two the response ramps, which is the honest behaviour for a live
- * recording of a real bird: a partial match should look partial, not certain.
+ * The floor lets in about nine syllables in ten; between floor and ceiling the response
+ * ramps, which is the honest behaviour for a live recording of a real bird — a partial
+ * match should look partial, not certain.
+ *
+ * **The cosine alone can no longer carry this test, and the old comment claiming it
+ * could was measuring a corpus that no longer exists.** Against 176 centroids fitted to
+ * two thirds field audio, white noise scores 0.996 and room tone 0.996 — both above the
+ * *median* real syllable. That is not a tuning failure: some of those clusters are bins
+ * of wind and rain, and 59 noise-leaning syllables average into a centroid that is more
+ * noise-like than any of its members (they score p99 0.941 individually, 0.996 pooled).
+ * No floor separates the two, and dropping the worst clusters only promotes the next
+ * ones. The tonality gate below is what actually does the work.
  */
-const MATCH_FLOOR = 0.78;
-const MATCH_CEILING = 0.92;
+const MATCH_FLOOR = 0.62;
+const MATCH_CEILING = 0.86;
+
+/**
+ * Spectral flatness above which the input is broadband noise and not a bird, whatever it
+ * happens to be nearest to.
+ *
+ * This is the test the cosine cannot do, and it separates cleanly where the cosine does
+ * not: measured on the same corpus, white noise sits at 0.845 and room tone at 0.847,
+ * while real harvested syllables reach 0.345 at p99. Ramping between 0.40 and 0.55
+ * therefore touches under one percent of genuine birdsong and zeroes both noise probes.
+ *
+ * It says nothing about a *tonal* impostor, and cannot: a 1 kHz sine has flatness 0.000
+ * and scores 0.917 against a tawny owl whose learned call sits at 907 Hz. Those two
+ * sounds really are close in this feature space, so the honest report is a strong match,
+ * not a rejection.
+ */
+const TONAL_FLOOR = 0.4;
+const TONAL_CEILING = 0.55;
 
 function smoothstep(edge0: number, edge1: number, x: number): number {
 	const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
@@ -296,14 +322,22 @@ export class ActivationTracker {
 		this.similarity = new Float32Array(centroids.items.length);
 	}
 
-	update(zLive: Float32Array): Float32Array {
+	/**
+	 * @param zLive standardised live descriptor
+	 * @param flatness the same descriptor's raw spectral flatness, before standardising —
+	 *   the noise test needs the physical quantity, not its z-score
+	 */
+	update(zLive: Float32Array, flatness = 0): Float32Array {
 		const k = this.vectors.length;
 		let max = -Infinity;
 		for (let i = 0; i < k; i++) {
 			this.similarity[i] = cosine(zLive, this.vectors[i]);
 			if (this.similarity[i] > max) max = this.similarity[i];
 		}
-		const target = smoothstep(MATCH_FLOOR, MATCH_CEILING, max);
+		// Two tests, and both have to pass: how close the nearest cluster is, and whether
+		// the input is a tone at all. Either one alone lets noise through.
+		const tonal = 1 - smoothstep(TONAL_FLOOR, TONAL_CEILING, flatness);
+		const target = smoothstep(MATCH_FLOOR, MATCH_CEILING, max) * tonal;
 		this.strength = this.smoothing * this.strength + (1 - this.smoothing) * target;
 
 		let sum = 0;
@@ -454,14 +488,19 @@ export class PointTracker {
 			const off = i * d;
 			let dot = 0;
 			for (let j = 0; j < d; j++) dot += features[off + j] * this.zLo[j];
-			const affinity = Math.max(0, (dot - 0.86) / 0.14);
+			const affinity = Math.max(0, (dot - 0.9) / 0.1);
 			const clusterAct = activations[this.clusterOf[i]] ?? 0;
 			// The cluster activation sets how loud the response is, the point's own
 			// similarity sets which members of it actually light. Both are multiplied by
 			// the match strength, so an input that resembles nothing lights nothing.
+			// The `0.08` is what a point gets for resembling the sound while its own cluster
+			// is not responding. It used to be 0.25, which on a 44-cluster galaxy read as a
+			// faint sympathetic shimmer and on a 176-cluster one reads as half the sky
+			// lighting up when one bird sings: the reduced space keeps 77 % of the variance,
+			// so "close in 8-d" is a much weaker statement than "this is the same call".
 			const target = Math.min(
 				1,
-				Math.max(clusterAct * 0.2, affinity * affinity) * (0.25 + clusterAct * 3) * strength
+				Math.max(clusterAct * 0.2, affinity * affinity) * (0.08 + clusterAct * 3) * strength
 			);
 			this.activation[i] = this.smoothing * this.activation[i] + (1 - this.smoothing) * target;
 		}

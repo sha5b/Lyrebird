@@ -243,7 +243,10 @@ export class Listener {
 			const descriptor = this.extractor.descriptor();
 			if (descriptor) {
 				const z = standardise(descriptor, this.assets.featureSpace);
-				this.tracker.update(z);
+				// Flatness is the last element of the 28-d descriptor, and it has to be
+				// handed over raw: standardising turns "this is broadband noise" into a
+				// z-score whose meaning depends on how much noise the corpus contains.
+				this.tracker.update(z, descriptor[descriptor.length - 1]);
 				this.signal.activations.set(this.tracker.activations);
 				this.signal.best = this.tracker.best().index;
 			}

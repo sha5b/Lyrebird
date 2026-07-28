@@ -13,7 +13,7 @@ import math
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable, Iterator
+from typing import Any, Callable, Iterable, Iterator
 
 import numpy as np
 import soundfile as sf
@@ -58,6 +58,10 @@ def _rng(seed: int, *parts: int) -> np.random.Generator:
     return np.random.default_rng([seed, *parts])
 
 
+class Cancelled(RuntimeError):
+    """A build was asked to stop. Nothing has been written; the old assets still stand."""
+
+
 def synthetic_corpus(
     inventory: dict[str, Any],
     calibration: Calibration | None,
@@ -67,11 +71,19 @@ def synthetic_corpus(
     sample_rate: int = SAMPLE_RATE,
     jitter: Jitter | None = None,
     verbose: bool = True,
+    should_stop: Callable[[], bool] | None = None,
 ) -> list[Clip]:
-    """`variants` renders of every syllable + `song_variants` of every song."""
+    """`variants` renders of every syllable + `song_variants` of every song.
+
+    `should_stop` is polled per species. A build that is asked to stop raises rather
+    than returning what it has: half a corpus embeds into a galaxy that looks finished
+    and is not, and the assets on disk are still a complete older build.
+    """
     jit = Jitter() if jitter is None else jitter
     clips: list[Clip] = []
     for si, species in enumerate(inventory["species"]):
+        if should_stop and should_stop():
+            raise Cancelled("stopped while rendering the corpus")
         sid = species["id"]
         table = syllable_table(species)
         n_before = len(clips)

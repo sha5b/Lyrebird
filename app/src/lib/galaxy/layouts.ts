@@ -17,6 +17,7 @@
  * click away.
  */
 import type { BirdyAssets } from '$lib/data/types';
+import { CLAIM_COUNT } from './shaders';
 
 export type LayoutId = 'acoustic' | 'species' | 'meaning';
 
@@ -153,7 +154,7 @@ export function buildLayouts(
 	}
 	const claimOf: number[] = new Array(n);
 	for (let i = 0; i < n; i++) {
-		claimOf[i] = claimOfCluster[assets.points.clusterId[i]] ?? 2;
+		claimOf[i] = claimOfCluster[assets.points.clusterId[i]] ?? CLAIM_COUNT - 1;
 	}
 
 	return {
@@ -161,8 +162,11 @@ export function buildLayouts(
 			positions: assets.positions,
 			centroids: Float32Array.from(assets.centroids.items.flatMap((c) => c.position))
 		},
-		// tighter and further apart for twelve groups than for three
-		species: grouped(assets, speciesOf, Math.max(1, speciesIndex.size), 0.78, 0.34),
-		meaning: grouped(assets, claimOf, 3, 0.6, 0.6)
+		// Tighter and further apart for twelve groups than for three. The centres go out
+		// further than the groups are wide on purpose: the whole point of the rearrangement
+		// is that you can see which species tore apart, and that is only visible if the
+		// islands clear each other.
+		species: grouped(assets, speciesOf, Math.max(1, speciesIndex.size), 0.92, 0.28),
+		meaning: grouped(assets, claimOf, CLAIM_COUNT, 0.8, 0.45)
 	};
 }

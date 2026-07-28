@@ -274,6 +274,7 @@ class Pipeline:
                 },
                 types=types,
                 should_stop=lambda: job.cancelled,
+                invert=not bool(body.get("noInvert")),
             )
             if not document["species"]:
                 raise RuntimeError("no species had enough observations to fit")
@@ -335,8 +336,14 @@ class Pipeline:
                 argv += ["--inventory", str(self.inventory_path)]
             if include_harvest and (self.store_path / "state.json").exists():
                 argv += ["--harvest-store", str(self.store_path)]
+            from .corpus import Cancelled
+
             args = build_parser().parse_args(argv)
-            code = cmd_build(args)
+            try:
+                code = cmd_build(args, should_stop=lambda: job.cancelled)
+            except Cancelled as stopped:
+                harvest.log(str(stopped) + " — the assets on disk are the previous build")
+                return
             if code != 0:
                 raise RuntimeError(f"build exited {code}")
 

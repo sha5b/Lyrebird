@@ -76,7 +76,9 @@
 		uniforms: {
 			...shared(),
 			uPixelRatio: { value: typeof window === 'undefined' ? 1 : Math.min(2, window.devicePixelRatio) },
-			uSizeScale: { value: 2.6 }
+			// Matches the point cloud's reference distance exactly; see the note in the
+			// bead vertex shader for why the two cannot differ.
+			uSizeScale: { value: 4.0 }
 		},
 		transparent: true,
 		depthWrite: false,
@@ -128,9 +130,19 @@
 		}
 		progress.fill(-1);
 		alpha.fill(0);
+		// The more threads there are, the fainter each one is drawn.
+		//
+		// One bird's phrase is a figure you are meant to read; twelve birds at once is a
+		// texture, and drawing all twelve at the weight of one turns the galaxy into a
+		// ball of wool with the cloud invisible behind it. Falling off with the count
+		// keeps the total ink roughly constant, so a chorus reads as a faint web with the
+		// travelling beads picking out where each bird is *now* — which is the part of a
+		// chorus worth watching — while a single selected phrase stays at full strength.
+		const active = Math.min(MAX_PATHS, signal.paths.length);
+		const crowd = active <= 1 ? 1 : Math.pow(active, -0.55);
 		signal.paths.slice(0, MAX_PATHS).forEach((path, i) => {
 			progress[i] = path.progress;
-			alpha[i] = path.alpha;
+			alpha[i] = path.alpha * crowd;
 			const slot = speciesIndex.get(path.speciesId);
 			pathColour[i].set(
 				mono || slot === undefined ? MONO_HOT : palette.hot[slot % palette.hot.length]

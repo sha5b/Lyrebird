@@ -15,7 +15,7 @@ from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Callable, Sequence
 
 import numpy as np
 from sklearn.cluster import KMeans
@@ -24,7 +24,7 @@ from sklearn.neighbors import NearestNeighbors
 from umap import UMAP
 
 from . import features
-from .corpus import Clip
+from .corpus import Cancelled, Clip
 
 UMAP_N_NEIGHBORS = 15
 # 0.25 rather than 0.12: at 0.12 each syllable type packs into a knot a few pixels
@@ -118,11 +118,17 @@ class GalaxyStats:
     point_feature_variance: float  # share of variance the shipped per-point features keep
 
 
-def descriptors(clips: Sequence[Clip], verbose: bool = True) -> PointSet:
+def descriptors(
+    clips: Sequence[Clip],
+    verbose: bool = True,
+    should_stop: Callable[[], bool] | None = None,
+) -> PointSet:
     """28-d descriptor per clip; clips with no voiced frame are dropped (8.2)."""
     rows: list[np.ndarray] = []
     kept: list[Clip] = []
     for i, clip in enumerate(clips):
+        if should_stop and i % 64 == 0 and should_stop():
+            raise Cancelled("stopped while extracting descriptors")
         d = features.descriptor(clip.audio, clip.sample_rate)
         if d is None or not np.all(np.isfinite(d)):
             continue
@@ -288,12 +294,74 @@ def project(
     raise ValueError(f"unknown projection {method!r}, expected one of {PROJECTIONS}")
 
 
-def normalise_positions(pos: np.ndarray) -> tuple[np.ndarray, float]:
-    """Centre on the bounding-box midpoint, scale so max|coord| == 1 (8.3)."""
+#: Coordinate quantile the scaling is fitted to, before the tail is clamped in.
+POSITION_QUANTILE = 99.5
+#: How far cluster centres are pushed apart, relative to the knots' own size.
+DEFAULT_SEPARATION = 1.6
+
+
+def separate_clusters(
+    pos: np.ndarray, cluster_id: np.ndarray, k: int, factor: float
+) -> np.ndarray:
+    """Push the knots apart without changing their shape, so the cloud has gaps in it.
+
+    Every point moves by the same vector as the rest of its cluster — its centre times
+    `factor - 1` — so within a knot nothing changes at all, and between knots the gaps
+    grow. After renormalisation the visible effect is that each knot is smaller relative
+    to the space it sits in, which is the difference between a cloud you can see the
+    structure of and one soft ball.
+
+    It is a stated distortion, not a hidden one: between-cluster distances are scaled up
+    against within-cluster distances, so the ratio of the two no longer matches the 28-d
+    space. The projection comparison in the log is measured *after* this runs, so the
+    faithfulness figure the manifest reports is the one that ships.
+    """
+    if factor <= 1.0:
+        return pos
+    centres = np.zeros((k, pos.shape[1]))
+    counts = np.zeros(k)
+    for i, c in enumerate(cluster_id):
+        if 0 <= c < k:
+            centres[c] += pos[i]
+            counts[c] += 1
+    centres /= np.maximum(counts, 1)[:, None]
+    shift = centres[np.clip(cluster_id, 0, k - 1)] * (factor - 1.0)
+    return pos + shift
+
+
+def normalise_positions(pos: np.ndarray, per_axis: bool = True) -> tuple[np.ndarray, float]:
+    """Centre, scale the *bulk* to fill the box, clamp the tail to it (8.3).
+
+    `per_axis` scales each of the three axes by its own quantile rather than by one
+    global number. A projection does not spread its variance evenly — cMDS puts 31 % on
+    the first axis and 7 % on the third — so one global scale fills the box along the
+    widest axis and leaves the other two occupying a fraction of it. The cloud then reads
+    as a flat lens whichever way you orbit it, and the third axis, which is real
+    structure, is invisible.
+
+    It is an anisotropic scaling, so it stretches distances by up to the ratio of the
+    axes' spreads. Like the separation above, it is applied before the faithfulness
+    measurement, so the correlation the manifest reports is the one that ships.
+
+    Scaling by the single furthest point is what made the cloud read as one soft ball:
+    a handful of strays set the radius, everything else was divided by their distance,
+    and 99 % of the corpus ended up inside a fraction of the box with its structure
+    squeezed out of visibility. Fitting to the 99.5th percentile instead expands the
+    bulk to fill the space, and the few points beyond it are clamped to the surface —
+    they are outliers in the projection, and their exact radius is the least
+    trustworthy number in it.
+
+    The contract's invariant (`max|coord| == 1`) still holds, which is what `verify`
+    checks and what the camera framing assumes.
+    """
     out = pos - 0.5 * (pos.max(axis=0) + pos.min(axis=0))
     extent = float(np.max(np.abs(out)))
-    if extent > 0.0:
-        out = out / extent
+    if per_axis:
+        scale = np.percentile(np.abs(out), POSITION_QUANTILE, axis=0)
+    else:
+        scale = np.full(out.shape[1], np.percentile(np.abs(out), POSITION_QUANTILE))
+    scale = np.where(scale > 0.0, scale, max(extent, 1.0e-9))
+    out = np.clip(out / scale, -1.0, 1.0)
     return out, extent
 
 
@@ -548,6 +616,7 @@ def build_galaxy(
     min_dist: float | None = None,
     projection: str = DEFAULT_PROJECTION,
     compare_projections: bool = True,
+    separation: float = DEFAULT_SEPARATION,
     build_info: dict[str, Any] | None = None,
     verbose: bool = True,
 ) -> GalaxyStats:
@@ -608,7 +677,8 @@ def build_galaxy(
         raw, info = project(z, method, seed=seed, min_dist=min_dist, verbose=verbose)
         if not np.all(np.isfinite(raw)):
             raise RuntimeError(f"projection {method} produced non-finite positions")
-        candidate, candidate_extent = normalise_positions(raw)
+        spaced = separate_clusters(raw, cluster_id, k_final, separation)
+        candidate, candidate_extent = normalise_positions(spaced)
         results[method] = {
             "positions": candidate,
             "extent": candidate_extent,

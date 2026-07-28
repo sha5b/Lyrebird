@@ -9,7 +9,7 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 
@@ -154,7 +154,10 @@ def cmd_calibrate(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_build(args: argparse.Namespace) -> int:
+def cmd_build(
+    args: argparse.Namespace, should_stop: Callable[[], bool] | None = None
+) -> int:
+    """`should_stop` is polled by the two long loops. A stopped build writes nothing."""
     t0 = time.time()
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -179,11 +182,12 @@ def cmd_build(args: argparse.Namespace) -> int:
             variants=args.variants,
             song_variants=args.song_variants,
             seed=args.seed,
+            should_stop=should_stop,
         )
         log(f"corpus: {len(clips)} clips, {sum(c.duration for c in clips):.1f} s of audio")
         if args.wav_out:
             dump_clip_wavs(clips, Path(args.wav_out))
-        parts.append(galaxy.descriptors(clips))
+        parts.append(galaxy.descriptors(clips, should_stop=should_stop))
     elif args.source == "local":
         if not args.audio_dir:
             log("--source local requires --audio-dir")
@@ -193,7 +197,7 @@ def cmd_build(args: argparse.Namespace) -> int:
         log(f"corpus: {len(clips)} clips, {sum(c.duration for c in clips):.1f} s of audio")
         if args.wav_out:
             dump_clip_wavs(clips, Path(args.wav_out))
-        parts.append(galaxy.descriptors(clips))
+        parts.append(galaxy.descriptors(clips, should_stop=should_stop))
 
     # The harvested store can stand alone or sit alongside the rendered inventory. Mixed
     # is the interesting case: the synthetic clips anchor the clusters that have
@@ -231,6 +235,7 @@ def cmd_build(args: argparse.Namespace) -> int:
         min_dist=args.min_dist,
         projection=args.projection,
         compare_projections=not args.no_compare_projections,
+        separation=args.separation,
         build_info={
             "source": args.source,
             "audioDir": str(args.audio_dir) if args.audio_dir else None,
@@ -238,6 +243,7 @@ def cmd_build(args: argparse.Namespace) -> int:
             "variantsPerSong": args.song_variants if args.source == "synthetic" else None,
             "harvest": harvest_info,
             "betaClamp": [syrinx.BETA_MIN, syrinx.BETA_MAX],
+            "clusterSeparation": args.separation,
             "envelopeAsOutputGain": True,
         },
     )
@@ -336,6 +342,7 @@ def cmd_learn(args: argparse.Namespace) -> int:
         },
         types=args.types,
         seed=args.seed,
+        invert=not args.no_invert,
     )
     if not document["species"]:
         log("no species had enough observations to fit — harvest more recordings")
@@ -452,6 +459,81 @@ def cmd_demo(args: argparse.Namespace) -> int:
 
 def cmd_verify(args: argparse.Namespace) -> int:
     return verify(Path(args.out))
+
+
+def cmd_thresholds(args: argparse.Namespace) -> int:
+    """Re-measure the match ramp the browser uses to say "this is not birdsong".
+
+    `app/src/lib/audio/features.ts` scales every activation by how well the best centroid
+    matches, ramping between two constants. Those constants are only meaningful against
+    the corpus that is actually shipped: a galaxy of synthetic renders and a galaxy that
+    is two thirds field audio put birdsong and noise in different places. This prints
+    where each sits now, so the ramp can be set from the measurement instead of from
+    memory.
+    """
+    out = Path(args.out)
+    centroids = json.loads((out / "centroids.json").read_text(encoding="utf-8"))
+    space = json.loads((out / "feature-space.json").read_text(encoding="utf-8"))
+    mean = np.asarray(space["mean"], dtype=float)
+    std = np.maximum(np.asarray(space["std"], dtype=float), 1.0e-6)
+    vectors = np.stack([np.asarray(c["vector"], dtype=float) for c in centroids["items"]])
+    vectors = vectors / np.maximum(np.linalg.norm(vectors, axis=1, keepdims=True), 1.0e-12)
+
+    def best_match(descriptor: np.ndarray) -> tuple[float, int]:
+        z = features.standardise(descriptor, mean, std)
+        z = z / max(float(np.linalg.norm(z)), 1.0e-12)
+        scores = vectors @ z
+        i = int(np.argmax(scores))
+        return float(scores[i]), i
+
+    def best_cosine(descriptor: np.ndarray) -> float:
+        return best_match(descriptor)[0]
+
+    def name_of(index: int) -> str:
+        item = centroids["items"][index]
+        label = item.get("label") or item.get("syllableId") or "?"
+        return f"c{index} {item.get('speciesId', '?')} / {label} (n={item.get('count', '?')})"
+
+    rate = features.SAMPLE_RATE
+    rng = np.random.default_rng(args.seed)
+    seconds = 1.0
+    t = np.arange(int(seconds * rate)) / rate
+    probes = {
+        "1 kHz hum": np.sin(2 * math.pi * 1000.0 * t),
+        "white noise": rng.normal(0.0, 1.0, t.size),
+        "room tone at -60 dBFS": rng.normal(0.0, 1.0, t.size) * 1.0e-3,
+        "silence with a click": np.concatenate([[1.0], np.zeros(t.size - 1)]),
+    }
+    log("what the corpus says is not birdsong:")
+    for name, audio in probes.items():
+        d = features.descriptor(syrinx.peak_normalise(audio), rate)
+        if d is None:
+            log(f"  {name:24} no descriptor")
+            continue
+        # Naming the winner is the difference between "the matcher is broken" and "one
+        # cluster is a bin of wind and rain". Only the second has a fix.
+        score, index = best_match(d)
+        log(f"  {name:24} {score:.3f}  -> {name_of(index)}")
+
+    # Real birds, from the harvested syllables: this is the case the ramp has to let in.
+    store_path = Path(args.store)
+    if (store_path / "state.json").exists():
+        store = harvest.HarvestStore(store_path)
+        rows = [np.asarray(o.descriptor, dtype=float) for o in store.syllables if o.descriptor]
+        if rows:
+            sample = rows if len(rows) <= args.sample else [
+                rows[i] for i in rng.choice(len(rows), args.sample, replace=False)
+            ]
+            scores = np.array([best_cosine(r) for r in sample])
+            log(f"\nreal field syllables (n={len(sample)} of {len(rows)}):")
+            for q in (1, 5, 10, 25, 50):
+                log(f"  p{q:<3} {np.percentile(scores, q):.3f}")
+            log(f"  max  {scores.max():.3f}")
+            log("\nMATCH_FLOOR should sit above the loudest thing that is not a bird and "
+                "below p10 of the real ones; MATCH_CEILING where a match is unambiguous.")
+    else:
+        log(f"\nno harvest store at {store_path}: skipping the real-audio side")
+    return 0
 
 
 def verify(out: Path) -> int:
@@ -628,6 +710,9 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--min-dist", type=float, default=None,
                    help="UMAP min_dist; visual spread only, does not affect clustering "
                         "(default %s)" % galaxy.UMAP_MIN_DIST)
+    b.add_argument("--separation", type=float, default=galaxy.DEFAULT_SEPARATION,
+                   help="push cluster centres this far apart relative to knot size "
+                        "(1.0 = the raw projection)")
     b.add_argument("--projection", choices=galaxy.PROJECTIONS,
                    default=galaxy.DEFAULT_PROJECTION,
                    help="3D layout: cmds = classical MDS on cosine distance "
@@ -681,6 +766,8 @@ def build_parser() -> argparse.ArgumentParser:
                      help="used for species names and citations, never overwritten")
     lrn.add_argument("--calibration-dir", default=str(DEFAULT_OUT),
                      help="where syrinx-calibration.json lives")
+    lrn.add_argument("--no-invert", action="store_true",
+                     help="skip the gesture search and ship the cluster medians as fitted")
     lrn.add_argument("--learned-only", action="store_true",
                      help="write only the fitted repertoire, dropping every documented "
                           "function; the default merges it into the authored inventory")
@@ -707,6 +794,13 @@ def build_parser() -> argparse.ArgumentParser:
     v = sub.add_parser("verify", help="check a generated asset directory")
     v.add_argument("--out", default=str(DEFAULT_OUT))
     v.set_defaults(func=cmd_verify)
+
+    th = sub.add_parser("thresholds", help="re-measure the browser's match ramp on the shipped assets")
+    th.add_argument("--out", default=str(DEFAULT_OUT))
+    th.add_argument("--store", default=str(DEFAULT_HARVEST_STORE))
+    th.add_argument("--sample", type=int, default=2000, help="field syllables to score")
+    th.add_argument("--seed", type=int, default=0)
+    th.set_defaults(func=cmd_thresholds)
     return p
 
 

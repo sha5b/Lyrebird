@@ -54,8 +54,13 @@ ONSET_REL = 0.14  # of the recording's envelope peak
 MIN_SYLLABLE_S = 0.018
 MAX_SYLLABLE_S = 1.2
 MERGE_GAP_S = 0.022
-CONTOUR_KNOTS = 5
-COLLINEAR_TOL = 0.035
+# A syllable's pitch is sampled at this many points before redundant ones are dropped,
+# so it is the ceiling on how much shape a fitted call can have. Five was enough for a
+# whistle and a two-note call and too few for anything with a wobble in it: a nightingale
+# phrase came back as a straight line between its endpoints. Nine costs four more floats
+# per syllable and is what the resynthesis has to work with.
+CONTOUR_KNOTS = 9
+COLLINEAR_TOL = 0.025
 MAX_PER_RECORDING = 400
 
 # --- fitting -----------------------------------------------------------------------
@@ -503,6 +508,120 @@ def render_and_measure(
     return _unit(features.standardise(descriptor, mean, std))
 
 
+def _score(
+    syllable: dict[str, Any],
+    reference: np.ndarray,
+    calibration: Calibration | None,
+    frame: tuple[np.ndarray, np.ndarray] | None,
+    sample_rate: int,
+) -> float:
+    """Cosine between this syllable's resynthesis and the real audio it stands for."""
+    audio = peak_normalise(
+        render_syllable(syllable, sample_rate=sample_rate, calibration=calibration)
+    )
+    d = features.descriptor(audio, sample_rate)
+    if d is None:
+        return -1.0
+    if frame is not None:
+        d = features.standardise(d, frame[0], frame[1])
+    return float(_unit(d) @ reference)
+
+
+#: What the search may move, and to where. The pitch *contour* is deliberately absent:
+#: the F0 tracker already gets it to about 1 %, and letting a texture search move pitch
+#: would trade the one thing the model does well for the one it does badly. Duration stays
+#: measured for the same reason. Everything here is a property of the gesture rather than
+#: of the note — how hard the bird was blowing, how the tract was shaped, whether both
+#: sides of the syrinx were driven — and those are exactly what a median over a cluster
+#: cannot recover, because they vary within a type while the pitch does not.
+_SEARCH_AXES: list[tuple[str, list[Any]]] = [
+    ("timbre", ["pure", "reed", "buzz"]),
+    ("level", [0.3, 0.45, 0.6, 0.75, 0.9, 1.05, 1.2, 1.35]),
+    ("harmonic", [0.0, 0.1, 0.2, 0.35, 0.5, 0.7, 0.9]),
+    ("amDepth", [0.0, 0.15, 0.3, 0.45, 0.6, 0.8]),
+    ("am", [12.0, 25.0, 45.0, 80.0, 140.0]),
+    ("attack", [0.004, 0.008, 0.016, 0.03, 0.06]),
+    ("hold", [False, True]),
+    ("two", [False, True]),
+    ("vibDepth", [0.0, 0.01, 0.025, 0.05, 0.09]),
+    ("vibRate", [4.0, 8.0, 14.0, 22.0, 34.0]),
+]
+INVERT_PASSES = 3
+
+
+def _with(syllable: dict[str, Any], key: str, value: Any) -> dict[str, Any]:
+    """A copy of the syllable with one axis moved. `vib` is nested, so it needs a case."""
+    trial = dict(syllable)
+    if key in ("vibDepth", "vibRate"):
+        vib = dict(trial.get("vib") or {"rate": 12.0, "depth": 0.0})
+        vib["depth" if key == "vibDepth" else "rate"] = value
+        if vib["depth"] <= 0.0:
+            trial.pop("vib", None)
+        else:
+            trial["vib"] = vib
+        return trial
+    trial[key] = value
+    # An AM depth with no rate is silent, and a rate with no depth is inaudible.
+    if key == "amDepth" and value and not trial.get("am"):
+        trial["am"] = 30.0
+    if key == "am" and not trial.get("amDepth"):
+        trial["amDepth"] = 0.3
+    return trial
+
+
+def _axis_value(syllable: dict[str, Any], key: str) -> Any:
+    if key == "vibDepth":
+        return (syllable.get("vib") or {}).get("depth", 0.0)
+    if key == "vibRate":
+        return (syllable.get("vib") or {}).get("rate", 12.0)
+    return syllable.get(key)
+
+
+def invert_gestures(
+    t: LearnedType,
+    reference: np.ndarray,
+    calibration: Calibration | None,
+    frame: tuple[np.ndarray, np.ndarray] | None,
+    sample_rate: int = features.SAMPLE_RATE,
+    passes: int = INVERT_PASSES,
+) -> tuple[float, float]:
+    """Search the fitted syllable towards the audio it was fitted to. Returns (before, after).
+
+    This is the cheap end of the inversion the literature describes (Boari et al. 2015,
+    `docs/04-synthetic-bird-voices.md` §4.2): rather than solving for the pressure and
+    tension gestures directly, it renders candidates through the same oscillator the app
+    uses and keeps whichever lands closest to the real syllable in the 28-d space. The
+    objective is therefore exactly the number the verification reports, which is the
+    point — the median that came out of the clustering is a description of the cluster,
+    not an attempt to sound like it, and nothing before this ever asked the model to try.
+
+    Coordinate descent over ten axes, three passes: a couple of hundred renders per type,
+    against the tens of thousands a full grid would need for the same answer on a surface
+    this smooth. It cannot escape a bad basin, and it does not have to — it starts from
+    the measured values and only ever moves on an improvement, so the worst case is that
+    it stays exactly where the median put it.
+    """
+    before = _score(t.syllable, reference, calibration, frame, sample_rate)
+    best = before
+    for _ in range(max(1, passes)):
+        improved = False
+        for key, candidates in _SEARCH_AXES:
+            current = _axis_value(t.syllable, key)
+            for value in candidates:
+                if value == current:
+                    continue
+                trial = _with(t.syllable, key, value)
+                score = _score(trial, reference, calibration, frame, sample_rate)
+                if score > best + 1.0e-4:
+                    best = score
+                    t.syllable = trial
+                    current = value
+                    improved = True
+        if not improved:
+            break
+    return before, best
+
+
 # --- syntax ------------------------------------------------------------------------
 
 
@@ -562,6 +681,7 @@ def learn_species(
     seed: int = 0,
     verbose: bool = True,
     frame: tuple[np.ndarray, np.ndarray] | None = None,
+    invert: bool = True,
 ) -> dict[str, Any] | None:
     """Fitted syllables + a measured grammar for one species, or None if too little data."""
     if len(observations) < MIN_OBSERVATIONS:
@@ -592,7 +712,13 @@ def learn_species(
             mean_row = features.standardise(mean_row, frame[0], frame[1])
         real.append(_unit(mean_row))
 
+    gains: list[float] = []
     for i, t in enumerate(fitted):
+        # Search first, then measure: the reported cosine has to describe the syllable
+        # that ships, not the median it started from.
+        if invert and real[i] is not None:
+            before, after = invert_gestures(t, real[i], calibration, frame)
+            gains.append(after - before)
         z = render_and_measure(t, calibration, frame)
         if z is None or real[i] is None:
             continue
@@ -613,6 +739,7 @@ def learn_species(
             + (f"{np.median(cosines):.3f}" if cosines else "n/a")
             + f", nearest own {placed}/{len(fitted)}"
             + f", |F0 error| median {np.median(errors):.1f} %"
+            + (f", inversion +{np.median(gains):.3f}" if gains else "")
         )
 
     return {
@@ -645,6 +772,7 @@ def build_learned_inventory(
     seed: int = 0,
     verbose: bool = True,
     should_stop: Callable[[], bool] | None = None,
+    invert: bool = True,
 ) -> dict[str, Any]:
     """A full inventory document in the schema of `data/inventory.json`.
 
@@ -673,7 +801,7 @@ def build_learned_inventory(
             break
         learned = learn_species(
             species_id, grouped[species_id], descriptors, calibration,
-            types=types, seed=seed, verbose=verbose, frame=frame,
+            types=types, seed=seed, verbose=verbose, frame=frame, invert=invert,
         )
         if learned is None:
             continue

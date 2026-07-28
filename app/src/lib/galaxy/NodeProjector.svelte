@@ -41,6 +41,8 @@
 		const index = buildSpeciesIndex(assets);
 		return centroids.map((c) => index.get(c.speciesId) ?? -1);
 	});
+	/** Has a documented function: worth a tag before an unnamed field cluster is. */
+	const namedOf = untrack(() => centroids.map((c) => Boolean(c.function)));
 	// A label's rule and figures wear its own bird's colour, so a tag and the knot it
 	// points at are obviously the same thing.
 	const accentOf = untrack(() => {
@@ -71,6 +73,15 @@
 	const GAP_X = 168;
 	const GAP_Y = 26;
 	const HOT = 0.12;
+	/**
+	 * At most this many tags on screen at once, whatever fits geometrically.
+	 *
+	 * Collision culling alone was written for 44 clusters and does not scale to 176: the
+	 * exclusion boxes tile the middle of the view and you get a wall of text that happens
+	 * not to overlap. A sheet is readable at a couple of dozen labels, so the budget is
+	 * the constraint and the ordering below decides who spends it.
+	 */
+	const MAX_LABELS = 26;
 
 	useTask(() => {
 		const cam = camera.current;
@@ -90,14 +101,20 @@
 			shown[i] = shown[i] * 0.8 + act * 0.2;
 		}
 
-		// Nearest and hottest get to keep their place; anything overlapping them is hidden.
-		// Without this the 44 labels pile into an unreadable stack whenever the camera
-		// looks down the long axis of the cloud.
+		// Who gets a tag, in order: whatever is responding, then whatever has something to
+		// say, then whatever is nearest. The middle term is the one that matters now that
+		// most clusters are field audio — a cluster with a documented function carries a
+		// name, a citation and a claim, and "unlabelled field cluster" repeated forty times
+		// carries none of that, so it should not be what crowds the named ones out.
 		order.sort((a, b) => {
 			const hot = (shown[b] > HOT ? 1 : 0) - (shown[a] > HOT ? 1 : 0);
-			return hot !== 0 ? hot : projected[a].z - projected[b].z;
+			if (hot !== 0) return hot;
+			const named = (namedOf[b] ? 1 : 0) - (namedOf[a] ? 1 : 0);
+			if (named !== 0) return named;
+			return projected[a].z - projected[b].z;
 		});
 		placed.length = 0;
+		let budget = MAX_LABELS;
 
 		for (const i of order) {
 			const node = el[i];
@@ -114,7 +131,13 @@
 			// away rather than greying out, which is the difference between a legible
 			// diagram of one repertoire and 44 overlapping ones.
 			let visible =
-				!behind && x > -80 && x < width + 80 && y > -40 && y < height + 40 && !(dimmed && !hot);
+				!behind &&
+				x > -80 &&
+				x < width + 80 &&
+				y > -40 &&
+				y < height + 40 &&
+				!(dimmed && !hot) &&
+				(budget > 0 || i === pinned || hot);
 			if (visible && i !== pinned) {
 				// An open tag is several lines tall, so it needs a taller exclusion box than a
 				// closed one. Hot tags are sorted first, so when two of them want the same
@@ -127,7 +150,10 @@
 					}
 				}
 			}
-			if (visible) placed.push({ x, y, h: open ? 70 : GAP_Y });
+			if (visible) {
+				placed.push({ x, y, h: open ? 70 : GAP_Y });
+				budget--;
+			}
 
 			node.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
 			node.style.opacity = visible ? String(Math.min(1, 0.55 + shown[i] * 3)) : '0';

@@ -81,8 +81,8 @@ client reconstructs the live query in that space from the centroids it matched a
 a cosine against every point — 31,328 × 8 multiply-adds a frame, less work than the FFT
 that produced the descriptor. A cluster then lights from the inside out.
 
-On the shipped corpus the 8 components keep **77.2 %** of the 28-d variance, and each
-point's mean cosine to its own centroid is **0.926** against **-0.026** to all centroids.
+On the shipped corpus the 8 components keep **76.1 %** of the 28-d variance, and each
+point's mean cosine to its own centroid is **0.922** against **-0.004** to all centroids.
 (On a synthetic-only build, where every point is a render of one of 44 types rather than
 a second of a windy field, the same figures are 82.3 % and 0.984 against 0.005.)
 Both numbers are printed by every build and stored in `manifest.json`; `verify` fails
@@ -105,11 +105,11 @@ Measured on the shipped corpus (31,328 points — 11,328 rendered, 20,000 harves
 
 | projection | Pearson | Spearman | purity | 3D kNN agreement | notes |
 |---|---|---|---|---|---|
-| `umap` (`min_dist` 0.25) | 0.376 | 0.375 | 29.7 % | 68.2 % | neighbourhoods only |
-| `pca` | 0.641 | 0.651 | 29.7 % | 29.7 % | variance 30/14/9 % |
-| **`cmds` (default)** | **0.841** | **0.839** | 29.7 % | 27.5 % | variance 31/12/7 %, negative eigenvalue mass 36 % |
+| **`umap` (`min_dist` 0.25, shipped)** | 0.300 | 0.296 | 35.4 % | **73.0 %** | neighbourhoods only |
+| `pca` | 0.485 | 0.484 | 35.4 % | 44.0 % | variance 29/12/9 % |
+| `cmds` (default) | **0.752** | **0.740** | 35.4 % | 43.4 % | variance 26/12/8 %, negative eigenvalue mass 38 % |
 
-The purity is 29.7 % rather than the 90.7 % a synthetic-only build reports, and that is
+The purity is 35.4 % rather than the 90.7 % a synthetic-only build reports, and that is
 the corpus, not the clustering: two thirds of these points are seconds of field audio
 whose call type nobody has labelled, so they land wherever they sound like they belong.
 
@@ -119,18 +119,24 @@ full double-centred matrix is decomposed exactly (`numpy.linalg.eigh`, about 7 s
 points); above it, and so on the shipped build, it switches to landmark MDS with 800
 landmarks and says so in the log and in `manifest.json`.
 
-**The trade-off, stated plainly.** UMAP scores best on kNN agreement (68.2 %) and worst
-on distance faithfulness (0.376) because it exaggerates separation: it guarantees only
-that neighbours stay neighbours, so gaps between distant clusters are not interpretable.
-cMDS gives the most honest distances (0.841) and a visibly looser picture - the knots
-overlap more, kNN agreement drops to 27.5 %. We chose honest distances. If the render
-ever needs the tidier look, `--projection umap` still produces a valid asset set, and
-`manifest.json` records which one was used along with its correlations, so the client can
-show or hide distance-based UI accordingly.
+**The trade-off, stated plainly, and the choice has changed.** UMAP scores best on kNN
+agreement (73.0 %) and worst on distance faithfulness (0.300) because it exaggerates
+separation: it guarantees only that neighbours stay neighbours, so *gaps between distant
+clusters are not interpretable*. cMDS gives the most honest distances (0.752) and a
+picture that is a near-featureless ball — the knots overlap so completely that at the
+framing which holds the whole corpus you cannot see there are knots at all.
 
-Neither linear projection is degenerate: cMDS spreads its variance 31/12/7 % over the
+The shipped build is now **UMAP**, on the ground that a viewer who cannot see the
+structure cannot be helped by the fact that the distances between the parts they cannot
+see are accurate. Two things keep this honest rather than merely prettier: the trade is
+recorded here and in `manifest.json` with both correlations, and no part of the interface
+quotes a distance. Nothing in the app reads a position — matching, clustering and the
+per-point response all happen in the 28-d space. `--projection cmds` still produces a
+valid asset set for anyone who wants the faithful-distance version.
+
+Neither linear projection is degenerate: cMDS spreads its variance 26/12/8 % over the
 three axes, so the cloud is a genuine volume rather than a line.
-The 36 % negative eigenvalue mass is expected and worth knowing: cosine distance is not
+The 38 % negative eigenvalue mass is expected and worth knowing: cosine distance is not
 a Euclidean metric, so a perfect embedding does not exist at any dimensionality, and
 that share of the structure cannot be drawn.
 
@@ -265,10 +271,30 @@ parameters `data/inventory.json` uses — duration, level, attack, an f0 contour
 vibrato, a harmonic ratio and a timbre class. A few dozen floats per syllable, and the
 audio is gone a moment later.
 
-`learn` then clusters those observations per species, takes the median of each type, and
-**renders the result through the same Mindlin-Laje oscillator the app uses** to find out
-whether the model can actually sing what it just described. Two numbers go next to every
-learned syllable, because they fail differently:
+`learn` then clusters those observations per species, takes the median of each type,
+**searches that median towards the audio it came from**, and renders the result through
+the same Mindlin-Laje oscillator the app uses to find out whether the model can sing what
+it just described.
+
+The search is the cheap end of the gesture inversion the literature describes (Boari et
+al. 2015, `docs/04-synthetic-bird-voices.md` §4.2). Rather than solving for the pressure
+and tension curves analytically, it renders candidates and keeps whichever lands closest
+to the real syllable in the 28-d space — coordinate descent over ten axes (timbre class,
+level, harmonic ratio, AM rate and depth, vibrato rate and depth, attack, hold, bilateral
+voice), three passes, a couple of hundred renders per type, two or three seconds per
+species. Pitch and duration are excluded on purpose: the tracker already gets F0 to about
+1 %, and a texture search allowed to move pitch would trade the one thing the model does
+well for the one it does badly.
+
+It is worth what it costs, and it does not close the gap. Across all 132 fitted types on
+the current harvest the median resynthesis cosine goes from **0.31 to 0.547** and the
+share landing nearest their own type from 30 % to **51 %** (67 of 132). But the median
+*rival* cosine is **0.533** — the fit resembles its own call barely more than it
+resembles a different call by the same bird — and 0.547 still sits nearer the "two
+different calls" baseline of 0.49 than the "two recordings of the same call" baseline of
+0.78. Median F0 error is 0.80 %, so what is missing is entirely timbre.
+`--no-invert` ships the cluster medians instead, which is what every build before this
+did. Three numbers go next to every learned syllable, because they fail differently:
 
 - `resynthesisCosine` — the 28-d descriptor of the resynthesis against the mean
   descriptor of **the syllables of that type**, in a frame centred on the harvested
@@ -283,8 +309,8 @@ learned syllable, because they fail differently:
 A syllable can pass one and fail the other: a buzz whose pitch is right but whose
 texture is not, or a clean whistle a semitone flat. A type the model cannot reproduce
 says so in the file instead of shipping as though it could — and on the current harvest
-most of them say exactly that (40 of 132 land nearest their own type). See the root
-README for what that means.
+half of them say exactly that (67 of 132 land nearest their own type, and the margin over
+the nearest rival is 0.014). See the root README for what that means.
 
 **The frame is the measurement.** The reference used to be the recording-level
 descriptor, standardised against a synthetic build's corpus statistics. Every field

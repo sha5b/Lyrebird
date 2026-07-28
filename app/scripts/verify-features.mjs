@@ -96,10 +96,58 @@ if (confusions.length) {
 	console.log('\ncross-species confusions:');
 	for (const c of confusions) console.log('  ' + c);
 }
+/**
+ * The other half of the contract: what the matcher does with things that are not birds.
+ *
+ * Getting the birds right is only half of honest, and it is the easier half. Against a
+ * corpus that is two thirds field audio, broadband noise scores 0.996 against the nearest
+ * centroid — higher than the median real syllable — because some clusters are bins of
+ * wind and rain. The cosine cannot reject it and no floor can; the tonality gate in
+ * `features.ts` is what does, and this asserts that it is still wired up and still
+ * calibrated against *this* build rather than against the one it was written for.
+ */
+console.log('\nnot birdsong:');
+const rate = spec.sampleRate;
+let seed = 12345;
+const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff) * 2 - 1;
+const seconds = 1;
+const n = rate * seconds;
+const probes = {
+	'white noise': Float32Array.from({ length: n }, () => rnd()),
+	'room tone': Float32Array.from({ length: n }, () => rnd() * 1e-3),
+	'1 kHz hum': Float32Array.from({ length: n }, (_, i) => Math.sin((2 * Math.PI * 1000 * i) / rate))
+};
+let leaked = 0;
+for (const [name, signal] of Object.entries(probes)) {
+	const descriptor = describe(signal);
+	if (!descriptor) {
+		console.log(`  ${name.padEnd(14)} no descriptor — rejected before matching`);
+		continue;
+	}
+	const flatness = descriptor[descriptor.length - 1];
+	const noise = new ActivationTracker(centroids, spec, 0);
+	noise.update(standardise(descriptor, spec), flatness);
+	const { index, similarity } = noise.best();
+	const match = centroids.items[index];
+	console.log(
+		`  ${name.padEnd(14)} flatness ${flatness.toFixed(3)}  cosine ${similarity.toFixed(3)}  ` +
+			`strength ${noise.strength.toFixed(3)}  -> ${match.speciesId}/${match.syllableId}`
+	);
+	// The hum is exempt and always will be: a 1 kHz sine really is close to a 907 Hz owl
+	// hoot in this feature space, and reporting that as a match is the honest answer.
+	if (name !== '1 kHz hum' && noise.strength > 0.05) leaked++;
+}
+
 // A live sound only has to land in the right neighbourhood for the galaxy to be honest,
 // so this gate is deliberately loose; a collapse below it means the halves have drifted.
 const floor = 0.5;
+let failed = false;
 if (hits / total < floor) {
 	console.error(`\nFAIL: exact match rate below ${floor * 100}% — the two halves have drifted apart`);
-	process.exit(1);
+	failed = true;
 }
+if (leaked) {
+	console.error(`\nFAIL: ${leaked} noise probe(s) reported as birdsong — the tonality gate is not holding`);
+	failed = true;
+}
+if (failed) process.exit(1);

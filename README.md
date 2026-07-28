@@ -66,6 +66,14 @@ carries a specimen tag — what the cluster is, how many points fell into it, ho
 is — that opens up and shows the documented function and the live match percentage when
 its cluster responds.
 
+At most twenty-six tags are drawn at once, and they are spent in a fixed order:
+whatever is responding, then whatever has a documented function, then whatever is
+nearest. Collision culling alone was written for 44 clusters and does not scale to 176 —
+the exclusion boxes tile the middle of the view and you get a wall of text that happens
+not to overlap. The middle term matters most now that most clusters are field audio: a
+named cluster carries a function and a citation, and "unlabelled field cluster" repeated
+forty times carries neither, so it should not be what crowds the named ones out.
+
 Points respond **individually**, not as clusters. The pipeline ships an 8-dimensional
 per-point projection of the descriptor space, and the browser takes a cosine against
 every point each frame, so a knot lights from the inside out and you can see which
@@ -128,21 +136,39 @@ cluster always wins. Fed room tone or a fan, the matcher used to pin 100 % on an
 arbitrary call and hold it there indefinitely, which is what made the galaxy hang on one
 node while nothing was playing.
 
-The activation is now scaled by an absolute measure of how well the best centroid
-actually matches, and the thresholds come from the corpus rather than from taste:
+The activation is scaled by an absolute measure of how well the best centroid actually
+matches, and the thresholds come from the corpus rather than from taste. Re-measured by
+`birdy-pipeline thresholds` against the shipped assets:
 
-| input | best-centroid cosine |
-|---|---|
-| a real corpus clip, to its own centroid | 0.94 – 0.99 (p10 = 0.952) |
-| a 1 kHz hum | 0.705 |
-| white noise | 0.485 |
-| room tone at −60 dBFS | 0.480 |
+| input | best-centroid cosine | spectral flatness |
+|---|---|---|
+| real harvested syllables (n = 2000) | p10 0.654 · p50 0.801 · max 0.992 | p99 0.345 |
+| a 1 kHz hum | 0.917 | 0.000 |
+| white noise | **0.996** | 0.848 |
+| room tone at −60 dBFS | **0.996** | 0.848 |
 
-So the response ramps from 0.78 to 0.92: everything that is not birdsong sits below it,
-every genuine member sits above it, and a live recording of a real bird lands in
-between and looks partial, which it is. The **match** meter in the header shows that
-number, so a stuck reading is visible rather than mysterious. Below about 25 % the
-reading panel reports nothing at all.
+**The cosine alone no longer separates birdsong from noise, and pretending otherwise
+would be the easiest lie in this project.** Those two bold numbers are above the *median*
+real syllable. The reason is not a bad threshold: against a corpus that is two thirds
+field audio, some clusters are bins of wind and rain, and averaging 59 noise-leaning
+syllables produces a centroid more noise-like than any of its members — they score
+p99 0.941 individually and 0.996 pooled. Dropping the worst cluster only promotes the
+next one, and the top three (1064 points, 3.4 % of the corpus) shade into a genuine
+continuum: a wren's trill really is broadband.
+
+So there are two tests now, and both have to pass. The cosine ramps from **0.62 to
+0.86**, which lets in about nine real syllables in ten. On top of it a **tonality gate**
+zeroes anything whose spectral flatness runs from 0.40 to 0.55 — a margin that touches
+under 1 % of genuine birdsong and kills both noise probes outright.
+
+The hum is deliberately *not* rejected. A 1 kHz sine has flatness 0.000 and scores 0.917
+against a tawny owl whose learned call sits at 907 Hz; those two sounds really are close
+in this feature space, and reporting a strong match is the honest answer rather than a
+bug. `npm run verify:features` asserts all of this on every build, so the gate cannot
+quietly stop holding.
+
+The **match** meter in the header shows the resulting number, so a stuck reading is
+visible rather than mysterious. Below about 25 % the reading panel reports nothing.
 
 If your input device is a system-audio loopback rather than a microphone, Birdy will
 hear its own output — the match meter is the way to tell.
@@ -252,19 +278,26 @@ repertoire on its own.
 On the shipped harvest — 434 recordings, 31,653 segmented syllables, 12 fitted types per
 species:
 
-| measure | result |
-|---|---|
-| F0 error of the resynthesis against its own contour | median 0.1 – 1.8 % per species |
-| resynthesis cosine to the syllables it was fitted to | median 0.31 |
-| resynthesis nearest its *own* type rather than another | 40 of 132 |
+| measure | before inversion | after inversion |
+|---|---|---|
+| F0 error of the resynthesis against its own contour | — | **median 0.80 %** |
+| resynthesis cosine to the syllables it was fitted to | median 0.31 | **median 0.547** |
+| cosine to the *nearest rival* type | — | **median 0.533** |
+| resynthesis nearest its *own* type rather than another | 40 of 132 | **67 of 132** |
+
+The gesture search (nine contour knots, three passes over ten parameter axes) nearly
+doubles the resynthesis cosine and takes own-type nearest from 30 % to 51 %. It does not
+rescue the result, and the fourth row is why: **0.547 against its own type, 0.533
+against the nearest rival.** The fit is barely better at resembling the call it was
+fitted to than it is at resembling a different call by the same bird.
 
 Read against the frame those cosines live in — two real syllables of one type score
-about 0.78, two of different types about 0.49 — that is a clear result and not a
-flattering one: **the oscillator reaches the pitch and does not reach the timbre.** A
-third of the fitted types land nearest their own call (chance is one in twelve), and the
-rest land nearer some other call of the same bird. A field recording carries wind,
-distance, a second bird and a room; a two-parameter oscillator carries none of that, and
-the descriptor notices.
+about 0.78, two of *different* types about 0.49 — the fitted voices sit at 0.547, which
+is nearer the different-type baseline than the same-type one. That is a clear result and
+not a flattering one: **the oscillator reaches the pitch and does not reach the timbre.**
+The F0 error is 0.80 %, so the contour is essentially exact; everything the descriptor
+still objects to is spectral. A field recording carries wind, distance, a second bird and
+a room; a two-parameter oscillator carries none of that, and 26 MFCC dimensions notice.
 
 The numbers only say this because of how they are taken, and that is worth stating,
 because the previous version of this check said nothing at all. It compared a fitted
@@ -274,6 +307,29 @@ corpus statistics of a synthetic build. In that frame every field syllable score
 against every other, so the check could not fail. It now compares against the syllable's
 own audio, in a frame centred on the harvested population, where 0.78 and 0.49 are
 measurably different numbers.
+
+### Why not just play the recordings back?
+
+It would sound better — it would sound perfect, because it would be the bird. Two things
+stop it, and only one of them is philosophy.
+
+The first is the licence, and it is measured rather than assumed. Of the 435 recordings
+in the current harvest: 344 are CC BY-NC-SA, 68 are CC BY-NC-**ND**, 18 are CC BY-NC,
+three are CC BY-SA, one is CC0. So **four** of them could be redistributed in a product
+that might one day be commercial, and the 68 ND ones cannot legally be pitch-shifted or
+time-stretched at all, because that makes a derivative. A shipped sample bank means
+accepting non-commercial for the whole app, excluding the ND clips, and carrying
+per-clip attribution into the interface.
+
+The second is the claim. "Nothing is sampled; every note is integrated from the syrinx
+model" is what makes the galaxy's response mean anything — the app is showing you what a
+physical model of a bird does, and a played-back sample is a recording of a bird rather
+than a claim about one.
+
+There is a version that costs neither: a **local** sample bank, never shipped, that
+plays the real syllable next to its resynthesis. Nothing is redistributed, so the licence
+question does not arise, and it is the strongest possible demonstration of the science —
+you can hear exactly how far 0.61 cosine is from the real thing.
 
 Every harvested recording's recordist and licence is written to `CREDITS.md` in the
 store. xeno-canto recordings are individually licensed and CC-BY-NC-SA is common.

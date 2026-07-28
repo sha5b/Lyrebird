@@ -17,20 +17,30 @@
  */
 
 /**
- * How much meaning is claimed for a cluster, in three steps. This is the semantic axis
- * the corpus can actually support: the pipeline sorts each cluster's documented function
- * into a behavioural class, and those classes collapse into how strong a claim they make.
+ * How much meaning is claimed for a cluster. The pipeline sorts each cluster's documented
+ * function into a behavioural class, and those classes collapse into how strong a claim
+ * they make.
  *
- * Three and not six because this is a scatter plot: with every pair of series on screen
- * at once, only three categorical hues stay separable under colour-vision deficiency
- * (validated against the light surface — worst pair ΔE 9.2 deutan, 24.0 normal). The
- * finer six-class detail lives in the node labels, where it costs nothing to read.
+ * **`none` is not a claim, and keeping it separate is the whole point.** It used to fall
+ * into `structural`, which reads as "a song element carrying syntax" — a real assertion
+ * about a bird. Most clusters are now fitted to field recordings and carry no documented
+ * function at all, so that default silently turned "we do not know" into "we know this is
+ * song structure" for two thirds of the galaxy. They are their own group now, in grey,
+ * and the Meaning arrangement puts them in their own island where the size of the island
+ * is the honest headline: this is how much of the corpus has no documented meaning.
+ *
+ * Four and not six because this is a scatter plot: only three categorical hues stay
+ * separable under colour-vision deficiency (validated against the light surface — worst
+ * pair ΔE 9.2 deutan, 24.0 normal), and the fourth is a neutral, which does not compete
+ * with them. The finer six-class detail lives in the node labels.
  */
 import { CLAIM_HOT } from './palette';
 
 export const CLAIM_REFERENTIAL = 0;
 export const CLAIM_SOCIAL = 1;
 export const CLAIM_STRUCTURAL = 2;
+export const CLAIM_NONE = 3;
+export const CLAIM_COUNT = 4;
 
 export const CLAIM_OF_FUNCTION: Record<string, number> = {
 	alarm: CLAIM_REFERENTIAL,
@@ -39,7 +49,7 @@ export const CLAIM_OF_FUNCTION: Record<string, number> = {
 	courtship: CLAIM_SOCIAL,
 	contact: CLAIM_SOCIAL,
 	structural: CLAIM_STRUCTURAL,
-	unclassified: CLAIM_STRUCTURAL
+	unclassified: CLAIM_NONE
 };
 
 export const CLAIM_LEGEND = [
@@ -60,6 +70,12 @@ export const CLAIM_LEGEND = [
 		hex: CLAIM_HOT[CLAIM_STRUCTURAL],
 		label: 'structural',
 		hint: 'a song element carrying syntax, with no referential meaning'
+	},
+	{
+		id: CLAIM_NONE,
+		hex: CLAIM_HOT[CLAIM_NONE],
+		label: 'no claim',
+		hint: 'real audio of a known bird, and no documented function of any kind'
 	}
 ];
 
@@ -76,8 +92,17 @@ export const COLOUR_RESPONSE = 0;
 export const COLOUR_MEANING = 1;
 export const COLOUR_MONO = 2;
 
+/**
+ * Simultaneous waves. Three, because a chorus is several birds at once and the point of
+ * the interference is that you can see two of them meet; a fourth adds cost and nothing
+ * legible on top of three overlapping fronts.
+ */
+export const WAVE_SOURCES = 3;
+
 export function vertexShader(clusterCount: number): string {
 	return /* glsl */ `
+		#define WAVE_SOURCES ${WAVE_SOURCES}
+
 		attribute float aCluster;
 		attribute float aSeed;
 		attribute float aAct;
@@ -95,12 +120,24 @@ export function vertexShader(clusterCount: number): string {
 		uniform float uFocus;
 		uniform float uFocusDim;
 		uniform float uMorph;
+		/** Wavefronts per unit of the box, from the live pitch. */
+		uniform float uWaveK;
+		/** Box units per second the front travels outward at, also from the pitch. */
+		uniform float uWaveSpeed;
+		/** Thickness of the travelling shell, in box units. */
+		uniform float uWaveWidth;
+		/** Per source: where it started, how old it is, and how hard it hit. */
+		uniform vec3 uWaveOrigin[${WAVE_SOURCES}];
+		uniform float uWaveAge[${WAVE_SOURCES}];
+		uniform float uWaveAmp[${WAVE_SOURCES}];
 
 		varying float vAct;
 		varying float vSeed;
 		varying float vFocus;
 		varying float vClaim;
 		varying float vSpecies;
+		varying float vDepth;
+		varying float vChosen;
 
 		void main() {
 			int index = int(aCluster + 0.5);
@@ -112,7 +149,14 @@ export function vertexShader(clusterCount: number): string {
 			vSeed = aSeed;
 			vClaim = aClaim;
 			vSpecies = aSpecies;
-			vFocus = (uFocus < 0.0 || abs(uFocus - aSpecies) < 0.5) ? 1.0 : uFocusDim;
+			// Selection is a two-sided change, not just a dimming of everyone else. With
+			// only the dim, the chosen bird's points stayed exactly as they were and you
+			// could see the threads between its nodes without ever seeing *which* marks
+			// they joined. Its points now also grow and gain weight, so the bird reads as
+			// standing out of the crowd rather than the crowd receding from it.
+			bool chosen = uFocus >= 0.0 && abs(uFocus - aSpecies) < 0.5;
+			vFocus = (uFocus < 0.0 || chosen) ? 1.0 : uFocusDim;
+			vChosen = chosen ? 1.0 : 0.0;
 
 			// Rearranging between layouts. Each point takes its own slightly different
 			// share of the transition, so the cloud flows apart and back together instead
@@ -120,26 +164,83 @@ export function vertexShader(clusterCount: number): string {
 			float lead = mix(0.75, 1.25, aSeed);
 			vec3 base = mix(position, aTarget, clamp(uMorph * lead, 0.0, 1.0));
 
-			// Active points breathe outward and jump with the input level — the "it jumps"
-			// behaviour of the reference visualisation, now per point rather than per knot.
+			// Active points breathe and jump with the input level — the "it jumps" behaviour
+			// of the reference visualisation, per point rather than per knot.
+			//
+			// Each point takes its own fixed direction on the unit sphere, so a responding
+			// knot *inflates* in three dimensions. The previous version pushed every point
+			// along normalize(base) — away from the centre of the whole box — and then
+			// added a term straight up Y. For a knot sitting off-centre those are nearly
+			// the same direction for all of its members, so the knot slid bodily sideways
+			// and upward instead of swelling: a three-dimensional response rendered as a
+			// one-dimensional twitch.
 			float pulse = act * (0.5 + 0.5 * sin(uTime * 9.0 + aSeed * 6.2831853));
-			vec3 p = base + normalize(base + vec3(1e-4)) * pulse * 0.07;
-			p.y += pulse * 0.06 * (0.5 + uLevel * 4.0);
+			float za = aSeed * 6.2831853 * 1.7;
+			float zb = aSeed * 6.2831853 * 2.9;
+			vec3 burst = normalize(vec3(cos(za) * sin(zb), cos(zb), sin(za) * sin(zb)) + vec3(1e-4));
+			vec3 p = base + burst * pulse * 0.07 * (0.6 + uLevel * 2.0);
+
+			// Waves, plural, each expanding from the knot that is actually sounding.
+			//
+			// The first version put one wave at the centre of the box, which is nowhere in
+			// particular: the cloud pulsed as a whole and said only "something is
+			// happening". A sound in this galaxy has a *place* — the cluster it matched —
+			// and a wave that starts there and spreads outward says which knot spoke and
+			// how the rest of the corpus sits relative to it. Three at once, because a
+			// chorus is several birds, and where two fronts cross they add and cancel like
+			// real ones. That interference is not decoration: it is the only thing on
+			// screen that shows two calls arriving in the same region of the space.
+			//
+			// Each is a travelling shell rather than an endless ripple — a Gaussian
+			// envelope riding out from the source at a speed set by the pitch — so what you
+			// see is a front crossing the volume, not a standing corrugation.
+			float ph = aSeed * 6.2831853;
+			float waveTotal = 0.0;
+			for (int i = 0; i < WAVE_SOURCES; i++) {
+				float amp = uWaveAmp[i];
+				if (amp <= 0.0) continue;
+				vec3 away = base - uWaveOrigin[i];
+				float dist = length(away) + 1e-4;
+				// Distances are in the cloud's own box, so a front travels the same share
+				// of the picture whatever the viewing scale is set to.
+				float front = uWaveAge[i] * uWaveSpeed;
+				float env = exp(-pow((dist - front) / uWaveWidth, 2.0));
+				float phase = (dist - front) * uWaveK + aSeed * 0.35;
+				p += (away / dist) * sin(phase) * env * amp;
+				waveTotal += env * amp;
+			}
+
+			// The old drift survives only as what the cloud does in silence, and fades out
+			// as the waves come up so the two never fight.
+			float idle = 0.004 * (1.0 - clamp(waveTotal * 40.0, 0.0, 1.0));
+			p += vec3(
+				sin(uTime * 0.55 + ph),
+				sin(uTime * 0.41 + ph * 1.7),
+				cos(uTime * 0.48 + ph * 2.3)
+			) * idle;
 
 			vec4 mv = modelViewMatrix * vec4(p, 1.0);
 			gl_Position = projectionMatrix * mv;
+			vDepth = -mv.z;
 
 			// Growth follows the live level as well as the activation, and each point takes
 			// its own share of it. Inflating every member by the same fixed amount is what
 			// made a lit knot read as one swollen disc: it has to breathe with the sound,
 			// and unevenly, or the per-point response is invisible in the size channel too.
 			float grow = act * (0.35 + 0.9 * uLevel) * (0.5 + 1.0 * aSeed);
-			float size = uPointSize * (1.0 + grow);
+			float size = uPointSize * (1.0 + grow) * (1.0 + 0.45 * vChosen);
 			if (abs(uHighlight - aCluster) < 0.5) size *= 1.15;
-			// uPointSize is in pixels at the default camera distance (uSizeScale), which
-			// keeps the cloud readable: the corpus is normalised to |coord| <= 1, so the
-			// usual large perspective constant turns every point into a screen-wide blob.
-			gl_PointSize = clamp(size * uPixelRatio * (uSizeScale / max(0.001, -mv.z)), 1.0, 64.0);
+			// Perspective, but softened. True 1/z is right for a solid and wrong for a
+			// scatter: zoomed out every mark falls under a pixel and the cloud turns to fog,
+			// zoomed in the near ones become saucers that hide everything behind them. The
+			// exponent keeps the *ordering* — nearer is still bigger, which is half the
+			// depth cue — while compressing the range enough that a point is a legible dot
+			// at every distance. The floor and ceiling catch the extremes of a hard zoom.
+			float persp = pow(uSizeScale / max(0.001, -mv.z), 0.7);
+			// The floor is three device pixels rather than two: below that a disc has no
+			// interior left once the edge is feathered, and the mark degenerates into the
+			// feather itself — which is exactly what a haze is.
+			gl_PointSize = clamp(size * uPixelRatio * persp, 3.0, 42.0);
 		}
 	`;
 }
@@ -152,23 +253,58 @@ export const fragmentShader = /* glsl */ `
 	uniform vec3 uSurface;
 	uniform float uOpacity;
 	uniform float uMode;
+	/** Live pitch, 0..1 over the corpus's range. Shapes the gradient inside each mark. */
+	uniform float uPitch;
+
+	/**
+	 * View-space depth at which aerial perspective starts (x) and is complete (y).
+	 * Rewritten every frame from the camera's actual distance to the cloud, because a
+	 * fixed depth is wrong at every zoom but one — quoted against a constant, the whole
+	 * corpus sits past the far plane when you back off and the picture turns to fog.
+	 */
+	uniform vec2 uFogRange;
 
 	varying float vAct;
 	varying float vSeed;
 	varying float vFocus;
 	varying float vClaim;
 	varying float vSpecies;
+	varying float vDepth;
+	varying float vChosen;
 
 	void main() {
 		vec2 uv = gl_PointCoord - 0.5;
 		float d = length(uv);
 		if (d > 0.5) discard;
 
-		// A soft disc with a firmer centre: the body carries the density of the cloud, the
-		// centre is what sharpens when a point responds.
-		float core = smoothstep(0.5, 0.12, d);
-		float centre = smoothstep(0.28, 0.0, d);
-		float mask = core * 0.75 + centre * 0.45;
+		// A hard-edged disc with a one-pixel feather, plus a halo that belongs to whatever
+		// is responding.
+		//
+		// The feather is measured with fwidth rather than fixed in sprite coordinates,
+		// and that is the whole difference between a dot and a smudge. A constant
+		// smoothstep band is a constant *fraction* of the sprite, so at the sizes most of
+		// this corpus is drawn at — five or six pixels once the camera holds the whole
+		// galaxy — the entire mark is ramp and never reaches full opacity. Feathering by
+		// the actual screen-space derivative keeps the ramp one pixel wide at every point
+		// size, so a distant point is a small crisp dot instead of a faint blur.
+		float aa = max(fwidth(d), 0.0015);
+		float disc = 1.0 - smoothstep(0.40 - aa, 0.40 + aa, d);
+
+		// The inner gradient tightens with pitch. A high call draws a small hard nucleus,
+		// a low one a broad soft centre, so the same mark carries the frequency of what is
+		// sounding as well as how strongly it responds — and there is something to look at
+		// inside a point rather than a flat wafer.
+		float bright = mix(0.26, 0.11, uPitch);
+		float centre = smoothstep(bright, 0.01, d);
+
+		// The afterglow has to be *earned*. Scaled by vAct alone it turned on at the
+		// residual activation every point carries during a chorus, and thirty thousand
+		// faint halos are indistinguishable from the fog this shader just stopped drawing:
+		// after any sound the cloud stopped looking like it did on load. Below a quarter
+		// response there is no glow at all.
+		float glow = smoothstep(0.25, 0.75, vAct);
+		float halo = smoothstep(0.5, 0.24, d) * glow;
+		float mask = disc * 0.88 + centre * (0.22 + 0.5 * glow) + halo * 0.45;
 
 		// Which category this point belongs to: its bird, or how much meaning its cluster
 		// claims. Both palettes live in the same two uniforms; the CPU swaps them.
@@ -190,10 +326,26 @@ export const fragmentShader = /* glsl */ `
 		float ring = (1.0 - smoothstep(0.30, 0.42, d)) * smoothstep(0.30, 0.44, d);
 		colour = mix(colour, uSurface, ring * vAct * 0.9);
 
+		// Aerial perspective: far points wash toward the paper and thin out, near ones keep
+		// their weight. This is what makes a rotating scatter read as a volume rather than
+		// as a disc — the size cue alone is too weak once the sizes are compressed, and
+		// the eye takes contrast-with-distance as depth without being told.
+		//
+		// Responding points are exempted in proportion to how hard they respond: the whole
+		// job of this view is to show where a sound landed, and a match that happens to be
+		// at the back should not be dimmer than the paper.
+		float fog = clamp((vDepth - uFogRange.x) / max(0.001, uFogRange.y - uFogRange.x), 0.0, 1.0);
+		fog *= 1.0 - 0.85 * vAct;
+		colour = mix(colour, uSurface, fog * 0.45);
+
 		// Resting points are faint so density reads as tone and the responding ones carry
 		// the eye; even at full response it stays under 1, because opaque marks stack into
 		// a silhouette and the per-point detail disappears.
-		float alpha = uOpacity * mask * (0.34 + vAct * 0.5) * vFocus;
+		// A chosen point also carries more ink than the same point unselected, so the bird
+		// separates from the crowd by weight as well as by everyone else fading.
+		float alpha =
+			uOpacity * mask * (0.55 + vAct * 0.45) * vFocus * (1.0 + 0.35 * vChosen) *
+			(1.0 - fog * 0.45);
 		gl_FragColor = vec4(colour, clamp(alpha, 0.0, 1.0));
 	}
 `;
@@ -349,11 +501,12 @@ export const trajectoryPointsVertexShader = /* glsl */ `
 
 		vec4 mv = modelViewMatrix * vec4(position, 1.0);
 		gl_Position = projectionMatrix * mv;
-		gl_PointSize = clamp(
-			(2.2 + vPeak * 7.0) * uPixelRatio * (uSizeScale / max(0.001, -mv.z)),
-			1.0,
-			64.0
-		);
+		// The same softened perspective law as the cloud, quoted at the same distance.
+		// It has to be the same or the thread comes loose from the points it connects:
+		// under true 1/z the beads shrank twice as fast as the knots they run between, so
+		// backing off to hold the whole galaxy left visible nodes joined by nothing.
+		float persp = pow(uSizeScale / max(0.001, -mv.z), 0.7);
+		gl_PointSize = clamp((2.6 + vPeak * 7.0) * uPixelRatio * persp, 2.0, 64.0);
 	}
 `;
 
@@ -370,7 +523,9 @@ export const trajectoryPointsFragmentShader = /* glsl */ `
 		vec2 uv = gl_PointCoord - 0.5;
 		float d = length(uv);
 		if (d > 0.5) discard;
-		float core = smoothstep(0.5, 0.05, d);
+		// Crisp like the cloud's marks, with the glow reserved for the travelling bead.
+		float aa = max(fwidth(d), 0.0015);
+		float core = (1.0 - smoothstep(0.38 - aa, 0.38 + aa, d)) + smoothstep(0.5, 0.2, d) * vPeak * 0.6;
 
 		bool singing = vProgress >= 0.0;
 		float passed = singing ? step(vIndex, vProgress) : 1.0;

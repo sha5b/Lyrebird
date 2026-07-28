@@ -66,7 +66,10 @@
 	let pointSize = $state(6);
 	let spin = $state(true);
 	let showLabels = $state(true);
-	let coloured = $state(true);
+	// Off by default: with 176 clusters the hues cannot separate them anyway, and the
+	// arrangement plus the labels carry identity. Colour is something you turn on to ask
+	// a specific question, not the resting state of the picture.
+	let coloured = $state(false);
 	let tempo = $state(1);
 	let lastPhrase = $state<Phrase | null>(null);
 	let nowSinging = $state<ScheduledSyllable[]>([]);
@@ -110,8 +113,17 @@
 	/**
 	 * Listening distance as a viewing scale. Close is large and near, far is small and
 	 * distant, so the slider moves the picture the same way it moves the filters.
+	 *
+	 * The floor is what the middle of the slider used to give, not what its bottom did.
+	 * The old range started at 0.9, and down there the cloud contracted to a ball a few
+	 * centimetres across in which every island sat on top of every other — the arrangement
+	 * was still correct and completely unreadable. A scale that destroys the structure is
+	 * not a viewing distance, so the bottom of the slider now begins where the picture is
+	 * still legible and the range runs 2.33 to 6.0 rather than 0.9 to 6.0.
 	 */
-	const spread = $derived(0.9 * Math.exp(1.9 * distance));
+	const SPREAD_MIN = 2.33;
+	const SPREAD_MAX = 6.0;
+	const spread = $derived(SPREAD_MIN * Math.exp(Math.log(SPREAD_MAX / SPREAD_MIN) * distance));
 
 	/**
 	 * One switch, not a list of schemes. The arrangement already says what the grouping
@@ -446,6 +458,12 @@
 		if (chorus === 'global') {
 			listener?.setContext([]);
 			contextSpecies = null;
+			// The whole aviary is the subject, so nothing should still be claiming to be
+			// it: clearing the bird also releases the camera back to the entire galaxy,
+			// which is the only framing in which a chorus of twelve makes any sense.
+			speciesId = '';
+			pinnedCluster = -1;
+			selectedSung = null;
 			engine.startAmbient(species.map((s) => s.id), 22 * tempo, 2);
 		} else if (currentSpecies) {
 			contextSpecies = currentSpecies.id;
@@ -716,8 +734,10 @@ uv run birdy-pipeline build</pre>
 										Regrouped by bird, each keeping its own shape. Watch which species tore
 										apart on the way here — those were the ones overlapping acoustically.
 									{:else}
-										Regrouped by how much meaning is claimed. Position no longer means
-										acoustic similarity.
+										Regrouped by how much meaning is claimed — and the grey island is the
+										one to look at: those clusters are real audio of a known bird with no
+										documented function of any kind. Position no longer means acoustic
+										similarity.
 									{/if}
 								</p>
 							</section>
@@ -1288,7 +1308,7 @@ uv run birdy-pipeline serve</pre>
 								</h3>
 								<pre class="joblog mono">{job.log.slice(-14).join('\n') || '…'}</pre>
 								{#if job.error}<p class="error note">{job.error}</p>{/if}
-								{#if jobRunning && job.name !== 'build'}
+								{#if jobRunning}
 									<button
 										class="wide"
 										disabled={job.state === 'stopping'}
@@ -1297,14 +1317,15 @@ uv run birdy-pipeline serve</pre>
 										{job.state === 'stopping' ? 'Stopping…' : 'Stop'}
 									</button>
 									<p class="note faint">
-										Stops after the recording being analysed, or the species being fitted —
-										everything already done is kept, so a stopped harvest is a shorter
-										harvest rather than a wasted one.
-									</p>
-								{:else if jobRunning}
-									<p class="note faint">
-										A build runs to the end: there is no point in it where half an asset set
-										would be usable, so it has no stop.
+										{#if job.name === 'build'}
+											A build stops between species while it renders, and every sixty-fourth
+											clip while it measures. It writes nothing on the way out: half an asset
+											set is not a galaxy, so the previous build stays where it is.
+										{:else}
+											Stops after the recording being analysed, or the species being fitted —
+											everything already done is kept, so a stopped harvest is a shorter
+											harvest rather than a wasted one.
+										{/if}
 									</p>
 								{/if}
 							</section>

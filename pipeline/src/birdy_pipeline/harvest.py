@@ -108,22 +108,47 @@ def decode(path: Path, sample_rate: int = SAMPLE_RATE) -> tuple[np.ndarray, int]
     return resample(mono, int(rate), sample_rate), sample_rate
 
 
+#: A window must hold at least this much segmented syllable to count as a bird.
+MIN_SYLLABLE_OVERLAP_S = 0.08
+
+
 def slice_descriptors(
     mono: np.ndarray,
     sample_rate: int = SAMPLE_RATE,
     clip_seconds: float = LOCAL_CLIP_SECONDS,
     hop_seconds: float = LOCAL_HOP_SECONDS,
     max_seconds: float | None = None,
+    voiced: Sequence[tuple[float, float]] | None = None,
 ) -> Iterator[np.ndarray]:
-    """Yield one 28-d descriptor per voiced window. The audio is never copied out."""
+    """Yield one 28-d descriptor per window that holds a bird. Audio is never copied out.
+
+    `voiced` is the segmenter's syllable spans, and passing it is what keeps the galaxy a
+    picture of birdsong rather than of the places birds were recorded. Without it every
+    0.6 s of a field recording becomes a point, gaps included, and a recording is mostly
+    gaps: wind, traffic, a river, the two seconds before the bird answers. Those windows
+    cluster together perfectly happily, and then the corpus contains a cluster whose
+    honest description is "background", which white noise matches at 0.99 — measured, on
+    the build before this: the live match meter read 0.987 for noise against a floor of
+    0.78, so the galaxy lit up on room tone.
+
+    The descriptor's own voicing test cannot catch this, because it is relative to each
+    window's own peak: a window of pure wind has a loudest 5 % too.
+    """
     if max_seconds is not None:
         mono = mono[: int(max_seconds * sample_rate)]
     win = int(round(clip_seconds * sample_rate))
     hop = max(1, int(round(hop_seconds * sample_rate)))
+    spans = sorted(voiced) if voiced else None
     for start in range(0, max(1, mono.size - win + 1), hop):
         seg = mono[start : start + win]
         if seg.size < win // 2:
             continue
+        if spans is not None:
+            t0 = start / sample_rate
+            t1 = (start + seg.size) / sample_rate
+            overlap = sum(max(0.0, min(t1, b) - max(t0, a)) for a, b in spans)
+            if overlap < MIN_SYLLABLE_OVERLAP_S:
+                continue
         d = features.descriptor(peak_normalise(seg), sample_rate)
         if d is not None and np.all(np.isfinite(d)):
             yield d
@@ -483,6 +508,16 @@ class XenoCanto:
     def download(self, recording: dict[str, Any], dest: Path) -> Path:
         url = recording.get("file") or ""
         if not url:
+            # xeno-canto redacts the audio (and the location) for species it considers at
+            # risk from trapping or disturbance, and says so only in `_meta`. Reporting it
+            # as a missing url made the zebra finch look like a transient fetch failure
+            # worth retrying; it is a policy decision, and no query will get round it.
+            redacted = (recording.get("_meta") or {}).get("redacted_fields") or {}
+            why = redacted.get("file")
+            if why:
+                raise RuntimeError(
+                    f"recording {recording.get('id')} has no audio: xeno-canto redacts it ({why})"
+                )
             raise RuntimeError(f"recording {recording.get('id')} has no file url")
         self._wait()
         req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
@@ -492,6 +527,22 @@ class XenoCanto:
             with out.open("wb") as fh:
                 shutil.copyfileobj(res, fh, length=1 << 16)
         return out
+
+
+def quality_term(quality: str) -> str:
+    """xeno-canto's quality term for a filter like ``A`` or ``>B``.
+
+    A comparison has to be quoted: ``q:">B"``. Bare ``q:>B`` and the older website syntax
+    ``q>:B`` are both rejected by API v3 with a 400 and the message that it "only accepts
+    queries using tags", which does not obviously point at the operator. Measured against
+    the live API: ``q:">B"`` returns 17 zebra finch recordings, ``q:B`` 23, unfiltered 49.
+    """
+    quality = quality.strip()
+    if not quality:
+        return ""
+    if quality[0] in "<>":
+        return f'q:"{quality}"'
+    return f"q:{quality}"
 
 
 def species_queries(inventory: dict[str, Any], quality: str = "") -> list[tuple[str, str]]:
@@ -508,8 +559,9 @@ def species_queries(inventory: dict[str, Any], quality: str = "") -> list[tuple[
             continue
         genus, epithet = scientific.split(" ", 1)
         query = f'gen:"{genus}" sp:"{epithet.split()[0]}"'
-        if quality:
-            query += f" q:{quality}"
+        term = quality_term(quality)
+        if term:
+            query += f" {term}"
         out.append((sp["id"], query))
     return out
 
@@ -547,8 +599,16 @@ def ingest_file(
     mono, rate = decode(path)
     report.seconds += mono.size / rate
 
+    # Segment first: the syllable spans decide which descriptor windows are worth keeping.
+    observations = (
+        extract_syllables(mono, rate, species_id, recording_id, max_seconds=max_seconds)
+        if segment
+        else []
+    )
+    spans = [(o.start, o.start + o.dur) for o in observations] or None
+
     rows: list[np.ndarray] = []
-    for descriptor in slice_descriptors(mono, rate, max_seconds=max_seconds):
+    for descriptor in slice_descriptors(mono, rate, max_seconds=max_seconds, voiced=spans):
         report.descriptors += 1
         rows.append(descriptor)
         if store.offer(
@@ -564,11 +624,9 @@ def ingest_file(
     if rows:
         store.note_descriptor(recording_id, np.mean(np.stack(rows), axis=0))
 
-    if segment:
-        report.syllables += store.add_syllables(
-            extract_syllables(mono, rate, species_id, recording_id, max_seconds=max_seconds)
-        )
-    del mono, rows
+    if observations:
+        report.syllables += store.add_syllables(observations)
+    del mono, rows, observations
 
 
 def harvest_xeno_canto(

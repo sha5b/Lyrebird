@@ -179,13 +179,14 @@ export const MONO_HOT = '#1e2836';
  * The three-step meaning palette, from the validated categorical slots 1–3. Held to the
  * full all-pairs gate: worst pair ΔE 9.2 deutan, 24.0 normal, on this surface.
  */
-export const CLAIM_HOT = ['#2a78d6', '#eb6834', '#1baf7a'];
+/** Three claims plus a neutral for "no claim", which must not read as a category. */
+export const CLAIM_HOT = ['#2a78d6', '#eb6834', '#1baf7a', '#7b8794'];
 
 /** Pale companions to the above, mixed toward the paper rather than desaturated. */
-export const CLAIM_REST = ['#d7e5f8', '#fae0d2', '#d2efe4'];
+export const CLAIM_REST = ['#d7e5f8', '#fae0d2', '#d2efe4', '#dfe3e8'];
 
 /**
  * Softer steps of the same three hues, for marks that sit over the cloud — trajectory
  * threads, label rules — where the full categorical colour would shout.
  */
-export const CLAIM_SOFT = ['#5b95df', '#ef8d63', '#4dc59a'];
+export const CLAIM_SOFT = ['#5b95df', '#ef8d63', '#4dc59a', '#96a0ac'];

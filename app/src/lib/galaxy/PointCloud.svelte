@@ -1,16 +1,18 @@
 <script lang="ts">
-	import { T, useTask } from '@threlte/core';
+	import { T, useTask, useThrelte } from '@threlte/core';
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
 	import { buildSpeciesIndex } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
 	import {
+		CLAIM_COUNT,
+		CLAIM_NONE,
 		CLAIM_OF_FUNCTION,
-		CLAIM_STRUCTURAL,
 		COLOUR_MEANING,
 		COLOUR_MONO,
 		COLOUR_RESPONSE,
 		PALETTE_SLOTS,
+		WAVE_SOURCES,
 		fragmentShader,
 		vertexShader,
 		type VisualSignal
@@ -57,11 +59,11 @@
 		THREE.DynamicDrawUsage
 	);
 
-	// A point inherits its cluster's claim class; assets built before the pipeline
-	// classified functions fall back to structural, which claims the least.
+	// A point inherits its cluster's claim class. A cluster with no documented function
+	// gets `none` rather than the weakest real claim — see the note in `shaders.ts`.
 	const claimOfCluster = untrack(() =>
-		assets.centroids.items.map(
-			(c) => CLAIM_OF_FUNCTION[c.functionClass ?? ''] ?? CLAIM_STRUCTURAL
+		assets.centroids.items.map((c) =>
+			c.function ? (CLAIM_OF_FUNCTION[c.functionClass ?? ''] ?? CLAIM_NONE) : CLAIM_NONE
 		)
 	);
 
@@ -89,7 +91,7 @@
 			// deterministic per-point phase offset, so the pulse is not synchronised
 			seed[i] = ((i * 2654435761) % 1000) / 1000;
 			species[i] = speciesIndex.get(assets.points.speciesId[i] ?? '') ?? -1;
-			claim[i] = claimOf[cluster[i]] ?? CLAIM_STRUCTURAL;
+			claim[i] = claimOf[cluster[i]] ?? CLAIM_NONE;
 		}
 		g.setAttribute('aCluster', new THREE.BufferAttribute(cluster, 1));
 		g.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
@@ -110,7 +112,10 @@
 			uPointSize: { value: untrack(() => pointSize) },
 			uPixelRatio: { value: typeof window === 'undefined' ? 1 : Math.min(2, window.devicePixelRatio) },
 			uHighlight: { value: -1 },
-			uSizeScale: { value: 2.6 },
+			// The camera distance the point size is quoted at. Larger than the old 2.6
+			// because the framing now backs off to hold the whole galaxy: at 2.6 every point
+			// was less than half its intended size the moment nothing was selected.
+			uSizeScale: { value: 4.0 },
 			uMorph: { value: 1 },
 			uFocus: { value: -1 },
 			// Enough that an unselected species still reads as part of the same corpus,
@@ -118,6 +123,16 @@
 			uFocusDim: { value: 0.16 },
 			uOpacity: { value: 1 },
 			uMode: { value: COLOUR_RESPONSE },
+			// Filled in every frame from the camera's distance to the cloud; the initial
+			// value only has to be sane for the first frame.
+			uFogRange: { value: new THREE.Vector2(2, 5) },
+			uPitch: { value: 0.5 },
+			uWaveK: { value: 6 },
+			uWaveSpeed: { value: 0.9 },
+			uWaveWidth: { value: 0.35 },
+			uWaveOrigin: { value: Array.from({ length: WAVE_SOURCES }, () => new THREE.Vector3()) },
+			uWaveAge: { value: new Float32Array(WAVE_SOURCES) },
+			uWaveAmp: { value: new Float32Array(WAVE_SOURCES) },
 			uRest: { value: Array.from({ length: PALETTE_SLOTS }, () => new THREE.Color()) },
 			uHot: { value: Array.from({ length: PALETTE_SLOTS }, () => new THREE.Color()) },
 			uSurface: { value: new THREE.Color('#fafbfc') }
@@ -186,9 +201,126 @@
 		morph = 0;
 	});
 
+	const { camera } = useThrelte();
+	/** Scratch, so the per-frame fog fit allocates nothing. */
+	const worldCentre = new THREE.Vector3();
+
+	/**
+	 * Fit the aerial-perspective band to where the cloud actually is.
+	 *
+	 * Fog has to be quoted against the camera's current distance, not against a constant:
+	 * the framing moves from 0.3 units (one node) to tens of units (the whole galaxy), and
+	 * a fixed depth means either no fog at all or a corpus that is entirely fog. Near edge
+	 * a little inside the front of the cloud, far edge a little past the back, so the
+	 * gradient always spans the thing being looked at.
+	 */
+	function fitFog(points: THREE.Points | undefined) {
+		const cam = camera.current;
+		const sphere = geometry.boundingSphere;
+		if (!cam || !points || !sphere) return;
+		const scale = points.matrixWorld.getMaxScaleOnAxis();
+		const radius = Math.max(1e-3, sphere.radius * scale);
+		worldCentre.copy(sphere.center).applyMatrix4(points.matrixWorld);
+		const distance = cam.position.distanceTo(worldCentre);
+		const range = material.uniforms.uFogRange.value as THREE.Vector2;
+		range.set(Math.max(0.01, distance - radius * 0.55), distance + radius * 1.15);
+	}
+
+	let points = $state<THREE.Points | undefined>();
+
+	/**
+	 * Pitch the wave is quoted against — near the middle of the corpus, in octaves. The
+	 * shape is followed toward the measurement rather than set from it: f0 is a per-frame
+	 * estimate that jumps an octave whenever the tracker changes its mind, and a
+	 * wavelength that jumps with it looks like a fault rather than like a sound.
+	 */
+	const WAVE_REFERENCE_HZ = 900;
+	/** Seconds a front keeps travelling before it is retired. */
+	const WAVE_LIFETIME = 2.6;
+	let waveK = 6;
+	let pitch = 0.5;
+
+	/** One expanding front: where it started, how old it is, how hard it hit. */
+	const sources = Array.from({ length: WAVE_SOURCES }, () => ({
+		origin: new THREE.Vector3(),
+		age: WAVE_LIFETIME,
+		amp: 0
+	}));
+	let nextSource = 0;
+	/** The cluster the last front was launched from, so one note launches one wave. */
+	let lastLaunch = -1;
+
+	/**
+	 * Launch a front from the knot that is sounding.
+	 *
+	 * `signal.best` is the cluster the live sound matched, and the layout view knows where
+	 * that cluster is *right now* — which matters, because the same knot is somewhere else
+	 * after a rearrangement, and a wave that started from where it used to be would be a
+	 * wave from nowhere.
+	 */
+	function launch(cluster: number, strength: number) {
+		if (cluster < 0 || cluster * 3 + 2 >= view.centroids.length) return;
+		const s = sources[nextSource];
+		nextSource = (nextSource + 1) % WAVE_SOURCES;
+		s.origin.set(
+			view.centroids[cluster * 3],
+			view.centroids[cluster * 3 + 1],
+			view.centroids[cluster * 3 + 2]
+		);
+		s.age = 0;
+		s.amp = strength;
+	}
+
+	function fitWave(delta: number) {
+		const f0 = signal.f0;
+		const octaves = f0 > 60 ? Math.log2(f0 / WAVE_REFERENCE_HZ) : 0;
+		// Few, broad fronts rather than many tight ones. Wound tighter, the displacement
+		// stacks the points into concentric shells that a still frame reads as *density* —
+		// a structure the data does not have. Kept broad, the same motion reads as the
+		// cloud flexing, and only the movement carries the pitch.
+		const k = Math.min(9, Math.max(1.5, 4 + octaves * 1.6));
+		waveK += (k - waveK) * Math.min(1, delta * 6);
+		// 0..1 over roughly four octaves of birdsong, for the gradient inside each mark
+		const p = f0 > 60 ? Math.min(1, Math.max(0, (Math.log2(f0) - 8.2) / 4)) : pitch;
+		pitch += (p - pitch) * Math.min(1, delta * 4);
+
+		// A new note from a different knot starts its own front; the same knot holding on
+		// does not, or a sustained call would emit a front every frame and the interference
+		// would be mush rather than two crossing shells.
+		const best = signal.best;
+		if (best >= 0 && best !== lastLaunch && signal.level > 0.04) {
+			launch(best, Math.min(0.055, 0.02 + signal.level * 0.06));
+		}
+		if (best !== lastLaunch) lastLaunch = best;
+
+		const u = material.uniforms;
+		const ages = u.uWaveAge.value as Float32Array;
+		const amps = u.uWaveAmp.value as Float32Array;
+		const origins = u.uWaveOrigin.value as THREE.Vector3[];
+		for (let i = 0; i < WAVE_SOURCES; i++) {
+			const s = sources[i];
+			s.age += delta;
+			// Fade over the life rather than cutting off, so a front thins out as it
+			// crosses the far side instead of vanishing mid-cloud.
+			const life = Math.max(0, 1 - s.age / WAVE_LIFETIME);
+			ages[i] = s.age;
+			amps[i] = s.amp * life * life;
+			origins[i].copy(s.origin);
+		}
+		u.uWaveK.value = waveK;
+		// Faster fronts for higher calls, so the pitch is in the travel as well as the
+		// wavelength. Quoted in box units a second: the box is the cloud, whatever scale
+		// the distance slider has it drawn at, so a front crosses the same share of the
+		// picture at every setting.
+		u.uWaveSpeed.value = 0.55 + pitch * 0.9;
+		u.uPitch.value = pitch;
+	}
+
 	useTask((delta) => {
 		const u = material.uniforms;
 		u.uTime.value += delta * speed;
+		fitFog(points);
+		fitWave(delta * speed);
 
 		if (morph < 1) {
 			morph = Math.min(1, morph + delta / MORPH_SECONDS);
@@ -220,4 +352,4 @@
 	});
 </script>
 
-<T.Points {geometry} {material} frustumCulled={false} />
+<T.Points bind:ref={points} {geometry} {material} frustumCulled={false} />
