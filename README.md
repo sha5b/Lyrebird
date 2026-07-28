@@ -43,6 +43,12 @@ app/                  SvelteKit + TypeScript: realtime synthesis, mic analysis, 
 
 ## The galaxy
 
+The shipped galaxy is **31,328 points in 176 clusters**: 11,328 clips rendered from the
+inventory, and 20,000 descriptors of real xeno-canto audio from 434 recordings across
+twelve species. One cluster per syllable type — the 44 authored ones and the 132 fitted
+to field recordings — because a cluster is what carries a name, a function and a
+citation, and merging two types into one loses all three.
+
 Points are individual clips; clusters are call types. Selecting a bird dims the other
 species and narrows the floating node labels to that repertoire, so the picture changes
 with the selection instead of showing all twelve species at once regardless. Each node
@@ -64,16 +70,29 @@ rather than one diagram being redrawn.
 
 **Distance** is one control over two things: it drives air absorption and reverb in the
 audio, and the viewing scale in the picture, so a bird across the field is further away
-in both. **Tempo** slows the whole aviary — the drift, the pulse, how long each syllable
+in both. The scale is exponential over roughly a seven-fold range, and the camera's
+reach was raised to match: at the far end the cloud is several times its own radius
+across, and a viewer that cannot back away from it turns the control into a wall.
+
+**Tempo** slows the whole aviary — the drift, the pulse, how long each syllable
 lasts and how often a bird starts. It stretches time and nothing else: pitch comes from
 a syllable's contour and length from its `dur`, so unlike a tape slowing down, a bird
 slowed here keeps its pitch and simply sings longer. Trill and vibrato rates are divided
 by the same factor, or a slowed call stops sounding like itself.
 
-**What has been sung** runs along the bottom of the view, newest against the reading
-panel and older ones extending left until they clip. A chorus goes past faster than
-anyone can read; clicking an entry draws that phrase's path back onto the galaxy and
-selects its bird, and clicking empty space clears it.
+**What has been sung** runs along the bottom of the view, in the lane between the two
+panels: newest against the reading card and older ones extending left until they clip. A
+chorus goes past faster than anyone can read; clicking an entry draws that phrase's path
+back onto the galaxy, selects its bird, and **flies the camera to it** — the knot it
+lives in is one of a hundred and seventy in a cloud you may have orbited away from, and
+"it is highlighted somewhere behind you" is not a way to find anything.
+
+The flight ends the moment you touch the controls. The *lock* on the phrase does not:
+the cloud is drifting, and without it the thing you just asked to see rotates back out of
+frame while you look at it. Orbiting and zooming stay yours throughout — the lock only
+writes the point they happen around. Clicking empty space clears nothing, because
+orbiting is a click-and-drag on that same surface; the reading card carries an explicit
+**clear selection** instead.
 
 ### Rearranging
 
@@ -140,9 +159,13 @@ cluster overlap. Anything responding also gets a ring of the background colour a
 it; without that a lit knot fuses into a single silhouette and the per-point response,
 which is the entire point of the view, disappears.
 
-Two things can wear the hue, chosen from the display control on the view itself:
+Since the arrangement now says what the grouping is, colour only has to say whether to
+carry it: the display control offers **Monochrome** and **Coloured**, and what a colour
+*means* follows the arrangement — species hues under Sound and Bird, the three-step
+claim palette under Meaning. Monochrome drops the category entirely and leaves response
+to value, size and the ring, which is most of what carried it anyway.
 
-**Bird** gives each species its own colour. **Meaning** gives each cluster a colour for
+**Meaning** gives each cluster a colour for
 how much meaning is claimed for it — *referential* (names something outside the bird),
 *social* (says something about the singer), *structural* (a song element carrying syntax
 and no referential meaning). The pipeline sorts each documented function into a
@@ -214,6 +237,34 @@ them: fitted ids start with `L`, carry `unlabelled` confidence and no function, 
 every playback-verified call keeps its citation. `--learned-only` writes the fitted
 repertoire on its own.
 
+### What the fitted voices actually achieve
+
+On the shipped harvest — 434 recordings, 31,653 segmented syllables, 12 fitted types per
+species:
+
+| measure | result |
+|---|---|
+| F0 error of the resynthesis against its own contour | median 0.1 – 1.8 % per species |
+| resynthesis cosine to the syllables it was fitted to | median 0.31 |
+| resynthesis nearest its *own* type rather than another | 40 of 132 |
+
+Read against the frame those cosines live in — two real syllables of one type score
+about 0.78, two of different types about 0.49 — that is a clear result and not a
+flattering one: **the oscillator reaches the pitch and does not reach the timbre.** A
+third of the fitted types land nearest their own call (chance is one in twelve), and the
+rest land nearer some other call of the same bird. A field recording carries wind,
+distance, a second bird and a room; a two-parameter oscillator carries none of that, and
+the descriptor notices.
+
+The numbers only say this because of how they are taken, and that is worth stating,
+because the previous version of this check said nothing at all. It compared a fitted
+syllable against the *recording-level* descriptor — a five-second window average over
+everything that recording contained, identical for every type of a species — in the
+corpus statistics of a synthetic build. In that frame every field syllable scores 0.99
+against every other, so the check could not fail. It now compares against the syllable's
+own audio, in a frame centred on the harvested population, where 0.78 and 0.49 are
+measurably different numbers.
+
 Every harvested recording's recordist and licence is written to `CREDITS.md` in the
 store. xeno-canto recordings are individually licensed and CC-BY-NC-SA is common.
 See [`pipeline/README.md`](pipeline/README.md) for the details.
@@ -267,7 +318,12 @@ npm run demo:wav          # writes listenable wavs to app/out/wav
 `verify:features` is the one that matters most: it crosses the language boundary. A high
 hit rate means the two ODE implementations, the two MFCC implementations and the
 standardisation statistics all agree. Drift shows up here rather than as a galaxy that
-quietly lights the wrong clusters. Current: 35/44 exact, 36/44 same species.
+quietly lights the wrong clusters. Current: **25/44 exact, 26/44 same species** — down
+from 35/44, and the drop is the price of the learned inventory rather than drift. The
+galaxy went from 44 clusters to 176 when the fitted types joined the documented ones, so
+a rendered `cuck` now competes with a tawny owl's `L01` fitted to real audio that happens
+to resemble it. Build without the fitted types (the checkbox in the Learn tab, or plain
+`--inventory ../data/inventory.json`) and the old figure comes back.
 
 `uv run birdy-pipeline verify` checks the generated assets, including that the per-point
 feature rows are unit vectors and still separate their own cluster from the rest — a

@@ -84,10 +84,11 @@ export function birdyPipeline(): Plugin {
 			let quiet = true;
 			const forward = (buf: Buffer) => {
 				for (const line of buf.toString().split('\n')) {
-					if (!line.trim()) continue;
-					if (quiet && !/^(harvesting|fitting|building|wrote|skip|XC)/.test(line)) continue;
+					const text = line.trim();
+					if (!text) continue;
+					if (quiet && !/^(harvesting|fitting|building|wrote|skip|XC)/.test(text)) continue;
 					quiet = false;
-					info(line);
+					info(text);
 				}
 			};
 			child.stdout?.on('data', forward);

@@ -13,7 +13,7 @@
 	import * as THREE from 'three';
 	import { buildSpeciesIndex } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
-	import { speciesPalette } from './palette';
+	import { MONO_HOT, speciesPalette } from './palette';
 	import type { LayoutView } from './layouts';
 	import type { VisualSignal } from './shaders';
 
@@ -28,9 +28,11 @@
 		pinned?: number;
 		/** Where the centroids are right now; moves while the cloud rearranges. */
 		view: LayoutView;
+		/** Drop the species hues when the cloud is monochrome. */
+		mono?: boolean;
 	}
 
-	let { assets, signal, elements, focus = -1, pinned = -1, view }: Props = $props();
+	let { assets, signal, elements, focus = -1, pinned = -1, view, mono = false }: Props = $props();
 
 	const { camera, size } = useThrelte();
 
@@ -134,7 +136,7 @@
 			node.style.zIndex = String(Math.round((1 - (p.z + 1) / 2) * 1000) + (hot ? 2000 : 0));
 			node.style.setProperty('--hot', open ? '1' : '0');
 			node.style.setProperty('--act', shown[i].toFixed(3));
-			node.style.setProperty('--accent', accentOf[i]);
+			node.style.setProperty('--accent', mono ? MONO_HOT : accentOf[i]);
 
 			// The one piece of text that changes while running. Written only when the
 			// rounded percentage actually moves, and only for a label that is open.

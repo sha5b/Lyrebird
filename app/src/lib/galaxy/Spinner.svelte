@@ -16,12 +16,12 @@
 		 * faithful as it was; only the viewing scale changes.
 		 */
 		scale?: number;
+		/** The group itself, for anything that has to convert a point in it to world space. */
+		group?: THREE.Group;
 		children?: Snippet;
 	}
 
-	let { spin = true, speed = 1, scale = 1, children }: Props = $props();
-
-	let group = $state<THREE.Group | undefined>();
+	let { spin = true, speed = 1, scale = 1, group = $bindable(), children }: Props = $props();
 	let current = 1;
 
 	/** Slow drift, so the cloud reads as a volume rather than a flat picture. */

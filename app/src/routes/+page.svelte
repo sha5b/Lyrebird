@@ -18,11 +18,12 @@
 	import {
 		CLAIM_LEGEND,
 		COLOUR_MEANING,
+		COLOUR_MONO,
 		COLOUR_RESPONSE,
 		createSignal,
 		type VisualSignal
 	} from '$lib/galaxy/shaders';
-	import { speciesPalette } from '$lib/galaxy/palette';
+	import { MONO_HOT, speciesPalette } from '$lib/galaxy/palette';
 	import type { LayoutId } from '$lib/galaxy/layouts';
 	import { PipelineClient, type PipelineStatus } from '$lib/data/pipeline';
 	import type { BirdyAssets } from '$lib/data/types';
@@ -63,7 +64,7 @@
 	let pointSize = $state(6);
 	let spin = $state(true);
 	let showLabels = $state(true);
-	let colourMode = $state(COLOUR_RESPONSE);
+	let coloured = $state(true);
 	let tempo = $state(1);
 	let lastPhrase = $state<Phrase | null>(null);
 	let nowSinging = $state<ScheduledSyllable[]>([]);
@@ -108,7 +109,23 @@
 	 * Listening distance as a viewing scale. Close is large and near, far is small and
 	 * distant, so the slider moves the picture the same way it moves the filters.
 	 */
-	const spread = $derived(1.35 - 0.8 * distance);
+	const spread = $derived(0.9 * Math.exp(1.9 * distance));
+
+	/**
+	 * One switch, not a list of schemes. The arrangement already says what the grouping
+	 * is, so colour only has to say whether to carry it: `Arrange` by meaning and the
+	 * hues are the three claim colours, anything else and they are the species hues.
+	 * `Monochrome` drops the category entirely and leaves response to value and size,
+	 * which twelve indistinguishable species hues were never really adding to.
+	 */
+	const colourMode = $derived(
+		!coloured ? COLOUR_MONO : layout === 'meaning' ? COLOUR_MEANING : COLOUR_RESPONSE
+	);
+
+	/** The clusters of the phrase picked out of the history: what the camera flies to. */
+	const frameNodes = $derived(
+		selectedSung === null ? [] : (history.find((h) => h.id === selectedSung)?.nodes ?? [])
+	);
 
 	onMount(() => {
 		loadAssets()
@@ -447,7 +464,7 @@
 	}
 
 	const job = $derived(pipelineStatus?.job ?? null);
-	const jobRunning = $derived(job?.state === 'running');
+	const jobRunning = $derived(job?.state === 'running' || job?.state === 'stopping');
 
 	$effect(() => {
 		engine?.setDistance(distance);
@@ -493,8 +510,10 @@
 		pinnedCluster >= 0 ? (assets?.centroids.items[pinnedCluster] ?? null) : null
 	);
 	const palette = speciesPalette();
+	/** Follows the display switch: a swatch cannot say "this bird is blue" in monochrome. */
 	function speciesColourOf(id: string): string {
 		const slot = speciesIndex?.get(id);
+		if (!coloured) return MONO_HOT;
 		return slot === undefined ? 'var(--ink-faint)' : palette.hot[slot % palette.hot.length];
 	}
 	// The hue of the *selected* bird, which is not the same as the focused one: during a
@@ -566,8 +585,8 @@ uv run birdy-pipeline build</pre>
 				labels={showLabels}
 				pinned={pinnedCluster}
 				{layout}
+				frame={frameNodes}
 				onpick={pickCluster}
-				onbackground={clearSelection}
 			/>
 
 			<!-- Display settings belong on the thing they change, not in the tab strip. -->
@@ -589,58 +608,76 @@ uv run birdy-pipeline build</pre>
 					</svg>
 				</button>
 				{#if viewOpen}
-					<div class="viewpanel">
-						<h3 class="blocktitle">Colour</h3>
-						<div class="segmented">
-							<button
-								class:on={colourMode === COLOUR_RESPONSE}
-								onclick={() => (colourMode = COLOUR_RESPONSE)}>Bird</button
-							>
-							<button
-								class:on={colourMode === COLOUR_MEANING}
-								onclick={() => (colourMode = COLOUR_MEANING)}>Meaning</button
-							>
-						</div>
-						<h3 class="blocktitle">Arrange</h3>
-						<div class="segmented">
-							<button class:on={layout === 'acoustic'} onclick={() => (layout = 'acoustic')}>
-								Sound
-							</button>
-							<button class:on={layout === 'species'} onclick={() => (layout = 'species')}>
-								Bird
-							</button>
-							<button class:on={layout === 'meaning'} onclick={() => (layout = 'meaning')}>
-								Meaning
-							</button>
-						</div>
-						<p class="note faint">
-							{#if layout === 'acoustic'}
-								Points sit where they sound. Distance is acoustic distance.
-							{:else if layout === 'species'}
-								Regrouped by bird, each keeping its own shape. Watch which species tore apart
-								on the way here — those were the ones overlapping acoustically.
-							{:else}
-								Regrouped by how much meaning is claimed. Position no longer means acoustic
-								similarity.
-							{/if}
-						</p>
-						<label class="field">
-							<span class="lbl">Point size <b class="mono">{pointSize.toFixed(1)}</b></span>
-							<input type="range" min="1" max="10" step="0.1" bind:value={pointSize} />
-						</label>
-						<label class="field">
-							<span class="lbl">Tempo <b class="mono">{tempo.toFixed(2)}×</b></span>
-							<input type="range" min="0.1" max="2" step="0.05" bind:value={tempo} />
-						</label>
-						<div class="checks">
-							<label class="check"><input type="checkbox" bind:checked={spin} /> Rotate</label>
-							<label class="check"><input type="checkbox" bind:checked={showLabels} /> Labels</label>
+					<div class="panel viewpanel">
+						<h2>Display</h2>
+						<div class="cardbody">
+							<section class="block">
+								<h3 class="blocktitle">Arrange</h3>
+								<div class="segmented">
+									<button class:on={layout === 'acoustic'} onclick={() => (layout = 'acoustic')}>
+										Sound
+									</button>
+									<button class:on={layout === 'species'} onclick={() => (layout = 'species')}>
+										Bird
+									</button>
+									<button class:on={layout === 'meaning'} onclick={() => (layout = 'meaning')}>
+										Meaning
+									</button>
+								</div>
+								<p class="note faint">
+									{#if layout === 'acoustic'}
+										Points sit where they sound. Distance is acoustic distance.
+									{:else if layout === 'species'}
+										Regrouped by bird, each keeping its own shape. Watch which species tore
+										apart on the way here — those were the ones overlapping acoustically.
+									{:else}
+										Regrouped by how much meaning is claimed. Position no longer means
+										acoustic similarity.
+									{/if}
+								</p>
+							</section>
+
+							<section class="block">
+								<h3 class="blocktitle">Colour</h3>
+								<div class="segmented">
+									<button class:on={!coloured} onclick={() => (coloured = false)}>Monochrome</button>
+									<button class:on={coloured} onclick={() => (coloured = true)}>Coloured</button>
+								</div>
+								<p class="note faint">
+									{#if !coloured}
+										One ink. Response reads as value and size, and the arrangement carries the
+										grouping on its own.
+									{:else if layout === 'meaning'}
+										A hue per claim of meaning, matching the arrangement.
+									{:else}
+										A hue per bird. Twelve cannot be told apart by colour alone — the labels
+										and the selection are what name them.
+									{/if}
+								</p>
+							</section>
+
+							<section class="block">
+								<label class="field">
+									<span class="lbl">Point size <b class="mono">{pointSize.toFixed(1)}</b></span>
+									<input type="range" min="1" max="10" step="0.1" bind:value={pointSize} />
+								</label>
+								<label class="field">
+									<span class="lbl">Tempo <b class="mono">{tempo.toFixed(2)}×</b></span>
+									<input type="range" min="0.1" max="2" step="0.05" bind:value={tempo} />
+								</label>
+								<div class="checks">
+									<label class="check"><input type="checkbox" bind:checked={spin} /> Rotate</label>
+									<label class="check"
+										><input type="checkbox" bind:checked={showLabels} /> Labels</label
+									>
+								</div>
+							</section>
 						</div>
 					</div>
 				{/if}
 			</div>
 
-			{#if colourMode === COLOUR_MEANING}
+			{#if coloured && colourMode === COLOUR_MEANING}
 				<div class="legend">
 					<span class="legend-title">how much meaning is claimed</span>
 					{#each CLAIM_LEGEND as entry (entry.id)}
@@ -674,8 +711,14 @@ uv run birdy-pipeline build</pre>
 				</div>
 			{/if}
 
-			<aside class="readout">
-				<h2>Reading</h2>
+			<aside class="panel readout">
+				<h2>
+					Reading
+					{#if selectedSung !== null || pinnedCluster >= 0}
+						<button class="link" onclick={clearSelection}>clear selection</button>
+					{/if}
+				</h2>
+				<div class="cardbody">
 				{#if reading?.best}
 					{@const best = reading.best}
 					<div class="best">
@@ -747,6 +790,7 @@ uv run birdy-pipeline build</pre>
 					{reading?.caveat ??
 						'Birdy reports documented call functions with a confidence label. Machine learning can characterise repertoires and link calls to behaviour; it cannot translate them into sentences.'}
 				</p>
+				</div>
 			</aside>
 
 			<aside class="panel controls">
@@ -1145,6 +1189,25 @@ uv run birdy-pipeline serve</pre>
 								</h3>
 								<pre class="joblog mono">{job.log.slice(-14).join('\n') || '…'}</pre>
 								{#if job.error}<p class="error note">{job.error}</p>{/if}
+								{#if jobRunning && job.name !== 'build'}
+									<button
+										class="wide"
+										disabled={job.state === 'stopping'}
+										onclick={() => runPipeline(() => pipeline.stop())}
+									>
+										{job.state === 'stopping' ? 'Stopping…' : 'Stop'}
+									</button>
+									<p class="note faint">
+										Stops after the recording being analysed, or the species being fitted —
+										everything already done is kept, so a stopped harvest is a shorter
+										harvest rather than a wasted one.
+									</p>
+								{:else if jobRunning}
+									<p class="note faint">
+										A build runs to the end: there is no point in it where half an asset set
+										would be usable, so it has no stop.
+									</p>
+								{/if}
 							</section>
 						{/if}
 					{/if}
@@ -1285,15 +1348,14 @@ uv run birdy-pipeline serve</pre>
 		color: var(--signal);
 	}
 
-	.viewpanel {
-		display: grid;
-		gap: 0.6rem;
-		width: 15rem;
-		padding: 0.8rem 0.85rem;
-		background: var(--paper-raised);
-		border: 1px solid var(--rule);
-		border-radius: var(--radius);
-		box-shadow: 0 2px 16px rgba(15, 23, 42, 0.09);
+	/* Sits in the flow of the button it hangs from, so `.panel`'s absolute positioning and
+	   its percentage max-height are undone here — everything else about the shell is
+	   shared with the left column. Two classes deep on purpose: `.panel` is declared
+	   after this block and would otherwise win. */
+	.viewctl .viewpanel {
+		position: static;
+		width: 16rem;
+		max-height: calc(100vh - 8rem);
 	}
 
 	.level {
@@ -1341,38 +1403,39 @@ uv run birdy-pipeline serve</pre>
 	}
 
 	/* The reading stays a card floating over the specimen rather than a third column:
-	   it reports on one moment, and it belongs next to the thing it is reporting on. */
+	   it reports on one moment, and it belongs next to the thing it is reporting on.
+	   Same shell as the left column, so the two read as one instrument. */
 	.readout {
-		position: absolute;
 		bottom: 1rem;
 		right: 1rem;
-		z-index: 3;
 		width: min(21rem, calc(100% - 2rem));
-		max-height: calc(100% - 2rem);
-		overflow-y: auto;
-		display: grid;
-		gap: 0.6rem;
-		align-content: start;
-		padding: 0.9rem 1rem 0.8rem;
-		background: color-mix(in srgb, var(--paper-raised) 94%, transparent);
-		border: 1px solid var(--rule);
-		border-radius: var(--radius);
-		box-shadow: 0 1px 16px rgba(15, 23, 42, 0.06);
+		/* Short enough that the display panel, which drops from the button above it, has
+		   somewhere to be. The body scrolls, so this costs nothing but the illusion that
+		   a long reading has to be read all at once. */
+		max-height: min(26rem, calc(100% - 2rem));
 	}
 
-	.readout h2 {
-		padding: 0 0 0.5rem;
+	/* The scrolling half of a card, under its header. */
+	.cardbody {
+		min-height: 0;
+		overflow-y: auto;
+		display: grid;
+		align-content: start;
 	}
 
 	.readout .best,
 	.readout .candidates {
 		display: grid;
-		gap: 0.4rem;
+		gap: 0.5rem;
+		padding: 0.9rem 1rem;
 	}
 
-	.readout .caveat {
-		margin: 0;
-		padding: 0.6rem 0 0;
+	.readout .best + .candidates {
+		border-top: 1px solid var(--rule);
+	}
+
+	.readout > .cardbody > .note {
+		padding: 0.9rem 1rem;
 	}
 
 	.tabbody {
@@ -1448,6 +1511,10 @@ uv run birdy-pipeline serve</pre>
 	}
 
 	h2 {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		gap: 0.5rem;
 		font-size: 0.58rem;
 		text-transform: uppercase;
 		letter-spacing: 0.11em;
@@ -1715,8 +1782,9 @@ uv run birdy-pipeline serve</pre>
 	.history {
 		position: absolute;
 		bottom: 1rem;
-		left: 1rem;
-		/* stops where the reading panel starts, and clips at the left */
+		/* the lane between the two columns: it clips at the left rather than sliding
+		   under the controls, and stops before the reading card rather than behind it */
+		left: calc(20rem + 2rem);
 		right: calc(21rem + 2rem);
 		z-index: 2;
 		display: flex;

@@ -63,9 +63,18 @@ export const CLAIM_LEGEND = [
 	}
 ];
 
-/** 0 = response only, 1 = colour by how much meaning is claimed. */
+/**
+ * 0 = one hue per bird, 1 = one hue per claim of meaning, 2 = no hue at all.
+ *
+ * Monochrome needs no branch in the shader: the CPU fills every palette slot with the
+ * same pair, so whichever slot a point selects it gets the same ink, and response still
+ * reads through value, size and the ring. Which is the honest version of what colour
+ * was doing here anyway — twelve hues cannot be told apart, and the arrangement now
+ * carries the grouping colour used to gesture at.
+ */
 export const COLOUR_RESPONSE = 0;
 export const COLOUR_MEANING = 1;
+export const COLOUR_MONO = 2;
 
 export function vertexShader(clusterCount: number): string {
 	return /* glsl */ `

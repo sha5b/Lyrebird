@@ -34,7 +34,7 @@ import sys
 from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any, Callable, Iterable, Sequence
 
 import numpy as np
 from sklearn.cluster import KMeans
@@ -73,7 +73,7 @@ def log(msg: str) -> None:
 
 @dataclass
 class SyllableObservation:
-    """One segmented syllable, as syrinx parameters. No audio, ~30 floats."""
+    """One segmented syllable, as syrinx parameters. No audio, ~60 floats."""
 
     species_id: str
     recording_id: str
@@ -92,13 +92,20 @@ class SyllableObservation:
     timbre: str
     flatness: float
     gap_before: float
+    # The 28-d descriptor of this syllable's own audio (§8.2), taken while the recording
+    # is still in memory. It is what `verify_type` compares a resynthesis against: the
+    # recording-level descriptor averages five-second windows over everything that
+    # recording contains, so it is the same vector for every type of a species and
+    # cannot say which of them the model caught. Optional, because stores harvested
+    # before this field existed do not have it.
+    descriptor: list[float] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "SyllableObservation":
-        return cls(**d)
+        return cls(**{k: v for k, v in d.items() if k in cls.__dataclass_fields__})
 
 
 def _frames(x: np.ndarray, frame: int, hop: int) -> np.ndarray:
@@ -288,6 +295,7 @@ def extract_syllables(
         mean_flatness = float(np.mean(flatness)) if flatness.size else 0.0
 
         start = s0 / sample_rate
+        own = features.descriptor(peak_normalise(seg), sample_rate)
         out.append(
             SyllableObservation(
                 species_id=species_id,
@@ -307,6 +315,11 @@ def extract_syllables(
                 timbre=_timbre(mean_flatness, harmonic),
                 flatness=round(mean_flatness, 5),
                 gap_before=round(max(0.0, start - previous_end), 4),
+                descriptor=(
+                    [round(float(v), 5) for v in own]
+                    if own is not None and np.all(np.isfinite(own))
+                    else None
+                ),
             )
         )
         previous_end = (s1 / sample_rate)
@@ -363,6 +376,10 @@ class LearnedType:
     syllable: dict[str, Any] = field(default_factory=dict)
     resynthesis_cosine: float = 0.0
     f0_error_percent: float = 0.0
+    #: Best cosine the resynthesis scored against a *different* type of the same bird.
+    #: A syllable is only reproduced in any useful sense if this is the lower number.
+    rival_cosine: float = 0.0
+    nearest_own: bool = False
 
 
 def fit_types(
@@ -428,31 +445,62 @@ def fit_types(
 # --- can the model actually sing it? -----------------------------------------------
 
 
-def verify_type(
-    t: LearnedType,
-    reference: np.ndarray | None,
-    calibration: Calibration | None,
-    sample_rate: int = features.SAMPLE_RATE,
-) -> None:
-    """Render the fitted syllable and record how close it lands to the real thing.
+def population_frame(
+    observations: Sequence[SyllableObservation],
+) -> tuple[np.ndarray, np.ndarray] | None:
+    """Mean and sd of the harvested syllables' own descriptors — the frame to judge in.
 
-    Two independent checks, because they fail differently: the descriptor cosine says
-    whether it lands in the right region of the feature space the galaxy is built from,
-    and the F0 error says whether the oscillator reached the pitch it was asked for. A
-    syllable can pass one and fail the other — a buzz whose pitch is right but whose
-    texture is not, or a clean whistle a semitone flat.
+    Not the corpus statistics from `feature-space.json`, and this is the whole point.
+    Those are measured over a *synthetic* build, so every field recording sits far from
+    that mean in the same direction — the direction of "was recorded outdoors". Cosines
+    taken there run at 0.99 between two syllables that share nothing but a hedgerow: on
+    this store, a real syllable scored 0.995 against its own type and 0.991 against a
+    different one, which is a measurement of nothing.
+
+    Centred on the harvested population instead, the same comparison separates: 0.78
+    within a type against 0.49 across types. That is a frame in which a claim about a
+    resynthesis can be either true or false.
     """
-    audio = peak_normalise(render_syllable(t.syllable, sample_rate=sample_rate, calibration=calibration))
-    descriptor = features.descriptor(audio, sample_rate)
-    if descriptor is not None and reference is not None:
-        a = descriptor / max(float(np.linalg.norm(descriptor)), 1e-12)
-        b = reference / max(float(np.linalg.norm(reference)), 1e-12)
-        t.resynthesis_cosine = round(float(a @ b), 4)
+    rows = [np.asarray(o.descriptor, dtype=float) for o in observations if o.descriptor]
+    if len(rows) < 2:
+        return None
+    d = np.stack(rows)
+    return d.mean(axis=0), np.maximum(d.std(axis=0), 1.0e-6)
 
+
+def _unit(v: np.ndarray) -> np.ndarray:
+    return v / max(float(np.linalg.norm(v)), 1.0e-12)
+
+
+def render_and_measure(
+    t: LearnedType,
+    calibration: Calibration | None,
+    frame: tuple[np.ndarray, np.ndarray] | None,
+    sample_rate: int = features.SAMPLE_RATE,
+) -> np.ndarray | None:
+    """Render the fitted syllable, record its F0 error, and return where it landed.
+
+    The returned vector is the resynthesis in the frame above, ready to be compared
+    with the real types. The F0 error is independent of all of that: it asks only
+    whether the oscillator reached the pitch the contour asked for, and the two fail
+    separately — a buzz whose pitch is right but whose texture is not, or a clean
+    whistle a semitone flat.
+    """
+    audio = peak_normalise(
+        render_syllable(t.syllable, sample_rate=sample_rate, calibration=calibration)
+    )
     requested = syrinx.f0_reference(t.syllable["contour"])
     measured, _ = syrinx.measure_f0_zero_crossings(audio, steady_from=0.2)
     if requested > 0:
         t.f0_error_percent = round(100.0 * (measured - requested) / requested, 2)
+
+    descriptor = features.descriptor(audio, sample_rate)
+    if descriptor is None:
+        return None
+    if frame is None:
+        return _unit(descriptor)
+    mean, std = frame
+    return _unit(features.standardise(descriptor, mean, std))
 
 
 # --- syntax ------------------------------------------------------------------------
@@ -513,6 +561,7 @@ def learn_species(
     types: int = DEFAULT_TYPES,
     seed: int = 0,
     verbose: bool = True,
+    frame: tuple[np.ndarray, np.ndarray] | None = None,
 ) -> dict[str, Any] | None:
     """Fitted syllables + a measured grammar for one species, or None if too little data."""
     if len(observations) < MIN_OBSERVATIONS:
@@ -527,22 +576,42 @@ def learn_species(
     index = {id(o): i for i, o in enumerate(observations)}
     type_of = {index[id(o)]: t.id for t in fitted for o in t.members}
 
+    # Where each type's *real* audio sits, in the frame the whole harvest defines. The
+    # type's own recordings when the store kept them, and the recording averages
+    # otherwise — a much weaker reference, identical for every type of a species.
+    real: list[np.ndarray | None] = []
     for t in fitted:
-        reference = None
-        if descriptors:
+        rows = [np.asarray(o.descriptor, dtype=float) for o in t.members if o.descriptor]
+        if not rows and descriptors:
             rows = [descriptors[o.recording_id] for o in t.members if o.recording_id in descriptors]
-            if rows:
-                reference = np.mean(np.stack(rows), axis=0)
-        verify_type(t, reference, calibration)
+        if not rows:
+            real.append(None)
+            continue
+        mean_row = np.mean(np.stack(rows), axis=0)
+        if frame is not None:
+            mean_row = features.standardise(mean_row, frame[0], frame[1])
+        real.append(_unit(mean_row))
+
+    for i, t in enumerate(fitted):
+        z = render_and_measure(t, calibration, frame)
+        if z is None or real[i] is None:
+            continue
+        sims = [float(z @ r) if r is not None else -1.0 for r in real]
+        t.resynthesis_cosine = round(sims[i], 4)
+        rivals = [s for j, s in enumerate(sims) if j != i]
+        t.rival_cosine = round(max(rivals), 4) if rivals else 0.0
+        t.nearest_own = all(sims[i] >= s for s in rivals)
 
     grammar = learn_grammar(observations, type_of)
     cosines = [t.resynthesis_cosine for t in fitted if t.resynthesis_cosine]
     errors = [abs(t.f0_error_percent) for t in fitted]
+    placed = sum(1 for t in fitted if t.nearest_own)
     if verbose:
         log(
             f"  {species_id:26} {len(observations):5d} obs -> {len(fitted)} types, "
             f"resynthesis cosine "
             + (f"{np.median(cosines):.3f}" if cosines else "n/a")
+            + f", nearest own {placed}/{len(fitted)}"
             + f", |F0 error| median {np.median(errors):.1f} %"
         )
 
@@ -554,6 +623,8 @@ def learn_species(
                 "learned": {
                     "members": len(t.members),
                     "resynthesisCosine": t.resynthesis_cosine,
+                    "rivalCosine": t.rival_cosine,
+                    "nearestOwn": t.nearest_own,
                     "f0ErrorPercent": t.f0_error_percent,
                 },
             }
@@ -573,6 +644,7 @@ def build_learned_inventory(
     types: int = DEFAULT_TYPES,
     seed: int = 0,
     verbose: bool = True,
+    should_stop: Callable[[], bool] | None = None,
 ) -> dict[str, Any]:
     """A full inventory document in the schema of `data/inventory.json`.
 
@@ -584,12 +656,24 @@ def build_learned_inventory(
     for o in observations:
         grouped[o.species_id].append(o)
 
+    # One frame for the whole harvest, not one per species: a resynthesis has to be
+    # judged against the same axes every other syllable was measured on.
+    frame = population_frame([o for group in grouped.values() for o in group])
+    if verbose and frame is None:
+        log("no per-syllable descriptors in the store — the resynthesis cosine will be "
+            "taken raw, where it barely separates one call from another")
+
     known = {sp["id"]: sp for sp in inventory.get("species", [])}
     species_out: list[dict[str, Any]] = []
     for species_id in sorted(grouped, key=lambda s: -len(grouped[s])):
+        # One species is the unit of work here, as one recording is in `harvest`: the
+        # species already fitted are kept and written out.
+        if should_stop and should_stop():
+            log("stopping: asked to")
+            break
         learned = learn_species(
             species_id, grouped[species_id], descriptors, calibration,
-            types=types, seed=seed, verbose=verbose,
+            types=types, seed=seed, verbose=verbose, frame=frame,
         )
         if learned is None:
             continue

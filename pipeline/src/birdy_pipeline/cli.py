@@ -322,8 +322,10 @@ def cmd_learn(args: argparse.Namespace) -> int:
     calibration = ensure_calibration(Path(args.calibration_dir))
 
     t0 = time.time()
+    with_own = sum(1 for o in store.syllables if o.descriptor)
     log(f"fitting {len(store.syllables)} syllable observations from "
-        f"{len({o.recording_id for o in store.syllables})} recordings")
+        f"{len({o.recording_id for o in store.syllables})} recordings "
+        f"({with_own} with their own descriptor)")
     document = learn.build_learned_inventory(
         store.syllables,
         inventory,
@@ -358,12 +360,20 @@ def cmd_learn(args: argparse.Namespace) -> int:
     log(f"wrote {out}: {len(document['species'])} species, {total} learned syllable types "
         f"({time.time() - t0:.1f}s)"
         + ("" if args.learned_only else ", alongside the documented inventory"))
+    placed = [
+        s["learned"]["nearestOwn"]
+        for sp in document["species"]
+        for s in sp["syllables"]
+        if s.get("learned")
+    ]
     if cosines:
         log(f"resynthesis cosine to the source audio: median {np.median(cosines):.3f}, "
             f"worst {min(cosines):.3f} over {len(cosines)} types")
-        log("  (1.0 would mean the syrinx model reproduces the recording's 28-d "
-            "descriptor exactly; this is the number that says whether a learned "
-            "syllable is really singable)")
+        log(f"  nearest its own type rather than another: {sum(placed)}/{len(placed)}")
+        log("  (measured against the harvested syllables themselves, in their own frame:"
+            " two real syllables of one type score about 0.78 there, and two of different"
+            " types about 0.49. A resynthesis below that second number has not"
+            " reproduced the call, whatever its pitch says.)")
     for sp in document["species"]:
         grammar = sp.get("grammar", {})
         log(f"  {sp['id']:26} {len(sp['syllables'])} types, "

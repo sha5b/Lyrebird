@@ -34,7 +34,15 @@ UMAP_N_NEIGHBORS = 15
 UMAP_MIN_DIST = 0.25
 UMAP_METRIC = "cosine"
 TEMPERATURE = 0.12
-K_CAP = 64
+# One cluster per syllable type is the point — a cluster the app can name and cite. The
+# cap only exists to stop a pathological corpus from asking for thousands, and it was 64
+# when the inventory had 44 types. A learned inventory has an order more (12 fitted types
+# per species on top of the authored ones), and capping there is not a cheaper galaxy but
+# a wrong one: types get merged, and the documented calls lose the clusters that carry
+# their function and citation. On the merged inventory the cap cost 13 % purity against
+# 176 requested types. Nothing downstream is quadratic in it — the shader holds one float
+# per cluster and the labels cull by collision.
+K_CAP = 256
 
 PROJECTIONS = ("umap", "pca", "cmds")
 DEFAULT_PROJECTION = "cmds"  # most distance-faithful; see README "Galaxy shape"

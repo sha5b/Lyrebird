@@ -8,13 +8,14 @@
 		CLAIM_OF_FUNCTION,
 		CLAIM_STRUCTURAL,
 		COLOUR_MEANING,
+		COLOUR_MONO,
 		COLOUR_RESPONSE,
 		PALETTE_SLOTS,
 		fragmentShader,
 		vertexShader,
 		type VisualSignal
 	} from './shaders';
-	import { CLAIM_HOT, CLAIM_REST, speciesPalette } from './palette';
+	import { CLAIM_HOT, CLAIM_REST, MONO_HOT, MONO_REST, speciesPalette } from './palette';
 	import { buildLayouts, type LayoutId, type LayoutView } from './layouts';
 
 	interface Props {
@@ -139,9 +140,18 @@
 	// Both palettes occupy the same uniforms; switching mode rewrites them rather than
 	// shipping four arrays and branching in the fragment shader for every pixel.
 	$effect(() => {
-		const meaning = colourMode === COLOUR_MEANING;
-		const rest = meaning ? CLAIM_REST : species.rest;
-		const hot = meaning ? CLAIM_HOT : species.hot;
+		const rest =
+			colourMode === COLOUR_MONO
+				? [MONO_REST]
+				: colourMode === COLOUR_MEANING
+					? CLAIM_REST
+					: species.rest;
+		const hot =
+			colourMode === COLOUR_MONO
+				? [MONO_HOT]
+				: colourMode === COLOUR_MEANING
+					? CLAIM_HOT
+					: species.hot;
 		const uRest = material.uniforms.uRest.value as THREE.Color[];
 		const uHot = material.uniforms.uHot.value as THREE.Color[];
 		for (let i = 0; i < PALETTE_SLOTS; i++) {

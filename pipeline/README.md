@@ -25,8 +25,9 @@ uv run birdy-pipeline demo             # a few example wavs into pipeline/out/de
 uv run birdy-pipeline verify           # re-check an existing asset directory
 ```
 
-A full build takes about 27 s on a laptop: 4287 clips, 882 s of synthesised audio,
-5974 calibration cells. The ODE kernels are `numba`-compiled (numba arrives with
+A synthetic-only build takes about 27 s on a laptop: 4287 clips, 882 s of synthesised
+audio, 5974 calibration cells. The shipped build is larger — the learned inventory and
+the harvested store together — at 31,328 points and a few minutes. The ODE kernels are `numba`-compiled (numba arrives with
 `umap-learn`; there is a pure-Python fallback, which is ~100x slower).
 
 ### build options
@@ -39,7 +40,7 @@ A full build takes about 27 s on a laptop: 4287 clips, 882 s of synthesised audi
 | `--variants N` | 96 | jittered renders per syllable |
 | `--song-variants N` | 3 | renders per whole song |
 | `--seed N` | 0 | seeds the jitter, UMAP and KMeans; a build is byte-reproducible |
-| `--k N` | number of syllable types (44), cap 64 | KMeans clusters |
+| `--k N` | number of syllable types, cap 256 | KMeans clusters |
 | `--out DIR` | `app/static/birdy` | where the assets go |
 | `--wav-out DIR` | - | also write every corpus clip as a wav |
 | `--projection umap\|pca\|cmds` | `cmds` | 3D layout; see "Galaxy shape" below |
@@ -77,11 +78,13 @@ a continuum and a live sound sits somewhere particular inside it.
 So the build also writes the top-8 principal components of the standardised descriptors,
 one unit row per point, plus the same projection of each centroid as `featuresLo`. The
 client reconstructs the live query in that space from the centroids it matched and takes
-a cosine against every point — 4287 × 8 multiply-adds a frame, less work than the FFT
+a cosine against every point — 31,328 × 8 multiply-adds a frame, less work than the FFT
 that produced the descriptor. A cluster then lights from the inside out.
 
-On the shipped corpus the 8 components keep **82.3 %** of the 28-d variance, and each
-point's mean cosine to its own centroid is **0.984** against **0.005** to all centroids.
+On the shipped corpus the 8 components keep **77.2 %** of the 28-d variance, and each
+point's mean cosine to its own centroid is **0.926** against **-0.026** to all centroids.
+(On a synthetic-only build, where every point is a render of one of 44 types rather than
+a second of a windy field, the same figures are 82.3 % and 0.984 against 0.005.)
 Both numbers are printed by every build and stored in `manifest.json`; `verify` fails
 the build if the separation collapses, which is what would happen if the PCA signs came
 back mirrored between the points and the centroids.
@@ -97,43 +100,47 @@ information. `--projection` picks it, and every build measures the answer instea
 asserting it: 200k seeded random point pairs, 28-d cosine distance against 3D Euclidean
 distance, Pearson and Spearman.
 
-Measured on the shipped corpus (4287 points, seed 0):
+Measured on the shipped corpus (31,328 points — 11,328 rendered, 20,000 harvested —
+176 clusters, seed 0):
 
 | projection | Pearson | Spearman | purity | 3D kNN agreement | notes |
 |---|---|---|---|---|---|
-| `umap` (`min_dist` 0.25) | 0.685 | 0.646 | 90.7 % | 98.2 % | neighbourhoods only |
-| `pca` | 0.798 | 0.782 | 90.7 % | 94.1 % | variance 32/12/10 % |
-| **`cmds` (default)** | **0.878** | **0.870** | 90.7 % | 91.4 % | variance 30/16/13 %, negative eigenvalue mass 28 % |
+| `umap` (`min_dist` 0.25) | 0.376 | 0.375 | 29.7 % | 68.2 % | neighbourhoods only |
+| `pca` | 0.641 | 0.651 | 29.7 % | 29.7 % | variance 30/14/9 % |
+| **`cmds` (default)** | **0.841** | **0.839** | 29.7 % | 27.5 % | variance 31/12/7 %, negative eigenvalue mass 36 % |
+
+The purity is 29.7 % rather than the 90.7 % a synthetic-only build reports, and that is
+the corpus, not the clustering: two thirds of these points are seconds of field audio
+whose call type nobody has labelled, so they land wherever they sound like they belong.
 
 `cmds` is classical (Torgerson/PCoA) multidimensional scaling on the cosine distance
-matrix - the same metric everything else uses. At 4287 points the full 4287x4287
-double-centred matrix is decomposed exactly (`numpy.linalg.eigh`, about 7 s); above
-`CMDS_FULL_MAX = 6000` points it switches to landmark MDS with 800 landmarks and says so
-in the log and in `manifest.json`.
+matrix - the same metric everything else uses. Up to `CMDS_FULL_MAX = 6000` points the
+full double-centred matrix is decomposed exactly (`numpy.linalg.eigh`, about 7 s at 4287
+points); above it, and so on the shipped build, it switches to landmark MDS with 800
+landmarks and says so in the log and in `manifest.json`.
 
-**The trade-off, stated plainly.** UMAP scores best on kNN agreement (98.2 %) and worst
-on distance faithfulness (0.685) because it exaggerates separation: it guarantees only
+**The trade-off, stated plainly.** UMAP scores best on kNN agreement (68.2 %) and worst
+on distance faithfulness (0.376) because it exaggerates separation: it guarantees only
 that neighbours stay neighbours, so gaps between distant clusters are not interpretable.
-cMDS gives the most honest distances (0.878) and a visibly looser picture - the knots
-overlap more, kNN agreement drops to 91.4 %. We chose honest distances. If the render
+cMDS gives the most honest distances (0.841) and a visibly looser picture - the knots
+overlap more, kNN agreement drops to 27.5 %. We chose honest distances. If the render
 ever needs the tidier look, `--projection umap` still produces a valid asset set, and
 `manifest.json` records which one was used along with its correlations, so the client can
 show or hide distance-based UI accordingly.
 
-Neither linear projection is degenerate: cMDS spreads its variance 30/16/13 % over the
-three axes (59 % of the positive eigenvalue mass in 3 of 4287 dimensions) with per-axis
-position std 0.576/0.418/0.374, so the cloud is a genuine volume rather than a line.
-The 28 % negative eigenvalue mass is expected and worth knowing: cosine distance is not
+Neither linear projection is degenerate: cMDS spreads its variance 31/12/7 % over the
+three axes, so the cloud is a genuine volume rather than a line.
+The 36 % negative eigenvalue mass is expected and worth knowing: cosine distance is not
 a Euclidean metric, so a perfect embedding does not exist at any dimensionality, and
 that share of the structure cannot be drawn.
 
 Cluster purity - the share of points carrying their cluster's majority
-`(speciesId, syllableId)` - is **identical (90.7 %) for all three projections**, as it
+`(speciesId, syllableId)` - is **identical for all three projections**, as it
 must be, since the clustering never sees a position. It is the control for this whole
 exercise: if it ever differs between projections, something is wired wrong. It is
 printed by every build and stored as `clusterPurity`.
 
-Within UMAP, `min_dist` is also purely visual (purity is 90.7 % at 0.25, 0.5 and 0.8
+Within UMAP, `min_dist` is also purely visual (purity is unchanged at 0.25, 0.5 and 0.8
 alike); raising it loosens the knots, filling 0.8 % -> 1.4 % -> 2.4 % of a 32^3 voxel
 grid.
 
@@ -264,14 +271,28 @@ whether the model can actually sing what it just described. Two numbers go next 
 learned syllable, because they fail differently:
 
 - `resynthesisCosine` — the 28-d descriptor of the resynthesis against the mean
-  descriptor of the recordings the type was fitted to. Does it land in the right part
-  of the feature space?
+  descriptor of **the syllables of that type**, in a frame centred on the harvested
+  population. Does it land in the right part of the feature space?
+- `nearestOwn` / `rivalCosine` — whether it lands nearer its own type than any other
+  type of the same bird, and what the best rival scored. This is the number that
+  matters: a cosine has no scale of its own, and "0.4" means nothing until you know
+  that two real syllables of one type score 0.78 and two of different types 0.49.
 - `f0ErrorPercent` — measured F0 of the resynthesis against the contour it was asked
   for. Did the oscillator reach the pitch?
 
 A syllable can pass one and fail the other: a buzz whose pitch is right but whose
 texture is not, or a clean whistle a semitone flat. A type the model cannot reproduce
-says so in the file instead of shipping as though it could.
+says so in the file instead of shipping as though it could — and on the current harvest
+most of them say exactly that (40 of 132 land nearest their own type). See the root
+README for what that means.
+
+**The frame is the measurement.** The reference used to be the recording-level
+descriptor, standardised against a synthetic build's corpus statistics. Every field
+recording is far from a synthetic mean in the same direction — the direction of "was
+recorded outdoors" — so in that space a real syllable scored 0.995 against its own type
+and 0.991 against a different one, and the check could not fail. Centred on the
+harvested syllables instead, the same comparison gives 0.78 within a type and 0.49
+across, which is a frame in which a claim can be false.
 
 `learn` writes its result into `data/learned-inventory.json` **merged onto the
 hand-authored inventory**: the documented calls stay exactly as they are, with their

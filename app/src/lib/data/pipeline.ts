@@ -51,9 +51,11 @@ export interface BuiltStatus {
 export interface JobStatus {
 	name: string;
 	detail: string;
-	state: 'running' | 'done' | 'failed';
+	/** `stopping` is after a stop request and before the job reaches its next checkpoint. */
+	state: 'running' | 'stopping' | 'done' | 'stopped' | 'failed';
 	seconds: number;
 	error: string | null;
+	cancelled: boolean;
 	log: string[];
 }
 
@@ -122,6 +124,15 @@ export class PipelineClient {
 
 	build(options: { useLearned?: boolean; includeHarvest?: boolean; source?: string }) {
 		return this.call<{ job: JobStatus }>('/api/build', options);
+	}
+
+	/**
+	 * Asks the running job to stop. It ends at its next checkpoint — after the recording
+	 * it is currently analysing, or the species it is currently fitting — so everything
+	 * already done is kept rather than thrown away.
+	 */
+	stop() {
+		return this.call<{ job: JobStatus }>('/api/stop', {});
 	}
 
 	/**

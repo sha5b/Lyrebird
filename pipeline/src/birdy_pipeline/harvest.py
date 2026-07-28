@@ -40,7 +40,7 @@ import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable, Iterator, Sequence
+from typing import Any, Callable, Iterable, Iterator, Sequence
 
 import numpy as np
 import soundfile as sf
@@ -579,14 +579,27 @@ def harvest_xeno_canto(
     max_seconds: float | None = DEFAULT_MAX_SECONDS,
     max_pages: int = 3,
     dry_run: bool = False,
+    should_stop: Callable[[], bool] | None = None,
 ) -> HarvestReport:
+    """`should_stop` is polled between recordings, so a run can be asked to end.
+
+    Between, not during: one recording is one indivisible unit of work — it is fetched,
+    analysed and deleted — and everything already ingested is kept, because a stopped
+    harvest is a shorter harvest rather than a wasted one.
+    """
     report = HarvestReport()
     for species_id, query in targets:
+        if should_stop and should_stop():
+            log("\nstopping: asked to")
+            return report
         log(f"\n{species_id}: {query}")
         taken = 0
         for rec in client.search(query, max_pages=max_pages):
             if taken >= per_species:
                 break
+            if should_stop and should_stop():
+                log("  stopping: asked to")
+                return report
             rid = f"XC{rec.get('id')}"
             if store.has(rid):
                 report.skipped += 1
@@ -632,6 +645,7 @@ def harvest_directory(
     audio_dir: Path,
     max_seconds: float | None = None,
     species_id: str | None = None,
+    should_stop: Callable[[], bool] | None = None,
 ) -> HarvestReport:
     """The same streaming path over files already on disk — no network, no key.
 
@@ -647,6 +661,9 @@ def harvest_directory(
     if not paths:
         raise FileNotFoundError(f"no audio under {audio_dir}")
     for path in paths:
+        if should_stop and should_stop():
+            log("stopping: asked to")
+            return report
         rid = path.stem
         if store.has(rid):
             report.skipped += 1

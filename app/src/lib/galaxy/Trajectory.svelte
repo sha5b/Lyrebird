@@ -4,7 +4,7 @@
 	import * as THREE from 'three';
 	import { buildSpeciesIndex } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
-	import { speciesPalette } from './palette';
+	import { MONO_HOT, speciesPalette } from './palette';
 	import type { LayoutView } from './layouts';
 	import {
 		MAX_PATHS,
@@ -20,9 +20,11 @@
 		signal: VisualSignal;
 		/** Where the centroids are right now; moves while the cloud rearranges. */
 		view: LayoutView;
+		/** Drop the species hues when the cloud is monochrome, or the threads contradict it. */
+		mono?: boolean;
 	}
 
-	let { assets, signal, view }: Props = $props();
+	let { assets, signal, view, mono = false }: Props = $props();
 
 	/** Samples per segment: enough that the travelling highlight moves smoothly. */
 	const SUBDIVISIONS = 14;
@@ -131,7 +133,7 @@
 			alpha[i] = path.alpha;
 			const slot = speciesIndex.get(path.speciesId);
 			pathColour[i].set(
-				slot === undefined ? '#8595ae' : palette.hot[slot % palette.hot.length]
+				mono || slot === undefined ? MONO_HOT : palette.hot[slot % palette.hot.length]
 			);
 		});
 	});

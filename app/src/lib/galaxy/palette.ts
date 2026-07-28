@@ -167,6 +167,15 @@ export function speciesPalette(): { rest: string[]; hot: string[] } {
 }
 
 /**
+ * The monochrome pair. Neutral rather than a desaturated hue, so nothing in the picture
+ * suggests a category that is no longer being shown, and the two ends are far enough
+ * apart in lightness that response is as visible as it is in colour: ΔL* is about 55,
+ * where the pale-to-saturated walk of a species hue is about 25.
+ */
+export const MONO_REST = '#cdd3da';
+export const MONO_HOT = '#1e2836';
+
+/**
  * The three-step meaning palette, from the validated categorical slots 1–3. Held to the
  * full all-pairs gate: worst pair ΔE 9.2 deutan, 24.0 normal, on this surface.
  */

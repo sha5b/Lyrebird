@@ -72,8 +72,13 @@ class Job:
 
     def state(self) -> str:
         if self.finished is None:
-            return "running"
-        return "failed" if self.error else "done"
+            return "stopping" if self.cancelled else "running"
+        return "failed" if self.error else ("stopped" if self.cancelled else "done")
+
+    def stop(self) -> None:
+        """Ask the job to end. It stops at its next checkpoint, not immediately."""
+        self.cancelled = True
+        self.log.append("stop requested — finishing the current step")
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -82,6 +87,7 @@ class Job:
             "state": self.state(),
             "seconds": round((self.finished or time.time()) - self.started, 1),
             "error": self.error,
+            "cancelled": self.cancelled,
             "log": list(self.log),
         }
 
@@ -183,7 +189,9 @@ class Pipeline:
 
     def start(self, name: str, detail: str, fn: Callable[[Job], None]) -> dict[str, Any]:
         with self._lock:
-            if self.job and self.job.state() == "running":
+            # `finished`, not the state: a job that has been asked to stop is still
+            # holding the store until it reaches its next checkpoint.
+            if self.job and self.job.finished is None:
                 return {"ok": False, "error": f"{self.job.name} is still running"}
             job = Job(name, detail)
             self.job = job
@@ -202,6 +210,13 @@ class Pipeline:
         threading.Thread(target=run, daemon=True, name=f"birdy-{name}").start()
         return {"ok": True, "job": job.to_dict()}
 
+    def stop(self) -> dict[str, Any]:
+        job = self.job
+        if not job or job.finished is not None:
+            return {"ok": False, "error": "nothing is running"}
+        job.stop()
+        return {"ok": True, "job": job.to_dict()}
+
     def harvest(self, body: dict[str, Any]) -> dict[str, Any]:
         species = body.get("species") or None
         per_species = int(body.get("perSpecies", 10))
@@ -215,7 +230,8 @@ class Pipeline:
             store = harvest.HarvestStore(self.store_path, cap=cap)
             if from_dir:
                 report = harvest.harvest_directory(
-                    store, Path(from_dir), max_seconds=max_seconds, species_id=species
+                    store, Path(from_dir), max_seconds=max_seconds, species_id=species,
+                    should_stop=lambda: job.cancelled,
                 )
             else:
                 key = os.environ.get("XC_API_KEY", "")
@@ -228,6 +244,7 @@ class Pipeline:
                 report = harvest.harvest_xeno_canto(
                     store, client, targets, per_species=per_species,
                     max_seconds=max_seconds, dry_run=dry_run,
+                    should_stop=lambda: job.cancelled,
                 )
             if not dry_run:
                 store.save()
@@ -256,6 +273,7 @@ class Pipeline:
                     for rid, row in store.recording_descriptors.items()
                 },
                 types=types,
+                should_stop=lambda: job.cancelled,
             )
             if not document["species"]:
                 raise RuntimeError("no species had enough observations to fit")
@@ -381,6 +399,10 @@ def make_handler(pipeline: Pipeline) -> type[BaseHTTPRequestHandler]:
                 body = json.loads(self.rfile.read(length) or b"{}")
             except json.JSONDecodeError:
                 self._send({"ok": False, "error": "body is not JSON"}, 400)
+                return
+            if self.path.startswith("/api/stop"):
+                result = pipeline.stop()
+                self._send(result, 200 if result.get("ok") else 409)
                 return
             routes = {
                 "/api/harvest": pipeline.harvest,
