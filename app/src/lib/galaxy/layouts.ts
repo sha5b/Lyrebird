@@ -142,24 +142,25 @@ function grouped(
 }
 
 /**
- * How much each knot is opened out around its own centre, for legibility.
+ * How much each knot is scaled about its own centre, for legibility.
  *
- * A cluster's mean radius in the shipped projection is about 0.117 of the box, and at the
- * framing that holds the whole corpus that is a few dozen pixels — a blob whose internal
- * arrangement is invisible, so you can see *that* forty points responded but not *how*
- * they are distributed. Pushing each point away from its own centroid gives the knot room
- * to show its shape.
+ * Below 1 it draws the knots tighter than the projection puts them. A cluster of 64
+ * renders of one syllable comes out of UMAP as an elongated streak, and at the framing
+ * that holds the whole corpus those streaks are the dominant shape on screen — long
+ * enough to run into each other and to read as structure between clusters rather than
+ * within one. Halving them turns each into a compact node, which is what the rest of the
+ * interface treats a cluster as.
  *
  * This is a display transform and it is worth being clear about what it does and does not
- * change. It preserves each cluster's centre exactly — an expansion about the mean leaves
- * the mean where it was, so labels, threads and grid strikes all still land on their knots
- * — and it preserves the *relative* arrangement inside a knot, which is the shape it is
- * there to reveal. What it does distort is the distance between a point and its
- * neighbours in another cluster. Nothing reads those: matching, clustering and the
- * per-point response all happen in the 28-d space, and the projection's distance
- * faithfulness is measured and reported before this is applied.
+ * change. It preserves each cluster's centre exactly — a scaling about the mean leaves the
+ * mean where it was, so labels, threads and grid strikes all still land on their knots —
+ * and it preserves the *relative* arrangement inside a knot, so a knot's shape is still
+ * its shape, just smaller. What it distorts is the distance between a point and points in
+ * another cluster. Nothing reads those: matching, clustering and the per-point response
+ * all happen in the 28-d space, and the projection's distance faithfulness is measured
+ * and reported on the untransformed positions.
  */
-const CLUSTER_SPACING = 1.45;
+const CLUSTER_SPACING = 0.5;
 
 function expandClusters(
 	positions: Float32Array,

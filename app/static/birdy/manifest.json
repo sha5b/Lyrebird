@@ -1,5 +1,5 @@
 {
- "builtAt": "2026-07-28T14:47:11+00:00",
+ "builtAt": "2026-07-28T15:46:42+00:00",
  "pipeline": "birdy-pipeline",
  "contract": "docs/08-implementation.md v1",
  "inventoryVersion": 1,
@@ -15,26 +15,26 @@
   "metric": "cosine"
  },
  "faithfulness": {
-  "pearson": 0.3004,
-  "spearman": 0.2959,
+  "pearson": 0.277,
+  "spearman": 0.2731,
   "pairs": 199989,
   "definition": "correlation between 28-d cosine distance and 3D euclidean distance over random point pairs; 1.0 = distances fully meaningful"
  },
  "knnAgreement": {
   "k": 10,
-  "value": 0.7299,
+  "value": 0.7303,
   "definition": "share of a point's 3D k nearest neighbours sharing its type"
  },
  "projectionComparison": {
   "umap": {
    "faithfulness": {
-    "pearson": 0.3004,
-    "spearman": 0.2959,
+    "pearson": 0.277,
+    "spearman": 0.2731,
     "pairs": 199989
    },
-   "knnAgreement": 0.7299,
-   "purity": 0.3538,
-   "meanRadius": 0.5702,
+   "knnAgreement": 0.7303,
+   "purity": 0.3426,
+   "meanRadius": 0.5953,
    "params": {
     "nNeighbors": 15,
     "minDist": 0.25,
@@ -43,43 +43,43 @@
   },
   "pca": {
    "faithfulness": {
-    "pearson": 0.485,
-    "spearman": 0.4844,
+    "pearson": 0.4822,
+    "spearman": 0.4818,
     "pairs": 199989
    },
-   "knnAgreement": 0.44,
-   "purity": 0.3538,
-   "meanRadius": 0.7426,
+   "knnAgreement": 0.4327,
+   "purity": 0.3426,
+   "meanRadius": 0.7435,
    "params": {
     "varianceRatio": [
-     0.28910076728827044,
-     0.11698000356165807,
-     0.08667020877418588
+     0.2875884334010119,
+     0.11680042989311169,
+     0.08655890632116721
     ],
-    "varianceRatioTotal": 0.4927509796241144
+    "varianceRatioTotal": 0.4909477696152908
    }
   },
   "cmds": {
    "faithfulness": {
-    "pearson": 0.7523,
-    "spearman": 0.74,
+    "pearson": 0.7573,
+    "spearman": 0.7456,
     "pairs": 199989
    },
-   "knnAgreement": 0.4335,
-   "purity": 0.3538,
-   "meanRadius": 0.821,
+   "knnAgreement": 0.4291,
+   "purity": 0.3426,
+   "meanRadius": 0.8221,
    "params": {
     "eigenvalues": [
-     179.97250804359086,
-     81.30274726169759,
-     56.01186913297052
+     176.81313077762735,
+     83.07883497122809,
+     55.930784298244994
     ],
     "varianceRatio": [
-     0.25806316792620404,
-     0.11658027521834254,
-     0.08031560234978394
+     0.25296157726417123,
+     0.11885855444764754,
+     0.08001860128533182
     ],
-    "negativeEigenvalueMass": 0.3826230190089263,
+    "negativeEigenvalueMass": 0.3849420549484139,
     "landmarks": 800,
     "mode": "landmark",
     "metric": "cosine"
@@ -102,7 +102,7 @@
   "bytes": 1002496,
   "dims": 8,
   "space": "PCA of the standardised 28-d descriptors, rows unit-normalised",
-  "varianceRatioTotal": 0.7613,
+  "varianceRatioTotal": 0.7597,
   "purpose": "per-point render response only; the reported match still uses the 28-d centroid vectors"
  },
  "functionClasses": {
@@ -164,11 +164,11 @@
    ]
   },
   "counts": {
-   "unclassified": 145,
-   "structural": 15,
-   "alarm": 7,
-   "territorial": 6,
-   "contact": 2,
+   "unclassified": 147,
+   "structural": 16,
+   "alarm": 6,
+   "territorial": 5,
+   "contact": 1,
    "recruitment": 1
   }
  },
@@ -195,8 +195,8 @@
   0.027,
   1.8649
  ],
- "clusterPurity": 0.3538,
- "meanRadius": 0.5702,
+ "clusterPurity": 0.3426,
+ "meanRadius": 0.5953,
  "files": [
   "manifest.json",
   "inventory.json",
@@ -214,11 +214,11 @@
  "harvest": {
   "store": "out/harvest",
   "points": 20000,
-  "recordings": 434,
-  "descriptorsSeen": 25538,
+  "recordings": 453,
+  "descriptorsSeen": 26931,
   "sampleDrift": {
-   "meanDrift": 0.036,
-   "stdRatio": 1.0054
+   "meanDrift": 0.0289,
+   "stdRatio": 1.0075
   }
  },
  "betaClamp": [

@@ -189,6 +189,25 @@
 	const layouts = untrack(() =>
 		buildLayouts(assets, buildSpeciesIndex(assets), claimOfCluster)
 	);
+
+	/**
+	 * Seed the buffers from the layout, not from the raw asset.
+	 *
+	 * They were filled with `assets.positions` at construction, and the effect below only
+	 * runs when `layout` *changes* — so on first load the cloud was drawn from the raw
+	 * projection while the labels read `layouts.acoustic.centroids`. Any transform the
+	 * acoustic layout applies was silently skipped until you switched arrangement and came
+	 * back, which is both a source of drift between the marks and their tags and the
+	 * reason a display setting appeared to do nothing.
+	 */
+	untrack(() => {
+		current.set(layouts.acoustic.positions);
+		target.set(layouts.acoustic.positions);
+		positionAttribute.needsUpdate = true;
+		targetAttribute.needsUpdate = true;
+		view.centroids.set(layouts.acoustic.centroids);
+		view.version++;
+	});
 	/** Seconds a rearrangement takes. Long enough to follow a point across it. */
 	const MORPH_SECONDS = 1.5;
 	let morph = 1;

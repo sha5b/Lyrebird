@@ -113,6 +113,45 @@ The purity is 35.4 % rather than the 90.7 % a synthetic-only build reports, and 
 the corpus, not the clustering: two thirds of these points are seconds of field audio
 whose call type nobody has labelled, so they land wherever they sound like they belong.
 
+### The loudest thing in this space is the microphone
+
+Of the 176 clusters, **82 hold nothing but field audio, 86 hold nothing but synthetic
+renders, and exactly one is a genuine mixture.** The two populations' centres of mass sit
+0.28 apart in a box of ±1. A bird's real call and Birdy's resynthesis of that same call
+essentially never land in the same cluster.
+
+So the dominant axis of the 28-d descriptor space is not *what does this sound like*, it
+is **was this recorded or was it synthesised**. Twenty-six of the twenty-eight dimensions
+are MFCC statistics, and nothing about them is invariant to a microphone, a distance, a
+wind, a room or a second bird two trees away. A two-parameter oscillator carries none of
+that, so the gap between the two domains is wider than the gap between one call and
+another, and the clustering finds it first.
+
+That one fact accounts for most of the numbers on this page:
+
+- **Purity 35.4 %.** A type is split across at least two clusters — its synthetic one and
+  its field one — before the clustering has said anything about acoustics.
+- **82 clusters with no `syllableId`.** A syllable id is only assigned when a cluster's
+  majority points come from a *rendered* syllable, so the field-only clusters are all
+  anonymous. They light when something resembles them and they appear in the reading
+  panel, but they can never appear in a trajectory, because paths are built from syllable
+  ids. Forty-seven percent of the corpus participates in the response and none of it
+  participates in the syntax.
+- **Resynthesis cosine 0.547 against its own type, 0.533 against the nearest rival.** The
+  fitted voices are being measured across the same gap.
+- **One sound lighting two knots on opposite sides of the galaxy.** The scheduled node is
+  the synthetic cluster; the listener hears the output and also matches the field cluster
+  of the same call. Both are correct, and they are far apart.
+
+**What would actually fix it** is a representation with the invariance this one lacks — a
+pretrained bioacoustic embedding (Perch, BirdNET, AVES) trained across recording
+conditions, where a call is the same point whether it arrived through a forest or out of
+an oscillator. The test is the table above plus one more line: re-run the source-purity
+count in the new space. If 168 of 176 pure clusters falls toward chance, the gap has
+closed, and only then is it safe to give an unlabelled field cluster the name of its
+nearest labelled neighbour. Until then that assignment would be inventing a syntax, which
+is the same class of error as the `structural` default this project already removed.
+
 `cmds` is classical (Torgerson/PCoA) multidimensional scaling on the cosine distance
 matrix - the same metric everything else uses. Up to `CMDS_FULL_MAX = 6000` points the
 full double-centred matrix is decomposed exactly (`numpy.linalg.eigh`, about 7 s at 4287

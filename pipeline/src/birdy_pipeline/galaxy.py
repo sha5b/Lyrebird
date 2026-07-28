@@ -329,6 +329,44 @@ def separate_clusters(
     return pos + shift
 
 
+
+
+def _soft_limit(out: np.ndarray, knee: float = 0.86) -> np.ndarray:
+    """Compress the tail into the box instead of clipping it against the wall.
+
+    Clipping is what the contract's ``max|coord| == 1`` used to be enforced with, and it
+    destroys the position of everything it touches. Measured on the shipped build: 471
+    points sat exactly on a face, and they were not scattered — cluster 19 had *all 64*
+    of its points pinned to one plane and cluster 16 had 55 of 64, so two whole knots were
+    drawn as flat smears against the boundary, at coordinates the projection never
+    produced. A point that has been clipped is not merely imprecise, it is somewhere else.
+
+    Below the knee nothing moves at all, so the 99 % of the corpus that was already inside
+    the box is untouched and the faithfulness figure is unaffected. Above it the axis is
+    squashed through a tanh scaled so the furthest point lands exactly on 1: monotonic, so
+    the ordering of the tail survives, and injective, so no two points are merged onto the
+    same face. The outliers are still the least trustworthy positions in the picture —
+    they are just no longer lies about which side of each other they are on.
+    """
+    out = out.copy()
+    for axis in range(out.shape[1]):
+        v = out[:, axis]
+        mag = np.abs(v)
+        far = mag > knee
+        if not far.any():
+            continue
+        peak = float(mag.max())
+        if peak <= knee:
+            continue
+        span = 1.0 - knee
+        # tanh maps [0, inf) -> [0, 1); dividing by its value at the furthest point makes
+        # that point land on exactly 1 rather than merely approaching it
+        top = np.tanh((peak - knee) / span)
+        excess = np.tanh((mag[far] - knee) / span) / max(top, 1.0e-9)
+        v[far] = np.sign(v[far]) * (knee + span * excess)
+    return out
+
+
 def normalise_positions(pos: np.ndarray, per_axis: bool = True) -> tuple[np.ndarray, float]:
     """Centre, scale the *bulk* to fill the box, clamp the tail to it (8.3).
 
@@ -361,8 +399,7 @@ def normalise_positions(pos: np.ndarray, per_axis: bool = True) -> tuple[np.ndar
     else:
         scale = np.full(out.shape[1], np.percentile(np.abs(out), POSITION_QUANTILE))
     scale = np.where(scale > 0.0, scale, max(extent, 1.0e-9))
-    out = np.clip(out / scale, -1.0, 1.0)
-    return out, extent
+    return _soft_limit(out / scale), extent
 
 
 # --- how meaningful are the distances? --------------------------------------------

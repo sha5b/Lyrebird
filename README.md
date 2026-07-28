@@ -299,6 +299,17 @@ The F0 error is 0.80 %, so the contour is essentially exact; everything the desc
 still objects to is spectral. A field recording carries wind, distance, a second bird and
 a room; a two-parameter oscillator carries none of that, and 26 MFCC dimensions notice.
 
+How much they notice is worth stating as its own number, because it turns out to be the
+largest single effect in the whole system. Of the 176 clusters in the shipped galaxy,
+**82 hold nothing but field audio, 86 hold nothing but synthetic renders, and exactly one
+is a mixture.** A real call and Birdy's resynthesis of that same call do not merely score
+poorly against each other — they are never even grouped together. The dominant axis of
+this feature space is *was this recorded or synthesised*, not *what does it sound like*,
+and that is why one sound can light two knots on opposite sides of the galaxy: the note
+being sung is the synthetic cluster, and the field cluster of the same call is somewhere
+else. See the pipeline README, "The loudest thing in this space is the microphone", for
+what it costs and what would fix it.
+
 The numbers only say this because of how they are taken, and that is worth stating,
 because the previous version of this check said nothing at all. It compared a fitted
 syllable against the *recording-level* descriptor — a five-second window average over
