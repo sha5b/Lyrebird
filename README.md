@@ -21,6 +21,7 @@ a confidence label:
 | **playback-verified** | function established by playback experiments on wild birds |
 | **documented** | function described in the literature |
 | **inferred** | plausible from context, not experimentally established |
+| **field recording** | real audio of a known species, with no documented function at all |
 | **invented** | our own mapping — not a claim about real birds |
 
 Typed words are rendered through a species' own song syntax and are always labelled
@@ -36,9 +37,103 @@ data/inventory.json   canonical data: 12 species, 44 syllable types, songs, gram
                       documented functions with citations. Read by BOTH halves.
 docs/                 the research this is built on; 08-implementation.md is the contract
 pipeline/             offline Python (uv): renders a corpus, calibrates the oscillator,
-                      builds the galaxy -> app/static/birdy/
+                      harvests and learns from field audio, builds the galaxy
 app/                  SvelteKit + TypeScript: realtime synthesis, mic analysis, 3D galaxy
 ```
+
+## The galaxy
+
+Points are individual clips; clusters are call types. Selecting a bird dims the other
+species and narrows the floating node labels to that repertoire, so the picture changes
+with the selection instead of showing all twelve species at once regardless. Each node
+carries a specimen tag — what the cluster is, how many points fell into it, how tight it
+is — that opens up and shows the documented function and the live match percentage when
+its cluster responds.
+
+Points respond **individually**, not as clusters. The pipeline ships an 8-dimensional
+per-point projection of the descriptor space, and the browser takes a cosine against
+every point each frame, so a knot lights from the inside out and you can see which
+members of a call type a sound actually resembles. The reported match still uses the
+28-d centroids the contract specifies; the per-point space only decides brightness.
+
+The chorus comes in two forms. **This bird** is the selected species and its
+neighbours, drawn against its own backdrop of songs. **All species** sets the selection
+aside entirely — no focus, no backdrop — and every bird that starts singing adds its own
+trajectory, so a dozen threads light in parallel and the whole corpus is visibly moving
+rather than one diagram being redrawn.
+
+**Distance** is one control over two things: it drives air absorption and reverb in the
+audio, and the viewing scale in the picture, so a bird across the field is further away
+in both. **Tempo** slows the drift, the pulse and the chorus together, for when the
+whole thing moves faster than you can read it.
+
+### Nothing matching has to look like nothing matching
+
+Softmax is a relative measure — its outputs sum to 1, so whatever you feed it, some
+cluster always wins. Fed room tone or a fan, the matcher used to pin 100 % on an
+arbitrary call and hold it there indefinitely, which is what made the galaxy hang on one
+node while nothing was playing.
+
+The activation is now scaled by an absolute measure of how well the best centroid
+actually matches, and the thresholds come from the corpus rather than from taste:
+
+| input | best-centroid cosine |
+|---|---|
+| a real corpus clip, to its own centroid | 0.94 – 0.99 (p10 = 0.952) |
+| a 1 kHz hum | 0.705 |
+| white noise | 0.485 |
+| room tone at −60 dBFS | 0.480 |
+
+So the response ramps from 0.78 to 0.92: everything that is not birdsong sits below it,
+every genuine member sits above it, and a live recording of a real bird lands in
+between and looks partial, which it is. The **match** meter in the header shows that
+number, so a stuck reading is visible rather than mysterious. Below about 25 % the
+reading panel reports nothing at all.
+
+If your input device is a system-audio loopback rather than a microphone, Birdy will
+hear its own output — the match meter is the way to tell.
+
+### Listening
+
+The Listen tab chooses between a **microphone** (with a device picker) and **computer
+audio** via display capture — tick "share audio" in the browser's dialog or no sound
+arrives. Echo cancellation, noise suppression and gain control are all switched off:
+they are tuned for speech and they gate exactly the quiet broadband texture a distant
+bird is made of.
+
+A recording can be sent straight into the learning store with **Learn from this**. It
+goes through the pipeline's own segmenter — the same function that processes downloaded
+audio — rather than a second implementation in the browser, so a bird recorded at your
+desk and one fetched from xeno-canto are analysed by identical code.
+
+### Colour
+
+Every point has a **pale resting tint** and a **saturated responding one** in the same
+hue. Response is a walk between them, so identity never moves and intensity always
+does — and unlike a walk from dark to darker it stays legible when forty points of one
+cluster overlap. Anything responding also gets a ring of the background colour around
+it; without that a lit knot fuses into a single silhouette and the per-point response,
+which is the entire point of the view, disappears.
+
+Two things can wear the hue, chosen from the display control on the view itself:
+
+**Bird** gives each species its own colour. **Meaning** gives each cluster a colour for
+how much meaning is claimed for it — *referential* (names something outside the bird),
+*social* (says something about the singer), *structural* (a song element carrying syntax
+and no referential meaning). The pipeline sorts each documented function into a
+behavioural class using a keyword table it writes into `manifest.json`, so the grouping
+can be audited.
+
+**What colour can and cannot carry here.** Twelve species hues cannot be told apart by
+colour alone, and that is arithmetic rather than a failure of taste: at usable chroma,
+clearing the ΔE 15 normal-vision floor needs about 52° between hues, so a wheel holds
+roughly seven, and colour-vision deficiency cuts that to about three. Separating on
+lightness as well as hue takes the worst species pair from ΔE 5 to 12.9, which is better
+but still short. So colour in the Bird view is *orienting*: every cluster carries a
+label naming its species, selecting a bird dims the others, and the reading panel says
+which bird it heard. Turn the colour off entirely and nothing becomes unreadable. The
+three-step Meaning palette is the one held to the full gate — worst pair ΔE 9.2 deutan,
+24.0 normal — because there it is doing real categorical work.
 
 The two halves implement the same physical model and the same feature extractor, both
 specified in [`docs/08-implementation.md`](docs/08-implementation.md). That document is
@@ -54,6 +149,55 @@ cd pipeline
 uv sync
 uv run birdy-pipeline build      # writes app/static/birdy/
 ```
+
+## Growing the corpus from real recordings
+
+The shipped galaxy is rendered from the hand-authored inventory. Two further commands
+grow it from field audio without ever holding more than one recording at a time:
+
+```bash
+export XC_API_KEY=...                                  # xeno-canto v3 key
+uv run birdy-pipeline harvest --per-species 20         # stream in, keep a bounded sample
+uv run birdy-pipeline learn                            # fit syllables + syntax, verify them
+uv run birdy-pipeline build --inventory ../data/learned-inventory.json \
+                            --harvest-store out/harvest
+```
+
+`harvest` fetches, decodes, analyses and **deletes** each recording before the next one
+starts, keeping a species-stratified reservoir of 28-d descriptors capped at a size you
+choose. It also tracks statistics over every descriptor it discards, so it can tell you
+how far the sample it kept has drifted from the stream it came from.
+
+`learn` fits syllable parameters to the segmented audio, then renders each fitted
+syllable through the same syrinx oscillator the app uses and records how close it lands
+— descriptor cosine and F0 error, written next to every learned syllable. Syllable order
+within a recording gives a first-order grammar, which is what lets Birdy compose phrases
+no bird sang in a syntax measured from birds that did. Those phrases are labelled
+*invented*; their syllables are labelled *field recording*.
+
+Every harvested recording's recordist and licence is written to `CREDITS.md` in the
+store. xeno-canto recordings are individually licensed and CC-BY-NC-SA is common.
+See [`pipeline/README.md`](pipeline/README.md) for the details.
+
+### Driving it from the interface instead
+
+```bash
+cd pipeline && uv run birdy-pipeline serve
+```
+
+The app's **Learn** tab picks that up and gives you the same three operations with the
+store's figures in front of you and the job's log streaming back. It binds to
+`127.0.0.1` only and the address is not configurable — every endpoint runs pipeline
+code, so exposing it on a network would be handing out remote execution.
+
+The running app still needs no backend. This is a developer-facing process for driving
+the offline stage; without it the Learn tab says how to start it and everything else is
+unaffected.
+
+**The galaxy is static while the app runs.** Clustering, the projection and the
+per-point feature space are all computed offline and loaded once. Harvesting and
+learning change what the *next* build produces — they do not reshape the cloud live.
+After a rebuild, reload the page.
 
 Then the app:
 
@@ -81,7 +225,11 @@ npm run demo:wav          # writes listenable wavs to app/out/wav
 `verify:features` is the one that matters most: it crosses the language boundary. A high
 hit rate means the two ODE implementations, the two MFCC implementations and the
 standardisation statistics all agree. Drift shows up here rather than as a galaxy that
-quietly lights the wrong clusters.
+quietly lights the wrong clusters. Current: 35/44 exact, 36/44 same species.
+
+`uv run birdy-pipeline verify` checks the generated assets, including that the per-point
+feature rows are unit vectors and still separate their own cluster from the rest — a
+mirrored PCA sign would otherwise light the wrong points with total confidence.
 
 ## Credits
 

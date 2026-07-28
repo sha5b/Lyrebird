@@ -100,7 +100,66 @@ export async function loadAssets(fetcher: typeof fetch = fetch): Promise<BirdyAs
 		);
 	}
 
-	return { manifest, inventory, calibration, featureSpace, positions, points, centroids };
+	const { pointFeatures, pointFeatureDims } = await loadPointFeatures(points.n, centroids, fetcher);
+
+	return {
+		manifest,
+		inventory,
+		calibration,
+		featureSpace,
+		positions,
+		points,
+		centroids,
+		pointFeatures,
+		pointFeatureDims
+	};
+}
+
+/**
+ * The per-point response space, if the pipeline wrote one.
+ *
+ * Optional on purpose: an asset set built before this existed still renders, it just
+ * falls back to lighting whole clusters. A file that is present but inconsistent with
+ * `points.json` or with the centroids is treated as absent rather than trusted, because
+ * a mismatched projection would light the wrong points with total confidence.
+ */
+async function loadPointFeatures(
+	n: number,
+	centroids: Centroids,
+	fetcher: typeof fetch
+): Promise<{ pointFeatures: Float32Array | null; pointFeatureDims: number }> {
+	const dims = centroids.items[0]?.featuresLo?.length ?? 0;
+	if (!dims) return { pointFeatures: null, pointFeatureDims: 0 };
+	try {
+		const res = await fetcher(`${base}/${ROOT}/point-features.f32`);
+		if (!res.ok) return { pointFeatures: null, pointFeatureDims: 0 };
+		const data = new Float32Array(await res.arrayBuffer());
+		if (data.length !== n * dims) {
+			console.warn(
+				`point-features.f32 holds ${data.length / dims} rows but points.json declares ${n}; ` +
+					'falling back to per-cluster response'
+			);
+			return { pointFeatures: null, pointFeatureDims: 0 };
+		}
+		return { pointFeatures: data, pointFeatureDims: dims };
+	} catch {
+		return { pointFeatures: null, pointFeatureDims: 0 };
+	}
+}
+
+/**
+ * Stable species -> index map for the renderer, so a point can be dimmed when another
+ * species is selected. The inventory sets the order; species that appear only in the
+ * point cloud (harvested field recordings of something not in the inventory) are
+ * appended, so no point is left without an index.
+ */
+export function buildSpeciesIndex(assets: BirdyAssets): Map<string, number> {
+	const index = new Map<string, number>();
+	assets.inventory.species.forEach((s) => index.set(s.id, index.size));
+	for (const id of assets.points.speciesId) {
+		if (!index.has(id)) index.set(id, index.size);
+	}
+	return index;
 }
 
 export function speciesById(inventory: Inventory, id: string): Species | undefined {

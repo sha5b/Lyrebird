@@ -18,6 +18,9 @@ uv sync
 
 uv run birdy-pipeline build            # calibrate if needed, render, embed, write assets
 uv run birdy-pipeline calibrate        # only re-measure the syrinx table
+uv run birdy-pipeline harvest          # stream real recordings into a bounded store
+uv run birdy-pipeline learn            # fit syllables + syntax to what was harvested
+uv run birdy-pipeline serve            # drive the above from the app's Learn tab
 uv run birdy-pipeline demo             # a few example wavs into pipeline/out/demo
 uv run birdy-pipeline verify           # re-check an existing asset directory
 ```
@@ -30,8 +33,9 @@ A full build takes about 27 s on a laptop: 4287 clips, 882 s of synthesised audi
 
 | flag | default | meaning |
 |---|---|---|
-| `--source synthetic\|local` | `synthetic` | render the inventory, or read real audio |
+| `--source synthetic\|local\|harvest` | `synthetic` | render the inventory, read real audio, or embed a harvested store |
 | `--audio-dir DIR` | - | corpus root, required by `--source local` |
+| `--harvest-store DIR` | - | also embed a harvested store alongside `--source` |
 | `--variants N` | 96 | jittered renders per syllable |
 | `--song-variants N` | 3 | renders per whole song |
 | `--seed N` | 0 | seeds the jitter, UMAP and KMeans; a build is byte-reproducible |
@@ -58,8 +62,29 @@ Into `--out` (all of it is fetched at runtime by the app; contract 8.3):
 | `syrinx-calibration.json` | measured `f0Hz` and `ampPP` over pressure x beta, plus the inverse `beta(f0)` table (8.4) |
 | `feature-space.json` | extractor spec, corpus `mean`/`std`, `dimNames`, `temperature` |
 | `positions.f32` | little-endian float32, `3*n`, xyz per point, `max abs coord == 1` (layout per `manifest.json` `projection`) |
+| `point-features.f32` | little-endian float32, `8*n`, unit rows: the per-point render response space |
 | `points.json` | parallel metadata arrays of length `n` |
-| `centroids.json` | `k` labelled clusters: 3D position, 28-d standardised vector, `count` |
+| `centroids.json` | `k` labelled clusters: 3D position, 28-d standardised vector, 8-d `featuresLo`, `count`, and per-cluster summary figures |
+
+### `point-features.f32`: why each point reacts on its own
+
+The browser matches live audio to the 28-d **cluster centroids**, as contract 8.2 says,
+and that match is what the reading panel reports. It is not enough to draw with. A
+cluster holds up to 195 points; lighting all of them equally makes an active knot a flat
+disc and throws away the thing the galaxy exists to show, which is that a repertoire is
+a continuum and a live sound sits somewhere particular inside it.
+
+So the build also writes the top-8 principal components of the standardised descriptors,
+one unit row per point, plus the same projection of each centroid as `featuresLo`. The
+client reconstructs the live query in that space from the centroids it matched and takes
+a cosine against every point — 4287 × 8 multiply-adds a frame, less work than the FFT
+that produced the descriptor. A cluster then lights from the inside out.
+
+On the shipped corpus the 8 components keep **82.3 %** of the 28-d variance, and each
+point's mean cosine to its own centroid is **0.984** against **0.005** to all centroids.
+Both numbers are printed by every build and stored in `manifest.json`; `verify` fails
+the build if the separation collapses, which is what would happen if the PCA signs came
+back mirrored between the points and the centroids.
 
 `pipeline/out/demo/` holds the demo wavs. Nothing else is written outside `--out`.
 
@@ -147,18 +172,148 @@ Resampling is **linear interpolation**, preceded by a 63-tap Hann-windowed-sinc
 lowpass at `0.45 * dstRate` when downsampling; without that prefilter, decimating a
 96 kHz file would fold energy above the new Nyquist into the descriptor.
 
-### mp3 and xeno-canto caveats
+### mp3
 
-- **`soundfile` cannot read mp3 on older libsndfile** (mp3 support arrived in
-  libsndfile 1.1.0, 2021). Most xeno-canto downloads are mp3. Unreadable files are
-  skipped with a message rather than failing the build. Convert first:
-  `for f in *.mp3; do ffmpeg -i "$f" -ac 1 -ar 48000 "${f%.mp3}.wav"; done`.
-- **The xeno-canto v3 API needs an API key** (`?key=...`) and applies rate limits; v2
-  is retired. No downloader is implemented here on purpose: the key is per-user, the
-  per-recording licences vary (CC-BY-NC-SA appears often, which matters if Birdy is
-  ever commercial - see `docs/06-architecture.md` 6.2), and a corpus should be curated
-  by hand rather than scraped. Fetch and convert the audio yourself, sort it into
-  per-species directories, then point `--source local` at it.
+`soundfile` cannot read mp3 on older libsndfile (mp3 support arrived in libsndfile
+1.1.0, 2021), and most xeno-canto downloads are mp3. `--source local` skips unreadable
+files with a message rather than failing the build; `harvest` falls back to ffmpeg,
+transcoding to a wav at the file's own rate so the mono mix and the resampler stay the
+ones documented above.
+
+## Harvesting: learn from a lot of audio, keep almost none of it
+
+```bash
+cp .env.example .env             # then paste your key into it
+uv run birdy-pipeline harvest --per-species 20 --quality A --dry-run
+uv run birdy-pipeline harvest --per-species 20 --quality A
+uv run birdy-pipeline harvest --stats
+uv run birdy-pipeline build --harvest-store ../pipeline/out/harvest
+```
+
+The point of `harvest` is what it throws away. One recording is fetched, decoded,
+analysed and deleted before the next one starts, so peak memory is one recording rather
+than one corpus, and a session that streams several gigabytes of audio leaves a store of
+a few megabytes. What survives is a **species-stratified reservoir** of 28-d
+descriptors: Algorithm R against a persisted counter, so a store built over ten sessions
+is the same uniform sample as one built in a single pass, and a species with 900
+recordings on xeno-canto cannot bury one with 12.
+
+Whether that sample is honest is measurable, so it is measured. Welford accumulators run
+over **every** descriptor the stream produces, discarded ones included, and `--stats`
+prints how far the retained sample's mean and spread have drifted from the full stream's
+— in units of the stream's own standard deviation. Near zero means the reservoir is a
+faithful miniature of everything fed through it. If it is not, raise `--cap`.
+
+### The API key
+
+`pipeline/.env`, from the template in `pipeline/.env.example`:
+
+```
+XC_API_KEY=your-key-here
+```
+
+It is read by `birdy-pipeline` at startup and never overrides a variable already in the
+environment, so `XC_API_KEY=... uv run ...` still wins. `.env` is gitignored.
+
+**It does not go in `app/`.** Vite inlines anything it finds there into the bundle it
+ships to the browser, and the browser never talks to xeno-canto in the first place —
+harvesting is entirely an offline step, so the key is only ever seen by Python.
+
+| flag | default | meaning |
+|---|---|---|
+| `--store DIR` | `pipeline/out/harvest` | where the descriptors and observations live |
+| `--cap N` | 20000 | descriptors the store may hold, over all runs |
+| `--per-species N` | 20 | recordings per species |
+| `--max-seconds F` | 90 | analyse at most this much of each recording |
+| `--quality Q` | `A` | xeno-canto quality filter |
+| `--query Q` | - | raw xeno-canto query instead of the inventory's species |
+| `--from-dir DIR` | - | ingest files already on disk; no network, no key |
+| `--dry-run` | off | list what would be fetched |
+| `--stats` | off | describe an existing store and exit |
+
+**Licensing.** Every retained recording's id, recordist and licence is written to
+`CREDITS.md` in the store, because xeno-canto recordings are individually licensed and
+CC-BY-NC-SA is common — which matters if Birdy is ever commercial (see
+`docs/06-architecture.md` §6.2). Check the licences before shipping a harvested galaxy.
+An earlier version of this README argued no downloader should exist at all; the position
+now is that one should exist and should carry the attribution with it, since the
+alternative in practice was people scraping without recording the licence.
+
+**Honesty.** Harvested points are real audio of a known species and nothing more. A
+cluster the inventory cannot name gets `confidence: "unlabelled"` — a fifth label
+alongside the four in the root README — which the app renders as *field recording*. It
+is a different claim from `invented`, and both are different from having a citation.
+
+## Learning: fit the model to what was heard
+
+```bash
+uv run birdy-pipeline learn --types 8
+uv run birdy-pipeline build --inventory ../data/learned-inventory.json \
+                            --harvest-store ../pipeline/out/harvest
+```
+
+While a recording is briefly in memory, `harvest` runs a second analysis beside the
+sliding descriptors: it segments the audio into syllables and reduces each one to the
+parameters `data/inventory.json` uses — duration, level, attack, an f0 contour, AM,
+vibrato, a harmonic ratio and a timbre class. A few dozen floats per syllable, and the
+audio is gone a moment later.
+
+`learn` then clusters those observations per species, takes the median of each type, and
+**renders the result through the same Mindlin-Laje oscillator the app uses** to find out
+whether the model can actually sing what it just described. Two numbers go next to every
+learned syllable, because they fail differently:
+
+- `resynthesisCosine` — the 28-d descriptor of the resynthesis against the mean
+  descriptor of the recordings the type was fitted to. Does it land in the right part
+  of the feature space?
+- `f0ErrorPercent` — measured F0 of the resynthesis against the contour it was asked
+  for. Did the oscillator reach the pitch?
+
+A syllable can pass one and fail the other: a buzz whose pitch is right but whose
+texture is not, or a clean whistle a semitone flat. A type the model cannot reproduce
+says so in the file instead of shipping as though it could.
+
+Because the observations keep their order within their recording, typing them also turns
+each recording into a string of type ids, and counting the transitions gives a
+first-order grammar in exactly the shape `app/src/lib/lang/grammar.ts` already
+improvises from. That is the sense in which Birdy can produce **new phrases**: sequences
+no bird sang, generated in a syntax measured from birds that did. They are labelled
+`invented`, and their syllables stay `unlabelled`. Neither label is a claim about
+meaning.
+
+## `serve`: the same three operations, from the interface
+
+```bash
+uv run birdy-pipeline serve            # http://127.0.0.1:8781
+```
+
+Harvest, learn and rebuild, driven from the app's **Learn** tab, with the store's
+figures on screen and the job's stderr streaming back so progress is the real log rather
+than a spinner. One job at a time.
+
+**It binds to the loopback interface and the address is not configurable.** Every
+endpoint runs pipeline code — downloading, decoding, writing files — so exposing it on a
+network would be handing out remote code execution. `--port` is the only knob.
+
+This does not give the app a backend. The galaxy is precomputed and `adapter-static`
+still serves it with no server at all; this is a developer-facing process for the
+offline stage, and the Learn tab degrades to instructions when it is not running.
+
+## What the visualisation encodes
+
+`build` writes two things the renderer uses that are not part of the acoustic contract:
+
+- **`functionClass`** on every cluster — the behavioural class of its documented
+  function (alarm, recruitment, courtship, territorial, contact, structural,
+  unclassified), matched against a keyword table stored in `manifest.json` under
+  `functionClasses.rules`. First hit wins, and the order matters: "mate attraction /
+  countersinging" is courtship before it is territorial. On the shipped inventory:
+  structural 23, alarm 8, territorial 6, contact 4, courtship 2, recruitment 1.
+- **`point-features.f32`** — described above.
+
+The app collapses the seven classes into three for colour, because with every pair of
+series on screen at once only three categorical hues stay separable under colour-vision
+deficiency. The full class is in the cluster's label.
 
 ## Notes on the model, and clarifications
 

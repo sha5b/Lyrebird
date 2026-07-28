@@ -76,6 +76,7 @@ export class BirdyEngine {
 	private readonly analysisBus: GainNode;
 	private micStream: MediaStream | null = null;
 	private micSource: MediaStreamAudioSourceNode | null = null;
+	private inputSource: 'microphone' | 'system' | null = null;
 	private recorder: MediaRecorder | null = null;
 	private recordChunks: Blob[] = [];
 	private ambientTimer: ReturnType<typeof setInterval> | null = null;
@@ -302,32 +303,78 @@ export class BirdyEngine {
 
 	// --- microphone + recording ---
 
-	async startMic(): Promise<void> {
-		if (this.micStream) return;
-		const stream = await navigator.mediaDevices.getUserMedia({
-			audio: {
-				echoCancellation: false,
-				noiseSuppression: false,
-				autoGainControl: false,
-				channelCount: 1
+	/**
+	 * Opens an input and routes it into the analysis bus.
+	 *
+	 * `microphone` takes an optional device id. `system` uses display capture, which is
+	 * the only way a browser will hand over the computer's own output; Chrome requires a
+	 * video track to be requested alongside it, so one is asked for and immediately
+	 * stopped — we never look at it.
+	 *
+	 * Every processing option is off. Echo cancellation, noise suppression and AGC are
+	 * tuned for speech: they gate exactly the quiet broadband texture a distant bird is
+	 * made of, and AGC would rescale the level the descriptor depends on.
+	 */
+	async startInput(source: 'microphone' | 'system', deviceId?: string): Promise<void> {
+		this.stopInput();
+		const constraints: MediaTrackConstraints = {
+			echoCancellation: false,
+			noiseSuppression: false,
+			autoGainControl: false
+		};
+		let stream: MediaStream;
+		if (source === 'system') {
+			if (!navigator.mediaDevices.getDisplayMedia) {
+				throw new Error('This browser cannot capture computer audio.');
 			}
-		});
+			stream = await navigator.mediaDevices.getDisplayMedia({
+				audio: constraints,
+				video: true
+			});
+			stream.getVideoTracks().forEach((t) => {
+				t.stop();
+				stream.removeTrack(t);
+			});
+			if (!stream.getAudioTracks().length) {
+				throw new Error(
+					'No audio came with that capture. Tick "share audio" when choosing the tab or screen.'
+				);
+			}
+		} else {
+			stream = await navigator.mediaDevices.getUserMedia({
+				audio: deviceId ? { ...constraints, deviceId: { exact: deviceId } } : constraints
+			});
+		}
 		this.micStream = stream;
+		this.inputSource = source;
 		this.micSource = this.ctx.createMediaStreamSource(stream);
 		// analysis only — never routed to the speakers, which would feed back
 		this.micSource.connect(this.analysisBus);
 		await this.resume();
 	}
 
-	stopMic(): void {
+	/** Input devices the browser will name. Labels stay blank until permission is given. */
+	static async inputDevices(): Promise<MediaDeviceInfo[]> {
+		if (!navigator.mediaDevices?.enumerateDevices) return [];
+		const all = await navigator.mediaDevices.enumerateDevices();
+		return all.filter((d) => d.kind === 'audioinput');
+	}
+
+	stopInput(): void {
 		this.micSource?.disconnect();
 		this.micSource = null;
 		this.micStream?.getTracks().forEach((t) => t.stop());
 		this.micStream = null;
+		this.inputSource = null;
 	}
 
 	get micActive(): boolean {
 		return this.micStream !== null;
+	}
+
+	/** Which input is open, or null. */
+	get activeInput(): 'microphone' | 'system' | null {
+		return this.inputSource;
 	}
 
 	startRecording(): boolean {
@@ -365,7 +412,7 @@ export class BirdyEngine {
 
 	async dispose(): Promise<void> {
 		this.panic();
-		this.stopMic();
+		this.stopInput();
 		await this.ctx.close();
 	}
 }

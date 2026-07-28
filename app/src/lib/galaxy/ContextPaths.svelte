@@ -15,15 +15,16 @@
 	const centroids = untrack(() => assets.centroids.items);
 
 	// Disconnected segments rather than one polyline, so separate songs are not joined to
-	// each other. Additive blending is the point: where two songs share a transition the
-	// segment is drawn twice and reads brighter, so the bird's reused paths stand out.
+	// each other. Overlap is the point: where two songs share a transition the segment is
+	// drawn twice and the accumulated alpha reads darker, so the bird's reused paths stand
+	// out — on a light ground that means normal blending, not additive.
 	const geometry = new THREE.BufferGeometry();
 	const material = new THREE.LineBasicMaterial({
-		color: new THREE.Color('#7f97dd'),
+		color: new THREE.Color('#8595ae'),
 		transparent: true,
-		opacity: 0.16,
+		opacity: 0.28,
 		depthWrite: false,
-		blending: THREE.AdditiveBlending
+		blending: THREE.NormalBlending
 	});
 
 	let builtVersion = -1;

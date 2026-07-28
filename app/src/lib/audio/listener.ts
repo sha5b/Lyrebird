@@ -1,28 +1,39 @@
 import { PitchDetector } from 'pitchy';
-import { ActivationTracker, FeatureExtractor, standardise } from './features.ts';
+import { ActivationTracker, FeatureExtractor, PointTracker, standardise } from './features.ts';
 import { readActivations, type Reading } from '$lib/lang/translate';
-import { createSignal, type VisualSignal } from '$lib/galaxy/shaders';
+import { createSignal, MAX_PATHS, type LivePath, type VisualSignal } from '$lib/galaxy/shaders';
 import type { BirdyAssets } from '$lib/data/types';
 import type { BirdyEngine } from './engine';
 
+/** A path with nothing scheduled behind it fades to this and stays as a faint thread. */
+const IDLE_ALPHA = 0.4;
+/** A finished live path is removed once it has faded this far. */
+const GONE_ALPHA = 0.02;
+
 /**
- * The live loop: analysis bus -> 28-d descriptor -> cluster activations -> galaxy
- * uniforms + translation readout. Everything here is cheap enough to run per frame
- * (docs/05-embedding-galaxy.md §5.3); the only ML-shaped step is a nearest-centroid
- * lookup, which is why no model has to run in the browser.
+ * The live loop: analysis bus -> 28-d descriptor -> cluster activations -> per-point
+ * response + galaxy uniforms + translation readout. Everything here is cheap enough to
+ * run per frame (docs/05-embedding-galaxy.md §5.3); the only ML-shaped step is a
+ * nearest-centroid lookup, which is why no model has to run in the browser.
  */
 export class Listener {
 	readonly signal: VisualSignal;
 	readonly extractor: FeatureExtractor;
 	private readonly tracker: ActivationTracker;
+	private readonly points: PointTracker;
 	private readonly pitch: PitchDetector<Float32Array>;
 	private raf = 0;
 	private lastReading = 0;
 	private onsetTimes: number[] = [];
 	private wasActive = false;
 
-	/** Scheduled syllable windows in AudioContext time, when a phrase is playing. */
-	private pathTimes: { start: number; end: number }[] | null = null;
+	/**
+	 * The selected-but-unplayed call, drawn as a static thread. Held separately from the
+	 * live paths so that starting a chorus does not erase it and finishing a song does
+	 * not fade it away.
+	 */
+	private preview: LivePath | null = null;
+	private live: LivePath[] = [];
 
 	reading: Reading;
 	onReading: ((reading: Reading) => void) | null = null;
@@ -31,7 +42,9 @@ export class Listener {
 	 * and needs no reactivity. Anything the UI displays has to arrive as a callback instead,
 	 * or Svelte never sees the change.
 	 */
-	onMeters: ((meters: { level: number; f0: number; active: boolean }) => void) | null = null;
+	onMeters:
+		| ((meters: { level: number; f0: number; strength: number; active: boolean }) => void)
+		| null = null;
 	private lastMeters = 0;
 
 	constructor(
@@ -48,7 +61,8 @@ export class Listener {
 			sampleRate: engine.ctx.sampleRate
 		});
 		this.tracker = new ActivationTracker(assets.centroids, assets.featureSpace);
-		this.signal = createSignal(assets.centroids.items.length);
+		this.points = new PointTracker(assets);
+		this.signal = createSignal(assets.centroids.items.length, assets.points.n);
 		this.pitch = PitchDetector.forFloat32Array(assets.featureSpace.frameSize);
 		this.reading = readActivations(
 			assets.inventory,
@@ -59,15 +73,17 @@ export class Listener {
 		);
 	}
 
-	/**
-	 * Sets the trajectory through the galaxy.
-	 *
-	 * With `times`, the path animates: a travelling highlight follows the schedule, so the
-	 * galaxy lights each cluster exactly as its syllable sounds. Without them the path is
-	 * drawn as a faint thread — that is what a selected-but-unplayed call looks like.
-	 * Nodes the corpus does not know (index < 0) are dropped along with their times.
-	 */
-	setPath(nodes: number[], times: { start: number; end: number }[] | null = null): void {
+	/** True when each point's response is measured rather than derived from its cluster. */
+	get perPointMeasured(): boolean {
+		return this.points.measured;
+	}
+
+	/** Which species to keep at full strength in the cloud; -1 shows all equally. */
+	setFocus(index: number): void {
+		this.signal.focus = index;
+	}
+
+	private static clean(nodes: number[], times: { start: number; end: number }[] | null) {
 		const keptNodes: number[] = [];
 		const keptTimes: { start: number; end: number }[] = [];
 		nodes.forEach((node, i) => {
@@ -75,11 +91,77 @@ export class Listener {
 			keptNodes.push(node);
 			if (times?.[i]) keptTimes.push(times[i]);
 		});
-		this.signal.path = keptNodes;
-		this.signal.pathVersion++;
-		this.pathTimes = times && keptTimes.length === keptNodes.length ? keptTimes : null;
-		this.signal.pathProgress = -1;
-		this.signal.pathAlpha = keptNodes.length > 1 ? 1 : 0;
+		return {
+			nodes: keptNodes,
+			times: times && keptTimes.length === keptNodes.length ? keptTimes : null
+		};
+	}
+
+	private publishPaths(): void {
+		this.signal.paths = (this.preview ? [this.preview, ...this.live] : [...this.live]).slice(
+			0,
+			MAX_PATHS
+		);
+		this.signal.pathsVersion++;
+	}
+
+	/**
+	 * The shape of a selected call, before anything plays it: a faint static thread.
+	 * Nodes the corpus does not know (index < 0) are dropped.
+	 */
+	setPreview(nodes: number[], speciesId = '', label = ''): void {
+		const cleaned = Listener.clean(nodes, null);
+		this.preview =
+			cleaned.nodes.length > 1
+				? {
+						nodes: cleaned.nodes,
+						times: null,
+						progress: -1,
+						alpha: IDLE_ALPHA,
+						// the preview is a static thread, never animated, so it is "started"
+						// in the sense that nothing is waiting to happen to it
+						started: true,
+						speciesId,
+						label
+					}
+				: null;
+		this.publishPaths();
+	}
+
+	clearPreview(): void {
+		this.preview = null;
+		this.publishPaths();
+	}
+
+	/**
+	 * Adds an animated trajectory for something that is being sung right now.
+	 *
+	 * These accumulate: during a chorus a dozen birds overlap, and each gets its own
+	 * thread with its own travelling highlight, so the picture is the whole vector field
+	 * coming alive rather than one line being rewritten by whoever sang last. The oldest
+	 * is dropped once there are more than the renderer can draw.
+	 */
+	addLive(
+		nodes: number[],
+		times: { start: number; end: number }[],
+		speciesId = '',
+		label = ''
+	): void {
+		const cleaned = Listener.clean(nodes, times);
+		if (cleaned.nodes.length < 2) return;
+		this.live.push({
+			nodes: cleaned.nodes,
+			times: cleaned.times,
+			progress: -1,
+			// invisible until the first note sounds; `advancePaths` raises it
+			alpha: 0,
+			started: false,
+			speciesId,
+			label
+		});
+		// one slot is reserved for the preview
+		while (this.live.length > MAX_PATHS - 1) this.live.shift();
+		this.publishPaths();
 	}
 
 	/** The faint backdrop of every song this bird sings; drops nodes the corpus lacks. */
@@ -88,27 +170,30 @@ export class Listener {
 		this.signal.contextVersion++;
 	}
 
-	clearPath(): void {
-		this.signal.path = [];
-		this.signal.pathVersion++;
-		this.signal.pathProgress = -1;
-		this.signal.pathAlpha = 0;
-		this.pathTimes = null;
+	clearPaths(): void {
+		this.preview = null;
+		this.live = [];
+		this.publishPaths();
 	}
 
 	/**
-	 * Position along the path right now, in node units, or -1 once the phrase is over.
+	 * Position along one path right now, in node units, or -1 when it is not sounding.
 	 * Between two syllables it keeps moving through the gap so the highlight travels along
 	 * the connecting line instead of jumping.
+	 *
+	 * A path that has not started yet reports -1, not 0. The ambient chorus draws
+	 * exponential inter-arrival times, so it queues songs many seconds — sometimes half a
+	 * minute — ahead of the clock. Reporting position 0 for all of that wait lit the
+	 * phrase's *first* cluster at full strength while nothing was playing, and held it
+	 * there until the note finally sounded. That was the node that appeared stuck.
 	 */
-	private advancePath(now: number): number {
-		const times = this.pathTimes;
+	private advance(path: LivePath, now: number): number {
+		const times = path.times;
 		if (!times || !times.length) return -1;
-		if (now < times[0].start) return 0;
+		if (now < times[0].start) return -1;
 		const last = times[times.length - 1];
 		if (now > last.end + 0.25) {
-			// leave the path on screen as a faint completed thread
-			this.pathTimes = null;
+			path.times = null;
 			return -1;
 		}
 		for (let i = 0; i < times.length; i++) {
@@ -137,6 +222,7 @@ export class Listener {
 		this.raf = 0;
 		this.extractor.reset();
 		this.signal.activations.fill(0);
+		this.signal.pointActivation.fill(0);
 		this.signal.level = 0;
 		this.signal.best = -1;
 	}
@@ -166,35 +252,41 @@ export class Listener {
 		} else {
 			this.tracker.decay();
 			this.signal.activations.set(this.tracker.activations);
+			// The pitch readout is a live measurement, not a last-known-good value. Left
+			// latched it reports several kHz over a silent aviary, which is a lie the HUD
+			// has no way to qualify.
+			this.signal.f0 = this.signal.f0 > 1 ? this.signal.f0 * 0.9 : 0;
 		}
+		this.signal.strength = this.tracker.strength;
+		if (this.tracker.strength < 1e-3) this.signal.best = -1;
 
-		// While Birdy sings, it knows the score, so the trajectory is driven by the schedule
-		// rather than by matching — the cluster lights exactly on the note instead of a
-		// feature-window later. Listening still relies on the tracker above.
-		const progress = this.advancePath(this.engine.ctx.currentTime);
-		this.signal.pathProgress = progress;
-		if (progress >= 0) {
+		// While Birdy sings, it knows the score, so the trajectories are driven by the
+		// schedule rather than by matching — a cluster lights exactly on the note instead
+		// of a feature-window later. Listening still relies on the tracker above.
+		const singing = this.advancePaths();
+
+		if (singing) {
 			// The matched activations stay visible but are damped: the analysis window spans
 			// ~0.7 s, so it lights every cluster of a short phrase at once, which blurs the
 			// order. Damping them lets the scheduled node read as "this syllable, now".
 			for (let i = 0; i < this.signal.activations.length; i++) this.signal.activations[i] *= 0.3;
-			this.signal.path.forEach((node, i) => {
-				const offset = (progress - i) / 0.5;
-				const pulse = Math.exp(-(offset * offset));
-				if (pulse > 0.01) {
-					this.signal.activations[node] = Math.max(this.signal.activations[node], pulse);
-				}
-			});
-			const current = this.signal.path[Math.round(progress)];
-			if (current !== undefined) this.signal.best = current;
-		} else if (this.signal.pathAlpha > 0 && !this.pathTimes) {
-			// fade the finished path down to a faint thread, then leave it
-			this.signal.pathAlpha = Math.max(0.45, this.signal.pathAlpha - 0.02);
+			this.applyScheduledPulses();
 		}
+
+		// A scheduled note is known, not matched, so it lights at full strength; anything
+		// arriving through the microphone has to earn it.
+		this.points.update(this.signal.activations, singing ? 1 : this.tracker.strength);
+		if (singing) this.pulseScheduledPoints();
+		this.signal.pointActivation.set(this.points.activation);
 
 		if (now - this.lastMeters > 0.05) {
 			this.lastMeters = now;
-			this.onMeters?.({ level: this.signal.level, f0: this.signal.f0, active });
+			this.onMeters?.({
+				level: this.signal.level,
+				f0: this.signal.f0,
+				strength: this.tracker.strength,
+				active
+			});
 		}
 
 		// the readout is for human eyes; 8 Hz is plenty and keeps Svelte updates cheap
@@ -205,9 +297,70 @@ export class Listener {
 				this.assets.centroids,
 				this.signal.activations,
 				this.tracker.similarity,
-				{ active, onsetRate: this.onsetTimes.length / 3, f0: this.signal.f0 }
+				{
+					active,
+					strength: this.tracker.strength,
+					onsetRate: this.onsetTimes.length / 3,
+					f0: this.signal.f0
+				}
 			);
 			this.onReading?.(this.reading);
+		}
+	}
+
+	/** Moves every live path along, retires the finished ones. True if any is playing. */
+	private advancePaths(): boolean {
+		const time = this.engine.ctx.currentTime;
+		let anySinging = false;
+		for (const path of this.live) {
+			path.progress = this.advance(path, time);
+			if (path.progress >= 0) {
+				anySinging = true;
+				path.started = true;
+				path.alpha = 1;
+			} else if (path.started) {
+				// A phrase that has finished fades out rather than vanishing mid-frame, so a
+				// chorus leaves a decaying trace of what has just been sung.
+				path.alpha -= 0.012;
+			}
+		}
+		// Only a phrase that has actually been sung can be finished with. A queued one is
+		// held, invisible, until its turn.
+		const remaining = this.live.filter((p) => !p.started || p.alpha > GONE_ALPHA);
+		const changed = remaining.length !== this.live.length;
+		if (changed) this.live = remaining;
+		if (changed) this.publishPaths();
+		return anySinging;
+	}
+
+	private applyScheduledPulses(): void {
+		for (const path of this.live) {
+			if (path.progress < 0) continue;
+			path.nodes.forEach((node, i) => {
+				const offset = (path.progress - i) / 0.5;
+				const pulse = Math.exp(-(offset * offset));
+				if (pulse > 0.01) {
+					this.signal.activations[node] = Math.max(this.signal.activations[node], pulse);
+				}
+			});
+			const current = path.nodes[Math.round(path.progress)];
+			if (current !== undefined) this.signal.best = current;
+		}
+	}
+
+	/**
+	 * A scheduled note has no live descriptor behind it — we know which cluster it is, not
+	 * which of that cluster's points it resembles — so its members light together, with a
+	 * fixed per-point offset that keeps the knot from reading as a single disc.
+	 */
+	private pulseScheduledPoints(): void {
+		for (const path of this.live) {
+			if (path.progress < 0) continue;
+			path.nodes.forEach((node, i) => {
+				const offset = (path.progress - i) / 0.5;
+				const pulse = Math.exp(-(offset * offset));
+				if (pulse > 0.05) this.points.pulseCluster(node, pulse);
+			});
 		}
 	}
 }

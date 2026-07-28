@@ -45,6 +45,53 @@ KNN_AGREEMENT_K = 10
 CMDS_FULL_MAX = 6000
 CMDS_LANDMARKS = 800
 
+# Per-point features shipped to the browser so a point can react on its own rather than
+# inheriting its cluster's activation. The full 28-d matrix would be 4*28*n bytes; the
+# top-8 principal components keep most of the between-type structure at 2/7 the size,
+# and the number that says how much is kept goes into the manifest.
+POINT_FEATURE_DIMS = 8
+
+
+@dataclass
+class PointSet:
+    """Descriptors plus the parallel metadata that lands in points.json.
+
+    The galaxy is built from this rather than from `Clip`s so that a source which has
+    already thrown its audio away — the harvester, which never holds more than one
+    recording in memory — can be embedded on equal terms with a rendered corpus.
+    """
+
+    x: np.ndarray  # (n, features.DIM) raw descriptors
+    species_id: list[str]
+    syllable_id: list[str]
+    song_id: list[str]
+    duration: list[float]
+    source: list[str]
+
+    def __len__(self) -> int:
+        return int(self.x.shape[0])
+
+    def types(self) -> list[tuple[str, str]]:
+        """(speciesId, syllableId|song:<id>) per point — the label purity is measured on."""
+        return [
+            (sp, syl or f"song:{song}")
+            for sp, syl, song in zip(self.species_id, self.syllable_id, self.song_id)
+        ]
+
+    @staticmethod
+    def concat(parts: Sequence["PointSet"]) -> "PointSet":
+        kept = [p for p in parts if len(p)]
+        if not kept:
+            raise RuntimeError("nothing to embed: every source was empty")
+        return PointSet(
+            x=np.concatenate([p.x for p in kept], axis=0),
+            species_id=[v for p in kept for v in p.species_id],
+            syllable_id=[v for p in kept for v in p.syllable_id],
+            song_id=[v for p in kept for v in p.song_id],
+            duration=[v for p in kept for v in p.duration],
+            source=[v for p in kept for v in p.source],
+        )
+
 
 @dataclass
 class GalaxyStats:
@@ -60,9 +107,10 @@ class GalaxyStats:
     projection: str
     faithfulness: dict[str, Any]  # 28-d cosine vs 3D euclidean correlation
     knn_agreement: float  # share of 3D k-NN sharing a point's type
+    point_feature_variance: float  # share of variance the shipped per-point features keep
 
 
-def descriptors(clips: Sequence[Clip], verbose: bool = True) -> tuple[np.ndarray, list[Clip]]:
+def descriptors(clips: Sequence[Clip], verbose: bool = True) -> PointSet:
     """28-d descriptor per clip; clips with no voiced frame are dropped (8.2)."""
     rows: list[np.ndarray] = []
     kept: list[Clip] = []
@@ -76,7 +124,14 @@ def descriptors(clips: Sequence[Clip], verbose: bool = True) -> tuple[np.ndarray
             print(f"  descriptors {i + 1}/{len(clips)}", file=sys.stderr)
     if not rows:
         raise RuntimeError("no clip produced a descriptor")
-    return np.stack(rows), kept
+    return PointSet(
+        x=np.stack(rows),
+        species_id=[c.species_id for c in kept],
+        syllable_id=[c.syllable_id for c in kept],
+        song_id=[c.song_id for c in kept],
+        duration=[c.duration for c in kept],
+        source=[c.source for c in kept],
+    )
 
 
 # --- projections ------------------------------------------------------------------
@@ -339,12 +394,80 @@ def _print_projection_table(results: dict[str, dict[str, Any]], chosen: str) -> 
     print("", file=sys.stderr)
 
 
-def default_k(clips: Sequence[Clip]) -> int:
+def default_k(points: PointSet) -> int:
     """Number of distinct syllable types (or labels, for a local corpus), cap 64."""
-    types = {(c.species_id, c.syllable_id) for c in clips if c.syllable_id}
+    types = {
+        (sp, syl) for sp, syl in zip(points.species_id, points.syllable_id) if syl
+    }
     if not types:
-        types = {(c.species_id, "") for c in clips}
+        types = {(sp, "") for sp in points.species_id}
     return max(2, min(K_CAP, len(types)))
+
+
+def point_features(
+    z: np.ndarray, centroid_vectors: np.ndarray, dims: int = POINT_FEATURE_DIMS
+) -> tuple[np.ndarray, np.ndarray, float]:
+    """Compress the standardised descriptors to `dims` unit vectors, for the renderer.
+
+    The browser matches live audio against the 28-d centroid vectors, as the contract
+    requires; that match is what the readout reports. This is a second, cheaper space
+    used only to decide *how brightly each individual point* responds, so that a cluster
+    lights up from the inside out instead of as one flat blob. Cosine is preserved
+    approximately, which is all a brightness needs — the returned variance share says
+    how approximately.
+    """
+    mean = z.mean(axis=0)
+    k = min(dims, z.shape[1], max(1, z.shape[0] - 1))
+    pca = PCA(n_components=k, random_state=0).fit(z - mean)
+    kept = float(pca.explained_variance_ratio_.sum())
+
+    # The sign of a principal axis is arbitrary. It is resolved once, on the points, and
+    # the same flip is then applied to the centroids — resolving it per matrix would put
+    # the two sets in mirrored spaces and every similarity would be wrong.
+    lo = pca.transform(z - mean)
+    signs = np.array(
+        [-1.0 if lo[np.argmax(np.abs(lo[:, c])), c] < 0 else 1.0 for c in range(k)]
+    )
+
+    def project(rows: np.ndarray) -> np.ndarray:
+        out = np.zeros((rows.shape[0], dims), dtype=np.float64)
+        out[:, :k] = pca.transform(rows - mean) * signs
+        norm = np.linalg.norm(out, axis=1, keepdims=True)
+        return out / np.maximum(norm, 1.0e-12)
+
+    return project(z), project(centroid_vectors), kept
+
+
+# What a call *does*, which is the only kind of meaning this project claims. The classes
+# are matched against the documented function text in `data/inventory.json`, in this
+# order, because several functions mention more than one ("mate attraction /
+# countersinging" is courtship before it is territorial). The table ships in the manifest
+# so the grouping can be audited rather than taken on trust, and `structural` is a real
+# answer: a song element with no referential meaning is not an unclassified call.
+FUNCTION_CLASSES: list[tuple[str, tuple[str, ...]]] = [
+    ("alarm", ("hawk", "predator", "alarm", "mobbing", "escape", "flee", "vigilance",
+               "attack", "danger", "scan", "agitation", "threat", "cover", "snake")),
+    ("recruitment", ("recruitment", "approach the caller", "receivers approach")),
+    ("courtship", ("courtship", "mate attraction", "pair contact")),
+    ("territorial", ("territor", "advertis", "countersinging")),
+    ("contact", ("contact", "cohesion", "flock")),
+    ("structural", ("song element", "song onset", "song-type", "song introduction",
+                    "transition", "phrase ending", "flourish", "trill element",
+                    "percussive", "opening note", "terminal note", "song syntax",
+                    "song bout", "motif", "note 1", "note 2")),
+]
+UNCLASSIFIED = "unclassified"
+
+
+def function_class(text: str) -> str:
+    """Behavioural class of a documented function, or `unclassified` when it says nothing."""
+    lowered = (text or "").lower()
+    if not lowered.strip():
+        return UNCLASSIFIED
+    for name, keywords in FUNCTION_CLASSES:
+        if any(word in lowered for word in keywords):
+            return name
+    return UNCLASSIFIED
 
 
 def _inventory_index(inventory: dict[str, Any]) -> dict[tuple[str, str, str], dict[str, Any]]:
@@ -371,21 +494,30 @@ def _inventory_index(inventory: dict[str, Any]) -> dict[tuple[str, str, str], di
 
 
 def label_cluster(
-    members: Sequence[Clip], index: dict[tuple[str, str, str], dict[str, Any]]
+    members: Sequence[tuple[str, str, str]],
+    index: dict[tuple[str, str, str], dict[str, Any]],
+    common_names: dict[str, str] | None = None,
 ) -> dict[str, Any]:
-    """Majority syllable wins; fall back to majority song, then to the raw label."""
+    """Majority syllable wins; fall back to majority song, then to the raw label.
+
+    `members` are (speciesId, syllableId, songId) triples.
+    """
     keys = Counter(
-        (c.species_id, c.syllable_id, c.song_id if not c.syllable_id else "")
-        for c in members
+        (sp, syl, song if not syl else "") for sp, syl, song in members
     )
     syllable_keys = Counter({k: v for k, v in keys.items() if k[1]})
     key, _ = (syllable_keys or keys).most_common(1)[0]
     meta = index.get(key)
     if meta is None:
+        # No inventory entry means no citation and no documented function: a cluster of
+        # field recordings we can name the species of and nothing more. Saying so with
+        # `unlabelled` keeps contract 8.5 honest instead of letting the interface's
+        # default ("invented") imply we made the function up.
+        common = (common_names or {}).get(key[0], key[0])
         meta = {
-            "label": key[0] + (f" - {key[2]}" if key[2] else ""),
+            "label": f"{common} - unlabelled field cluster",
             "function": "",
-            "confidence": "",
+            "confidence": "unlabelled",
             "refs": [],
         }
     return {
@@ -399,7 +531,7 @@ def label_cluster(
 
 
 def build_galaxy(
-    clips: Sequence[Clip],
+    source: Sequence[Clip] | PointSet,
     inventory: dict[str, Any],
     out_dir: Path,
     inventory_path: Path,
@@ -419,11 +551,16 @@ def build_galaxy(
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    if verbose:
-        print(f"extracting descriptors for {len(clips)} clips", file=sys.stderr)
-    x, kept = descriptors(clips, verbose=verbose)
-    n_dropped = len(clips) - len(kept)
+    if isinstance(source, PointSet):
+        kept = source
+        n_dropped = 0
+    else:
+        if verbose:
+            print(f"extracting descriptors for {len(source)} clips", file=sys.stderr)
+        kept = descriptors(source, verbose=verbose)
+        n_dropped = len(source) - len(kept)
 
+    x = kept.x
     mean = x.mean(axis=0)
     std = x.std(axis=0)  # population std, floored at lookup time
     z = features.standardise(x, mean, std)
@@ -440,8 +577,18 @@ def build_galaxy(
     km = KMeans(n_clusters=k_final, n_init=10, random_state=seed).fit(z)
     cluster_id = km.labels_.astype(int)
 
-    type_of = [(c.species_id, c.syllable_id or f"song:{c.song_id}") for c in kept]
+    type_of = kept.types()
     purity = _purity(cluster_id, type_of, k_final)
+
+    # The renderer's per-point response space. Built from the same standardised
+    # descriptors, after KMeans, so nothing about the clustering depends on it.
+    lo_points, lo_centroids, lo_variance = point_features(z, km.cluster_centers_)
+    if verbose:
+        print(
+            f"per-point features: {POINT_FEATURE_DIMS}-d, "
+            f"{lo_variance * 100:.1f} % of the 28-d variance retained",
+            file=sys.stderr,
+        )
 
     # Evaluate the projections. Distance faithfulness decides which one is honest;
     # kNN agreement says how tidy it looks. Purity cannot move (it never sees pos).
@@ -472,23 +619,52 @@ def build_galaxy(
     extent = chosen["extent"]
 
     index = _inventory_index(inventory)
+    common_names = {sp["id"]: sp.get("common", sp["id"]) for sp in inventory.get("species", [])}
     items: list[dict[str, Any]] = []
     counts: list[int] = []
     for c in range(k_final):
         sel = np.nonzero(cluster_id == c)[0]
-        members = [kept[i] for i in sel]
-        info = label_cluster(members, index) if members else {
+        members = [
+            (kept.species_id[i], kept.syllable_id[i], kept.song_id[i]) for i in sel
+        ]
+        info = label_cluster(members, index, common_names) if members else {
             "label": "", "speciesId": "", "syllableId": "",
             "function": "", "confidence": "", "refs": [],
         }
         position = pos[sel].mean(axis=0) if sel.size else np.zeros(3)
+        member_durations = [kept.duration[i] for i in sel]
+        member_sources = Counter(kept.source[i] for i in sel)
         items.append(
             {
                 "id": c,
                 **info,
                 "position": [round(float(v), 6) for v in position],
+                "functionClass": function_class(info["function"]),
                 "vector": [round(float(v), 6) for v in km.cluster_centers_[c]],
+                "featuresLo": [round(float(v), 6) for v in lo_centroids[c]],
                 "count": int(sel.size),
+                # Small per-cluster summary the interface can put on screen next to the
+                # node without fetching anything else.
+                "meanDuration": round(float(np.mean(member_durations)), 4)
+                if member_durations
+                else 0.0,
+                "radius": round(
+                    float(np.mean(np.linalg.norm(pos[sel] - position, axis=1)))
+                    if sel.size
+                    else 0.0,
+                    4,
+                ),
+                "cohesion": round(
+                    float(np.mean(_unit_rows(z[sel]) @ _unit_rows(km.cluster_centers_[c][None, :])[0]))
+                    if sel.size
+                    else 0.0,
+                    4,
+                ),
+                "speciesMix": [
+                    {"speciesId": sp, "count": int(n)}
+                    for sp, n in Counter(kept.species_id[i] for i in sel).most_common(3)
+                ],
+                "sources": {s: int(n) for s, n in member_sources.most_common()},
             }
         )
         counts.append(int(sel.size))
@@ -497,16 +673,19 @@ def build_galaxy(
     (out_dir / "positions.f32").write_bytes(
         pos.astype("<f4", copy=False).ravel(order="C").tobytes()
     )
+    (out_dir / "point-features.f32").write_bytes(
+        lo_points.astype("<f4", copy=False).ravel(order="C").tobytes()
+    )
     _write_json(
         out_dir / "points.json",
         {
             "n": len(kept),
-            "speciesId": [c.species_id for c in kept],
-            "syllableId": [c.syllable_id for c in kept],
-            "songId": [c.song_id for c in kept],
+            "speciesId": kept.species_id,
+            "syllableId": kept.syllable_id,
+            "songId": kept.song_id,
             "clusterId": [int(v) for v in cluster_id],
-            "durations": [round(c.duration, 6) for c in kept],
-            "source": [c.source for c in kept],
+            "durations": [round(v, 6) for v in kept.duration],
+            "source": kept.source,
         },
     )
     _write_json(out_dir / "centroids.json", {"k": k_final, "dims": features.DIM, "items": items})
@@ -564,7 +743,7 @@ def build_galaxy(
     shutil.copyfile(inventory_path, out_dir / "inventory.json")
 
     spread = float(np.mean(np.linalg.norm(pos, axis=1)))
-    durations = [c.duration for c in kept]
+    durations = list(kept.duration)
     stats = GalaxyStats(
         n_points=len(kept),
         n_dropped=n_dropped,
@@ -578,6 +757,7 @@ def build_galaxy(
         projection=projection,
         faithfulness=dict(chosen["faithfulness"]),
         knn_agreement=float(chosen["knnAgreement"]),
+        point_feature_variance=lo_variance,
     )
 
     manifest = {
@@ -623,6 +803,29 @@ def build_galaxy(
             "bytes": stats.n_points * 3 * 4,
             "normalisation": "centred on the bbox midpoint, scaled so max|coord| = 1",
         },
+        "pointFeatures": {
+            "format": f"little-endian float32, {POINT_FEATURE_DIMS}*n, row-major",
+            "bytes": stats.n_points * POINT_FEATURE_DIMS * 4,
+            "dims": POINT_FEATURE_DIMS,
+            "space": "PCA of the standardised 28-d descriptors, rows unit-normalised",
+            "varianceRatioTotal": round(lo_variance, 4),
+            "purpose": (
+                "per-point render response only; the reported match still uses the "
+                "28-d centroid vectors"
+            ),
+        },
+        "functionClasses": {
+            "definition": (
+                "behavioural class of each cluster's documented function, matched "
+                "against the keyword table below in order; the first hit wins"
+            ),
+            "rules": {name: list(words) for name, words in FUNCTION_CLASSES},
+            "counts": {
+                c: int(n) for c, n in Counter(it["functionClass"] for it in items).most_common()
+            },
+        },
+        "sourceMix": {s: int(n) for s, n in Counter(kept.source).most_common()},
+        "speciesMix": {s: int(n) for s, n in Counter(kept.species_id).most_common()},
         "durationSeconds": [round(stats.duration_range[0], 4), round(stats.duration_range[1], 4)],
         "clusterPurity": round(stats.purity, 4),
         "meanRadius": round(stats.spread, 4),
@@ -632,6 +835,7 @@ def build_galaxy(
             "syrinx-calibration.json",
             "feature-space.json",
             "positions.f32",
+            "point-features.f32",
             "points.json",
             "centroids.json",
         ],

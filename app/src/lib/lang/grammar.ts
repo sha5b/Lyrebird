@@ -25,6 +25,11 @@ export interface Phrase {
 	/** Words that triggered a documented match, for the UI to highlight. */
 	matched: string[];
 	note: string;
+	/**
+	 * Species ids that *do* have a documented call for this text, when the selected one
+	 * does not. The interface offers them rather than silently switching voice.
+	 */
+	documentedElsewhere?: string[];
 }
 
 interface DocumentedEntry {
@@ -257,16 +262,23 @@ export function compilePhrase(inventory: Inventory, text: string, options: Compi
 	const trimmed = text.trim();
 	if (!trimmed) return null;
 
+	// Documented calls belong to the species that has them, so a match only wins when it
+	// is a match *for the selected voice*. Letting any species' documented call win meant
+	// "danger" always came out as a great tit however the Voice control was set — the
+	// control was quietly ignored, which is worse than not having it.
+	const elsewhere = matchDocumented(trimmed)
+		.filter((h) => h.entry.speciesId !== options.speciesId)
+		.map((h) => h.entry.speciesId);
+
 	if (options.allowDocumented !== false) {
-		const hits = matchDocumented(trimmed);
+		const hits = matchDocumented(trimmed).filter((h) => h.entry.speciesId === options.speciesId);
 		if (hits.length) {
 			// The great tit compound ABC-D exists only because both parts were matched;
 			// this is the one place where combining two messages is itself documented.
-			const tit = hits.filter((h) => h.entry.speciesId === 'parus_minor');
-			const hasAbc = tit.some((h) => h.entry.songId === 'abc');
-			const hasD = tit.some((h) => h.entry.songId === 'd');
-			if (hasAbc && hasD) {
-				const matched = tit.flatMap((h) => h.matched);
+			const hasAbc = hits.some((h) => h.entry.songId === 'abc');
+			const hasD = hits.some((h) => h.entry.songId === 'd');
+			if (options.speciesId === 'parus_minor' && hasAbc && hasD) {
+				const matched = hits.flatMap((h) => h.matched);
 				const phrase = documentedPhrase(inventory, { speciesId: 'parus_minor', songId: 'abc_d', keywords: [] }, matched);
 				if (phrase) return phrase;
 			}
@@ -314,6 +326,7 @@ export function compilePhrase(inventory: Inventory, text: string, options: Compi
 		gaps,
 		source: 'invented',
 		matched: [],
+		documentedElsewhere: [...new Set(elsewhere)],
 		note:
 			species.grammar
 				? 'Syllables are chosen by walking this species’ finite-state song grammar; vowels set pitch, stress sets pressure, and the utterance declines like speech. Birds do not encode words this way.'
@@ -361,15 +374,22 @@ export function improvise(inventory: Inventory, speciesId: string, maxSyllables 
 	}
 
 	if (!syllables.length) return null;
+	// A grammar fitted by `birdy-pipeline learn` is measured from field recordings, not
+	// taken from the literature, so it must not borrow the citation that belongs to the
+	// hand-authored one. Syllables with no documented function are the tell: only the
+	// learned inventory produces them.
+	const learned = syllables.every((s) => s.confidence === 'unlabelled');
 	return {
 		speciesId: species.id,
 		label: `${species.common} improvisation`,
 		gloss: 'a bout drawn from this species’ song syntax',
-		function: grammar
-			? 'Sampled from the finite-state song syntax; song carries syntax rather than referential meaning.'
-			: 'Sampled from this species’ song library.',
-		confidence: 'documented',
-		refs: grammar ? ['okanoya2004'] : [],
+		function: learned
+			? 'Sampled from a first-order syntax measured from field recordings of this species. The syntax is counted, not cited; the bout is ours.'
+			: grammar
+				? 'Sampled from the finite-state song syntax; song carries syntax rather than referential meaning.'
+				: 'Sampled from this species’ song library.',
+		confidence: learned ? 'unlabelled' : 'documented',
+		refs: grammar && !learned ? ['okanoya2004'] : [],
 		syllables,
 		gaps,
 		source: 'invented',

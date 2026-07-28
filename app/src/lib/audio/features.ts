@@ -1,5 +1,5 @@
 import { RealFft } from './fft.ts';
-import type { Centroids, FeatureSpace } from '$lib/data/types';
+import type { BirdyAssets, Centroids, FeatureSpace } from '$lib/data/types';
 
 /**
  * The 28-dimensional clip/window descriptor of docs/08-implementation.md §8.2,
@@ -14,6 +14,20 @@ export interface FrameFeatures {
 }
 
 const MEL_SCALE = 1125;
+/**
+ * Normative. `feature-space.json` publishes this as `extractor.voiced.rmsFloor` and the
+ * Python extractor uses the same value, so the two descriptors agree frame for frame.
+ * Do not tune it to make the interface behave — `verify:features` will catch it, which
+ * is what it is for.
+ */
+const CONTRACT_RMS_FLOOR = 1e-4;
+/**
+ * Not normative: how loud the input has to be before the client bothers matching at all.
+ * Higher than the contract floor because room tone, fans and reverb tails all sit above
+ * -80 dBFS, and promoting them to "voiced" is what used to leave a cluster lit between
+ * songs. It gates the match, never the descriptor.
+ */
+const LISTEN_FLOOR = 5e-4;
 
 function hzToMel(hz: number): number {
 	return MEL_SCALE * Math.log(1 + hz / 700);
@@ -151,10 +165,18 @@ export class FeatureExtractor {
 		return features;
 	}
 
-	/** True while the input is loud enough to be worth projecting into the galaxy. */
+	/**
+	 * True while the input is loud enough to be worth projecting into the galaxy.
+	 *
+	 * The relative part of the gate adapts to how loud the source is, but on its own it
+	 * lets a decaying `maxRms` promote room tone to "voiced" a few seconds after the last
+	 * note — which is how a chorus used to leave one cluster lit indefinitely between
+	 * songs. `LISTEN_FLOOR` is an absolute backstop at about -66 dBFS: below that nothing
+	 * is a bird, however quiet the recent history has been.
+	 */
 	get active(): boolean {
 		const last = this.history[this.history.length - 1];
-		return Boolean(last && last.rms > 1e-4 && last.rms > 0.05 * this.maxRms);
+		return Boolean(last && last.rms > LISTEN_FLOOR && last.rms > 0.05 * this.maxRms);
 	}
 
 	get level(): number {
@@ -167,7 +189,7 @@ export class FeatureExtractor {
 	 * note still registers, which an eight-frame minimum silently dropped.
 	 */
 	descriptor(): Float32Array | null {
-		const gate = Math.max(1e-4, 0.05 * this.maxRms);
+		const gate = Math.max(CONTRACT_RMS_FLOOR, 0.05 * this.maxRms);
 		const voiced = this.history.filter((f) => f.rms > gate);
 		if (voiced.length < 4) return null;
 		const c = this.spec.mfccCoeffs;
@@ -219,8 +241,39 @@ function cosine(a: Float32Array | number[], b: Float32Array | number[]): number 
 }
 
 /**
+ * How well the best centroid has to match before anything is allowed to light up.
+ *
+ * Softmax is a *relative* measure: its outputs sum to 1, so whatever the input, some
+ * cluster always wins. Fed room tone, a fan or a reverb tail, the matcher used to pin
+ * 100 % on an arbitrary call and hold it there indefinitely — the galaxy hung on one
+ * node while nothing was playing.
+ *
+ * These two numbers turn the relative measure into an absolute one, and they come from
+ * the corpus rather than from taste. Measured on the shipped assets:
+ *
+ *   - a real corpus clip sits at cosine 0.94..0.99 to its own centroid (p10 = 0.952)
+ *   - white noise reaches 0.485, room tone 0.480, a 1 kHz hum 0.705
+ *
+ * So the floor sits above everything that is not birdsong and below every genuine
+ * member. Between the two the response ramps, which is the honest behaviour for a live
+ * recording of a real bird: a partial match should look partial, not certain.
+ */
+const MATCH_FLOOR = 0.78;
+const MATCH_CEILING = 0.92;
+
+function smoothstep(edge0: number, edge1: number, x: number): number {
+	const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
+	return t * t * (3 - 2 * t);
+}
+
+/**
  * Turns a live descriptor into per-cluster activation weights (§8.2): cosine similarity
  * to each cluster centroid, softmax, then EMA smoothing so the galaxy does not flicker.
+ *
+ * The softmax distribution says *which* cluster is closest; `strength` says whether the
+ * input resembles the corpus at all, and everything reported is scaled by it. Nothing
+ * downstream has to re-derive that: an activation of zero means "this is not birdsong",
+ * which the previous version had no way to express.
  */
 export class ActivationTracker {
 	readonly activations: Float32Array;
@@ -228,6 +281,8 @@ export class ActivationTracker {
 	private readonly vectors: Float32Array[];
 	private readonly temperature: number;
 	private readonly smoothing: number;
+	/** 0..1 confidence that the input matches anything in the corpus. EMA-smoothed. */
+	strength = 0;
 
 	constructor(centroids: Centroids, spec: FeatureSpace, smoothing = 0.82) {
 		this.smoothing = smoothing;
@@ -248,6 +303,9 @@ export class ActivationTracker {
 			this.similarity[i] = cosine(zLive, this.vectors[i]);
 			if (this.similarity[i] > max) max = this.similarity[i];
 		}
+		const target = smoothstep(MATCH_FLOOR, MATCH_CEILING, max);
+		this.strength = this.smoothing * this.strength + (1 - this.smoothing) * target;
+
 		let sum = 0;
 		const exp = new Float32Array(k);
 		for (let i = 0; i < k; i++) {
@@ -255,23 +313,182 @@ export class ActivationTracker {
 			sum += exp[i];
 		}
 		for (let i = 0; i < k; i++) {
-			const target = exp[i] / sum;
-			this.activations[i] = this.smoothing * this.activations[i] + (1 - this.smoothing) * target;
+			const scaled = (exp[i] / sum) * this.strength;
+			this.activations[i] = this.smoothing * this.activations[i] + (1 - this.smoothing) * scaled;
 		}
 		return this.activations;
 	}
 
-	/** Pulls all activations toward zero — used when the input goes quiet. */
+	/**
+	 * Pulls everything toward zero — used when the input goes quiet.
+	 *
+	 * The floor matters: an exponential decay never reaches zero, and a residual
+	 * activation of 1e-7 is still enough to keep a node's label open and its points
+	 * faintly lit. Below a thousandth it is snapped to nothing.
+	 */
 	decay(): Float32Array {
-		for (let i = 0; i < this.activations.length; i++) this.activations[i] *= this.smoothing;
+		this.strength *= this.smoothing;
+		if (this.strength < 1e-3) this.strength = 0;
+		for (let i = 0; i < this.activations.length; i++) {
+			const v = this.activations[i] * this.smoothing;
+			this.activations[i] = v < 1e-3 ? 0 : v;
+		}
+		// `similarity` is a measurement, not a level: it holds the last cosine actually
+		// computed. Nothing displays it unless the reading is confident, and decaying it
+		// would corrupt the ranking `best()` depends on.
 		return this.activations;
 	}
 
+	/**
+	 * Nearest centroid by raw cosine.
+	 *
+	 * Ranked on `similarity` rather than on `activations` because the activations are
+	 * scaled by `strength`, and below the match floor every one of them is zero — an
+	 * argmax over that returns cluster 0 for any unrecognised sound, which is a
+	 * confident wrong answer rather than no answer. Softmax is monotonic in similarity,
+	 * so above the floor the two rankings are identical. Callers that need "is this
+	 * anything at all" read `strength`.
+	 */
 	best(): { index: number; similarity: number } {
 		let index = 0;
-		for (let i = 1; i < this.activations.length; i++) {
-			if (this.activations[i] > this.activations[index]) index = i;
+		for (let i = 1; i < this.similarity.length; i++) {
+			if (this.similarity[i] > this.similarity[index]) index = i;
 		}
 		return { index, similarity: this.similarity[index] ?? 0 };
+	}
+}
+
+/**
+ * How brightly each *individual* point responds, rather than each cluster.
+ *
+ * The reported match stays where the contract puts it: 28-d cosine against the cluster
+ * centroids, in `ActivationTracker`. This is a second, cheaper pass whose only output is
+ * a brightness. It projects the live descriptor into the reduced space the pipeline
+ * shipped in `point-features.f32`, then takes the cosine of every point against it — at
+ * the shipped corpus that is 4287 x 8 multiply-adds a frame, which is less work than the
+ * FFT that produced the descriptor.
+ *
+ * Without that asset it degrades to a deterministic per-point offset of the cluster's
+ * activation, which is not a measurement but does keep a knot from switching on as one
+ * flat blob.
+ */
+export class PointTracker {
+	readonly activation: Float32Array;
+	private readonly affinity: Float32Array;
+	private readonly features: Float32Array | null;
+	private readonly dims: number;
+	private readonly clusterOf: Int32Array;
+	private readonly centroidsLo: Float32Array | null;
+	private readonly zLo: Float32Array;
+	private readonly smoothing: number;
+
+	constructor(assets: BirdyAssets, smoothing = 0.7) {
+		const n = assets.points.n;
+		this.smoothing = smoothing;
+		this.activation = new Float32Array(n);
+		this.affinity = new Float32Array(n);
+		this.dims = assets.pointFeatureDims;
+		this.features = assets.pointFeatures;
+		this.clusterOf = Int32Array.from(assets.points.clusterId);
+		this.zLo = new Float32Array(this.dims);
+
+		const lo = assets.centroids.items.map((c) => c.featuresLo);
+		this.centroidsLo =
+			this.features && lo.every((v) => v?.length === this.dims)
+				? Float32Array.from(lo.flatMap((v) => v as number[]))
+				: null;
+
+		if (!this.centroidsLo) {
+			// deterministic per-point offset, matching the shader's own seed
+			for (let i = 0; i < n; i++) this.affinity[i] = ((i * 2654435761) % 1000) / 1000;
+		}
+	}
+
+	get measured(): boolean {
+		return this.centroidsLo !== null;
+	}
+
+	/**
+	 * Projects the live descriptor into the reduced space by expressing it as the
+	 * activation-weighted mix of the cluster centroids it matched. The pipeline's
+	 * projection matrix is not shipped — only the projected vectors are — so this
+	 * reconstructs the query from the same k anchors both sides already agree on.
+	 */
+	update(activations: Float32Array, strength = 1): Float32Array {
+		const n = this.activation.length;
+		const d = this.dims;
+		const centroids = this.centroidsLo;
+		// Below this there is nothing to show, and continuing would be actively wrong:
+		// the query direction below is renormalised, so a vanishing activation still
+		// yields a full-length unit vector and would keep the last matched knot glowing.
+		if (strength < 1e-3) return this.decay();
+
+		if (!centroids) {
+			for (let i = 0; i < n; i++) {
+				const act = activations[this.clusterOf[i]] ?? 0;
+				const target = act * (0.35 + 0.65 * this.affinity[i]);
+				this.activation[i] = this.smoothing * this.activation[i] + (1 - this.smoothing) * target;
+			}
+			return this.activation;
+		}
+
+		this.zLo.fill(0);
+		const k = activations.length;
+		for (let c = 0; c < k; c++) {
+			const w = activations[c];
+			if (w < 1e-4) continue;
+			const off = c * d;
+			for (let j = 0; j < d; j++) this.zLo[j] += w * centroids[off + j];
+		}
+		let norm = 0;
+		for (let j = 0; j < d; j++) norm += this.zLo[j] * this.zLo[j];
+		norm = Math.sqrt(norm);
+		if (norm < 1e-6) return this.decay();
+		for (let j = 0; j < d; j++) this.zLo[j] /= norm;
+
+		// Both sides are unit vectors, so the dot product is the cosine directly. Mapped
+		// through a steep ramp: below 0.9 a point is not really this sound, and without the
+		// ramp the whole cloud glows dimly instead of the matched region standing out.
+		const features = this.features as Float32Array;
+		for (let i = 0; i < n; i++) {
+			const off = i * d;
+			let dot = 0;
+			for (let j = 0; j < d; j++) dot += features[off + j] * this.zLo[j];
+			const affinity = Math.max(0, (dot - 0.86) / 0.14);
+			const clusterAct = activations[this.clusterOf[i]] ?? 0;
+			// The cluster activation sets how loud the response is, the point's own
+			// similarity sets which members of it actually light. Both are multiplied by
+			// the match strength, so an input that resembles nothing lights nothing.
+			const target = Math.min(
+				1,
+				Math.max(clusterAct * 0.2, affinity * affinity) * (0.25 + clusterAct * 3) * strength
+			);
+			this.activation[i] = this.smoothing * this.activation[i] + (1 - this.smoothing) * target;
+		}
+		return this.activation;
+	}
+
+	decay(): Float32Array {
+		for (let i = 0; i < this.activation.length; i++) {
+			const v = this.activation[i] * this.smoothing;
+			this.activation[i] = v < 2e-3 ? 0 : v;
+		}
+		return this.activation;
+	}
+
+	/**
+	 * Lights one whole cluster, for a scheduled note nothing is being matched against.
+	 *
+	 * The spread is wide on purpose. A scheduled note tells us the cluster and nothing
+	 * about which of its members the rendition resembles, so lighting them evenly would
+	 * assert a uniformity we have not measured — and would put a solid disc where the
+	 * rest of the visualisation shows a spray of individual points.
+	 */
+	pulseCluster(cluster: number, strength: number): void {
+		for (let i = 0; i < this.activation.length; i++) {
+			if (this.clusterOf[i] !== cluster) continue;
+			const jitter = 0.15 + 0.85 * (((i * 2654435761) % 1000) / 1000);
+			this.activation[i] = Math.max(this.activation[i], strength * jitter);
+		}
 	}
 }

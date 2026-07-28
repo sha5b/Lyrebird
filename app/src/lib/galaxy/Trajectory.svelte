@@ -4,6 +4,7 @@
 	import * as THREE from 'three';
 	import type { BirdyAssets } from '$lib/data/types';
 	import {
+		MAX_PATHS,
 		trajectoryFragmentShader,
 		trajectoryPointsFragmentShader,
 		trajectoryPointsVertexShader,
@@ -23,90 +24,98 @@
 	const MAX_NODES = 64;
 
 	const centroids = untrack(() => assets.centroids.items);
-	// Preallocated to the longest path we will ever draw, then a draw range is set per
-	// path — reallocating buffers on every selection would churn GPU memory.
-	const maxVertices = (MAX_NODES - 1) * SUBDIVISIONS + 1;
+	// Preallocated to every path we will ever draw at once, then a draw range is set per
+	// rebuild — reallocating buffers on every note would churn GPU memory during a chorus.
+	// Line *segments* rather than a strip, so separate paths are never joined together.
+	const maxVertices = MAX_PATHS * (MAX_NODES - 1) * SUBDIVISIONS * 2;
 	const positions = new Float32Array(maxVertices * 3);
 	const indices = new Float32Array(maxVertices);
+	const pathIds = new Float32Array(maxVertices);
 
 	const geometry = untrack(() => {
 		const g = new THREE.BufferGeometry();
 		g.setAttribute('position', new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage));
 		g.setAttribute('aIndex', new THREE.BufferAttribute(indices, 1).setUsage(THREE.DynamicDrawUsage));
+		g.setAttribute('aPath', new THREE.BufferAttribute(pathIds, 1).setUsage(THREE.DynamicDrawUsage));
 		g.setDrawRange(0, 0);
 		return g;
+	});
+
+	const progress = new Float32Array(MAX_PATHS).fill(-1);
+	const alpha = new Float32Array(MAX_PATHS);
+
+	const shared = () => ({
+		uProgress: { value: progress },
+		uAlpha: { value: alpha },
+		uColdColor: { value: new THREE.Color('#6b7a94') },
+		uHotColor: { value: new THREE.Color('#e2600d') }
 	});
 
 	const material = new THREE.ShaderMaterial({
 		vertexShader: trajectoryVertexShader,
 		fragmentShader: trajectoryFragmentShader,
-		uniforms: {
-			uProgress: { value: -1 },
-			uAlpha: { value: 0 },
-			uColdColor: { value: new THREE.Color('#93a9e8') },
-			uHotColor: { value: new THREE.Color('#ffd479') }
-		},
+		uniforms: shared(),
 		transparent: true,
 		depthWrite: false,
-		blending: THREE.AdditiveBlending
+		blending: THREE.NormalBlending
 	});
 
 	const beadMaterial = new THREE.ShaderMaterial({
 		vertexShader: trajectoryPointsVertexShader,
 		fragmentShader: trajectoryPointsFragmentShader,
 		uniforms: {
-			uProgress: { value: -1 },
-			uAlpha: { value: 0 },
+			...shared(),
 			uPixelRatio: { value: typeof window === 'undefined' ? 1 : Math.min(2, window.devicePixelRatio) },
-			uSizeScale: { value: 2.6 },
-			uColdColor: { value: new THREE.Color('#93a9e8') },
-			uHotColor: { value: new THREE.Color('#ffd479') }
+			uSizeScale: { value: 2.6 }
 		},
 		transparent: true,
 		depthWrite: false,
-		blending: THREE.AdditiveBlending
+		blending: THREE.NormalBlending
 	});
 
 	let builtVersion = -1;
 
-	/** Lays the path out as a subdivided polyline between cluster centroids. */
-	function rebuild(path: number[]): void {
-		const nodes = path.filter((i) => i >= 0 && i < centroids.length).slice(0, MAX_NODES);
-		if (nodes.length < 2) {
-			geometry.setDrawRange(0, 0);
-			return;
-		}
+	/** Lays every active path out as a run of short segments between cluster centroids. */
+	function rebuild(paths: VisualSignal['paths']): void {
 		let v = 0;
-		for (let n = 0; n < nodes.length - 1; n++) {
-			const a = centroids[nodes[n]].position;
-			const b = centroids[nodes[n + 1]].position;
-			// the last segment carries its endpoint, earlier ones stop short of it so
-			// vertices are not duplicated at the joins
-			const steps = n === nodes.length - 2 ? SUBDIVISIONS : SUBDIVISIONS - 1;
-			for (let s = 0; s <= steps; s++) {
-				const t = s / SUBDIVISIONS;
-				positions[v * 3] = a[0] + (b[0] - a[0]) * t;
-				positions[v * 3 + 1] = a[1] + (b[1] - a[1]) * t;
-				positions[v * 3 + 2] = a[2] + (b[2] - a[2]) * t;
-				indices[v] = n + t;
-				v++;
+		paths.slice(0, MAX_PATHS).forEach((path, p) => {
+			const nodes = path.nodes.filter((i) => i >= 0 && i < centroids.length).slice(0, MAX_NODES);
+			if (nodes.length < 2) return;
+			for (let n = 0; n < nodes.length - 1; n++) {
+				const a = centroids[nodes[n]].position;
+				const b = centroids[nodes[n + 1]].position;
+				for (let s = 0; s < SUBDIVISIONS; s++) {
+					// each subdivision contributes both of its endpoints, which is what
+					// LineSegments expects and what keeps one path from joining the next
+					for (const t of [s / SUBDIVISIONS, (s + 1) / SUBDIVISIONS]) {
+						positions[v * 3] = a[0] + (b[0] - a[0]) * t;
+						positions[v * 3 + 1] = a[1] + (b[1] - a[1]) * t;
+						positions[v * 3 + 2] = a[2] + (b[2] - a[2]) * t;
+						indices[v] = n + t;
+						pathIds[v] = p;
+						v++;
+					}
+				}
 			}
-		}
+		});
 		geometry.attributes.position.needsUpdate = true;
 		geometry.attributes.aIndex.needsUpdate = true;
+		geometry.attributes.aPath.needsUpdate = true;
 		geometry.setDrawRange(0, v);
 		geometry.computeBoundingSphere();
 	}
 
 	useTask(() => {
-		if (signal.pathVersion !== builtVersion) {
-			builtVersion = signal.pathVersion;
-			rebuild(signal.path);
+		if (signal.pathsVersion !== builtVersion) {
+			builtVersion = signal.pathsVersion;
+			rebuild(signal.paths);
 		}
-		material.uniforms.uProgress.value = signal.pathProgress;
-		material.uniforms.uAlpha.value = signal.pathAlpha;
-		beadMaterial.uniforms.uProgress.value = signal.pathProgress;
-		beadMaterial.uniforms.uAlpha.value = signal.pathAlpha;
+		progress.fill(-1);
+		alpha.fill(0);
+		signal.paths.slice(0, MAX_PATHS).forEach((path, i) => {
+			progress[i] = path.progress;
+			alpha[i] = path.alpha;
+		});
 	});
 
 	$effect(() => () => {
@@ -116,5 +125,5 @@
 	});
 </script>
 
-<T.Line {geometry} {material} frustumCulled={false} />
+<T.LineSegments {geometry} {material} frustumCulled={false} />
 <T.Points {geometry} material={beadMaterial} frustumCulled={false} />

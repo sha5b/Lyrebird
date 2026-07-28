@@ -5,8 +5,17 @@
 
 export type Timbre = 'pure' | 'reed' | 'buzz';
 
-/** How well the stated function is supported by the literature. */
-export type Confidence = 'experimental' | 'documented' | 'inferred' | 'invented';
+/**
+ * How well the stated function is supported by the literature. `unlabelled` is what a
+ * harvested field cluster gets: real audio of a known species with no documented
+ * function attached, which is a different claim from `invented`.
+ */
+export type Confidence =
+	| 'experimental'
+	| 'documented'
+	| 'inferred'
+	| 'invented'
+	| 'unlabelled';
 
 /** A pitch-contour breakpoint: [time fraction 0..1, frequency in Hz]. */
 export type ContourPoint = [number, number];
@@ -123,6 +132,25 @@ export interface Centroid {
 	position: [number, number, number];
 	vector: number[];
 	count: number;
+	/**
+	 * The centroid in the reduced space of `point-features.f32`. Used only to decide how
+	 * brightly each individual point responds; the reported match still uses `vector`.
+	 */
+	featuresLo?: number[];
+	/**
+	 * Behavioural class of the documented function — alarm, recruitment, courtship,
+	 * territorial, contact, structural or unclassified. Derived by the pipeline from an
+	 * auditable keyword table stored in the manifest.
+	 */
+	functionClass?: string;
+	/** Per-cluster summary the node labels show. Absent in assets built before they existed. */
+	meanDuration?: number;
+	/** Mean 3D distance of members from the centroid: how tight the knot is on screen. */
+	radius?: number;
+	/** Mean 28-d cosine of members to the centroid: how tight it is in feature space. */
+	cohesion?: number;
+	speciesMix?: { speciesId: string; count: number }[];
+	sources?: Record<string, number>;
 }
 
 export interface Centroids {
@@ -149,4 +177,11 @@ export interface BirdyAssets {
 	positions: Float32Array;
 	points: PointCloudMeta;
 	centroids: Centroids;
+	/**
+	 * `n * pointFeatureDims` unit vectors, row-major, or null for an asset set built
+	 * before the pipeline emitted them. When present, each point reacts to live audio on
+	 * its own similarity rather than inheriting its cluster's.
+	 */
+	pointFeatures: Float32Array | null;
+	pointFeatureDims: number;
 }
