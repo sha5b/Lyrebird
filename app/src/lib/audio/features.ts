@@ -314,7 +314,18 @@ export class ActivationTracker {
 		this.smoothing = smoothing;
 		this.temperature = spec.temperature || 0.12;
 		// KMeans runs on standardised descriptors, but tolerate raw vectors too.
-		const looksRaw = centroids.items.some((c) => c.vector.some((v) => Math.abs(v) > 12));
+		//
+		// Decided on the **median** component, not on whether any single one is large. The
+		// old test asked whether *some* component exceeded 12, which one three-point
+		// cluster of outliers satisfied on its own — its worst component reached 14.87 —
+		// and every centroid was then standardised a second time. That inverts the whole
+		// matcher silently: cosines go negative, the exact-match rate falls from 26/44 to
+		// 1/44, and nothing anywhere reports an error. A median is unmoved by one bad
+		// cluster, and the two cases it has to tell apart are nowhere near each other:
+		// standardised vectors sit around 0.6, raw descriptors an order of magnitude up.
+		const magnitudes = centroids.items.flatMap((c) => c.vector.map(Math.abs)).sort((a, b) => a - b);
+		const median = magnitudes[magnitudes.length >> 1] ?? 0;
+		const looksRaw = median > 4;
 		this.vectors = centroids.items.map((c) =>
 			looksRaw ? standardise(Float32Array.from(c.vector), spec) : Float32Array.from(c.vector)
 		);

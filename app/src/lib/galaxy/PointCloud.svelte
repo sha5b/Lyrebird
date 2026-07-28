@@ -5,19 +5,15 @@
 	import { buildSpeciesIndex } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
 	import {
-		CLAIM_COUNT,
 		CLAIM_NONE,
 		CLAIM_OF_FUNCTION,
-		COLOUR_MEANING,
-		COLOUR_MONO,
-		COLOUR_RESPONSE,
-		PALETTE_SLOTS,
+		SIZE_REFERENCE,
 		WAVE_SOURCES,
 		fragmentShader,
 		vertexShader,
 		type VisualSignal
 	} from './shaders';
-	import { CLAIM_HOT, CLAIM_REST, MONO_HOT, MONO_REST, speciesPalette } from './palette';
+	import { ACCENT, MONO_HOT, MONO_REST } from './palette';
 	import { buildLayouts, type LayoutId, type LayoutView } from './layouts';
 
 	interface Props {
@@ -26,14 +22,19 @@
 		pointSize?: number;
 		/** Species index to keep at full strength; -1 shows every species equally. */
 		focus?: number;
-		/** COLOUR_RESPONSE or COLOUR_MEANING. */
-		colourMode?: number;
 		/** Multiplies the animation clock, so the pulse can be slowed down. */
 		speed?: number;
 		/** Which arrangement to show. Changing it animates the cloud into the new one. */
 		layout?: LayoutId;
 		/** Written into as the cloud rearranges, so lines and labels follow their knots. */
 		view: LayoutView;
+		/** The scale the whole group is drawn at, from the listening distance. */
+		spread?: number;
+		/**
+		 * Clusters the learning pipeline is working on right now. They pulse, so the corpus
+		 * shows where the work is happening rather than leaving it to a progress bar.
+		 */
+		learning?: number[];
 	}
 
 	let {
@@ -41,10 +42,11 @@
 		signal,
 		pointSize = 7,
 		focus = -1,
-		colourMode = COLOUR_RESPONSE,
 		speed = 1,
 		layout = 'acoustic',
-		view
+		view,
+		spread = 1,
+		learning = []
 	}: Props = $props();
 
 	// The corpus never changes while the component is alive, so the buffers are built once
@@ -59,8 +61,9 @@
 		THREE.DynamicDrawUsage
 	);
 
-	// A point inherits its cluster's claim class. A cluster with no documented function
-	// gets `none` rather than the weakest real claim — see the note in `shaders.ts`.
+	// How much meaning each cluster claims, which is what the Meaning arrangement groups
+	// by. A cluster with no documented function gets `none` rather than the weakest real
+	// claim — see the note in `shaders.ts`.
 	const claimOfCluster = untrack(() =>
 		assets.centroids.items.map((c) =>
 			c.function ? (CLAIM_OF_FUNCTION[c.functionClass ?? ''] ?? CLAIM_NONE) : CLAIM_NONE
@@ -93,18 +96,14 @@
 		const cluster = new Float32Array(assets.points.n);
 		const seed = seeds;
 		const species = new Float32Array(assets.points.n);
-		const claim = new Float32Array(assets.points.n);
 		const speciesIndex = buildSpeciesIndex(assets);
-		const claimOf = claimOfCluster;
 		for (let i = 0; i < assets.points.n; i++) {
 			cluster[i] = assets.points.clusterId[i] ?? 0;
 			species[i] = speciesIndex.get(assets.points.speciesId[i] ?? '') ?? -1;
-			claim[i] = claimOf[cluster[i]] ?? CLAIM_NONE;
 		}
 		g.setAttribute('aCluster', new THREE.BufferAttribute(cluster, 1));
 		g.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
 		g.setAttribute('aSpecies', new THREE.BufferAttribute(species, 1));
-		g.setAttribute('aClaim', new THREE.BufferAttribute(claim, 1));
 		g.setAttribute('aAct', activationAttribute);
 		g.computeBoundingSphere();
 		return g;
@@ -116,23 +115,28 @@
 		uniforms: {
 			uActivation: { value: new Float32Array(clusterCount) },
 			uSung: { value: new Float32Array(clusterCount) },
-			uNeutralHot: { value: new THREE.Color(MONO_HOT) },
+			uRest: { value: new THREE.Color(MONO_REST) },
+			uInk: { value: new THREE.Color(MONO_HOT) },
+			uAccent: { value: new THREE.Color(ACCENT) },
 			uTime: { value: 0 },
 			uLevel: { value: 0 },
 			uPointSize: { value: untrack(() => pointSize) },
 			uPixelRatio: { value: typeof window === 'undefined' ? 1 : Math.min(2, window.devicePixelRatio) },
 			uHighlight: { value: -1 },
-			// The camera distance the point size is quoted at. Larger than the old 2.6
-			// because the framing now backs off to hold the whole galaxy: at 2.6 every point
-			// was less than half its intended size the moment nothing was selected.
-			uSizeScale: { value: 4.0 },
+			// Rewritten from `spread` below; the initial value only has to be sane.
+			uSizeScale: { value: SIZE_REFERENCE },
 			uMorph: { value: 1 },
 			uFocus: { value: -1 },
-			// Enough that an unselected species still reads as part of the same corpus,
-			// little enough that the selected one is unmistakably the subject.
-			uFocusDim: { value: 0.12 },
+			// Enough that an unselected species still reads as part of the same corpus.
+			//
+			// Pushed down to 0.07 while chasing "make the selection stand out" and that was
+			// the wrong lever: the selected bird is only about six percent of the points, so
+			// erasing the other ninety-four left the accent as the only thing on screen and
+			// it looked like everything was selected. The accent, the extra size and the
+			// extra weight already say which bird it is; the crowd has to stay visible for
+			// there to be anything to stand out *of*.
+			uFocusDim: { value: 0.22 },
 			uOpacity: { value: 1 },
-			uMode: { value: COLOUR_RESPONSE },
 			// Filled in every frame from the camera's distance to the cloud; the initial
 			// value only has to be sane for the first frame.
 			uFogRange: { value: new THREE.Vector2(2, 5) },
@@ -143,8 +147,6 @@
 			uWaveOrigin: { value: Array.from({ length: WAVE_SOURCES }, () => new THREE.Vector3()) },
 			uWaveAge: { value: new Float32Array(WAVE_SOURCES) },
 			uWaveAmp: { value: new Float32Array(WAVE_SOURCES) },
-			uRest: { value: Array.from({ length: PALETTE_SLOTS }, () => new THREE.Color()) },
-			uHot: { value: Array.from({ length: PALETTE_SLOTS }, () => new THREE.Color()) },
 			uSurface: { value: new THREE.Color('#fafbfc') }
 		},
 		transparent: true,
@@ -160,30 +162,8 @@
 		material.uniforms.uFocus.value = focus;
 	});
 
-	const species = speciesPalette();
-
-	// Both palettes occupy the same uniforms; switching mode rewrites them rather than
-	// shipping four arrays and branching in the fragment shader for every pixel.
 	$effect(() => {
-		const rest =
-			colourMode === COLOUR_MONO
-				? [MONO_REST]
-				: colourMode === COLOUR_MEANING
-					? CLAIM_REST
-					: species.rest;
-		const hot =
-			colourMode === COLOUR_MONO
-				? [MONO_HOT]
-				: colourMode === COLOUR_MEANING
-					? CLAIM_HOT
-					: species.hot;
-		const uRest = material.uniforms.uRest.value as THREE.Color[];
-		const uHot = material.uniforms.uHot.value as THREE.Color[];
-		for (let i = 0; i < PALETTE_SLOTS; i++) {
-			uRest[i].set(rest[i % rest.length]);
-			uHot[i].set(hot[i % hot.length]);
-		}
-		material.uniforms.uMode.value = colourMode;
+		material.uniforms.uSizeScale.value = SIZE_REFERENCE * spread;
 	});
 
 	const layouts = untrack(() =>
@@ -210,6 +190,20 @@
 	});
 	/** Seconds a rearrangement takes. Long enough to follow a point across it. */
 	const MORPH_SECONDS = 1.5;
+	/**
+	 * The slowest per-point share of a transition, and therefore how far `uMorph` has to
+	 * travel before *every* point has arrived.
+	 *
+	 * The shader gives each point its own lead between 0.75 and 1.25 so the cloud flows
+	 * rather than sliding as one body. Driving `uMorph` only to 1 means the 0.75 points
+	 * are three quarters of the way there when the transition is declared over — and then
+	 * the settle drops them on the target in a single frame. That snap is the trail
+	 * vanishing at the end instead of arriving: the fastest quarter of the cloud lands
+	 * smoothly and the rest teleports. Running to 1/0.75 lets the slowest point finish,
+	 * with the shader's clamp holding the early ones still once they get there.
+	 */
+	const MORPH_LEAD_MIN = 0.75;
+	const MORPH_END = 1 / MORPH_LEAD_MIN;
 	let morph = 1;
 	let fromLayout: LayoutId = 'acoustic';
 	let toLayout: LayoutId = 'acoustic';
@@ -262,10 +256,11 @@
 		// whole cloud somewhere it had never been and the interruption jumped.
 		const a = layouts[fromLayout].positions;
 		const b = layouts[toLayout].positions;
-		const eased = Math.min(1, morph) * Math.min(1, morph) * (3 - 2 * Math.min(1, morph));
+		const m = Math.min(1, morph);
+		const eased = m * m * (3 - 2 * m) * MORPH_END;
 		for (let i = 0; i < current.length; i++) {
 			const seed = seeds[(i / 3) | 0];
-			const t = Math.min(1, eased * (0.75 + 0.5 * seed));
+			const t = Math.min(1, eased * (MORPH_LEAD_MIN + 0.5 * seed));
 			current[i] = a[i] + (b[i] - a[i]) * t;
 		}
 		target.set(layouts[layout].positions);
@@ -412,11 +407,19 @@
 			} else {
 				// smoothstep, so it eases out of the old arrangement and into the new one
 				const eased = morph * morph * (3 - 2 * morph);
-				u.uMorph.value = eased;
-				// The centroids travel with their points, from where they actually were.
+				u.uMorph.value = eased * MORPH_END;
+				// The centroids travel with their points, from where they actually were,
+				// **on the same extended progress the points use**.
+				//
+				// The leads average to 1, so the mean point sits at `eased * MORPH_END` —
+				// not at `eased`. Advancing the knots on the un-extended value put every
+				// label a third of a step behind its own cloud, in the direction of
+				// travel, for the whole of a rearrangement: a uniform offset that looks
+				// exactly like a systematic placement error and is one.
+				const progress = Math.min(1, eased * MORPH_END);
 				const b = layouts[toLayout].centroids;
 				for (let i = 0; i < view.centroids.length; i++) {
-					view.centroids[i] = fromCentroids[i] + (b[i] - fromCentroids[i]) * eased;
+					view.centroids[i] = fromCentroids[i] + (b[i] - fromCentroids[i]) * progress;
 				}
 				view.version++;
 				view.morphing = true;
@@ -428,6 +431,16 @@
 		target.set(signal.activations.subarray(0, target.length));
 		const sung = u.uSung.value as Float32Array;
 		sung.set(signal.sung.subarray(0, sung.length));
+
+		// The learning pipeline breathes through the same channel the audio does. Slower
+		// than a note and never marked as sung: this is work happening at a place in the
+		// corpus, not a sound, and it must not be mistaken for one.
+		if (learning.length) {
+			const breath = 0.45 + 0.35 * Math.sin(u.uTime.value * 3.2);
+			for (const c of learning) {
+				if (c >= 0 && c < target.length) target[c] = Math.max(target[c], breath);
+			}
+		}
 
 		activation.set(signal.pointActivation.subarray(0, activation.length));
 		activationAttribute.needsUpdate = true;

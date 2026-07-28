@@ -17,7 +17,7 @@
 	 * lifetimes — so the rules and the wavefront belong to the same event rather than
 	 * being two decorations that happen to fire together.
 	 */
-	import { T, useTask } from '@threlte/core';
+	import { T, useTask, useThrelte } from '@threlte/core';
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
 	import type { LayoutView } from './layouts';
@@ -28,18 +28,33 @@
 		/** Where the centroids are right now, so a cross lands on its knot. */
 		view: LayoutView;
 		colour?: string;
-		/** Half-length of each rule, in the cloud's own units. */
-		reach?: number;
+		/**
+		 * Half-length of each rule as a share of the visible height, rather than a fixed
+		 * distance in the cloud's units. A fixed length is only right at one zoom: framed
+		 * on the whole corpus it is a short tick, framed on one knot it runs off every
+		 * edge of the screen and the "cross" has no ends. Quoting it against what the
+		 * camera can actually see keeps a strike the same size on the page at every zoom.
+		 */
+		reachOfView?: number;
 	}
 
-	let { signal, view, colour = '#8e9bab', reach = 2.4 }: Props = $props();
+	// 1.2 of the visible half-height: the rule runs past the edge of the frame, which is
+	// what makes it read as a ruled line across the background rather than as a small
+	// cross sitting on a knot. Quoted against the view so that holds at every zoom.
+	let { signal, view, colour = '#8e9bab', reachOfView = 1.2 }: Props = $props();
 
 	/** Crosses alive at once. More than this and the field stops reading as "here". */
 	const MAX_BURSTS = 6;
 	/** Seconds from strike to gone. */
 	const LIFETIME = 1.9;
-	/** Vertices per rule: the ends fade out, so each needs its own run of segments. */
-	const STEPS = 10;
+	/**
+	 * Segments per rule, which is what sets the *dash* length: a rule spans `reach` and is
+	 * drawn as this many alternating on/off pieces, so each dash is `reach / STEPS` long.
+	 * Raising it makes the dashing finer without shortening the line — those are two
+	 * separate things and conflating them once already made the rules tiny instead of
+	 * finely dashed.
+	 */
+	const STEPS = 20;
 	const SEGMENTS_PER_BURST = 3 * STEPS;
 	const VERTS = MAX_BURSTS * SEGMENTS_PER_BURST * 2;
 
@@ -124,7 +139,31 @@
 		[0, 0, 1]
 	];
 
+	const { camera } = useThrelte();
+	let anchor = $state<THREE.Object3D | undefined>();
+	const anchorWorld = new THREE.Vector3();
+
+	/**
+	 * Rule half-length in the cloud's own units, for the camera's current framing.
+	 *
+	 * The visible height at the cloud's distance is `2 * d * tan(fov/2)`; dividing by the
+	 * group's scale converts it into the local units the geometry is built in, so the
+	 * rules stay the same length on screen whatever the distance slider and the framing
+	 * are doing.
+	 */
+	function reachNow(): number {
+		const cam = camera.current as THREE.PerspectiveCamera | undefined;
+		if (!cam || !anchor) return 1.2;
+		anchor.updateWorldMatrix(true, false);
+		anchorWorld.setFromMatrixPosition(anchor.matrixWorld);
+		const scale = anchor.matrixWorld.getMaxScaleOnAxis() || 1;
+		const distance = cam.position.distanceTo(anchorWorld);
+		const halfHeight = distance * Math.tan((((cam.fov ?? 55) * Math.PI) / 180) / 2);
+		return Math.max(0.15, (halfHeight * reachOfView) / scale);
+	}
+
 	function rebuild() {
+		const reach = reachNow();
 		let v = 0;
 		for (const b of bursts) {
 			if (b.age >= LIFETIME || b.strength <= 0) continue;
@@ -180,4 +219,5 @@
 	});
 </script>
 
+<T.Object3D bind:ref={anchor} />
 <T.LineSegments {geometry} {material} renderOrder={-1} frustumCulled={false} />

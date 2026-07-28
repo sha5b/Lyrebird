@@ -34,8 +34,6 @@
  * pair ΔE 9.2 deutan, 24.0 normal), and the fourth is a neutral, which does not compete
  * with them. The finer six-class detail lives in the node labels.
  */
-import { CLAIM_HOT } from './palette';
-
 export const CLAIM_REFERENTIAL = 0;
 export const CLAIM_SOCIAL = 1;
 export const CLAIM_STRUCTURAL = 2;
@@ -52,52 +50,30 @@ export const CLAIM_OF_FUNCTION: Record<string, number> = {
 	unclassified: CLAIM_NONE
 };
 
-export const CLAIM_LEGEND = [
-	{
-		id: CLAIM_REFERENTIAL,
-		hex: CLAIM_HOT[CLAIM_REFERENTIAL],
-		label: 'referential',
-		hint: 'names something outside the bird — a predator, a direction to move'
-	},
-	{
-		id: CLAIM_SOCIAL,
-		hex: CLAIM_HOT[CLAIM_SOCIAL],
-		label: 'social',
-		hint: 'says something about the singer — territory, pair bond, presence'
-	},
-	{
-		id: CLAIM_STRUCTURAL,
-		hex: CLAIM_HOT[CLAIM_STRUCTURAL],
-		label: 'structural',
-		hint: 'a song element carrying syntax, with no referential meaning'
-	},
-	{
-		id: CLAIM_NONE,
-		hex: CLAIM_HOT[CLAIM_NONE],
-		label: 'no claim',
-		hint: 'real audio of a known bird, and no documented function of any kind'
-	}
-];
-
-/**
- * 0 = one hue per bird, 1 = one hue per claim of meaning, 2 = no hue at all.
- *
- * Monochrome needs no branch in the shader: the CPU fills every palette slot with the
- * same pair, so whichever slot a point selects it gets the same ink, and response still
- * reads through value, size and the ring. Which is the honest version of what colour
- * was doing here anyway — twelve hues cannot be told apart, and the arrangement now
- * carries the grouping colour used to gesture at.
- */
-export const COLOUR_RESPONSE = 0;
-export const COLOUR_MEANING = 1;
-export const COLOUR_MONO = 2;
-
 /**
  * Simultaneous waves. Three, because a chorus is several birds at once and the point of
  * the interference is that you can see two of them meet; a fourth adds cost and nothing
  * legible on top of three overlapping fronts.
  */
 export const WAVE_SOURCES = 3;
+
+/**
+ * The camera distance a mark's pixel size is quoted at, at a viewing scale of 1. Both
+ * the cloud and the trajectory beads multiply it by the current scale, and they have to
+ * agree or the beads come loose from the knots they run between.
+ *
+ * Quoting it against the scale is the whole point, and the fact that it was a bare
+ * constant is why the animation stopped being visible. The distance slider scales the
+ * group the cloud lives in, and the framing then backs the camera off to hold the same
+ * thing in view — so the picture stays the same size on screen while `-mv.z` grows in
+ * proportion to the scale. Measured against a fixed reference that reads as "the cloud
+ * moved away", and every mark shrinks toward its floor: taking the top of the slider to
+ * 12 quietly cut the points, and the travelling beads with them, to about a third of the
+ * size they were designed at, which for a bead is the difference between a moving
+ * highlight and a slightly brighter pixel. Scaling the reference with the group cancels
+ * it exactly — a viewing distance should not be a resolution control.
+ */
+export const SIZE_REFERENCE = 4.0;
 
 export function vertexShader(clusterCount: number): string {
 	return /* glsl */ `
@@ -107,7 +83,6 @@ export function vertexShader(clusterCount: number): string {
 		attribute float aSeed;
 		attribute float aAct;
 		attribute float aSpecies;
-		attribute float aClaim;
 		attribute vec3 aTarget;
 
 		uniform float uActivation[${Math.max(1, clusterCount)}];
@@ -136,11 +111,14 @@ export function vertexShader(clusterCount: number): string {
 		varying float vAct;
 		varying float vSeed;
 		varying float vFocus;
-		varying float vClaim;
-		varying float vSpecies;
 		varying float vDepth;
 		varying float vChosen;
-		varying float vSung;
+		/**
+		 * How much of the accent this point is entitled to. One channel, because the accent
+		 * only ever answers one question and the answer depends on whether a bird has been
+		 * chosen — see the note where it is set.
+		 */
+		varying float vAccent;
 
 		void main() {
 			int index = int(aCluster + 0.5);
@@ -149,10 +127,7 @@ export function vertexShader(clusterCount: number): string {
 			// even when nothing is being matched against it.
 			float act = clamp(max(aAct, uActivation[index] * 0.25), 0.0, 1.0);
 			vAct = act;
-			vSung = uSung[index];
 			vSeed = aSeed;
-			vClaim = aClaim;
-			vSpecies = aSpecies;
 			// Selection is a two-sided change, not just a dimming of everyone else. With
 			// only the dim, the chosen bird's points stayed exactly as they were and you
 			// could see the threads between its nodes without ever seeing *which* marks
@@ -161,6 +136,21 @@ export function vertexShader(clusterCount: number): string {
 			bool chosen = uFocus >= 0.0 && abs(uFocus - aSpecies) < 0.5;
 			vFocus = (uFocus < 0.0 || chosen) ? 1.0 : uFocusDim;
 			vChosen = chosen ? 1.0 : 0.0;
+
+			// **The accent answers one question, and which question depends on the selection.**
+			//
+			// With no bird chosen — how the app opens, and what a whole-aviary chorus looks
+			// like — the question is *what is sounding right now*, so the accent goes to the
+			// cluster being sung. uSung is 1 only for a note we scheduled and know the
+			// identity of; the clusters that merely resemble it stay in ink, which is the
+			// distinction the whole view exists to draw.
+			//
+			// With a bird chosen the question becomes *where is this bird*, so the accent
+			// goes to its points and nothing else gets any — including its own sung notes,
+			// which already have it. Letting another species' note flare violet while a bird
+			// is selected would answer a question nobody asked, in the colour reserved for
+			// the one they did.
+			vAccent = (uFocus < 0.0) ? clamp(uSung[index], 0.0, 1.0) : vChosen;
 
 			// Rearranging between layouts. Each point takes its own slightly different
 			// share of the transition, so the cloud flows apart and back together instead
@@ -232,7 +222,7 @@ export function vertexShader(clusterCount: number): string {
 			// made a lit knot read as one swollen disc: it has to breathe with the sound,
 			// and unevenly, or the per-point response is invisible in the size channel too.
 			float grow = act * (0.35 + 0.9 * uLevel) * (0.5 + 1.0 * aSeed);
-			float size = uPointSize * (1.0 + grow) * (1.0 + 0.45 * vChosen);
+			float size = uPointSize * (1.0 + grow) * (1.0 + 0.7 * vChosen);
 			if (abs(uHighlight - aCluster) < 0.5) size *= 1.15;
 			// Perspective, but softened. True 1/z is right for a solid and wrong for a
 			// scatter: zoomed out every mark falls under a pixel and the cloud turns to fog,
@@ -249,16 +239,15 @@ export function vertexShader(clusterCount: number): string {
 	`;
 }
 
-export const PALETTE_SLOTS = 16;
-
 export const fragmentShader = /* glsl */ `
-	uniform vec3 uRest[${PALETTE_SLOTS}];
-	uniform vec3 uHot[${PALETTE_SLOTS}];
+	/** The pale end of the response ramp, and the paper it is mixed toward. */
+	uniform vec3 uRest;
 	uniform vec3 uSurface;
-	/** Where a *resembling* cluster's response lands, in place of its category colour. */
-	uniform vec3 uNeutralHot;
+	/** The dark end: where any point lands when it responds and has earned no accent. */
+	uniform vec3 uInk;
+	/** The one colour in the picture — the sung note, or the selected bird. */
+	uniform vec3 uAccent;
 	uniform float uOpacity;
-	uniform float uMode;
 	/** Live pitch, 0..1 over the corpus's range. Shapes the gradient inside each mark. */
 	uniform float uPitch;
 
@@ -273,11 +262,9 @@ export const fragmentShader = /* glsl */ `
 	varying float vAct;
 	varying float vSeed;
 	varying float vFocus;
-	varying float vClaim;
-	varying float vSpecies;
 	varying float vDepth;
 	varying float vChosen;
-	varying float vSung;
+	varying float vAccent;
 
 	void main() {
 		vec2 uv = gl_PointCoord - 0.5;
@@ -313,39 +300,30 @@ export const fragmentShader = /* glsl */ `
 		float halo = smoothstep(0.5, 0.24, d) * glow;
 		float mask = disc * 0.88 + centre * (0.22 + 0.5 * glow) + halo * 0.45;
 
-		// Which category this point belongs to: its bird, or how much meaning its cluster
-		// claims. Both palettes live in the same two uniforms; the CPU swaps them.
-		float slotF = (uMode > 0.5) ? vClaim : mod(max(vSpecies, 0.0), float(${PALETTE_SLOTS}));
-		int slot = int(slotF + 0.5);
-		vec3 rest = uRest[slot];
-		vec3 hot = uHot[slot];
-
-		// Response walks from the pale resting tint to the saturated one along a single
-		// hue, so identity never moves and intensity always does. The whole 0..1 range is
-		// used: a steeper curve made everything above about half look identical, which is
-		// what made an active knot read as one flat colour.
-		// **Source and resemblance are not the same claim, so they are not the same ink.**
+		// **Where this point's response ends up: ink, unless it has earned the accent.**
 		//
-		// The category colour — this bird, or this claim of meaning — belongs to the note
-		// that is actually sounding. A cluster that merely resembles it walks toward a
-		// neutral dark instead, so a phrase reads as one coloured thread with a grey field
-		// of relatives around it. Rendered identically, as they were, five species' hues
-		// lighting at once looked like five birds singing rather than one bird and its
-		// four nearest neighbours in the corpus — which is the relation the view exists to
-		// show, and the opposite of what it appeared to say.
+		// Source and resemblance are not the same claim, so they are not the same colour.
+		// The accent belongs to the note that is actually sounding — or, once a bird is
+		// chosen, to that bird. A cluster that merely resembles what is sounding walks to
+		// ink instead, so a phrase reads as one violet thread with a grey field of
+		// relatives around it. Rendered identically, as they were, five clusters lighting
+		// at once looked like five birds singing rather than one bird and its four nearest
+		// neighbours in the corpus — which is the relation the view exists to show, and the
+		// opposite of what it appeared to say.
 		//
 		// Nothing is hidden by this: the resembling clusters light exactly as brightly as
-		// before, and the reading panel still names them. Only the hue is withheld, and
-		// only from the clusters that did not earn it.
-		vec3 end = mix(uNeutralHot, hot, clamp(vSung, 0.0, 1.0));
+		// they would have, and the reading panel still names them. Only the colour is
+		// withheld, and only from the points that did not earn it.
+		vec3 end = mix(uInk, uAccent, clamp(vAccent, 0.0, 1.0));
 
-		// A chosen bird's points start part-way along their own ramp even at rest, so the
-		// selection is a darker set of marks rather than the same marks in a thinner
+		// A chosen bird's points sit most of the way along their own ramp even at rest, so
+		// the selection is a violet set of marks rather than the same marks in a thinner
 		// crowd. Dimming everyone else was not enough on its own: a bird owns forty of a
 		// hundred and seventy-six clusters scattered right across the layout, so with only
 		// the dim you could see the threads joining its nodes without being able to point
-		// at a single mark and say that one belongs to it.
-		vec3 base = mix(rest, end, 0.34 * vChosen);
+		// at a single mark and say that one belongs to it. Not all the way, because
+		// responding still has to be visible on top of being selected.
+		vec3 base = mix(uRest, end, 0.8 * vChosen);
 		vec3 colour = mix(base, end, clamp(vAct, 0.0, 1.0));
 
 		// A ring of the surface colour around anything that is responding. This is the

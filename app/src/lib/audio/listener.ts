@@ -287,10 +287,19 @@ export class Listener {
 		this.signal.sung.fill(0);
 
 		if (singing) {
-			// The matched activations stay visible but are damped: the analysis window spans
-			// ~0.7 s, so it lights every cluster of a short phrase at once, which blurs the
-			// order. Damping them lets the scheduled node read as "this syllable, now".
-			for (let i = 0; i < this.signal.activations.length; i++) this.signal.activations[i] *= 0.3;
+			// **While Birdy sings, only what it is singing lights up.**
+			//
+			// Two different claims were being drawn in the same channel: the scheduled node,
+			// which we know, and whatever the matcher thought the output resembled, which we
+			// infer. Damping the inferred ones to 30 % was not a fix — a third of full
+			// brightness across a dozen clusters still reads as a dozen clusters, so one
+			// bird singing flared clouds all over the galaxy and looked like a chorus.
+			//
+			// The rule now has no middle: known beats inferred outright. The matcher keeps
+			// running — `strength`, the reading panel and the microphone path all still use
+			// it — but it does not get to draw over a note whose identity is not in doubt.
+			// Listening, where nothing is known, is the case the inference is for.
+			this.signal.activations.fill(0);
 			this.applyScheduledPulses();
 		}
 

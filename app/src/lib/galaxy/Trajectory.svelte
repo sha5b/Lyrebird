@@ -2,12 +2,12 @@
 	import { T, useTask } from '@threlte/core';
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
-	import { buildSpeciesIndex } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
-	import { MONO_HOT, speciesPalette } from './palette';
+	import { ACCENT, MONO_HOT } from './palette';
 	import type { LayoutView } from './layouts';
 	import {
 		MAX_PATHS,
+		SIZE_REFERENCE,
 		trajectoryFragmentShader,
 		trajectoryPointsFragmentShader,
 		trajectoryPointsVertexShader,
@@ -20,11 +20,11 @@
 		signal: VisualSignal;
 		/** Where the centroids are right now; moves while the cloud rearranges. */
 		view: LayoutView;
-		/** Drop the species hues when the cloud is monochrome, or the threads contradict it. */
-		mono?: boolean;
+		/** The scale the whole group is drawn at, from the listening distance. */
+		spread?: number;
 	}
 
-	let { assets, signal, view, mono = false }: Props = $props();
+	let { assets, signal, view, spread = 1 }: Props = $props();
 
 	/** Samples per segment: enough that the travelling highlight moves smoothly. */
 	const SUBDIVISIONS = 14;
@@ -52,9 +52,23 @@
 	/** What is drawn: eased toward `wanted`, so nothing ever cuts. */
 	const alpha = new Float32Array(MAX_PATHS);
 	const wanted = new Float32Array(MAX_PATHS);
-	const pathColour = Array.from({ length: MAX_PATHS }, () => new THREE.Color('#8595ae'));
-	const palette = speciesPalette();
-	const speciesIndex = untrack(() => buildSpeciesIndex(assets));
+	/**
+	 * The bead carries its own weight, because it fades on a different rule to the thread.
+	 * See the crowd factors below.
+	 */
+	const beadAlpha = new Float32Array(MAX_PATHS);
+	const beadWanted = new Float32Array(MAX_PATHS);
+	/**
+	 * The thread and the bead running along it are coloured separately.
+	 *
+	 * A thread is structure — which knots this phrase visits, and in what order — and it
+	 * is there whether or not anything is happening on it, so it is drawn in ink. The bead
+	 * is the live position, the one thing on the line that is happening *now*, and it gets
+	 * the accent. Colouring both the same made the whole path look equally live and hid
+	 * the only part of it that was.
+	 */
+	const pathColour = Array.from({ length: MAX_PATHS }, () => new THREE.Color(MONO_HOT));
+	const beadColour = Array.from({ length: MAX_PATHS }, () => new THREE.Color(ACCENT));
 
 	const shared = () => ({
 		uProgress: { value: progress },
@@ -77,14 +91,25 @@
 		fragmentShader: trajectoryPointsFragmentShader,
 		uniforms: {
 			...shared(),
+			// its own colour and weight arrays: the bead is the live position, the thread is
+			// structure, and they neither look nor fade the same
+			uPathColour: { value: beadColour },
+			uAlpha: { value: beadAlpha },
+			uColdColor: { value: new THREE.Color(ACCENT) },
 			uPixelRatio: { value: typeof window === 'undefined' ? 1 : Math.min(2, window.devicePixelRatio) },
-			// Matches the point cloud's reference distance exactly; see the note in the
-			// bead vertex shader for why the two cannot differ.
-			uSizeScale: { value: 4.0 }
+			// Rewritten from `spread`, exactly as the cloud's is; see the note in the bead
+			// vertex shader for why the two cannot differ.
+			uSizeScale: { value: SIZE_REFERENCE }
 		},
 		transparent: true,
 		depthWrite: false,
 		blending: THREE.NormalBlending
+	});
+
+	// Quoted against the viewing scale, exactly as the cloud's marks are. A bead that does
+	// not follow the same law comes loose from the knots it runs between.
+	$effect(() => {
+		beadMaterial.uniforms.uSizeScale.value = SIZE_REFERENCE * spread;
 	});
 
 	let builtVersion = -1;
@@ -132,24 +157,33 @@
 		}
 		progress.fill(-1);
 		alpha.fill(0);
-		// The more threads there are, the fainter each one is drawn.
+		// The more threads there are, the fainter each one is drawn — and the bead does not
+		// join in.
 		//
 		// One bird's phrase is a figure you are meant to read; twelve birds at once is a
 		// texture, and drawing all twelve at the weight of one turns the galaxy into a
-		// ball of wool with the cloud invisible behind it. Falling off with the count
-		// keeps the total ink roughly constant, so a chorus reads as a faint web with the
-		// travelling beads picking out where each bird is *now* — which is the part of a
-		// chorus worth watching — while a single selected phrase stays at full strength.
+		// ball of wool with the cloud invisible behind it. Falling off with the count keeps
+		// the total ink roughly constant.
+		//
+		// That argument is about the *threads*, which are long, and it was being applied to
+		// the beads, which are four pixels each. Twelve of them cost almost no ink and they
+		// are the one part of a chorus worth watching — where each bird is right now — so
+		// fading them by three quarters along with the wool they run through is how the
+		// whole-aviary view ended up with nothing visibly moving in it. They keep a much
+		// gentler falloff, just enough that a dozen accents do not read as a swarm.
 		const active = Math.min(MAX_PATHS, signal.paths.length);
 		const crowd = active <= 1 ? 1 : Math.pow(active, -0.55);
+		const beadCrowd = active <= 1 ? 1 : Math.pow(active, -0.15);
 		wanted.fill(0);
+		beadWanted.fill(0);
 		signal.paths.slice(0, MAX_PATHS).forEach((path, i) => {
 			progress[i] = path.progress;
 			wanted[i] = path.alpha * crowd;
-			const slot = speciesIndex.get(path.speciesId);
-			pathColour[i].set(
-				mono || slot === undefined ? MONO_HOT : palette.hot[slot % palette.hot.length]
-			);
+			beadWanted[i] = path.alpha * beadCrowd;
+			// Thread in ink, bead in the accent — the same accent the sounding knot in the
+			// cloud wears, because they are the same event seen twice.
+			pathColour[i].set(MONO_HOT);
+			beadColour[i].set(ACCENT);
 		});
 
 		// Weight is eased rather than assigned, so a thread never steps in brightness —
@@ -161,6 +195,8 @@
 		for (let i = 0; i < MAX_PATHS; i++) {
 			alpha[i] += (wanted[i] - alpha[i]) * ease;
 			if (alpha[i] < 0.002) alpha[i] = 0;
+			beadAlpha[i] += (beadWanted[i] - beadAlpha[i]) * ease;
+			if (beadAlpha[i] < 0.002) beadAlpha[i] = 0;
 		}
 	});
 

@@ -13,7 +13,7 @@
 	import * as THREE from 'three';
 	import { buildSpeciesIndex } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
-	import { MONO_HOT, speciesPalette } from './palette';
+	import { ACCENT, MONO_HOT } from './palette';
 	import type { LayoutView } from './layouts';
 	import type { VisualSignal } from './shaders';
 
@@ -28,11 +28,9 @@
 		pinned?: number;
 		/** Where the centroids are right now; moves while the cloud rearranges. */
 		view: LayoutView;
-		/** Drop the species hues when the cloud is monochrome. */
-		mono?: boolean;
 	}
 
-	let { assets, signal, elements, focus = -1, pinned = -1, view, mono = false }: Props = $props();
+	let { assets, signal, elements, focus = -1, pinned = -1, view }: Props = $props();
 
 	const { camera, size } = useThrelte();
 
@@ -43,14 +41,6 @@
 	});
 	/** Has a documented function: worth a tag before an unnamed field cluster is. */
 	const namedOf = untrack(() => centroids.map((c) => Boolean(c.function)));
-	// A label's rule and figures wear its own bird's colour, so a tag and the knot it
-	// points at are obviously the same thing.
-	const accentOf = untrack(() => {
-		const palette = speciesPalette();
-		return speciesOf.map((s) =>
-			s < 0 ? 'var(--signal)' : palette.hot[s % palette.hot.length]
-		);
-	});
 
 	let anchor = $state<THREE.Object3D | undefined>();
 
@@ -162,7 +152,11 @@
 			node.style.zIndex = String(Math.round((1 - (p.z + 1) / 2) * 1000) + (hot ? 2000 : 0));
 			node.style.setProperty('--hot', open ? '1' : '0');
 			node.style.setProperty('--act', shown[i].toFixed(3));
-			node.style.setProperty('--accent', mono ? MONO_HOT : accentOf[i]);
+			// A tag wears the accent on the same rule its knot does: the selected bird's
+			// tags, or — with nothing selected — whichever tag is currently responding. Any
+			// other tag is ink, so the sheet never claims more than one thing at a time.
+			const live = focus >= 0 ? speciesOf[i] === focus : hot;
+			node.style.setProperty('--accent', live ? ACCENT : MONO_HOT);
 
 			// The one piece of text that changes while running. Written only when the
 			// rounded percentage actually moves, and only for a label that is open.

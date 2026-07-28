@@ -5,7 +5,6 @@
 	import type * as THREE from 'three';
 	import type { OrbitControls as OrbitControlsInstance } from 'three/examples/jsm/controls/OrbitControls.js';
 	import type { BirdyAssets } from '$lib/data/types';
-	import { COLOUR_MONO } from './shaders';
 	import ContextPaths from './ContextPaths.svelte';
 	import Framing from './Framing.svelte';
 	import GridBurst from './GridBurst.svelte';
@@ -26,8 +25,6 @@
 		/** Species index to keep at full strength; -1 shows every species equally. */
 		focus?: number;
 		pinned?: number;
-		/** COLOUR_RESPONSE, COLOUR_MEANING or COLOUR_MONO. */
-		colourMode?: number;
 		/**
 		 * Clusters to fly the camera to and hold in frame — the nodes of a phrase picked
 		 * out of the history. Empty releases the camera back to the viewer.
@@ -39,6 +36,8 @@
 		speed?: number;
 		/** Which arrangement to show; changing it animates the cloud into the new one. */
 		layout?: LayoutId;
+		/** Clusters the learning pipeline is working on, pulsed live in the cloud. */
+		learning?: number[];
 		onpick?: (cluster: number) => void;
 		/** Fired on a click that hit no node, so the page can clear its selection. */
 		onbackground?: () => void;
@@ -52,11 +51,11 @@
 		labels = true,
 		focus = -1,
 		pinned = -1,
-		colourMode = 0,
 		spread = 1,
 		speed = 1,
 		layout = 'acoustic',
 		frame = [],
+		learning = [],
 		onpick,
 		onbackground
 	}: Props = $props();
@@ -131,18 +130,20 @@
 		<Spinner {spin} {speed} scale={spread} bind:group={cloud}>
 			<GridBurst {signal} {view} />
 			<ContextPaths {assets} {signal} {view} />
-			<PointCloud {assets} {signal} {pointSize} {focus} {colourMode} {speed} {layout} {view} />
-			<Trajectory {assets} {signal} {view} mono={colourMode === COLOUR_MONO} />
+			<PointCloud
+				{assets}
+				{signal}
+				{pointSize}
+				{focus}
+				{speed}
+				{layout}
+				{view}
+				{spread}
+				{learning}
+			/>
+			<Trajectory {assets} {signal} {view} {spread} />
 			{#if labels}
-				<NodeProjector
-					{assets}
-					{signal}
-					elements={labelElements}
-					{focus}
-					{pinned}
-					{view}
-					mono={colourMode === COLOUR_MONO}
-				/>
+				<NodeProjector {assets} {signal} elements={labelElements} {focus} {pinned} {view} />
 			{/if}
 		</Spinner>
 

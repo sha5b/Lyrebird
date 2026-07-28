@@ -15,15 +15,8 @@
 	import { createIndividual } from '$lib/audio/individual';
 	import { compilePhrase, improvise, type Phrase } from '$lib/lang/grammar';
 	import { citationsFor, confidenceLabel, type Reading } from '$lib/lang/translate';
-	import {
-		CLAIM_LEGEND,
-		COLOUR_MEANING,
-		COLOUR_MONO,
-		COLOUR_RESPONSE,
-		createSignal,
-		type VisualSignal
-	} from '$lib/galaxy/shaders';
-	import { MONO_HOT, speciesPalette } from '$lib/galaxy/palette';
+	import { createSignal, type VisualSignal } from '$lib/galaxy/shaders';
+	import { ACCENT, MONO_HOT } from '$lib/galaxy/palette';
 	import type { LayoutId } from '$lib/galaxy/layouts';
 	import { PipelineClient, type PipelineStatus } from '$lib/data/pipeline';
 	import type { BirdyAssets } from '$lib/data/types';
@@ -66,10 +59,6 @@
 	let pointSize = $state(6);
 	let spin = $state(true);
 	let showLabels = $state(true);
-	// Off by default: with 176 clusters the hues cannot separate them anyway, and the
-	// arrangement plus the labels carry identity. Colour is something you turn on to ask
-	// a specific question, not the resting state of the picture.
-	let coloured = $state(false);
 	let tempo = $state(1);
 	let lastPhrase = $state<Phrase | null>(null);
 	let nowSinging = $state<ScheduledSyllable[]>([]);
@@ -129,17 +118,6 @@
 	const spread = $derived(SPREAD_AT_LOW * Math.exp(SPREAD_RATE * (distance - 0.1)));
 
 	/**
-	 * One switch, not a list of schemes. The arrangement already says what the grouping
-	 * is, so colour only has to say whether to carry it: `Arrange` by meaning and the
-	 * hues are the three claim colours, anything else and they are the species hues.
-	 * `Monochrome` drops the category entirely and leaves response to value and size,
-	 * which twelve indistinguishable species hues were never really adding to.
-	 */
-	const colourMode = $derived(
-		!coloured ? COLOUR_MONO : layout === 'meaning' ? COLOUR_MEANING : COLOUR_RESPONSE
-	);
-
-	/**
 	 * Choosing a bird ends the whole-aviary chorus, which is the other half of the rule
 	 * that starting one clears the bird.
 	 *
@@ -184,6 +162,50 @@
 		if (currentSpecies) return clustersOfSpecies.get(currentSpecies.id) ?? allClusters;
 		return allClusters;
 	});
+
+	/**
+	 * Which bird the running job is working on, read out of its own log.
+	 *
+	 * Learning is not a progress bar with an unknown interior. The pipeline says what it is
+	 * doing line by line — which species it is harvesting, rendering or fitting — and every
+	 * one of those lines names a bird the galaxy already draws. Matching the newest mention
+	 * against the inventory turns the log into a position, and the corpus can then show the
+	 * work happening in the place it is happening.
+	 *
+	 * Deliberately last-mention-wins over a short window: a line like the per-species
+	 * retention summary names several, and the useful answer is the most recent one.
+	 */
+	const learningSpecies = $derived.by(() => {
+		const log = job?.log;
+		if (!job || job.state !== 'running' || !log?.length) return '';
+		for (let i = log.length - 1; i >= Math.max(0, log.length - 6); i--) {
+			const line = log[i];
+			const hit = species.find((s) => line.includes(s.id));
+			if (hit) return hit.id;
+		}
+		return '';
+	});
+	/** Those clusters, for the cloud to pulse while the work is going on. */
+	const learningClusters = $derived(
+		learningSpecies ? (clustersOfSpecies.get(learningSpecies) ?? []) : []
+	);
+
+	/**
+	 * One line saying what is happening, in place of fourteen lines of log.
+	 *
+	 * The last line the pipeline printed is almost always the answer, and the log itself
+	 * stays available underneath for when it is not.
+	 */
+	const jobDoing = $derived.by(() => {
+		const log = job?.log;
+		if (!log?.length) return '';
+		for (let i = log.length - 1; i >= 0; i--) {
+			const line = log[i].trim();
+			if (line) return line;
+		}
+		return '';
+	});
+
 
 	onMount(() => {
 		loadAssets()
@@ -378,6 +400,48 @@
 	}
 
 	/**
+	 * Transitions below this probability are not drawn.
+	 *
+	 * A measured first-order grammar is a dense matrix — every type has some chance of
+	 * following every other, and drawing all of it is a complete graph, which shows
+	 * nothing. The floor keeps the transitions a bird actually uses. It is a display
+	 * threshold and it hides real structure, so it is a named constant rather than a
+	 * number buried in a loop.
+	 */
+	const GRAMMAR_FLOOR = 0.08;
+
+	/**
+	 * The measured grammar as threads: which fitted type follows which.
+	 *
+	 * Without this a selected bird had almost nothing joining its knots, and the reason was
+	 * not a rendering fault. The authored songs are sequences of *documented* syllables —
+	 * `A`, `B`, `C` — while everything `learn` fits is `L00`…`L11`, and the syntax measured
+	 * over those lives in `grammar`, which nothing was drawing. So the twelve types this
+	 * project actually learned from field audio appeared as unconnected dots while the six
+	 * hand-authored calls got all the lines.
+	 *
+	 * These are two-node threads rather than paths: a first-order grammar is a set of
+	 * pairs, and stringing them into a route would assert an order that was never measured.
+	 */
+	function grammarPathsOf(id: string): number[][] {
+		if (!assets || !clusters) return [];
+		const bird = speciesById(assets.inventory, id);
+		const transitions = bird?.grammar?.transitions;
+		if (!transitions) return [];
+		const out: number[][] = [];
+		for (const [from, nexts] of Object.entries(transitions)) {
+			const a = clusterIndexFor(clusters, id, from);
+			if (a < 0) continue;
+			for (const [to, p] of Object.entries(nexts)) {
+				if (to === 'end' || p < GRAMMAR_FLOOR) continue;
+				const b = clusterIndexFor(clusters, id, to);
+				if (b >= 0 && b !== a) out.push([a, b]);
+			}
+		}
+		return out;
+	}
+
+	/**
 	 * The faint backdrop of songs behind the live ones.
 	 *
 	 * Passing no bird draws every bird's, rather than nothing. "All birds" is a selection
@@ -389,10 +453,10 @@
 	function showContext(id: string) {
 		if (!listener) return;
 		if (id) {
-			listener.setContext(songPathsOf(id));
+			listener.setContext([...songPathsOf(id), ...grammarPathsOf(id)]);
 			return;
 		}
-		listener.setContext(species.flatMap((s) => songPathsOf(s.id)));
+		listener.setContext(species.flatMap((s) => [...songPathsOf(s.id), ...grammarPathsOf(s.id)]));
 	}
 
 	function sing() {
@@ -401,6 +465,13 @@
 			voice: soloVoice ?? undefined,
 			distance
 		});
+		// Register the phrase as a live path, which is what draws the thread through its
+		// knots and runs the bead along it. Without this "Sing it" made a sound and left
+		// the galaxy completely static — `singImprovisation` did it and this did not, so
+		// improvising drew a trajectory and playing a documented call drew nothing.
+		singer = soloVoice?.label ?? null;
+		addLive(currentSpecies.id, nowSinging, singer ?? '');
+		recordSung(currentSpecies.id, currentSong.id, nowSinging, singer ?? '');
 		lastPhrase = {
 			speciesId: currentSpecies.id,
 			label: currentSong.label,
@@ -649,12 +720,15 @@
 	const pinned = $derived(
 		pinnedCluster >= 0 ? (assets?.centroids.items[pinnedCluster] ?? null) : null
 	);
-	const palette = speciesPalette();
-	/** Follows the display switch: a swatch cannot say "this bird is blue" in monochrome. */
+	/**
+	 * The colour a bird's mark carries, matching exactly what the galaxy would draw for it.
+	 *
+	 * There are two cases, because the cloud has two: the selected bird wears the accent
+	 * and everything else is ink. Deriving both from the same rule is the only way a chip
+	 * in the history strip and a knot in the cloud are recognisably the same thing.
+	 */
 	function speciesColourOf(id: string): string {
-		const slot = speciesIndex?.get(id);
-		if (!coloured) return MONO_HOT;
-		return slot === undefined ? 'var(--ink-faint)' : palette.hot[slot % palette.hot.length];
+		return id && id === currentSpecies?.id ? ACCENT : MONO_HOT;
 	}
 	// The hue of the *selected* bird, which is not the same as the focused one: during a
 	// global chorus nothing is focused, but the selection still has a colour in the cloud.
@@ -720,13 +794,13 @@ uv run birdy-pipeline build</pre>
 				{pointSize}
 				{spin}
 				{focus}
-				{colourMode}
 				{spread}
 				speed={tempo}
 				labels={showLabels}
 				pinned={pinnedCluster}
 				{layout}
 				frame={frameNodes}
+				learning={learningClusters}
 				onpick={pickCluster}
 			/>
 			{/key}
@@ -782,25 +856,6 @@ uv run birdy-pipeline build</pre>
 							</section>
 
 							<section class="block">
-								<h3 class="blocktitle">Colour</h3>
-								<div class="segmented">
-									<button class:on={!coloured} onclick={() => (coloured = false)}>Monochrome</button>
-									<button class:on={coloured} onclick={() => (coloured = true)}>Coloured</button>
-								</div>
-								<p class="note faint">
-									{#if !coloured}
-										One ink. Response reads as value and size, and the arrangement carries the
-										grouping on its own.
-									{:else if layout === 'meaning'}
-										A hue per claim of meaning, matching the arrangement.
-									{:else}
-										A hue per bird. Twelve cannot be told apart by colour alone — the labels
-										and the selection are what name them.
-									{/if}
-								</p>
-							</section>
-
-							<section class="block">
 								<label class="field">
 									<span class="lbl">Point size <b class="mono">{pointSize.toFixed(1)}</b></span>
 									<input type="range" min="1" max="10" step="0.1" bind:value={pointSize} />
@@ -820,18 +875,6 @@ uv run birdy-pipeline build</pre>
 					</div>
 				{/if}
 			</div>
-
-			{#if coloured && colourMode === COLOUR_MEANING}
-				<div class="legend">
-					<span class="legend-title">how much meaning is claimed</span>
-					{#each CLAIM_LEGEND as entry (entry.id)}
-						<span class="legend-item">
-							<span class="swatch" style:background={entry.hex}></span>
-							<b>{entry.label}</b> — {entry.hint}
-						</span>
-					{/each}
-				</div>
-			{/if}
 
 			{#if history.length}
 				<!--
@@ -1368,7 +1411,25 @@ uv run birdy-pipeline serve</pre>
 									{job.name}
 									<span class="mono faint">{job.state} · {job.seconds}s</span>
 								</h3>
-								<pre class="joblog mono">{job.log.slice(-14).join('\n') || '…'}</pre>
+								<!--
+									One line of what is happening, not fourteen. A running job printed a
+									scrolling wall that pushed every control out of the panel, and nearly
+									all of it was the same message with a counter on the end. The newest
+									line is the answer; the rest is one click away when it is not.
+								-->
+								<p class="doing mono">{jobDoing || '…'}</p>
+								{#if learningSpecies}
+									<p class="note">
+										Working on <b style:color={speciesColourOf(learningSpecies)}
+											>{species.find((s) => s.id === learningSpecies)?.common ??
+												learningSpecies}</b
+										> — its knots are breathing in the galaxy while this runs.
+									</p>
+								{/if}
+								<details class="loglines">
+									<summary class="mono faint">full log · {job.log.length} lines</summary>
+									<pre class="joblog mono">{job.log.slice(-200).join('\n') || '…'}</pre>
+								</details>
 								{#if job.error}<p class="error note">{job.error}</p>{/if}
 								{#if jobRunning}
 									<button
@@ -1864,6 +1925,30 @@ uv run birdy-pipeline serve</pre>
 		font-size: 0.7rem;
 	}
 
+	/**
+	 * One line, clipped, never wrapping. A job's newest message is the status; letting it
+	 * wrap to three lines makes the panel jump every time the message changes length,
+	 * which is most seconds.
+	 */
+	.doing {
+		margin: 0;
+		padding: 0.4rem 0.5rem;
+		border-left: 2px solid var(--signal);
+		background: var(--paper);
+		font-size: 0.66rem;
+		line-height: 1.4;
+		color: var(--ink);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.loglines summary {
+		cursor: pointer;
+		font-size: 0.6rem;
+		padding: 0.2rem 0;
+	}
+
 	.joblog {
 		max-height: 12rem;
 		overflow: auto;
@@ -2020,41 +2105,6 @@ uv run birdy-pipeline serve</pre>
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
-	}
-
-	/* --- legend --- */
-
-	.legend {
-		position: absolute;
-		left: 1rem;
-		bottom: 1rem;
-		display: grid;
-		gap: 0.3rem;
-		padding: 0.6rem 0.75rem;
-		background: color-mix(in srgb, var(--paper-raised) 92%, transparent);
-		border: 1px solid var(--rule);
-		border-radius: var(--radius);
-		max-width: 26rem;
-		font-size: 0.7rem;
-		color: var(--ink-dim);
-	}
-
-	.legend-title {
-		font-size: 0.56rem;
-		text-transform: uppercase;
-		letter-spacing: 0.11em;
-		color: var(--ink-faint);
-	}
-
-	.legend-item {
-		display: flex;
-		align-items: baseline;
-		gap: 0.4rem;
-	}
-
-	.legend-item b {
-		color: var(--ink);
-		font-weight: 600;
 	}
 
 	.swatch {
