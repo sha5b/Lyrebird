@@ -232,6 +232,8 @@ def cmd_build(
         inventory_path=inventory_path,
         seed=args.seed,
         k=args.k,
+        clustering=args.clustering,
+        min_cluster_size=args.min_cluster_size,
         min_dist=args.min_dist,
         projection=args.projection,
         compare_projections=not args.no_compare_projections,
@@ -315,6 +317,50 @@ def cmd_harvest(args: argparse.Namespace) -> int:
     log(f"\nstore written to {store.root} in {time.time() - t0:.1f}s "
         f"(attribution in {store.root / 'CREDITS.md'})")
     log("next: uv run birdy-pipeline build --harvest-store " + str(store.root))
+    return 0
+
+
+def cmd_grow(args: argparse.Namespace) -> int:
+    """Add the harvest store's newest descriptors to the built galaxy, in place.
+
+    The corpus stops arriving as a discontinuity: existing points keep their coordinates
+    and the cloud gains marks around them. What it cannot do is discover a cluster — new
+    audio joins the nearest existing knot — so the drift figures it prints are the signal
+    for when a real rebuild is due.
+    """
+    from datetime import datetime, timezone
+
+    from . import grow
+
+    out = Path(args.out)
+    store_path = Path(args.harvest_store or DEFAULT_HARVEST_STORE)
+    store = harvest.HarvestStore(store_path)
+    field = store.to_point_set()
+    if not len(field):
+        log("the harvest store is empty; nothing to add")
+        return 1
+
+    points = json.loads((out / "points.json").read_text(encoding="utf-8"))
+    have = int(points["n"])
+    take = len(field) - have if args.only_new else len(field)
+    if take <= 0:
+        log(f"the galaxy already holds {have} points and the store has {len(field)}; "
+            "nothing new to add")
+        return 0
+    fresh = galaxy.PointSet(
+        x=field.x[-take:],
+        species_id=field.species_id[-take:],
+        syllable_id=field.syllable_id[-take:],
+        song_id=field.song_id[-take:],
+        duration=field.duration[-take:],
+        source=field.source[-take:],
+    )
+    stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    result = grow.extend_build(out, fresh, stamp)
+    log(f"generation {result['generation']}: {result['points']} points")
+    if result["drift"]["unmatched"] > 0.35:
+        log("more than a third of the new audio matched no existing knot — "
+            "the arrangement no longer describes its own contents; rebuild")
     return 0
 
 
@@ -703,6 +749,20 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--song-variants", type=int, default=3, help="renders per song")
     b.add_argument("--seed", type=int, default=0)
     b.add_argument("--k", type=int, default=None, help="clusters (default: syllable types)")
+    b.add_argument(
+        "--clustering",
+        choices=("kmeans", "hdbscan"),
+        default="kmeans",
+        help="kmeans fits exactly --k groups and puts every point in one of them; "
+             "hdbscan discovers how many dense regions there are and leaves the rest "
+             "unassigned, which is the only way a sound can come out as 'none of these'",
+    )
+    b.add_argument(
+        "--min-cluster-size",
+        type=int,
+        default=25,
+        help="hdbscan: fewest points that may be called a syllable type (default %(default)s)",
+    )
     b.add_argument("--out", default=str(DEFAULT_OUT))
     b.add_argument("--wav-out", default=None, help="also write every clip as a wav")
     b.add_argument("--inventory", default=str(DEFAULT_INVENTORY))
@@ -773,6 +833,21 @@ def build_parser() -> argparse.ArgumentParser:
                           "function; the default merges it into the authored inventory")
     lrn.add_argument("--seed", type=int, default=0)
     lrn.set_defaults(func=cmd_learn)
+
+    g = sub.add_parser(
+        "grow",
+        help="add the harvest store's newest audio to the built galaxy without rebuilding",
+    )
+    g.add_argument("--out", default=str(DEFAULT_OUT), help="built asset directory")
+    g.add_argument("--harvest-store", default=None)
+    g.add_argument(
+        "--all",
+        dest="only_new",
+        action="store_false",
+        help="re-add every descriptor in the store, not just the ones past the "
+             "galaxy's current count",
+    )
+    g.set_defaults(func=cmd_grow, only_new=True)
 
     s = sub.add_parser(
         "serve", help="local control surface for the app's Learn tab (loopback only)"

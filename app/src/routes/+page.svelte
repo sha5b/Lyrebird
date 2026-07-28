@@ -784,6 +784,14 @@
 	let buildIncludeHarvest = $state(true);
 	/** Which audio the build renders from; the server has taken this since it existed. */
 	let buildSource = $state<'synthetic' | 'local' | 'harvest'>('synthetic');
+	/**
+	 * How the knots are found. `kmeans` asks "which of these k groups is this sound in"
+	 * and answers for every sound; `hdbscan` asks where the dense regions are and leaves
+	 * the rest unassigned. Only the second can say "this belongs to none of them", which
+	 * is the answer that matters for audio nobody has identified.
+	 */
+	let buildClustering = $state<'kmeans' | 'hdbscan'>('kmeans');
+	let buildMinCluster = $state(25);
 
 	/** Seconds spent waiting for a control process that is not answering yet. */
 	let pipelineWaited = $state(0);
@@ -1604,6 +1612,34 @@ uv run birdy-pipeline serve</pre>
 
 						<section class="block">
 							<h3 class="blocktitle">Rebuild the galaxy</h3>
+							<div class="segmented">
+								<button
+									class:on={buildClustering === 'kmeans'}
+									onclick={() => (buildClustering = 'kmeans')}
+									title="Fit exactly k groups and put every point in one of them.">Fixed k</button
+								>
+								<button
+									class:on={buildClustering === 'hdbscan'}
+									onclick={() => (buildClustering = 'hdbscan')}
+									title="Find however many dense regions there are, and leave sounds that belong to none of them unassigned. Clusters holding both documented renders and field audio hand the field audio a candidate identity."
+									>Density</button
+								>
+							</div>
+							{#if buildClustering === 'hdbscan'}
+								<label class="field">
+									<span class="lbl">
+										Smallest type <b class="mono">{buildMinCluster}</b>
+									</span>
+									<input
+										type="range"
+										min="5"
+										max="200"
+										step="5"
+										bind:value={buildMinCluster}
+										title="Fewest points that may be called a syllable type. Lower finds more, smaller groups and calls less of the corpus noise."
+									/>
+								</label>
+							{/if}
 							<label class="field">
 								<span class="lbl">Render from</span>
 								<select bind:value={buildSource}>
@@ -1632,9 +1668,24 @@ uv run birdy-pipeline serve</pre>
 										pipeline.build({
 											useLearned: buildUseLearned,
 											includeHarvest: buildIncludeHarvest,
-											source: buildSource
+											source: buildSource,
+											clustering: buildClustering,
+											minClusterSize: buildMinCluster
 										})
 									)}>Rebuild</button
+							>
+							<!--
+								Growing is the cheap half of the same job: new audio is placed in the
+								frame the current galaxy already has, so nothing on screen moves and the
+								cloud gains marks around what you were looking at. It cannot discover a
+								cluster, which is what the drift figures in the job log are for.
+							-->
+							<button
+								class="wide"
+								disabled={jobRunning || pipelineBusy || !pipelineStatus.store.syllables}
+								onclick={() => runPipeline(() => pipeline.grow({}))}
+								title="Add the store's newest audio to the galaxy without rebuilding it. Existing points keep their positions."
+								>Grow it instead</button
 							>
 							{#if pipelineStatus.built.exists}
 								<dl class="facts mono">

@@ -1,71 +1,71 @@
 {
- "builtAt": "2026-07-28T18:21:38+00:00",
+ "builtAt": "2026-07-28T18:41:29+00:00",
  "pipeline": "birdy-pipeline",
  "contract": "docs/08-implementation.md v1",
  "inventoryVersion": 1,
- "points": 20000,
+ "points": 49664,
  "pointsDropped": 0,
- "clusters": 11,
+ "clusters": 256,
  "dims": 28,
  "seed": 0,
  "projection": "cmds",
  "projectionParams": {
   "eigenvalues": [
-   168.7482410189238,
-   70.39764330158488,
-   58.52728959297051
+   177.81597493725104,
+   86.1574153027981,
+   67.16513017647206
   ],
   "varianceRatio": [
-   0.23224289495023578,
-   0.09688606162241829,
-   0.08054926727880962
+   0.25925646057155016,
+   0.12561788417086225,
+   0.09792705030874972
   ],
-  "negativeEigenvalueMass": 0.40384935456857796,
+  "negativeEigenvalueMass": 0.36501668965389145,
   "landmarks": 800,
   "mode": "landmark",
   "metric": "cosine"
  },
  "faithfulness": {
-  "pearson": 0.7341,
-  "spearman": 0.7175,
-  "pairs": 199988,
+  "pearson": 0.7688,
+  "spearman": 0.7586,
+  "pairs": 199992,
   "definition": "correlation between 28-d cosine distance and 3D euclidean distance over random point pairs; 1.0 = distances fully meaningful"
  },
  "knnAgreement": {
   "k": 10,
-  "value": 0.1924,
+  "value": 0.5252,
   "definition": "share of a point's 3D k nearest neighbours sharing its type"
  },
  "tearing": {
-  "measured": 11,
-  "torn": 0,
-  "severe": 0,
-  "median": 1.494,
-  "worstGap": 0.469,
+  "measured": 252,
+  "torn": 12,
+  "severe": 2,
+  "median": 2.162,
+  "worstGap": 0.384,
   "definition": "clusters this projection draws in two places at once, so their centroid \u2014 where the label, the trajectory and the wave all go \u2014 lands between two blobs instead of on the points; splitting a single blob scores ~2, so 2 is the null and 'torn' counts above 5"
  },
  "projectionComparison": {
   "cmds": {
    "faithfulness": {
-    "pearson": 0.7341,
-    "spearman": 0.7175,
-    "pairs": 199988
+    "pearson": 0.7688,
+    "spearman": 0.7586,
+    "pairs": 199992
    },
-   "knnAgreement": 0.1924,
-   "purity": 0.0559,
-   "meanRadius": 0.8141,
+   "knnAgreement": 0.5252,
+   "purity": 0.413,
+   "meanRadius": 0.8264,
    "params": {
     "eigenvalues": [
-     168.7482410189238,
-     70.39764330158488,
-     58.52728959297051
+     177.81597493725104,
+     86.1574153027981,
+     67.16513017647206
     ],
     "varianceRatio": [
-     0.23224289495023578,
-     0.09688606162241829,
-     0.08054926727880962
+     0.25925646057155016,
+     0.12561788417086225,
+     0.09792705030874972
     ],
-    "negativeEigenvalueMass": 0.40384935456857796,
+    "negativeEigenvalueMass": 0.36501668965389145,
     "landmarks": 800,
     "mode": "landmark",
     "metric": "cosine"
@@ -73,22 +73,22 @@
   }
  },
  "kmeans": {
-  "k": 11,
+  "k": 256,
   "nInit": 10,
   "randomState": 0,
   "inputSpace": "standardised 28-d descriptors"
  },
  "positions": {
   "format": "little-endian float32, 3*n, xyz",
-  "bytes": 240000,
+  "bytes": 595968,
   "normalisation": "centred on the bbox midpoint, scaled so max|coord| = 1"
  },
  "pointFeatures": {
   "format": "little-endian float32, 8*n, row-major",
-  "bytes": 640000,
+  "bytes": 1589248,
   "dims": 8,
   "space": "PCA of the standardised 28-d descriptors, rows unit-normalised",
-  "varianceRatioTotal": 0.6935,
+  "varianceRatioTotal": 0.7898,
   "purpose": "per-point render response only; the reported match still uses the 28-d centroid vectors"
  },
  "functionClasses": {
@@ -150,31 +150,39 @@
    ]
   },
   "counts": {
-   "unclassified": 11
+   "unclassified": 226,
+   "structural": 16,
+   "alarm": 7,
+   "territorial": 4,
+   "contact": 2,
+   "recruitment": 1
   }
  },
  "sourceMix": {
-  "field": 20000
+  "synthetic": 29568,
+  "field": 20000,
+  "synthetic-song": 96
  },
  "speciesMix": {
-  "luscinia_megarhynchos": 2062,
-  "poecile_atricapillus": 2062,
-  "troglodytes_troglodytes": 2062,
-  "turdus_merula": 2062,
-  "cuculus_canorus": 2061,
-  "parus_minor": 1905,
-  "zosterops_japonicus": 1818,
-  "strix_aluco": 1752,
-  "horornis_diphone": 1726,
-  "lonchura_striata": 1413,
-  "perisoreus_infaustus": 1077
+  "parus_minor": 4803,
+  "poecile_atricapillus": 4765,
+  "luscinia_megarhynchos": 4666,
+  "turdus_merula": 4568,
+  "troglodytes_troglodytes": 4472,
+  "cuculus_canorus": 4471,
+  "horornis_diphone": 4416,
+  "zosterops_japonicus": 4416,
+  "strix_aluco": 4320,
+  "lonchura_striata": 4299,
+  "perisoreus_infaustus": 3982,
+  "taeniopygia_guttata": 486
  },
  "durationSeconds": [
-  0.6,
-  0.6
+  0.0246,
+  1.8649
  ],
- "clusterPurity": 0.0559,
- "meanRadius": 0.8141,
+ "clusterPurity": 0.413,
+ "meanRadius": 0.8264,
  "files": [
   "manifest.json",
   "inventory.json",
@@ -185,18 +193,18 @@
   "points.json",
   "centroids.json"
  ],
- "source": "harvest",
+ "source": "synthetic",
  "audioDir": null,
- "variantsPerSyllable": null,
- "variantsPerSong": null,
+ "variantsPerSyllable": 96,
+ "variantsPerSong": 3,
  "harvest": {
   "store": "/home/sha5b/Documents/GitHub/Birdy/pipeline/out/harvest",
   "points": 20000,
-  "recordings": 553,
-  "descriptorsSeen": 33313,
+  "recordings": 630,
+  "descriptorsSeen": 37314,
   "sampleDrift": {
-   "meanDrift": 0.0381,
-   "stdRatio": 1.0013
+   "meanDrift": 0.0534,
+   "stdRatio": 0.9957
   }
  },
  "betaClamp": [

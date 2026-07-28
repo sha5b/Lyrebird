@@ -38,6 +38,7 @@ its own contents and a real build is due.
 from __future__ import annotations
 
 import json
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -207,3 +208,125 @@ def drift(basis: ProjectionBasis, x: np.ndarray, centroids: np.ndarray) -> dict[
         "unmatched": round(float((best < 0.62).mean()), 4),
         "clipped": round(float((np.abs(pos) >= 0.999).any(axis=1).mean()), 4),
     }
+
+
+# --- adding to a built galaxy -----------------------------------------------------------
+
+
+def _read_f32(path: Path, cols: int) -> np.ndarray:
+    return np.frombuffer(path.read_bytes(), dtype="<f4").reshape(-1, cols).astype(np.float64)
+
+
+def _write_f32(path: Path, rows: np.ndarray) -> None:
+    path.write_bytes(rows.astype("<f4", copy=False).ravel(order="C").tobytes())
+
+
+def extend_build(
+    out_dir: Path,
+    new: Any,
+    stamp: str,
+    verbose: bool = True,
+) -> dict[str, Any]:
+    """
+    Append a `PointSet` to the galaxy already in `out_dir`, leaving it otherwise alone.
+
+    Every existing point keeps the coordinates it had. New points are assigned to the
+    nearest existing knot in the 28-d space — the same comparison the live matcher makes —
+    and placed through the frozen frame. Nothing is re-clustered and nothing is re-fitted,
+    which is what makes this cheap and what makes `drift` necessary.
+
+    The generation counter is what lets the interface animate an arrival: every point
+    carries the build it joined in, so the renderer can tell which marks are new without
+    diffing two asset sets.
+    """
+    out_dir = Path(out_dir)
+    basis = ProjectionBasis.load(out_dir)
+    if basis is None:
+        raise RuntimeError(
+            "this galaxy has no projection basis, so it can only be rebuilt, not grown. "
+            "Build it again — the basis is written by every cMDS build."
+        )
+
+    manifest = json.loads((out_dir / "manifest.json").read_text(encoding="utf-8"))
+    points = json.loads((out_dir / "points.json").read_text(encoding="utf-8"))
+    centroids = json.loads((out_dir / "centroids.json").read_text(encoding="utf-8"))
+    items = centroids["items"]
+    cent = np.asarray([c["vector"] for c in items], dtype=np.float64)
+    dims = int(manifest.get("dims", basis.landmarks.shape[1]))
+
+    x = np.asarray(new.x, dtype=np.float64)
+    if x.ndim != 2 or x.shape[1] != dims:
+        raise RuntimeError(f"new descriptors are {x.shape}, expected (n, {dims})")
+
+    report = drift(basis, x, cent)
+    ids = assign_clusters(basis, x, cent)
+    pos_new = embed(basis, x, ids)
+
+    n_old = int(points["n"])
+    pos_all = np.concatenate([_read_f32(out_dir / "positions.f32", 3), pos_new])
+
+    # Per-point features come from the same frozen PCA the build shipped: the centroids
+    # carry their own 8-d rows, so a new point's is the unit-normalised projection onto
+    # the basis those rows span. Approximating it as its cluster's row would light every
+    # member of a knot identically and undo the per-point response entirely.
+    lo_path = out_dir / "point-features.f32"
+    lo_dims = len(items[0].get("featuresLo") or [])
+    if lo_dims and lo_path.exists():
+        lo_cent = np.asarray([c["featuresLo"] for c in items], dtype=np.float64)
+        z_new = (x - basis.mean) / np.maximum(basis.std, 1.0e-6)
+        z_cent = (cent - basis.mean) / np.maximum(basis.std, 1.0e-6)
+        # Least-squares map from the standardised space onto the shipped 8-d rows,
+        # fitted on the centroids, which are the only paired examples the assets carry.
+        proj, *_ = np.linalg.lstsq(z_cent, lo_cent, rcond=None)
+        lo_new = z_new @ proj
+        lo_new /= np.maximum(np.linalg.norm(lo_new, axis=1, keepdims=True), 1.0e-12)
+        _write_f32(lo_path, np.concatenate([_read_f32(lo_path, lo_dims), lo_new]))
+
+    _write_f32(out_dir / "positions.f32", pos_all)
+
+    generation = int(manifest.get("generation", 0)) + 1
+    grown = list(points.get("generation") or [0] * n_old) + [generation] * len(x)
+    points.update(
+        {
+            "n": n_old + int(len(x)),
+            "speciesId": list(points["speciesId"]) + list(new.species_id),
+            "syllableId": list(points["syllableId"]) + list(new.syllable_id),
+            "songId": list(points["songId"]) + list(new.song_id),
+            "clusterId": list(points["clusterId"]) + [int(v) for v in ids],
+            "durations": list(points["durations"]) + [float(v) for v in new.duration],
+            "source": list(points["source"]) + list(new.source),
+            "generation": grown,
+        }
+    )
+    (out_dir / "points.json").write_text(json.dumps(points, indent=1), encoding="utf-8")
+
+    # The knots keep their 28-d vectors — nothing was re-fitted — but their membership
+    # counts have changed and the app reads those.
+    added = np.bincount(ids, minlength=len(items))
+    for i, item in enumerate(items):
+        item["count"] = int(item.get("count", 0)) + int(added[i])
+    (out_dir / "centroids.json").write_text(
+        json.dumps({**centroids, "items": items}, indent=1), encoding="utf-8"
+    )
+
+    manifest.update(
+        {
+            "points": n_old + int(len(x)),
+            "builtAt": stamp,
+            "generation": generation,
+            "grownBy": [*manifest.get("grownBy", []), {"points": int(len(x)), "drift": report}],
+        }
+    )
+    (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=1), encoding="utf-8")
+
+    if verbose:
+        print(
+            f"grew the galaxy by {len(x)} points to {n_old + len(x)} "
+            f"(generation {generation}); "
+            f"mean cosine to the nearest knot {report['meanCosine']}, "
+            f"{report['unmatched'] * 100:.1f} % matched nothing, "
+            f"{report['clipped'] * 100:.1f} % fell outside the frame",
+            file=sys.stderr,
+        )
+    return {"added": int(len(x)), "points": n_old + int(len(x)),
+            "generation": generation, "drift": report}

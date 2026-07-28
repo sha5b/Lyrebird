@@ -117,6 +117,12 @@ export interface PointCloudMeta {
 	syllableId: string[];
 	songId: (string | null)[];
 	clusterId: number[];
+	/**
+	 * Which build each point joined in. 0 for the original build, incremented by every
+	 * `grow`, absent on an asset set built before growth existed. The renderer uses it to
+	 * animate arrivals rather than having the whole cloud appear at once.
+	 */
+	generation?: number[];
 	durations: number[];
 	source: string[];
 }
@@ -171,6 +177,12 @@ export interface Manifest {
 	clusters: number;
 	sourceMix?: Record<string, number>;
 	projection?: string;
+	/** Which clustering produced the knots: `kmeans` or `hdbscan`. */
+	clustering?: string;
+	/** Points the density clustering placed in no cluster at all. */
+	unassigned?: number;
+	/** Bumped by every `grow`; points carry the generation they joined in. */
+	generation?: number;
 	files?: Record<string, string>;
 	[key: string]: unknown;
 }

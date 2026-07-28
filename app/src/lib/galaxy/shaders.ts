@@ -83,6 +83,8 @@ export function vertexShader(clusterCount: number): string {
 		attribute float aSeed;
 		attribute float aAct;
 		attribute float aSpecies;
+		/** Which build this point joined in; see the point metadata's generation array. */
+		attribute float aBorn;
 		attribute vec3 aTarget;
 
 		uniform float uActivation[${Math.max(1, clusterCount)}];
@@ -97,6 +99,9 @@ export function vertexShader(clusterCount: number): string {
 		uniform float uFocus;
 		uniform float uFocusDim;
 		uniform float uMorph;
+		/** The newest generation, and how far its arrival has run (0..1). */
+		uniform float uGeneration;
+		uniform float uArrival;
 		/** Wavefronts per unit of the box, from the live pitch. */
 		uniform float uWaveK;
 		/** Box units per second the front travels outward at, also from the pitch. */
@@ -119,13 +124,27 @@ export function vertexShader(clusterCount: number): string {
 		 * chosen — see the note where it is set.
 		 */
 		varying float vAccent;
+		/** 1 where the pipeline placed this sound in no cluster at all. */
+		varying float vUnassigned;
+		/** 0..1 while a newly added point is arriving. */
+		varying float vArrive;
 
 		void main() {
-			int index = int(aCluster + 0.5);
+			// **A point can belong to no cluster, and that is a result, not a gap.**
+			//
+			// Density clustering leaves sounds in no dense region — too rare or too unlike
+			// anything else to call a type yet — and those arrive with aCluster = -1. Read
+			// naively that truncates to index 0 and the whole of the unknown borrows the
+			// first knot's activation, which would light a scattered haze every time
+			// cluster 0 sounded and assert a membership the pipeline explicitly refused.
+			bool assigned = aCluster >= -0.5 + 1.0;
+			int index = assigned ? int(aCluster + 0.5) : 0;
+			vUnassigned = assigned ? 0.0 : 1.0;
+			float clusterAct = assigned ? uActivation[index] : 0.0;
 			// aAct already folds the cluster activation into the point's own affinity; the
 			// cluster array is the floor, so a scheduled node still lights every member
 			// even when nothing is being matched against it.
-			float act = clamp(max(aAct, uActivation[index] * 0.25), 0.0, 1.0);
+			float act = clamp(max(aAct, clusterAct * 0.25), 0.0, 1.0);
 			vAct = act;
 			vSeed = aSeed;
 			// Selection is a two-sided change, not just a dimming of everyone else. With
@@ -150,7 +169,17 @@ export function vertexShader(clusterCount: number): string {
 			// which already have it. Letting another species' note flare violet while a bird
 			// is selected would answer a question nobody asked, in the colour reserved for
 			// the one they did.
-			vAccent = (uFocus < 0.0) ? clamp(uSung[index], 0.0, 1.0) : vChosen;
+			// An unassigned point is never the note being sung: it is not in the cluster
+			// that is sounding, because it is not in a cluster.
+			vAccent = assigned
+				? ((uFocus < 0.0) ? clamp(uSung[index], 0.0, 1.0) : vChosen)
+				: 0.0;
+
+			// Arriving. Points added by the newest grow fade and swell in rather than
+			// appearing between two frames, staggered by their own seed so a thousand of
+			// them read as a drift of new material settling rather than one block.
+			float born = step(uGeneration - 0.5, aBorn);
+			vArrive = mix(1.0, clamp((uArrival - aSeed * 0.35) / 0.65, 0.0, 1.0), born);
 
 			// Rearranging between layouts. Each point takes its own slightly different
 			// share of the transition, so the cloud flows apart and back together instead
@@ -222,7 +251,11 @@ export function vertexShader(clusterCount: number): string {
 			// made a lit knot read as one swollen disc: it has to breathe with the sound,
 			// and unevenly, or the per-point response is invisible in the size channel too.
 			float grow = act * (0.35 + 0.9 * uLevel) * (0.5 + 1.0 * aSeed);
-			float size = uPointSize * (1.0 + grow) * (1.0 + 0.7 * vChosen);
+			// Unassigned marks are drawn smaller: they are real measurements and they are
+			// not structure, and at the same weight a third of the corpus in no cluster
+			// reads as a cloud that has one.
+			float size = uPointSize * (1.0 + grow) * (1.0 + 0.7 * vChosen)
+				* (1.0 - 0.35 * vUnassigned) * mix(0.35, 1.0, vArrive);
 			if (abs(uHighlight - aCluster) < 0.5) size *= 1.15;
 			// Perspective, but softened. True 1/z is right for a solid and wrong for a
 			// scatter: zoomed out every mark falls under a pixel and the cloud turns to fog,
@@ -265,6 +298,8 @@ export const fragmentShader = /* glsl */ `
 	varying float vDepth;
 	varying float vChosen;
 	varying float vAccent;
+	varying float vUnassigned;
+	varying float vArrive;
 
 	void main() {
 		vec2 uv = gl_PointCoord - 0.5;
@@ -352,7 +387,7 @@ export const fragmentShader = /* glsl */ `
 		// separates from the crowd by weight as well as by everyone else fading.
 		float alpha =
 			uOpacity * mask * (0.55 + vAct * 0.45) * vFocus * (1.0 + 0.35 * vChosen) *
-			(1.0 - fog * 0.45);
+			(1.0 - fog * 0.45) * (1.0 - 0.45 * vUnassigned) * vArrive;
 		gl_FragColor = vec4(colour, clamp(alpha, 0.0, 1.0));
 	}
 `;

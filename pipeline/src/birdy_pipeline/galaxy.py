@@ -288,8 +288,21 @@ def project(
                     "matrix (full eigendecomposition)",
                     file=sys.stderr,
                 )
-            pos, info = _classical_mds(cosine_distance_matrix(z) ** 2)
+            d2_full = cosine_distance_matrix(z) ** 2
+            pos, info = _classical_mds(d2_full)
             info["mode"] = "full"
+            # The same out-of-sample frame the landmark path emits, with every point
+            # acting as a landmark. Without it a corpus under the full-matrix limit
+            # could be built but never grown, which is the wrong way round — a small
+            # corpus is exactly the one you expect to add to.
+            lam_full = np.maximum(
+                np.asarray(info["eigenvalues"][:3], dtype=np.float64), 1.0e-12
+            )
+            info["basis"] = {
+                "landmarks": _unit_rows(z),
+                "lPinv": (pos / lam_full).T,
+                "meanSq": d2_full.mean(axis=0),
+            }
         else:
             if verbose:
                 print(
@@ -339,7 +352,14 @@ def separate_clusters(
             counts[c] += 1
     centres /= np.maximum(counts, 1)[:, None]
     per_cluster = centres * (factor - 1.0)
-    return pos + per_cluster[np.clip(cluster_id, 0, k - 1)], per_cluster
+    # A point in no cluster is not pushed anywhere. `np.clip` alone would hand every
+    # unassigned point cluster 0's shift and drag the whole of the noise into one knot.
+    shift = np.where(
+        (cluster_id >= 0)[:, None],
+        per_cluster[np.clip(cluster_id, 0, k - 1)],
+        0.0,
+    )
+    return pos + shift, per_cluster
 
 
 
@@ -542,6 +562,8 @@ def knn_label_agreement(
 
 
 def _purity(cluster_id: np.ndarray, types: Sequence[Any], k: int) -> float:
+    # Measured over assigned points. A density clustering leaves some of the corpus in no
+    # cluster at all, and counting those as impure would score honesty as failure.
     """Share of points carrying their cluster's majority type."""
     majority = 0
     for c in range(k):
@@ -747,6 +769,8 @@ def build_galaxy(
     inventory_path: Path,
     seed: int = 0,
     k: int | None = None,
+    clustering: str = "kmeans",
+    min_cluster_size: int = 25,
     min_dist: float | None = None,
     projection: str = DEFAULT_PROJECTION,
     compare_projections: bool = True,
@@ -778,22 +802,56 @@ def build_galaxy(
     if not np.all(np.isfinite(z)):
         raise RuntimeError("standardised descriptors contain NaN/inf")
 
-    k_final = int(k or default_k(kept))
-    k_final = max(2, min(k_final, len(kept)))
+    # The clustering is what the client's activation lookup uses, and it runs on the
+    # standardised descriptors, so it is identical for every projection.
+    density_summary: dict[str, Any] | None = None
+    anchors: list[dict[str, Any]] | None = None
+    if clustering == "hdbscan":
+        from . import density as density_mod
 
-    # KMeans first: the clustering is what the client's activation lookup uses, and it
-    # runs on the standardised descriptors, so it is identical for every projection.
-    if verbose:
-        print(f"kmeans: k={k_final} on standardised descriptors", file=sys.stderr)
-    km = KMeans(n_clusters=k_final, n_init=10, random_state=seed).fit(z)
-    cluster_id = km.labels_.astype(int)
+        if verbose:
+            print(
+                f"hdbscan: min_cluster_size={min_cluster_size} on standardised descriptors",
+                file=sys.stderr,
+            )
+        found = density_mod.cluster(z, min_cluster_size=min_cluster_size)
+        if found.k < 2:
+            raise RuntimeError(
+                f"hdbscan found {found.k} clusters at min_cluster_size={min_cluster_size}; "
+                "lower it, or harvest more audio"
+            )
+        cluster_id = found.labels
+        centre_vectors = found.centres
+        k_final = found.k
+        anchors = density_mod.anchor(
+            cluster_id, kept.species_id, kept.syllable_id, kept.source, k_final
+        )
+        density_summary = density_mod.summarise(found, anchors)
+        if verbose:
+            print(
+                f"  {k_final} clusters, {found.noise} points in none of them "
+                f"({found.noise_share * 100:.1f} %); anchored {density_summary['anchored']}, "
+                f"unknown {density_summary['unknown']}",
+                file=sys.stderr,
+            )
+    else:
+        k_final = int(k or default_k(kept))
+        k_final = max(2, min(k_final, len(kept)))
+        if verbose:
+            print(f"kmeans: k={k_final} on standardised descriptors", file=sys.stderr)
+        km = KMeans(n_clusters=k_final, n_init=10, random_state=seed).fit(z)
+        cluster_id = km.labels_.astype(int)
+        centre_vectors = km.cluster_centers_
+
+    assigned = cluster_id >= 0
+    n_noise = int((~assigned).sum())
 
     type_of = kept.types()
     purity = _purity(cluster_id, type_of, k_final)
 
     # The renderer's per-point response space. Built from the same standardised
     # descriptors, after KMeans, so nothing about the clustering depends on it.
-    lo_points, lo_centroids, lo_variance = point_features(z, km.cluster_centers_)
+    lo_points, lo_centroids, lo_variance = point_features(z, centre_vectors)
     if verbose:
         print(
             f"per-point features: {POINT_FEATURE_DIMS}-d, "
@@ -853,13 +911,16 @@ def build_galaxy(
         position = pos[sel].mean(axis=0) if sel.size else np.zeros(3)
         member_durations = [kept.duration[i] for i in sel]
         member_sources = Counter(kept.source[i] for i in sel)
+        # What this dense region can be said to be, and on what evidence. Only density
+        # clustering produces it — KMeans has no notion of a region that anchors nothing.
+        verdict = anchors[c] if anchors and c < len(anchors) else None
         items.append(
             {
                 "id": c,
                 **info,
                 "position": [round(float(v), 6) for v in position],
                 "functionClass": function_class(info["function"]),
-                "vector": [round(float(v), 6) for v in km.cluster_centers_[c]],
+                "vector": [round(float(v), 6) for v in centre_vectors[c]],
                 "featuresLo": [round(float(v), 6) for v in lo_centroids[c]],
                 "count": int(sel.size),
                 # Small per-cluster summary the interface can put on screen next to the
@@ -874,7 +935,7 @@ def build_galaxy(
                     4,
                 ),
                 "cohesion": round(
-                    float(np.mean(_unit_rows(z[sel]) @ _unit_rows(km.cluster_centers_[c][None, :])[0]))
+                    float(np.mean(_unit_rows(z[sel]) @ _unit_rows(centre_vectors[c][None, :])[0]))
                     if sel.size
                     else 0.0,
                     4,
@@ -884,6 +945,7 @@ def build_galaxy(
                     for sp, n in Counter(kept.species_id[i] for i in sel).most_common(3)
                 ],
                 "sources": {s: int(n) for s, n in member_sources.most_common()},
+                **({"anchor": verdict} if verdict else {}),
             }
         )
         counts.append(int(sel.size))
@@ -1046,6 +1108,7 @@ def build_galaxy(
             }
             for method, r in results.items()
         },
+        "clustering": clustering,
         "kmeans": {"k": stats.k, "nInit": 10, "randomState": seed,
                    "inputSpace": "standardised 28-d descriptors"},
         "positions": {
@@ -1078,6 +1141,8 @@ def build_galaxy(
         "speciesMix": {s: int(n) for s, n in Counter(kept.species_id).most_common()},
         "durationSeconds": [round(stats.duration_range[0], 4), round(stats.duration_range[1], 4)],
         "clusterPurity": round(stats.purity, 4),
+        **({"density": density_summary} if density_summary else {}),
+        "unassigned": n_noise,
         "meanRadius": round(stats.spread, 4),
         "files": [
             "manifest.json",

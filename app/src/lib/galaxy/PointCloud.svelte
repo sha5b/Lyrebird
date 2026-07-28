@@ -96,14 +96,21 @@
 		const cluster = new Float32Array(assets.points.n);
 		const seed = seeds;
 		const species = new Float32Array(assets.points.n);
+		// -1 survives into the attribute rather than being clamped to 0: a point in no
+		// cluster is a result the density clustering went out of its way to produce, and
+		// the shader is what respects it.
+		const born = new Float32Array(assets.points.n);
+		const generation = assets.points.generation;
 		const speciesIndex = buildSpeciesIndex(assets);
 		for (let i = 0; i < assets.points.n; i++) {
-			cluster[i] = assets.points.clusterId[i] ?? 0;
+			cluster[i] = assets.points.clusterId[i] ?? -1;
 			species[i] = speciesIndex.get(assets.points.speciesId[i] ?? '') ?? -1;
+			born[i] = generation?.[i] ?? 0;
 		}
 		g.setAttribute('aCluster', new THREE.BufferAttribute(cluster, 1));
 		g.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
 		g.setAttribute('aSpecies', new THREE.BufferAttribute(species, 1));
+		g.setAttribute('aBorn', new THREE.BufferAttribute(born, 1));
 		g.setAttribute('aAct', activationAttribute);
 		g.computeBoundingSphere();
 		return g;
@@ -126,6 +133,11 @@
 			// Rewritten from `spread` below; the initial value only has to be sane.
 			uSizeScale: { value: SIZE_REFERENCE },
 			uMorph: { value: 1 },
+			// The generation currently arriving, and how far its arrival has run. Set from
+			// the manifest; 0 on an asset set built before growth existed, which makes the
+			// arrival a no-op because every point then shares generation 0 and starts done.
+			uGeneration: { value: untrack(() => assets.manifest?.generation ?? 0) },
+			uArrival: { value: untrack(() => (assets.manifest?.generation ? 0 : 1)) },
 			uFocus: { value: -1 },
 			// Enough that an unselected species still reads as part of the same corpus.
 			//
@@ -402,9 +414,15 @@
 		u.uPitch.value = pitch;
 	}
 
+	/** Seconds an arrival takes to finish, from the first frame the new points exist. */
+	const ARRIVAL_SECONDS = 2.4;
+
 	useTask((delta) => {
 		const u = material.uniforms;
 		u.uTime.value += delta * speed;
+		if (u.uArrival.value < 1) {
+			u.uArrival.value = Math.min(1, u.uArrival.value + delta / ARRIVAL_SECONDS);
+		}
 		fitFog(points);
 		fitWave(delta * speed);
 

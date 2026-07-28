@@ -17,6 +17,7 @@ can show the same progress the CLI prints, rather than a spinner and a guess.
 
 from __future__ import annotations
 
+import argparse
 import contextlib
 import io
 import json
@@ -320,16 +321,35 @@ class Pipeline:
 
         return self.start("ingest", f"{name} as {species_id}", run)
 
+    def grow(self, body: dict[str, Any]) -> dict[str, Any]:
+        """Add the newest harvested audio to the built galaxy, leaving it in place."""
+
+        def run(job: Job) -> None:
+            from .cli import cmd_grow
+
+            argv = argparse.Namespace(
+                out=str(self.out_path),
+                harvest_store=str(self.store_path),
+                only_new=not bool(body.get("all")),
+            )
+            cmd_grow(argv)
+
+        return self.start("grow", "adding new audio to the galaxy", run)
+
     def build(self, body: dict[str, Any]) -> dict[str, Any]:
         use_learned = bool(body.get("useLearned"))
         include_harvest = bool(body.get("includeHarvest", True))
         source = str(body.get("source", "synthetic"))
+        clustering = str(body.get("clustering", "kmeans"))
+        min_cluster_size = int(body.get("minClusterSize", 25))
 
         def run(job: Job) -> None:
             from .cli import build_parser, cmd_build
 
             argv = ["build", "--source", source, "--out", str(self.out_path),
-                    "--no-compare-projections"]
+                    "--no-compare-projections",
+                    "--clustering", clustering,
+                    "--min-cluster-size", str(min_cluster_size)]
             if use_learned:
                 argv += ["--inventory", str(self.learned_path)]
             else:
@@ -412,6 +432,7 @@ def make_handler(pipeline: Pipeline) -> type[BaseHTTPRequestHandler]:
                 self._send(result, 200 if result.get("ok") else 409)
                 return
             routes = {
+                "/api/grow": pipeline.grow,
                 "/api/harvest": pipeline.harvest,
                 "/api/learn": pipeline.learn,
                 "/api/build": pipeline.build,

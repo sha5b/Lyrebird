@@ -42,6 +42,8 @@ export interface LearnedStatus {
 export interface BuiltStatus {
 	exists: boolean;
 	builtAt?: string;
+	/** Bumped by every grow; 0 or absent on a galaxy that has only ever been built. */
+	generation?: number;
 	points?: number;
 	clusters?: number;
 	source?: string;
@@ -122,8 +124,28 @@ export class PipelineClient {
 		return this.call<{ job: JobStatus }>('/api/learn', options);
 	}
 
-	build(options: { useLearned?: boolean; includeHarvest?: boolean; source?: string }) {
+	build(options: {
+		useLearned?: boolean;
+		includeHarvest?: boolean;
+		source?: string;
+		/**
+		 * `kmeans` fits exactly k groups and puts every point in one; `hdbscan` finds how
+		 * many dense regions there are and leaves the rest unassigned, which is the only
+		 * way a sound can come out as "none of these".
+		 */
+		clustering?: 'kmeans' | 'hdbscan';
+		minClusterSize?: number;
+	}) {
 		return this.call<{ job: JobStatus }>('/api/build', options);
+	}
+
+	/**
+	 * Adds the harvest store's newest audio to the built galaxy in place, leaving every
+	 * existing point where it is. Cheaper than a build and unable to discover a cluster —
+	 * the drift figures in the job log say when that has started to matter.
+	 */
+	grow(options: { all?: boolean } = {}) {
+		return this.call<{ job: JobStatus }>('/api/grow', options);
 	}
 
 	/**
