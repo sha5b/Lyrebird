@@ -385,10 +385,31 @@ class Pipeline:
                         out=str(self.out_path),
                         harvest_store=str(self.store_path),
                         only_new=True,
+                        inventory=str(self.learned_path),
                     )
                     cmd_grow(argv)
                 except Exception as err:
                     harvest.log(f"grow skipped: {err}")
+
+                # **The rebuild this docstring has always promised, which until now did not
+                # exist.** `rebuild_at` was parsed, printed in the job's label and never read
+                # again, so a loop left running for an hour accumulated fitted types that no
+                # clustering had ever seen: `grow` assigns new audio to the nearest *existing*
+                # knot and cannot create one, so a genuinely new call joined whatever it was
+                # least unlike and the galaxy slowly stopped describing its own contents. The
+                # drift figure is exactly the measurement of that, and it is already written
+                # into the manifest by every grow, so the trigger costs one file read.
+                unmatched = self._last_drift()
+                if unmatched is not None and unmatched > rebuild_at:
+                    harvest.log(
+                        f"--- pass {done}: {unmatched:.0%} of the new audio matched no "
+                        f"existing knot (over {rebuild_at:.0%}) — rebuilding so the "
+                        "clustering can see it ---"
+                    )
+                    try:
+                        self._rebuild(job)
+                    except Exception as err:
+                        harvest.log(f"rebuild skipped: {err}")
 
                 # What the pass actually learned, as one line. A log that only says which
                 # step is running tells you it is alive and nothing about whether it is
@@ -425,6 +446,42 @@ class Pipeline:
         except Exception:
             return 0
 
+    def _last_drift(self) -> float | None:
+        """The share of the newest grown points that matched no existing knot.
+
+        Read from the manifest rather than passed back from `cmd_grow`, because every grow
+        already records it there and a return value would only be a second copy that could
+        disagree with the first.
+        """
+        try:
+            manifest = json.loads((self.out_path / "manifest.json").read_text())
+            grown = manifest.get("grownBy") or []
+            return float(grown[-1]["drift"]["unmatched"])
+        except Exception:
+            return None
+
+    def _rebuild(self, job: Job) -> None:
+        """A full build from the fitted inventory, cancellable like any other step."""
+        from .cli import build_parser, cmd_build
+        from .corpus import Cancelled
+
+        argv = [
+            "build",
+            "--source", "synthetic",
+            "--out", str(self.out_path),
+            "--no-compare-projections",
+            "--inventory", str(self.learned_path),
+        ]
+        if (self.store_path / "state.json").exists():
+            argv += ["--harvest-store", str(self.store_path)]
+        try:
+            code = cmd_build(build_parser().parse_args(argv), should_stop=lambda: job.cancelled)
+        except Cancelled as stopped:
+            harvest.log(str(stopped) + " — the assets on disk are the previous build")
+            return
+        if code != 0:
+            raise RuntimeError(f"rebuild exited {code}")
+
     def grow(self, body: dict[str, Any]) -> dict[str, Any]:
         """Add the newest harvested audio to the built galaxy, leaving it in place."""
 
@@ -435,6 +492,7 @@ class Pipeline:
                 out=str(self.out_path),
                 harvest_store=str(self.store_path),
                 only_new=not bool(body.get("all")),
+                inventory=str(self.learned_path),
             )
             cmd_grow(argv)
 

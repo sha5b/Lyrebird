@@ -38,8 +38,10 @@ its own contents and a real build is due.
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -226,6 +228,7 @@ def extend_build(
     new: Any,
     stamp: str,
     verbose: bool = True,
+    inventory_path: Path | None = None,
 ) -> dict[str, Any]:
     """
     Append a `PointSet` to the galaxy already in `out_dir`, leaving it otherwise alone.
@@ -309,6 +312,19 @@ def extend_build(
         json.dumps({**centroids, "items": items}, indent=1), encoding="utf-8"
     )
 
+    # The inventory travels with the points, or the growth is invisible where it counts.
+    #
+    # A grow can add points for a syllable — or a whole species — that the shipped
+    # `inventory.json` has never heard of, because `learn` writes the fitted repertoire to
+    # `data/` and only a full build used to copy it across. The result was a galaxy that
+    # drew the new marks and an app that could not sing them: no voice, no songs, no
+    # grammar, and a species dropdown that never grew an entry. Copying the inventory
+    # alongside costs one file write and is what makes "learn while it runs" mean anything.
+    inventory_copied = False
+    if inventory_path is not None and Path(inventory_path).exists():
+        shutil.copyfile(Path(inventory_path), out_dir / "inventory.json")
+        inventory_copied = True
+
     manifest.update(
         {
             "points": n_old + int(len(x)),
@@ -317,6 +333,17 @@ def extend_build(
             "grownBy": [*manifest.get("grownBy", []), {"points": int(len(x)), "drift": report}],
         }
     )
+    if inventory_copied:
+        inv = json.loads((out_dir / "inventory.json").read_text(encoding="utf-8"))
+        manifest["inventorySource"] = {
+            "path": str(inventory_path),
+            "name": Path(inventory_path).name,
+            "writtenAt": datetime.fromtimestamp(
+                Path(inventory_path).stat().st_mtime, timezone.utc
+            ).isoformat(timespec="seconds"),
+            "species": len(inv.get("species", [])),
+            "syllables": sum(len(sp.get("syllables", [])) for sp in inv.get("species", [])),
+        }
     (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=1), encoding="utf-8")
 
     if verbose:

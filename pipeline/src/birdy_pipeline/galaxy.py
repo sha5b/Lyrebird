@@ -43,7 +43,16 @@ TEMPERATURE = 0.12
 # their function and citation. On the merged inventory the cap cost 13 % purity against
 # 176 requested types. Nothing downstream is quadratic in it — the shader holds one float
 # per cluster and the labels cull by collision.
-K_CAP = 256
+#
+# **Raised from 256 after it bound a second time, silently, and cost the cuckoo both of
+# its calls.** A 264-type learned inventory asks for 308 clusters plus room for the field
+# points; at 256 the shipped build named 180 types and dropped 128, and `cuculus_canorus`
+# was the species that lost *every* authored syllable. Nothing in the app can report that:
+# `clusterIndexFor` correctly returns -1 rather than guessing, so the bird simply sang
+# with no node to light, no trajectory to draw and no label to show. The cap is now high
+# enough that the corpus decides the number, and `cluster_plan` says out loud when it is
+# the cap talking instead.
+K_CAP = 1024
 
 PROJECTIONS = ("umap", "pca", "cmds")
 DEFAULT_PROJECTION = "cmds"  # most distance-faithful; see README "Galaxy shape"
@@ -628,12 +637,91 @@ def default_k(points: PointSet) -> int:
     kinds of sound. For that corpus it gives 100, in the same range as the 176 the mixed
     build fits from real labels.
     """
+    return cluster_plan(points)["k"]
+
+
+def cluster_plan(points: PointSet) -> dict[str, Any]:
+    """`default_k` with its reasoning attached, so a build can report what it asked for.
+
+    **One per type was only ever half the count.** Harvested points carry no
+    ``syllable_id``, and they are 40 % of the shipped corpus — they need clusters as much
+    as the rendered types do, and they take them first, because a field recording is
+    further from every synthetic render than the renders are from each other. Asking for
+    exactly ``len(types)`` therefore hands a large share of the clusters to field audio and
+    leaves the named types to share what is left: the 256-cluster build gave 76 clusters to
+    field-only knots, so 180 remained for 308 types and 128 types ended up with no cluster
+    carrying their name. That is invisible in purity, which only scores the points that
+    *do* have a cluster, and invisible in the app, which cannot distinguish "this call has
+    no node" from "this call is quiet".
+
+    So the count is the types plus an allowance for the points that have no type, using the
+    same sqrt(n/2) rule this function already trusted for a corpus with no labels at all.
+    """
     types = {
         (sp, syl) for sp, syl in zip(points.species_id, points.syllable_id) if syl
     }
-    if types:
-        return max(2, min(K_CAP, len(types)))
-    return max(2, min(K_CAP, int(math.sqrt(max(1, len(points.species_id)) / 2))))
+    unlabelled = sum(1 for syl in points.syllable_id if not syl)
+    allowance = int(math.sqrt(unlabelled / 2)) if unlabelled else 0
+    wanted = len(types) + allowance if types else int(
+        math.sqrt(max(1, len(points.species_id)) / 2)
+    )
+    k = max(2, min(K_CAP, wanted))
+    return {
+        "k": k,
+        "types": len(types),
+        "unlabelledPoints": unlabelled,
+        "allowance": allowance,
+        "wanted": wanted,
+        "capped": wanted > K_CAP,
+        "cap": K_CAP,
+    }
+
+
+def type_seeds(
+    z: np.ndarray, points: PointSet, k: int, seed: int = 0
+) -> tuple[np.ndarray, int] | None:
+    """Initial centroids: one at the centre of every named type, the rest found freely.
+
+    **KMeans++ picks its seeds by distance, and distance in this space is dominated by
+    "was this recorded or synthesised".** So it spends its seeds spreading across that gap
+    and two acoustically similar types of the same bird — a rendered `oo` and a fitted
+    `L02`, both low held cuckoo tones — start life sharing one seed and finish sharing one
+    cluster. Whichever loses the majority vote loses its name, its function and its
+    citation, and in the app it loses the ability to light, label or draw a trajectory at
+    all. Raising `k` alone does not fix that: it hands the extra clusters to whatever is
+    furthest away, which is more field audio, not the type that was crowded out.
+
+    Seeding each type at its own centre states the thing the design already claims — that a
+    type is what a cluster is *for*. Lloyd's algorithm still moves every centroid and still
+    decides membership, so nothing is forced: a type whose renders genuinely sit inside
+    another type's cloud will still be absorbed, and `typeCoverage` will still say so. What
+    changes is that a type is no longer denied a cluster by an accident of initialisation.
+
+    Returns the seed matrix and how many of its rows are type means, or None when the
+    corpus has no types or has more of them than `k` can hold.
+    """
+    labelled: dict[tuple[str, str], list[int]] = {}
+    unlabelled: list[int] = []
+    for i, (sp, syl) in enumerate(zip(points.species_id, points.syllable_id)):
+        if syl:
+            labelled.setdefault((sp, syl), []).append(i)
+        else:
+            unlabelled.append(i)
+    if not labelled or len(labelled) > k:
+        return None
+
+    means = np.stack(
+        [z[idx].mean(axis=0) for _, idx in sorted(labelled.items())]
+    )
+    extra = k - len(means)
+    if extra <= 0:
+        return means[:k], len(means[:k])
+    # The remaining seeds belong to the points that have no type — overwhelmingly field
+    # audio — and KMeans++ over just those is the right way to place them, because there
+    # the "recorded or synthesised" axis it keys on is no longer a distraction.
+    pool = z[unlabelled] if len(unlabelled) >= extra else z
+    rest = KMeans(n_clusters=extra, n_init=3, random_state=seed).fit(pool).cluster_centers_
+    return np.concatenate([means, rest]), len(means)
 
 
 def point_features(
@@ -806,6 +894,7 @@ def build_galaxy(
     # standardised descriptors, so it is identical for every projection.
     density_summary: dict[str, Any] | None = None
     anchors: list[dict[str, Any]] | None = None
+    plan_report: dict[str, Any] | None = None
     if clustering == "hdbscan":
         from . import density as density_mod
 
@@ -835,13 +924,44 @@ def build_galaxy(
                 file=sys.stderr,
             )
     else:
-        k_final = int(k or default_k(kept))
+        plan = cluster_plan(kept)
+        plan_report = plan
+        k_final = int(k or plan["k"])
         k_final = max(2, min(k_final, len(kept)))
         if verbose:
             print(f"kmeans: k={k_final} on standardised descriptors", file=sys.stderr)
-        km = KMeans(n_clusters=k_final, n_init=10, random_state=seed).fit(z)
+            print(
+                f"  {plan['types']} named types + {plan['allowance']} for "
+                f"{plan['unlabelledPoints']} points with no type = {plan['wanted']} wanted",
+                file=sys.stderr,
+            )
+            if plan["capped"]:
+                # The failure mode this replaces was silent, and silence is what made it
+                # expensive: a bird lost every cluster carrying its name and the only
+                # symptom was that it sang and nothing lit up.
+                print(
+                    f"  WARNING: clamped to the cap of {plan['cap']}; "
+                    f"{plan['wanted'] - plan['cap']} types will share clusters and lose "
+                    "the name, function and citation that go with having one",
+                    file=sys.stderr,
+                )
+        seeded = type_seeds(z, kept, k_final, seed=seed)
+        if seeded is not None:
+            init, n_type_seeds = seeded
+            if verbose:
+                print(
+                    f"  seeded {n_type_seeds} centroids at their own type's centre, "
+                    f"{k_final - n_type_seeds} by kmeans++ over the untyped points",
+                    file=sys.stderr,
+                )
+            # n_init must be 1 with an explicit init: the seeds are the whole point, and a
+            # restart would throw them away for a random draw.
+            km = KMeans(n_clusters=k_final, init=init, n_init=1, random_state=seed).fit(z)
+        else:
+            km = KMeans(n_clusters=k_final, n_init=10, random_state=seed).fit(z)
         cluster_id = km.labels_.astype(int)
         centre_vectors = km.cluster_centers_
+        plan_report = {**plan, "seededTypes": seeded[1] if seeded else 0}
 
     assigned = cluster_id >= 0
     n_noise = int((~assigned).sum())
@@ -949,6 +1069,41 @@ def build_galaxy(
             }
         )
         counts.append(int(sel.size))
+
+    # How many types actually ended up with a cluster carrying their name.
+    #
+    # **This is the number whose absence cost the cuckoo both of its calls.** A type only
+    # gets a `syllableId` on a cluster when it wins that cluster's majority vote, so a type
+    # can be present in the corpus, rendered 96 times, and still have no node anywhere in
+    # the galaxy — at which point the app cannot draw its trajectory, cannot light it and
+    # cannot label it, and the bird sings into an empty picture. Purity does not see it
+    # (it scores the points that have a cluster), the projection metrics do not see it, and
+    # neither did anyone until a cuckoo went quiet. So it is measured, printed, and written
+    # into the manifest with the offenders named.
+    named_types = {
+        (sp, syl) for sp, syl in zip(kept.species_id, kept.syllable_id) if syl
+    }
+    homed = {(it["speciesId"], it["syllableId"]) for it in items if it["syllableId"]}
+    orphans = sorted(f"{sp}/{syl}" for sp, syl in (named_types - homed))
+    coverage = {
+        "types": len(named_types),
+        "withCluster": len(named_types) - len(orphans),
+        "orphans": orphans,
+        "share": round((len(named_types) - len(orphans)) / max(1, len(named_types)), 4),
+    }
+    if verbose:
+        print(
+            f"type coverage: {coverage['withCluster']}/{coverage['types']} types have a "
+            f"cluster carrying their name ({coverage['share'] * 100:.1f} %)",
+            file=sys.stderr,
+        )
+        if orphans:
+            print(
+                f"  {len(orphans)} with no cluster — they cannot light, label or draw a "
+                f"trajectory: {', '.join(orphans[:12])}"
+                + (f", +{len(orphans) - 12} more" if len(orphans) > 12 else ""),
+                file=sys.stderr,
+            )
 
     # --- write the asset set (8.3) ---
     # The frozen frame, so later audio can be added to this galaxy rather than replacing
@@ -1068,6 +1223,26 @@ def build_galaxy(
         "pipeline": "birdy-pipeline",
         "contract": "docs/08-implementation.md v1",
         "inventoryVersion": inventory.get("version"),
+        # Which inventory this galaxy was built from, and when that file was last written.
+        # A build is only as current as its input, and the input is a file another command
+        # rewrites: `learn` had refit the inventory to 80 types while the shipped assets
+        # still held the 264-type fit, and nothing on either side said so. With this the
+        # app can compare what it loaded against what is on disk now.
+        "inventorySource": {
+            "path": str(inventory_path),
+            "name": Path(inventory_path).name,
+            "writtenAt": datetime.fromtimestamp(
+                Path(inventory_path).stat().st_mtime, timezone.utc
+            ).isoformat(timespec="seconds"),
+            "species": len(inventory.get("species", [])),
+            "syllables": sum(
+                len(sp.get("syllables", [])) for sp in inventory.get("species", [])
+            ),
+        },
+        # Types that got a cluster carrying their name, and the ones that did not. See the
+        # comment where this is computed: an orphaned type is silently unplayable.
+        "typeCoverage": coverage,
+        "clusterPlan": plan_report,
         "points": stats.n_points,
         "pointsDropped": stats.n_dropped,
         "clusters": stats.k,

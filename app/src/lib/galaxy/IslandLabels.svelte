@@ -19,19 +19,37 @@
 		/** Filled by this component, positioned every frame by `IslandProjector`. */
 		elements: (HTMLElement | null)[];
 		groups: { key: string; label: string; count: number; hint?: string }[];
+		/**
+		 * Fired when a heading is clicked, so the page can frame the region it names.
+		 *
+		 * A heading is the only mark on screen that names something at the scale a viewer
+		 * actually navigates by — a whole bird, or every call that claims the same kind of
+		 * meaning — and it was the one mark that did nothing when clicked. Reaching that
+		 * region otherwise meant finding the species in a dropdown and trusting that the
+		 * island under the cursor was the same one.
+		 */
+		onpick?: (key: string) => void;
+		/** The heading whose region is currently framed, drawn as held down. */
+		active?: string;
 	}
 
-	let { elements, groups }: Props = $props();
+	let { elements, groups, onpick, active = '' }: Props = $props();
 </script>
 
-<div class="layer" aria-hidden="true">
+<div class="layer">
 	{#each groups as group, i (group.key)}
-		<div class="island" bind:this={elements[i]}>
+		<button
+			class="island"
+			class:active={group.key === active}
+			bind:this={elements[i]}
+			onclick={() => onpick?.(group.key)}
+			title="Frame this region"
+		>
 			<span class="name">{group.label}</span>
 			<span class="meta mono">
 				{group.count} knots{#if group.hint}<span class="hint"> · {group.hint}</span>{/if}
 			</span>
-		</div>
+		</button>
 	{/each}
 </div>
 
@@ -66,6 +84,36 @@
 			border-color 160ms ease,
 			background 160ms ease;
 		white-space: nowrap;
+		/* The layer stays transparent to the pointer — dragging anywhere on the view has to
+		   keep orbiting the camera — and only the headings themselves take the click. */
+		pointer-events: auto;
+		border-top: 0;
+		border-right: 0;
+		border-bottom: 0;
+		font: inherit;
+		text-align: left;
+		cursor: pointer;
+	}
+
+	.island:hover .name,
+	.island:focus-visible .name {
+		color: var(--ink);
+	}
+
+	.island:focus-visible {
+		outline: 1px solid var(--signal);
+		outline-offset: 2px;
+	}
+
+	/* Held down while its region is the thing being framed, so the heading says which one
+	   you asked for rather than leaving the camera move as the only evidence. */
+	.island.active {
+		background: color-mix(in srgb, var(--paper) 82%, transparent);
+		border-left-color: var(--signal);
+	}
+
+	.island.active .name {
+		color: var(--ink);
 	}
 
 	/* Responds to whatever is sounding inside it: the heading is how you see that a

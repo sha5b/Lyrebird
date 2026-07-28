@@ -49,6 +49,24 @@
 	const order: number[] = centroids.map((_, i) => i);
 	/** Smoothed activation per node, so a label does not strobe on a noisy frame. */
 	const shown = new Float32Array(centroids.length);
+	/**
+	 * How long a tag stays up after its cluster has gone quiet.
+	 *
+	 * **Kept separate from the activation on purpose.** A syllable lasts a tenth of a
+	 * second; a person reading "Black-capped chickadee — D note" needs a second or two.
+	 * Driving visibility straight off the activation meant a tag appeared and vanished
+	 * inside one note, so the label was technically correct and never once legible —
+	 * during a chorus it read as flicker.
+	 *
+	 * Slowing the activation itself would have been the wrong fix: that number is also
+	 * the match percentage and the tag's own accent, and a smoothed version of it would
+	 * report a match that had already stopped. So the *figure* stays honest and fast, and
+	 * only the decision to keep the tag on screen is slow: it rises with the activation
+	 * instantly and then bleeds away linearly, which is predictable to read and easy to
+	 * reason about.
+	 */
+	const LINGER_SECONDS = 2.6;
+	const linger = new Float32Array(centroids.length);
 	const placed: { x: number; y: number; h: number }[] = [];
 	/** Cached `[data-match]` spans and their last written value, to avoid needless writes. */
 	const matchEls: (HTMLElement | null)[] = centroids.map(() => null);
@@ -73,7 +91,7 @@
 	 */
 	const MAX_LABELS = 26;
 
-	useTask(() => {
+	useTask((delta) => {
 		const cam = camera.current;
 		const el = elements;
 		if (!cam || !anchor || !el.length) return;
@@ -89,6 +107,7 @@
 			projected[i].copy(world[i]).applyMatrix4(matrix).project(cam);
 			const act = signal.activations[i] ?? 0;
 			shown[i] = shown[i] * 0.8 + act * 0.2;
+			linger[i] = Math.max(shown[i], linger[i] - delta / LINGER_SECONDS);
 		}
 
 		// Who gets a tag, in order: whatever is responding, then whatever has something to
@@ -97,7 +116,7 @@
 		// name, a citation and a claim, and "unlabelled field cluster" repeated forty times
 		// carries none of that, so it should not be what crowds the named ones out.
 		order.sort((a, b) => {
-			const hot = (shown[b] > HOT ? 1 : 0) - (shown[a] > HOT ? 1 : 0);
+			const hot = (linger[b] > HOT ? 1 : 0) - (linger[a] > HOT ? 1 : 0);
 			if (hot !== 0) return hot;
 			const named = (namedOf[b] ? 1 : 0) - (namedOf[a] ? 1 : 0);
 			if (named !== 0) return named;
@@ -110,7 +129,9 @@
 			const node = el[i];
 			if (!node) continue;
 			const p = projected[i];
-			const hot = shown[i] > HOT;
+			// `hot` is what keeps a tag on screen, so it reads the lingering envelope; the
+			// figures inside the tag still read the live activation.
+			const hot = linger[i] > HOT;
 			const dimmed = focus >= 0 && speciesOf[i] !== focus;
 			const behind = p.z > 1 || p.z < -1;
 			const x = (p.x * 0.5 + 0.5) * width;
@@ -165,7 +186,7 @@
 			const near = 1 - 0.65 * depth * depth;
 			node.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
 			node.style.opacity = visible
-				? String(Math.min(1, (0.55 + shown[i] * 3) * near))
+				? String(Math.min(1, (0.35 + linger[i] * 3) * near))
 				: '0';
 			node.style.visibility = visible ? 'visible' : 'hidden';
 			// Depth ordering so a near label draws over a far one.

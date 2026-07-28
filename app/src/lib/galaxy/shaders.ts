@@ -544,7 +544,10 @@ export const trajectoryFragmentShader = /* glsl */ `
 		float passed = singing ? step(vIndex, vProgress) : 1.0;
 		float peak = singing ? exp(-pow((vIndex - vProgress) / 0.45, 2.0)) : 0.0;
 
-		float base = 0.45 + 0.35 * passed;
+		// A GL line is one pixel whatever the zoom, so as the dots shrink toward their
+		// floor the thread is the only thing still joining them, and it has to hold a
+		// little more ink to do that job than it needed when the dots were large.
+		float base = 0.55 + 0.35 * passed;
 		vec3 colour = mix(uColdColor, vColour, clamp(0.35 + peak, 0.0, 1.0));
 		gl_FragColor = vec4(colour, clamp(vAlpha * (base + peak * 0.6), 0.0, 1.0));
 	}
@@ -566,10 +569,10 @@ export const trajectoryPointsVertexShader = /* glsl */ `
 	uniform float uSizeScale;
 	/**
 	 * The cloud's particle size, so a bead is quoted against the marks it runs between.
-	 * It used to be two bare constants, which meant turning the particles down to 3 left
-	 * the beads at the size they were tuned for at 6 and the thread became a string of
-	 * boulders between specks. The ratios below reproduce the old 2.6 and 7.0 exactly at
-	 * a particle size of 6.
+	 *
+	 * The ratios below are calibrated at a particle size of **3**, which is the default —
+	 * they were first written against 6, and then the default halved, which quietly
+	 * halved every bead with it. That is why the thread went thin.
 	 */
 	uniform float uPointSize;
 
@@ -595,8 +598,22 @@ export const trajectoryPointsVertexShader = /* glsl */ `
 		// under true 1/z the beads shrank twice as fast as the knots they run between, so
 		// backing off to hold the whole galaxy left visible nodes joined by nothing.
 		float persp = pow(uSizeScale / max(0.001, -mv.z), 0.7);
-		float bead = uPointSize * (0.433 + vPeak * 1.167);
-		gl_PointSize = clamp(bead * uPixelRatio * persp, 2.0, 64.0);
+		float bead = uPointSize * (0.85 + vPeak * 2.4);
+		// **The floor rises with the travelling peak, and that is the whole fix.**
+		//
+		// Both the cloud and the thread shrink together as you back away, which is right,
+		// and both stop at a floor, which is also right — below three pixels a mark has no
+		// interior left. What was wrong is that they stopped at *different* floors: the
+		// cloud held at 3 while the bead kept falling to 2. So the further out you went the
+		// worse the ratio got, and past a certain zoom the travelling highlight was
+		// **smaller than a resting cloud point** — measured, 0.67 of one, where near the
+		// cloud it is 3.3 times one. The animation did not fade out, it inverted.
+		//
+		// Giving the peak its own floor keeps the relation instead of the absolute size:
+		// a bead at full peak is never under ten pixels however far out the camera is, and
+		// the resting dots of the thread floor at 3 alongside the cloud they run through.
+		float bottom = 3.0 + vPeak * 7.0;
+		gl_PointSize = clamp(bead * uPixelRatio * persp, bottom, 64.0);
 	}
 `;
 

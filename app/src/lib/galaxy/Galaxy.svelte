@@ -48,6 +48,13 @@
 		/** Clusters the learning pipeline is working on, pulsed live in the cloud. */
 		learning?: number[];
 		onpick?: (cluster: number) => void;
+		/**
+		 * Fired when an island heading is clicked, with the clusters that island holds — the
+		 * page decides what framing that means, since it owns the camera's priority order.
+		 */
+		onpickisland?: (group: { key: string; label: string; members: number[] }) => void;
+		/** The island heading to draw as held down; the page owns which region is framed. */
+		activeIsland?: string;
 		/** Fired on a click that hit no node, so the page can clear its selection. */
 		onbackground?: () => void;
 	}
@@ -66,6 +73,8 @@
 		frame = [],
 		learning = [],
 		onpick,
+		onpickisland,
+		activeIsland = '',
 		onbackground
 	}: Props = $props();
 
@@ -219,7 +228,15 @@
 		elements is simpler than reconciling two different groupings into one array.
 	-->
 	{#key layout}
-		<IslandLabels elements={islandElements} groups={islandGroups} />
+		<IslandLabels
+			elements={islandElements}
+			groups={islandGroups}
+			active={activeIsland}
+			onpick={(key) => {
+				const group = islandGroups.find((g) => g.key === key);
+				if (group) onpickisland?.({ key, label: group.label, members: group.members });
+			}}
+		/>
 	{/key}
 
 	{#if labels}

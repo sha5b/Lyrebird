@@ -8,6 +8,7 @@ import math
 import os
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
@@ -136,6 +137,37 @@ def species_by_id(inventory: dict[str, Any], sid: str) -> dict[str, Any]:
     raise KeyError(sid)
 
 
+def warn_if_stale_inventory(chosen: Path) -> None:
+    """Say so when `learn` has written a newer inventory than the one being built.
+
+    **A build is only as current as its input, and its input is a file another command
+    rewrites underneath it.** `learn` refits `data/learned-inventory.json` from scratch on
+    every run, and `build` defaults to the hand-authored `data/inventory.json`; so the
+    ordinary way to use this pipeline — learn, then build — quietly produces a galaxy with
+    none of the learning in it, and the ordinary way to use it *twice* produces a galaxy
+    built from a fit that has since been replaced. Neither said anything.
+
+    It warns rather than switching the input, because which inventory to build is a claim
+    about what the galaxy contains, and guessing it would be the pipeline overruling an
+    explicit flag. Loud is enough; silent was the problem.
+    """
+    learned = DEFAULT_LEARNED_INVENTORY
+    if not learned.exists():
+        return
+    try:
+        chosen_resolved = chosen.resolve()
+    except OSError:
+        return
+    if chosen_resolved == learned.resolve():
+        return
+    when = datetime.fromtimestamp(learned.stat().st_mtime, timezone.utc)
+    log(
+        f"NOTE: building from {chosen.name}, but {learned.name} was written "
+        f"{when.isoformat(timespec='seconds')} and holds the fitted repertoire. "
+        f"Use --inventory {learned} to include it."
+    )
+
+
 # --- commands ---------------------------------------------------------------------
 
 
@@ -167,6 +199,7 @@ def cmd_build(
 
     inventory_path = Path(args.inventory)
     inventory = load_inventory(inventory_path)
+    warn_if_stale_inventory(inventory_path)
     calibration = ensure_calibration(out, force=args.recalibrate)
     if args.source == "synthetic":
         report_reachability(inventory, calibration)
@@ -356,7 +389,10 @@ def cmd_grow(args: argparse.Namespace) -> int:
         source=field.source[-take:],
     )
     stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    result = grow.extend_build(out, fresh, stamp)
+    # The newest fitted repertoire rides along, so a grown point that belongs to a syllable
+    # or a species the shipped inventory has never seen arrives with a voice.
+    inventory_path = Path(args.inventory)
+    result = grow.extend_build(out, fresh, stamp, inventory_path=inventory_path)
     log(f"generation {result['generation']}: {result['points']} points")
     if result["drift"]["unmatched"] > 0.35:
         log("more than a third of the new audio matched no existing knot — "
@@ -840,6 +876,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     g.add_argument("--out", default=str(DEFAULT_OUT), help="built asset directory")
     g.add_argument("--harvest-store", default=None)
+    # Defaults to the fitted repertoire rather than the authored one: a grow only ever adds
+    # field audio, and field audio is what `learn` names.
+    g.add_argument(
+        "--inventory",
+        default=str(DEFAULT_LEARNED_INVENTORY),
+        help="inventory to copy alongside the grown points, so new voices arrive with them",
+    )
     g.add_argument(
         "--all",
         dest="only_new",

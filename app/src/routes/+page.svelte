@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
 	import Galaxy from '$lib/galaxy/Galaxy.svelte';
+	import FitMonitor from '$lib/galaxy/FitMonitor.svelte';
 	import {
 		buildClusterLookup,
 		buildSpeciesIndex,
@@ -32,6 +33,34 @@
 	// reactive proxy; the meters the UI shows come from the listener's callback instead.
 	let signal = $state.raw<VisualSignal>(createSignal(1));
 	let reading = $state<Reading | null>(null);
+	/**
+	 * The last reading that named something, kept on screen for a few seconds after the
+	 * sound that produced it has stopped.
+	 *
+	 * The panel only reports while `strength` is above the floor, which for a syllable is
+	 * a tenth of a second — so it filled in and emptied again faster than it could be
+	 * read, and during a chorus it was a flicker of text nobody could catch. Holding the
+	 * last one is the only way the panel is legible at all.
+	 *
+	 * It is held, not faked: the moment it stops being live the panel says so, because
+	 * "this is what I am hearing" and "this is what I last heard" are different claims
+	 * and the whole card is built on not confusing them.
+	 */
+	let heldReading = $state<Reading | null>(null);
+	let holdTimer: ReturnType<typeof setTimeout> | null = null;
+	/** Long enough to read a name, a function and a citation without hurrying. */
+	const READING_HOLD_MS = 6000;
+	function holdReading(r: Reading) {
+		heldReading = r;
+		if (holdTimer) clearTimeout(holdTimer);
+		holdTimer = setTimeout(() => {
+			heldReading = null;
+			holdTimer = null;
+		}, READING_HOLD_MS);
+	}
+	/** What the panel draws: the live reading if there is one, else the last one. */
+	const panelReading = $derived(reading?.best ? reading : heldReading);
+	const readingIsLive = $derived(Boolean(reading?.best));
 	let audioError = $state<string | null>(null);
 	let level = $state(0);
 	let pitch = $state(0);
@@ -87,8 +116,41 @@
 	 */
 	let layoutPinned = $state(false);
 	function chooseLayout(id: LayoutId) {
+		// The islands are a property of the arrangement, so a region framed in one of them
+		// does not survive into another — the heading you asked for is not on screen any more.
+		framedIsland = null;
 		layout = id;
 		layoutPinned = true;
+	}
+
+	/**
+	 * The island heading whose region the camera is holding, if any.
+	 *
+	 * An island heading names the only thing on screen at the scale a viewer navigates by —
+	 * a whole bird, or every call that claims the same kind of meaning — and until now it
+	 * was the one mark that did nothing when clicked. Reaching that region meant finding the
+	 * bird in a dropdown and trusting the island under the cursor was the same one.
+	 *
+	 * Framing only. It deliberately does **not** select the bird, because selecting one
+	 * switches the arrangement to *Sound* (see the effect below) and the islands you just
+	 * clicked would dissolve under the camera on its way there. "Take me to this region" and
+	 * "make this bird the subject" are different requests and the second one has its own
+	 * control.
+	 */
+	let framedIsland = $state<{ key: string; label: string; members: number[] } | null>(null);
+
+	function pickIsland(group: { key: string; label: string; members: number[] }) {
+		// Clicking the heading again releases it, which is the only way back to the whole
+		// galaxy without touching a different control.
+		if (framedIsland?.key === group.key) {
+			framedIsland = null;
+			return;
+		}
+		// A region is a coarser request than a node or a phrase, and those outrank it in
+		// `frameNodes` — leaving one set would frame the node and light the heading.
+		pinnedCluster = -1;
+		selectedSung = null;
+		framedIsland = group.members.length ? group : null;
 	}
 
 	/**
@@ -242,8 +304,11 @@
 
 	/**
 	 * What the camera holds in frame, most specific first: a phrase picked out of the
-	 * history, a pinned node, the selected bird's whole repertoire, or — with nothing
-	 * selected, which is how the app opens — the entire galaxy.
+	 * history, a pinned node, an island whose heading was clicked, the selected bird's whole
+	 * repertoire, or — with nothing selected, which is how the app opens — the entire galaxy.
+	 *
+	 * The island sits below the node and the phrase because it is the coarsest of the three
+	 * and a viewer who has since asked for one knot means that knot.
 	 */
 	const frameNodes = $derived.by(() => {
 		if (selectedSung !== null) {
@@ -251,6 +316,7 @@
 			if (nodes?.length) return nodes;
 		}
 		if (pinnedCluster >= 0) return [pinnedCluster];
+		if (framedIsland?.members.length) return framedIsland.members;
 		if (currentSpecies) return clustersOfSpecies.get(currentSpecies.id) ?? allClusters;
 		return allClusters;
 	});
@@ -288,12 +354,29 @@
 	 * The last line the pipeline printed is almost always the answer, and the log itself
 	 * stays available underneath for when it is not.
 	 */
+	/**
+	 * Whether the fit monitor is welcome. Dismissing it is per-session and deliberate:
+	 * a loop can run for an hour and an overlay nobody can close is a worse overlay.
+	 * It reappears on the next job, because the next job is a new thing to watch.
+	 */
+	let fitMonitorOpen = $state(true);
+	$effect(() => {
+		if (job?.state === 'running') fitMonitorOpen = true;
+	});
+	/** The `FIT` lines in the current log, so the panel can outlive the job that wrote them. */
+	const fitLines = $derived.by(() =>
+		(job?.log ?? []).filter((l) => l.trimStart().startsWith('FIT '))
+	);
+
 	const jobDoing = $derived.by(() => {
 		const log = job?.log;
 		if (!log?.length) return '';
 		for (let i = log.length - 1; i >= 0; i--) {
 			const line = log[i].trim();
-			if (line) return line;
+			// The per-type `FIT` lines are for the monitor, which draws them. Here they would
+			// replace "fitting syllables and syntax" with a row of numbers a hundred times a
+			// second, which is less information rather than more.
+			if (line && !line.startsWith('FIT ')) return line;
 		}
 		return '';
 	});
@@ -311,6 +394,9 @@
 		return () => {
 			listener?.stop();
 			engine?.dispose();
+			// The hold is a timer, and a timer that outlives the component writes state
+			// into a page that has gone.
+			if (holdTimer) clearTimeout(holdTimer);
 		};
 	});
 
@@ -344,10 +430,26 @@
 			engine = null;
 			micOn = false;
 			reading = null;
+			// The held reading outlives the live one by design, and a reload is the one moment
+			// that is wrong: it names a cluster from a galaxy that no longer exists.
+			heldReading = null;
+			if (holdTimer) {
+				clearTimeout(holdTimer);
+				holdTimer = null;
+			}
 			history = [];
 			selectedSung = null;
 			pinnedCluster = -1;
+			// A rebuild re-places every point, so the cluster ids the framed island held are
+			// not the same clusters any more.
+			framedIsland = null;
 			assets = loaded;
+			// A new inventory can drop a species — `--learned-only` does exactly that — and a
+			// selection pointing at one that is gone leaves `currentSpecies` null, which reads
+			// as "all birds" while the dropdown still shows the missing name.
+			if (speciesId && !loaded.inventory.species.some((s) => s.id === speciesId)) {
+				speciesId = '';
+			}
 			signal = createSignal(loaded.centroids.items.length, loaded.points.n);
 			galaxyVersion += 1;
 			// Only if audio was already running: `enter` needs a user gesture the first time,
@@ -370,7 +472,15 @@
 		// exists.
 		const built = pipelineStatus?.built?.builtAt;
 		const loaded = assets?.manifest?.builtAt;
-		if (built && loaded && built !== loaded && !jobRunning) untrack(() => reloadGalaxy(built));
+		// **No longer gated on the job being finished, which used to exclude the one case
+		// that matters.** `loop` holds a job open for as long as it runs — that is its whole
+		// nature — so waiting for the job to end meant every galaxy it grew was invisible
+		// until you stopped it, and "learning while the app runs" quietly meant "learning,
+		// then reloading the page". The gate was there to avoid reading a half-written asset
+		// set, and it is not needed for that: `manifest.json` is written *last* by both
+		// `build` and `grow`, so a changed stamp is itself the proof that everything else
+		// already landed, and every fetch is pinned to that stamp.
+		if (built && loaded && built !== loaded) untrack(() => reloadGalaxy(built));
 	});
 
 	/** Audio can only start from a user gesture, so the whole audio side begins here. */
@@ -398,6 +508,7 @@
 			const live = new Listener(created, assets);
 			live.onReading = (r) => {
 				reading = r;
+				if (r.best) holdReading(r);
 			};
 			live.onMeters = (m) => {
 				level = m.level;
@@ -460,9 +571,10 @@
 	}
 
 	function clearSelection() {
-		if (selectedSung === null && pinnedCluster < 0) return;
+		if (selectedSung === null && pinnedCluster < 0 && !framedIsland) return;
 		selectedSung = null;
 		pinnedCluster = -1;
+		framedIsland = null;
 		refreshSelection();
 	}
 
@@ -806,15 +918,26 @@
 		pipelineWaited = pipelineStatus ? 0 : pipelineWaited + 1.5;
 	}
 
+	/**
+	 * Poll the control process on every tab, quickly on Learn and slowly elsewhere.
+	 *
+	 * **It used to stop the moment you left the Learn tab, which is the moment you would
+	 * leave it.** You start a loop, go back to Sing to listen while it works, and from then
+	 * on `pipelineStatus` is frozen at whatever it held when you switched: the effect below
+	 * that swaps in a finished build never re-evaluates, so the app cannot notice its own
+	 * galaxy has been replaced. The whole point of learning while the app runs is that you
+	 * are somewhere else in the app while it happens.
+	 *
+	 * Slower off the Learn tab because the reason to poll is different. On Learn it is the
+	 * job log, which is a progress indicator and wants to move; everywhere else it is one
+	 * question — has the build stamp changed — and asking that every six seconds is enough.
+	 */
+	const POLL_MS = { learn: 1500, elsewhere: 6000 };
 	$effect(() => {
-		if (tab !== 'learn') return;
-		pipelineWaited = 0;
+		const fast = tab === 'learn';
+		if (fast) pipelineWaited = 0;
 		refreshPipeline();
-		// Poll while the tab is open: a harvest run takes minutes and its log is the only
-		// honest progress indicator. It is also what picks up the control process the dev
-		// server starts in the background, which takes a few seconds to compile its
-		// kernels. Cleared as soon as the tab closes.
-		const id = setInterval(refreshPipeline, 1500);
+		const id = setInterval(refreshPipeline, fast ? POLL_MS.learn : POLL_MS.elsewhere);
 		return () => clearInterval(id);
 	});
 
@@ -995,8 +1118,24 @@ uv run birdy-pipeline build</pre>
 				frame={frameNodes}
 				learning={learningClusters}
 				onpick={pickCluster}
+				onpickisland={pickIsland}
+				activeIsland={framedIsland?.key ?? ''}
 			/>
 			{/key}
+
+			<!--
+				The fit, while it happens, over the galaxy it is going to change. On every tab,
+				because a loop runs for as long as you let it and you will not be sitting on
+				Learn while it does.
+			-->
+			<FitMonitor
+				show={fitMonitorOpen && (jobRunning || fitLines.length > 0)}
+				log={job?.log ?? []}
+				jobName={job?.name ?? ''}
+				doing={jobDoing}
+				commonOf={(id) => species.find((s) => s.id === id)?.common ?? id}
+				onclose={() => (fitMonitorOpen = false)}
+			/>
 
 			<!-- Display settings belong on the thing they change, not in the tab strip. -->
 			<div class="viewctl" class:open={viewOpen}>
@@ -1104,12 +1243,15 @@ uv run birdy-pipeline build</pre>
 					{/if}
 				</h2>
 				<div class="cardbody">
-				{#if reading?.best}
-					{@const best = reading.best}
-					<div class="best">
+				{#if panelReading?.best}
+					{@const best = panelReading.best}
+					<div class="best" class:past={!readingIsLive}>
 						<span class="badge {best.centroid.confidence}">
 							{confidenceLabel(best.centroid.confidence).text}
 						</span>
+						{#if !readingIsLive}
+							<span class="badge past-badge">last heard</span>
+						{/if}
 						<h3 class="strong">{best.centroid.label}</h3>
 						<!--
 							Deliberately not showing the singer here: this panel reports what the audio
@@ -1121,7 +1263,9 @@ uv run birdy-pipeline build</pre>
 						<p class="note">{best.centroid.function}</p>
 						<div class="gauge">
 							<span class="lbl">urgency</span>
-							<span class="level"><span style:width={`${reading.urgency * 100}%`}></span></span>
+							<span class="level"
+								><span style:width={`${panelReading.urgency * 100}%`}></span></span
+							>
 						</div>
 						{#if best.centroid.refs.length}
 							<ul class="refs">
@@ -1131,8 +1275,8 @@ uv run birdy-pipeline build</pre>
 							</ul>
 						{/if}
 					</div>
-					<div class="candidates">
-						{#each reading.candidates as candidate (candidate.centroid.id)}
+					<div class="candidates" class:past={!readingIsLive}>
+						{#each panelReading.candidates as candidate (candidate.centroid.id)}
 							<div class="candidate">
 								<span class="bar"><span style:width={`${candidate.probability * 100}%`}></span></span>
 								<span class="note">{candidate.centroid.label}</span>
@@ -2479,6 +2623,21 @@ uv run birdy-pipeline serve</pre>
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+	}
+
+	/* A held reading is drawn back, so "what I am hearing now" and "what I last heard"
+	   never look like the same claim. It is still fully readable — that is the point of
+	   holding it — just visibly no longer live. */
+	.best.past,
+	.candidates.past {
+		opacity: 0.62;
+		transition: opacity 240ms linear;
+	}
+
+	.past-badge {
+		background: transparent;
+		border: 1px solid var(--rule);
+		color: var(--ink-faint);
 	}
 
 	.swatch {

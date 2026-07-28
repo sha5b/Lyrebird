@@ -727,6 +727,25 @@ def learn_species(
         rivals = [s for j, s in enumerate(sims) if j != i]
         t.rival_cosine = round(max(rivals), 4) if rivals else 0.0
         t.nearest_own = all(sims[i] >= s for s in rivals)
+        if verbose:
+            # One line per type, as it lands, in a shape something else can read.
+            #
+            # The per-species summary below is the right thing to read afterwards and the
+            # wrong thing to watch: it arrives once, at the end, after two or three seconds
+            # in which the only evidence the fit is doing anything is that it has not
+            # returned. These are the numbers that decide whether a fitted voice is worth
+            # shipping — how close it landed, how close it landed to the *wrong* call, and
+            # whether the oscillator reached the pitch — and they exist per type well before
+            # the summary does. The fixed `FIT` prefix is so the app can parse them out of
+            # the job log it already streams, without a second channel to keep in step.
+            log(
+                f"FIT {species_id} {t.syllable['id']} "
+                f"f0={syrinx.f0_reference(t.syllable['contour']):.0f} "
+                f"dur={t.syllable['dur'] * 1000:.0f} "
+                f"cos={t.resynthesis_cosine:.3f} rival={t.rival_cosine:.3f} "
+                f"own={1 if t.nearest_own else 0} "
+                f"f0err={abs(t.f0_error_percent):.2f} members={len(t.members)}"
+            )
 
     grammar = learn_grammar(observations, type_of)
     cosines = [t.resynthesis_cosine for t in fitted if t.resynthesis_cosine]
