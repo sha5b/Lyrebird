@@ -91,9 +91,11 @@
 {#if show}
 	<div class="pip">
 		<div class="head">
-			<span class="what">{jobName || 'fitting'}{#if current} · {current}{/if}</span>
+			<!-- The separators are inside the expression because Svelte trims the leading
+			     whitespace of a text node, which turned "loop · Siberian jay" into "loop·". -->
+			<span class="what">{jobName || 'fitting'}{current ? ` · ${current}` : ''}</span>
 			<span class="tally mono">
-				{fits.length} types{#if lost}<span class="warn"> · {lost} lost</span>{/if}
+				{fits.length} types{#if lost}<span class="warn">{` · ${lost} lost`}</span>{/if}
 			</span>
 			{#if onclose}
 				<button class="x" onclick={onclose} aria-label="Hide the fit monitor">×</button>

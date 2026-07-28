@@ -374,11 +374,25 @@ def cmd_grow(args: argparse.Namespace) -> int:
         return 1
 
     points = json.loads((out / "points.json").read_text(encoding="utf-8"))
-    have = int(points["n"])
+    total = int(points["n"])
+    # **Count the field points, not all of them.** This compared the store's descriptor
+    # count against the galaxy's *total* point count, and a mixed build's total includes
+    # ~12000 synthetic renders — so `take` came out negative and `grow --only-new` reported
+    # "nothing new to add" on every run, forever. The loop's third step was a no-op from the
+    # day the harvest joined the corpus, which is why an hour of learning left the galaxy
+    # at exactly the size it started.
+    have = sum(1 for s in points.get("source", []) if s == "field") or 0
     take = len(field) - have if args.only_new else len(field)
     if take <= 0:
-        log(f"the galaxy already holds {have} points and the store has {len(field)}; "
-            "nothing new to add")
+        log(f"the galaxy holds {have} field points of {total} and the store has "
+            f"{len(field)}; nothing new to add")
+        # A capped reservoir does not grow, it *replaces*: Algorithm R swaps random slots,
+        # so once the store is full the descriptors that changed are not a suffix and no
+        # append can express them. Saying so is the difference between "nothing happened"
+        # and "nothing can happen this way" — the second one means rebuild.
+        if len(field) >= getattr(store, "cap", 0) > 0:
+            log(f"the store is at its cap of {store.cap}, so new audio replaces old rather "
+                "than adding to it — only a rebuild can take it in")
         return 0
     fresh = galaxy.PointSet(
         x=field.x[-take:],

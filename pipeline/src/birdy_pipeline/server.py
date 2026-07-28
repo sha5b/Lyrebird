@@ -27,6 +27,7 @@ import threading
 import time
 import urllib.parse
 from collections import deque
+from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Callable
@@ -380,6 +381,9 @@ class Pipeline:
                     break
 
                 harvest.log(f"--- pass {done}: growing the galaxy ---")
+                # So the drift figure below can be told apart from the one a previous pass
+                # left in the manifest: a grow that adds nothing writes no new entry.
+                generation_before = self._generation()
                 try:
                     argv = argparse.Namespace(
                         out=str(self.out_path),
@@ -399,17 +403,33 @@ class Pipeline:
                 # least unlike and the galaxy slowly stopped describing its own contents. The
                 # drift figure is exactly the measurement of that, and it is already written
                 # into the manifest by every grow, so the trigger costs one file read.
-                unmatched = self._last_drift()
+                # Two reasons to rebuild, and the second one is the one that fires in
+                # practice. Drift says the *arrangement* has stopped describing its contents;
+                # a fitted inventory newer than the galaxy says the *repertoire* has. Once
+                # the harvest store is at its cap — which it reaches early and stays at — a
+                # pass adds no points at all and only the second reason is ever true, so
+                # triggering on drift alone would have meant never rebuilding again.
+                reason = None
+                unmatched = self._last_drift(grew_to=generation_before)
                 if unmatched is not None and unmatched > rebuild_at:
-                    harvest.log(
-                        f"--- pass {done}: {unmatched:.0%} of the new audio matched no "
-                        f"existing knot (over {rebuild_at:.0%}) — rebuilding so the "
-                        "clustering can see it ---"
+                    reason = (
+                        f"{unmatched:.0%} of the new audio matched no existing knot "
+                        f"(over {rebuild_at:.0%})"
                     )
+                elif self._inventory_newer_than_build():
+                    reason = "the fitted inventory is newer than the galaxy built from it"
+                if reason:
+                    harvest.log(f"--- pass {done}: {reason} — rebuilding ---")
                     try:
                         self._rebuild(job)
                     except Exception as err:
                         harvest.log(f"rebuild skipped: {err}")
+                else:
+                    harvest.log(
+                        f"  pass {done}: galaxy left as it is — "
+                        f"drift {'n/a' if unmatched is None else f'{unmatched:.0%}'}, "
+                        "inventory no newer than the build"
+                    )
 
                 # What the pass actually learned, as one line. A log that only says which
                 # step is running tells you it is alive and nothing about whether it is
@@ -446,19 +466,57 @@ class Pipeline:
         except Exception:
             return 0
 
-    def _last_drift(self) -> float | None:
+    def _manifest(self) -> dict[str, Any]:
+        try:
+            return json.loads((self.out_path / "manifest.json").read_text())
+        except Exception:
+            return {}
+
+    def _generation(self) -> int:
+        return int(self._manifest().get("generation", 0) or 0)
+
+    def _last_drift(self, grew_to: int | None = None) -> float | None:
         """The share of the newest grown points that matched no existing knot.
 
         Read from the manifest rather than passed back from `cmd_grow`, because every grow
         already records it there and a return value would only be a second copy that could
-        disagree with the first.
+        disagree with the first. `grew_to` is the generation counter from *before* the grow:
+        if it has not moved, the newest entry belongs to some earlier pass and reporting it
+        as this pass's drift would be a stale number dressed up as a fresh one.
         """
+        manifest = self._manifest()
+        if grew_to is not None and int(manifest.get("generation", 0) or 0) == grew_to:
+            return None
         try:
-            manifest = json.loads((self.out_path / "manifest.json").read_text())
             grown = manifest.get("grownBy") or []
             return float(grown[-1]["drift"]["unmatched"])
         except Exception:
             return None
+
+    def _inventory_newer_than_build(self) -> bool:
+        """Has `learn` written a repertoire the built galaxy has never seen?
+
+        The build stamps the mtime of the inventory it read into `inventorySource`, so this
+        is a straight comparison against the file on disk now. It is the honest trigger for
+        a rebuild in the steady state: the harvest store fills up and stops growing, every
+        pass refits the same 20000 descriptors into a slightly different set of types, and
+        the only thing that changes is the inventory. Without this the loop would harvest
+        and fit forever while the galaxy stayed exactly as it was — which is what it did.
+        """
+        if not self.learned_path.exists():
+            return False
+        built = (self._manifest().get("inventorySource") or {}).get("writtenAt")
+        if not built:
+            # A build from before the stamp existed cannot be compared, and assuming it is
+            # current would mean never rebuilding on a galaxy that predates this check.
+            return True
+        try:
+            when = datetime.fromtimestamp(
+                self.learned_path.stat().st_mtime, timezone.utc
+            ).isoformat(timespec="seconds")
+        except OSError:
+            return False
+        return when > built
 
     def _rebuild(self, job: Job) -> None:
         """A full build from the fitted inventory, cancellable like any other step."""

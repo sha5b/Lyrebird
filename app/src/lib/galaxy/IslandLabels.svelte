@@ -47,7 +47,9 @@
 		>
 			<span class="name">{group.label}</span>
 			<span class="meta mono">
-				{group.count} knots{#if group.hint}<span class="hint"> · {group.hint}</span>{/if}
+				<!-- Separator inside the expression: Svelte trims a text node's leading space,
+				     so the markup form of this rendered "226 knots· real audio". -->
+				{group.count} knots{#if group.hint}<span class="hint">{` · ${group.hint}`}</span>{/if}
 			</span>
 		</button>
 	{/each}
