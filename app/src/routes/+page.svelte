@@ -766,8 +766,24 @@
 	let harvestPerSpecies = $state(10);
 	let harvestQuality = $state('A');
 	let harvestFromDir = $state('');
+	/**
+	 * The two harvest limits the control process has always accepted and the panel never
+	 * offered: how much of a single recording is analysed, and how many descriptors the
+	 * store keeps before it starts discarding.
+	 *
+	 * The store cap matters more than it looks. It is a reservoir — once it is full,
+	 * everything after that is sampled rather than kept — and the status line above says
+	 * plainly when you are there ("20000 kept, 26931 seen"). Leaving the only control over
+	 * that out of the interface meant the one number you could act on was the one you
+	 * could not change. Defaults match the pipeline's own.
+	 */
+	let harvestMaxSeconds = $state(90);
+	let harvestCap = $state(20000);
 	let learnTypes = $state(8);
 	let buildUseLearned = $state(true);
+	let buildIncludeHarvest = $state(true);
+	/** Which audio the build renders from; the server has taken this since it existed. */
+	let buildSource = $state<'synthetic' | 'local' | 'harvest'>('synthetic');
 
 	/** Seconds spent waiting for a control process that is not answering yet. */
 	let pipelineWaited = $state(0);
@@ -807,6 +823,42 @@
 
 	const job = $derived(pipelineStatus?.job ?? null);
 	const jobRunning = $derived(job?.state === 'running' || job?.state === 'stopping');
+
+	/**
+	 * One line standing in for eleven paragraphs.
+	 *
+	 * The fitted repertoire was printed a species at a time, two lines each, and on a
+	 * twelve-bird corpus that was more than half of the whole Learn tab — a wall you
+	 * scrolled past on the way to every control under it. The totals are what you check
+	 * after a fit; the per-species breakdown is what you open when a total looks wrong.
+	 */
+	/**
+	 * Whether the galaxy currently loaded can draw anything at all.
+	 *
+	 * A build from the harvest alone produces a corpus of real audio in which no cluster
+	 * carries a syllable id, so nothing resolves to a knot, so there are no threads and
+	 * no travelling beads — and the picture gives no hint why. It looks like the renderer
+	 * has failed. Three numbers next to the Rebuild button say plainly which kind of
+	 * corpus you asked for and what it can support.
+	 */
+	const corpusHealth = $derived.by(() => {
+		if (!assets || !clusters) return null;
+		const items = assets.centroids.items;
+		return {
+			clusters: items.length,
+			documented: items.filter((c) => c.function).length,
+			mapped: clusters.bySyllable.size
+		};
+	});
+
+	const learnedTotals = $derived.by(() => {
+		const list = pipelineStatus?.learned.species;
+		if (!list?.length) return null;
+		return {
+			species: list.length,
+			types: list.reduce((sum, s) => sum + s.types, 0)
+		};
+	});
 
 	$effect(() => {
 		engine?.setDistance(distance);
@@ -1473,6 +1525,8 @@ uv run birdy-pipeline serve</pre>
 												species: harvestSpecies || null,
 												perSpecies: harvestPerSpecies,
 												quality: harvestQuality,
+												cap: harvestCap,
+												maxSeconds: harvestMaxSeconds,
 												fromDir: harvestFromDir || null,
 												dryRun: true
 											})
@@ -1487,6 +1541,8 @@ uv run birdy-pipeline serve</pre>
 												species: harvestSpecies || null,
 												perSpecies: harvestPerSpecies,
 												quality: harvestQuality,
+												cap: harvestCap,
+												maxSeconds: harvestMaxSeconds,
 												fromDir: harvestFromDir || null
 											})
 										)}>Harvest</button
@@ -1510,20 +1566,33 @@ uv run birdy-pipeline serve</pre>
 								>Fit syllables and syntax</button
 							>
 							{#if pipelineStatus.learned.exists}
-								<dl class="facts mono">
+								<dl
+									class="facts mono"
+									title="Cosine between each fitted syllable's resynthesis and the audio it came from; 1.0 would mean the syrinx model reproduces the recording exactly."
+								>
 									<div><dt>median cosine</dt><dd>{pipelineStatus.learned.medianCosine ?? '—'}</dd></div>
 									<div><dt>worst</dt><dd>{pipelineStatus.learned.worstCosine ?? '—'}</dd></div>
 								</dl>
-								{#each pipelineStatus.learned.species ?? [] as sp (sp.id)}
-									<p class="note">
-										<b>{sp.common}</b> — {sp.types} types, {sp.states} states
-										{#if sp.bout.length}<br /><span class="mono">{sp.bout.join(' ')}</span>{/if}
-									</p>
-								{/each}
-								<p class="note faint">
-									Cosine between each fitted syllable's resynthesis and its source audio; 1.0
-									would be exact.
-								</p>
+								{#if learnedTotals}
+									<details class="rollup">
+										<summary class="mono faint"
+											>{learnedTotals.species} species · {learnedTotals.types} types fitted</summary
+										>
+										<div class="fitted">
+											{#each pipelineStatus.learned.species ?? [] as sp (sp.id)}
+												<div
+													class="fit"
+													title={sp.bout.length
+														? `sampled bout: ${sp.bout.join(' ')}`
+														: 'no bout sampled'}
+												>
+													<span class="fit-name">{sp.common}</span>
+													<span class="mono faint">{sp.types}t · {sp.states}s</span>
+												</div>
+											{/each}
+										</div>
+									</details>
+								{/if}
 							{:else}
 								<p class="note faint">Nothing fitted yet. Harvest some recordings first.</p>
 							{/if}
@@ -1535,16 +1604,36 @@ uv run birdy-pipeline serve</pre>
 
 						<section class="block">
 							<h3 class="blocktitle">Rebuild the galaxy</h3>
-							<label class="check">
-								<input type="checkbox" bind:checked={buildUseLearned} disabled={!pipelineStatus.learned.exists} />
-								Include the syllables fitted to real recordings
+							<label class="field">
+								<span class="lbl">Render from</span>
+								<select bind:value={buildSource}>
+									<option value="synthetic">synthetic renders</option>
+									<option value="local">local audio</option>
+									<option value="harvest">harvested audio</option>
+								</select>
 							</label>
+							<div class="checks">
+								<label class="check" title="Include the syllables fitted to real recordings.">
+									<input
+										type="checkbox"
+										bind:checked={buildUseLearned}
+										disabled={!pipelineStatus.learned.exists}
+									/> Fitted
+								</label>
+								<label class="check" title="Fold the harvested descriptor store into the corpus.">
+									<input type="checkbox" bind:checked={buildIncludeHarvest} /> Harvested
+								</label>
+							</div>
 							<button
 								class="wide"
 								disabled={jobRunning || pipelineBusy}
 								onclick={() =>
 									runPipeline(() =>
-										pipeline.build({ useLearned: buildUseLearned, includeHarvest: true })
+										pipeline.build({
+											useLearned: buildUseLearned,
+											includeHarvest: buildIncludeHarvest,
+											source: buildSource
+										})
 									)}>Rebuild</button
 							>
 							{#if pipelineStatus.built.exists}
@@ -1552,6 +1641,24 @@ uv run birdy-pipeline serve</pre>
 									<div><dt>points</dt><dd>{pipelineStatus.built.points ?? '—'}</dd></div>
 									<div><dt>clusters</dt><dd>{pipelineStatus.built.clusters ?? '—'}</dd></div>
 								</dl>
+							{/if}
+							{#if corpusHealth}
+								<dl
+									class="facts mono"
+									title="Knots that carry a documented function, and knots a syllable can be sung into. A corpus with none of the second draws no threads at all, because nothing resolves to a place."
+								>
+									<div><dt>documented</dt><dd>{corpusHealth.documented}/{corpusHealth.clusters}</dd></div>
+									<div><dt>singable</dt><dd>{corpusHealth.mapped}</dd></div>
+								</dl>
+								{#if corpusHealth.mapped === 0}
+									<p class="note faint">
+										<b>No knot in this galaxy is tied to a syllable</b>, so nothing draws a
+										thread and nothing lights when a bird sings. A harvest-only build has that
+										shape: it is real audio with no documented calls in it. Rebuild with
+										<b>synthetic renders</b> — with <b>Harvested</b> still ticked — to get a
+										corpus that carries both.
+									</p>
+								{/if}
 							{/if}
 							<p
 								class="note faint"
@@ -2296,6 +2403,46 @@ uv run birdy-pipeline serve</pre>
 	.tally.inline {
 		margin-left: 0.3rem;
 		cursor: inherit;
+	}
+
+	/* A summary line with the detail folded behind it. The totals are what you check
+	   after a fit; the per-species breakdown is what you open when a total looks wrong,
+	   and printing it always was more than half the Learn tab. */
+	.rollup > summary {
+		font-size: 0.6rem;
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.rollup > summary::before {
+		content: '▸ ';
+	}
+
+	.rollup[open] > summary::before {
+		content: '▾ ';
+	}
+
+	.fitted {
+		display: grid;
+		gap: 0.1rem;
+		margin-top: 0.3rem;
+		padding-left: 0.65rem;
+		border-left: 1px solid var(--rule);
+	}
+
+	.fit {
+		display: flex;
+		justify-content: space-between;
+		gap: 0.5rem;
+		font-size: 0.62rem;
+		color: var(--ink-dim);
+		cursor: help;
+	}
+
+	.fit-name {
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
 	}
 
 	/* --- overlay --- */

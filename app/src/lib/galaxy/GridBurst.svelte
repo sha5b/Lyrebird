@@ -107,12 +107,26 @@
 		(material.uniforms.uColour.value as THREE.Color).set(colour);
 	});
 
+	/**
+	 * A strike belongs to a *knot*, not to a place, so it remembers which cluster it came
+	 * from and reads that cluster's position fresh on every frame.
+	 *
+	 * Storing the coordinates at strike time was fine for as long as knots never moved,
+	 * and wrong the moment the arrangements arrived. Rearranging carries every cluster to
+	 * a new position over a second and a half, and a live strike went on drawing its cross
+	 * where its knot used to be — most visibly switching to Bird, which moves a knot most
+	 * of the way across the box, leaving a set of rules ruled through empty space with
+	 * nothing sounding there. The wave fronts in the point cloud had the same fault and
+	 * the same fix.
+	 */
 	interface Burst {
+		cluster: number;
 		centre: THREE.Vector3;
 		age: number;
 		strength: number;
 	}
 	const bursts: Burst[] = Array.from({ length: MAX_BURSTS }, () => ({
+		cluster: -1,
 		centre: new THREE.Vector3(),
 		age: LIFETIME,
 		strength: 0
@@ -120,15 +134,20 @@
 	let next = 0;
 	let lastCluster = -1;
 
+	/** Where a burst's knot is now. Returns false if the cluster has gone out of range. */
+	function follow(b: Burst): boolean {
+		const c = b.cluster;
+		if (c < 0 || c * 3 + 2 >= view.centroids.length) return false;
+		b.centre.set(view.centroids[c * 3], view.centroids[c * 3 + 1], view.centroids[c * 3 + 2]);
+		return true;
+	}
+
 	function strike(cluster: number, strength: number) {
 		if (cluster < 0 || cluster * 3 + 2 >= view.centroids.length) return;
 		const b = bursts[next];
 		next = (next + 1) % MAX_BURSTS;
-		b.centre.set(
-			view.centroids[cluster * 3],
-			view.centroids[cluster * 3 + 1],
-			view.centroids[cluster * 3 + 2]
-		);
+		b.cluster = cluster;
+		follow(b);
 		b.age = 0;
 		b.strength = strength;
 	}
@@ -167,6 +186,8 @@
 		let v = 0;
 		for (const b of bursts) {
 			if (b.age >= LIFETIME || b.strength <= 0) continue;
+			// Re-read every frame, so a strike rides its knot through a rearrangement.
+			if (!follow(b)) continue;
 			const t = b.age / LIFETIME;
 			// out fast, back slower — a rule that snaps away reads as a glitch
 			const grow = Math.min(1, t * 3.2);

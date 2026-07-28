@@ -9,6 +9,7 @@ whether *distance on screen* means anything. `faithfulness` measures exactly tha
 from __future__ import annotations
 
 import json
+import math
 import shutil
 import sys
 from collections import Counter
@@ -560,13 +561,33 @@ def _print_projection_table(results: dict[str, dict[str, Any]], chosen: str) -> 
 
 
 def default_k(points: PointSet) -> int:
-    """Number of distinct syllable types (or labels, for a local corpus), cap 64."""
+    """
+    How many clusters to fit: one per known syllable type, or — for a corpus that has no
+    syllable labels at all — a count scaled to the size of the corpus.
+
+    **The fallback used to be one cluster per species, and that is never a defensible
+    number of acoustic clusters.** Harvested field points carry no ``syllable_id``, so a
+    build from the harvest alone found no types and fell back to counting birds: twenty
+    thousand points into eleven clusters, each one about eighteen hundred points holding
+    every species in the corpus. Measured on that build, cluster purity was 0.056 and
+    k-NN agreement 0.19 — the clusters carried essentially no information, every one of
+    them lit for every sound, and because none of them mapped to a documented syllable
+    the galaxy drew no connections at all. It looked like the app had broken; what had
+    happened is that the corpus was asked how many kinds of sound it contained and
+    answered "twelve, one per bird".
+
+    sqrt(n / 2) is the standard rule of thumb for an unknown cluster count and it is
+    honest here in a way the species count is not: it makes no claim about what the
+    groups *are*, only that a corpus of twenty thousand syllables holds more than eleven
+    kinds of sound. For that corpus it gives 100, in the same range as the 176 the mixed
+    build fits from real labels.
+    """
     types = {
         (sp, syl) for sp, syl in zip(points.species_id, points.syllable_id) if syl
     }
-    if not types:
-        types = {(sp, "") for sp in points.species_id}
-    return max(2, min(K_CAP, len(types)))
+    if types:
+        return max(2, min(K_CAP, len(types)))
+    return max(2, min(K_CAP, int(math.sqrt(max(1, len(points.species_id)) / 2))))
 
 
 def point_features(

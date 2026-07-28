@@ -313,8 +313,17 @@
 	let waveK = 6;
 	let pitch = 0.5;
 
-	/** One expanding front: where it started, how old it is, how hard it hit. */
+	/**
+	 * One expanding front: the knot it came from, how old it is, how hard it hit.
+	 *
+	 * The *knot*, not the coordinates. A front captured its origin at launch, which was
+	 * correct until the arrangements arrived — now a rearrangement carries every cluster
+	 * somewhere else over a second and a half, and a front already travelling kept
+	 * expanding from where its knot used to be. Reading the position back every frame
+	 * makes the front follow its own cluster through the move.
+	 */
 	const sources = Array.from({ length: WAVE_SOURCES }, () => ({
+		cluster: -1,
 		origin: new THREE.Vector3(),
 		age: WAVE_LIFETIME,
 		amp: 0
@@ -335,11 +344,7 @@
 		if (cluster < 0 || cluster * 3 + 2 >= view.centroids.length) return;
 		const s = sources[nextSource];
 		nextSource = (nextSource + 1) % WAVE_SOURCES;
-		s.origin.set(
-			view.centroids[cluster * 3],
-			view.centroids[cluster * 3 + 1],
-			view.centroids[cluster * 3 + 2]
-		);
+		s.cluster = cluster;
 		s.age = 0;
 		s.amp = strength;
 	}
@@ -375,6 +380,11 @@
 		const origins = u.uWaveOrigin.value as THREE.Vector3[];
 		for (let i = 0; i < WAVE_SOURCES; i++) {
 			const s = sources[i];
+			// Follow the knot rather than the place it was in when the note sounded.
+			const c = s.cluster;
+			if (c >= 0 && c * 3 + 2 < view.centroids.length) {
+				s.origin.set(view.centroids[c * 3], view.centroids[c * 3 + 1], view.centroids[c * 3 + 2]);
+			}
 			s.age += delta;
 			// Fade over the life rather than cutting off, so a front thins out as it
 			// crosses the far side instead of vanishing mid-cloud.
