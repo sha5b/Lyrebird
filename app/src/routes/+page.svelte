@@ -780,6 +780,8 @@
 	let harvestMaxSeconds = $state(90);
 	let harvestCap = $state(20000);
 	let learnTypes = $state(8);
+	/** How much each pass of the loop takes on before folding it in. */
+	let loopPerPass = $state(2);
 	let buildUseLearned = $state(true);
 	let buildIncludeHarvest = $state(true);
 	/** Which audio the build renders from; the server has taken this since it existed. */
@@ -1489,6 +1491,52 @@ uv run birdy-pipeline serve</pre>
 					</section>
 
 					{#if pipelineStatus}
+						<!--
+							The loop is the headline, because harvesting once is not what learning
+							from the wild is: a corpus of field recordings is never finished, and
+							the three manual steps below are that same cycle done by hand. One
+							switch runs it; everything under it is for driving a single step.
+						-->
+						<section class="block">
+							<h3 class="blocktitle">Keep learning</h3>
+							<div class="row">
+								<button
+									class="primary"
+									class:on={job?.name === 'loop' && jobRunning}
+									disabled={pipelineBusy || (jobRunning && job?.name !== 'loop')}
+									onclick={() =>
+										runPipeline(() =>
+											job?.name === 'loop' && jobRunning
+												? pipeline.stop()
+												: pipeline.loop({ perSpecies: loopPerPass, types: learnTypes })
+										)}
+								>
+									{job?.name === 'loop' && jobRunning ? 'Stop learning' : 'Start learning'}
+								</button>
+							</div>
+							<label class="field">
+								<span class="lbl">
+									Per pass <b class="mono">{loopPerPass}</b>
+								</span>
+								<input
+									type="range"
+									min="1"
+									max="10"
+									step="1"
+									bind:value={loopPerPass}
+									title="Recordings per species per pass. Small on purpose — a long harvest and one enormous rebuild is the discontinuity growing exists to remove."
+								/>
+							</label>
+							<p class="note faint">
+								Each pass harvests a few recordings, fits what came in, and grows the galaxy
+								around what is already there. Runs in the control process, so closing the tab
+								does not stop it.
+							</p>
+						</section>
+
+						<details class="rollup block">
+							<summary class="mono faint">run one step by hand</summary>
+
 						<section class="block">
 							<h3 class="blocktitle">Harvest</h3>
 							{#if !pipelineStatus.hasKey && !harvestFromDir}
@@ -1724,6 +1772,8 @@ uv run birdy-pipeline serve</pre>
 							</p>
 						</section>
 
+						</details>
+
 						{#if job}
 							<section class="block">
 								<h3 class="blocktitle">
@@ -1737,6 +1787,15 @@ uv run birdy-pipeline serve</pre>
 									line is the answer; the rest is one click away when it is not.
 								-->
 								<p class="doing mono">{jobDoing || '…'}</p>
+								<!--
+									A running loop is the one job you watch rather than wait for: it
+									harvests, fits and grows for as long as you leave it, and the only
+									record of what it learned is what it printed. The tail is live while
+									anything is running and folds away when nothing is.
+								-->
+								{#if jobRunning}
+									<pre class="stream mono">{job.log.slice(-14).join('\n') || '…'}</pre>
+								{/if}
 								{#if learningSpecies}
 									<p class="note">
 										Working on <b style:color={speciesColourOf(learningSpecies)}
@@ -2463,6 +2522,30 @@ uv run birdy-pipeline serve</pre>
 		font-size: 0.6rem;
 		cursor: pointer;
 		list-style: none;
+	}
+
+	/* The manual steps folded behind one line: they are the same cycle the switch above
+	   runs, done by hand, and they should not be the first thing the tab shows. */
+	.rollup.block > summary {
+		text-transform: uppercase;
+		letter-spacing: 0.09em;
+	}
+
+	/* The live tail of a running job. Fixed height so a chatty pass cannot push the
+	   controls out of the panel, which is what the full log used to do. */
+	.stream {
+		margin: 0.35rem 0 0;
+		padding: 0.4rem 0.5rem;
+		max-height: 11rem;
+		overflow-y: auto;
+		background: var(--paper);
+		border: 1px solid var(--rule);
+		border-radius: var(--radius);
+		font-size: 0.58rem;
+		line-height: 1.45;
+		color: var(--ink-dim);
+		white-space: pre-wrap;
+		word-break: break-word;
 	}
 
 	.rollup > summary::before {

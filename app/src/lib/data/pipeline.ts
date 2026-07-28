@@ -82,7 +82,18 @@ export class PipelineClient {
 			body: body === undefined ? undefined : JSON.stringify(body)
 		});
 		const data = (await res.json()) as T & { ok?: boolean; error?: string };
-		if (data.ok === false) throw new Error(data.error ?? 'the pipeline refused that');
+		if (data.ok === false) {
+			// A route the running process has never heard of almost always means the code
+			// moved on and the process did not — it is started once and outlives many
+			// edits. Saying so beats "unknown endpoint", which reads like a bug in the app.
+			if ((data.error ?? '').includes('unknown endpoint')) {
+				throw new Error(
+					`This control process does not have ${path}. It was started before that ` +
+						'route existed — restart it (birdy-pipeline serve) and try again.'
+				);
+			}
+			throw new Error(data.error ?? 'the pipeline refused that');
+		}
 		return data;
 	}
 
@@ -146,6 +157,15 @@ export class PipelineClient {
 	 */
 	grow(options: { all?: boolean } = {}) {
 		return this.call<{ job: JobStatus }>('/api/grow', options);
+	}
+
+	/**
+	 * Keep learning: harvest a little, fit what came in, grow the galaxy, repeat, until
+	 * stopped. One job rather than three, and it runs in the control process, so closing
+	 * the tab does not stop it.
+	 */
+	loop(options: { perSpecies?: number; quality?: string; types?: number; passes?: number } = {}) {
+		return this.call<{ job: JobStatus }>('/api/loop', options);
 	}
 
 	/**

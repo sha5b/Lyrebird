@@ -40,6 +40,27 @@ export const CLAIM_STRUCTURAL = 2;
 export const CLAIM_NONE = 3;
 export const CLAIM_COUNT = 4;
 
+/**
+ * What each claim island is called, and what its claim amounts to.
+ *
+ * The Meaning arrangement lays these out in order — see `orderedCentres` in `layouts.ts`
+ * — so the run of islands is a gradient from the strongest claim to none at all, and the
+ * hint is what tells you which end you are looking at.
+ */
+export const CLAIM_LABELS: Record<number, string> = {
+	0: 'referential',
+	1: 'social',
+	2: 'structural',
+	3: 'no documented meaning'
+};
+
+export const CLAIM_HINTS: Record<number, string> = {
+	0: 'names something outside the bird',
+	1: 'says something about the singer',
+	2: 'carries syntax, refers to nothing',
+	3: 'real audio, nothing documented'
+};
+
 export const CLAIM_OF_FUNCTION: Record<string, number> = {
 	alarm: CLAIM_REFERENTIAL,
 	recruitment: CLAIM_REFERENTIAL,

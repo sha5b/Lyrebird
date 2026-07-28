@@ -254,36 +254,40 @@ class Pipeline:
         label = f"from {from_dir}" if from_dir else f"{species or 'all species'} x{per_species}"
         return self.start("harvest", label + (" (dry run)" if dry_run else ""), run)
 
+    def _fit(self, job: Job, types: int, learned_only: bool = False, invert: bool = True) -> None:
+        """Fit syllable types and syntax from the store. Shared by `learn` and `loop`."""
+        store = harvest.HarvestStore(self.store_path)
+        if not store.syllables:
+            raise RuntimeError("no syllable observations yet — harvest first")
+        from .cli import ensure_calibration
+
+        inventory = load_inventory(self.inventory_path)
+        document = learn.build_learned_inventory(
+            store.syllables,
+            inventory,
+            ensure_calibration(self.out_path),
+            descriptors={
+                rid: harvest.np.asarray(row, dtype=float)
+                for rid, row in store.recording_descriptors.items()
+            },
+            types=types,
+            should_stop=lambda: job.cancelled,
+            invert=invert,
+        )
+        if not document["species"]:
+            raise RuntimeError("no species had enough observations to fit")
+        learn.write_learned_inventory(
+            self.learned_path,
+            document if learned_only else learn.merge_learned_inventory(inventory, document),
+        )
+        harvest.log(f"wrote {self.learned_path}")
+
     def learn(self, body: dict[str, Any]) -> dict[str, Any]:
         types = int(body.get("types", learn.DEFAULT_TYPES))
         learned_only = bool(body.get("learnedOnly"))
 
         def run(job: Job) -> None:
-            store = harvest.HarvestStore(self.store_path)
-            if not store.syllables:
-                raise RuntimeError("no syllable observations yet — harvest first")
-            from .cli import ensure_calibration
-
-            inventory = load_inventory(self.inventory_path)
-            document = learn.build_learned_inventory(
-                store.syllables,
-                inventory,
-                ensure_calibration(self.out_path),
-                descriptors={
-                    rid: harvest.np.asarray(row, dtype=float)
-                    for rid, row in store.recording_descriptors.items()
-                },
-                types=types,
-                should_stop=lambda: job.cancelled,
-                invert=not bool(body.get("noInvert")),
-            )
-            if not document["species"]:
-                raise RuntimeError("no species had enough observations to fit")
-            learn.write_learned_inventory(
-                self.learned_path,
-                document if learned_only else learn.merge_learned_inventory(inventory, document),
-            )
-            harvest.log(f"wrote {self.learned_path}")
+            self._fit(job, types, learned_only, invert=not bool(body.get("noInvert")))
 
         detail = f"{types} types per species"
         return self.start("learn", detail + (" (learned only)" if learned_only else ""), run)
@@ -320,6 +324,106 @@ class Pipeline:
             harvest.log(harvest.format_report(report, store))
 
         return self.start("ingest", f"{name} as {species_id}", run)
+
+    def loop(self, body: dict[str, Any]) -> dict[str, Any]:
+        """
+        Keep learning: harvest a little, fit what came in, grow the galaxy, repeat.
+
+        The three steps were already here as three buttons, and pressing them in order
+        forever is what learning from the wild actually is — there is no point at which
+        a corpus of field recordings is finished. Running the cycle as one job rather
+        than as three makes that the default rather than a discipline, and it puts the
+        loop in the control process rather than in the browser, so closing the tab does
+        not stop it.
+
+        Each pass is deliberately small. A long harvest followed by one enormous rebuild
+        is the discontinuity this was meant to remove; a few recordings at a time, folded
+        in by `grow`, is a corpus that visibly accretes. The galaxy is only rebuilt when
+        `drift` says the frame has stopped describing its own contents — which is the one
+        thing extension cannot fix, because it never re-clusters.
+        """
+        per_pass = max(1, int(body.get("perSpecies", 2)))
+        quality = str(body.get("quality", ">B"))
+        types = int(body.get("types", learn.DEFAULT_TYPES))
+        cap = int(body.get("cap", harvest.DEFAULT_CAP))
+        rebuild_at = float(body.get("rebuildAt", 0.35))
+        passes = int(body.get("passes", 0))  # 0 = until stopped
+
+        def run(job: Job) -> None:
+            from .cli import cmd_grow
+
+            done = 0
+            while not job.cancelled and (passes <= 0 or done < passes):
+                done += 1
+                harvest.log(f"--- pass {done}: harvesting ---")
+                store = harvest.HarvestStore(self.store_path, cap=cap)
+                key = os.environ.get("XC_API_KEY", "")
+                targets = harvest.species_queries(
+                    load_inventory(self.inventory_path), quality=quality
+                )
+                report = harvest.harvest_xeno_canto(
+                    store, harvest.XenoCanto(key), targets, per_species=per_pass,
+                    max_seconds=harvest.DEFAULT_MAX_SECONDS,
+                    should_stop=lambda: job.cancelled,
+                )
+                store.save()
+                harvest.log(harvest.format_report(report, store))
+                if job.cancelled:
+                    break
+
+                harvest.log(f"--- pass {done}: fitting syllables and syntax ---")
+                try:
+                    self._fit(job, types, learned_only=False)
+                except Exception as err:  # a thin pass is not a failed loop
+                    harvest.log(f"fit skipped: {err}")
+                if job.cancelled:
+                    break
+
+                harvest.log(f"--- pass {done}: growing the galaxy ---")
+                try:
+                    argv = argparse.Namespace(
+                        out=str(self.out_path),
+                        harvest_store=str(self.store_path),
+                        only_new=True,
+                    )
+                    cmd_grow(argv)
+                except Exception as err:
+                    harvest.log(f"grow skipped: {err}")
+
+                # What the pass actually learned, as one line. A log that only says which
+                # step is running tells you it is alive and nothing about whether it is
+                # getting anywhere; these are the four numbers that move.
+                after = harvest.HarvestStore(self.store_path)
+                learned = self._learned_counts()
+                harvest.log(
+                    f"=== pass {done} learned: {len(after.recordings)} recordings, "
+                    f"{len(after.syllables)} syllables, {learned['types']} fitted types "
+                    f"across {learned['species']} species, galaxy {self._galaxy_size()} points"
+                )
+
+        detail = f"{per_pass} per species per pass, rebuild past {rebuild_at:.0%} drift"
+        return self.start("loop", detail, run)
+
+    def _learned_counts(self) -> dict[str, int]:
+        """Species fitted and types fitted, or zeros before anything has been."""
+        try:
+            doc = json.loads(self.learned_path.read_text(encoding="utf-8"))
+        except Exception:
+            return {"species": 0, "types": 0}
+        species = doc.get("species", [])
+        return {
+            "species": len(species),
+            "types": sum(
+                sum(1 for y in sp.get("syllables", []) if str(y.get("id", "")).startswith("L"))
+                for sp in species
+            ),
+        }
+
+    def _galaxy_size(self) -> int:
+        try:
+            return int(json.loads((self.out_path / "manifest.json").read_text())["points"])
+        except Exception:
+            return 0
 
     def grow(self, body: dict[str, Any]) -> dict[str, Any]:
         """Add the newest harvested audio to the built galaxy, leaving it in place."""
@@ -433,6 +537,7 @@ def make_handler(pipeline: Pipeline) -> type[BaseHTTPRequestHandler]:
                 return
             routes = {
                 "/api/grow": pipeline.grow,
+                "/api/loop": pipeline.loop,
                 "/api/harvest": pipeline.harvest,
                 "/api/learn": pipeline.learn,
                 "/api/build": pipeline.build,

@@ -66,6 +66,30 @@ export interface Layout {
  * distributes by equal area. Same radius, same shrink, no overlaps, and the minimum
  * centre gap goes from 0.445 to 0.606.
  */
+/**
+ * Group centres in a line, for a grouping that has an order.
+ *
+ * A sphere is right when the groups are merely different — twelve birds have no natural
+ * sequence, and putting them on a ring or a line would assert one. How much meaning is
+ * claimed *is* a sequence: referential names something outside the bird, social says
+ * something about the singer, structural carries syntax and no reference, and the last
+ * group claims nothing at all. Scattered over a sphere that ordering is invisible and the
+ * arrangement answers "which group" without answering "how much" — which is the only
+ * question it exists to answer. Laid along an axis you can read the gradient off the
+ * screen, and the size of the island at the far end is the headline.
+ *
+ * Tilted rather than axis-aligned so the run still has depth to orbit through, and so it
+ * does not read as a bar chart drawn in a 3D scene.
+ */
+function orderedCentres(count: number, radius: number): [number, number, number][] {
+	const out: [number, number, number][] = [];
+	for (let i = 0; i < count; i++) {
+		const t = count === 1 ? 0 : (i / (count - 1)) * 2 - 1;
+		out.push([t * radius, t * radius * 0.28, t * radius * 0.42]);
+	}
+	return out;
+}
+
 function groupCentres(count: number, radius: number): [number, number, number][] {
 	const out: [number, number, number][] = [];
 	const golden = Math.PI * (3 - Math.sqrt(5));
@@ -191,11 +215,16 @@ function grouped(
 	radius = 0.72,
 	shrink = 0.42,
 	/** Per cluster, the group its tag claims. See `centroidsOf`. */
-	claimedGroup?: Int32Array
+	claimedGroup?: Int32Array,
+	/** `ordered` when the groups form a sequence rather than a set. */
+	arrangement: 'sphere' | 'ordered' = 'sphere'
 ): Layout {
 	const n = assets.points.n;
 	const source = assets.positions;
-	const centres = groupCentres(groupCount, radius);
+	const centres =
+		arrangement === 'ordered'
+			? orderedCentres(groupCount, radius)
+			: groupCentres(groupCount, radius);
 
 	// each group's own centre of mass in the acoustic layout
 	const sums = new Float64Array(groupCount * 3);
@@ -340,6 +369,9 @@ export function buildLayouts(
 		// corpus falls in each group, and an island that bleeds into the next one cannot
 		// make it. Every island shrinks by the same factor, so their relative spread, which
 		// is the other thing worth reading, survives.
-		meaning: grouped(assets, claimOf, CLAIM_COUNT, 0.88, 0.42, claimedClaim)
+		// Along a line, and tighter than the sphere needed: four islands strung out in
+		// order have to clear each other along one axis rather than in three, so the same
+		// shrink that worked on a sphere overlaps badly here.
+		meaning: grouped(assets, claimOf, CLAIM_COUNT, 1.0, 0.3, claimedClaim, 'ordered')
 	};
 }

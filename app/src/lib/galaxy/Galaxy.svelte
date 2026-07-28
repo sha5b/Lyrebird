@@ -10,11 +10,20 @@
 	import GridBurst from './GridBurst.svelte';
 	import NodeLabels from './NodeLabels.svelte';
 	import NodeProjector from './NodeProjector.svelte';
+	import IslandLabels from './IslandLabels.svelte';
+	import IslandProjector from './IslandProjector.svelte';
 	import PointCloud from './PointCloud.svelte';
 	import Spinner from './Spinner.svelte';
 	import Trajectory from './Trajectory.svelte';
 	import { createLayoutView, type LayoutId } from './layouts';
-	import type { VisualSignal } from './shaders';
+	import { speciesById } from '$lib/data/assets';
+	import {
+		CLAIM_HINTS,
+		CLAIM_LABELS,
+		CLAIM_NONE,
+		CLAIM_OF_FUNCTION,
+		type VisualSignal
+	} from './shaders';
 
 	interface Props {
 		assets: BirdyAssets;
@@ -93,6 +102,54 @@
 	let cloud = $state<THREE.Group | undefined>();
 	/** Bumped on every grab of the view, which is what ends a camera flight. */
 	let grabbed = $state(0);
+
+	/**
+	 * The islands each arrangement makes, as the clusters that belong to them.
+	 *
+	 * Membership is by what a knot *claims* to be — the bird written on its tag, the claim
+	 * it is filed under — which is the same rule `layouts.ts` uses to decide where to put
+	 * the knot. Deriving both from the same answer is what keeps a heading over the island
+	 * its own knots are in.
+	 */
+	const islands = untrack(() => {
+		const items = assets.centroids.items;
+		const bySpecies = new Map<string, number[]>();
+		const byClaim = new Map<number, number[]>();
+		items.forEach((c, i) => {
+			const sp = bySpecies.get(c.speciesId);
+			if (sp) sp.push(i);
+			else bySpecies.set(c.speciesId, [i]);
+			const claim = c.function
+				? (CLAIM_OF_FUNCTION[c.functionClass ?? ''] ?? CLAIM_NONE)
+				: CLAIM_NONE;
+			const cl = byClaim.get(claim);
+			if (cl) cl.push(i);
+			else byClaim.set(claim, [i]);
+		});
+		return {
+			species: [...bySpecies].map(([id, members]) => ({
+				key: id,
+				label: speciesById(assets.inventory, id)?.common ?? id,
+				members,
+				count: members.length
+			})),
+			meaning: [...byClaim]
+				.sort((a, b) => a[0] - b[0])
+				.map(([claim, members]) => ({
+					key: `claim-${claim}`,
+					label: CLAIM_LABELS[claim] ?? 'unclaimed',
+					hint: CLAIM_HINTS[claim],
+					members,
+					count: members.length
+				}))
+		};
+	});
+	const islandGroups = $derived(
+		layout === 'species' ? islands.species : layout === 'meaning' ? islands.meaning : []
+	);
+	// Plain array for the same reason the node tags use one: written by the label layer,
+	// moved every frame by the projector, and never worth a reactive round trip.
+	const islandElements: (HTMLElement | null)[] = [];
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -145,10 +202,25 @@
 			{#if labels}
 				<NodeProjector {assets} {signal} elements={labelElements} {focus} {pinned} {view} />
 			{/if}
+			<IslandProjector
+				groups={islandGroups}
+				elements={islandElements}
+				show={layout !== 'acoustic'}
+				{view}
+				{signal}
+			/>
 		</Spinner>
 
 		<Framing {view} {frame} group={cloud} {controls} interrupt={grabbed} />
 	</Canvas>
+
+	<!--
+		Keyed on the arrangement: the set of islands changes with it, and re-creating the
+		elements is simpler than reconciling two different groupings into one array.
+	-->
+	{#key layout}
+		<IslandLabels elements={islandElements} groups={islandGroups} />
+	{/key}
 
 	{#if labels}
 		<NodeLabels {assets} elements={labelElements} {onpick} />

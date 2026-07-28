@@ -120,8 +120,17 @@
 			// Selecting a bird narrows the sheet to that bird: the other species' tags go
 			// away rather than greying out, which is the difference between a legible
 			// diagram of one repertoire and 44 overlapping ones.
+			//
+			// **With nothing selected, only what is responding gets a tag at all.** The
+			// whole-corpus view had every cluster's name on screen at once, which at 176
+			// knots is a sheet of text with a galaxy somewhere behind it — and none of it
+			// answers a question anyone asked, because nothing has been chosen. The island
+			// headings say where you are; the small tags are for what is happening, so
+			// they appear when something happens and leave when it stops.
+			const idle = focus < 0 && !hot && i !== pinned;
 			let visible =
 				!behind &&
+				!idle &&
 				x > -80 &&
 				x < width + 80 &&
 				y > -40 &&
@@ -145,8 +154,19 @@
 				budget--;
 			}
 
+			// Depth: a tag on the far side of the cloud is written over everything in
+			// front of it, and at 176 knots that reads as one flat sheet with no sense of
+			// which name belongs to which depth. Fading with distance restores the cue the
+			// cloud itself already has — the points behind are washed toward the paper —
+			// and costs nothing, because a far tag is the one you were least likely to be
+			// reading. `p.z` is normalised device depth, -1 at the near plane to 1 at the
+			// far one, so this is the same curve the aerial perspective in the shader uses.
+			const depth = Math.min(1, Math.max(0, (p.z + 1) * 0.5));
+			const near = 1 - 0.65 * depth * depth;
 			node.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
-			node.style.opacity = visible ? String(Math.min(1, 0.55 + shown[i] * 3)) : '0';
+			node.style.opacity = visible
+				? String(Math.min(1, (0.55 + shown[i] * 3) * near))
+				: '0';
 			node.style.visibility = visible ? 'visible' : 'hidden';
 			// Depth ordering so a near label draws over a far one.
 			node.style.zIndex = String(Math.round((1 - (p.z + 1) / 2) * 1000) + (hot ? 2000 : 0));
