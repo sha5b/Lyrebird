@@ -148,6 +148,22 @@
 			currentSpecies.syllables.map((s) => s.id)
 		);
 	});
+	/**
+	 * And for the fitted grammar, which is what `Improvise` walks.
+	 *
+	 * Worth its own tally rather than being folded into the repertoire's, because it is
+	 * the one that got materially worse when unplaced syllables stopped being given a
+	 * borrowed position: only 64 of the corpus's 132 fitted types won a cluster, so an
+	 * improvisation now typically loses about half its nodes and draws a sparser thread
+	 * than the same walk did last week. That is the honest picture rather than a
+	 * regression, and it should be legible as one.
+	 */
+	const grammarCoverage = $derived.by(() => {
+		if (!clusters || !currentSpecies) return null;
+		const states = Object.keys(currentSpecies.grammar?.transitions ?? {});
+		if (!states.length) return null;
+		return syllableCoverage(clusters, currentSpecies.id, states);
+	});
 	/** -1 during a global chorus: every species is equally the subject. */
 	const focus = $derived(
 		chorus === 'global' ? -1 : (speciesIndex?.get(currentSpecies?.id ?? '') ?? -1)
@@ -902,26 +918,22 @@ uv run birdy-pipeline build</pre>
 										Meaning
 									</button>
 								</div>
+								<!--
+									One line, because the arrangement is on screen the moment you pick it and
+									the panel does not need to describe what you are already looking at. What
+									is not visible is whether distance means anything, so that is the line.
+								-->
 								<p class="note faint">
 									{#if layout === 'acoustic'}
-										Points sit where they sound, and distance is the only thing in this view
-										that is measured. The ruler at the bottom left says how much.
+										Distance is acoustic distance — the ruler says how much.
 									{:else if layout === 'species'}
-										Regrouped by bird, each island keeping its own shape. Watch which species
-										tore apart on the way here — those were the ones overlapping acoustically.
-										Distance between islands is arrangement, not measurement.
+										One island per bird. Distance is arrangement, not measurement.
 									{:else}
-										Regrouped by how much meaning is claimed — and the largest island is the
-										one to look at: those clusters are real audio of a known bird with no
-										documented function of any kind. Distance is arrangement, not measurement.
+										Grouped by how much meaning is documented; the big island has none.
+										Distance is arrangement, not measurement.
 									{/if}
-								</p>
-								<p class="note faint">
-									{#if layoutPinned}
-										Chosen by hand, so it stays put until the page is reloaded.
-									{:else}
-										Follows the selection: <b>bird</b> with nothing chosen, <b>sound</b> once a
-										bird is. Pick one here and it stops following.
+									{#if !layoutPinned}
+										<br />Following the selection until you pick one here.
 									{/if}
 								</p>
 							</section>
@@ -1060,6 +1072,18 @@ uv run birdy-pipeline build</pre>
 								Species
 								<!-- the hue this bird carries in the galaxy, so the two are connected -->
 								<span class="swatch" style:background={speciesColour}></span>
+								<!--
+									Coverage as a tally rather than a paragraph. It answers "why is so much of
+									this bird lit when so little of it sings", which is worth having on screen
+									permanently — but as three characters with the explanation on hover, not as
+									four lines of prose in a panel that already has too many.
+								-->
+								{#if repertoireCoverage && repertoireCoverage.placed < repertoireCoverage.total}
+									<span
+										class="tally mono"
+										title="{repertoireCoverage.placed} of this bird's {repertoireCoverage.total} syllables won a cluster. Selecting it lights all of its points, including harvested field audio and fitted types that no note can reach."
+									>{repertoireCoverage.placed}/{repertoireCoverage.total}</span>
+								{/if}
 							</span>
 							<select bind:value={speciesId}>
 								<option value="">all birds</option>
@@ -1080,7 +1104,16 @@ uv run birdy-pipeline build</pre>
 						{#if currentSpecies}
 							<p class="note">{currentSpecies.summary}</p>
 							<label class="field">
-								<span class="lbl">Call or song</span>
+								<span class="lbl">
+										Call or song
+										{#if songCoverage && songCoverage.placed < songCoverage.total}
+											<span
+												class="tally mono"
+												class:none={songCoverage.placed < 2}
+												title="{songCoverage.placed} of this call's {songCoverage.total} syllables have a place in the galaxy. The thread joins those and skips the rest rather than guessing at them; below two there is no thread to draw. It plays either way — the synthesis does not need the galaxy."
+											>{songCoverage.placed}/{songCoverage.total}</span>
+										{/if}
+									</span>
 								<select bind:value={songId}>
 									{#each songs as s (s.id)}
 										<option value={s.id}>{s.label} — {s.gloss}</option>
@@ -1092,74 +1125,47 @@ uv run birdy-pipeline build</pre>
 								last of them was pushed past its right edge, which is why the chorus
 								looked like it did nothing: it was still there, just not clickable.
 							-->
+							<!--
+								What each button does is written on the button, and again on hover. It was
+								set out a third time in a paragraph underneath; that paragraph is gone.
+							-->
 							<div class="row">
-								<button class="primary" disabled={!engine || !currentSong} onclick={sing}>
-									Sing it
+								<button
+									class="primary"
+									disabled={!engine || !currentSong}
+									onclick={sing}
+									title="Play the chosen call once."
+									>Sing it</button
+								>
+								<button
+									disabled={!engine}
+									onclick={singImprovisation}
+									title={grammarCoverage
+										? `Walk this bird's measured grammar — the transitions fitted to its own field recordings. ${grammarCoverage.placed} of its ${grammarCoverage.total} fitted types won a cluster, so the thread shows those and skips the rest.`
+										: "Walk this bird's measured grammar — the transitions fitted to its own field recordings."}
+								>
+									Improvise
+									{#if grammarCoverage && grammarCoverage.placed < grammarCoverage.total}
+										<span class="tally inline mono" class:none={grammarCoverage.placed < 2}
+											>{grammarCoverage.placed}/{grammarCoverage.total}</span
+										>
+									{/if}
 								</button>
-								<button disabled={!engine} onclick={singImprovisation}>Improvise</button>
 							</div>
 							<div class="row">
-								<button class:on={chorus === 'solo'} disabled={!engine} onclick={() => setChorus('solo')}>
-									Chorus
-								</button>
+								<button
+									class:on={chorus === 'solo'}
+									disabled={!engine}
+									onclick={() => setChorus('solo')}
+									title="Three individuals of this bird answering each other on a Poisson schedule. Each voice holds its pitch, timing and position for as long as it runs."
+									>Chorus</button
+								>
 								<button disabled={!engine} onclick={silence}>Stop</button>
 							</div>
-							<p class="note">
-								{#if chorus === 'solo'}
-									{currentSpecies.common} only, three individuals answering each other. Held on a
-									Poisson schedule: each voice keeps its pitch, timing and position for as long
-									as it runs.
-								{:else}
-									<b>Sing it</b> plays the chosen call once. <b>Improvise</b> walks this bird's
-									measured grammar. <b>Chorus</b> holds three of them answering each other.
-								{/if}
-							</p>
-							<!--
-								Where this call is, and is not, in the galaxy. A syllable only has a
-								position if enough of its renders clustered together, so a call can be
-								perfectly playable and have no thread at all — which without this line
-								looks like the picture is broken rather than like the corpus is thin.
-							-->
-							{#if songCoverage && songCoverage.placed < songCoverage.total}
-								<p class="note faint">
-									{#if songCoverage.placed === 0}
-										None of this call's {songCoverage.total} syllables were fitted to a cluster in
-										this build, so it draws no thread. It still plays — the synthesis does not
-										need the galaxy — but the corpus has nowhere to put it.
-									{:else if songCoverage.placed === 1}
-										One of this call's {songCoverage.total} syllables has a place in the galaxy, and
-										a thread needs two, so this one draws none. It still plays.
-									{:else}
-										<b class="mono">{songCoverage.placed}/{songCoverage.total}</b> of this call's syllables
-										have a place in the galaxy; the thread joins those and skips the rest rather
-										than guessing at them.
-									{/if}
-								</p>
-							{/if}
-							{#if repertoireCoverage && repertoireCoverage.placed < repertoireCoverage.total}
-								<p class="note faint">
-									Selecting this bird lights all of its points, and only
-									<b class="mono">{repertoireCoverage.placed}</b> of its
-									<b class="mono">{repertoireCoverage.total}</b> syllables can be sung into one.
-									The rest of the accent is harvested field audio and fitted types with no route
-									back to a note.
-								</p>
-							{/if}
 						{:else}
 							<p class="note">
-								{#if layout === 'species'}
-									The whole corpus as twelve islands, one per bird, each keeping the shape it
-									had in the acoustic layout. Choosing a bird narrows the labels to its
-									repertoire and rearranges by sound, so you can see what else resembles it.
-								{:else if layout === 'meaning'}
-									The whole corpus grouped by how much meaning is documented for it. Most of
-									it sits in the unclaimed island — 147 of 176 clusters have no documented
-									function at all.
-								{:else}
-									The whole corpus where it sounds, nothing dimmed and the camera holding all
-									of it. Choosing a bird narrows the labels to its repertoire and flies to the
-									region its clusters occupy.
-								{/if}
+								The whole corpus, nothing dimmed. Choosing a bird narrows the labels to its
+								repertoire and arranges by sound.
 							</p>
 							<div class="row">
 								<button
@@ -1172,10 +1178,8 @@ uv run birdy-pipeline build</pre>
 								</button>
 								<button disabled={!engine} onclick={silence}>Stop</button>
 							</div>
-							<p class="note">
-								Every species at once, each drawing its own trajectory as it sings. Held on a
-								Poisson schedule: each voice keeps its pitch, timing and position for as long as
-								it runs.
+							<p class="note faint">
+								Every species at once, each drawing its own trajectory as it sings.
 							</p>
 						{/if}
 					</section>
@@ -1279,15 +1283,10 @@ uv run birdy-pipeline build</pre>
 								{recording ? 'Stop recording' : 'Record'}
 							</button>
 						</div>
-						<p class="note">
-							Whatever you choose feeds the same analysis path as the synthetic bird: a
-							28-dimensional MFCC descriptor every frame, matched to the nearest documented
-							cluster. Nothing leaves your device unless you send a recording to the store below.
-						</p>
 						<p class="note faint">
-							The match meter in the header says how well what it hears resembles the corpus.
-							Below about 25 % nothing is reported — which is what silence, room tone and hum all
-							measure.
+							Same analysis path as the synthetic bird — a 28-d MFCC descriptor every frame,
+							matched to the nearest cluster. Nothing leaves your device. Below about 25 % on
+							the match meter nothing is reported, which is what silence and room tone measure.
 						</p>
 					</section>
 
@@ -1310,9 +1309,8 @@ uv run birdy-pipeline build</pre>
 							{/each}
 							<p class="note faint">
 								{#if pipelineStatus}
-									"Learn from this" sends the audio to the local pipeline, which segments it into
-									syllables with the same code it uses on downloaded recordings and folds them
-									into the learning store. Then fit them in the Learn tab.
+									Segmented into syllables and folded into the learning store; fit them in the
+									Learn tab.
 								{:else}
 									Start <span class="mono">birdy-pipeline serve</span> to send a recording into
 									the learning store.
@@ -1346,15 +1344,13 @@ uv run birdy-pipeline build</pre>
 								>
 							</p>
 							<p class="note faint">
-								The dev server launches it in the background; the first start compiles the
-								oscillator kernels, which takes a few seconds.
+								The first start compiles the oscillator kernels.
 							</p>
 						{:else if !pipelineStatus}
 							<p class="note">
-								Learning runs the offline Python pipeline, so it needs its control process, and
-								the dev server could not start one — usually because <span class="mono">uv</span>
-								is not on its PATH. Start it yourself and this tab picks it up within a second or
-								two. The galaxy itself needs no backend and is unaffected.
+								No control process — usually <span class="mono">uv</span> is not on the dev
+								server's PATH. Start it yourself and this tab picks it up. The galaxy needs no
+								backend and is unaffected.
 							</p>
 							<pre class="mono">cd pipeline
 uv run birdy-pipeline serve</pre>
@@ -1368,11 +1364,12 @@ uv run birdy-pipeline serve</pre>
 								<div><dt>recordings</dt><dd>{pipelineStatus.store.recordings ?? 0}</dd></div>
 							</dl>
 							{#if pipelineStatus.store.exists}
-								<p class="note faint">
-									Sample drift from the full stream: mean
-									<b class="mono">{pipelineStatus.store.meanDrift?.toFixed(3)}</b> sd, spread ratio
-									<b class="mono">{pipelineStatus.store.stdRatio?.toFixed(3)}</b>. Near 0 and 1 mean
-									the retained sample is a faithful miniature of everything discarded.
+								<p
+									class="note faint"
+									title="Near 0 and 1 mean the retained sample is a faithful miniature of everything that was discarded."
+								>
+									drift <b class="mono">{pipelineStatus.store.meanDrift?.toFixed(3)}</b> sd · spread
+									<b class="mono">{pipelineStatus.store.stdRatio?.toFixed(3)}</b>
 								</p>
 							{/if}
 						{/if}
@@ -1443,8 +1440,7 @@ uv run birdy-pipeline serve</pre>
 								>
 							</div>
 							<p class="note faint">
-								Each recording is fetched, analysed and deleted before the next one starts. Only
-								descriptors and syllable measurements are kept.
+								Fetched, analysed and deleted one at a time; only measurements are kept.
 							</p>
 						</section>
 
@@ -1472,16 +1468,15 @@ uv run birdy-pipeline serve</pre>
 									</p>
 								{/each}
 								<p class="note faint">
-									Cosine between each fitted syllable's resynthesis and the audio it came from.
-									1.0 would mean the syrinx model reproduces the recording exactly.
+									Cosine between each fitted syllable's resynthesis and its source audio; 1.0
+									would be exact.
 								</p>
 							{:else}
 								<p class="note faint">Nothing fitted yet. Harvest some recordings first.</p>
 							{/if}
 							<p class="note faint">
-								Fitted types are written next to the documented calls, not instead of them:
-								their ids start with <span class="mono">L</span>, they carry no function, and
-								every documented call keeps its citation.
+								Written next to the documented calls, never instead of them: ids start with
+								<span class="mono">L</span> and carry no function.
 							</p>
 						</section>
 
@@ -1505,14 +1500,15 @@ uv run birdy-pipeline serve</pre>
 									<div><dt>clusters</dt><dd>{pipelineStatus.built.clusters ?? '—'}</dd></div>
 								</dl>
 							{/if}
-							<p class="note faint">
+							<p
+								class="note faint"
+								title="Clustering and the projection are computed over the whole corpus at once, so a syllable learned a minute ago has no position until the next build."
+							>
 								{#if reloading}
 									Loading the new galaxy…
 								{:else}
-									A build re-places every point at once — a syllable learned a minute ago has no
-									position until then — but you do not have to reload the page for it: when the
-									build finishes, this tab notices the new stamp and swaps the galaxy, the
-									inventory and the voices under you.
+									Re-places every point at once, and swaps itself in when it finishes — no
+									reload needed.
 								{/if}
 							</p>
 						</section>
@@ -1535,7 +1531,7 @@ uv run birdy-pipeline serve</pre>
 										Working on <b style:color={speciesColourOf(learningSpecies)}
 											>{species.find((s) => s.id === learningSpecies)?.common ??
 												learningSpecies}</b
-										> — its knots are breathing in the galaxy while this runs.
+										> — its knots are breathing in the galaxy.
 									</p>
 								{/if}
 								<details class="loglines">
@@ -1553,13 +1549,9 @@ uv run birdy-pipeline serve</pre>
 									</button>
 									<p class="note faint">
 										{#if job.name === 'build'}
-											A build stops between species while it renders, and every sixty-fourth
-											clip while it measures. It writes nothing on the way out: half an asset
-											set is not a galaxy, so the previous build stays where it is.
+											Stops cleanly and writes nothing; the previous build stays where it is.
 										{:else}
-											Stops after the recording being analysed, or the species being fitted —
-											everything already done is kept, so a stopped harvest is a shorter
-											harvest rather than a wasted one.
+											Stops after the current item. Everything already done is kept.
 										{/if}
 									</p>
 								{/if}
@@ -2225,6 +2217,32 @@ uv run birdy-pipeline serve</pre>
 		height: 9px;
 		border-radius: 2px;
 		transform: translateY(1px);
+	}
+
+	/* How much of something the galaxy can place, as a tally beside its label. Three
+	   characters where there used to be a paragraph; the sentence lives in the tooltip. */
+	.tally {
+		margin-left: auto;
+		padding: 0.05rem 0.3rem;
+		border: 1px solid var(--rule);
+		border-radius: 999px;
+		font-size: 0.56rem;
+		color: var(--ink-faint);
+		cursor: help;
+	}
+
+	/* Nothing to draw at all is a different fact from drawing part of it, and the one
+	   case a viewer is likely to read as a fault. */
+	.tally.none {
+		border-color: color-mix(in srgb, var(--signal) 45%, var(--rule));
+		color: var(--signal);
+	}
+
+	/* Sitting inside a button rather than at the end of a label row, where the auto
+	   margin would shove it against the far edge. */
+	.tally.inline {
+		margin-left: 0.3rem;
+		cursor: inherit;
 	}
 
 	/* --- overlay --- */
