@@ -1,6 +1,7 @@
 import workletUrl from './worklets/syrinx-processor.js?url';
 import type { BirdyAssets, Species, Syllable } from '$lib/data/types';
 import { songSyllables, speciesById } from '$lib/data/assets';
+import { applyVoice, createPopulation, type Individual } from './individual.ts';
 
 export interface PlayOptions {
 	/** AudioContext time to start at; defaults to "just now". */
@@ -8,8 +9,10 @@ export interface PlayOptions {
 	gain?: number;
 	/** 0 = in your hand, 1 = far across the field. Drives air absorption and reverb. */
 	distance?: number;
-	/** Per-individual variation: pitch/duration/level jitter, matching the corpus. */
+	/** Anonymous per-rendition variation, matching the corpus jitter. */
 	jitter?: number;
+	/** Sing as this particular bird instead: a held voice rather than fresh randomness. */
+	voice?: Individual;
 	pan?: number;
 }
 
@@ -77,10 +80,24 @@ export class BirdyEngine {
 	private recordChunks: Blob[] = [];
 	private ambientTimer: ReturnType<typeof setInterval> | null = null;
 	private ambientUntil = 0;
+	private population: Individual[] = [];
 	private readonly frameBuffer: Float32Array<ArrayBuffer>;
 
 	state: EngineState = { voices: 0, f0: 0, level: 0 };
 	onState: ((state: EngineState) => void) | null = null;
+	/**
+	 * Fires whenever a song is scheduled, including by the ambient chorus. The visualisation
+	 * subscribes to this so the trajectory follows whatever is actually singing instead of
+	 * staying on whatever the menus have selected.
+	 */
+	onScheduled:
+		| ((event: {
+				speciesId: string;
+				songId: string;
+				scheduled: ScheduledSyllable[];
+				voice?: Individual;
+		  }) => void)
+		| null = null;
 
 	private constructor(ctx: AudioContext, synth: AudioWorkletNode, private readonly assets: BirdyAssets) {
 		this.ctx = ctx;
@@ -171,7 +188,9 @@ export class BirdyEngine {
 
 	playSyllable(syllable: Syllable, options: PlayOptions = {}): number {
 		const at = options.at ?? this.ctx.currentTime + 0.05;
-		const shaped = toPlain(jitterSyllable(syllable, options.jitter ?? 0));
+		const shaped = toPlain(
+			options.voice ? applyVoice(syllable, options.voice) : jitterSyllable(syllable, options.jitter ?? 0)
+		);
 		// pan travels with the note and is applied per voice inside the worklet, so
 		// overlapping birds keep their own positions
 		this.synth.port.postMessage({
@@ -201,22 +220,32 @@ export class BirdyEngine {
 		if (!species) return [];
 		const resolved = songSyllables(species, songId);
 		if (!resolved) return [];
-		return this.playSequence(resolved.syllables, resolved.song.gaps, options);
+		const scheduled = this.playSequence(resolved.syllables, resolved.song.gaps, options);
+		this.onScheduled?.({ speciesId, songId, scheduled, voice: options.voice });
+		return scheduled;
 	}
 
 	// --- ambient scheduling (Poisson, doc 02 §2.1) ---
 
 	/**
-	 * Background chorus: Poisson-distributed songs at `songsPerMinute`, drawn from the
-	 * given species, with a 25 % chance that a second bird answers.
+	 * Background chorus: Poisson-distributed songs at `songsPerMinute`, drawn from a fixed
+	 * roster of individual birds, with a 25 % chance that a *different* bird of the same
+	 * species answers — which is what makes it a duet rather than an echo.
 	 */
-	startAmbient(speciesIds: string[], songsPerMinute = 12): void {
+	startAmbient(speciesIds: string[], songsPerMinute = 12, birdsPerSpecies = 2): void {
 		this.stopAmbient();
 		if (!speciesIds.length) return;
 		const pool = speciesIds
 			.map((id) => speciesById(this.assets.inventory, id))
 			.filter((s): s is Species => Boolean(s) && s!.songs.length > 0);
 		if (!pool.length) return;
+
+		// The roster is created once and held: each bird keeps its pitch, timing, timbre and
+		// position for as long as the chorus runs, so you can hear the same individual twice.
+		this.population = createPopulation(
+			pool.map((s) => ({ id: s.id, common: s.common })),
+			birdsPerSpecies
+		);
 
 		this.ambientUntil = this.ctx.currentTime;
 		const rate = songsPerMinute / 60;
@@ -226,6 +255,9 @@ export class BirdyEngine {
 				// exponential inter-arrival times = Poisson process
 				this.ambientUntil += -Math.log(1 - Math.random()) / rate;
 				const species = pool[Math.floor(Math.random() * pool.length)];
+				const birds = this.population.filter((b) => b.speciesId === species.id);
+				if (!birds.length) continue;
+				const bird = birds[Math.floor(Math.random() * birds.length)];
 				const song = species.songs[Math.floor(Math.random() * species.songs.length)];
 				const at = this.ambientUntil;
 				// Distance is a scene-wide property the listener controls, so individual birds
@@ -233,21 +265,27 @@ export class BirdyEngine {
 				// the UI and retune the filters mid-phrase.
 				this.playSong(species.id, song.id, {
 					at,
-					jitter: 1,
+					voice: bird,
 					gain: 0.45 + Math.random() * 0.5,
-					pan: Math.random() * 1.6 - 0.8
+					pan: bird.pan
 				});
 				if (Math.random() < 0.25) {
+					const rival = birds.find((b) => b.id !== bird.id) ?? bird;
 					const answer = species.songs[Math.floor(Math.random() * species.songs.length)];
 					this.playSong(species.id, answer.id, {
 						at: at + 0.4 + Math.random() * 0.9,
-						jitter: 1,
+						voice: rival,
 						gain: 0.6,
-						pan: Math.random() * 1.6 - 0.8
+						pan: rival.pan
 					});
 				}
 			}
 		}, 100);
+	}
+
+	/** The birds currently present, in the order they were created. */
+	get birds(): readonly Individual[] {
+		return this.population;
 	}
 
 	stopAmbient(): void {

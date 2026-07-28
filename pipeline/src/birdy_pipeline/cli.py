@@ -173,6 +173,8 @@ def cmd_build(args: argparse.Namespace) -> int:
         seed=args.seed,
         k=args.k,
         min_dist=args.min_dist,
+        projection=args.projection,
+        compare_projections=not args.no_compare_projections,
         build_info={
             "source": args.source,
             "audioDir": str(args.audio_dir) if args.audio_dir else None,
@@ -190,6 +192,10 @@ def cmd_build(args: argparse.Namespace) -> int:
         f"cluster sizes {min(stats.cluster_counts)}..{max(stats.cluster_counts)}")
     log(f"cluster purity {stats.purity * 100:.1f} %, mean radius {stats.spread:.3f} "
         f"of max|coord| = 1")
+    log(f"projection {stats.projection}: distance faithfulness pearson "
+        f"{stats.faithfulness['pearson']:.3f}, spearman "
+        f"{stats.faithfulness['spearman']:.3f}; 3D kNN agreement "
+        f"{stats.knn_agreement * 100:.1f} %")
     return verify(out)
 
 
@@ -330,6 +336,14 @@ def verify(out: Path) -> int:
     log(f"  contract 8.6      worst error {worst_f0:.2f} % F0, {worst_amp:.2f} % ampPP")
     log(f"  confidence mix    " + ", ".join(
         f"{k}={v}" for k, v in sorted(_count_confidence(centroids).items())))
+    manifest_path = out / "manifest.json"
+    if manifest_path.exists():
+        man = json.loads(manifest_path.read_text())
+        if "faithfulness" in man:
+            f = man["faithfulness"]
+            log(f"  projection        {man.get('projection', '?')}: distance pearson "
+                f"{f['pearson']:.3f} / spearman {f['spearman']:.3f} over {f['pairs']} "
+                f"pairs, purity {man.get('clusterPurity', 0) * 100:.1f} %")
     if problems:
         for p in problems:
             log(f"  FAIL: {p}")
@@ -367,6 +381,13 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--min-dist", type=float, default=None,
                    help="UMAP min_dist; visual spread only, does not affect clustering "
                         "(default %s)" % galaxy.UMAP_MIN_DIST)
+    b.add_argument("--projection", choices=galaxy.PROJECTIONS,
+                   default=galaxy.DEFAULT_PROJECTION,
+                   help="3D layout: cmds = classical MDS on cosine distance "
+                        "(distance-faithful), pca = first 3 PCs, umap = neighbourhood "
+                        "only (default %s)" % galaxy.DEFAULT_PROJECTION)
+    b.add_argument("--no-compare-projections", action="store_true",
+                   help="skip building the other projections just to measure them")
     b.add_argument("--beta-min", type=float, default=syrinx.BETA_MIN,
                    help="beta clamp floor (contract default 0.15; -0.45 unlocks sub-kHz f0)")
     b.set_defaults(func=cmd_build)

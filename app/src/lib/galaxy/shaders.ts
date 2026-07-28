@@ -83,6 +83,13 @@ export interface VisualSignal {
 	path: number[];
 	/** Bumped whenever `path` changes, so the renderer knows to rebuild its geometry. */
 	pathVersion: number;
+	/**
+	 * Every song of the selected species, drawn faintly behind the selected one. Segments
+	 * shared between songs overlap and so read brighter, which shows at a glance which
+	 * transitions this bird reuses.
+	 */
+	context: number[][];
+	contextVersion: number;
 	/** Position along the path in node units while singing; -1 when nothing is playing. */
 	pathProgress: number;
 	/** Overall visibility of the trajectory, 0..1. */
@@ -98,7 +105,9 @@ export function createSignal(clusterCount: number): VisualSignal {
 		path: [],
 		pathVersion: 0,
 		pathProgress: -1,
-		pathAlpha: 0
+		pathAlpha: 0,
+		context: [],
+		contextVersion: 0
 	};
 }
 

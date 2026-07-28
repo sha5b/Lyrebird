@@ -2,6 +2,7 @@
 	import { Canvas, T } from '@threlte/core';
 	import { OrbitControls } from '@threlte/extras';
 	import type { BirdyAssets } from '$lib/data/types';
+	import ContextPaths from './ContextPaths.svelte';
 	import PointCloud from './PointCloud.svelte';
 	import Spinner from './Spinner.svelte';
 	import Trajectory from './Trajectory.svelte';
@@ -36,6 +37,7 @@
 			or the line drifts off the points it connects.
 		-->
 		<Spinner {spin}>
+			<ContextPaths {assets} {signal} />
 			<PointCloud {assets} {signal} {pointSize} />
 			<Trajectory {assets} {signal} />
 		</Spinner>

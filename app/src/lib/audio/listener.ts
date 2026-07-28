@@ -82,6 +82,12 @@ export class Listener {
 		this.signal.pathAlpha = keptNodes.length > 1 ? 1 : 0;
 	}
 
+	/** The faint backdrop of every song this bird sings; drops nodes the corpus lacks. */
+	setContext(paths: number[][]): void {
+		this.signal.context = paths.map((p) => p.filter((n) => n >= 0)).filter((p) => p.length > 1);
+		this.signal.contextVersion++;
+	}
+
 	clearPath(): void {
 		this.signal.path = [];
 		this.signal.pathVersion++;

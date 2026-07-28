@@ -38,6 +38,9 @@ A full build takes about 27 s on a laptop: 4287 clips, 882 s of synthesised audi
 | `--k N` | number of syllable types (44), cap 64 | KMeans clusters |
 | `--out DIR` | `app/static/birdy` | where the assets go |
 | `--wav-out DIR` | - | also write every corpus clip as a wav |
+| `--projection umap\|pca\|cmds` | `cmds` | 3D layout; see "Galaxy shape" below |
+| `--no-compare-projections` | off | skip building the other two just to measure them |
+| `--min-dist F` | 0.25 | UMAP `min_dist`; visual spread only |
 | `--recalibrate` | off | re-measure the syrinx table even if it exists |
 | `--beta-min F` | 0.15 | beta clamp floor - see the note below, this one matters |
 
@@ -54,27 +57,60 @@ Into `--out` (all of it is fetched at runtime by the app; contract 8.3):
 | `inventory.json` | verbatim copy of `data/inventory.json` |
 | `syrinx-calibration.json` | measured `f0Hz` and `ampPP` over pressure x beta, plus the inverse `beta(f0)` table (8.4) |
 | `feature-space.json` | extractor spec, corpus `mean`/`std`, `dimNames`, `temperature` |
-| `positions.f32` | little-endian float32, `3*n`, xyz per point, `max abs coord == 1` |
+| `positions.f32` | little-endian float32, `3*n`, xyz per point, `max abs coord == 1` (layout per `manifest.json` `projection`) |
 | `points.json` | parallel metadata arrays of length `n` |
 | `centroids.json` | `k` labelled clusters: 3D position, 28-d standardised vector, `count` |
 
 `pipeline/out/demo/` holds the demo wavs. Nothing else is written outside `--out`.
 
-### Galaxy shape
+### Galaxy shape: do the distances mean anything?
 
-`positions.f32` is built with UMAP `n_neighbors=15`, `min_dist=0.25`, `metric=cosine`,
-then centred and scaled so `max abs coord == 1`. KMeans runs on the **standardised
-28-d descriptors**, not on the 3D positions, so `min_dist` is purely a visual knob:
-cluster purity is 90.7 % at `min_dist` 0.25, 0.5 and 0.8 alike. At 4287 points the
-44 clusters have a median internal rms radius of 0.045 and their centres sit at radius
-0.21-1.11, so the cloud is a shell of tight knots; raising `min_dist` to 0.5 or 0.8
-loosens the knots (voxel fill 0.8 % -> 1.4 % -> 2.4 % of a 32^3 grid) at no cost to
-purity, if the render wants a denser look.
+KMeans, the centroid vectors and the client's activation lookup all live in the
+**standardised 28-d descriptor space** and never touch the 3D positions. The projection
+is therefore free to change; what it changes is whether *distance on screen* carries
+information. `--projection` picks it, and every build measures the answer instead of
+asserting it: 200k seeded random point pairs, 28-d cosine distance against 3D Euclidean
+distance, Pearson and Spearman.
 
-Cluster purity - the share of points that carry their cluster's majority
-`(speciesId, syllableId)` - is printed by every build and stored in `manifest.json` as
-`clusterPurity`. It is how we know the clusters correspond to syllable types, so watch
-it when changing the corpus.
+Measured on the shipped corpus (4287 points, seed 0):
+
+| projection | Pearson | Spearman | purity | 3D kNN agreement | notes |
+|---|---|---|---|---|---|
+| `umap` (`min_dist` 0.25) | 0.685 | 0.646 | 90.7 % | 98.2 % | neighbourhoods only |
+| `pca` | 0.798 | 0.782 | 90.7 % | 94.1 % | variance 32/12/10 % |
+| **`cmds` (default)** | **0.878** | **0.870** | 90.7 % | 91.4 % | variance 30/16/13 %, negative eigenvalue mass 28 % |
+
+`cmds` is classical (Torgerson/PCoA) multidimensional scaling on the cosine distance
+matrix - the same metric everything else uses. At 4287 points the full 4287x4287
+double-centred matrix is decomposed exactly (`numpy.linalg.eigh`, about 7 s); above
+`CMDS_FULL_MAX = 6000` points it switches to landmark MDS with 800 landmarks and says so
+in the log and in `manifest.json`.
+
+**The trade-off, stated plainly.** UMAP scores best on kNN agreement (98.2 %) and worst
+on distance faithfulness (0.685) because it exaggerates separation: it guarantees only
+that neighbours stay neighbours, so gaps between distant clusters are not interpretable.
+cMDS gives the most honest distances (0.878) and a visibly looser picture - the knots
+overlap more, kNN agreement drops to 91.4 %. We chose honest distances. If the render
+ever needs the tidier look, `--projection umap` still produces a valid asset set, and
+`manifest.json` records which one was used along with its correlations, so the client can
+show or hide distance-based UI accordingly.
+
+Neither linear projection is degenerate: cMDS spreads its variance 30/16/13 % over the
+three axes (59 % of the positive eigenvalue mass in 3 of 4287 dimensions) with per-axis
+position std 0.576/0.418/0.374, so the cloud is a genuine volume rather than a line.
+The 28 % negative eigenvalue mass is expected and worth knowing: cosine distance is not
+a Euclidean metric, so a perfect embedding does not exist at any dimensionality, and
+that share of the structure cannot be drawn.
+
+Cluster purity - the share of points carrying their cluster's majority
+`(speciesId, syllableId)` - is **identical (90.7 %) for all three projections**, as it
+must be, since the clustering never sees a position. It is the control for this whole
+exercise: if it ever differs between projections, something is wired wrong. It is
+printed by every build and stored as `clusterPurity`.
+
+Within UMAP, `min_dist` is also purely visual (purity is 90.7 % at 0.25, 0.5 and 0.8
+alike); raising it loosens the knots, filling 0.8 % -> 1.4 % -> 2.4 % of a 32^3 voxel
+grid.
 
 ### The two modules a reader should start with
 

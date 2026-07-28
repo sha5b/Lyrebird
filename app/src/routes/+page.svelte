@@ -6,10 +6,12 @@
 		clusterIndexFor,
 		loadAssets,
 		songSyllables,
+		speciesById,
 		type ClusterLookup
 	} from '$lib/data/assets';
 	import { BirdyEngine, type ScheduledSyllable } from '$lib/audio/engine';
 	import { Listener } from '$lib/audio/listener';
+	import { createIndividual } from '$lib/audio/individual';
 	import { compilePhrase, improvise, type Phrase } from '$lib/lang/grammar';
 	import { citationsFor, confidenceLabel, type Reading } from '$lib/lang/translate';
 	import { createSignal, type VisualSignal } from '$lib/galaxy/shaders';
@@ -29,6 +31,8 @@
 	let level = $state(0);
 	let pitch = $state(0);
 	let rateNote = $state<string | null>(null);
+	let contextSpecies = $state<string | null>(null);
+	let singer = $state<string | null>(null);
 
 	let tab = $state<'sing' | 'words' | 'listen'>('sing');
 	let speciesId = $state('parus_minor');
@@ -49,6 +53,10 @@
 	const clusters = $derived<ClusterLookup | null>(assets ? buildClusterLookup(assets.centroids) : null);
 	const species = $derived(assets?.inventory.species ?? []);
 	const currentSpecies = $derived(species.find((s) => s.id === speciesId) ?? species[0]);
+	// Deterministic, so the bird you audition keeps its voice for the whole session.
+	const soloVoice = $derived(
+		currentSpecies ? createIndividual(currentSpecies.id, 0, currentSpecies.common) : null
+	);
 	const songs = $derived(currentSpecies?.songs ?? []);
 	const currentSong = $derived(songs.find((s) => s.id === songId) ?? songs[0]);
 
@@ -77,6 +85,16 @@
 			created.setVolume(volume);
 			created.onState = (s) => {
 				voices = s.voices;
+			};
+			// The chorus schedules its own songs, so the trajectory follows the engine rather
+			// than the menus: whatever sings next redraws the path and its species backdrop.
+			created.onScheduled = ({ speciesId: singing, scheduled, voice }) => {
+				singer = voice?.label ?? null;
+				showPath(singing, scheduled);
+				if (singing !== contextSpecies) {
+					contextSpecies = singing;
+					showContext(singing);
+				}
 			};
 			const live = new Listener(created, assets);
 			live.onReading = (r) => {
@@ -107,6 +125,21 @@
 		);
 	}
 
+	/** Every song this species sings, as the faint backdrop behind the selected one. */
+	function showContext(speciesId: string) {
+		if (!assets || !clusters || !listener) return;
+		const species = speciesById(assets.inventory, speciesId);
+		if (!species) return;
+		listener.setContext(
+			species.songs.map((song) => {
+				const resolved = songSyllables(species, song.id);
+				return resolved
+					? resolved.syllables.map((syl) => clusterIndexFor(clusters, speciesId, syl.id))
+					: [];
+			})
+		);
+	}
+
 	/** The same trajectory without timing: what a selected-but-unplayed call looks like. */
 	function previewPath(speciesId: string, syllableIds: string[]) {
 		if (!clusters || !listener) return;
@@ -115,8 +148,10 @@
 
 	function sing() {
 		if (!engine || !currentSpecies || !currentSong) return;
-		nowSinging = engine.playSong(currentSpecies.id, currentSong.id, { jitter: 0.5, distance });
-		showPath(currentSpecies.id, nowSinging);
+		nowSinging = engine.playSong(currentSpecies.id, currentSong.id, {
+			voice: soloVoice ?? undefined,
+			distance
+		});
 		lastPhrase = {
 			speciesId: currentSpecies.id,
 			label: currentSong.label,
@@ -135,7 +170,11 @@
 	function singPhrase(phrase: Phrase | null) {
 		if (!engine || !phrase) return;
 		lastPhrase = phrase;
-		nowSinging = engine.playSequence(phrase.syllables, phrase.gaps, { jitter: 0.35, distance });
+		nowSinging = engine.playSequence(phrase.syllables, phrase.gaps, {
+			voice: soloVoice ?? undefined,
+			distance
+		});
+		singer = soloVoice?.label ?? null;
 		showPath(phrase.speciesId, nowSinging);
 	}
 
@@ -211,6 +250,10 @@
 		if (!assets || !currentSpecies || !currentSong || !listener) return;
 		const resolved = songSyllables(currentSpecies, currentSong.id);
 		if (resolved) previewPath(currentSpecies.id, resolved.syllables.map((s) => s.id));
+		if (contextSpecies !== currentSpecies.id) {
+			contextSpecies = currentSpecies.id;
+			showContext(currentSpecies.id);
+		}
 	});
 
 	const preview = $derived(
@@ -399,6 +442,12 @@ uv run birdy-pipeline build</pre>
 					{confidenceLabel(best.centroid.confidence).text}
 				</span>
 				<h3>{best.centroid.label}</h3>
+				<!--
+					Deliberately not showing the singer here: this panel reports what the audio was
+					matched to, and the singer is who we scheduled. During a chorus those are
+					different claims, and concatenating them reads as "this cluster was sung by
+					that bird", which we do not know.
+				-->
 				<p class="species">{best.speciesCommon}</p>
 				<p>{best.centroid.function}</p>
 				<div class="urgency">
@@ -428,6 +477,7 @@ uv run birdy-pipeline build</pre>
 					{confidenceLabel(lastPhrase.confidence).text}
 				</span>
 				<h3>{lastPhrase.label}</h3>
+				{#if singer}<p class="species">sung by {singer}</p>{/if}
 				<p class="gloss">“{lastPhrase.gloss}”</p>
 				<p>{lastPhrase.function}</p>
 				<p class="small faint">{lastPhrase.note}</p>

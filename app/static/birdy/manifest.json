@@ -1,5 +1,5 @@
 {
- "builtAt": "2026-07-28T10:05:06+00:00",
+ "builtAt": "2026-07-28T10:34:40+00:00",
  "pipeline": "birdy-pipeline",
  "contract": "docs/08-implementation.md v1",
  "inventoryVersion": 1,
@@ -8,13 +8,92 @@
  "clusters": 44,
  "dims": 28,
  "seed": 0,
- "umap": {
-  "nComponents": 3,
-  "nNeighbors": 15,
-  "minDist": 0.8,
-  "metric": "cosine",
-  "randomState": 0,
-  "inputSpace": "standardised 28-d descriptors"
+ "projection": "cmds",
+ "projectionParams": {
+  "eigenvalues": [
+   1010.0037132319978,
+   532.8055588817308,
+   424.7109983019824
+  ],
+  "varianceRatio": [
+   0.3031697434981796,
+   0.1599306245159071,
+   0.12748420894814247
+  ],
+  "negativeEigenvalueMass": 0.28129157831932367,
+  "mode": "full",
+  "metric": "cosine"
+ },
+ "faithfulness": {
+  "pearson": 0.8784,
+  "spearman": 0.8695,
+  "pairs": 199954,
+  "definition": "correlation between 28-d cosine distance and 3D euclidean distance over random point pairs; 1.0 = distances fully meaningful"
+ },
+ "knnAgreement": {
+  "k": 10,
+  "value": 0.914,
+  "definition": "share of a point's 3D k nearest neighbours sharing its type"
+ },
+ "projectionComparison": {
+  "umap": {
+   "faithfulness": {
+    "pearson": 0.6853,
+    "spearman": 0.6465,
+    "pairs": 199954
+   },
+   "knnAgreement": 0.9819,
+   "purity": 0.9067,
+   "meanRadius": 0.804,
+   "params": {
+    "nNeighbors": 15,
+    "minDist": 0.25,
+    "metric": "cosine"
+   }
+  },
+  "pca": {
+   "faithfulness": {
+    "pearson": 0.7983,
+    "spearman": 0.7819,
+    "pairs": 199954
+   },
+   "knnAgreement": 0.9407,
+   "purity": 0.9067,
+   "meanRadius": 0.5975,
+   "params": {
+    "varianceRatio": [
+     0.31703804375045025,
+     0.11797003981534009,
+     0.10085619939148208
+    ],
+    "varianceRatioTotal": 0.5358642829572724
+   }
+  },
+  "cmds": {
+   "faithfulness": {
+    "pearson": 0.8784,
+    "spearman": 0.8695,
+    "pairs": 199954
+   },
+   "knnAgreement": 0.914,
+   "purity": 0.9067,
+   "meanRadius": 0.7903,
+   "params": {
+    "eigenvalues": [
+     1010.0037132319978,
+     532.8055588817308,
+     424.7109983019824
+    ],
+    "varianceRatio": [
+     0.3031697434981796,
+     0.1599306245159071,
+     0.12748420894814247
+    ],
+    "negativeEigenvalueMass": 0.28129157831932367,
+    "mode": "full",
+    "metric": "cosine"
+   }
+  }
  },
  "kmeans": {
   "k": 44,
@@ -32,7 +111,7 @@
   1.8649
  ],
  "clusterPurity": 0.9067,
- "meanRadius": 0.7556,
+ "meanRadius": 0.7903,
  "files": [
   "manifest.json",
   "inventory.json",
