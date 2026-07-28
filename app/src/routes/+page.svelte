@@ -64,7 +64,29 @@
 	let nowSinging = $state<ScheduledSyllable[]>([]);
 	let voices = $state(0);
 	let pinnedCluster = $state(-1);
-	let layout = $state<LayoutId>('acoustic');
+	/**
+	 * The aviary opens arranged **by bird**, and choosing one switches to **sound**.
+	 *
+	 * The two arrangements answer the two questions in the order they get asked. Opening on
+	 * the acoustic layout shows a single undifferentiated cloud of thirty thousand marks —
+	 * true, and unreadable as a first impression, because nothing in it says the corpus is
+	 * twelve birds. Twelve islands says that immediately. Then, once you have picked one,
+	 * the question stops being "who is here" and becomes "what does this one sound like,
+	 * and what else sounds like it" — which is the acoustic layout and nothing else, since
+	 * it is the only arrangement where distance is a measurement rather than a grouping.
+	 */
+	let layout = $state<LayoutId>('species');
+	/**
+	 * Set the moment the viewer touches `Arrange`, and never cleared until the page is
+	 * reloaded. An automatic rearrangement is a convenience for someone who has not
+	 * expressed a preference; the instant they have, it becomes the interface overruling
+	 * them, which is worse than never having helped.
+	 */
+	let layoutPinned = $state(false);
+	function chooseLayout(id: LayoutId) {
+		layout = id;
+		layoutPinned = true;
+	}
 
 	/**
 	 * What has been sung, newest first. The strip along the bottom is the only record of
@@ -134,6 +156,15 @@
 		if (chosen === lastSpeciesChoice) return;
 		lastSpeciesChoice = chosen;
 		if (chosen && untrack(() => chorus) === 'global') untrack(() => setChorus('off'));
+	});
+
+	// Selecting a bird arranges by sound, releasing it goes back to the twelve islands —
+	// unless the arrangement has been chosen by hand, which wins for the rest of the
+	// session. Tracks the selection only; the pin is read outside the dependency.
+	$effect(() => {
+		const chosen = speciesId;
+		if (untrack(() => layoutPinned)) return;
+		layout = chosen ? 'acoustic' : 'species';
 	});
 
 	/** Cluster ids per species, for framing a whole repertoire at once. */
@@ -830,27 +861,36 @@ uv run birdy-pipeline build</pre>
 							<section class="block">
 								<h3 class="blocktitle">Arrange</h3>
 								<div class="segmented">
-									<button class:on={layout === 'acoustic'} onclick={() => (layout = 'acoustic')}>
+									<button class:on={layout === 'acoustic'} onclick={() => chooseLayout('acoustic')}>
 										Sound
 									</button>
-									<button class:on={layout === 'species'} onclick={() => (layout = 'species')}>
+									<button class:on={layout === 'species'} onclick={() => chooseLayout('species')}>
 										Bird
 									</button>
-									<button class:on={layout === 'meaning'} onclick={() => (layout = 'meaning')}>
+									<button class:on={layout === 'meaning'} onclick={() => chooseLayout('meaning')}>
 										Meaning
 									</button>
 								</div>
 								<p class="note faint">
 									{#if layout === 'acoustic'}
-										Points sit where they sound. Distance is acoustic distance.
+										Points sit where they sound, and distance is the only thing in this view
+										that is measured. The ruler at the bottom left says how much.
 									{:else if layout === 'species'}
-										Regrouped by bird, each keeping its own shape. Watch which species tore
-										apart on the way here — those were the ones overlapping acoustically.
+										Regrouped by bird, each island keeping its own shape. Watch which species
+										tore apart on the way here — those were the ones overlapping acoustically.
+										Distance between islands is arrangement, not measurement.
 									{:else}
-										Regrouped by how much meaning is claimed — and the grey island is the
+										Regrouped by how much meaning is claimed — and the largest island is the
 										one to look at: those clusters are real audio of a known bird with no
-										documented function of any kind. Position no longer means acoustic
-										similarity.
+										documented function of any kind. Distance is arrangement, not measurement.
+									{/if}
+								</p>
+								<p class="note faint">
+									{#if layoutPinned}
+										Chosen by hand, so it stays put until the page is reloaded.
+									{:else}
+										Follows the selection: <b>bird</b> with nothing chosen, <b>sound</b> once a
+										bird is. Pick one here and it stops following.
 									{/if}
 								</p>
 							</section>
@@ -1045,9 +1085,19 @@ uv run birdy-pipeline build</pre>
 							</p>
 						{:else}
 							<p class="note">
-								The whole corpus, nothing dimmed and the camera holding all of it. Choosing a
-								bird narrows the labels to its repertoire and flies to the region its clusters
-								occupy.
+								{#if layout === 'species'}
+									The whole corpus as twelve islands, one per bird, each keeping the shape it
+									had in the acoustic layout. Choosing a bird narrows the labels to its
+									repertoire and rearranges by sound, so you can see what else resembles it.
+								{:else if layout === 'meaning'}
+									The whole corpus grouped by how much meaning is documented for it. Most of
+									it sits in the unclaimed island — 147 of 176 clusters have no documented
+									function at all.
+								{:else}
+									The whole corpus where it sounds, nothing dimmed and the camera holding all
+									of it. Choosing a bird narrows the labels to its repertoire and flies to the
+									region its clusters occupy.
+								{/if}
 							</p>
 							<div class="row">
 								<button

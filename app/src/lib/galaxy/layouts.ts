@@ -53,12 +53,24 @@ export interface Layout {
  * Group centres on a Fibonacci sphere. Evenly spaced on a sphere rather than a ring, so
  * the arrangement is still a volume you can orbit rather than a flat dial, and no two
  * groups sit behind each other from the starting camera.
+ *
+ * **The half-step in `y` is what makes it even, and leaving it out is why two islands
+ * always ran into each other.** The obvious spacing, `1 - 2i/(count-1)`, walks from the
+ * north pole to the south pole *inclusive*, so the first and last groups land exactly on
+ * the poles where the ring radius is zero — and the second and second-to-last sit only
+ * one step of latitude away with almost a full ring to spread out in. Measured on the
+ * shipped corpus that put the closest pair of species centres 0.445 apart while their
+ * combined reach was 0.522: two overlapping pairs out of sixty-six, both at the poles,
+ * every time. Offsetting to the middle of each band puts the extremes at
+ * `±(1 - 1/count)` instead, which is the standard construction and the one that actually
+ * distributes by equal area. Same radius, same shrink, no overlaps, and the minimum
+ * centre gap goes from 0.445 to 0.606.
  */
 function groupCentres(count: number, radius: number): [number, number, number][] {
 	const out: [number, number, number][] = [];
 	const golden = Math.PI * (3 - Math.sqrt(5));
 	for (let i = 0; i < count; i++) {
-		const y = count === 1 ? 0 : 1 - (i / (count - 1)) * 2;
+		const y = count === 1 ? 0 : 1 - (2 * i + 1) / count;
 		const r = Math.sqrt(Math.max(0, 1 - y * y));
 		const theta = golden * i;
 		out.push([Math.cos(theta) * r * radius, y * radius * 0.75, Math.sin(theta) * r * radius]);
@@ -215,11 +227,20 @@ export function buildLayouts(
 			// drift if that ever stops being true.
 			centroids: centroidsOf(acoustic, assets.points.clusterId, assets.centroids.k)
 		},
-		// Tighter and further apart for twelve groups than for three. The centres go out
+		// Tighter and further apart for twelve groups than for four. The centres go out
 		// further than the groups are wide on purpose: the whole point of the rearrangement
 		// is that you can see which species tore apart, and that is only visible if the
 		// islands clear each other.
 		species: grouped(assets, speciesOf, Math.max(1, speciesIndex.size), 0.92, 0.28),
-		meaning: grouped(assets, claimOf, CLAIM_COUNT, 0.8, 0.45)
+		// Further out and tighter than the four groups would suggest, because the four are
+		// wildly unequal in *spread* as well as in size. The six clusters that claim a
+		// social meaning are scattered right across the acoustic layout — they are the same
+		// bird's territorial call and another's contact note, which have no reason to sound
+		// alike — so that island reached 0.617 where the other three sat near 0.33, and it
+		// ran into both of its neighbours. The claim being made here is how much of the
+		// corpus falls in each group, and an island that bleeds into the next one cannot
+		// make it. Every island shrinks by the same factor, so their relative spread, which
+		// is the other thing worth reading, survives.
+		meaning: grouped(assets, claimOf, CLAIM_COUNT, 0.88, 0.42)
 	};
 }

@@ -11,9 +11,12 @@
 	import NodeLabels from './NodeLabels.svelte';
 	import NodeProjector from './NodeProjector.svelte';
 	import PointCloud from './PointCloud.svelte';
+	import ScaleBar from './ScaleBar.svelte';
+	import ScaleProbe from './ScaleProbe.svelte';
 	import Spinner from './Spinner.svelte';
 	import Trajectory from './Trajectory.svelte';
 	import { createLayoutView, type LayoutId } from './layouts';
+	import { measureAcousticScale } from './scale';
 	import type { VisualSignal } from './shaders';
 
 	interface Props {
@@ -93,6 +96,12 @@
 	let cloud = $state<THREE.Group | undefined>();
 	/** Bumped on every grab of the view, which is what ends a camera flight. */
 	let grabbed = $state(0);
+
+	// Fitted once from this build's own centroids, so the ruler cannot describe a galaxy
+	// that has been rebuilt underneath it.
+	const acousticScale = untrack(() => measureAcousticScale(assets.centroids));
+	/** Layout units per screen pixel, written by the probe inside the scene. */
+	let unitsPerPixel = $state(0);
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -148,11 +157,14 @@
 		</Spinner>
 
 		<Framing {view} {frame} group={cloud} {controls} interrupt={grabbed} />
+		<ScaleProbe group={cloud} {controls} onchange={(v) => (unitsPerPixel = v)} />
 	</Canvas>
 
 	{#if labels}
 		<NodeLabels {assets} elements={labelElements} {onpick} />
 	{/if}
+
+	<ScaleBar {unitsPerPixel} scale={acousticScale} />
 </div>
 
 <style>
