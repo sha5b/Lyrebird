@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
 	import Galaxy from '$lib/galaxy/Galaxy.svelte';
-	import FitMonitor from '$lib/galaxy/FitMonitor.svelte';
+	import SpeciesPicker from '$lib/SpeciesPicker.svelte';
 	import {
 		buildClusterLookup,
 		buildSpeciesIndex,
@@ -19,7 +19,6 @@
 	import { citationsFor, confidenceLabel, type Reading } from '$lib/lang/translate';
 	import { createSignal, type VisualSignal } from '$lib/galaxy/shaders';
 	import { ACCENT, MONO_HOT } from '$lib/galaxy/palette';
-	import type { LayoutId } from '$lib/galaxy/layouts';
 	import { PipelineClient, type PipelineStatus } from '$lib/data/pipeline';
 	import type { BirdyAssets } from '$lib/data/types';
 
@@ -98,86 +97,6 @@
 	let nowSinging = $state<ScheduledSyllable[]>([]);
 	let voices = $state(0);
 	let pinnedCluster = $state(-1);
-	/**
-	 * The aviary opens arranged **by bird**, and choosing one switches to **sound**.
-	 *
-	 * The two arrangements answer the two questions in the order they get asked. Opening on
-	 * the acoustic layout shows a single undifferentiated cloud of thirty thousand marks —
-	 * true, and unreadable as a first impression, because nothing in it says the corpus is
-	 * twelve birds. Twelve islands says that immediately. Then, once you have picked one,
-	 * the question stops being "who is here" and becomes "what does this one sound like,
-	 * and what else sounds like it" — which is the acoustic layout and nothing else, since
-	 * it is the only arrangement where distance is a measurement rather than a grouping.
-	 */
-	let layout = $state<LayoutId>('species');
-	/**
-	 * Set the moment the viewer touches `Arrange`, and never cleared until the page is
-	 * reloaded. An automatic rearrangement is a convenience for someone who has not
-	 * expressed a preference; the instant they have, it becomes the interface overruling
-	 * them, which is worse than never having helped.
-	 */
-	let layoutPinned = $state(false);
-	function chooseLayout(id: LayoutId) {
-		// The islands are a property of the arrangement, so a region framed in one of them
-		// does not survive into another — the heading you asked for is not on screen any more.
-		framedIsland = null;
-		layout = id;
-		layoutPinned = true;
-	}
-
-	/**
-	 * The island heading whose region the camera is holding, if any.
-	 *
-	 * An island heading names the only thing on screen at the scale a viewer navigates by —
-	 * a whole bird — and until now it was the one mark that did nothing when clicked.
-	 * Reaching that region meant finding the bird in a dropdown and trusting the island under
-	 * the cursor was the same one.
-	 *
-	 * Framing only. It deliberately does **not** select the bird, because selecting one
-	 * switches the arrangement to *Sound* (see the effect below) and the islands you just
-	 * clicked would dissolve under the camera on its way there. "Take me to this region" and
-	 * "make this bird the subject" are different requests and the second one has its own
-	 * control.
-	 */
-	let framedIsland = $state<{ key: string; label: string; members: number[] } | null>(null);
-	/**
-	 * Set for the one tick in which a species selection came from clicking its island.
-	 *
-	 * Choosing a bird normally switches the arrangement to *Sound*, which is right when the
-	 * choice came from the dropdown and wrong when it came from clicking that bird's island —
-	 * the islands would dissolve under the cursor on the way to the thing just clicked. This
-	 * is narrower than pinning the layout: it suppresses one automatic switch rather than all
-	 * of them, so the dropdown keeps behaving as it did.
-	 */
-	let islandSelection = $state(false);
-
-	function pickIsland(group: { key: string; label: string; members: number[] }) {
-		// Clicking the heading again releases it, which is the only way back to the whole
-		// galaxy without touching a different control.
-		if (framedIsland?.key === group.key) {
-			framedIsland = null;
-			speciesId = '';
-			return;
-		}
-		// A region is a coarser request than a node or a phrase, and those outrank it in
-		// `frameNodes` — leaving one set would frame the node and light the heading.
-		pinnedCluster = -1;
-		selectedSung = null;
-		framedIsland = group.members.length ? group : null;
-
-		// **Clicking a heading is a selection, not a camera move.**
-		//
-		// It used to only fly the camera, so choosing a bird's island and looking at it from
-		// closer up were the same gesture: nothing dimmed, nothing recoloured, and the one
-		// thing a viewer wants from picking a region — everything else getting out of the
-		// way — did not happen. Picking a bird from the dropdown had always done that. Now
-		// both routes end in the same place, which is what makes the two feel like one app.
-		//
-		// `islandSelection` suppresses the effect that would otherwise switch the arrangement
-		// to Sound and dissolve the very islands being clicked.
-		islandSelection = true;
-		speciesId = group.key;
-	}
 
 	/**
 	 * What has been sung, newest first. The strip along the bottom is the only record of
@@ -307,20 +226,6 @@
 		});
 	});
 
-	// Selecting a bird arranges by sound, releasing it goes back to the twelve islands —
-	// unless the arrangement has been chosen by hand, which wins for the rest of the
-	// session. Tracks the selection only; the pin is read outside the dependency.
-	$effect(() => {
-		const chosen = speciesId;
-		if (untrack(() => islandSelection)) {
-			// Consumed: the next selection from the dropdown should switch as usual.
-			untrack(() => (islandSelection = false));
-			return;
-		}
-		if (untrack(() => layoutPinned)) return;
-		layout = chosen ? 'acoustic' : 'species';
-	});
-
 	/** Cluster ids per species, for framing a whole repertoire at once. */
 	const clustersOfSpecies = $derived.by(() => {
 		const map = new Map<string, number[]>();
@@ -335,11 +240,8 @@
 
 	/**
 	 * What the camera holds in frame, most specific first: a phrase picked out of the
-	 * history, a pinned node, an island whose heading was clicked, the selected bird's whole
-	 * repertoire, or — with nothing selected, which is how the app opens — the entire galaxy.
-	 *
-	 * The island sits below the node and the phrase because it is the coarsest of the three
-	 * and a viewer who has since asked for one knot means that knot.
+	 * history, a pinned node, the selected bird's whole repertoire, or — with nothing
+	 * selected, which is how the app opens — the entire galaxy.
 	 */
 	const frameNodes = $derived.by(() => {
 		if (selectedSung !== null) {
@@ -347,7 +249,6 @@
 			if (nodes?.length) return nodes;
 		}
 		if (pinnedCluster >= 0) return [pinnedCluster];
-		if (framedIsland?.members.length) return framedIsland.members;
 		if (currentSpecies) return clustersOfSpecies.get(currentSpecies.id) ?? allClusters;
 		return allClusters;
 	});
@@ -385,28 +286,14 @@
 	 * The last line the pipeline printed is almost always the answer, and the log itself
 	 * stays available underneath for when it is not.
 	 */
-	/**
-	 * Whether the fit monitor is welcome. Dismissing it is per-session and deliberate:
-	 * a loop can run for an hour and an overlay nobody can close is a worse overlay.
-	 * It reappears on the next job, because the next job is a new thing to watch.
-	 */
-	let fitMonitorOpen = $state(true);
-	$effect(() => {
-		if (job?.state === 'running') fitMonitorOpen = true;
-	});
-	/** The `FIT` lines in the current log, so the panel can outlive the job that wrote them. */
-	const fitLines = $derived.by(() =>
-		(job?.log ?? []).filter((l) => l.trimStart().startsWith('FIT '))
-	);
-
 	const jobDoing = $derived.by(() => {
 		const log = job?.log;
 		if (!log?.length) return '';
 		for (let i = log.length - 1; i >= 0; i--) {
 			const line = log[i].trim();
-			// The per-type `FIT` lines are for the monitor, which draws them. Here they would
-			// replace "fitting syllables and syntax" with a row of numbers a hundred times a
-			// second, which is less information rather than more.
+			// The per-type `FIT` lines are progress rows, printed a hundred times a second —
+			// here they would replace "fitting syllables and syntax" with a row of numbers,
+			// which is less information rather than more.
 			if (line && !line.startsWith('FIT ')) return line;
 		}
 		return '';
@@ -471,9 +358,6 @@
 			history = [];
 			selectedSung = null;
 			pinnedCluster = -1;
-			// A rebuild re-places every point, so the cluster ids the framed island held are
-			// not the same clusters any more.
-			framedIsland = null;
 			assets = loaded;
 			// A new inventory can drop a species — `--learned-only` does exactly that — and a
 			// selection pointing at one that is gone leaves `currentSpecies` null, which reads
@@ -587,6 +471,18 @@
 	}
 
 	/**
+	 * The chorus the aviary was running when the current selection began, so clearing the
+	 * selection can hand the air back to it. Picking a phrase or a knot starts that bird's
+	 * solo chorus (see the effect on `speciesId`); going back should restore what it
+	 * replaced rather than leaving silence, and "what it replaced" is only ever the
+	 * whole-corpus chorus or nothing.
+	 */
+	let chorusToResume = $state(false);
+	function noteChorusBeforeSelecting() {
+		if (selectedSung === null && pinnedCluster < 0) chorusToResume = chorus === 'global';
+	}
+
+	/**
 	 * Selecting a past phrase draws its path as a static thread and focuses its bird, so
 	 * you can go back to something you heard go past. Selecting it again, or clicking
 	 * empty space in the view, clears it.
@@ -596,17 +492,23 @@
 			clearSelection();
 			return;
 		}
+		noteChorusBeforeSelecting();
 		selectedSung = entry.id;
 		speciesId = entry.speciesId;
 		listener?.setPreview(entry.nodes, entry.speciesId, entry.label);
 	}
 
 	function clearSelection() {
-		if (selectedSung === null && pinnedCluster < 0 && !framedIsland) return;
+		if (selectedSung === null && pinnedCluster < 0) return;
 		selectedSung = null;
 		pinnedCluster = -1;
-		framedIsland = null;
+		// Back to the whole corpus: the selection had narrowed it to one bird.
+		speciesId = '';
 		refreshSelection();
+		// `setChorus` toggles, so guard the mode as well: starting the aviary chorus by
+		// hand already clears the selection, and this must never switch it back off.
+		if (chorusToResume && engine && chorus !== 'global') setChorus('global');
+		chorusToResume = false;
 	}
 
 	/** Adds the trajectory a phrase takes through the galaxy, in time with the audio. */
@@ -889,6 +791,7 @@
 	 */
 	function pickCluster(index: number) {
 		if (!assets) return;
+		noteChorusBeforeSelecting();
 		pinnedCluster = pinnedCluster === index ? -1 : index;
 		const centroid = assets.centroids.items[index];
 		if (!centroid) return;
@@ -1001,6 +904,16 @@
 
 	const job = $derived(pipelineStatus?.job ?? null);
 	const jobRunning = $derived(job?.state === 'running' || job?.state === 'stopping');
+
+	/**
+	 * Birds the learning loop found and fitted, marked wherever species are listed.
+	 * They sing like any other once they are in the inventory — the mark only says how
+	 * they got there.
+	 */
+	const discoveredIds = $derived(new Set((pipelineStatus?.discovered ?? []).map((d) => d.id)));
+	const speciesOptions = $derived(
+		species.map((s) => ({ id: s.id, common: s.common, discovered: discoveredIds.has(s.id) }))
+	);
 
 	/**
 	 * One line standing in for eleven paragraphs.
@@ -1168,35 +1081,12 @@ uv run birdy-pipeline build</pre>
 				speed={tempo}
 				labels={showLabels}
 				pinned={pinnedCluster}
-				{layout}
 				frame={frameNodes}
 				learning={learningClusters}
 				onpick={pickCluster}
-				onpickisland={pickIsland}
-				activeIsland={framedIsland?.key ?? ''}
+				onbackground={clearSelection}
 			/>
 			{/key}
-
-			<!--
-				The fit, while it happens, over the galaxy it is going to change. On every tab,
-				because a loop runs for as long as you let it and you will not be sitting on
-				Learn while it does.
-			-->
-			<!--
-				Only for a fit. It used to appear for any running job, so a build — which emits no
-				`FIT` lines at all — put an empty panel labelled BUILD in the corner with nothing
-				in it but a placeholder. The panel exists to watch types land; when none are
-				landing it is furniture.
-			-->
-			<FitMonitor
-				show={fitMonitorOpen && (jobRunning || fitLines.length > 0)}
-				running={jobRunning}
-				log={job?.log ?? []}
-				jobName={job?.name ?? ''}
-				doing={jobDoing}
-				commonOf={(id) => species.find((s) => s.id === id)?.common ?? id}
-				onclose={() => (fitMonitorOpen = false)}
-			/>
 
 			<!-- Display settings belong on the thing they change, not in the tab strip. -->
 			<div class="viewctl" class:open={viewOpen}>
@@ -1221,42 +1111,17 @@ uv run birdy-pipeline build</pre>
 						<h2>Display</h2>
 						<div class="cardbody">
 							<section class="block">
-								<h3 class="blocktitle">Arrange</h3>
-								<div class="segmented">
-									<button class:on={layout === 'acoustic'} onclick={() => chooseLayout('acoustic')}>
-										Sound
-									</button>
-									<button class:on={layout === 'species'} onclick={() => chooseLayout('species')}>
-										Bird
-									</button>
-								</div>
-								<!--
-									One line, because the arrangement is on screen the moment you pick it and
-									the panel does not need to describe what you are already looking at. What
-									is not visible is whether distance means anything, so that is the line.
-								-->
-								<p class="note faint">
-									{#if layout === 'acoustic'}
-										Distance is acoustic distance.
-									{:else}
-										One island per bird. Distance is arrangement, not measurement.
-									{/if}
-									{#if !layoutPinned}
-										<br />Following the selection until you pick one here.
-									{/if}
-								</p>
-							</section>
-
-							<section class="block">
 								<label class="field">
 									<span class="lbl">Point size <b class="mono">{pointSize.toFixed(1)}</b></span>
 									<input type="range" min="1" max="10" step="0.1" bind:value={pointSize} />
 								</label>
-									<div class="checks">
-									<label class="check"><input type="checkbox" bind:checked={spin} /> Rotate</label>
-									<label class="check"
-										><input type="checkbox" bind:checked={showLabels} /> Labels</label
-									>
+								<div class="checks">
+									<label class="check" title="Slow drift of the whole galaxy, so depth stays readable while you listen.">
+										<input type="checkbox" bind:checked={spin} /> Rotate
+									</label>
+									<label class="check" title="Name tags on the knots a syllable can be sung into.">
+										<input type="checkbox" bind:checked={showLabels} /> Labels
+									</label>
 								</div>
 							</section>
 						</div>
@@ -1287,6 +1152,55 @@ uv run birdy-pipeline build</pre>
 			{/if}
 
 			<aside class="panel readout">
+			{#if tab === 'learn'}
+				<!--
+					The right-hand panel answers to the tab: everywhere else it is the reading,
+					on Learn it is the learning run itself. A loop runs for as long as you let it,
+					and its status used to be buried at the bottom of the control column, under
+					every knob that drives it.
+				-->
+				<h2>
+					Learning
+					{#if job}<span class="mono faint">{job.name} · {job.state} · {job.seconds}s</span>{/if}
+				</h2>
+				<div class="cardbody">
+					{#if job}
+						<div class="loopstatus">
+							<p class="doing mono">{jobDoing || '…'}</p>
+							{#if jobRunning}
+								<pre class="stream mono">{job.log.slice(-14).join('\n') || '…'}</pre>
+							{/if}
+							{#if learningSpecies}
+								<p class="note">
+									Working on <b style:color={speciesColourOf(learningSpecies)}
+										>{species.find((s) => s.id === learningSpecies)?.common ??
+											learningSpecies}</b
+									> — its knots are breathing in the galaxy.
+								</p>
+							{/if}
+							{#if job.error}<p class="error note">{job.error}</p>{/if}
+							<details class="loglines">
+								<summary class="mono faint">full log · {job.log.length} lines</summary>
+								<pre class="joblog mono">{job.log.slice(-200).join('\n') || '…'}</pre>
+							</details>
+							{#if jobRunning}
+								<button
+									class="wide"
+									disabled={job.state === 'stopping'}
+									onclick={() => runPipeline(() => pipeline.stop())}
+								>
+									{job.state === 'stopping' ? 'Stopping…' : 'Stop'}
+								</button>
+							{/if}
+						</div>
+					{:else}
+						<p class="note faint standfirst">
+							No learning run yet. Start one under <b>Keep learning</b> and its progress
+							reports here, pass by pass.
+						</p>
+					{/if}
+				</div>
+			{:else}
 				<h2>
 					Reading
 					{#if selectedSung !== null || pinnedCluster >= 0}
@@ -1380,6 +1294,7 @@ uv run birdy-pipeline build</pre>
 						'Birdy reports documented call functions with a confidence label. Machine learning can characterise repertoires and link calls to behaviour; it cannot translate them into sentences.'}
 				</p>
 				</div>
+			{/if}
 			</aside>
 
 			<aside class="panel controls">
@@ -1393,7 +1308,7 @@ uv run birdy-pipeline build</pre>
 			<div class="tabbody">
 				{#if tab === 'sing'}
 					<section class="block">
-						<label class="field">
+						<div class="field">
 							<span class="lbl">
 								Species
 								<!-- the hue this bird carries in the galaxy, so the two are connected -->
@@ -1411,13 +1326,8 @@ uv run birdy-pipeline build</pre>
 									>{repertoireCoverage.placed}/{repertoireCoverage.total}</span>
 								{/if}
 							</span>
-							<select bind:value={speciesId}>
-								<option value="">all birds</option>
-								{#each species as s (s.id)}
-									<option value={s.id}>{s.common}</option>
-								{/each}
-							</select>
-						</label>
+							<SpeciesPicker options={speciesOptions} bind:value={speciesId} />
+						</div>
 						<!--
 							"All birds" is a place in the list, not an absence of one, so it gets the same
 							shape as every other entry: a description, a thing to play, and the transport.
@@ -1489,24 +1399,18 @@ uv run birdy-pipeline build</pre>
 								<button disabled={!engine} onclick={silence}>Stop</button>
 							</div>
 						{:else}
-							<p class="note">
-								The whole corpus, nothing dimmed. Choosing a bird narrows the labels to its
-								repertoire and arranges by sound.
-							</p>
 							<div class="row">
 								<button
 									class="primary"
 									class:on={chorus === 'global'}
 									disabled={!engine}
 									onclick={() => setChorus('global')}
+									title="The whole aviary at once, every species drawing its own trajectory as it sings. Choosing a bird narrows the labels to its repertoire instead."
 								>
 									Chorus
 								</button>
 								<button disabled={!engine} onclick={silence}>Stop</button>
 							</div>
-							<p class="note faint">
-								Every species at once, each drawing its own trajectory as it sings.
-							</p>
 						{/if}
 					</section>
 
@@ -1515,7 +1419,14 @@ uv run birdy-pipeline build</pre>
 						<div class="sliders">
 							<label class="field">
 								<span class="lbl">Distance <b class="mono">{distance.toFixed(2)}</b></span>
-								<input type="range" min="0" max="1" step="0.01" bind:value={distance} />
+								<input
+									type="range"
+									min="0"
+									max="1"
+									step="0.01"
+									bind:value={distance}
+									title="How far away the birds sound and look: air absorption, reverb and the viewing scale move together."
+								/>
 							</label>
 							<label class="field">
 								<span class="lbl">Volume <b class="mono">{volume.toFixed(2)}</b></span>
@@ -1548,7 +1459,6 @@ uv run birdy-pipeline build</pre>
 								/>
 							</label>
 						</div>
-						<p class="note">Distance drives air absorption, reverb and the viewing scale together.</p>
 					</section>
 				{:else if tab === 'words'}
 					<section class="block">
@@ -1587,13 +1497,14 @@ uv run birdy-pipeline build</pre>
 								{/if}
 							</div>
 						{/if}
-						<button class="primary wide" disabled={!engine || !preview} onclick={singWords}>
+						<button
+							class="primary wide"
+							disabled={!engine || !preview}
+							onclick={singWords}
+							title="Only a handful of calls have experimentally established meanings. Anything else is rendered through the species' own song syntax and labelled as our invention."
+						>
 							Sing the words
 						</button>
-						<p class="note faint">
-							Only a handful of calls have experimentally established meanings. Anything else is
-							rendered through the species' own song syntax and labelled as our invention.
-						</p>
 					</section>
 				{:else if tab === 'listen'}
 					<section class="block">
@@ -1628,18 +1539,18 @@ uv run birdy-pipeline build</pre>
 							</p>
 						{/if}
 						<div class="row">
-							<button class:on={micOn} disabled={!engine} onclick={toggleMic}>
+							<button
+								class:on={micOn}
+								disabled={!engine}
+								onclick={toggleMic}
+								title="Same analysis path as the synthetic bird — a 28-d MFCC descriptor every frame, matched to the nearest cluster. Nothing leaves your device. Below about 25 % on the match meter nothing is reported, which is what silence and room tone measure."
+							>
 								{micOn ? 'Stop input' : 'Start input'}
 							</button>
 							<button class:on={recording} disabled={!engine || !micOn} onclick={toggleRecording}>
 								{recording ? 'Stop recording' : 'Record'}
 							</button>
 						</div>
-						<p class="note faint">
-							Same analysis path as the synthetic bird — a 28-d MFCC descriptor every frame,
-							matched to the nearest cluster. Nothing leaves your device. Below about 25 % on
-							the match meter nothing is reported, which is what silence and room tone measure.
-						</p>
 					</section>
 
 					{#if recordings.length}
@@ -1756,6 +1667,37 @@ uv run birdy-pipeline serve</pre>
 									typing <b class="mono">hand-written</b> · no critic trained
 								</p>
 							{/if}
+							<!--
+								"This bird just sang something new", as a count rather than a claim.
+								A flagged syllable is far from every known type centroid at a threshold
+								calibrated to a chosen 5 % false-positive rate (docs/09 §9.7) — that is a
+								detection, not an identification, and the line says so: the syllable stays
+								`unlabelled` (§8.5). Absent on a control process older than the scorer.
+							-->
+							{#if pipelineStatus.novelCount !== undefined}
+								<p
+									class="note faint"
+									title="Cosine distance in the critic's embedding to the nearest known type centroid, past a threshold calibrated to a chosen false-positive rate. ROC AUC 0.825 measured on species the critic never trained on (docs/09 §9.7)."
+								>
+									unheard syllables <b class="mono">{pipelineStatus.novelCount}</b>
+									{#if pipelineStatus.novelCount}
+										— real acoustics, no documented function: detecting that a sound is
+										new is not knowing what it means
+									{:else}
+										· none flagged yet
+									{/if}
+								</p>
+								{#if pipelineStatus.recentNovel?.length}
+									<dl class="facts mono">
+										{#each pipelineStatus.recentNovel as n (`${n.recordingId}/${n.order}`)}
+											<div>
+												<dt>{n.speciesId}</dt>
+												<dd>{n.typeId || 'no type yet'}</dd>
+											</div>
+										{/each}
+									</dl>
+								{/if}
+							{/if}
 						{/if}
 					</section>
 
@@ -1768,25 +1710,31 @@ uv run birdy-pipeline serve</pre>
 						-->
 						<section class="block">
 						{#if pipelineStatus.discovered?.length}
-							<h3 class="blocktitle">Discovered species</h3>
-							<p class="note faint">
-								Harvested alongside the {pipelineStatus.inventorySpecies.length} documented
-								birds. No voice until enough audio arrives to fit one.
-							</p>
-							<dl class="facts mono discovered">
-								{#each pipelineStatus.discovered as d (d.id)}
-									<div>
-										<dt title={d.scientific}>{d.common}</dt>
-										<dd class:warn={d.stage === 'waiting for audio'}>
-											{d.stage === 'fitted'
-												? `fitted · ${d.descriptors} pts`
-												: d.stage === 'collecting'
-													? `${d.descriptors} pts`
-													: `0 of ~${d.available}`}
-										</dd>
-									</div>
-								{/each}
-							</dl>
+							<details class="rollup">
+								<summary class="mono faint">
+									{pipelineStatus.discovered.length} discovered species
+								</summary>
+								<p class="note faint discovered-note">
+									Harvested alongside the {pipelineStatus.inventorySpecies.length} documented
+									birds. No voice until enough audio arrives to fit one.
+								</p>
+								<ul class="discovered">
+									{#each pipelineStatus.discovered as d (d.id)}
+										<li class:live={jobRunning && learningSpecies === d.id}>
+											<span class="disc-name">{d.common}</span>
+											<span class="disc-pts mono">{d.descriptors} pts</span>
+											<span
+												class="disc-chip"
+												class:fitted={d.stage === 'fitted'}
+												class:collecting={d.stage === 'collecting'}
+												class:waiting={d.stage === 'waiting for audio'}
+											>
+												{d.stage === 'waiting for audio' ? 'waiting' : d.stage}
+											</span>
+										</li>
+									{/each}
+								</ul>
+							</details>
 						{/if}
 						<h3 class="blocktitle">Keep learning</h3>
 							<div class="row">
@@ -1794,6 +1742,7 @@ uv run birdy-pipeline serve</pre>
 									class="primary"
 									class:on={job?.name === 'loop' && jobRunning}
 									disabled={pipelineBusy || (jobRunning && job?.name !== 'loop')}
+									title="Each pass harvests a few recordings, fits what came in, and grows the galaxy around what is already there. Runs in the control process, so closing the tab does not stop it."
 									onclick={() =>
 										runPipeline(() =>
 											job?.name === 'loop' && jobRunning
@@ -1834,12 +1783,6 @@ uv run birdy-pipeline serve</pre>
 									title="Look for this many birds xeno-canto has that the inventory does not, at the start of each pass — by default congeners of the species already modelled. 0 keeps the loop to the birds it already knows."
 								/>
 							</label>
-							<p class="note faint">
-								Each pass harvests a few recordings, fits what came in, and grows the galaxy
-								around what is already there.{loopDiscover
-									? ' It looks for new birds first, and collects whatever holds the least.'
-									: ''} Runs in the control process, so closing the tab does not stop it.
-							</p>
 						</section>
 
 						<details class="rollup block">
@@ -1899,6 +1842,7 @@ uv run birdy-pipeline serve</pre>
 								<button
 									class="primary"
 									disabled={jobRunning || pipelineBusy}
+									title="Fetched, analysed and deleted one at a time; only the measurements are kept."
 									onclick={() =>
 										runPipeline(() =>
 											pipeline.harvest({
@@ -1912,9 +1856,6 @@ uv run birdy-pipeline serve</pre>
 										)}>Harvest</button
 								>
 							</div>
-							<p class="note faint">
-								Fetched, analysed and deleted one at a time; only measurements are kept.
-							</p>
 						</section>
 
 						<section class="block">
@@ -1933,6 +1874,7 @@ uv run birdy-pipeline serve</pre>
 							<button
 								class="wide"
 								disabled={jobRunning || pipelineBusy || !pipelineStatus.store.syllables}
+								title="Fitted syllables are written next to the documented calls, never instead of them: ids start with L and carry no function."
 								onclick={() => runPipeline(() => pipeline.learn({ types: learnTypes }))}
 								>Fit syllables and syntax</button
 							>
@@ -1967,14 +1909,17 @@ uv run birdy-pipeline serve</pre>
 							{:else}
 								<p class="note faint">Nothing fitted yet. Harvest some recordings first.</p>
 							{/if}
-							<p class="note faint">
-								Written next to the documented calls, never instead of them: ids start with
-								<span class="mono">L</span> and carry no function.
-							</p>
 						</section>
 
 						<section class="block">
-							<h3 class="blocktitle">Rebuild the galaxy</h3>
+							<h3
+								class="blocktitle help"
+								title="Renders {pipelineStatus.learned.exists
+									? `${learnedTypeCount} fitted + 44 documented`
+									: '44 documented'} syllables and folds in the whole harvest. Both always."
+							>
+								Rebuild the galaxy
+							</h3>
 							<div class="segmented">
 								<button
 									class:on={buildClustering === 'kmeans'}
@@ -2004,13 +1949,13 @@ uv run birdy-pipeline serve</pre>
 									/>
 								</label>
 							{/if}
-							<p class="note faint">
-								Renders {pipelineStatus.learned.exists
-									? `${learnedTypeCount} fitted + 44 documented`
-									: '44 documented'} syllables and folds in the whole harvest. Both always.
-							</p>
 							<details class="diag">
-								<summary class="note faint">Leave one out (diagnostic)</summary>
+								<summary
+									class="note faint"
+									title="For reading a measurement, not for a galaxy to use: leaving a half out of the corpus is how you verify a figure, at the price of a galaxy that is missing it."
+								>
+									Leave one out (diagnostic)
+								</summary>
 								<div class="checks">
 									<label
 										class="check"
@@ -2029,11 +1974,11 @@ uv run birdy-pipeline serve</pre>
 										<input type="checkbox" bind:checked={buildIncludeHarvest} /> Harvested audio
 									</label>
 								</div>
-								<p class="note faint">For reading a measurement, not for a galaxy to use.</p>
 							</details>
 							<button
 								class="wide"
 								disabled={jobRunning || pipelineBusy}
+								title="Each learning pass rebuilds when the repertoire has moved on; this only forces it now. Clustering and the projection are computed over the whole corpus at once, so a syllable learned a minute ago has no position until the next build."
 								onclick={() =>
 									runPipeline(() =>
 										pipeline.build({
@@ -2044,11 +1989,7 @@ uv run birdy-pipeline serve</pre>
 										})
 									)}>Rebuild</button
 							>
-							<p class="note faint">
-								Each learning pass folds new audio in and rebuilds when the repertoire has
-								moved on. This only forces it now.
-							</p>
-						{#if pipelineStatus.built.exists}
+							{#if pipelineStatus.built.exists}
 								<dl class="facts mono">
 									<div><dt>points</dt><dd>{pipelineStatus.built.points ?? '—'}</dd></div>
 									<div><dt>clusters</dt><dd>{pipelineStatus.built.clusters ?? '—'}</dd></div>
@@ -2091,74 +2032,12 @@ uv run birdy-pipeline serve</pre>
 									</p>
 								{/if}
 							{/if}
-							<p
-								class="note faint"
-								title="Clustering and the projection are computed over the whole corpus at once, so a syllable learned a minute ago has no position until the next build."
-							>
-								{#if reloading}
-									Loading the new galaxy…
-								{:else}
-									Re-places every point at once, and swaps itself in when it finishes — no
-									reload needed.
-								{/if}
-							</p>
+							{#if reloading}
+								<p class="note faint">Loading the new galaxy…</p>
+							{/if}
 						</section>
 
 						</details>
-
-						{#if job}
-							<section class="block">
-								<h3 class="blocktitle">
-									{job.name}
-									<span class="mono faint">{job.state} · {job.seconds}s</span>
-								</h3>
-								<!--
-									One line of what is happening, not fourteen. A running job printed a
-									scrolling wall that pushed every control out of the panel, and nearly
-									all of it was the same message with a counter on the end. The newest
-									line is the answer; the rest is one click away when it is not.
-								-->
-								<p class="doing mono">{jobDoing || '…'}</p>
-								<!--
-									A running loop is the one job you watch rather than wait for: it
-									harvests, fits and grows for as long as you leave it, and the only
-									record of what it learned is what it printed. The tail is live while
-									anything is running and folds away when nothing is.
-								-->
-								{#if jobRunning}
-									<pre class="stream mono">{job.log.slice(-14).join('\n') || '…'}</pre>
-								{/if}
-								{#if learningSpecies}
-									<p class="note">
-										Working on <b style:color={speciesColourOf(learningSpecies)}
-											>{species.find((s) => s.id === learningSpecies)?.common ??
-												learningSpecies}</b
-										> — its knots are breathing in the galaxy.
-									</p>
-								{/if}
-								<details class="loglines">
-									<summary class="mono faint">full log · {job.log.length} lines</summary>
-									<pre class="joblog mono">{job.log.slice(-200).join('\n') || '…'}</pre>
-								</details>
-								{#if job.error}<p class="error note">{job.error}</p>{/if}
-								{#if jobRunning}
-									<button
-										class="wide"
-										disabled={job.state === 'stopping'}
-										onclick={() => runPipeline(() => pipeline.stop())}
-									>
-										{job.state === 'stopping' ? 'Stopping…' : 'Stop'}
-									</button>
-									<p class="note faint">
-										{#if job.name === 'build'}
-											Stops cleanly and writes nothing; the previous build stays where it is.
-										{:else}
-											Stops after the current item. Everything already done is kept.
-										{/if}
-									</p>
-								{/if}
-							</section>
-						{/if}
 					{/if}
 				{/if}
 			</div>
@@ -2215,14 +2094,16 @@ uv run birdy-pipeline serve</pre>
 
 	.hud h1 {
 		font-size: 0.95rem;
-		letter-spacing: 0.02em;
+		font-weight: 600;
+		letter-spacing: -0.01em;
 	}
 
 	.strap {
 		margin: 0;
+		font-family: var(--font-mono);
 		color: var(--ink-faint);
-		font-size: 0.66rem;
-		letter-spacing: 0.02em;
+		font-size: 0.6rem;
+		letter-spacing: 0.06em;
 	}
 
 	/* Every live figure in one strip, labelled, monospaced, tabular — an instrument
@@ -2289,7 +2170,6 @@ uv run birdy-pipeline serve</pre>
 		height: 2rem;
 		padding: 0;
 		color: var(--ink-dim);
-		box-shadow: 0 1px 6px rgba(15, 23, 42, 0.06);
 	}
 
 	.viewctl.open .viewbtn {
@@ -2341,7 +2221,6 @@ uv run birdy-pipeline serve</pre>
 		background: var(--paper-raised);
 		border: 1px solid var(--rule);
 		border-radius: var(--radius);
-		box-shadow: 0 1px 16px rgba(15, 23, 42, 0.07);
 		overflow: hidden;
 	}
 
@@ -2401,8 +2280,12 @@ uv run birdy-pipeline serve</pre>
 
 	.tabs button {
 		flex: 1;
-		padding: 0.6rem 0.3rem;
-		font-size: 0.76rem;
+		padding: 0.65rem 0.3rem 0.55rem;
+		font-size: 0.62rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.12em;
+		color: var(--ink-faint);
 		background: none;
 		border: none;
 		border-bottom: 2px solid transparent;
@@ -2410,10 +2293,13 @@ uv run birdy-pipeline serve</pre>
 		margin-bottom: -1px;
 	}
 
+	.tabs button:hover {
+		color: var(--ink-dim);
+	}
+
 	.tabs button.active {
 		color: var(--ink);
 		border-bottom-color: var(--signal);
-		font-weight: 500;
 	}
 
 	/* One rhythm for the whole panel: sections separated by a rule, a single padding
@@ -2604,10 +2490,95 @@ uv run birdy-pipeline serve</pre>
 		font-size: 0.7rem;
 	}
 
-	/* One per row rather than the two-column default: a species name plus a stage does not
-	   fit half a panel width. */
-	.facts.discovered {
-		grid-template-columns: 1fr;
+	/* The learning run, reporting in the right-hand panel while the Learn tab is up. */
+	.loopstatus {
+		display: grid;
+		gap: 0.6rem;
+		padding: 0.9rem 1rem;
+		align-content: start;
+	}
+
+	.standfirst {
+		padding: 0.9rem 1rem;
+	}
+
+	/* Discovered birds, one row each: the name, what has arrived, and how far it has got
+	   as a coloured chip rather than a sentence. The row breathes while the loop is
+	   working on that bird, so a live harvest reads as live. */
+	.discovered-note {
+		margin-top: 0.45rem;
+	}
+
+	.discovered {
+		margin: 0.3rem 0 0;
+		padding: 0;
+		list-style: none;
+		display: grid;
+		gap: 0.15rem;
+	}
+
+	.discovered li {
+		display: flex;
+		align-items: baseline;
+		gap: 0.5rem;
+		padding: 0.2rem 0.3rem;
+		border-radius: 2px;
+		border-bottom: 1px dotted var(--rule);
+	}
+
+	.disc-name {
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		font-size: 0.74rem;
+		color: var(--ink);
+	}
+
+	.disc-pts {
+		font-size: 0.64rem;
+		color: var(--ink-faint);
+	}
+
+	/* How far a discovered bird has got, as a soft tinted pill: the colour carries the
+	   stage, so no border is needed — an outlined bubble at this size reads as noise. */
+	.disc-chip {
+		font-size: 0.56rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		padding: 0.14rem 0.45rem;
+		border-radius: 999px;
+	}
+
+	.disc-chip.fitted {
+		color: var(--documented);
+		background: color-mix(in srgb, var(--documented) 9%, transparent);
+	}
+
+	.disc-chip.collecting {
+		color: var(--signal);
+		background: var(--signal-soft);
+	}
+
+	.disc-chip.waiting {
+		color: var(--invented);
+		background: color-mix(in srgb, var(--invented) 10%, transparent);
+	}
+
+	.discovered li.live {
+		animation: disc-breathe 1.6s ease-in-out infinite;
+	}
+
+	@keyframes disc-breathe {
+		0%,
+		100% {
+			background: transparent;
+		}
+		50% {
+			background: var(--signal-soft);
+		}
 	}
 
 	/* Coverage below 98 % means some types cannot be played at all, which is worth a colour
@@ -2902,6 +2873,22 @@ uv run birdy-pipeline serve</pre>
 		letter-spacing: 0.09em;
 	}
 
+	/* The steps sit inside a `.block`, so their own block padding would double the
+	   parent's. Strip the sides and let the rules between them do the separating. */
+	.rollup.block > .block {
+		padding-left: 0;
+		padding-right: 0;
+	}
+
+	.rollup.block > .block:first-of-type {
+		padding-top: 0.7rem;
+	}
+
+	/* A title whose explanation lives on hover. */
+	.blocktitle.help {
+		cursor: help;
+	}
+
 	/* The live tail of a running job. Fixed height so a chatty pass cannot push the
 	   controls out of the panel, which is what the full log used to do. */
 	.stream {
@@ -2974,7 +2961,6 @@ uv run birdy-pipeline serve</pre>
 		padding: 1.6rem;
 		display: grid;
 		gap: 0.8rem;
-		box-shadow: 0 1px 24px rgba(15, 23, 42, 0.08);
 	}
 
 	.card h1 {

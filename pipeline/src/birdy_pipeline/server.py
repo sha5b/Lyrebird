@@ -647,8 +647,11 @@ class Pipeline:
                 continue
             recent.append(
                 {
-                    "speciesId": d.get("speciesId", ""),
-                    "recordingId": d.get("recordingId", ""),
+                    # `syllables.jsonl` is `asdict(SyllableObservation)`, so its keys
+                    # are snake_case — reading camelCase here reported every flagged
+                    # syllable as an anonymous one.
+                    "speciesId": d.get("species_id", ""),
+                    "recordingId": d.get("recording_id", ""),
                     "order": int(d.get("order", 0)),
                 }
             )

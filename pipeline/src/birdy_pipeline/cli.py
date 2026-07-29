@@ -685,8 +685,12 @@ def cmd_grow(args: argparse.Namespace) -> int:
     space = manifest.get("space", "descriptor")
 
     if space == "embed":
+        # `getattr`: the control surface calls this with a hand-built Namespace that has
+        # no `critic` attribute — its grow is the one Phase 3's ingest -> grow loop runs,
+        # and an AttributeError there looked exactly like the refusal below.
         trained = load_critic(
-            args.critic or (str(DEFAULT_CRITIC) if DEFAULT_CRITIC.exists() else None)
+            getattr(args, "critic", None)
+            or (str(DEFAULT_CRITIC) if DEFAULT_CRITIC.exists() else None)
         )
         if trained is None:
             log(f"{out} was built in the critic's embedding space: its projection basis "
@@ -730,7 +734,16 @@ def cmd_grow(args: argparse.Namespace) -> int:
             song_id=[o.recording_id for o in fresh_obs],
             duration=[float(o.dur) for o in fresh_obs],
             source=[harvest.SOURCE] * len(fresh_obs),
+            # The ingest-time verdict that decides which of these points may be
+            # force-assigned to an existing knot and which must wait for a quorum of
+            # their own kind (grow.py, docs/09 §9.2b use 2).
+            novel=[bool(o.novel) for o in fresh_obs],
         )
+        # The 28-d rows ride along only so a knot founded in this space can also ship
+        # the fallback `vector` the browser's pre-embedding path reads.
+        descriptors28 = np.stack([
+            np.asarray(o.descriptor, dtype=np.float64) for o in fresh_obs
+        ])
         log(f"embedded {len(fresh)} new syllables in the critic's space")
     else:
         field = store.to_point_set()
@@ -758,12 +771,21 @@ def cmd_grow(args: argparse.Namespace) -> int:
             duration=field.duration[-take:],
             source=field.source[-take:],
         )
+        # Window-level points carry no per-syllable novelty verdict — the flag lives on
+        # syllable observations, and these are reservoir windows.
+        descriptors28 = None
     stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
     # The newest fitted repertoire rides along, so a grown point that belongs to a syllable
     # or a species the shipped inventory has never seen arrives with a voice.
     inventory_path = Path(args.inventory)
-    result = grow.extend_build(out, fresh, stamp, inventory_path=inventory_path)
+    result = grow.extend_build(
+        out, fresh, stamp, inventory_path=inventory_path, descriptors28=descriptors28
+    )
     log(f"generation {result['generation']}: {result['points']} points")
+    if result.get("founded"):
+        log(f"{len(result['founded'])} new knot(s) founded from novel syllables: "
+            "heard enough times to be a thing, still unlabelled — detecting that a "
+            "sound is new is not knowing what it means")
     if result["drift"]["unmatched"] > 0.35:
         log("more than a third of the new audio matched no existing knot — "
             "the arrangement no longer describes its own contents; rebuild")

@@ -40,7 +40,7 @@ from typing import Any, Callable, Iterable, Sequence
 import numpy as np
 from sklearn.cluster import KMeans
 
-from . import features, syrinx
+from . import density, features, syrinx
 from .syrinx import Calibration, peak_normalise, render_syllable
 
 # --- segmentation ------------------------------------------------------------------
@@ -623,6 +623,31 @@ def fit_contour_from_grid(grid: np.ndarray, hz: np.ndarray) -> list[list[float]]
     return keep
 
 
+def _median_syllable(members: Sequence[SyllableObservation], type_id: str) -> dict[str, Any]:
+    """The base syllable dict of one cluster's median: the fields every fitted type carries.
+
+    Factored out of `fit_types` so the label-free path (`learn_unlabelled`) fits its
+    candidate types with exactly this median logic rather than a copy of it. What is NOT
+    here is deliberate: the conditional AM/vibrato extras `fit_types` adds on top, and
+    everything the gesture inversion writes. A `U*` type is never inverted — there is no
+    species reference to judge it against — so its syllable is this dict and only this.
+    """
+    return {
+        "id": type_id,
+        "label": "",  # filled in once the types are ordered by pitch
+        "function": "",
+        "confidence": "unlabelled",
+        "refs": [],
+        "dur": round(float(np.median([o.dur for o in members])), 4),
+        "level": round(float(np.median([o.level for o in members])), 3),
+        "timbre": Counter(o.timbre for o in members).most_common(1)[0][0],
+        "contour": _median_contour(members),
+        "attack": round(float(np.median([o.attack for o in members])), 4),
+        "hold": bool(np.mean([o.hold for o in members]) > 0.5),
+        "harmonic": round(float(np.median([o.harmonic for o in members])), 3),
+    }
+
+
 @dataclass
 class LearnedType:
     id: str
@@ -668,23 +693,9 @@ def fit_types(
             continue
         # a type is named by rank so the ids are stable for a given corpus and seed
         t = LearnedType(id=f"L{c:02d}", members=members)
-        contour = _median_contour(members)
+        t.syllable = _median_syllable(members, t.id)
         am_depths = [o.am_depth for o in members]
         vib_depths = [o.vib_depth for o in members]
-        t.syllable = {
-            "id": t.id,
-            "label": "",  # filled in once the types are ordered by pitch
-            "function": "",
-            "confidence": "unlabelled",
-            "refs": [],
-            "dur": round(float(np.median([o.dur for o in members])), 4),
-            "level": round(float(np.median([o.level for o in members])), 3),
-            "timbre": Counter(o.timbre for o in members).most_common(1)[0][0],
-            "contour": contour,
-            "attack": round(float(np.median([o.attack for o in members])), 4),
-            "hold": bool(np.mean([o.hold for o in members]) > 0.5),
-            "harmonic": round(float(np.median([o.harmonic for o in members])), 3),
-        }
         # **The measured harmonic spectrum is deliberately NOT written into the syllable.**
         #
         # `measure_harmonics` works — validated against synthetic signals it recovers a
@@ -735,7 +746,11 @@ def _id_key(syllable: dict[str, Any]) -> tuple[float, float]:
 ID_MATCH_TOLERANCE = 0.66
 
 
-def assign_ids(types: list[LearnedType], previous: dict[str, dict[str, Any]] | None) -> None:
+def assign_ids(
+    types: list[LearnedType],
+    previous: dict[str, dict[str, Any]] | None,
+    prefix: str = "L",
+) -> None:
     """Give each fitted type an id, keeping the one it had in the previous fit.
 
     **An id that changes meaning between runs is worse than no id.** These were assigned by
@@ -753,6 +768,10 @@ def assign_ids(types: list[LearnedType], previous: dict[str, dict[str, Any]] | N
     after the highest one already used, so an id is never silently recycled onto a different
     sound. With no previous fit it falls back to numbering by rank, which is where all of
     these came from.
+
+    `prefix` is `L` for a species' learned types and `U` for the unlabelled pool's
+    candidates (`learn_unlabelled`), so the two namespaces can never collide inside one
+    inventory.
     """
     if previous:
         pairs: list[tuple[float, int, str]] = []
@@ -784,10 +803,10 @@ def assign_ids(types: list[LearnedType], previous: dict[str, dict[str, Any]] | N
         if i in assigned:
             new_id = assigned[i]
         elif previous:
-            new_id = f"L{next_free:02d}"
+            new_id = f"{prefix}{next_free:02d}"
             next_free += 1
         else:
-            new_id = f"L{i:02d}"
+            new_id = f"{prefix}{i:02d}"
         t.id = new_id
         t.syllable["id"] = new_id
         t.syllable["label"] = (
@@ -824,6 +843,10 @@ def population_frame(
 
 def _unit(v: np.ndarray) -> np.ndarray:
     return v / max(float(np.linalg.norm(v)), 1.0e-12)
+
+
+def _unit_rows(z: np.ndarray) -> np.ndarray:
+    return z / np.maximum(np.linalg.norm(z, axis=1, keepdims=True), 1.0e-12)
 
 
 def render_and_measure(
@@ -1266,6 +1289,432 @@ def learn_grammar(
     }
 
 
+# --- syntax mining: chunks ------------------------------------------------------------
+
+#: A chunk must occur at least this often to be reported at all. Three is the floor at
+#: which "repeated" means anything; anything rarer is indistinguishable from chance
+#: co-occurrence at these corpus sizes.
+CHUNK_MIN_COUNT = 3
+#: Longest chunk mined. Six syllables covers the documented cases — the chickadee's
+#: A→B→C→D ordering is four (docs/03 §3.2) — and longer exact repeats essentially do not
+#: occur in a 47k-syllable corpus.
+CHUNK_MAX_LEN = 6
+#: How many chunks a grammar carries, ranked by count. The tail past fifty is rare
+#: n-grams that say nothing the transition table does not already say.
+CHUNK_TOP = 50
+
+
+def type_sequences(
+    observations: Sequence[SyllableObservation],
+    typing: Sequence[dict[str, Any]],
+) -> list[tuple[str, list[str]]]:
+    """Per-recording type-id sequences, one per bout: `(species_id, [typeId, ...])`.
+
+    Rebuilt from the store's observations and the fit's membership rows — the same two
+    inputs `learn_grammar` sees, under the same two rules, so a chunk mined over these is
+    a chunk of the grammar's own strings: order within a recording is meaningful and
+    across recordings it is not (sequences are never concatenated), and a gap over a
+    second breaks a bout. Observations with no type id are skipped without breaking the
+    bout, exactly as `learn_grammar` skips them.
+    """
+    type_of = {
+        (e["speciesId"], e["recordingId"], int(e["order"])): str(e["typeId"])
+        for e in typing
+    }
+    by_recording: dict[tuple[str, str], list[SyllableObservation]] = defaultdict(list)
+    for o in observations:
+        by_recording[(o.species_id, o.recording_id)].append(o)
+    out: list[tuple[str, list[str]]] = []
+    for (species_id, _), items in by_recording.items():
+        items.sort(key=lambda o: o.order)
+        bout: list[str] = []
+        for o in items:
+            if o.gap_before > 1.0 and bout:
+                out.append((species_id, bout))
+                bout = []
+            tid = type_of.get((o.species_id, o.recording_id, o.order))
+            if tid is not None:
+                bout.append(tid)
+        if bout:
+            out.append((species_id, bout))
+    return out
+
+
+def mine_chunks(
+    sequences: Iterable[tuple[str, Sequence[str]]],
+    min_count: int = CHUNK_MIN_COUNT,
+) -> list[dict[str, Any]]:
+    """Repeated contiguous subsequences of type ids — the "new syllable syntaxes" deliverable.
+
+    What this is: discovered *structure with counts*. Over every typed bout (all species
+    and the unlabelled pool — see `type_sequences`), find the subsequences that recur
+    more than their own parts predict, and report them with where they were heard. What
+    it is not: meaning. A chunk says these types occur together, in this order, more
+    often than the bigram statistics of its pieces account for — the formal shape of the
+    chickadee's A→B→C→D ordering or the great tit's ABC-D composition (docs/03 §3.2),
+    with no gloss attached. Anything beyond that is playback-experiment territory, and
+    this function cannot go there.
+
+    Method. Count every n-gram up to `CHUNK_MAX_LEN`. A candidate is an n-gram with
+    n ≥ 3 (pairs are the transition table's business) and count ≥ `min_count` whose
+    pointwise mutual information against the bigram baseline is positive:
+
+        pmi(c) = log2( P(c) / ( P(x₁) · Πᵢ P(xᵢ | xᵢ₋₁) ) )
+
+    — the chunk occurs more often than chaining the bigram probabilities of its parts
+    expects: the whole is more predictable than the parts. The trigram (order-2) counts
+    are where the mining starts, because order-1 exactly cancels in this score — for a
+    bigram the ratio is identically 1. The same cancellation is what makes the
+    shuffled-sequence control score ~nothing: shuffling preserves unigram and roughly
+    bigram frequencies, so every candidate's pmi collapses to zero.
+
+    Maximality: a chunk that only ever occurs inside a longer chunk with the same count
+    is a fragment of it, not a chunk of its own, and is dropped in the longer one's
+    favour. The result is capped at `CHUNK_TOP` by count.
+
+    **Ids are species-local.** A chunk reported with two species means the two birds
+    share a pattern of rank-ordered type ids — and because ids are assigned by pitch
+    rank, at most a similar pitch-ordered structure — NOT that they share sounds. Shared
+    acoustics across species is `relations.py`'s question, asked in the embedding space.
+    """
+    counts: dict[int, Counter[tuple[str, ...]]] = {
+        n: Counter() for n in range(1, CHUNK_MAX_LEN + 1)
+    }
+    species_of: dict[tuple[str, ...], set[str]] = defaultdict(set)
+    totals = {n: 0 for n in counts}
+    for species_id, seq in sequences:
+        seq = list(seq)
+        for n in counts:
+            for i in range(len(seq) - n + 1):
+                gram = tuple(seq[i : i + n])
+                counts[n][gram] += 1
+                totals[n] += 1
+                if n >= 3:
+                    species_of[gram].add(species_id)
+
+    unigram, bigram = counts[1], counts[2]
+
+    def pmi(gram: tuple[str, ...], count: int) -> float:
+        n = len(gram)
+        p_chunk = count / max(1, totals[n])
+        p_chain = unigram[(gram[0],)] / max(1, totals[1])
+        for a, b in zip(gram, gram[1:]):
+            p_chain *= bigram[(a, b)] / max(1, unigram[(a,)])
+        return math.log2(p_chunk / max(p_chain, 1e-300))
+
+    # A fragment is a chunk that occurs exactly as often as a longer chunk containing
+    # it: every one of its occurrences is inside the longer one, so it adds nothing.
+    fragment: set[tuple[str, ...]] = set()
+    for n in range(3, CHUNK_MAX_LEN):
+        for gram, c in counts[n + 1].items():
+            if c < min_count:
+                continue
+            for i in (0, 1):
+                sub = gram[i : i + n]
+                if counts[n][sub] == c:
+                    fragment.add(sub)
+
+    chunks: list[dict[str, Any]] = []
+    for n in range(3, CHUNK_MAX_LEN + 1):
+        for gram, c in counts[n].items():
+            if c < min_count or gram in fragment:
+                continue
+            score = pmi(gram, c)
+            if score <= 0.0:
+                continue
+            chunks.append(
+                {
+                    "sequence": list(gram),
+                    "count": int(c),
+                    "species": sorted(species_of[gram]),
+                    "pmi": round(score, 3),
+                }
+            )
+    chunks.sort(key=lambda ch: (-ch["count"], ch["sequence"]))
+    return chunks[:CHUNK_TOP]
+
+
+# --- typing without a species label ---------------------------------------------------
+
+#: The species_id every browser-ingested recording arrives under (server.py
+#: `/api/ingest`), and the id of the pseudo-species the pool becomes in the learned
+#: inventory.
+UNLABELLED_SPECIES = "unlabelled"
+#: Below this many arrivals the pool is left alone. Sixteen is two min-clusters' worth —
+#: the smallest pool in which "some of this is a known sound and some is not" can both
+#: be said at once.
+UNLABELLED_MIN_OBSERVATIONS = 16
+#: Fewest arrivals of one kind that may be called a candidate type. Much lower than the
+#: galaxy's 25 (density.py): the pool is small by construction — it is what ingest
+#: brought in — and a sound heard eight times in it is past accident.
+UNLABELLED_MIN_CLUSTER = 8
+
+
+def known_type_centroids(
+    observations: Sequence[SyllableObservation],
+    typing: Sequence[dict[str, Any]],
+    embeddings: np.ndarray,
+) -> dict[str, np.ndarray]:
+    """Mean raw embedding of each fitted type, keyed `species/typeId`.
+
+    The reference set `learn_unlabelled` inherits against: one centroid per (species,
+    type) the current fit produced, in the critic's raw 32-d space — the space the
+    novelty threshold was calibrated in, so standardising here would move every distance
+    the threshold is about to judge. The key carries the species because type ids are
+    species-local (`L03` names a different sound for every bird), and the whole point of
+    the inheritance is to say *whose* type an arrival matches. Rows for the unlabelled
+    pool itself are excluded: its verdicts are what is being decided.
+    """
+    row_of = {
+        (o.species_id, o.recording_id, o.order): i for i, o in enumerate(observations)
+    }
+    members: dict[str, list[int]] = defaultdict(list)
+    for e in typing:
+        if e["speciesId"] == UNLABELLED_SPECIES:
+            continue
+        i = row_of.get((e["speciesId"], e["recordingId"], int(e["order"])))
+        if i is not None:
+            members[f"{e['speciesId']}/{e['typeId']}"].append(i)
+    z = np.asarray(embeddings, dtype=np.float64)
+    out: dict[str, np.ndarray] = {}
+    for tid, rows in members.items():
+        vecs = z[rows]
+        finite = np.all(np.isfinite(vecs), axis=1)
+        if finite.any():
+            out[tid] = vecs[finite].mean(axis=0)
+    return out
+
+
+def learn_unlabelled(
+    observations: Sequence[SyllableObservation],
+    embedder: Embedder | None,
+    novelty: Any,
+    known_types: dict[str, np.ndarray],
+    seed: int = 0,
+    previous: dict[str, dict[str, Any]] | None = None,
+) -> list[LearnedType]:
+    """Type the unlabelled pool: inherit what matches a known type, cluster the rest.
+
+    Everything else in this module is conditioned on xeno-canto's species label — typing
+    and grammar run per species, so audio that arrives without one (browser ingest stores
+    it as `unlabelled`) had no path to either. This is the label-free path, and it works
+    precisely because the critic's embedding needs no label: "which known type is this
+    nearest, and how near" and "which of these arrivals sound like each other" are both
+    distance questions in a space that was trained without being told what it would hear.
+
+    Two verdicts, kept apart because they are not equally strong:
+
+    - **Inheritance.** An arrival within the novelty threshold of a known type centroid
+      is *evidence for that type*: a `LearnedType` whose id is the qualified
+      `species/typeId` and whose syllable is empty — the type already exists, this adds
+      no new one. The threshold is the novelty scorer's own, calibrated to a chosen
+      false-positive rate (critic.py), so the verdict's error rate is known rather than
+      assumed; it is borrowed from a calibration over the scorer's own centroids, which
+      is the same kind of distance in the same space, not a re-measurement. The
+      observation's species is never relabelled: matching a sound is not identifying a
+      bird.
+    - **Candidates.** The remainder is clustered with HDBSCAN (min_cluster_size
+      `UNLABELLED_MIN_CLUSTER`) over the standardised embedding. Each dense cluster is a
+      candidate type `U00…`, fitted by the same median logic as any other type
+      (`_median_syllable`) but carrying the base fields only — there is no species
+      reference to invert or verify against, so nothing is searched and no resynthesis
+      cosine is claimed. Arrivals HDBSCAN leaves as noise stay untyped: "too rare to
+      call yet" is an answer, not a failure (density.py).
+
+    `previous` is the last fit's `U*` syllables keyed by id, so candidates keep their ids
+    across refits at the same tolerance as any species' types (`assign_ids`).
+    """
+    pool = [o for o in observations if o.species_id == UNLABELLED_SPECIES]
+    if len(pool) < UNLABELLED_MIN_OBSERVATIONS or embedder is None:
+        return []
+    z = np.asarray(embedder(pool), dtype=np.float64)
+
+    assigned = np.zeros(len(pool), dtype=bool)
+    nearest_id = [""] * len(pool)
+    if known_types and novelty is not None:
+        keys = sorted(known_types)
+        sims = _unit_rows(z) @ _unit_rows(np.stack([known_types[k] for k in keys])).T
+        best = sims.argmax(axis=1)
+        # Cosine distance against the novelty threshold — the same comparison
+        # `Novelty.distance` makes, with a type id instead of a novelty flag as the answer.
+        assigned = (1.0 - sims[np.arange(len(pool)), best]) <= novelty.threshold
+        nearest_id = [keys[i] for i in best]
+
+    types: list[LearnedType] = []
+    by_type: dict[str, list[SyllableObservation]] = defaultdict(list)
+    rest_idx: list[int] = []
+    for i, o in enumerate(pool):
+        if assigned[i]:
+            by_type[nearest_id[i]].append(o)
+        else:
+            rest_idx.append(i)
+    for tid, members in sorted(by_type.items()):
+        types.append(LearnedType(id=tid, members=members))
+
+    n_noise = len(rest_idx)
+    if len(rest_idx) >= UNLABELLED_MIN_CLUSTER:
+        rest = z[rest_idx]
+        standardised = (rest - rest.mean(axis=0)) / np.maximum(rest.std(axis=0), 1e-6)
+        result = density.cluster(standardised, min_cluster_size=UNLABELLED_MIN_CLUSTER)
+        n_noise = result.noise
+        candidates: list[LearnedType] = []
+        for c in range(result.k):
+            members = [pool[rest_idx[i]] for i in np.nonzero(result.labels == c)[0]]
+            t = LearnedType(id=f"U{c:02d}", members=members)
+            t.syllable = _median_syllable(members, t.id)
+            candidates.append(t)
+        candidates.sort(key=lambda t: syrinx.f0_reference(t.syllable["contour"]))
+        assign_ids(candidates, previous, prefix="U")
+        types.extend(candidates)
+
+    log(
+        f"  {UNLABELLED_SPECIES:26} {len(pool)} arrivals: {int(assigned.sum())} within "
+        f"the novelty threshold of {len(by_type)} known type(s), "
+        f"{sum(1 for t in types if t.syllable)} candidate type(s) from the remaining "
+        f"{len(rest_idx)}, {n_noise} unplaceable"
+    )
+    return types
+
+
+def unlabelled_entry(
+    types: Sequence[LearnedType],
+    pool: Sequence[SyllableObservation],
+    grammar: dict[str, Any],
+) -> dict[str, Any]:
+    """The pseudo-species the typed unlabelled pool becomes in the learned inventory.
+
+    Kept in the same schema as every learned species so the galaxy build, the grammar
+    and the interface treat it uniformly: one entry, id `unlabelled`, bank `learned`.
+    The `U*` syllables carry the base fields only (see `_median_syllable`) and stay
+    `unlabelled`: clustered acoustics, no documented function. The inheritance verdicts
+    travel separately under `assigned` — they are evidence *about other species' types*,
+    so they are not syllables of this one — and the summary states the numbers rather
+    than a gloss: matching a sound is not knowing what it means (§8.5).
+    """
+    candidates = [t for t in types if t.syllable]
+    inherited = [t for t in types if not t.syllable]
+    n_inherited = sum(len(t.members) for t in inherited)
+    n_clustered = sum(len(t.members) for t in candidates)
+    n_noise = len(pool) - n_inherited - n_clustered
+    return {
+        "id": UNLABELLED_SPECIES,
+        "common": "Unlabelled arrivals",
+        "scientific": "",
+        "bank": "learned",
+        "summary": (
+            f"Arrivals with no species label, typed in the critic's embedding: "
+            f"{n_inherited} of {len(pool)} syllables matched a known type within the "
+            f"novelty-calibrated threshold (evidence for that type, not an "
+            f"identification); {len(candidates)} candidate type(s) clustered from the "
+            f"remaining {n_clustered}; {n_noise} could not be placed. No documented "
+            f"function is attached to any of them."
+        ),
+        "syllables": [
+            {**t.syllable, "learned": {"members": len(t.members)}} for t in candidates
+        ],
+        "songs": [],
+        "grammar": grammar,
+        "assigned": [
+            {"type": t.id, "observations": len(t.members)}
+            for t in sorted(inherited, key=lambda t: -len(t.members))
+        ],
+    }
+
+
+def fit_unlabelled(
+    document: dict[str, Any],
+    observations: Sequence[SyllableObservation],
+    typing: list[dict[str, Any]],
+    embedder: Embedder | None,
+    novelty: Any,
+    seed: int = 0,
+    previous: dict[str, dict[str, Any]] | None = None,
+    verbose: bool = True,
+) -> dict[str, Any] | None:
+    """Run the label-free fit over a store's unlabelled pool and fold it into `document`.
+
+    The shared tail of `cmd_learn` and the control surface's fit, so the two cannot
+    drift: the pseudo-species is appended to the document, its membership rows are
+    appended to `typing` (and so land in the store's typing.json beside every other
+    fit's), and its grammar is measured by the same `learn_grammar` as any species —
+    per recording, never concatenated across recordings, because order within a
+    recording is meaningful and order across them is not.
+
+    Gated on evidence, in the order it runs out: enough arrivals to say anything
+    (`UNLABELLED_MIN_OBSERVATIONS`), an embedder to see them with, and a novelty scorer
+    to threshold inheritance with. Without the scorer the calibrated distance is missing
+    and inheritance would happen at an invented threshold, so the pool is skipped with a
+    logged reason rather than typed dishonestly. With no pool at all it returns None
+    silently — a store without arrivals is the ordinary case, not a finding.
+    """
+    pool = [o for o in observations if o.species_id == UNLABELLED_SPECIES]
+    if not pool:
+        return None
+    if len(pool) < UNLABELLED_MIN_OBSERVATIONS:
+        if verbose:
+            log(f"  {UNLABELLED_SPECIES:26} {len(pool)} arrivals — below the "
+                f"{UNLABELLED_MIN_OBSERVATIONS} needed, left untyped")
+        return None
+    if embedder is None:
+        if verbose:
+            log(f"  {UNLABELLED_SPECIES:26} {len(pool)} arrivals, but no critic is "
+                "available to embed them — label-free typing needs the learned "
+                "embedding, so the pool is left untyped")
+        return None
+    if novelty is None:
+        if verbose:
+            log(f"  {UNLABELLED_SPECIES:26} {len(pool)} arrivals, but no novelty scorer "
+                "(<critic>-novelty.json, written by `critic train`) — without the "
+                "calibrated threshold there is no honest distance to inherit at, so "
+                "the pool is left untyped")
+        return None
+
+    # One embedding pass serves both halves: the centroids of the types the per-species
+    # fit just wrote into `typing`, and (inside `learn_unlabelled`) the arrivals.
+    z_all = np.asarray(embedder(observations), dtype=np.float64)
+    known = known_type_centroids(observations, typing, z_all)
+    types = learn_unlabelled(pool, embedder, novelty, known, seed=seed, previous=previous)
+    if not types:
+        return None
+
+    index = {id(o): i for i, o in enumerate(pool)}
+    type_of = {index[id(o)]: t.id for t in types for o in t.members}
+    grammar = learn_grammar(pool, type_of)
+    typing.extend(typing_rows(types))
+    entry = unlabelled_entry(types, pool, grammar)
+    document["species"].append(entry)
+    return entry
+
+
+def attach_chunks(
+    document: dict[str, Any],
+    observations: Sequence[SyllableObservation],
+    typing: Sequence[dict[str, Any]],
+    min_count: int = CHUNK_MIN_COUNT,
+    verbose: bool = True,
+) -> list[dict[str, Any]]:
+    """Mine chunks over every typed sequence and hang them on each species' grammar.
+
+    One global mining — all species plus the unlabelled pool, because a chunk whose
+    *pattern* crosses a species boundary is exactly the thing worth reporting — then
+    each grammar carries the chunks heard in its own species under `grammar.chunks`.
+    The `start`/`transitions` schema is untouched. Returns the global chunk list.
+    """
+    if not typing:
+        return []
+    chunks = mine_chunks(type_sequences(observations, typing), min_count=min_count)
+    for sp in document.get("species", []):
+        mine = [c for c in chunks if sp["id"] in c["species"]]
+        if mine:
+            sp.setdefault("grammar", {})["chunks"] = mine
+    if verbose:
+        shared = sum(1 for c in chunks if len(c["species"]) > 1)
+        log(f"chunk mining: {len(chunks)} repeated subsequence(s) at count >= "
+            f"{min_count}, {shared} repeating across species (as id patterns — "
+            "species-local ids; see mine_chunks)")
+    return chunks
+
+
 # --- putting it together -----------------------------------------------------------
 
 
@@ -1575,9 +2024,10 @@ def learn_species(
 def previous_fit(path: Path) -> dict[str, dict[str, dict[str, Any]]]:
     """The fitted syllables of an already-written inventory, per species and keyed by id.
 
-    Only the `L`-prefixed ones: the authored syllables keep their own ids by definition and
-    a refit never touches them. Missing or unreadable file means "no previous fit", which is
-    the correct answer for a first run and the safe one for a corrupted file.
+    Only the machine-assigned ones (`L` for a species' learned types, `U` for the
+    unlabelled pool's candidates): the authored syllables keep their own ids by definition
+    and a refit never touches them. Missing or unreadable file means "no previous fit",
+    which is the correct answer for a first run and the safe one for a corrupted file.
     """
     try:
         doc = json.loads(Path(path).read_text(encoding="utf-8"))
@@ -1588,7 +2038,7 @@ def previous_fit(path: Path) -> dict[str, dict[str, dict[str, Any]]]:
         fitted = {
             syl["id"]: syl
             for syl in sp.get("syllables", [])
-            if str(syl.get("id", "")).startswith("L")
+            if str(syl.get("id", ""))[:1] in ("L", "U")
         }
         if fitted:
             out[sp["id"]] = fitted
@@ -1680,6 +2130,14 @@ def build_learned_inventory(
         if should_stop and should_stop():
             log("stopping: asked to")
             break
+        if species_id == UNLABELLED_SPECIES:
+            # Not a species: these arrived without a label, and fitting them as one would
+            # invent a bird. The label-free path (`fit_unlabelled`) types them after the
+            # per-species loop, when the known types exist to be matched against.
+            if verbose:
+                log(f"  {species_id:26} {len(grouped[species_id])} arrivals — typed by "
+                    "the label-free path, not fitted as a species")
+            continue
         learned = learn_species(
             species_id, grouped[species_id], descriptors, calibration,
             types=types, seed=seed, verbose=verbose, frame=frame, invert=invert,
@@ -1958,6 +2416,71 @@ def self_test(verbose: bool = True) -> None:
     legacy = flagged.to_dict()
     del legacy["novel"]
     assert SyllableObservation.from_dict(legacy).novel is False
+
+    # 9. `type_sequences` breaks bouts at the same one-second gap the grammar does, and
+    #    `mine_chunks` finds a planted syntax while its shuffled control does not — the
+    #    pmi filter is exactly what a shuffle collapses (see its docstring).
+    gap_obs = [
+        observation(3000.0, 0.05, species_id="s", recording_id="r", order=i)
+        for i in range(4)
+    ]
+    gap_obs[2].gap_before = 2.0
+    rows = [
+        {"speciesId": "s", "recordingId": "r", "order": i, "typeId": f"T{i}"}
+        for i in range(4)
+    ]
+    assert type_sequences(gap_obs, rows) == [("s", ["T0", "T1"]), ("s", ["T2", "T3"])]
+
+    rng = np.random.default_rng(0)
+    planted = [("sp", ["A", "B", "C", "D"]) for _ in range(6)]
+    planted += [
+        ("sp", [str(v) for v in rng.integers(10, size=5)]) for _ in range(40)
+    ]
+    chunks = mine_chunks(planted)
+    assert chunks and chunks[0]["sequence"] == ["A", "B", "C", "D"], (
+        f"planted A->B->C->D not found: {chunks[:2]}"
+    )
+    assert chunks[0]["count"] == 6 and chunks[0]["species"] == ["sp"]
+    shuffled = [("sp", list(rng.permutation(seq))) for _, seq in planted]
+    assert not any(c["sequence"] == ["A", "B", "C", "D"] for c in mine_chunks(shuffled)), (
+        "the shuffled control must not reproduce the planted chunk"
+    )
+
+    # 10. `learn_unlabelled`: an arrival near a known type centroid inherits its id as
+    #     evidence (empty syllable — the type already exists); the remainder clusters
+    #     into `U*` candidates carrying the base fields only.
+    def angle_embed(obs: Sequence[SyllableObservation]) -> np.ndarray:
+        a = np.log2([max(50.0, o.contour[0][1]) for o in obs])
+        return np.stack([np.cos(a), np.sin(a), np.zeros_like(a)], axis=1)
+
+    stub_novelty = type("StubNovelty", (), {"threshold": 0.05})()
+    known = {"sp/L00": angle_embed([observation(2000.0, 0.05)])[0]}
+    arrivals = [
+        observation(2000.0 * (1.0 + 0.002 * i), 0.05, species_id="unlabelled",
+                    recording_id=f"u{i // 4}", order=i % 4)
+        for i in range(12)
+    ]
+    arrivals += [
+        observation(9000.0 * (1.0 + 0.002 * i), 0.09, species_id="unlabelled",
+                    recording_id=f"v{i // 4}", order=i % 4)
+        for i in range(16)
+    ]
+    found = learn_unlabelled(
+        arrivals, angle_embed, stub_novelty, known, seed=0
+    )
+    inherited = [t for t in found if not t.syllable]
+    candidates = [t for t in found if t.syllable]
+    assert len(inherited) == 1 and inherited[0].id == "sp/L00", (
+        f"inheritance wrong: {[t.id for t in found]}"
+    )
+    assert len(inherited[0].members) == 12
+    assert candidates and all(t.id.startswith("U") for t in candidates), (
+        f"candidates wrong: {[t.id for t in candidates]}"
+    )
+    assert sum(len(t.members) for t in candidates) >= 14
+    assert all(t.syllable["confidence"] == "unlabelled" for t in candidates)
+    # ...and below the observation floor the pool is left alone entirely.
+    assert learn_unlabelled(arrivals[:4], angle_embed, stub_novelty, known) == []
 
     if verbose:
         print(

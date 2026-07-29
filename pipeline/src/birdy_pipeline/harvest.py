@@ -1295,10 +1295,28 @@ def self_test(verbose: bool = True) -> None:
             raise AssertionError("a lightweight store saved, which would erase the corpus")
         assert HarvestStore(Path(tmp) / "guard").syllable_count == 5, "the store was damaged"
 
+        # --- the novelty flag must survive a store save/load ---
+        #
+        # Ingest flags an unheard syllable and saves; the next grow reads the flag back
+        # to decide the point may not be force-assigned to an existing knot (docs/09
+        # §9.2b). A flag that silently loaded as False would reintroduce exactly the
+        # misassignment it exists to end.
+        flagged_store = HarvestStore(Path(tmp) / "novel")
+        heard = [obs("sp_a", "sp_a-r0", i) for i in range(3)]
+        unheard = obs("sp_a", "sp_a-r0", 3)
+        unheard.novel = True
+        flagged_store.add_syllables([*heard, unheard])
+        flagged_store.save()
+        loaded = HarvestStore(Path(tmp) / "novel")
+        assert [o.novel for o in loaded.syllables] == [False, False, False, True], (
+            f"the novel flag did not survive save/load: {[o.novel for o in loaded.syllables]}"
+        )
+
     if verbose:
         print(
             f"harvest self-test ok: cap trims per species ({len(plan)} survived), "
-            f"recordings stay whole, a lightweight store refuses to save"
+            f"recordings stay whole, a lightweight store refuses to save, "
+            f"the novel flag survives save/load"
         )
 
 

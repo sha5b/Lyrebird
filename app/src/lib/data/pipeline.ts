@@ -59,6 +59,12 @@ export interface JobStatus {
 	error: string | null;
 	cancelled: boolean;
 	log: string[];
+	/**
+	 * What a finished job had to report beyond its log. Only jobs with something to
+	 * count set it — an ingest's is `{ novel, total }`: how many of the syllables it
+	 * segmented were unlike every known type centroid (docs/09 §9.2b).
+	 */
+	result?: Record<string, unknown> | null;
 }
 
 /**
@@ -119,6 +125,22 @@ export interface PipelineStatus {
 		stage: string;
 	}[];
 	inventorySpecies: { id: string; common: string }[];
+	/**
+	 * Syllables the novelty scorer judged unlike every known type centroid, store-wide
+	 * (docs/09 §9.2b). Both absent on a control process started before novelty scoring
+	 * existed — and a flagged syllable is still `unlabelled`: detecting that a sound is
+	 * new is not knowing what it means.
+	 */
+	novelCount?: number;
+	/** The most recent flagged syllables (at most 8), newest first. */
+	recentNovel?: {
+		speciesId: string;
+		recordingId: string;
+		/** The syllable's index within its recording. */
+		order: number;
+		/** Its fitted type, if a fit has assigned one; empty otherwise. */
+		typeId?: string;
+	}[];
 	job: JobStatus | null;
 }
 

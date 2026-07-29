@@ -12,7 +12,7 @@
 		type VisualSignal
 	} from './shaders';
 	import { ACCENT, MONO_HOT, MONO_REST } from './palette';
-	import { buildLayouts, type LayoutId, type LayoutView } from './layouts';
+	import { buildLayout, type LayoutView } from './layouts';
 
 	interface Props {
 		assets: BirdyAssets;
@@ -22,9 +22,7 @@
 		focus?: number;
 		/** Multiplies the animation clock, so the pulse can be slowed down. */
 		speed?: number;
-		/** Which arrangement to show. Changing it animates the cloud into the new one. */
-		layout?: LayoutId;
-		/** Written into as the cloud rearranges, so lines and labels follow their knots. */
+		/** Written into as the cloud is placed, so lines and labels follow their knots. */
 		view: LayoutView;
 		/** The scale the whole group is drawn at, from the listening distance. */
 		spread?: number;
@@ -41,7 +39,6 @@
 		pointSize = 3,
 		focus = -1,
 		speed = 1,
-		layout = 'acoustic',
 		view,
 		spread = 1,
 		learning = []
@@ -59,8 +56,9 @@
 		THREE.DynamicDrawUsage
 	);
 
-	// `position` holds where the cloud is coming *from* and is rewritten at the start of
-	// each rearrangement; `aTarget` is where it is going. The shader interpolates.
+	// `position` and `aTarget` hold the same arrangement: the shader still interpolates
+	// between them, but with the islands layout gone there is nothing to morph to, so
+	// both are seeded with the acoustic layout and `uMorph` never leaves zero.
 	const current = untrack(() => Float32Array.from(assets.positions));
 	const target = untrack(() => Float32Array.from(assets.positions));
 	const positionAttribute = new THREE.BufferAttribute(current, 3).setUsage(
@@ -121,7 +119,9 @@
 			uHighlight: { value: -1 },
 			// Rewritten from `spread` below; the initial value only has to be sane.
 			uSizeScale: { value: SIZE_REFERENCE },
-			uMorph: { value: 1 },
+			// Never leaves zero now that there is one arrangement: the shader interpolates
+			// between `position` and `aTarget`, and both hold the same layout.
+			uMorph: { value: 0 },
 			// The generation currently arriving, and how far its arrival has run. Set from
 			// the manifest; 0 on an asset set built before growth existed, which makes the
 			// arrival a no-op because every point then shares generation 0 and starts done.
@@ -167,110 +167,22 @@
 		material.uniforms.uSizeScale.value = SIZE_REFERENCE * spread;
 	});
 
-	const layouts = untrack(() => buildLayouts(assets, buildSpeciesIndex(assets)));
+	const layout = untrack(() => buildLayout(assets));
 
 	/**
 	 * Seed the buffers from the layout, not from the raw asset.
 	 *
-	 * They were filled with `assets.positions` at construction, and the effect below only
-	 * runs when `layout` *changes* — so on first load the cloud was drawn from the raw
-	 * projection while the labels read `layouts.acoustic.centroids`. Any transform the
-	 * acoustic layout applies was silently skipped until you switched arrangement and came
-	 * back, which is both a source of drift between the marks and their tags and the
-	 * reason a display setting appeared to do nothing.
+	 * They were filled with `assets.positions` at construction, and drawing from the raw
+	 * projection while the labels read the layout's centroids let any transform the
+	 * layout applies drift the marks off their tags.
 	 */
 	untrack(() => {
-		current.set(layouts.acoustic.positions);
-		target.set(layouts.acoustic.positions);
+		current.set(layout.positions);
+		target.set(layout.positions);
 		positionAttribute.needsUpdate = true;
 		targetAttribute.needsUpdate = true;
-		view.centroids.set(layouts.acoustic.centroids);
+		view.centroids.set(layout.centroids);
 		view.version++;
-	});
-	/** Seconds a rearrangement takes. Long enough to follow a point across it. */
-	const MORPH_SECONDS = 1.5;
-	/**
-	 * The slowest per-point share of a transition, and therefore how far `uMorph` has to
-	 * travel before *every* point has arrived.
-	 *
-	 * The shader gives each point its own lead between 0.75 and 1.25 so the cloud flows
-	 * rather than sliding as one body. Driving `uMorph` only to 1 means the 0.75 points
-	 * are three quarters of the way there when the transition is declared over — and then
-	 * the settle drops them on the target in a single frame. That snap is the trail
-	 * vanishing at the end instead of arriving: the fastest quarter of the cloud lands
-	 * smoothly and the rest teleports. Running to 1/0.75 lets the slowest point finish,
-	 * with the shader's clamp holding the early ones still once they get there.
-	 */
-	const MORPH_LEAD_MIN = 0.75;
-	const MORPH_END = 1 / MORPH_LEAD_MIN;
-	let morph = 1;
-	let fromLayout: LayoutId = 'acoustic';
-	let toLayout: LayoutId = 'acoustic';
-
-	/**
-	 * Put every point exactly on its arrangement and forget the transition.
-	 *
-	 * A rearrangement is the one thing here that leaves the cloud in a state the data does
-	 * not describe: mid-morph, a point is somewhere on the line between where it was and
-	 * where it belongs. That is fine while it lasts and wrong the instant it stops, and it
-	 * showed as long radial streaks — points strung out along their own paths toward the
-	 * island layouts, which fan out from the centre — that never resolved. Landing the
-	 * buffer on the target and dropping `uMorph` back to zero means the resting state is
-	 * always a real arrangement, whatever happened during the move.
-	 */
-	/**
-	 * Where the centroids were when the current transition started.
-	 *
-	 * It cannot be `layouts[fromLayout].centroids`, and that mismatch is what pulled the
-	 * tags off their knots. Interrupting a rearrangement freezes the *points* wherever
-	 * they had got to and starts them again from there, but the centroid lerp went on
-	 * reading the layout they had left — so for the whole of the next move the labels, the
-	 * trajectory threads and the grid strikes were all interpolating from a place the
-	 * cloud was no longer at. Everything that asks "where is cluster N" reads this array,
-	 * so they only agree if it starts where the points did.
-	 */
-	const fromCentroids = untrack(() => Float32Array.from(view.centroids));
-
-	function settle(id: LayoutId) {
-		current.set(layouts[id].positions);
-		target.set(layouts[id].positions);
-		positionAttribute.needsUpdate = true;
-		targetAttribute.needsUpdate = true;
-		material.uniforms.uMorph.value = 0;
-		view.centroids.set(layouts[id].centroids);
-		fromCentroids.set(layouts[id].centroids);
-		view.version++;
-		view.morphing = false;
-		fromLayout = id;
-		toLayout = id;
-		morph = 1;
-	}
-
-	$effect(() => {
-		if (layout === toLayout) return;
-		// Freeze wherever the cloud is right now and start again from there, so
-		// interrupting a rearrangement half way does not snap. The freeze has to reproduce
-		// what the *shader* is drawing, per point: it eases the progress and then gives
-		// every point its own share of it, so reading back a single linear `morph` put the
-		// whole cloud somewhere it had never been and the interruption jumped.
-		const a = layouts[fromLayout].positions;
-		const b = layouts[toLayout].positions;
-		const m = Math.min(1, morph);
-		const eased = m * m * (3 - 2 * m) * MORPH_END;
-		for (let i = 0; i < current.length; i++) {
-			const seed = seeds[(i / 3) | 0];
-			const t = Math.min(1, eased * (MORPH_LEAD_MIN + 0.5 * seed));
-			current[i] = a[i] + (b[i] - a[i]) * t;
-		}
-		target.set(layouts[layout].positions);
-		positionAttribute.needsUpdate = true;
-		targetAttribute.needsUpdate = true;
-		material.uniforms.uMorph.value = 0;
-		// The knots restart from wherever they are on screen, exactly as the points do.
-		fromCentroids.set(view.centroids);
-		fromLayout = toLayout;
-		toLayout = layout;
-		morph = 0;
 	});
 
 	const { camera } = useThrelte();
@@ -413,33 +325,6 @@
 		fitFog(points);
 		fitWave(delta * speed);
 
-		if (morph < 1) {
-			morph = Math.min(1, morph + delta / MORPH_SECONDS);
-			if (morph >= 1) {
-				// Arrived: write the arrangement into the buffer rather than leaving the
-				// cloud described as "all the way along a transition". See `settle`.
-				settle(toLayout);
-			} else {
-				// smoothstep, so it eases out of the old arrangement and into the new one
-				const eased = morph * morph * (3 - 2 * morph);
-				u.uMorph.value = eased * MORPH_END;
-				// The centroids travel with their points, from where they actually were,
-				// **on the same extended progress the points use**.
-				//
-				// The leads average to 1, so the mean point sits at `eased * MORPH_END` —
-				// not at `eased`. Advancing the knots on the un-extended value put every
-				// label a third of a step behind its own cloud, in the direction of
-				// travel, for the whole of a rearrangement: a uniform offset that looks
-				// exactly like a systematic placement error and is one.
-				const progress = Math.min(1, eased * MORPH_END);
-				const b = layouts[toLayout].centroids;
-				for (let i = 0; i < view.centroids.length; i++) {
-					view.centroids[i] = fromCentroids[i] + (b[i] - fromCentroids[i]) * progress;
-				}
-				view.version++;
-				view.morphing = true;
-			}
-		}
 		u.uLevel.value = signal.level;
 		u.uHighlight.value = signal.best;
 		const target = u.uActivation.value as Float32Array;

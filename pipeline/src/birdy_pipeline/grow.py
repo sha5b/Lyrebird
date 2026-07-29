@@ -40,6 +40,7 @@ from __future__ import annotations
 import json
 import shutil
 import sys
+from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -421,10 +422,25 @@ def extend_build(
 
     report = drift(basis, x, cent)
     ids = assign_clusters(basis, x, cent)
+
+    # Points backed by an observation flagged `novel` at ingest are *not* force-assigned:
+    # that silent assignment to the nearest knot is exactly what the flag exists to end
+    # (docs/09 §9.2b). They join the cloud unassigned and wait in the pool below. `None`
+    # means the corpus was never scored — the window-level grow and every build path —
+    # and an unmeasured point is not a novel one.
+    novel_flags = (
+        [bool(v) for v in new.novel] if new.novel is not None else [False] * len(x)
+    )
+    if any(novel_flags):
+        ids = ids.copy()
+        ids[np.asarray(novel_flags)] = -1
     pos_new = embed(basis, x, ids)
 
     n_old = int(points["n"])
     pos_all = np.concatenate([_read_f32(out_dir / "positions.f32", 3), pos_new])
+
+    z_new = (x - basis.mean) / np.maximum(basis.std, 1.0e-6)
+    u_new = _unit_rows(z_new)
 
     # Per-point features come from the same frozen PCA the build shipped: the centroids
     # carry their own 8-d rows, so a new point's is the unit-normalised projection onto
@@ -432,9 +448,9 @@ def extend_build(
     # member of a knot identically and undo the per-point response entirely.
     lo_path = out_dir / "point-features.f32"
     lo_dims = len(items[0].get("featuresLo") or [])
+    lo_new: np.ndarray | None = None
     if lo_dims and lo_path.exists():
         lo_cent = np.asarray([c["featuresLo"] for c in items], dtype=np.float64)
-        z_new = (x - basis.mean) / np.maximum(basis.std, 1.0e-6)
         z_cent = (cent - basis.mean) / np.maximum(basis.std, 1.0e-6)
         # Least-squares map from the standardised space onto the shipped 8-d rows,
         # fitted on the centroids, which are the only paired examples the assets carry.
@@ -459,15 +475,126 @@ def extend_build(
             "generation": grown,
         }
     )
+
+    # The novel pool: this batch's unassigned points join the ones earlier grows parked,
+    # and a quorum of mutually cohesive ones founds a knot of its own. Entries carry the
+    # point's unit-normalised standardised vector so grouping needs nothing but the pool,
+    # and — when the caller handed over 28-d descriptors — the standardised 28-d row, so
+    # a knot founded in an embed-space galaxy can still ship the fallback `vector` the
+    # browser's pre-embedding path reads.
+    z28_new: np.ndarray | None = None
+    if descriptors28 is not None:
+        d28 = np.atleast_2d(np.asarray(descriptors28, dtype=np.float64))
+        if d28.shape[0] != len(x):
+            raise RuntimeError(
+                f"descriptors28 has {d28.shape[0]} rows for {len(x)} new points"
+            )
+        fs_path = out_dir / "feature-space.json"
+        if fs_path.exists():
+            fs = json.loads(fs_path.read_text(encoding="utf-8"))
+            fmean = np.asarray(fs["mean"], dtype=np.float64)
+            fstd = np.asarray(fs["std"], dtype=np.float64)
+            if fmean.size == d28.shape[1]:
+                z28_new = (d28 - fmean) / np.maximum(fstd, 1.0e-6)
+    pool = _load_pool(out_dir, points)
+    for i, flag in enumerate(novel_flags):
+        if not flag:
+            continue
+        entry: dict[str, Any] = {
+            "point": n_old + i,
+            "vector": [round(float(v), 6) for v in u_new[i]],
+        }
+        if z28_new is not None:
+            entry["vector28"] = [round(float(v), 6) for v in z28_new[i]]
+        pool.append(entry)
+
+    founded: list[int] = []
+    if pool:
+        vectors = _unit_rows(np.asarray([e["vector"] for e in pool], dtype=np.float64))
+        groups = _novel_groups(vectors)
+        consumed: set[int] = set()
+        for members, centre, cohesion in groups:
+            point_idx = [int(pool[m]["point"]) for m in members]
+            consumed.update(int(m) for m in members)
+            new_id = len(items) + len(founded)
+            for idx in point_idx:
+                points["clusterId"][idx] = new_id
+            member_pos = pos_all[np.asarray(point_idx, dtype=int)]
+            position = member_pos.mean(axis=0)
+            member_sources = Counter(points["source"][i] for i in point_idx)
+            item: dict[str, Any] = {
+                "id": new_id,
+                # "Unheard", not a name: the detector measured that this sound is far
+                # from every known type, which is all anyone knows about it (docs/09
+                # §9.2b). It stays `unlabelled` — real acoustics, no documented
+                # function (§8.5).
+                "label": "unheard syllable",
+                "speciesId": "",
+                "syllableId": "",
+                "function": "",
+                "confidence": "unlabelled",
+                "refs": [],
+                "position": [round(float(v), 6) for v in position],
+                "functionClass": "unclassified",
+                "count": len(members),
+                "meanDuration": round(
+                    float(np.mean([points["durations"][i] for i in point_idx])), 4
+                ),
+                "radius": round(
+                    float(np.mean(np.linalg.norm(member_pos - position, axis=1))), 4
+                ),
+                "cohesion": round(float(cohesion), 4),
+                "speciesMix": [
+                    {"speciesId": sp, "count": int(n)}
+                    for sp, n in Counter(
+                        points["speciesId"][i] for i in point_idx
+                    ).most_common(3)
+                    if sp
+                ],
+                "sources": {s: int(n) for s, n in member_sources.most_common()},
+            }
+            if space == "embed":
+                item["vector32"] = [round(float(v), 6) for v in centre]
+                v28 = [pool[m].get("vector28") for m in members]
+                if all(v is not None for v in v28):
+                    item["vector"] = [
+                        round(float(v), 6)
+                        for v in np.asarray(v28, dtype=np.float64).mean(axis=0)
+                    ]
+            else:
+                item["vector"] = [round(float(v), 6) for v in centre]
+            if lo_new is not None:
+                # Members that arrived in this batch have their 8-d rows in `lo_new`;
+                # older ones are already in the file that was just appended. Either
+                # way the rows exist, so the knot lights its members individually
+                # rather than not at all.
+                lo_all = _read_f32(lo_path, lo_dims)
+                item["featuresLo"] = [
+                    round(float(v), 6)
+                    for v in _unit_rows(lo_all[np.asarray(point_idx, dtype=int)].mean(axis=0, keepdims=True))[0]
+                ]
+            items.append(item)
+            founded.append(new_id)
+        pool = [e for j, e in enumerate(pool) if j not in consumed]
+        if founded and verbose:
+            print(
+                f"{len(founded)} new knot(s) founded from the novel pool: "
+                + ", ".join(f"#{i} unheard syllable" for i in founded),
+                file=sys.stderr,
+            )
+    _save_pool(out_dir, pool)
+
     (out_dir / "points.json").write_text(json.dumps(points, indent=1), encoding="utf-8")
 
     # The knots keep their centroid vectors — nothing was re-fitted — but their membership
-    # counts have changed and the app reads those.
-    added = np.bincount(ids, minlength=len(items))
-    for i, item in enumerate(items):
+    # counts have changed and the app reads those. Unassigned points (-1) belong to no
+    # knot and bump no count.
+    added = np.bincount(ids[ids >= 0], minlength=len(items))
+    for i, item in enumerate(items[: len(added)]):
         item["count"] = int(item.get("count", 0)) + int(added[i])
     (out_dir / "centroids.json").write_text(
-        json.dumps({**centroids, "items": items}, indent=1), encoding="utf-8"
+        json.dumps({**centroids, "k": len(items), "items": items}, indent=1),
+        encoding="utf-8",
     )
 
     # The inventory travels with the points, or the growth is invisible where it counts.
@@ -513,6 +640,7 @@ def extend_build(
     manifest.update(
         {
             "points": n_old + int(len(x)),
+            "clusters": len(items),
             "builtAt": stamp,
             "generation": generation,
             "grownBy": [*manifest.get("grownBy", []), {"points": int(len(x)), "drift": report}],
@@ -541,4 +669,4 @@ def extend_build(
             file=sys.stderr,
         )
     return {"added": int(len(x)), "points": n_old + int(len(x)),
-            "generation": generation, "drift": report}
+            "generation": generation, "drift": report, "founded": founded}
