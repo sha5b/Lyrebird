@@ -2249,6 +2249,9 @@ uv run birdy-pipeline serve</pre>
 		overflow-y: auto;
 		display: grid;
 		align-content: start;
+		/* Long unbroken strings — citation dois, file paths, mono ids — must wrap at the
+		   panel's edge rather than run under its `overflow: hidden` and read as cut off. */
+		overflow-wrap: break-word;
 	}
 
 	.readout .best,
@@ -2271,6 +2274,7 @@ uv run birdy-pipeline serve</pre>
 		overflow-y: auto;
 		display: grid;
 		align-content: start;
+		overflow-wrap: break-word;
 	}
 
 	.tabs {

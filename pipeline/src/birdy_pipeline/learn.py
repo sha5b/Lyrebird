@@ -1302,6 +1302,19 @@ CHUNK_MAX_LEN = 6
 #: How many chunks a grammar carries, ranked by count. The tail past fifty is rare
 #: n-grams that say nothing the transition table does not already say.
 CHUNK_TOP = 50
+#: Pseudocount added to the baseline's *expected* occurrences before the ratio is
+#: taken. A pmi built on an expectation of one or two occurrences is prior noise, not
+#: signal — under the permutation null, length-5 candidates at counts of five to eight
+#: were reporting three bits of surprise on expected counts below two. Add-four is the
+#: standard small-count guard, and measured on this store it is what returns the
+#: control's yield to zero without touching the count-~100 motifs.
+CHUNK_PSEUDOCOUNT = 4.0
+#: The evidence gate: a chunk's (smoothed) pmi must also clear its own sampling noise,
+#: not merely zero. pmi is estimated from the same counts it scores, so the best of
+#: thousands of null candidates lands positive by selection. The standard error of the
+#: estimate is ~1.44/√count bits, so pmi·√count ≥ 6 is roughly four standard errors
+#: from zero, and it sits past the permutation control's measured tail (≈ 4.6 here).
+CHUNK_MIN_EVIDENCE = 6.0
 
 
 def type_sequences(
@@ -1359,14 +1372,42 @@ def mine_chunks(
     n ≥ 3 (pairs are the transition table's business) and count ≥ `min_count` whose
     pointwise mutual information against the bigram baseline is positive:
 
-        pmi(c) = log2( P(c) / ( P(x₁) · Πᵢ P(xᵢ | xᵢ₋₁) ) )
+        pmi(c) = log2( P(c) / Σₛ wₛ · ( Pₛ(x₁) · Πᵢ Pₛ(xᵢ | xᵢ₋₁) ) )
 
     — the chunk occurs more often than chaining the bigram probabilities of its parts
-    expects: the whole is more predictable than the parts. The trigram (order-2) counts
-    are where the mining starts, because order-1 exactly cancels in this score — for a
-    bigram the ratio is identically 1. The same cancellation is what makes the
-    shuffled-sequence control score ~nothing: shuffling preserves unigram and roughly
-    bigram frequencies, so every candidate's pmi collapses to zero.
+    expects: the whole is more predictable than the parts. The ratio is taken against
+    the baseline's expected occurrences plus `CHUNK_PSEUDOCOUNT`, so a candidate whose
+    baseline expects one or two occurrences cannot report unbounded surprise. The
+    trigram (order-2) counts are where the mining starts, because order-1 exactly
+    cancels in this score — for a bigram the ratio is identically 1. The conditionals
+    are taken over bigram-*start* counts, not raw unigram counts: a bout-final token
+    starts no transition, and dividing by it anyway deflates every chain probability
+    (a third of it at the median bout length here), which inflates every pmi by the
+    same factor — the control's residue before this was measured.
+
+    **The baseline is a mixture over species, and that is load-bearing.** Ids are
+    species-local, so the pooled corpus aliases twenty-one different sounds named `L04`
+    into one token; a plain pooled bigram baseline then reports positive pmi for any
+    frequent trigram purely because species differ in their type-frequency profiles —
+    measured on this store, a per-species permutation control "found" fifty such chunks
+    at pmi up to 1.2 against the pooled baseline. Scoring each species against its own
+    chain (weighted by its share `wₛ` of the n-grams) removes the artifact.
+
+    **Runs of a single type are excluded.** `[L04, L04, L04]` is a trill, and a trill is
+    already fully expressed by the grammar's self-transition probability; the documented
+    cases this exists for — the chickadee's A→B→C→D, the great tit's ABC-D (docs/03
+    §3.2) — are sequences of *distinct* types. Measured on the 47k store, admitting
+    mono-runs puts forty-nine trill variants in the top fifty and the alternating
+    motifs below them out of sight.
+
+    The honest control: permute each species' tokens *globally* (not within bouts — a
+    three-syllable bout keeps its order by chance a third of the time, which is not a
+    null). A global permutation destroys exactly the sequential information while
+    keeping each species' marginals, so against the mixture baseline every candidate's
+    pmi collapses to ~0 — and the `CHUNK_MIN_EVIDENCE` gate, set past the control's
+    measured selection-noise tail, is what sends its yield to zero. A bare `pmi > 0`
+    was tried first and failed exactly this way: thousands of null candidates, and the
+    luckiest of them looked like structure.
 
     Maximality: a chunk that only ever occurs inside a longer chunk with the same count
     is a fragment of it, not a chunk of its own, and is dropped in the longer one's
@@ -1382,6 +1423,10 @@ def mine_chunks(
     }
     species_of: dict[tuple[str, ...], set[str]] = defaultdict(set)
     totals = {n: 0 for n in counts}
+    # Per-species unigram/bigram statistics and n-gram totals, for the mixture baseline.
+    uni_s: dict[str, Counter[tuple[str, ...]]] = defaultdict(Counter)
+    bi_s: dict[str, Counter[tuple[str, ...]]] = defaultdict(Counter)
+    tot_s: dict[str, dict[int, int]] = defaultdict(lambda: {n: 0 for n in counts})
     for species_id, seq in sequences:
         seq = list(seq)
         for n in counts:
@@ -1389,18 +1434,35 @@ def mine_chunks(
                 gram = tuple(seq[i : i + n])
                 counts[n][gram] += 1
                 totals[n] += 1
+                tot_s[species_id][n] += 1
+                if n == 1:
+                    uni_s[species_id][gram] += 1
+                elif n == 2:
+                    bi_s[species_id][gram] += 1
                 if n >= 3:
                     species_of[gram].add(species_id)
 
-    unigram, bigram = counts[1], counts[2]
+    # Occurrences of each token in a *non-final* position — the proper denominator for a
+    # transition probability (a bout-final token starts none).
+    starts_s: dict[str, Counter[str]] = defaultdict(Counter)
+    for sid, bi in bi_s.items():
+        for (a, _), c in bi.items():
+            starts_s[sid][a] += c
 
     def pmi(gram: tuple[str, ...], count: int) -> float:
         n = len(gram)
-        p_chunk = count / max(1, totals[n])
-        p_chain = unigram[(gram[0],)] / max(1, totals[1])
-        for a, b in zip(gram, gram[1:]):
-            p_chain *= bigram[(a, b)] / max(1, unigram[(a,)])
-        return math.log2(p_chunk / max(p_chain, 1e-300))
+        p_chain = 0.0
+        for sid, uni in uni_s.items():
+            weight = tot_s[sid][n] / max(1, totals[n])
+            if weight <= 0.0:
+                continue
+            starts = starts_s[sid]
+            p = starts[gram[0]] / max(1, tot_s[sid][2])
+            for a, b in zip(gram, gram[1:]):
+                p *= bi_s[sid][(a, b)] / max(1, starts[a])
+            p_chain += weight * p
+        expected = p_chain * totals[n]
+        return math.log2(count / (expected + CHUNK_PSEUDOCOUNT))
 
     # A fragment is a chunk that occurs exactly as often as a longer chunk containing
     # it: every one of its occurrences is inside the longer one, so it adds nothing.
@@ -1417,10 +1479,10 @@ def mine_chunks(
     chunks: list[dict[str, Any]] = []
     for n in range(3, CHUNK_MAX_LEN + 1):
         for gram, c in counts[n].items():
-            if c < min_count or gram in fragment:
+            if c < min_count or gram in fragment or len(set(gram)) == 1:
                 continue
             score = pmi(gram, c)
-            if score <= 0.0:
+            if score * math.sqrt(c) < CHUNK_MIN_EVIDENCE:
                 continue
             chunks.append(
                 {
@@ -2432,15 +2494,17 @@ def self_test(verbose: bool = True) -> None:
     assert type_sequences(gap_obs, rows) == [("s", ["T0", "T1"]), ("s", ["T2", "T3"])]
 
     rng = np.random.default_rng(0)
-    planted = [("sp", ["A", "B", "C", "D"]) for _ in range(6)]
+    planted = [("sp", ["A", "B", "C", "D"]) for _ in range(40)]
+    # length-2 filler: contributes unigrams and bigrams to the baseline without adding
+    # 4-gram noise of its own, so the planted chunk's pmi is legible
     planted += [
-        ("sp", [str(v) for v in rng.integers(10, size=5)]) for _ in range(40)
+        ("sp", [str(v) for v in rng.integers(10, size=2)]) for _ in range(10)
     ]
     chunks = mine_chunks(planted)
     assert chunks and chunks[0]["sequence"] == ["A", "B", "C", "D"], (
         f"planted A->B->C->D not found: {chunks[:2]}"
     )
-    assert chunks[0]["count"] == 6 and chunks[0]["species"] == ["sp"]
+    assert chunks[0]["count"] == 40 and chunks[0]["species"] == ["sp"]
     shuffled = [("sp", list(rng.permutation(seq))) for _, seq in planted]
     assert not any(c["sequence"] == ["A", "B", "C", "D"] for c in mine_chunks(shuffled)), (
         "the shuffled control must not reproduce the planted chunk"

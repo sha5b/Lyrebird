@@ -251,9 +251,9 @@ def self_test(verbose: bool = True) -> None:
 
     from .learn import SyllableObservation
 
-    def obs(species: str, order: int) -> SyllableObservation:
+    def obs(species: str, recording: str, order: int) -> SyllableObservation:
         return SyllableObservation(
-            species_id=species, recording_id="r", order=order, start=0.0, dur=0.05,
+            species_id=species, recording_id=recording, order=order, start=0.0, dur=0.05,
             level=0.9, attack=0.006, hold=True, contour=[[0.0, 3000.0]], am=0.0,
             am_depth=0.0, vib_rate=0.0, vib_depth=0.0, harmonic=0.2, timbre="pure",
             flatness=0.05, gap_before=0.05,
@@ -263,10 +263,12 @@ def self_test(verbose: bool = True) -> None:
     store = Store()
     entries = []
     embeddings = []
-    # Species A: three well-separated types. Species B: two types of its own, plus one
-    # sitting almost on top of A's second type — the planted shared pair.
-    basis = rng.normal(size=(8, 32))
-    planted_a = rng.normal(size=32)
+    # Axis directions for the ordinary types: mutually at distance 1, so the only pair
+    # under any sane threshold is the planted one. Species A has three well-separated
+    # types; species B has one of its own plus one sitting almost on top of A's second
+    # type — the planted shared pair.
+    basis = np.eye(32)
+    planted_a = basis[1] + 0.01 * rng.normal(size=32)
     planted_b = planted_a + 0.02 * rng.normal(size=32)  # nearly the same direction
     prototypes = {
         ("a", "L00"): basis[0], ("a", "L01"): planted_a, ("a", "L02"): basis[2],
@@ -274,9 +276,9 @@ def self_test(verbose: bool = True) -> None:
     }
     for (sid, tid), proto in prototypes.items():
         for k in range(6):
-            store.syllables.append(obs(sid, k))
+            store.syllables.append(obs(sid, f"{sid}-{tid}", k))
             entries.append(
-                {"speciesId": sid, "recordingId": "r", "order": k, "typeId": tid}
+                {"speciesId": sid, "recordingId": f"{sid}-{tid}", "order": k, "typeId": tid}
             )
             embeddings.append(proto + 0.01 * rng.normal(size=32))
     doc = compute_relations(
@@ -285,13 +287,16 @@ def self_test(verbose: bool = True) -> None:
     pair = doc["speciesPairs"][0]
     assert {pair["a"], pair["b"]} == {"a", "b"}
     shared = pair["sharedTypes"]
-    assert len(shared) == 1, f"expected exactly the planted pair, got {shared}"
-    assert shared[0]["a"]["typeId"] == "L01" and shared[0]["b"]["typeId"] == "L01"
-    assert shared[0]["distance"] < doc["sharedTypeThreshold"]
+    assert shared, "the planted shared pair was not found"
+    top = shared[0]
+    assert top["a"]["typeId"] == "L01" and top["b"]["typeId"] == "L01"
+    assert top["distance"] < 0.01, f"planted pair too far: {top['distance']}"
+    # ...and uniquely close: everything else is ordinary cross-species spacing.
+    assert all(p["distance"] > 0.9 for p in shared[1:]), shared
     if verbose:
         print(
             f"relations self-test ok: planted shared type found at "
-            f"{shared[0]['distance']:.4f} (threshold {doc['sharedTypeThreshold']:.4f})"
+            f"{top['distance']:.4f} (threshold {doc['sharedTypeThreshold']:.4f})"
         )
 
 

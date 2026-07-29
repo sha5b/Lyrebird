@@ -1,5 +1,5 @@
 {
- "builtAt": "2026-07-29T13:41:41+00:00",
+ "builtAt": "2026-07-29T14:05:03+00:00",
  "pipeline": "birdy-pipeline",
  "contract": "docs/08-implementation.md v1",
  "inventoryVersion": 1,
@@ -12,13 +12,17 @@
  },
  "typeCoverage": {
   "types": 401,
-  "withCluster": 398,
+  "withCluster": 394,
   "orphans": [
-   "parus_major/L02",
-   "poecile_cinctus/L09",
-   "troglodytes_troglodytes/L11"
+   "cuculus_solitarius/L37",
+   "horornis_diphone/kyo",
+   "luscinia_svecica/L52",
+   "parus_major/L03",
+   "parus_major/L38",
+   "troglodytes_troglodytes/L57",
+   "zosterops_japonicus/warbleDown"
   ],
-  "share": 0.9925
+  "share": 0.9825
  },
  "relations": {
   "definition": "per grouping: share of a point's 10 nearest neighbours sharing its label, against the same statistic over 199 label permutations. Groups under 8 points and unlabelled points are excluded; coverage says how much of the corpus was testable.",
@@ -152,10 +156,10 @@
     "groups": 28,
     "labelled": 75441,
     "coverage": 1.0,
-    "knn": 0.1995,
+    "knn": 0.1824,
     "knnNull": 0.0539,
     "knnP": 0.005,
-    "silhouette": -0.2263,
+    "silhouette": -0.2124,
     "verdict": "clear"
    },
    {
@@ -167,7 +171,7 @@
     "knn": null,
     "knnNull": null,
     "knnP": null,
-    "silhouette": 0.3428,
+    "silhouette": 0.3077,
     "verdict": "untestable (one observation per group)"
    },
    {
@@ -176,10 +180,10 @@
     "groups": 3,
     "labelled": 75441,
     "coverage": 1.0,
-    "knn": 0.8091,
-    "knnNull": 0.4986,
+    "knn": 0.807,
+    "knnNull": 0.4985,
     "knnP": 0.005,
-    "silhouette": 0.0044,
+    "silhouette": -0.0069,
     "verdict": "strong"
    },
    {
@@ -188,11 +192,11 @@
     "groups": 11,
     "labelled": 36278,
     "coverage": 0.4809,
-    "knn": 0.5451,
-    "knnNull": 0.435,
+    "knn": 0.5341,
+    "knnNull": 0.4351,
     "knnP": 0.005,
-    "silhouette": -0.2219,
-    "verdict": "clear"
+    "silhouette": -0.2621,
+    "verdict": "weak"
    },
    {
     "grouping": "sampleRate",
@@ -200,10 +204,10 @@
     "groups": 5,
     "labelled": 20016,
     "coverage": 0.2653,
-    "knn": 0.5692,
+    "knn": 0.5514,
     "knnNull": 0.4762,
     "knnP": 0.005,
-    "silhouette": -0.1652,
+    "silhouette": -0.1573,
     "verdict": "weak"
    },
    {
@@ -212,11 +216,11 @@
     "groups": 283,
     "labelled": 36636,
     "coverage": 0.4856,
-    "knn": 0.1236,
+    "knn": 0.1117,
     "knnNull": 0.0199,
     "knnP": 0.005,
-    "silhouette": -0.3675,
-    "verdict": "clear"
+    "silhouette": -0.3374,
+    "verdict": "weak"
    },
    {
     "grouping": "automatic",
@@ -224,10 +228,10 @@
     "groups": 3,
     "labelled": 20018,
     "coverage": 0.2653,
-    "knn": 0.8315,
-    "knnNull": 0.7643,
+    "knn": 0.8318,
+    "knnNull": 0.7647,
     "knnP": 0.005,
-    "silhouette": 0.0069,
+    "silhouette": -0.0176,
     "verdict": "weak"
    },
    {
@@ -236,10 +240,10 @@
     "groups": 2,
     "labelled": 36819,
     "coverage": 0.4881,
-    "knn": 0.7551,
-    "knnNull": 0.7407,
+    "knn": 0.751,
+    "knnNull": 0.7408,
     "knnP": 0.005,
-    "silhouette": 0.0124,
+    "silhouette": 0.0102,
     "verdict": "negligible"
    },
    {
@@ -248,10 +252,10 @@
     "groups": 59,
     "labelled": 36796,
     "coverage": 0.4877,
-    "knn": 0.1873,
+    "knn": 0.1746,
     "knnNull": 0.0647,
     "knnP": 0.005,
-    "silhouette": -0.2822,
+    "silhouette": -0.2824,
     "verdict": "clear"
    },
    {
@@ -260,27 +264,18 @@
     "groups": 4,
     "labelled": 20018,
     "coverage": 0.2653,
-    "knn": 0.4453,
-    "knnNull": 0.3393,
+    "knn": 0.4398,
+    "knnNull": 0.3391,
     "knnP": 0.005,
-    "silhouette": -0.0377,
+    "silhouette": -0.0386,
     "verdict": "clear"
    }
   ]
  },
- "clusterPlan": {
-  "k": 536,
-  "types": 401,
-  "unlabelledPoints": 36945,
-  "allowance": 135,
-  "wanted": 536,
-  "capped": false,
-  "cap": 1024,
-  "seededTypes": 401
- },
+ "clusterPlan": null,
  "points": 75441,
  "pointsDropped": 0,
- "clusters": 536,
+ "clusters": 1256,
  "dims": 28,
  "seed": 0,
  "projection": "cmds",
@@ -301,34 +296,34 @@
   "metric": "cosine"
  },
  "faithfulness": {
-  "pearson": 0.7664,
-  "spearman": 0.758,
+  "pearson": 0.7146,
+  "spearman": 0.705,
   "pairs": 199994,
   "definition": "correlation between 28-d cosine distance and 3D euclidean distance over random point pairs; 1.0 = distances fully meaningful"
  },
  "knnAgreement": {
   "k": 10,
-  "value": 0.5305,
+  "value": 0.5364,
   "definition": "share of a point's 3D k nearest neighbours sharing its type"
  },
  "tearing": {
-  "measured": 516,
-  "torn": 14,
-  "severe": 3,
-  "median": 2.204,
-  "worstGap": 0.498,
+  "measured": 805,
+  "torn": 2,
+  "severe": 0,
+  "median": 2.358,
+  "worstGap": 0.385,
   "definition": "clusters this projection draws in two places at once, so their centroid \u2014 where the label, the trajectory and the wave all go \u2014 lands between two blobs instead of on the points; splitting a single blob scores ~2, so 2 is the null and 'torn' counts above 5"
  },
  "projectionComparison": {
   "cmds": {
    "faithfulness": {
-    "pearson": 0.7664,
-    "spearman": 0.758,
+    "pearson": 0.7146,
+    "spearman": 0.705,
     "pairs": 199994
    },
-   "knnAgreement": 0.5305,
-   "purity": 0.5935,
-   "meanRadius": 0.7928,
+   "knnAgreement": 0.5364,
+   "purity": 0.6754,
+   "meanRadius": 0.7242,
    "params": {
     "eigenvalues": [
      194.27641610287915,
@@ -347,9 +342,9 @@
    }
   }
  },
- "clustering": "kmeans",
+ "clustering": "hdbscan",
  "kmeans": {
-  "k": 536,
+  "k": 1256,
   "nInit": 10,
   "randomState": 0,
   "inputSpace": "standardised 28-d descriptors"
@@ -426,13 +421,13 @@
    ]
   },
   "counts": {
-   "unclassified": 491,
-   "structural": 24,
-   "alarm": 8,
+   "unclassified": 1209,
+   "structural": 23,
+   "alarm": 9,
    "territorial": 7,
-   "contact": 4,
-   "recruitment": 1,
-   "courtship": 1
+   "contact": 5,
+   "courtship": 2,
+   "recruitment": 1
   }
  },
  "sourceMix": {
@@ -474,9 +469,21 @@
   0.0246,
   2.3081
  ],
- "clusterPurity": 0.5935,
- "unassigned": 0,
- "meanRadius": 0.7928,
+ "clusterPurity": 0.6754,
+ "density": {
+  "algorithm": "hdbscan",
+  "clusters": 1256,
+  "noise": 21082,
+  "noiseShare": 0.2795,
+  "anchored": 9,
+  "confirmed": 459,
+  "unknown": 781,
+  "mixed": 7,
+  "pointsGivenACandidate": 23,
+  "definition": "anchored: a dense region holding both documented renders and unlabelled field audio, so the field audio inherits a candidate identity. unknown: dense, real, and nothing documented in it \u2014 a candidate new syllable. noise: in no dense region at all."
+ },
+ "unassigned": 21082,
+ "meanRadius": 0.7242,
  "files": [
   "manifest.json",
   "inventory.json",

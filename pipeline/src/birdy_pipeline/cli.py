@@ -9,6 +9,7 @@ import math
 import os
 import sys
 import time
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -546,6 +547,42 @@ def cmd_build(
         embedding=embedding_block,
     )
 
+    # Cross-species relations (phase 4): shared/convergent types and species similarity
+    # in the critic's embedding, shipped beside the assets as `relations.json` — data
+    # only; what the app draws on top of it is the app's business. Needs the store, its
+    # typing and the stored embeddings; anything missing skips with a reason, as every
+    # learned component does.
+    if (
+        store is not None
+        and typing is not None
+        and embeddings_path is not None
+        and embeddings_path.exists()
+    ):
+        from . import relations as relations_mod
+
+        try:
+            if store_embeddings is None:
+                raw = np.frombuffer(embeddings_path.read_bytes(), dtype="<f4")
+                store_embeddings = raw.reshape(len(store.syllables), -1).astype(np.float64)
+            relations_doc = relations_mod.compute_relations(
+                store, store_embeddings, typing, inventory
+            )
+            relations_mod.write_relations(
+                out / relations_mod.RELATIONS_NAME, relations_doc
+            )
+            n_shared = sum(
+                len(p["sharedTypes"]) for p in relations_doc["speciesPairs"]
+            )
+            log(f"wrote {out / relations_mod.RELATIONS_NAME}: "
+                f"{len(relations_doc['speciesPairs'])} species pairs, "
+                f"{n_shared} shared-type candidate(s) under threshold "
+                f"{relations_doc['sharedTypeThreshold']}")
+        except Exception as exc:  # analysis, not output: a build must not fail on it
+            log(f"relations skipped: {exc}")
+    else:
+        log("relations skipped: needs the harvest store, its typing.json and "
+            "embeddings.f32 (`critic embed`)")
+
     log("")
     log(f"built {stats.n_points} points in {stats.k} clusters "
         f"({stats.n_dropped} clips dropped, {time.time() - t0:.1f}s)")
@@ -823,6 +860,11 @@ def cmd_learn(args: argparse.Namespace) -> int:
     )
 
     typing: list[dict[str, Any]] = []
+    # Inherit the ids the last fit used, so `L03` keeps naming the same sound. See
+    # `learn.assign_ids`: renumbering was why a refitted bird sang something new and lit
+    # a cluster that had been fitted to something else. Hoisted: the unlabelled pool's
+    # `U*` candidates inherit from the same document below.
+    prior = learn.previous_fit(Path(args.out))
     document = learn.build_learned_inventory(
         store.syllables,
         inventory,
@@ -837,15 +879,47 @@ def cmd_learn(args: argparse.Namespace) -> int:
         embedder=embedder,
         realism=realism,
         use_tube=args.use_tube,
-        # Inherit the ids the last fit used, so `L03` keeps naming the same sound. See
-        # `learn.assign_ids`: renumbering was why a refitted bird sang something new and lit
-        # a cluster that had been fitted to something else.
-        prior=learn.previous_fit(Path(args.out)),
+        prior=prior,
         # Where a discovered bird's common name is. Without it every species that is not in
         # the authored inventory is called by its own id everywhere in the app.
         discovered=harvest.load_discovered(DEFAULT_DISCOVERED),
         typing=typing,
     )
+
+    # --- label-free typing and syntax mining (phase 4) ---
+    #
+    # The per-species loop typed everything that carries a label. What arrived without
+    # one (browser ingest stores it as `unlabelled`) is typed now, against the types the
+    # loop just produced: inherit what matches a known type within the novelty
+    # threshold, cluster the rest into `U*` candidates. It needs the critic to see with
+    # and its novelty scorer to threshold with — both optional, every absence degrading
+    # to a logged skip, as every learned component does (§9.4).
+    novelty = None
+    if trained is not None and args.critic:
+        novelty_path = Path(args.critic).with_name(Path(args.critic).stem + "-novelty.json")
+        if novelty_path.exists():
+            from . import critic as critic_mod
+
+            novelty = critic_mod.Novelty.load(novelty_path)
+    unlabelled_embedder = embedder
+    if (
+        unlabelled_embedder is None
+        and trained is not None
+        and any(o.mel_patch is not None for o in store.syllables)
+    ):
+        # The pool's space is the critic's raw embedding regardless of how the labelled
+        # species were clustered: the novelty threshold was calibrated there.
+        unlabelled_embedder = learn.critic_embedder(trained)
+    learn.fit_unlabelled(
+        document,
+        store.syllables,
+        typing,
+        embedder=unlabelled_embedder,
+        novelty=novelty,
+        seed=args.seed,
+        previous=prior.get(learn.UNLABELLED_SPECIES),
+    )
+    learn.attach_chunks(document, store.syllables, typing)
     if not document["species"]:
         log("no species had enough observations to fit — harvest more recordings")
         return 2
@@ -872,7 +946,7 @@ def cmd_learn(args: argparse.Namespace) -> int:
         s["learned"]["resynthesisCosine"]
         for sp in document["species"]
         for s in sp["syllables"]
-        if s["learned"]["resynthesisCosine"]
+        if s.get("learned", {}).get("resynthesisCosine")
     ]
     log("")
     log(f"wrote {out}: {len(document['species'])} species, {total} learned syllable types "
@@ -882,7 +956,10 @@ def cmd_learn(args: argparse.Namespace) -> int:
         s["learned"]["nearestOwn"]
         for sp in document["species"]
         for s in sp["syllables"]
-        if s.get("learned")
+        # The unlabelled pool's `U*` candidates are never resynthesis-verified — there
+        # is no species reference to judge them against — so they carry no placement
+        # verdict and must not dilute the count.
+        if "nearestOwn" in s.get("learned", {})
     ]
     if cosines:
         log(f"resynthesis cosine to the source audio: median {np.median(cosines):.3f}, "
@@ -894,9 +971,13 @@ def cmd_learn(args: argparse.Namespace) -> int:
             " reproduced the call, whatever its pitch says.)")
     for sp in document["species"]:
         grammar = sp.get("grammar", {})
+        # The pseudo-species of unlabelled arrivals has no sampled bout — its songs list
+        # is empty on purpose (unlabelled_entry), so guard rather than assume one.
+        bout = sp["songs"][0]["sequence"] if sp.get("songs") else []
+        chunks = f", {len(grammar['chunks'])} chunks" if grammar.get("chunks") else ""
         log(f"  {sp['id']:26} {len(sp['syllables'])} types, "
-            f"{len(grammar.get('transitions', {}))} states, "
-            f"example bout {' '.join(sp['songs'][0]['sequence']) or '(none)'}")
+            f"{len(grammar.get('transitions', {}))} states{chunks}, "
+            f"example bout {' '.join(bout) or '(none)'}")
     log("")
     log("next: uv run birdy-pipeline build --inventory " + str(out) +
         " --harvest-store " + str(store.root))
@@ -1468,6 +1549,199 @@ def cmd_spacemap(args: argparse.Namespace) -> int:
             encoding="utf-8",
         )
         log(f"wrote {out}")
+    return 0
+
+
+def cmd_relations(args: argparse.Namespace) -> int:
+    """Cross-species relations from a store's typing and embeddings (relations.py).
+
+    The standalone form of what `build` ships into the assets as `relations.json`:
+    shared/convergent type candidates and the species similarity matrix, both in the
+    critic's 32-d space. The three files it needs are the three the learning loop
+    already writes — the store, its typing.json (`learn`) and its embeddings.f32
+    (`critic embed`) — and each absence says which command produces it.
+    """
+    from . import relations as relations_mod
+
+    store = harvest.HarvestStore(Path(args.store))
+    if not store.syllables:
+        log(f"{store.root} holds no syllable observations — run `harvest` first")
+        return 2
+    typing_path = Path(args.store) / learn.TYPING_NAME
+    if not typing_path.exists():
+        log(f"no {typing_path} — run `learn` first; relations are between types")
+        return 2
+    emb_path = (
+        Path(args.embeddings) if args.embeddings else Path(args.store) / EMBEDDINGS_NAME
+    )
+    if not emb_path.exists():
+        log(f"no embeddings at {emb_path} — run `birdy-pipeline critic embed "
+            f"--store {args.store}` first; relations live in the critic's space")
+        return 2
+    relations_mod.self_test(verbose=False)
+
+    t0 = time.time()
+    typing = json.loads(typing_path.read_text(encoding="utf-8"))
+    emb = np.frombuffer(emb_path.read_bytes(), dtype="<f4").reshape(
+        len(store.syllables), -1
+    ).astype(np.float64)
+    inventory = load_inventory(Path(args.inventory)) if args.inventory else None
+    document = relations_mod.compute_relations(store, emb, typing, inventory)
+
+    pairs = document["speciesPairs"]
+    n_shared = sum(len(p["sharedTypes"]) for p in pairs)
+    log(f"{len(pairs)} species pairs, {n_shared} shared-type candidate(s) under "
+        f"threshold {document['sharedTypeThreshold']} ({time.time() - t0:.1f}s)")
+    log("nearest species pairs:")
+    for p in pairs[:12]:
+        log(f"  {p['a']:26} {p['b']:26} {p['distance']:.3f} "
+            f"(centroid {p['centroidDistance']:.3f}, 1-NN "
+            f"{p['nearestNeighbourDistance'] if p['nearestNeighbourDistance'] is not None else 'n/a'}"
+            f") shared {len(p['sharedTypes'])}")
+    if args.out:
+        relations_mod.write_relations(Path(args.out), document)
+        log(f"wrote {args.out}")
+    return 0
+
+
+def expand_targets(
+    store: harvest.HarvestStore,
+    discovered: list[dict[str, Any]],
+) -> list[tuple[dict[str, Any], str]]:
+    """Discovered species the store does not cover, ranked, each with its reason.
+
+    Coverage is checked against both halves of the store — the descriptor strata and
+    the syllable observations — because they are populated separately and either one
+    alone can miss a species the other holds.
+
+    Ranking: congeners of high-novelty species first. A genus whose collected members
+    keep producing syllables the novelty scorer flags as unheard is a genus the corpus
+    under-describes, so its uncollected members are the most promising place to look
+    next. With no novelty flags at all the order falls back to the registry's own
+    (most-recorded first, as discovered).
+    """
+    covered = set(store.strata) | {o.species_id for o in store.syllables}
+    novelty: Counter[str] = Counter(o.species_id for o in store.syllables if o.novel)
+    genus_novelty: Counter[str] = Counter()
+    for species_id, n in novelty.items():
+        genus_novelty[species_id.split("_")[0]] += n
+    ranked: list[tuple[dict[str, Any], str, int]] = []
+    for e in discovered:
+        if e["id"] in covered:
+            continue
+        genus = (e.get("scientific", "").split() or [""])[0].lower()
+        n = genus_novelty.get(genus, 0)
+        reason = (
+            f"congener of high-novelty {genus} ({n} flagged syllable(s))"
+            if n
+            else "no store coverage"
+        )
+        ranked.append((e, reason, n))
+    ranked.sort(key=lambda t: (-t[2], -int(t[0].get("recordings", 0)), t[0]["id"]))
+    return [(e, reason) for e, reason, _ in ranked]
+
+
+def cmd_expand(
+    args: argparse.Namespace, should_stop: Callable[[], bool] | None = None
+) -> int:
+    """Grow the corpus outward: harvest discovered species the store does not cover.
+
+    Target selection is the only new logic (`expand_targets`); everything after it is
+    the existing path run per target: harvest the species, re-embed the store, refit
+    (id inheritance on, so the refit renames nothing), grow the galaxy. Bounded by
+    --max-species and --max-recordings because xeno-canto is rate-limited; the client
+    pauses between requests exactly as `harvest` does. `--dry-run` prints the ranked
+    target list and touches nothing — no network, no writes.
+    """
+    store = harvest.HarvestStore(Path(args.store))
+    discovered = harvest.load_discovered(Path(args.discovered))
+    if not discovered:
+        log(f"no discovered species in {args.discovered} — nothing to expand towards; "
+            "run `harvest --discover` first")
+        return 2
+    ranked = expand_targets(store, discovered)
+    if not ranked:
+        log(f"all {len(discovered)} discovered species already have store coverage — "
+            "nothing to expand towards")
+        return 0
+    chosen = ranked[: max(0, args.max_species)]
+    log(f"{len(ranked)} discovered species without store coverage; {len(chosen)} "
+        f"selected (--max-species {args.max_species}, --max-recordings "
+        f"{args.max_recordings}):")
+    for e, reason in chosen:
+        log(f"  {e['id']:28} {e.get('common', '')[:30]:30} {reason}")
+    if args.dry_run:
+        log("dry run: nothing fetched, nothing written")
+        return 0
+
+    key = args.xc_key or os.environ.get("XC_API_KEY", "")
+    try:
+        client = harvest.XenoCanto(key, pause=args.pause)
+    except RuntimeError as exc:
+        log(str(exc))
+        return 2
+
+    critic_arg = args.critic or (str(DEFAULT_CRITIC) if DEFAULT_CRITIC.exists() else None)
+    for e, _ in chosen:
+        sid = e["id"]
+        if should_stop and should_stop():
+            log("stopping: asked to")
+            break
+        log(f"--- expand {sid}: harvesting ---")
+        targets = harvest.species_queries(
+            {"species": []}, quality=args.quality, extra=[e]
+        )
+        if not targets:
+            log(f"  no xeno-canto query for {sid} "
+                f"(scientific {e.get('scientific')!r}); skipped")
+            continue
+        report = harvest.harvest_xeno_canto(
+            store, client, targets,
+            per_species=args.max_recordings,
+            should_stop=should_stop,
+        )
+        store.save()
+        log(harvest.format_report(report, store))
+
+        if critic_arg:
+            log(f"--- expand {sid}: embedding the store ---")
+            try:
+                cmd_critic_embed(build_parser().parse_args(
+                    ["critic", "embed", "--store", str(args.store),
+                     "--critic", critic_arg]
+                    + (["--cpu"] if args.cpu else [])
+                ))
+            except Exception as exc:
+                log(f"  embed skipped: {exc}")
+
+        log(f"--- expand {sid}: fitting ---")
+        learn_argv = [
+            "learn", "--store", str(args.store), "--out", str(args.learned),
+            "--inventory", str(args.inventory),
+            "--calibration-dir", str(args.calibration_dir),
+            "--seed", str(args.seed),
+        ]
+        if critic_arg:
+            learn_argv += ["--critic", critic_arg, "--embed-typing"]
+        if args.cpu:
+            learn_argv += ["--cpu"]
+        code = cmd_learn(build_parser().parse_args(learn_argv))
+        if code != 0:
+            log(f"  fit exited {code}; not growing the galaxy for {sid}")
+            continue
+
+        log(f"--- expand {sid}: growing the galaxy ---")
+        try:
+            grow_argv = [
+                "grow", "--out", str(args.out),
+                "--harvest-store", str(args.store),
+                "--inventory", str(args.learned),
+            ]
+            if critic_arg:
+                grow_argv += ["--critic", critic_arg]
+            cmd_grow(build_parser().parse_args(grow_argv))
+        except Exception as exc:
+            log(f"  grow skipped: {exc}")
     return 0
 
 
@@ -2123,6 +2397,56 @@ def build_parser() -> argparse.ArgumentParser:
                     help="also write the map and its quality gate as JSON here")
     sm.add_argument("--seed", type=int, default=0)
     sm.set_defaults(func=cmd_spacemap)
+
+    rel = sub.add_parser(
+        "relations",
+        help="cross-species relations: shared/convergent syllable types and species "
+             "similarity in the critic's embedding (relations.py, phase 4)",
+    )
+    rel.add_argument("--store", default=str(DEFAULT_HARVEST_STORE))
+    rel.add_argument("--embeddings", default=None,
+                     help="embedding matrix (default: <store>/%s)" % EMBEDDINGS_NAME)
+    rel.add_argument("--inventory", default=str(DEFAULT_LEARNED_INVENTORY),
+                     help="consulted for common names only")
+    rel.add_argument("--out", default=None,
+                     help="where to write relations.json (default: print a summary only)")
+    rel.set_defaults(func=cmd_relations)
+
+    xp = sub.add_parser(
+        "expand",
+        help="grow the corpus outward: harvest discovered species the store does not "
+             "cover, then embed, learn and grow (phase 4)",
+    )
+    xp.add_argument("--store", default=str(DEFAULT_HARVEST_STORE))
+    xp.add_argument("--discovered", default=str(DEFAULT_DISCOVERED),
+                    help="the registry `harvest --discover` writes")
+    xp.add_argument("--max-species", type=int, default=2,
+                    help="how many uncovered species to collect per run "
+                         "(default %(default)s)")
+    xp.add_argument("--max-recordings", type=int, default=20,
+                    help="recordings per target species; xeno-canto is rate-limited "
+                         "(default %(default)s)")
+    xp.add_argument("--quality", default="A", help="xeno-canto quality filter")
+    xp.add_argument("--dry-run", action="store_true",
+                    help="print the ranked target list and do nothing else — no "
+                         "network, no writes")
+    xp.add_argument("--out", default=str(DEFAULT_OUT), help="built assets to grow")
+    xp.add_argument("--learned", default=str(DEFAULT_LEARNED_INVENTORY),
+                    help="where the refit inventory is written")
+    xp.add_argument("--inventory", default=str(DEFAULT_INVENTORY))
+    xp.add_argument("--calibration-dir", default=str(DEFAULT_OUT),
+                    help="where syrinx-calibration.json lives")
+    xp.add_argument("--critic", default=None,
+                    help="trained critic for the embed/learn steps (default: "
+                         "out/critic.pt when it exists)")
+    xp.add_argument("--xc-key", default=None,
+                    help="xeno-canto v3 API key (or set XC_API_KEY)")
+    xp.add_argument("--pause", type=float, default=harvest.XC_PAGE_PAUSE,
+                    help="seconds between requests; the service rate-limits")
+    xp.add_argument("--seed", type=int, default=0)
+    xp.add_argument("--cpu", action="store_true",
+                    help="run the critic on the CPU even where a GPU is available")
+    xp.set_defaults(func=cmd_expand)
 
     pl = sub.add_parser(
         "placement",

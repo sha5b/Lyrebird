@@ -416,6 +416,7 @@ class Pipeline:
         )
 
         typing: list[dict[str, Any]] = []
+        prior = learn.previous_fit(self.learned_path)
         document = learn.build_learned_inventory(
             store.syllables,
             inventory,
@@ -429,13 +430,35 @@ class Pipeline:
             invert=invert,
             # So a refit keeps the ids the last one used. Without this every pass renamed
             # every learned syllable and the galaxy's labels stopped meaning anything.
-            prior=learn.previous_fit(self.learned_path),
+            prior=prior,
             embedder=embedder,
             realism=realism,
             # Where a discovered bird's common name is; see `build_learned_inventory`.
             discovered=harvest.load_discovered(self.discovered_path),
             typing=typing,
         )
+        # The label-free tail, identical to `cmd_learn`'s — this is the fit the ingested
+        # (unlabelled) audio actually arrives through, so it must not drift from the
+        # command-line one: same inheritance, same candidates, same chunks. The novelty
+        # scorer is the one ingest already uses; with no scorer the pool is skipped with
+        # a logged reason rather than typed at an invented threshold.
+        scorer = self._novelty_scorer()
+        unlabelled_embedder = embedder
+        if (
+            unlabelled_embedder is None
+            and scorer is not None
+            and any(o.mel_patch is not None for o in store.syllables)
+        ):
+            unlabelled_embedder = learn.critic_embedder(scorer[0])
+        learn.fit_unlabelled(
+            document,
+            store.syllables,
+            typing,
+            embedder=unlabelled_embedder,
+            novelty=scorer[1] if scorer else None,
+            previous=prior.get(learn.UNLABELLED_SPECIES),
+        )
+        learn.attach_chunks(document, store.syllables, typing)
         if not document["species"]:
             raise RuntimeError("no species had enough observations to fit")
         learn.write_learned_inventory(
@@ -967,6 +990,44 @@ class Pipeline:
 
         return self.start("grow", "adding new audio to the galaxy", run)
 
+    def expand(self, body: dict[str, Any]) -> dict[str, Any]:
+        """Collect discovered species the store does not cover yet — the loop, widened.
+
+        Orchestration only: the target list comes from `cli.expand_targets` and each
+        target goes through the same harvest → embed → learn → grow path the
+        command-line `expand` runs. A dry run lists the targets without touching the
+        network.
+        """
+        max_species = int(body.get("maxSpecies", 2))
+        max_recordings = int(body.get("maxRecordings", 20))
+        dry_run = bool(body.get("dryRun"))
+
+        def run(job: Job) -> None:
+            from .cli import build_parser, cmd_expand
+
+            argv = [
+                "expand",
+                "--store", str(self.store_path),
+                "--discovered", str(self.discovered_path),
+                "--max-species", str(max_species),
+                "--max-recordings", str(max_recordings),
+                "--out", str(self.out_path),
+                "--learned", str(self.learned_path),
+                "--inventory", str(self.inventory_path),
+            ]
+            if self.critic_path:
+                argv += ["--critic", str(self.critic_path)]
+            if dry_run:
+                argv.append("--dry-run")
+            code = cmd_expand(
+                build_parser().parse_args(argv), should_stop=lambda: job.cancelled
+            )
+            if code != 0:
+                raise RuntimeError(f"expand exited {code}")
+
+        detail = f"up to {max_species} new species, {max_recordings} recordings each"
+        return self.start("expand", detail + (" (dry run)" if dry_run else ""), run)
+
     def build(self, body: dict[str, Any]) -> dict[str, Any]:
         # Both default to on, because the corpus is one accumulating thing: the rendered
         # repertoire is the frame that names everything, and the harvest is what fills it in.
@@ -1084,6 +1145,7 @@ def make_handler(pipeline: Pipeline) -> type[BaseHTTPRequestHandler]:
                 "/api/harvest": pipeline.harvest,
                 "/api/learn": pipeline.learn,
                 "/api/build": pipeline.build,
+                "/api/expand": pipeline.expand,
             }
             for path, fn in routes.items():
                 if self.path.startswith(path):
