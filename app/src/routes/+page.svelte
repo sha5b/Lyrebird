@@ -988,6 +988,8 @@
 	/** From the loaded manifest, so both describe the galaxy currently on screen. */
 	const coverage = $derived(assets?.manifest?.typeCoverage ?? null);
 	const relationHeadline = $derived(assets?.manifest?.relations?.headline ?? '');
+	/** New species to look for at the start of each learning pass. 0 is off. */
+	let loopDiscover = $state(0);
 	let buildUseLearned = $state(true);
 	let buildIncludeHarvest = $state(true);
 	/** Which audio the build renders from; the server has taken this since it existed. */
@@ -1239,7 +1241,8 @@ uv run birdy-pipeline build</pre>
 				landing it is furniture.
 			-->
 			<FitMonitor
-				show={fitMonitorOpen && fitLines.length > 0}
+				show={fitMonitorOpen && (jobRunning || fitLines.length > 0)}
+				running={jobRunning}
 				log={job?.log ?? []}
 				jobName={job?.name ?? ''}
 				doing={jobDoing}
@@ -1860,7 +1863,11 @@ uv run birdy-pipeline serve</pre>
 										runPipeline(() =>
 											job?.name === 'loop' && jobRunning
 												? pipeline.stop()
-												: pipeline.loop({ perSpecies: loopPerPass, types: learnTypes })
+												: pipeline.loop({
+											perSpecies: loopPerPass,
+											types: learnTypes,
+											discover: loopDiscover
+										})
 										)}
 								>
 									{job?.name === 'loop' && jobRunning ? 'Stop learning' : 'Start learning'}
@@ -1879,10 +1886,24 @@ uv run birdy-pipeline serve</pre>
 									title="Recordings per species per pass. Small on purpose — a long harvest and one enormous rebuild is the discontinuity growing exists to remove."
 								/>
 							</label>
+							<label class="field">
+								<span class="lbl">
+									New species per pass <b class="mono">{loopDiscover}</b>
+								</span>
+								<input
+									type="range"
+									min="0"
+									max="6"
+									step="1"
+									bind:value={loopDiscover}
+									title="Look for this many birds xeno-canto has that the inventory does not, at the start of each pass — by default congeners of the species already modelled. 0 keeps the loop to the birds it already knows."
+								/>
+							</label>
 							<p class="note faint">
 								Each pass harvests a few recordings, fits what came in, and grows the galaxy
-								around what is already there. Runs in the control process, so closing the tab
-								does not stop it.
+								around what is already there.{loopDiscover
+									? ' It looks for new birds first, and collects whatever holds the least.'
+									: ''} Runs in the control process, so closing the tab does not stop it.
 							</p>
 						</section>
 

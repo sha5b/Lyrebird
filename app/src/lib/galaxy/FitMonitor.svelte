@@ -46,12 +46,43 @@
 		jobName?: string;
 		/** The line the pipeline printed most recently, when it is not a `FIT` line. */
 		doing?: string;
+		/**
+		 * Whether a job is running at all, so a build can report progress here too.
+		 *
+		 * A build emits no `FIT` lines — it is a global re-fit, not a per-type search — so this
+		 * panel used to sit empty for the two minutes it takes and got gated off entirely. Empty
+		 * was the right call; *absent* is not, because a rebuild is the longest thing the
+		 * pipeline does and the picture it will replace looks identical until the moment it
+		 * changes. What can honestly be shown is the phase and, where the log carries a counter,
+		 * how far through that phase it is. Not arriving nodes: during a build every point moves
+		 * and none of the intermediate positions exist.
+		 */
+		running?: boolean;
 		/** Common name lookup, so a row names a bird rather than a genus id. */
 		commonOf?: (speciesId: string) => string;
 		onclose?: () => void;
 	}
 
-	let { log, show = true, jobName = '', doing = '', commonOf, onclose }: Props = $props();
+	let {
+		log,
+		show = true,
+		jobName = '',
+		doing = '',
+		running = false,
+		commonOf,
+		onclose
+	}: Props = $props();
+
+	/** `  descriptors 1200/4224` and friends — the only counters the build log carries. */
+	const PROGRESS = /(\d+)\s*\/\s*(\d+)/;
+	const progress = $derived.by(() => {
+		const m = PROGRESS.exec(doing ?? '');
+		if (!m) return null;
+		const done = Number(m[1]);
+		const total = Number(m[2]);
+		if (!total || done > total) return null;
+		return { done, total, share: done / total };
+	});
 
 	const FIT_LINE =
 		/^\s*FIT (\S+) (\S+) f0=([\d.]+) dur=([\d.]+) cos=(-?[\d.]+) rival=(-?[\d.]+) own=([01]) f0err=([\d.]+) members=(\d+)/;
@@ -94,9 +125,14 @@
 			<!-- The separators are inside the expression because Svelte trims the leading
 			     whitespace of a text node, which turned "loop · Siberian jay" into "loop·". -->
 			<span class="what">{jobName || 'fitting'}{current ? ` · ${current}` : ''}</span>
-			<span class="tally mono">
-				{fits.length} types{#if lost}<span class="warn">{` · ${lost} lost`}</span>{/if}
-			</span>
+			{#if fits.length}
+				<span class="tally mono">
+					{fits.length} types{#if lost}<span class="warn">{` · ${lost} lost`}</span>{/if}
+				</span>
+			{:else if progress}
+				<!-- The counter itself, since the bar below has no numbers on it. -->
+				<span class="tally mono">{progress.done}/{progress.total}</span>
+			{/if}
 			{#if onclose}
 				<button class="x" onclick={onclose} aria-label="Hide the fit monitor">×</button>
 			{/if}
@@ -126,8 +162,13 @@
 				its best rival. Rule past the fill means it sounds more like another of this
 				bird's calls — the fit reached the pitch and missed the timbre.
 			</p>
-		{:else}
-			<p class="waiting mono">{doing || 'waiting for the first fitted type…'}</p>
+		{:else if running}
+			<p class="waiting mono">{doing || 'starting…'}</p>
+			{#if progress}
+				<span class="progress" style="--share: {(progress.share * 100).toFixed(1)}%">
+					<span class="progressfill"></span>
+				</span>
+			{/if}
 		{/if}
 	</div>
 {/if}
@@ -260,6 +301,23 @@
 
 	.row.lost .id {
 		color: var(--invented);
+	}
+
+	/* One bar, because the build log's counters are the only honest measure of how far it has
+	   got — phases have no comparable duration and a spinner would be a guess. */
+	.progress {
+		position: relative;
+		display: block;
+		height: 0.35rem;
+		background: color-mix(in srgb, var(--rule) 55%, transparent);
+	}
+
+	.progressfill {
+		position: absolute;
+		inset: 0 auto 0 0;
+		width: var(--share);
+		background: color-mix(in srgb, var(--signal) 72%, transparent);
+		transition: width 240ms linear;
 	}
 
 	.legend,

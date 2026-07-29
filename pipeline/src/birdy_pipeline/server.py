@@ -286,9 +286,7 @@ class Pipeline:
                 # the whole point of the registry, and a loop that ignored it would keep
                 # harvesting twelve birds while the file said fifteen.
                 targets = harvest.species_queries(
-                    load_inventory(self.inventory_path),
-                    quality=quality,
-                    extra=harvest.load_discovered(self.discovered_path),
+                    inventory, quality=quality, extra=registry
                 )
                 if species:
                     targets = [t for t in targets if t[0] == species]
@@ -407,6 +405,9 @@ class Pipeline:
         passes = int(body.get("passes", 0))  # 0 = until stopped
         max_length = float(body.get("maxLength", harvest.DEFAULT_MAX_LENGTH_SECONDS))
         clean_only = bool(body.get("cleanOnly"))
+        # Species to look for at the start of each pass. 0 keeps the loop to the birds it
+        # already knows, which is what it did before this existed.
+        discover = int(body.get("discover", 0))
 
         def run(job: Job) -> None:
             from .cli import cmd_grow
@@ -414,16 +415,53 @@ class Pipeline:
             done = 0
             while not job.cancelled and (passes <= 0 or done < passes):
                 done += 1
-                harvest.log(f"--- pass {done}: harvesting ---")
                 store = harvest.HarvestStore(self.store_path, cap=cap)
                 key = os.environ.get("XC_API_KEY", "")
+                inventory = load_inventory(self.inventory_path)
+                registry = harvest.load_discovered(self.discovered_path)
+
+                # **Learning now looks for birds as well as for calls.**
+                #
+                # Discovery was a separate command run by hand, so a loop left going for an hour
+                # deepened twelve repertoires and never widened the corpus — which is not what
+                # anyone means by "keep learning". The sweep asks xeno-canto what else it holds in
+                # the genera already modelled, adds what it finds to the registry, and from that
+                # moment the same pass harvests it: `species_queries` unions the registry in, and
+                # the least-collected-first ordering puts a bird holding nothing at the front of
+                # the queue rather than behind twelve that hold two thousand each.
+                if discover > 0:
+                    harvest.log(f"--- pass {done}: looking for new species ---")
+                    try:
+                        found = harvest.discover_species(
+                            harvest.XenoCanto(key),
+                            known={sp["id"] for sp in inventory.get("species", [])}
+                            | {e["id"] for e in registry},
+                            limit=discover,
+                            genera=sorted(
+                                {sp["scientific"].split()[0]
+                                 for sp in inventory.get("species", [])
+                                 if sp.get("scientific")}
+                            ),
+                            max_pages=int(body.get("discoverPages", 2)),
+                        )
+                        if found:
+                            registry = [*registry, *found]
+                            harvest.save_discovered(self.discovered_path, registry)
+                            harvest.log(
+                                f"  {len(found)} new species added; {len(registry)} discovered "
+                                "in total"
+                            )
+                        else:
+                            harvest.log("  nothing new in those genera")
+                    except Exception as err:
+                        harvest.log(f"discovery skipped: {err}")
+
+                harvest.log(f"--- pass {done}: harvesting ---")
                 # Discovered species are collected exactly like the authored ones — that is
                 # the whole point of the registry, and a loop that ignored it would keep
                 # harvesting twelve birds while the file said fifteen.
                 targets = harvest.species_queries(
-                    load_inventory(self.inventory_path),
-                    quality=quality,
-                    extra=harvest.load_discovered(self.discovered_path),
+                    inventory, quality=quality, extra=registry
                 )
                 report = harvest.harvest_xeno_canto(
                     store, harvest.XenoCanto(key), targets, per_species=per_pass,
@@ -481,8 +519,15 @@ class Pipeline:
                         f"{unmatched:.0%} of the new audio matched no existing knot "
                         f"(over {rebuild_at:.0%})"
                     )
-                elif self._inventory_newer_than_build():
-                    reason = "the fitted inventory is newer than the galaxy built from it"
+                else:
+                    missing = self._unbuilt_types()
+                    if missing:
+                        reason = (
+                            f"{len(missing)} fitted type(s) have no cluster to sit in "
+                            f"({', '.join(missing[:3])}"
+                            + (", …" if len(missing) > 3 else "")
+                            + ")"
+                        )
                 if reason:
                     harvest.log(f"--- pass {done}: {reason} — rebuilding ---")
                     try:
@@ -507,7 +552,10 @@ class Pipeline:
                     f"across {learned['species']} species, galaxy {self._galaxy_size()} points"
                 )
 
-        detail = f"{per_pass} per species per pass, rebuild past {rebuild_at:.0%} drift"
+        detail = (
+            f"{per_pass} per species per pass, rebuild past {rebuild_at:.0%} drift"
+            + (f", +{discover} new species per pass" if discover else "")
+        )
         return self.start("loop", detail, run)
 
     def _learned_counts(self) -> dict[str, int]:
@@ -558,30 +606,45 @@ class Pipeline:
         except Exception:
             return None
 
-    def _inventory_newer_than_build(self) -> bool:
-        """Has `learn` written a repertoire the built galaxy has never seen?
+    def _unbuilt_types(self) -> list[str]:
+        """Fitted types the built galaxy has no cluster for — the honest reason to rebuild.
 
-        The build stamps the mtime of the inventory it read into `inventorySource`, so this
-        is a straight comparison against the file on disk now. It is the honest trigger for
-        a rebuild in the steady state: the harvest store fills up and stops growing, every
-        pass refits the same 20000 descriptors into a slightly different set of types, and
-        the only thing that changes is the inventory. Without this the loop would harvest
-        and fit forever while the galaxy stayed exactly as it was — which is what it did.
+        **The trigger used to be the inventory's mtime, which is true every single pass.**
+        `learn` refits from scratch each time and rewrites the file, so "newer than the galaxy"
+        fired unconditionally and every pass ended in a full global rebuild: KMeans, the
+        projection and the per-point space recomputed over the whole corpus, about 165 s at
+        43 000 points, to absorb what was often the same repertoire with slightly nudged
+        parameters.
+
+        What actually requires a rebuild is a type the galaxy *cannot place*. `grow` assigns new
+        audio to the nearest existing knot and cannot create one, so a genuinely new syllable —
+        or a new species — has nowhere to go until the clustering runs again. A refit that only
+        moved a contour a few hertz does not need that; the knot it belongs to already exists.
+
+        This is only meaningful because ids are now stable across refits (`learn.assign_ids`).
+        While they were renumbered every run, every type looked new every pass and this check
+        would have been the mtime check with extra steps.
         """
         if not self.learned_path.exists():
-            return False
-        built = (self._manifest().get("inventorySource") or {}).get("writtenAt")
-        if not built:
-            # A build from before the stamp existed cannot be compared, and assuming it is
-            # current would mean never rebuilding on a galaxy that predates this check.
-            return True
+            return []
         try:
-            when = datetime.fromtimestamp(
-                self.learned_path.stat().st_mtime, timezone.utc
-            ).isoformat(timespec="seconds")
-        except OSError:
-            return False
-        return when > built
+            doc = json.loads(self.learned_path.read_text(encoding="utf-8"))
+            centroids = json.loads((self.out_path / "centroids.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            # No galaxy, or an unreadable one: rebuilding is the only way forward.
+            return ["<no galaxy>"]
+        placed = {
+            (c.get("speciesId"), c.get("syllableId"))
+            for c in centroids.get("items", [])
+            if c.get("syllableId")
+        }
+        missing = [
+            f"{sp['id']}/{y['id']}"
+            for sp in doc.get("species", [])
+            for y in sp.get("syllables", [])
+            if (sp["id"], y["id"]) not in placed
+        ]
+        return missing
 
     def _rebuild(self, job: Job) -> None:
         """A full build from the fitted inventory, cancellable like any other step."""
@@ -685,8 +748,20 @@ def make_handler(pipeline: Pipeline) -> type[BaseHTTPRequestHandler]:
             self.send_header("Access-Control-Allow-Origin", "*")
             self.send_header("Access-Control-Allow-Headers", "Content-Type")
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-            self.end_headers()
-            self.wfile.write(body)
+            try:
+                self.end_headers()
+                self.wfile.write(body)
+            except (BrokenPipeError, ConnectionResetError):
+                # **A client that hung up is not an error, and printing it as one was the
+                # actual damage.** The app polls this endpoint on every tab, so a reload, a
+                # navigation or an aborted fetch routinely closes the socket while the
+                # response is still going out — and the status payload is now the largest
+                # thing here (the job log plus the discovered-species list), which widens
+                # the window for it. Unhandled, `ThreadingHTTPServer` dumped a full
+                # traceback to stderr, and stderr is teed into the job log the Learn tab
+                # streams, so a harmless disconnect turned into ten lines of Python
+                # internals in the middle of the harvest progress a reader was following.
+                return
 
         def do_OPTIONS(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler naming
             self._send({"ok": True})
@@ -738,7 +813,24 @@ def make_handler(pipeline: Pipeline) -> type[BaseHTTPRequestHandler]:
 
 
 def serve(pipeline: Pipeline, port: int = DEFAULT_PORT) -> None:
-    server = ThreadingHTTPServer((BIND_HOST, port), make_handler(pipeline))
+    class QuietServer(ThreadingHTTPServer):
+        """Same server, silent about clients that hang up.
+
+        The guard in `_send` covers the write side; this covers the read side and anything
+        else socket-level, because `socketserver.handle_error` prints a traceback for every
+        exception that escapes a handler — and stderr here is teed into the job log, so a
+        dropped connection became ten lines of Python internals in the middle of the progress
+        someone was reading. Anything that is not a connection error still prints.
+        """
+
+        def handle_error(self, request: Any, client_address: Any) -> None:
+            import sys as _sys
+
+            if isinstance(_sys.exc_info()[1], (BrokenPipeError, ConnectionResetError)):
+                return
+            super().handle_error(request, client_address)
+
+    server = QuietServer((BIND_HOST, port), make_handler(pipeline))
     harvest.log(f"birdy pipeline control on http://{BIND_HOST}:{port} (loopback only)")
     harvest.log("the app's Learn tab will pick this up automatically; ctrl-c to stop")
     try:

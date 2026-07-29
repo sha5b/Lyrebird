@@ -175,7 +175,14 @@ export class PipelineClient {
 	 * stopped. One job rather than three, and it runs in the control process, so closing
 	 * the tab does not stop it.
 	 */
-	loop(options: { perSpecies?: number; quality?: string; types?: number; passes?: number } = {}) {
+	loop(options: {
+		/** New species to look for at the start of each pass; 0 keeps to the birds it knows. */
+		discover?: number;
+		perSpecies?: number;
+		quality?: string;
+		types?: number;
+		passes?: number;
+	} = {}) {
 		return this.call<{ job: JobStatus }>('/api/loop', options);
 	}
 

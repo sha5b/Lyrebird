@@ -86,7 +86,16 @@ def _length_seconds(text: str) -> float | None:
     for part in parts:
         total = total * 60 + int(part)
     return total
-DEFAULT_CAP = 20_000
+# Raised from 20_000 once discovery started adding species.
+#
+# The reservoir is stratified, so the cap divides by however many species are being collected:
+# at 20_000 the original twelve held about 1_670 descriptors each, and adding fourteen
+# discovered birds would have cut every one of them to ~770 to make room. It also had a second
+# cost nobody would guess from the number — a *full* store cannot grow, only replace, because
+# Algorithm R swaps random slots and the changed descriptors are no longer a suffix any append
+# can express. So every pass ended in a full rebuild, and the arrival animation the renderer
+# already implements (`aBorn`/`uArrival`) never had a generation to play.
+DEFAULT_CAP = 60_000
 # Syllable observations are ~30 floats each and are the input to `learn`, which needs
 # order within a recording — so they are kept whole per recording rather than sampled,
 # and bounded by dropping the oldest recordings' worth once the cap is passed.
