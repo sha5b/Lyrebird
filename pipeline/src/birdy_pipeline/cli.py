@@ -361,7 +361,7 @@ def cmd_harvest(args: argparse.Namespace) -> int:
                 }
                 found = harvest.discover_species(
                     client, known, limit=args.discover, query=args.discover_query,
-                    genera=genera,
+                    genera=genera, max_pages=args.discover_pages,
                 )
                 if found:
                     discovered = [*discovered, *found]
@@ -976,6 +976,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="before harvesting, find up to N species xeno-canto has that the inventory does "
              "not — by default congeners of the birds already modelled — and add them to "
              "data/discovered-species.json so every later run collects them too",
+    )
+    h.add_argument(
+        "--discover-pages",
+        type=int,
+        default=1,
+        help="pages of each genus query to read while discovering. One page is 100 "
+             "recordings, which for a common genus is a shallow look at it — raise this to "
+             "reach the less-recorded congeners a single page never shows",
     )
     h.add_argument(
         "--discover-query",
