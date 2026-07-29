@@ -177,6 +177,48 @@ class Pipeline:
             {"id": sp["id"], "common": sp.get("common", sp["id"])}
             for sp in load_inventory(self.inventory_path).get("species", [])
         ]
+
+        # **Discovered species, with how far each one has got.**
+        #
+        # A sweep changes what the pipeline collects and nothing in the interface said so: the
+        # app reads the *build's* inventory copy, which cannot contain a bird that has no audio
+        # yet, so fourteen new targets were invisible everywhere. That is the wrong kind of
+        # silence — it is indistinguishable from the sweep not having run. Each one reports the
+        # stage it has reached, because "discovered" and "singable" are several steps apart:
+        # audio has to arrive, clear the observation floor, fit, and be rebuilt into the galaxy
+        # before the bird has a voice at all.
+        discovered: list[dict[str, Any]] = []
+        if self.discovered_path.exists():
+            store_obj = (
+                harvest.HarvestStore(self.store_path)
+                if (self.store_path / "state.json").exists()
+                else None
+            )
+            fitted_ids = set()
+            if self.learned_path.exists():
+                try:
+                    doc = json.loads(self.learned_path.read_text(encoding="utf-8"))
+                    fitted_ids = {
+                        sp["id"] for sp in doc.get("species", [])
+                        if any(y.get("learned") for y in sp.get("syllables", []))
+                    }
+                except (OSError, ValueError):
+                    pass
+            for e in harvest.load_discovered(self.discovered_path):
+                kept = len(store_obj.strata[e["id"]].rows) if (
+                    store_obj and e["id"] in store_obj.strata
+                ) else 0
+                stage = "fitted" if e["id"] in fitted_ids else (
+                    "collecting" if kept else "waiting for audio"
+                )
+                discovered.append({
+                    "id": e["id"],
+                    "common": e.get("common", e["id"]),
+                    "scientific": e.get("scientific", ""),
+                    "available": e.get("recordings", 0),
+                    "descriptors": kept,
+                    "stage": stage,
+                })
         return {
             "ok": True,
             "hasKey": bool(os.environ.get("XC_API_KEY")),
@@ -185,6 +227,7 @@ class Pipeline:
             "learned": learned,
             "built": built,
             "inventorySpecies": species,
+            "discovered": discovered,
             "job": self.job.to_dict() if self.job else None,
         }
 

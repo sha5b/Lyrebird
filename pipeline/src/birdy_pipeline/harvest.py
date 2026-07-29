@@ -258,6 +258,15 @@ class HarvestStore:
             return
         state = json.loads(self._state_path.read_text(encoding="utf-8"))
         self.recordings = state.get("recordings", {})
+        # Recordings that can never be fetched, and species where none of them can.
+        #
+        # `has()` only remembers *successes*, so a recording that 404s or is redacted was
+        # re-attempted on every pass forever — and the zebra finch, whose audio xeno-canto
+        # withholds as a restricted species, burned a search plus seventeen skips per pass to
+        # arrive at the same answer. Neither is an error worth retrying: a redaction is policy
+        # and a 404 is a deleted file.
+        self.dead = dict(state.get("dead", {}))
+        self.restricted = set(state.get("restricted", []))
         self.recording_descriptors = state.get("recordingDescriptors", {})
         self.stream_n = int(state.get("streamCount", 0))
         self.stream_mean = np.asarray(state.get("streamMean", self.stream_mean), dtype=np.float64)
@@ -318,12 +327,20 @@ class HarvestStore:
                     "streamM2": [float(v) for v in self.stream_m2],
                     "seenPerSpecies": {s: self.strata[s].seen for s in sorted(self.strata)},
                     "recordings": self.recordings,
+                    "dead": self.dead,
+                    "restricted": sorted(self.restricted),
                 },
                 indent=1,
             ),
             encoding="utf-8",
         )
         self.write_credits()
+
+    def mark_dead(self, recording_id: str, reason: str) -> None:
+        self.dead[recording_id] = reason[:120]
+
+    def mark_restricted(self, species_id: str) -> None:
+        self.restricted.add(species_id)
 
     def write_credits(self) -> None:
         """Per-recording attribution and licence. Required by every CC licence xeno-canto uses."""
@@ -800,12 +817,44 @@ def harvest_xeno_canto(
     harvest is a shorter harvest rather than a wasted one.
     """
     report = HarvestReport()
-    for species_id, query in targets:
+
+    # **Least-collected species first, so a pass works the backlog instead of the front.**
+    #
+    # The target list arrives in inventory order — the twelve documented birds, then whatever
+    # discovery added — and a pass harvests a couple of recordings per species down that list.
+    # With the store at its cap the documented birds already hold about 1970 descriptors each
+    # and mostly return recordings `has()` already knows, so the budget went on re-searching
+    # birds that could not gain anything while the newly discovered ones, holding zero, sat at
+    # the far end of a queue every pass ran out of time before reaching. Fourteen species stayed
+    # at "0 of ~100" indefinitely, which reads as discovery being broken when it is starvation.
+    #
+    # Ordering by what each species already has fixes it without a quota or a special case: a
+    # bird with nothing is always served before a bird with two thousand, and once the new ones
+    # have caught up the order flattens back out on its own.
+    ordered = sorted(
+        targets,
+        key=lambda t: (
+            len(store.strata[t[0]].rows) if t[0] in store.strata else 0,
+            t[0],
+        ),
+    )
+    if len(ordered) > 1:
+        first = ", ".join(
+            f"{sid}({len(store.strata[sid].rows) if sid in store.strata else 0})"
+            for sid, _ in ordered[:4]
+        )
+        log(f"harvest order — least collected first: {first}, …")
+    for species_id, query in ordered:
         if should_stop and should_stop():
             log("\nstopping: asked to")
             return report
+        if species_id in store.restricted:
+            log(f"\n{species_id}: skipped — xeno-canto withholds this species' audio "
+                "(restricted_species); use --from-dir or an open dataset instead")
+            continue
         log(f"\n{species_id}: {query}")
         taken = 0
+        redacted = 0
         for rec in client.search(query, max_pages=max_pages):
             if taken >= per_species:
                 break
@@ -813,7 +862,7 @@ def harvest_xeno_canto(
                 log("  stopping: asked to")
                 return report
             rid = f"XC{rec.get('id')}"
-            if store.has(rid):
+            if store.has(rid) or rid in store.dead:
                 report.skipped += 1
                 continue
             # What the API gives us and we were throwing away.
@@ -884,6 +933,13 @@ def harvest_xeno_canto(
                     ingest_file(store, audio_path, species_id, rid, max_seconds, report)
                 except Exception as exc:
                     report.failed += 1
+                    text = str(exc)
+                    # Permanent by nature: policy, or a file that is gone. Remembered so the
+                    # next pass spends its budget on audio that exists.
+                    if "restricted_species" in text or "404" in text:
+                        store.mark_dead(rid, text)
+                        if "restricted_species" in text:
+                            redacted += 1
                     log(f"  skip {rid}: {exc}")
                     continue
             # the TemporaryDirectory is gone here: the audio existed for one iteration
@@ -894,6 +950,10 @@ def harvest_xeno_canto(
                 f"  {rid:10} q={info['quality']:1} {info['type'][:34]:34} "
                 f"+{report.retained - before:4d} kept  store={len(store)}"
             )
+        # Every candidate withheld and nothing ingested: this species has no audio here.
+        if taken == 0 and redacted >= 5:
+            store.mark_restricted(species_id)
+            log(f"  {species_id}: all {redacted} candidates withheld — not querying it again")
     return report
 
 

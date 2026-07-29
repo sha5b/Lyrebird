@@ -1232,8 +1232,14 @@ uv run birdy-pipeline build</pre>
 				because a loop runs for as long as you let it and you will not be sitting on
 				Learn while it does.
 			-->
+			<!--
+				Only for a fit. It used to appear for any running job, so a build — which emits no
+				`FIT` lines at all — put an empty panel labelled BUILD in the corner with nothing
+				in it but a placeholder. The panel exists to watch types land; when none are
+				landing it is furniture.
+			-->
 			<FitMonitor
-				show={fitMonitorOpen && (jobRunning || fitLines.length > 0)}
+				show={fitMonitorOpen && fitLines.length > 0}
 				log={job?.log ?? []}
 				jobName={job?.name ?? ''}
 				doing={jobDoing}
@@ -1823,7 +1829,28 @@ uv run birdy-pipeline serve</pre>
 							switch runs it; everything under it is for driving a single step.
 						-->
 						<section class="block">
-							<h3 class="blocktitle">Keep learning</h3>
+						{#if pipelineStatus.discovered?.length}
+							<h3 class="blocktitle">Discovered species</h3>
+							<p class="note faint">
+								Harvested alongside the {pipelineStatus.inventorySpecies.length} documented
+								birds. No voice until enough audio arrives to fit one.
+							</p>
+							<dl class="facts mono discovered">
+								{#each pipelineStatus.discovered as d (d.id)}
+									<div>
+										<dt title={d.scientific}>{d.common}</dt>
+										<dd class:warn={d.stage === 'waiting for audio'}>
+											{d.stage === 'fitted'
+												? `fitted · ${d.descriptors} pts`
+												: d.stage === 'collecting'
+													? `${d.descriptors} pts`
+													: `0 of ~${d.available}`}
+										</dd>
+									</div>
+								{/each}
+							</dl>
+						{/if}
+						<h3 class="blocktitle">Keep learning</h3>
 							<div class="row">
 								<button
 									class="primary"
@@ -1992,17 +2019,6 @@ uv run birdy-pipeline serve</pre>
 
 						<section class="block">
 							<h3 class="blocktitle">Rebuild the galaxy</h3>
-						<!--
-								**Named by what they are for, not by their algorithm.** "Fixed k" and
-								"Density" are implementation words, and they hid the fact that these two do
-								different jobs rather than the same job differently. Every response in the
-								app goes through a cluster carrying a `(species, syllable)` name — the
-								trajectory, the tag, the reported match — and only the seeded KMeans
-								guarantees each type gets one; it currently names 236 of 239 and can never
-								say "this is a sound nobody has identified". HDBSCAN can say exactly that,
-								and cannot guarantee coverage. So one builds the galaxy you use and the
-								other looks for what is missing from it.
-							-->
 							<div class="segmented">
 								<button
 									class:on={buildClustering === 'kmeans'}
@@ -2032,24 +2048,10 @@ uv run birdy-pipeline serve</pre>
 									/>
 								</label>
 							{/if}
-							<!--
-								**The corpus is one accumulating thing, so this is a statement rather than
-								a choice.** These were two checkboxes and a "render from" dropdown, and that
-								framing was wrong: the rendered repertoire is the *frame* — it is what
-								carries every name, function and citation, and therefore what any field
-								recording is identified against — while the harvest is what fills in the
-								shape of the real repertoire around it. Unticking either produced a galaxy
-								that was not a smaller version of the right one but a broken one: with no
-								renders, not a single cluster carries a syllable name and nothing the app
-								sings can light a knot, draw a path or be labelled at all.
-								So both are always in, and what is left to say is what the build *contains*.
-							-->
 							<p class="note faint">
-								Every build renders the current repertoire — {pipelineStatus.learned.exists
+								Renders {pipelineStatus.learned.exists
 									? `${learnedTypeCount} fitted + 44 documented`
-									: '44 documented'} syllables — and folds in every descriptor the harvest
-								has kept. The renders are the frame that names things; the field audio is
-								what gets identified against it.
+									: '44 documented'} syllables and folds in the whole harvest. Both always.
 							</p>
 							<details class="diag">
 								<summary class="note faint">Leave one out (diagnostic)</summary>
@@ -2071,10 +2073,7 @@ uv run birdy-pipeline serve</pre>
 										<input type="checkbox" bind:checked={buildIncludeHarvest} /> Harvested audio
 									</label>
 								</div>
-								<p class="note faint">
-									Unticking is for reading a measurement, not for a galaxy to use. A build
-									with no renders can name nothing and the app will say so.
-								</p>
+								<p class="note faint">For reading a measurement, not for a galaxy to use.</p>
 							</details>
 							<button
 								class="wide"
@@ -2089,39 +2088,14 @@ uv run birdy-pipeline serve</pre>
 										})
 									)}>Rebuild</button
 							>
-							<!--
-								**Growing is not an action, it is what learning does.**
-								
-								This was a button next to Rebuild, which framed the two as alternatives you
-								pick between. They are not: growing places new audio in the frame the current
-								galaxy already has, so nothing on screen moves and the cloud gains marks
-								around what you were looking at — it is the continuous half of learning, and
-								`loop` already does it at the end of every pass, followed by a rebuild when
-								the repertoire has moved on far enough that placing is no longer honest.
-								Asking someone to press it made a background process into a chore, and
-								pressing it at the wrong moment did nothing at all.
-								
-								Rebuild stays, because "re-place every point now" is a real thing to want.
-							-->
 							<p class="note faint">
-								New audio is folded into the cloud automatically at the end of every learning
-								pass, and a full rebuild follows once the repertoire has moved far enough that
-								placing it in the old frame would stop being honest. Rebuild here only forces
-								that now.
+								Each learning pass folds new audio in and rebuilds when the repertoire has
+								moved on. This only forces it now.
 							</p>
 						{#if pipelineStatus.built.exists}
 								<dl class="facts mono">
 									<div><dt>points</dt><dd>{pipelineStatus.built.points ?? '—'}</dd></div>
 									<div><dt>clusters</dt><dd>{pipelineStatus.built.clusters ?? '—'}</dd></div>
-									<!--
-										**The two numbers that decide whether a build is usable, which the tab
-										never showed.** Coverage is how many types got a cluster carrying their
-										name; a type with none is silently unplayable — it was 0/2 for the cuckoo
-										and the only symptom was a bird singing into an empty picture. The
-										relation headline is whether the geometry is answering a question about
-										birds or about microphones. Both come from the loaded manifest rather
-										than the control process, so they describe the galaxy on screen.
-									-->
 									{#if coverage}
 										<div>
 											<dt>named</dt>
@@ -2725,6 +2699,12 @@ uv run birdy-pipeline serve</pre>
 	.messages li {
 		font-size: 0.72rem;
 		line-height: 1.35;
+	}
+
+	/* One per row rather than the two-column default: a species name plus a stage does not
+	   fit half a panel width. */
+	.facts.discovered {
+		grid-template-columns: 1fr;
 	}
 
 	.facts dd.warn {

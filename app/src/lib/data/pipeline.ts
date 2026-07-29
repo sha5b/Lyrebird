@@ -68,6 +68,17 @@ export interface PipelineStatus {
 	store: StoreStatus;
 	learned: LearnedStatus;
 	built: BuiltStatus;
+	discovered?: {
+		id: string;
+		common: string;
+		scientific: string;
+		/** Recordings the discovery sweep saw for it on xeno-canto. */
+		available: number;
+		/** Descriptors the harvest store holds for it so far. */
+		descriptors: number;
+		/** `waiting for audio` | `collecting` | `fitted` — how far it has got. */
+		stage: string;
+	}[];
 	inventorySpecies: { id: string; common: string }[];
 	job: JobStatus | null;
 }
