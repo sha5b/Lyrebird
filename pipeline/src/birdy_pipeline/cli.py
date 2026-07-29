@@ -36,6 +36,7 @@ DEFAULT_INVENTORY = REPO_ROOT / "data" / "inventory.json"
 DEFAULT_DEMO_OUT = REPO_ROOT / "pipeline" / "out" / "demo"
 DEFAULT_HARVEST_STORE = REPO_ROOT / "pipeline" / "out" / "harvest"
 DEFAULT_LEARNED_INVENTORY = REPO_ROOT / "data" / "learned-inventory.json"
+DEFAULT_DISCOVERED = REPO_ROOT / "data" / "discovered-species.json"
 CALIBRATION_NAME = "syrinx-calibration.json"
 
 DEMO_SYLLABLES = [
@@ -348,7 +349,34 @@ def cmd_harvest(args: argparse.Namespace) -> int:
         if args.query:
             targets = [(args.species or "unlabelled", args.query)]
         else:
-            targets = harvest.species_queries(inventory, quality=args.quality)
+            discovered = harvest.load_discovered(DEFAULT_DISCOVERED)
+            if args.discover:
+                genera = sorted(
+                    {sp["scientific"].split()[0]
+                     for sp in inventory.get("species", [])
+                     if sp.get("scientific")}
+                )
+                known = {sp["id"] for sp in inventory.get("species", [])} | {
+                    e["id"] for e in discovered
+                }
+                found = harvest.discover_species(
+                    client, known, limit=args.discover, query=args.discover_query,
+                    genera=genera,
+                )
+                if found:
+                    discovered = [*discovered, *found]
+                    harvest.save_discovered(DEFAULT_DISCOVERED, discovered)
+                    log(f"added {len(found)} species to {DEFAULT_DISCOVERED.name}; "
+                        f"{len(discovered)} discovered in total")
+                else:
+                    log("no new species found")
+            if discovered:
+                log(f"including {len(discovered)} discovered species: "
+                    + ", ".join(e["id"] for e in discovered[:6])
+                    + (f", +{len(discovered) - 6}" if len(discovered) > 6 else ""))
+            targets = harvest.species_queries(
+                inventory, quality=args.quality, extra=discovered
+            )
             if args.species:
                 targets = [t for t in targets if t[0] == args.species]
                 if not targets:
@@ -939,6 +967,20 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="skip recordings with other species audible in them, which xeno-canto lists "
              "in its `also` field — the contamination the descriptor space is most sensitive to",
+    )
+    h.add_argument(
+        "--discover",
+        type=int,
+        default=0,
+        metavar="N",
+        help="before harvesting, find up to N species xeno-canto has that the inventory does "
+             "not — by default congeners of the birds already modelled — and add them to "
+             "data/discovered-species.json so every later run collects them too",
+    )
+    h.add_argument(
+        "--discover-query",
+        default=None,
+        help="raw xeno-canto query to discover from, instead of the genus sweep",
     )
     h.add_argument("--dry-run", action="store_true", help="list what would be fetched")
     h.add_argument("--stats", action="store_true", help="describe an existing store and exit")

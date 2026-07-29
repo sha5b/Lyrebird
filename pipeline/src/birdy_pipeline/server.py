@@ -100,6 +100,7 @@ class Pipeline:
     def __init__(self, store_path: Path, inventory_path: Path, learned_path: Path, out_path: Path):
         self.store_path = Path(store_path)
         self.inventory_path = Path(inventory_path)
+        self.discovered_path = Path(inventory_path).parent / harvest.DISCOVERED_NAME
         self.learned_path = Path(learned_path)
         self.out_path = Path(out_path)
         self.job: Job | None = None
@@ -238,8 +239,13 @@ class Pipeline:
             else:
                 key = os.environ.get("XC_API_KEY", "")
                 client = harvest.XenoCanto(key)
+                # Discovered species are collected exactly like the authored ones — that is
+                # the whole point of the registry, and a loop that ignored it would keep
+                # harvesting twelve birds while the file said fifteen.
                 targets = harvest.species_queries(
-                    load_inventory(self.inventory_path), quality=quality
+                    load_inventory(self.inventory_path),
+                    quality=quality,
+                    extra=harvest.load_discovered(self.discovered_path),
                 )
                 if species:
                     targets = [t for t in targets if t[0] == species]
@@ -368,8 +374,13 @@ class Pipeline:
                 harvest.log(f"--- pass {done}: harvesting ---")
                 store = harvest.HarvestStore(self.store_path, cap=cap)
                 key = os.environ.get("XC_API_KEY", "")
+                # Discovered species are collected exactly like the authored ones — that is
+                # the whole point of the registry, and a loop that ignored it would keep
+                # harvesting twelve birds while the file said fifteen.
                 targets = harvest.species_queries(
-                    load_inventory(self.inventory_path), quality=quality
+                    load_inventory(self.inventory_path),
+                    quality=quality,
+                    extra=harvest.load_discovered(self.discovered_path),
                 )
                 report = harvest.harvest_xeno_canto(
                     store, harvest.XenoCanto(key), targets, per_species=per_pass,

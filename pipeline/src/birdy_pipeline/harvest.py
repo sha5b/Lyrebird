@@ -602,7 +602,98 @@ def quality_term(quality: str) -> str:
     return f"q:{quality}"
 
 
-def species_queries(inventory: dict[str, Any], quality: str = "") -> list[tuple[str, str]]:
+DISCOVERED_NAME = "discovered-species.json"
+
+
+def species_id_for(scientific: str) -> str:
+    """`Cuculus canorus` -> `cuculus_canorus`, matching the ids the inventory already uses."""
+    parts = [p for p in str(scientific or "").strip().split() if p]
+    if len(parts) < 2:
+        return ""
+    return f"{parts[0].lower()}_{parts[1].lower()}"
+
+
+def load_discovered(path: Path) -> list[dict[str, Any]]:
+    """Species found by `--discover`, kept out of the authored inventory on purpose.
+
+    `data/inventory.json` is the file that carries functions and citations, and a species
+    nobody has written anything about does not belong in it. This registry sits beside it and
+    is unioned in wherever the pipeline asks "which birds are we collecting?", so a discovered
+    bird is harvested, fitted, rendered and analysed exactly like the twelve, while the
+    provenance of the authored file stays intact.
+    """
+    try:
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    return [e for e in data.get("species", []) if e.get("scientific")]
+
+
+def save_discovered(path: Path, entries: Sequence[dict[str, Any]]) -> None:
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    Path(path).write_text(
+        json.dumps({"note": "species found by harvest --discover", "species": list(entries)}, indent=1),
+        encoding="utf-8",
+    )
+
+
+def discover_species(
+    client: XenoCanto,
+    known: set[str],
+    limit: int = 4,
+    query: str | None = None,
+    genera: Sequence[str] = (),
+    max_pages: int = 1,
+) -> list[dict[str, Any]]:
+    """Find species xeno-canto has and the inventory does not.
+
+    The default search is **congeners**: for each genus already in the inventory, ask what else
+    xeno-canto holds in that genus. That is a more defensible expansion than a global
+    best-quality sweep, which returns whatever happens to be popular — a bird in the same genus
+    as one we already model is close enough that the existing syrinx parameter ranges are
+    likely to reach it, and close enough that a confusion between the two is interesting rather
+    than noise.
+
+    Nothing is downloaded here. Only the metadata is read, and the result is a candidate list
+    ranked by how much audio exists, because a species with four recordings cannot clear
+    `MIN_OBSERVATIONS` and would sit in the inventory as a permanent empty knot.
+    """
+    counts: dict[str, dict[str, Any]] = {}
+    queries = [query] if query else [f'gen:"{g}"' for g in genera]
+    for q in queries:
+        if not q:
+            continue
+        log(f"discovering: {q}")
+        for rec in client.search(q, max_pages=max_pages):
+            scientific = f"{rec.get('gen', '')} {rec.get('sp', '')}".strip()
+            sid = species_id_for(scientific)
+            if not sid or sid in known:
+                continue
+            entry = counts.setdefault(
+                sid,
+                {
+                    "id": sid,
+                    "scientific": scientific,
+                    "common": rec.get("en", "") or scientific,
+                    "bank": "learned",
+                    "summary": "Discovered on xeno-canto; nothing documented.",
+                    "recordings": 0,
+                    "syllables": [],
+                    "songs": [],
+                },
+            )
+            entry["recordings"] += 1
+    ranked = sorted(counts.values(), key=lambda e: -e["recordings"])[: max(0, limit)]
+    for e in ranked:
+        log(f"  + {e['id']:28} {e['common'][:34]:34} {e['recordings']} recordings seen")
+    return ranked
+
+
+def species_queries(
+    inventory: dict[str, Any],
+    quality: str = "",
+    extra: Sequence[dict[str, Any]] = (),
+) -> list[tuple[str, str]]:
     """(speciesId, xeno-canto query) for every species the inventory already knows.
 
     Harvesting these and only these is what makes the result usable: the points land
@@ -610,7 +701,11 @@ def species_queries(inventory: dict[str, Any], quality: str = "") -> list[tuple[
     documented clusters instead of beside them.
     """
     out: list[tuple[str, str]] = []
-    for sp in inventory.get("species", []):
+    seen: set[str] = set()
+    for sp in [*inventory.get("species", []), *extra]:
+        if sp.get("id") in seen:
+            continue
+        seen.add(sp.get("id", ""))
         scientific = sp.get("scientific", "").strip()
         if not scientific or " " not in scientific:
             continue
