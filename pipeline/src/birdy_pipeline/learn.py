@@ -124,6 +124,15 @@ class SyllableObservation:
     # cannot say which of them the model caught. Optional, because stores harvested
     # before this field existed do not have it.
     descriptor: list[float] | None = None
+    #: True when the novelty scorer judged this syllable unlike every known type
+    #: centroid (docs/09 §9.2b use 2: cosine distance in the critic's embedding past a
+    #: threshold calibrated to a chosen false-positive rate). Set at *ingest* time by
+    #: the control surface, never by the fit — the flag is evidence about one
+    #: observation, not a property a refit should redecide. A flagged syllable is still
+    #: `unlabelled` (§8.5): detecting that a sound is new is not knowing what it means.
+    #: Keyword with a default because rows harvested before the flag existed carry no
+    #: such key, and False is the truth for them — nobody ever measured them.
+    novel: bool = False
     #: `features.mel_patch` of this syllable: a (32, 23) band-limited log-mel grid, the
     #: critic's entire view of it (docs/09 §9.3). Deliberately **not** JSON: 736 floats per
     #: syllable would take `syllables.jsonl` from 26 MB to about 200 MB and make every load
@@ -1938,6 +1947,17 @@ def self_test(verbose: bool = True) -> None:
     assert "mel_patch" not in d, "mel_patch must not reach syllables.jsonl"
     json.dumps(d)
     assert SyllableObservation.from_dict(d).mel_patch is None
+
+    # 8. The novelty flag survives the JSON round trip in both directions: a flagged
+    #    observation stays flagged through save/load (or ingest would mark a syllable that
+    #    the next load quietly unmarked), and a row written before the flag existed —
+    #    every store on disk today — loads as False rather than raising.
+    flagged = observation(2500.0, 0.07)
+    flagged.novel = True
+    assert SyllableObservation.from_dict(flagged.to_dict()).novel is True
+    legacy = flagged.to_dict()
+    del legacy["novel"]
+    assert SyllableObservation.from_dict(legacy).novel is False
 
     if verbose:
         print(

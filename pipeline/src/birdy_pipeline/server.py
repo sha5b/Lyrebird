@@ -72,6 +72,9 @@ class Job:
         self.error: str | None = None
         self.log: deque[str] = deque(maxlen=LOG_LINES)
         self.cancelled = False
+        #: Small structured outcome a job can leave for the interface — the ingest
+        #: novelty counts are the one user so far. Anything bigger belongs in the log.
+        self.result: dict[str, Any] | None = None
 
     def state(self) -> str:
         if self.finished is None:
@@ -84,7 +87,7 @@ class Job:
         self.log.append("stop requested — finishing the current step")
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        out: dict[str, Any] = {
             "name": self.name,
             "detail": self.detail,
             "state": self.state(),
@@ -93,6 +96,9 @@ class Job:
             "cancelled": self.cancelled,
             "log": list(self.log),
         }
+        if self.result is not None:
+            out["result"] = self.result
+        return out
 
 
 class Pipeline:
@@ -134,6 +140,16 @@ class Pipeline:
         self.embed_typing = bool(embed_typing)
         self.job: Job | None = None
         self._lock = threading.Lock()
+        #: The novelty scorer cache: (critic mtime, centroids mtime, critic, scorer).
+        #: Re-read when either file changes — `critic train` rewrites both, and a
+        #: scorer held across a retrain would judge new audio against a network that
+        #: no longer exists. False means "checked and absent": ingest then behaves
+        #: exactly as it did before novelty flags, and says so once.
+        self._novelty: tuple[float, float, Any, Any] | bool | None = None
+        self._novelty_warned = False
+        #: typing.json, cached by mtime — status polls every 1.5 s and the file is
+        #: 5 MB at 40 k syllables, so parsing it per poll is not an option.
+        self._typing_cache: tuple[float, dict[tuple[str, str, int], str]] | None = None
 
     # -- status --
 
@@ -278,6 +294,10 @@ class Pipeline:
                     "descriptors": kept,
                     "stage": stage,
                 })
+        novel = (
+            self._novel_summary() if (self.store_path / "state.json").exists()
+            else {"novelCount": 0, "recentNovel": []}
+        )
         return {
             "ok": True,
             "hasKey": bool(os.environ.get("XC_API_KEY")),
@@ -288,6 +308,11 @@ class Pipeline:
             "built": built,
             "inventorySpecies": species,
             "discovered": discovered,
+            # Syllables flagged as unlike every known type centroid (docs/09 §9.2b):
+            # how many the store holds, and the most recent few so the interface can
+            # say *whose* new sound it was.
+            "novelCount": novel["novelCount"],
+            "recentNovel": novel["recentNovel"],
             "job": self.job.to_dict() if self.job else None,
         }
 
@@ -463,10 +488,177 @@ class Pipeline:
                         "url": "",
                     },
                 )
+            # "This bird just sang something new", flagged while the observations are
+            # still identifiable as the ones this recording added. Without this, a
+            # genuinely unheard syllable is silently assigned to the nearest existing
+            # knot at the next grow — the failure docs/09 §9.2b use 2 exists to end.
+            # The flag is what `grow` reads to hold a point back from force-assignment.
+            new_obs = [o for o in store.syllables if o.recording_id == rid]
+            scorer = self._novelty_scorer()
+            n_novel = 0
+            if scorer is not None:
+                trained, novelty = scorer
+                embeddable = [o for o in new_obs if o.mel_patch is not None]
+                if embeddable:
+                    patches = harvest.np.stack(
+                        [harvest.np.asarray(o.mel_patch, dtype=harvest.np.float32)
+                         for o in embeddable]
+                    )
+                    flags = novelty.is_novel(trained.embed(patches))
+                    for o, flag in zip(embeddable, flags):
+                        o.novel = bool(flag)
+                    n_novel = int(flags.sum())
+                    if n_novel:
+                        harvest.log(
+                            f"{n_novel} of {len(new_obs)} syllables are unlike every "
+                            "known type — flagged novel (still unlabelled: detecting "
+                            "that a sound is new is not knowing what it means)"
+                        )
             store.save()
+            job.result = {"novel": n_novel, "total": len(new_obs)}
             harvest.log(harvest.format_report(report, store))
 
         return self.start("ingest", f"{name} as {species_id}", run)
+
+    def _novelty_scorer(self) -> tuple[Any, Any] | None:
+        """The critic plus its novelty centroids, or None when either is absent.
+
+        `critic.pt` is auto-discovered exactly as `_fit` discovers it, and the
+        centroids sit next to it under the name `cmd_critic` writes
+        (`<stem>-novelty.json`). Loaded lazily on the first ingest that can use them
+        and reloaded when either file's mtime moves — the alternation of docs/09 §9.3
+        keeps retraining the critic, and a scorer held open across a retrain would
+        measure distances in a space that no longer exists.
+
+        With no scorer, ingest behaves exactly as it always did: every observation
+        keeps `novel=False`. That is the honest default — an unmeasured syllable is
+        not a known syllable, but flagging everything would be a false-positive rate
+        of 100 %, and the detector's whole point is that the rate is chosen (§9.2b).
+        """
+        from .cli import DEFAULT_CRITIC, load_critic
+
+        critic_path = self.critic_path
+        if critic_path is None:
+            critic_path = DEFAULT_CRITIC if DEFAULT_CRITIC.exists() else None
+        novelty_path = (
+            critic_path.with_name(critic_path.stem + "-novelty.json")
+            if critic_path is not None
+            else None
+        )
+        if (
+            critic_path is None
+            or not critic_path.exists()
+            or novelty_path is None
+            or not novelty_path.exists()
+        ):
+            self._warn_no_novelty(critic_path, novelty_path)
+            return None
+        key = (critic_path.stat().st_mtime, novelty_path.stat().st_mtime)
+        if isinstance(self._novelty, tuple) and self._novelty[:2] == key:
+            return self._novelty[2], self._novelty[3]
+        try:
+            from . import critic as critic_mod
+
+            trained = load_critic(str(critic_path))
+            scorer = critic_mod.Novelty.load(novelty_path) if trained is not None else None
+        except Exception as exc:
+            harvest.log(f"novelty scorer unusable ({exc}); ingest continues without it")
+            trained, scorer = None, None
+        if scorer is None:
+            self._warn_no_novelty(critic_path, novelty_path)
+            self._novelty = False
+            return None
+        self._novelty = (*key, trained, scorer)
+        harvest.log(
+            f"novelty scorer loaded (threshold {scorer.threshold:.4f} at a chosen "
+            f"{scorer.report.target_false_positive:.0%} false-positive rate)"
+        )
+        return trained, scorer
+
+    def _warn_no_novelty(self, critic_path: Any, novelty_path: Any) -> None:
+        """Absence is worth one line, not one per ingest."""
+        if self._novelty_warned:
+            return
+        self._novelty_warned = True
+        missing = (
+            f"no {novelty_path.name}"
+            if critic_path is not None and Path(critic_path).exists()
+            else "no trained critic"
+        )
+        harvest.log(
+            f"{missing} — ingest cannot flag unheard syllables; everything is stored "
+            "with novel=False, as before (`critic train` writes both files)"
+        )
+
+    def _type_of(self) -> dict[tuple[str, str, int], str]:
+        """(speciesId, recordingId, order) -> typeId, from the store's typing.json.
+
+        Cached by mtime: status is polled every 1.5 s and typing.json is 5 MB at
+        40 k observations, so parsing it per poll would be the syllables.jsonl
+        mistake again at a smaller scale.
+        """
+        path = self.store_path / learn.TYPING_NAME
+        try:
+            mtime = path.stat().st_mtime
+        except OSError:
+            return {}
+        if self._typing_cache and self._typing_cache[0] == mtime:
+            return self._typing_cache[1]
+        try:
+            typing = json.loads(path.read_text(encoding="utf-8"))
+            table = {
+                (e["speciesId"], e["recordingId"], int(e["order"])): str(e["typeId"])
+                for e in typing.get("entries", [])
+            }
+        except (OSError, ValueError, KeyError):
+            table = {}
+        self._typing_cache = (mtime, table)
+        return table
+
+    def _novel_summary(self) -> dict[str, Any]:
+        """Store-wide novelty count and the most recent flagged syllables.
+
+        Read by byte scan, not by parsing `syllables.jsonl`: the status endpoint's
+        reason for existing is that that file costs over a second to parse at 26 MB,
+        and it is polled every 1.5 s. `bytes.count` and a reverse search for the last
+        few flagged lines are milliseconds on the same file, and — unlike a sidecar —
+        can never disagree with the store, because they *are* the store.
+        """
+        out: dict[str, Any] = {"novelCount": 0, "recentNovel": []}
+        path = self.store_path / "syllables.jsonl"
+        try:
+            raw = path.read_bytes()
+        except OSError:
+            return out
+        needle = b'"novel": true'
+        out["novelCount"] = raw.count(needle)
+        recent: list[dict[str, Any]] = []
+        end = len(raw)
+        while len(recent) < 8:
+            at = raw.rfind(needle, 0, end)
+            if at < 0:
+                break
+            start = raw.rfind(b"\n", 0, at) + 1
+            stop = raw.find(b"\n", at)
+            end = start  # the next search looks before this line
+            try:
+                d = json.loads(raw[start : stop if stop >= 0 else len(raw)])
+            except ValueError:
+                continue
+            recent.append(
+                {
+                    "speciesId": d.get("speciesId", ""),
+                    "recordingId": d.get("recordingId", ""),
+                    "order": int(d.get("order", 0)),
+                }
+            )
+        type_of = self._type_of() if recent else {}
+        for entry in recent:
+            entry["typeId"] = type_of.get(
+                (entry["speciesId"], entry["recordingId"], entry["order"]), ""
+            )
+        out["recentNovel"] = recent
+        return out
 
     def loop(self, body: dict[str, Any]) -> dict[str, Any]:
         """

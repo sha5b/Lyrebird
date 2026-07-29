@@ -50,6 +50,32 @@ import numpy as np
 #: Filename inside the built asset directory.
 BASIS_FILE = "projection-basis.json"
 
+#: Filename next to the grown assets holding the pending pool of unassigned novel
+#: points — new sounds waiting for enough company to found a knot of their own.
+NOVEL_POOL_FILE = "novel-pool.json"
+
+#: How many unassigned novel points it takes to found a knot. Below this a new sound
+#: is a point in no cluster (clusterId -1), not a forced member of the nearest existing
+#: one — the silent misassignment docs/09 §9.2b exists to end. 8 mirrors the critic's
+#: own typing floor: `fit_novelty` asks KMeans for one type per 8 syllables, so a group
+#: smaller than that is not a "type" anywhere else in the pipeline either.
+MIN_NOVEL_CLUSTER = 8
+
+#: Membership radius for founding that knot: cosine to the group's (iterated) centre in
+#: the standardised space. Measured on 219 genuinely-novel flagged syllables of
+#: perisoreus_infaustus — a species the critic never trained on — grouped by their
+#: learn-types: a real group's cohesion is 0.81..0.97, so 0.70 admits the core of every
+#: one of them while staying well above what two different new sounds share. The
+#: novelty boundary itself (0.895 cosine at the calibrated 5 % false-positive rate)
+#: plays no part here — everything in the pool is already past it. This radius decides
+#: what counts as *one* new sound, not whether the sound is new.
+NOVEL_CLUSTER_MIN_COSINE = 0.70
+
+#: A founded knot must also hold together at this mean cosine to its own centre, or it
+#: is a bag of unrelated oddballs and stays in the pool. The loosest genuine group in
+#: the measurement above held 0.81.
+NOVEL_CLUSTER_MIN_COHESION = 0.75
+
 
 def _unit_rows(z: np.ndarray) -> np.ndarray:
     norms = np.linalg.norm(z, axis=1, keepdims=True)
@@ -147,7 +173,15 @@ def embed(basis: ProjectionBasis, x: np.ndarray, cluster_id: np.ndarray) -> np.n
     pos = -0.5 * (d2 - basis.mean_sq[None, :]) @ basis.l_pinv.T
 
     k = basis.cluster_shift.shape[0]
-    pos = pos + basis.cluster_shift[np.clip(cluster_id, 0, k - 1)]
+    # A point in no cluster — and a point in a knot founded *after* the basis was
+    # frozen, which has no shift entry — is not pushed anywhere. `np.clip` alone would
+    # hand every such point cluster 0's shift and drag them all into one knot; this is
+    # the same guard `separate_clusters` applies at build time, and the new knots'
+    # members were themselves placed with zero shift, so future members placed the same
+    # way land consistently.
+    cluster_id = np.asarray(cluster_id)
+    valid = (cluster_id >= 0) & (cluster_id < k)
+    pos = pos + np.where(valid[:, None], basis.cluster_shift[np.clip(cluster_id, 0, k - 1)], 0.0)
 
     out = (pos - basis.centre) / np.maximum(basis.scale, 1.0e-9)
     return _soft_limit_frozen(out, basis.knee, basis.peak)
@@ -229,12 +263,93 @@ def _write_f32(path: Path, rows: np.ndarray) -> None:
     path.write_bytes(rows.astype("<f4", copy=False).ravel(order="C").tobytes())
 
 
+# --- the novel pool: new sounds waiting for a quorum ------------------------------------
+
+
+def _load_pool(out_dir: Path, points: dict[str, Any]) -> list[dict[str, Any]]:
+    """The pending unassigned novel points, validated against the points on disk.
+
+    Every entry names a row of `points.json` that is still unassigned. Anything else —
+    an index past the end, or a row that has since gained a cluster — means the assets
+    were *rebuilt* since the pool was written, and the entry is dropped: a rebuild
+    re-clusters the whole corpus, novel points included, so a pool fitted to the old
+    point order has nothing left to say.
+    """
+    path = Path(out_dir) / NOVEL_POOL_FILE
+    if not path.exists():
+        return []
+    try:
+        blob = json.loads(path.read_text(encoding="utf-8"))
+        entries = blob.get("entries", [])
+    except (OSError, ValueError):
+        return []
+    cluster_id = points.get("clusterId", [])
+    return [
+        e for e in entries
+        if 0 <= int(e.get("point", -1)) < len(cluster_id)
+        and cluster_id[int(e["point"])] == -1
+    ]
+
+
+def _save_pool(out_dir: Path, entries: list[dict[str, Any]]) -> None:
+    path = Path(out_dir) / NOVEL_POOL_FILE
+    if not entries:
+        path.unlink(missing_ok=True)
+        return
+    path.write_text(
+        json.dumps({"version": 1, "entries": entries}, indent=1), encoding="utf-8"
+    )
+
+
+def _novel_groups(
+    u: np.ndarray,
+    min_cosine: float = NOVEL_CLUSTER_MIN_COSINE,
+    quorum: int = MIN_NOVEL_CLUSTER,
+    cohesion_floor: float = NOVEL_CLUSTER_MIN_COHESION,
+) -> list[tuple[np.ndarray, np.ndarray, float]]:
+    """Cohesive groups of at least `quorum` pending points: greedy seed + radius.
+
+    Seeds are tried in pool order — deterministic, which is what makes repeated grows
+    idempotent. A bare radius around the seed is unstable against an eccentric seed
+    (measured: one genuine 108-member novel group averaged 0.85 cosine to its own mean
+    but 0.34 to its first member), so the centre is re-fit to the members and the
+    radius re-applied, a few times: one spherical-kmeans step per seed, which moves the
+    centre off the seed and onto the group. What survives must also clear the cohesion
+    floor, or eight unrelated oddballs would found a knot that means nothing.
+    """
+    consumed = np.zeros(len(u), dtype=bool)
+    groups: list[tuple[np.ndarray, np.ndarray, float]] = []
+    for i in range(len(u)):
+        if consumed[i]:
+            continue
+        centre = u[i]
+        members = np.zeros(0, dtype=int)
+        for _ in range(4):
+            sim = u @ centre
+            members = np.nonzero((sim >= min_cosine) & ~consumed)[0]
+            if not len(members):
+                break
+            new_centre = _unit_rows(u[members].mean(axis=0, keepdims=True))[0]
+            if np.allclose(new_centre, centre, atol=1e-9):
+                break
+            centre = new_centre
+        if len(members) < quorum:
+            continue
+        cohesion = float((u[members] @ centre).mean())
+        if cohesion < cohesion_floor:
+            continue
+        groups.append((members, centre, cohesion))
+        consumed[members] = True
+    return groups
+
+
 def extend_build(
     out_dir: Path,
     new: Any,
     stamp: str,
     verbose: bool = True,
     inventory_path: Path | None = None,
+    descriptors28: np.ndarray | None = None,
 ) -> dict[str, Any]:
     """
     Append a `PointSet` to the galaxy already in `out_dir`, leaving it otherwise alone.
@@ -243,6 +358,22 @@ def extend_build(
     nearest existing knot in the 28-d space — the same comparison the live matcher makes —
     and placed through the frozen frame. Nothing is re-clustered and nothing is re-fitted,
     which is what makes this cheap and what makes `drift` necessary.
+
+    The exception is a point whose observation was flagged `novel` at ingest (docs/09
+    §9.2b use 2). Force-assigning it to the nearest knot is exactly the silent
+    misassignment the flag exists to end, so it joins the cloud unassigned
+    (`clusterId -1`, which the renderer already tolerates from the density-clustering
+    path) and waits in a persisted pool (`novel-pool.json`). Once the pool holds a
+    quorum of mutually cohesive novel points — `MIN_NOVEL_CLUSTER` of them, one sound
+    heard enough times to be a type and not an accident — they found a knot of their
+    own: appended to `centroids.json` as "unheard syllable", species unknown,
+    confidence `unlabelled`, because detecting that a sound is new is not knowing what
+    it means (§8.5). The pool persists between runs and a founded knot leaves it, so
+    repeated grows are deterministic and idempotent.
+
+    `descriptors28` is the new rows' 28-d descriptors, only so a knot founded in an
+    embed-space galaxy can also carry the fallback `vector` the browser's pre-embedding
+    path reads — the knot's primary vector is computed from `new.x` itself.
 
     The generation counter is what lets the interface animate an arrival: every point
     carries the build it joined in, so the renderer can tell which marks are new without

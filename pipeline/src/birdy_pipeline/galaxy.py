@@ -89,6 +89,11 @@ class PointSet:
     #: None for a corpus that was never embedded — the descriptor-space build, which is
     #: still the default. Only a build with `space="embed"` reads this.
     embeddings: np.ndarray | None = None
+    #: One flag per row: the observation this point came from was judged unlike every
+    #: known type centroid at ingest (docs/09 §9.2b use 2). None on corpora that were
+    #: never scored — every build path, where the flag changes nothing. Only `grow`
+    #: reads it, to hold a new point back from force-assignment to the nearest knot.
+    novel: list[bool] | None = None
 
     def __len__(self) -> int:
         return int(self.x.shape[0])
@@ -113,6 +118,13 @@ class PointSet:
             if all(p.embeddings is not None for p in kept)
             else None
         )
+        # Same all-or-nothing rule as the embeddings: a partially flagged corpus would
+        # make "unflagged" ambiguous between "measured, known" and "never measured".
+        novel = (
+            [v for p in kept for v in (p.novel or [False] * len(p))]
+            if all(p.novel is not None for p in kept)
+            else None
+        )
         return PointSet(
             x=np.concatenate([p.x for p in kept], axis=0),
             species_id=[v for p in kept for v in p.species_id],
@@ -121,6 +133,7 @@ class PointSet:
             duration=[v for p in kept for v in p.duration],
             source=[v for p in kept for v in p.source],
             embeddings=embeddings,
+            novel=novel,
         )
 
 
@@ -980,6 +993,11 @@ def build_galaxy(
                 song_id=[v for v, m in zip(kept.song_id, finite) if m],
                 duration=[v for v, m in zip(kept.duration, finite) if m],
                 source=[v for v, m in zip(kept.source, finite) if m],
+                novel=(
+                    [v for v, m in zip(kept.novel, finite) if m]
+                    if kept.novel is not None
+                    else None
+                ),
             )
             x = kept.x
             z28 = z28[finite]
