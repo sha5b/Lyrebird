@@ -355,6 +355,60 @@ the objective and not the measurements.
 Which finally makes the structural change the one worth doing, because it is the only candidate
 that adds capacity instead of re-aiming the search at a fixed capacity.
 
+### The missing building block, found: the tract must not track f0 (§8.1c)
+
+**No implementation in this literature contains an f0-tracking resonance.** In every reference
+version — Arneodo 2012, Perl 2011, Boari 2015, and the released code — the tract is *fixed*
+(tube length, reflection coefficient, cavity volume, beak gape) and spectral change across a
+syllable comes entirely from harmonics of a moving f0 sweeping through *stationary* resonances.
+§8.1 removed exactly that mechanism and then asked a fitter to recover its effect.
+
+Measured here, relative partial gains against f0:
+
+| f0 | tracking band, p2 | p3 | fixed waveguide, p2 | p3 |
+|---|---|---|---|---|
+| 700 Hz | 0.0233 | 0.0015 | 1.4838 | 1.8841 |
+| 1400 | 0.0189 | 0.0012 | 0.4927 | 0.0101 |
+| 2800 | 0.0175 | 0.0009 | 0.0467 | 0.0015 |
+| 4000 | 0.0178 | 0.0009 | 0.0946 | 0.0050 |
+
+The tracking band's spectrum is **frozen** — a 1.3× spread over a 5.7× change in f0, i.e. a
+rigid translation along log frequency parameterised by f0 alone. The waveguide's second partial
+spans **32×** and its third **1250×**.
+
+That is the mechanism behind the objective conflict above. With the spectral shape structurally
+locked to f0, the *only* lever the fit had for moving a spectral trajectory was bending the
+pitch contour — which is strongly species-diagnostic, so placement collapsed. Fixed resonances
+give the model an f0-independent spectral degree of freedom for the first time.
+
+Verified on the five-species store (wren, tawny owl, cuckoo, blackbird, great tit), swapping
+only the tract and fitting `(L, r)` per species on a coarse grid:
+
+| | nearest own species | cosine to own species | mel-path distance |
+|---|---|---|---|
+| tracking bandpass | 61.7 % | 0.433 | 3.67 |
+| fixed waveguide | **67.9 %** | **0.460** | **3.23** |
+
+**All three improve together.** Under the tracking tract, gaining on the trajectory metric cost
+placement (61.7 % → 43.2 %); under the waveguide there is no trade. The conflict was a symptom
+of the missing degree of freedom, not a property of the objectives.
+
+Structure, as implemented in `_tube_comb`: `pi[t] = src[t] − r·pi[t−2D]`, output
+`(1−r)·pi[t−D]`, with `D = L·sr/c` a **fractional** delay — at 48 kHz a 2 cm trachea is 2.8
+samples one way, so integer rounding would quantise tube length into a handful of useless steps
+and make the parameter unfittable. Resonators after it are **cascaded, not summed**: a sum of
+bandpasses with positive gains cannot produce a spectral zero, and hollow, reedy and nasal
+timbres live in the antiresonances. `(L, r)` is also two *physical* numbers where the formant
+bank was twelve free ones, and tube length goes with body size — so it carries species
+information that free-floating triples destroy.
+
+Still to do: fit `(L, r)` properly rather than on a 7×3 grid, mirror `_tube_comb` in the
+worklet, and re-run the full 22-species comparison. Ranked next after that, from the same
+review: inject `ẏ` rather than `y` at the tract input, and replace the per-syllable envelope
+with the two-state respiratory oscillator of Fainstein, Goller & Mindlin (arXiv:2509.11019),
+which generates attack shape, asymmetry and cross-syllable memory from five parameters instead
+of a designed envelope.
+
 The delay-line waveguide the Mindlin implementations use (`Pi[n] = src[n] − r·Pi[n−N]`,
 `N = round(2L·fs/c)`, cascaded into a fixed resonator; Sitt et al. 2010 `L = 1.9 cm, r = −0.9`)
 remains worth trying, because it passes a whole harmonic comb instead of isolating one partial.

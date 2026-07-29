@@ -132,6 +132,27 @@ TRACHEA_Q = 6.0
 # case `[1, 2*harmonic*0.5]`. Tracking rather than absolute on purpose: these are the
 # harmonics of the source, and the resonance that shapes them *does* follow f0 (Riede et al.
 # 2006). The trachea's fixed contribution is separate, in `formants`.
+# --- the fixed waveguide tract (8.1c) ----------------------------------------------
+#
+# The tract of 8.1 is a bandpass retuned to the instantaneous f0, and that is the piece no
+# implementation in this literature actually contains. Measured: the relative partial gains of
+# a tracking bandpass vary only ~13 % across a 5.7x change in f0, so its output spectrum is a
+# *rigid translation* along log frequency, parameterised by f0 alone. A fixed tract's second
+# partial spans ~126x over the same range and moves monotonically with f0.
+#
+# That is why a time-resolved spectral objective fought the time-averaged one here: with the
+# spectral shape structurally locked to f0, the only way the fit could move the trajectory was
+# to bend the pitch contour, which is a strongly species-diagnostic feature. Fixed resonances
+# give the model an f0-independent spectral degree of freedom for the first time.
+#
+# Structure, following Arneodo 2012 / Perl 2011 / the released reference code: a stopped-tube
+# feedback comb, then fixed resonators in *cascade* rather than parallel. Cascade matters — a
+# sum of bandpasses with positive gains cannot produce a spectral zero, and hollow, reedy and
+# nasal timbres live in the antiresonances.
+SOUND_SPEED_CM_S = 34400.0
+TUBE_LEN_MIN, TUBE_LEN_MAX = 0.8, 20.0  # cm; f1 = c / (4 L)
+TUBE_R_MAX = 0.95
+
 HARMONIC_MAX = 12
 HARMONIC_FLOOR = 1.0e-3  # below this a partial is inaudible and not worth a biquad
 NOISE_MAX = 1.0
@@ -306,6 +327,50 @@ def _xorshift_noise(n: int, stream: int) -> np.ndarray:
         state ^= (state << 5) & 0xFFFFFFFF
         state &= 0xFFFFFFFF
         out[i] = state * (2.0 / 4294967296.0) - 1.0
+    return out
+
+
+@njit(cache=True, fastmath=False)
+def _tube_comb(x: np.ndarray, delay: float, r: float) -> np.ndarray:
+    """Stopped-tube feedback comb: `pi[t] = x[t] - r*pi[t-2D]`, output `(1-r)*pi[t-D]`.
+
+    `D` is the one-way delay in samples, `L*sr/c`, and it is **fractional** with linear
+    interpolation. At 48 kHz a 2 cm trachea is 2.8 samples one way, so rounding to an integer
+    moves the first resonance by hundreds of Hz and quantises tube length into a handful of
+    useless steps — the parameter would be unfittable.
+
+    Unlike a parallel biquad bank this is a single pole *circle*: infinitely many peaks at the
+    odd multiples of `c/4L`, all with the same bandwidth in Hz, so Q rises with frequency.
+    Two numbers, `(L, r)`, and both are physical — tube length goes with body size, which is
+    why they carry species information that free-floating formant triples do not.
+    """
+    n = x.shape[0]
+    two = 2.0 * delay
+    pi = np.zeros(n)
+    out = np.zeros(n)
+    for t in range(n):
+        # feedback tap at t - 2D
+        a = t - two
+        v = 0.0
+        if a >= 0.0:
+            i0 = int(a)
+            frac = a - i0
+            if i0 + 1 < n:
+                v = pi[i0] * (1.0 - frac) + pi[i0 + 1] * frac
+            else:
+                v = pi[i0]
+        pi[t] = x[t] - r * v
+        # output tap at t - D
+        c = t - delay
+        w = 0.0
+        if c >= 0.0:
+            j0 = int(c)
+            frac = c - j0
+            if j0 + 1 < n:
+                w = pi[j0] * (1.0 - frac) + pi[j0 + 1] * frac
+            else:
+                w = pi[j0]
+        out[t] = (1.0 - r) * w
     return out
 
 
@@ -640,6 +705,9 @@ class Syllable:
     #: Measured amplitude of each partial, `harmonics[0]` the fundamental (§8.1b). When
     #: present it supersedes `harmonic`.
     harmonics: list[float] = field(default_factory=list)
+    #: `[length_cm, r]` of the stopped-tube waveguide (§8.1c). When present it **replaces**
+    #: the f0-tracking band of §8.1, and `formants` become cascaded resonators after it.
+    tube: list[float] = field(default_factory=list)
     #: Q of the f0-tracking tract band, overriding the timbre class's default when > 0.
     #: The three classes offer 9, 5 and 3, all of them broad next to the Q ~ 30 that
     #: Fletcher's model and Riede et al. (PNAS 2006) put on the oropharyngeal-esophageal
@@ -674,6 +742,14 @@ class Syllable:
             rough=float(np.clip(float(d.get("rough", 0.0)), 0.0, ROUGH_MAX)),
             gamma_scale=float(d.get("gammaScale", 1.0) or 1.0),
             harmonics=parse_harmonics(d.get("harmonics")),
+            tube=(
+                [
+                    min(max(float(d["tube"][0]), TUBE_LEN_MIN), TUBE_LEN_MAX),
+                    min(max(float(d["tube"][1]), 0.0), TUBE_R_MAX),
+                ]
+                if d.get("tube")
+                else []
+            ),
             tract_q=float(d.get("tractQ", 0.0) or 0.0),
             label=str(d.get("label", "")),
             function=str(d.get("function", "")),
@@ -807,6 +883,7 @@ def jitter_syllable(syl: Syllable, rng: np.random.Generator, j: Jitter) -> Sylla
         rough=syl.rough,
         gamma_scale=syl.gamma_scale,
         harmonics=list(syl.harmonics),
+        tube=list(syl.tube),
         tract_q=syl.tract_q,
         label=syl.label,
         function=syl.function,
@@ -918,6 +995,7 @@ def _voice(
     sample_rate: int,
     calibration: Calibration | None,
     formants: Sequence[Sequence[float]] = (),
+    tube: Sequence[float] = (),
     harmonics: Sequence[float] = (),
     noise: float = 0.0,
     rough: float = 0.0,
@@ -980,6 +1058,13 @@ def _voice(
 
     src = _one_pole_hp(source, TRACT_HP_HZ, sample_rate)
 
+    if tube:
+        # §8.1c: fixed waveguide, then resonators in CASCADE. No f0-tracking band at all.
+        delay = float(tube[0]) * sample_rate / SOUND_SPEED_CM_S
+        out = _tube_comb(src, delay, float(tube[1]))
+        for hz, fq, _gain in formants:
+            out = _static_bandpass(out, float(hz), float(fq), sample_rate)
+        return out
     if harmonics:
         # measured partials (§8.1b): one tracking band per partial, at its own amplitude
         nyq = 0.45 * sample_rate
@@ -1030,7 +1115,7 @@ def render_syllable(
     out = _voice(
         plan.f0, plan.alpha, plan.ps, plan.q, syl.harmonic,
         plan.gamma, plan.oversample, sample_rate, calibration,
-        syl.formants, syl.harmonics, syl.noise, syl.rough, stream,
+        syl.formants, syl.tube, syl.harmonics, syl.noise, syl.rough, stream,
     )
     if syl.two:
         f0b = plan.f0 * (2.0 ** (DETUNE_CENTS / 1200.0))
@@ -1041,7 +1126,7 @@ def render_syllable(
             # sides correlated, and correlated noise through two nearly identical tracts
             # sums to one louder voice instead of two — the bilateral shimmer is exactly
             # the part that has to stay independent.
-            syl.formants, syl.harmonics, syl.noise, syl.rough, stream + 1024,
+            syl.formants, syl.tube, syl.harmonics, syl.noise, syl.rough, stream + 1024,
         )
 
     # 180 Hz one-pole highpass and 12 kHz one-pole lowpass on the sum
