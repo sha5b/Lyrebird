@@ -2069,13 +2069,13 @@ def verify(out: Path) -> int:
                 if not f32_path.exists():
                     problems.append(f"{f32_path.name} is missing for the rff-ridge map")
                 else:
-                    raw = np.frombuffer(f32_path.read_bytes(), dtype="<f4")
-                    if raw.size != want:
+                    map_raw = np.frombuffer(f32_path.read_bytes(), dtype="<f4")
+                    if map_raw.size != want:
                         problems.append(
-                            f"{f32_path.name} holds {raw.size} floats, expected {want} "
+                            f"{f32_path.name} holds {map_raw.size} floats, expected {want} "
                             f"for D={D}"
                         )
-                    elif not np.all(np.isfinite(raw)):
+                    elif not np.all(np.isfinite(map_raw)):
                         problems.append(f"{f32_path.name} contains NaN/inf")
             else:
                 w = np.asarray(space_map.get("w", []), dtype=np.float64)

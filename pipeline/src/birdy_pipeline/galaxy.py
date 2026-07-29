@@ -54,6 +54,16 @@ TEMPERATURE = 0.12
 # the cap talking instead.
 K_CAP = 1024
 
+#: `harvest.SOURCE`, duplicated rather than imported: harvest pulls in the audio decode
+#: stack and galaxy must stay importable where only numpy/sklearn exist.
+FIELD_SOURCE = "field"
+
+#: Cosine between a type's field-blob mean and its synthetic-blob mean below which the
+#: two are seeded separately (`_type_seed_means`). 0.9 splits 483 of 496 types on the
+#: 47 k corpus — the source gap touches nearly everything — and still merges the blobs
+#: that genuinely coincide, which is what keeps the second seed honest.
+SOURCE_SEED_GATE = 0.9
+
 PROJECTIONS = ("umap", "pca", "cmds")
 DEFAULT_PROJECTION = "cmds"  # most distance-faithful; see README "Galaxy shape"
 FAITHFULNESS_PAIRS = 200_000
@@ -661,6 +671,46 @@ def _print_projection_table(results: dict[str, dict[str, Any]], chosen: str) -> 
     print("", file=sys.stderr)
 
 
+def _type_seed_means(
+    z: np.ndarray, points: PointSet, gate: float = SOURCE_SEED_GATE
+) -> tuple[list[np.ndarray], int]:
+    """One seed per type per *source blob*: the field mean and the synthetic mean.
+
+    The strongest relation in the critic's space is not species, it is `source` —
+    recorded or synthesised (kNN 0.990 against species' 0.513 on the 47 k build). A
+    type with members on both sides therefore lives in two blobs, and a single seed at
+    the mean of both sits in empty space between them, gets captured by whichever blob
+    is bigger, and leaves the other blob to be named by a neighbour. Measured on the
+    fixed 59 700-point corpus (`build --dump-points`): one seed per type covers 71.0 %
+    of types and scores 48.1 % purity; splitting at the 0.9 gate covers **93.1 %** at
+    56.6 % purity. 483 of 496 types split at that gate — the gap touches nearly every
+    type — and the gate still keeps the two seeds honest: blobs that genuinely coincide
+    (cosine >= gate) share one, because there is nothing to separate.
+    """
+    labelled: dict[tuple[str, str], list[int]] = {}
+    for i, (sp, syl) in enumerate(zip(points.species_id, points.syllable_id)):
+        if syl:
+            labelled.setdefault((sp, syl), []).append(i)
+    seeds: list[np.ndarray] = []
+    n_split = 0
+    for _, idx in sorted(labelled.items()):
+        ix = np.asarray(idx)
+        is_field = np.asarray([points.source[i] == FIELD_SOURCE for i in ix])
+        f, s = ix[is_field], ix[~is_field]
+        if f.size and s.size:
+            fm, sm = z[f].mean(axis=0), z[s].mean(axis=0)
+            cos = float(
+                np.dot(fm, sm)
+                / max(float(np.linalg.norm(fm) * np.linalg.norm(sm)), 1.0e-12)
+            )
+            if cos < gate:
+                seeds.extend((fm, sm))
+                n_split += 1
+                continue
+        seeds.append(z[ix].mean(axis=0))
+    return seeds, n_split
+
+
 def default_k(points: PointSet) -> int:
     """
     How many clusters to fit: one per known syllable type, or — for a corpus that has no
@@ -686,35 +736,41 @@ def default_k(points: PointSet) -> int:
     return cluster_plan(points)["k"]
 
 
-def cluster_plan(points: PointSet) -> dict[str, Any]:
+def cluster_plan(points: PointSet, z: np.ndarray | None = None) -> dict[str, Any]:
     """`default_k` with its reasoning attached, so a build can report what it asked for.
 
-    **One per type was only ever half the count.** Harvested points carry no
-    ``syllable_id``, and they are 40 % of the shipped corpus — they need clusters as much
-    as the rendered types do, and they take them first, because a field recording is
-    further from every synthetic render than the renders are from each other. Asking for
-    exactly ``len(types)`` therefore hands a large share of the clusters to field audio and
-    leaves the named types to share what is left: the 256-cluster build gave 76 clusters to
-    field-only knots, so 180 remained for 308 types and 128 types ended up with no cluster
-    carrying their name. That is invisible in purity, which only scores the points that
-    *do* have a cluster, and invisible in the app, which cannot distinguish "this call has
-    no node" from "this call is quiet".
+    **One seed per type was only ever half the count — twice.** First because harvested
+    points carried no ``syllable_id`` and took clusters the named types then lacked (the
+    256-cluster build: 76 field-only knots, 128 types orphaned). Then, once typing
+    labelled every field point and the sqrt allowance shrank to nothing (126 untyped →
+    7), because a type's field and synthetic members sit in *different blobs*: `source`
+    is the strongest relation in the critic's space (kNN 0.990, species 0.513), and one
+    midpoint seed per type is captured by the bigger blob. Coverage stuck at 70-71 %
+    across three builds (110, then 148, then 144 orphaned types — cuculus_solitarius
+    losing a dozen at a time).
 
-    So the count is the types plus an allowance for the points that have no type, using the
-    same sqrt(n/2) rule this function already trusted for a corpus with no labels at all.
+    The count is therefore the number of *type seeds* — one per type per source blob,
+    `_type_seed_means` with its measured gate — plus the sqrt allowance for the points
+    that still have no type. Measured on the fixed 59 700-point corpus: 71.0 % → 93.1 %
+    coverage, purity 48.1 % → 56.6 % (better on both: the seeds finally sit where the
+    points are). `z` is the standardised space matrix; without it the plan cannot see
+    the blobs and falls back to one seed per type, which is what `default_k` still does.
     """
     types = {
         (sp, syl) for sp, syl in zip(points.species_id, points.syllable_id) if syl
     }
     unlabelled = sum(1 for syl in points.syllable_id if not syl)
     allowance = int(math.sqrt(unlabelled / 2)) if unlabelled else 0
-    wanted = len(types) + allowance if types else int(
+    n_seeds = len(_type_seed_means(z, points)[0]) if z is not None else len(types)
+    wanted = n_seeds + allowance if types else int(
         math.sqrt(max(1, len(points.species_id)) / 2)
     )
     k = max(2, min(K_CAP, wanted))
     return {
         "k": k,
         "types": len(types),
+        "typeSeeds": n_seeds,
+        "sourceSplitTypes": n_seeds - len(types) if types else 0,
         "unlabelledPoints": unlabelled,
         "allowance": allowance,
         "wanted": wanted,
@@ -726,7 +782,8 @@ def cluster_plan(points: PointSet) -> dict[str, Any]:
 def type_seeds(
     z: np.ndarray, points: PointSet, k: int, seed: int = 0
 ) -> tuple[np.ndarray, int] | None:
-    """Initial centroids: one at the centre of every named type, the rest found freely.
+    """Initial centroids: one at the centre of every type's every source blob, the rest
+    found freely.
 
     **KMeans++ picks its seeds by distance, and distance in this space is dominated by
     "was this recorded or synthesised".** So it spends its seeds spreading across that gap
@@ -737,28 +794,26 @@ def type_seeds(
     all. Raising `k` alone does not fix that: it hands the extra clusters to whatever is
     furthest away, which is more field audio, not the type that was crowded out.
 
-    Seeding each type at its own centre states the thing the design already claims — that a
-    type is what a cluster is *for*. Lloyd's algorithm still moves every centroid and still
-    decides membership, so nothing is forced: a type whose renders genuinely sit inside
-    another type's cloud will still be absorbed, and `typeCoverage` will still say so. What
-    changes is that a type is no longer denied a cluster by an accident of initialisation.
+    Seeding each type at its own centre was the first fix; seeding each type's *source
+    blobs* separately is the measured one (`_type_seed_means`: the source gap is the
+    space's strongest axis, and a midpoint seed between two blobs is a seed in empty
+    space). Lloyd's algorithm still moves every centroid and still decides membership,
+    so nothing is forced: a blob whose points genuinely sit inside another type's cloud
+    will still be absorbed, and `typeCoverage` will still say so. Both blobs of a split
+    type may win their cluster's name — two knots, one type — which is the honest
+    picture of a space where recorded and synthesised do not coincide.
 
     Returns the seed matrix and how many of its rows are type means, or None when the
     corpus has no types or has more of them than `k` can hold.
     """
-    labelled: dict[tuple[str, str], list[int]] = {}
     unlabelled: list[int] = []
-    for i, (sp, syl) in enumerate(zip(points.species_id, points.syllable_id)):
-        if syl:
-            labelled.setdefault((sp, syl), []).append(i)
-        else:
+    for i, syl in enumerate(points.syllable_id):
+        if not syl:
             unlabelled.append(i)
-    if not labelled or len(labelled) > k:
+    means_list, _ = _type_seed_means(z, points)
+    if not means_list or len(means_list) > k:
         return None
-
-    means = np.stack(
-        [z[idx].mean(axis=0) for _, idx in sorted(labelled.items())]
-    )
+    means = np.stack(means_list)
     extra = k - len(means)
     if extra <= 0:
         return means[:k], len(means[:k])
@@ -1067,14 +1122,15 @@ def build_galaxy(
                 file=sys.stderr,
             )
     else:
-        plan = cluster_plan(kept)
+        plan = cluster_plan(kept, z)
         plan_report = plan
         k_final = int(k or plan["k"])
         k_final = max(2, min(k_final, len(kept)))
         if verbose:
             print(f"kmeans: k={k_final} on standardised descriptors", file=sys.stderr)
             print(
-                f"  {plan['types']} named types + {plan['allowance']} for "
+                f"  {plan['types']} named types ({plan['sourceSplitTypes']} with "
+                f"source-split seeds) + {plan['allowance']} for "
                 f"{plan['unlabelledPoints']} points with no type = {plan['wanted']} wanted",
                 file=sys.stderr,
             )

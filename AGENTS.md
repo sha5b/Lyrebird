@@ -48,6 +48,8 @@ uv run birdy-pipeline relations ...   # cross-species relations.json
 uv run birdy-pipeline expand --dry-run  # novelty-guided harvest targets (no network)
 uv run birdy-pipeline verify app/static/birdy
 uv run birdy-pipeline serve           # Learn-tab control surface, loopback :8781
+uv run birdy-pipeline sources list    # which audio sources are usable, and why not
+uv run birdy-pipeline sources fetch --source internet-archive --limit 5 --store /tmp/...
 ```
 
 Notes:
@@ -62,6 +64,13 @@ Notes:
   syllable points when typing.json exists.
 - Novelty recalibration after a big harvest: `critic.fit_novelty` on the current store
   (see docs/10 §10.3 — thresholds do not transfer across harvest epochs).
+- `sources` (sources.py) fetches from Zenodo, the Internet Archive, Kaggle (BirdCLEF)
+  and Hugging Face (BirdSet) through the same decode → describe → delete loop as
+  `harvest`. Keys live in `pipeline/.env` (template: `.env.example`: `XC_API_KEY`,
+  `KAGGLE_USERNAME`/`KAGGLE_KEY`, `HF_TOKEN`, `ZENODO_TOKEN`); an unfilled key or a
+  missing package is a logged skip with exit 0, never an error. The source SDKs are the
+  optional `sources` extra in `pyproject.toml` (lazy imports, like the critic's torch) —
+  do not `uv sync` it onto machines that only build the app.
 
 App checks run from `app/`: `npm run check` (4 pre-existing errors in
 `syrinx-processor.js` are known — no *new* errors allowed), `node scripts/verify-parity.mjs`.

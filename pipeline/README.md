@@ -19,6 +19,7 @@ uv sync
 uv run birdy-pipeline build            # calibrate if needed, render, embed, write assets
 uv run birdy-pipeline calibrate        # only re-measure the syrinx table
 uv run birdy-pipeline harvest          # stream real recordings into a bounded store
+uv run birdy-pipeline sources list     # which audio sources this machine can use, and why not
 uv run birdy-pipeline learn            # fit syllables + syntax to what was harvested
 uv run birdy-pipeline serve            # drive the above from the app's Learn tab
 uv run birdy-pipeline demo             # a few example wavs into pipeline/out/demo
@@ -295,7 +296,10 @@ XC_API_KEY=your-key-here
 ```
 
 It is read by `birdy-pipeline` at startup and never overrides a variable already in the
-environment, so `XC_API_KEY=... uv run ...` still wins. `.env` is gitignored.
+environment, so `XC_API_KEY=... uv run ...` still wins. `.env` is gitignored. The same
+file holds the keys for the other sources (`KAGGLE_USERNAME`/`KAGGLE_KEY`, `HF_TOKEN`,
+`ZENODO_TOKEN` — see `.env.example`); every one of them is optional, and an unfilled key
+skips its source rather than failing anything.
 
 **It does not go in `app/`.** Vite inlines anything it finds there into the bundle it
 ships to the browser, and the browser never talks to xeno-canto in the first place —
@@ -325,6 +329,35 @@ alternative in practice was people scraping without recording the licence.
 cluster the inventory cannot name gets `confidence: "unlabelled"` — a fifth label
 alongside the four in the root README — which the app renders as *field recording*. It
 is a different claim from `invented`, and both are different from having a citation.
+
+## Other sources: `sources` (no rate-limited API required)
+
+xeno-canto is one API key and one rate limit; the open-dataset world is not. `sources.py`
+puts four more services behind the same decode -> describe -> delete loop:
+
+```bash
+uv run birdy-pipeline sources list        # what this machine can use, and why not
+uv run birdy-pipeline sources fetch --source internet-archive \
+    --species "Turdus merula" --limit 5 --store out/harvest
+uv run birdy-pipeline sources fetch --source zenodo --limit 3        # XCDC soundscapes
+```
+
+`sources list` prints the availability table; an unfilled key or a missing package is a
+logged `skip <source>: <reason>` with exit 0, never an error. Verified against the live
+services on 2026-07-29:
+
+| source | needs | what it is |
+|---|---|---|
+| `zenodo` | nothing (`ZENODO_TOKEN` optional) | XCDC: 576 dawn-chorus soundscapes (record 15420487, CC-BY-NC-ND), one 23.6 GB tar.gz streamed from byte 0; any other record id via `--item`. Multi-species by construction — filed as `unlabelled`, never typed |
+| `internet-archive` | nothing | `xccoverbl_2014` (a xeno-canto mirror: 264 flacs, 88 UK species, per-file licences; the default) plus the `warblrb10k_public` / `ff1010bird` **control sets** (bird/no-bird labels only — the "8 000 species-labelled warblr clips" story does not survive checking; their 5-6 GB zips are read over HTTP range requests, members only) |
+| `kaggle` | `KAGGLE_USERNAME` + `KAGGLE_KEY`, `kaggle` package | BirdCLEF 2021-2025 `train_audio`, downloaded per species folder — never the whole archive |
+| `huggingface` | `huggingface_hub` package (`HF_TOKEN` optional; BirdSet is not gated) | BirdSet XCM/XCL shards (~0.5-5.4 GB tar.gz, streamed). Per-species partial download is not practical — the docstring in `sources.py` says why |
+| `xeno-canto` | `XC_API_KEY` | listed for a complete picture; fetched via `harvest`, not `sources fetch` |
+
+The packages for the keyed sources are an optional extra — `uv sync --extra sources` —
+imported lazily, exactly like the critic's torch. Staged audio lives in a temporary
+directory that is gone when the fetch returns; the store keeps descriptors, syllables
+and a CREDITS.md row, indistinguishable from a xeno-canto harvest.
 
 ## Learning: fit the model to what was heard
 
