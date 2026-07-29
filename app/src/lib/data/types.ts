@@ -37,6 +37,41 @@ export interface Syllable {
 	am?: number;
 	amDepth?: number;
 	vib?: { rate: number; depth: number };
+	/**
+	 * Tract resonances as `[hz, q, gain]`, at absolute frequencies that do **not** follow
+	 * f0 — up to three (§8.1a).
+	 *
+	 * The tract of §8.1 is a bandpass retuned to the instantaneous f0, so its resonance is
+	 * relative to pitch and the spectral envelope comes out pitch-invariant: transposing a
+	 * syllable transposes its whole spectrum, and two species at the same pitch are the
+	 * same instrument. A formant fixed in Hz is what lets a contour sweeping underneath it
+	 * change timbre as it goes, the way a real trachea does.
+	 */
+	formants?: [number, number, number][];
+	/** Turbulence at the labia, 0..1, gated by pressure. The only route to a real rasp:
+	 *  the ODE limit cycle is periodic, so a "buzz" made by widening a bandpass is a tone. */
+	noise?: number;
+	/** Cycle-to-cycle tension irregularity, 0..1, which reaches the sound through the
+	 *  oscillator as jitter, subharmonics and — at the top — aperiodicity. */
+	rough?: number;
+	/**
+	 * Multiplier on the per-syllable gamma of §8.1, and the syllable's harmonic-richness
+	 * control (§8.1a).
+	 *
+	 * gamma is a pure time-scale, so for a fixed target f0, raising it forces beta down —
+	 * and the spectral content index (spectral centroid ÷ f0) is a function of beta alone.
+	 * Low beta gives the pulse-like, harmonically dense solutions; high beta gives tonal
+	 * ones. The §8.1 rule puts every syllable at beta ≈ 1, which is the tonal end, so
+	 * without this the rich half of a repertoire is unreachable rather than merely
+	 * mis-fitted.
+	 */
+	gammaScale?: number;
+	/**
+	 * Q of the f0-tracking tract band, overriding the timbre class's default when set.
+	 * The three classes offer 9, 5 and 3 — all broad next to the Q ≈ 30 measured for the
+	 * oropharyngeal-esophageal resonance, and a broad band leaks the second harmonic.
+	 */
+	tractQ?: number;
 }
 
 export interface Song {

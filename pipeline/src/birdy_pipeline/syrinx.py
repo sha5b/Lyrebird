@@ -61,6 +61,110 @@ TIMBRE: dict[str, tuple[float, float]] = {
     "buzz": (1.75, 3.0),
 }
 
+# --- absolute tract resonances, turbulence and roughness (8.1a) --------------------
+#
+# The three additions below all default to off, so a syllable that does not carry them
+# renders exactly as it did before they existed. That is deliberate: the authored
+# inventory was tuned against the old chain and must not shift under it.
+#
+# **Why they exist.** The tract of 8.1 is a bandpass that is retuned to the instantaneous
+# f0 every COEFF_UPDATE samples. Every resonance in that chain is therefore *relative* to
+# pitch, which makes the spectral envelope pitch-invariant: transposing a syllable
+# transposes its whole spectrum, so two species at the same pitch are the same instrument.
+# Measured over the harvest, that is the dominant error — F0 lands within ~1 % while the
+# 28-d descriptor cosine sits near 0.48, and more than half of all fitted types resynthesise
+# closer to a *different* type than to their own source audio.
+#
+# `formants` fixes the frequency of a resonance in Hz instead of in multiples of f0, so a
+# contour sweeping under a fixed resonance changes timbre as it goes, the way a real
+# trachea does. `noise` injects turbulence at the labia, which is the only route to a
+# genuine rasp: the ODE limit cycle is periodic, so a "buzz" made by widening a bandpass
+# is still a tone. `rough` perturbs the driving pressure, which is what puts the
+# oscillator into the subharmonic and chaotic regimes real syringes visit.
+FORMANT_MAX = 4  # the tracheal comb below wants four
+FORMANT_Q_MIN, FORMANT_Q_MAX = 0.7, 40.0
+FORMANT_HZ_MIN = 150.0
+
+# --- the tracheal comb ------------------------------------------------------------
+#
+# `formants` is the general mechanism, but a bank of free `[hz, q, gain]` triples is nine
+# floats of search space with nothing holding it to anything physical, and a coordinate
+# search will happily overfit it. The trachea is not free: it is a tube closed at the
+# syrinx and open at the beak, so it resonates as a stopped quarter-wave pipe and its
+# peaks fall at the *odd* harmonics of a single frequency,
+#
+#     f_n = (2n - 1) * c / (4 * L_eff),   n = 1, 2, 3, 4
+#
+# which means the whole comb is one number. `tracheal_comb` expands that number, so the fit
+# searches one well-constrained float instead of nine loose ones.
+#
+# Measured, and the agreement with the tube formula is what justifies using it:
+#   eastern towhee, syrinx replaced by a loudspeaker and swept 0.5-11 kHz (Nelson, Beckers
+#     & Suthers, JEB 2005): resonances at ~2.0 and ~5.5 kHz, against 1.88 and 5.67 kHz
+#     predicted for the bird's 45 mm trachea;
+#   northern cardinal (Riede et al., PNAS 2006): ~2, 5, 8, 12 kHz, i.e. 1:3:5:7;
+#   white-throated sparrow (Riede & Suthers 2009): trachea 3.4-3.8 cm, first resonance
+#     ~2.2 kHz and second ~6.6 kHz, the first sitting ~20 dB below the moving OEC peak.
+#
+# That 20 dB is why TRACHEAL_GAIN is small by default: the trachea colours the sound, the
+# tract band carries it.
+TRACHEA_F1_MIN, TRACHEA_F1_MAX = 700.0, 4000.0
+TRACHEA_PARTIALS = 4
+# Q of the tracheal peaks. Lower than the OEC resonance's modelled Q ~ 30 (Fletcher; Riede
+# et al. 2006) because a tube damped by soft tissue is broader than an ideal one, and
+# because these have to colour a sweeping harmonic rather than track it.
+TRACHEA_Q = 6.0
+NOISE_MAX = 1.0
+# Turbulence scales with airflow, so the noise is gated by pressure rather than added flat:
+# a bird at rest does not hiss. Below this pressure there is no flow to be turbulent.
+NOISE_PS_FLOOR = 0.05
+# Calibrated so that `noise` over 0..1 spans the spectral flatness the harvest actually
+# contains, because a parameter whose useful range is its first tenth is a parameter the
+# coordinate search will not find. Measured against the 39 976 harvested syllables, whose
+# own flatness runs median 0.044 (pure 0.034, reed 0.114, buzz 0.349, p90 overall 0.141):
+#
+#   noise 0      -> 0.0005   the old chain, three orders of magnitude too pure to be a bird
+#   pure, 0.5    -> 0.063
+#   buzz, 0.5    -> 0.181
+#   buzz, 1.0    -> 0.227
+#   buzz, 1.0, one low-Q formant open -> 0.365   i.e. the buzz median is reachable
+#
+# The source is normalised to a peak-to-peak of SOURCE_GAIN by `ampPP`, so the two are
+# directly comparable and this ratio means what it looks like.
+NOISE_GAIN = 2.0 * SOURCE_GAIN
+ROUGH_MAX = 1.0
+# Pressure perturbation is lowpassed to this before it reaches alpha. White jitter at the
+# sample rate is heard as added hiss, not as roughness; real cycle-to-cycle irregularity in
+# birdsong lives in the tens of Hz, and at that rate it reads as a rough voice.
+ROUGH_LP_HZ = 140.0
+# Tension multiplier swing at rough = 1, per standard deviation of the lowpassed noise, and
+# the bound on it. Smaller than it looks: f0 goes roughly as sqrt(beta), so 0.12 on beta is
+# about 6 % on pitch at one sigma — already a strongly rough voice. Amador & Mindlin report
+# the response to their synthetic songs peaking at an *intermediate* noise level and
+# collapsing at a high one, so the useful range is genuinely narrow and the clamp matters.
+ROUGH_DEPTH = 0.12
+ROUGH_CLAMP = (0.5, 1.5)
+
+
+def rough_std_gain(sample_rate: int = SAMPLE_RATE) -> float:
+    """Scale that gives the lowpassed noise unit standard deviation.
+
+    Analytic rather than measured from the buffer, and that is the point: normalising by a
+    whole-array maximum needs the whole array, which a realtime worklet does not have, and
+    it also made the effect depend on syllable length — a longer syllable has a larger
+    maximum, so the same `rough` meant progressively less modulation. A one-pole lowpass on
+    noise uniform over [-1, 1) has variance `(1-c)/(1+c) * 1/3`, so both sides can compute
+    the same constant from the same cutoff and get the same sound.
+    """
+    c = math.exp(-2.0 * math.pi * ROUGH_LP_HZ / sample_rate)
+    return math.sqrt(3.0) * math.sqrt((1.0 + c) / (1.0 - c))
+#: Default stream index for the deterministic noise generator. The offline renderer and the
+#: verification always use 0, so a fitted cosine is reproducible; the browser gives each
+#: voice its own index, so two renditions of one syllable get different turbulence from the
+#: same spectrum — which is what a real bird does, and what `jitter_syllable` already does
+#: to the other parameters.
+NOISE_SEED = 0
+
 try:  # numba arrives with umap-learn; the ODE is ~100x faster with it
     from numba import njit
 
@@ -154,6 +258,75 @@ def _one_pole_lp(x: np.ndarray, cutoff_hz: float, sample_rate: int) -> np.ndarra
 
 
 @njit(cache=True, fastmath=False)
+def _xorshift_noise(n: int, stream: int) -> np.ndarray:
+    """White noise in [-1, 1) from xorshift32, bit-identical to the browser's copy.
+
+    A PRNG rather than `np.random` because this is part of the two-sided contract: the
+    browser has to be able to produce the same turbulence from the same syllable, and
+    "some noise with the same spectrum" is not a contract anyone can test. xorshift32 is
+    used because it is four integer ops and exactly representable in JavaScript's int32
+    bitwise ops, so the two implementations cannot drift.
+
+    `stream` selects an independent sequence. Seeding is `stream*2654435761 + 1` folded to
+    32 bits, then advanced eight times, because a small seed's first few outputs are
+    correlated across neighbouring streams.
+    """
+    out = np.zeros(n)
+    state = (stream * 2654435761 + 1) & 0xFFFFFFFF
+    if state == 0:
+        state = 0x9E3779B9
+    for _ in range(8):  # discard: adjacent streams start correlated otherwise
+        state ^= (state << 13) & 0xFFFFFFFF
+        state ^= state >> 17
+        state ^= (state << 5) & 0xFFFFFFFF
+        state &= 0xFFFFFFFF
+    for i in range(n):
+        state ^= (state << 13) & 0xFFFFFFFF
+        state ^= state >> 17
+        state ^= (state << 5) & 0xFFFFFFFF
+        state &= 0xFFFFFFFF
+        out[i] = state * (2.0 / 4294967296.0) - 1.0
+    return out
+
+
+@njit(cache=True, fastmath=False)
+def _static_bandpass(
+    x: np.ndarray, centre_hz: float, q: float, sample_rate: int
+) -> np.ndarray:
+    """The same RBJ bandpass as `_tracking_bandpass`, at a frequency that does not move.
+
+    Separate from the tracking form on purpose: a resonance fixed in Hz is the entire
+    point of `formants`, so its coefficients are computed once rather than refreshed from
+    an f0 that no longer applies to it.
+    """
+    n = x.shape[0]
+    out = np.zeros(n)
+    nyq = 0.45 * sample_rate
+    f = centre_hz
+    if f < 20.0:
+        f = 20.0
+    elif f > nyq:
+        f = nyq
+    w0 = 2.0 * math.pi * f / sample_rate
+    amp = math.sin(w0) / (2.0 * q)
+    a0 = 1.0 + amp
+    b0 = amp / a0
+    b2 = -amp / a0
+    a1 = (-2.0 * math.cos(w0)) / a0
+    a2 = (1.0 - amp) / a0
+    x1 = x2 = y1 = y2 = 0.0
+    for i in range(n):
+        xi = x[i]
+        yi = b0 * xi + b2 * x2 - a1 * y1 - a2 * y2
+        x2 = x1
+        x1 = xi
+        y2 = y1
+        y1 = yi
+        out[i] = yi
+    return out
+
+
+@njit(cache=True, fastmath=False)
 def _tracking_bandpass(
     x: np.ndarray,
     centre_hz: np.ndarray,
@@ -243,10 +416,17 @@ class Calibration:
     f0_grid: np.ndarray
     beta: np.ndarray  # inverse: [pressure][f0]
     f0_range: tuple[float, float]
+    #: The clamp the sweep actually covers, from the table's own `betaClamp`. Read from the
+    #: table rather than taken from the module constant, because `--beta-min` moves it and
+    #: both renderers have to agree on where it moved to — the browser reads the same field.
+    #: Without this, a table built down to 0.002 was still being clamped at the contract's
+    #: 0.15 here while the worklet honoured 0.002, so the two sides played different notes.
+    beta_clamp: tuple[float, float] = (BETA_MIN, BETA_MAX)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Calibration":
         inv = data["inverse"]
+        clamp = data.get("betaClamp") or [BETA_MIN, BETA_MAX]
         return cls(
             pressure_grid=np.asarray(data["pressureGrid"], dtype=np.float64),
             beta_grid=np.asarray(data["betaGrid"], dtype=np.float64),
@@ -254,6 +434,7 @@ class Calibration:
             f0_grid=np.asarray(inv["f0Grid"], dtype=np.float64),
             beta=np.asarray(inv["beta"], dtype=np.float64),
             f0_range=(float(data["f0Range"][0]), float(data["f0Range"][1])),
+            beta_clamp=(float(clamp[0]), float(clamp[1])),
         )
 
     def beta_for(
@@ -274,8 +455,8 @@ class Calibration:
                 np.asarray(pressure, dtype=np.float64),
                 f0_lookup,
             ),
-            BETA_MIN,
-            BETA_MAX,
+            self.beta_clamp[0],
+            self.beta_clamp[1],
         )
 
     def amp_pp_for(self, beta: np.ndarray, pressure: np.ndarray) -> np.ndarray:
@@ -302,7 +483,7 @@ class Calibration:
             np.full(self.f0_grid.shape, pressure),
             self.f0_grid,
         )
-        inside = np.nonzero((row > BETA_MIN) & (row < BETA_MAX))[0]
+        inside = np.nonzero((row > self.beta_clamp[0]) & (row < self.beta_clamp[1]))[0]
         scale = gamma / GAMMA_REFERENCE
         if inside.size == 0:
             return (float(self.f0_grid[0]) * scale, float(self.f0_grid[-1]) * scale)
@@ -337,6 +518,49 @@ def amp_pp_for(
 # --- syllable model ---------------------------------------------------------------
 
 
+def tracheal_comb(
+    f1_hz: float, gain: float, partials: int = TRACHEA_PARTIALS, q: float = TRACHEA_Q
+) -> list[list[float]]:
+    """The odd-harmonic resonance series of a stopped tube, as a `formants` bank.
+
+    One float in, up to four resonances out, at `(2n-1) * f1`. Partials above the tract's
+    12 kHz roll-off are dropped rather than filtered away later — they would cost a biquad
+    each for nothing. Higher partials are quieter, as they are in the measured combs.
+    """
+    f1 = min(max(float(f1_hz), TRACHEA_F1_MIN), TRACHEA_F1_MAX)
+    out: list[list[float]] = []
+    for n in range(1, partials + 1):
+        hz = (2 * n - 1) * f1
+        if hz > TRACT_LP_HZ:
+            break
+        out.append([hz, q, gain / (2 * n - 1)])
+    return out
+
+
+def parse_formants(raw: Any) -> list[list[float]]:
+    """`[[hz, q, gain], ...]` cleaned and clamped, dropping anything unusable.
+
+    Silently permissive because this reads a fitted file: a formant with a zero gain or a
+    frequency below the tract's range contributes nothing audible, so it is dropped rather
+    than allowed to occupy one of the `FORMANT_MAX` slots.
+    """
+    if not raw:
+        return []
+    out: list[list[float]] = []
+    for item in raw:
+        if len(item) < 3:
+            continue
+        hz, q, gain = float(item[0]), float(item[1]), float(item[2])
+        if not (math.isfinite(hz) and math.isfinite(q) and math.isfinite(gain)):
+            continue
+        if hz < FORMANT_HZ_MIN or gain <= 0.0:
+            continue
+        out.append([hz, min(max(q, FORMANT_Q_MIN), FORMANT_Q_MAX), gain])
+        if len(out) >= FORMANT_MAX:
+            break
+    return out
+
+
 @dataclass
 class Syllable:
     """A syllable exactly as it appears in `data/inventory.json`."""
@@ -354,6 +578,38 @@ class Syllable:
     am_depth: float = 0.0
     vib_rate: float = 0.0
     vib_depth: float = 0.0
+    #: Tract resonances as `[hz, q, gain]`, at absolute frequencies that do not follow f0.
+    formants: list[list[float]] = field(default_factory=list)
+    #: Turbulence at the labia, 0..1, gated by pressure.
+    noise: float = 0.0
+    #: Cycle-to-cycle tension irregularity, 0..1.
+    rough: float = 0.0
+    #: Multiplier on the per-syllable gamma of 8.1, and the syllable's harmonic-richness
+    #: control (§8.1a).
+    #:
+    #: gamma is a pure time-scale, so f0 = gamma * PHI(alpha, beta): for a *fixed* target
+    #: f0, raising gamma forces beta down. That matters because the spectral content index
+    #: — the spectral centroid divided by f0 — is a function of beta alone, and is
+    #: invariant to gamma (Sitt et al., Phys Rev E 2008; Perl et al. 2011). Oscillations
+    #: born in a saddle-node-on-a-limit-cycle at low beta have finite amplitude at zero
+    #: frequency and are pulse-like and harmonically dense; those born in a Hopf at high
+    #: beta are tonal.
+    #:
+    #: The 8.1 rule picks gamma so the syllable's median pitch sits at beta ~ 1, which is
+    #: exactly the tonal end. Measured over this harvest, that left every resynthesis at
+    #: SCI ~ 1.1 — the right *median* for a bird, but with no tail at all: 15.6 % of the
+    #: real syllables exceed SCI 1.5 and 5.3 % exceed 3, against 1.4 % and 0 % of ours. The
+    #: rich half of the repertoire was not merely mis-fitted, it was unreachable. This
+    #: scale is how a syllable gets out of the tonal regime, and it needs a calibration
+    #: table built with a lower `--beta-min` to have anywhere to go.
+    gamma_scale: float = 1.0
+    #: Q of the f0-tracking tract band, overriding the timbre class's default when > 0.
+    #: The three classes offer 9, 5 and 3, all of them broad next to the Q ~ 30 that
+    #: Fletcher's model and Riede et al. (PNAS 2006) put on the oropharyngeal-esophageal
+    #: resonance — the value that produces the 11-14 dB suppression of 2*f0 those authors
+    #: measured. A band that broad leaks the second harmonic, which is most of what makes a
+    #: whistle sound like an oscillator instead of a bird.
+    tract_q: float = 0.0
     label: str = ""
     function: str = ""
     confidence: str = ""
@@ -376,6 +632,11 @@ class Syllable:
             am_depth=float(d.get("amDepth", 0.0)),
             vib_rate=float(vib.get("rate", 0.0)),
             vib_depth=float(vib.get("depth", 0.0)),
+            formants=parse_formants(d.get("formants")),
+            noise=float(np.clip(float(d.get("noise", 0.0)), 0.0, NOISE_MAX)),
+            rough=float(np.clip(float(d.get("rough", 0.0)), 0.0, ROUGH_MAX)),
+            gamma_scale=float(d.get("gammaScale", 1.0) or 1.0),
+            tract_q=float(d.get("tractQ", 0.0) or 0.0),
             label=str(d.get("label", "")),
             function=str(d.get("function", "")),
             confidence=str(d.get("confidence", "")),
@@ -497,6 +758,17 @@ def jitter_syllable(syl: Syllable, rng: np.random.Generator, j: Jitter) -> Sylla
         am_depth=syl.am_depth,
         vib_rate=syl.vib_rate,
         vib_depth=syl.vib_depth,
+        # Formants ride the pitch jitter. They are a property of the tract, and a bird whose
+        # syrinx is a few per cent sharp today has the same trachea it had yesterday — but
+        # the individual variation that `pitch` stands in for is body size, and a larger
+        # bird has both a lower voice and a longer tract. Scaling them together is what
+        # keeps a jittered variant sounding like a different individual of the same species
+        # rather than like the same bird with a different throat.
+        formants=[[hz * pitch, q, gain] for hz, q, gain in syl.formants],
+        noise=syl.noise,
+        rough=syl.rough,
+        gamma_scale=syl.gamma_scale,
+        tract_q=syl.tract_q,
         label=syl.label,
         function=syl.function,
         confidence=syl.confidence,
@@ -531,6 +803,8 @@ def render_plan(
     t = np.arange(n, dtype=np.float64) / sample_rate
     t_norm = t / (n / sample_rate)
     gain, q = TIMBRE.get(syl.timbre, TIMBRE["pure"])
+    if syl.tract_q > 0.0:
+        q = min(max(syl.tract_q, FORMANT_Q_MIN), FORMANT_Q_MAX)
 
     # f0(t): contour, then vibrato
     f0 = contour_f0(syl.contour, t_norm)
@@ -544,7 +818,11 @@ def render_plan(
         ps = ps * (1.0 - syl.am_depth * (0.5 - 0.5 * np.cos(2.0 * np.pi * syl.am * t)))
     ps = np.clip(ps, PS_MIN, PS_MAX)
 
-    gamma = gamma_for_contour(syl.contour)  # per syllable (8.1)
+    # per syllable (8.1), then scaled to choose where on the tonal-to-rich axis this
+    # syllable sits (§8.1a). Still clamped to the range the Euler step stays accurate over.
+    gamma = float(
+        np.clip(gamma_for_contour(syl.contour) * syl.gamma_scale, GAMMA_MIN, GAMMA_MAX)
+    )
     return RenderPlan(
         n=n,
         t=t,
@@ -600,6 +878,10 @@ def _voice(
     oversample: int,
     sample_rate: int,
     calibration: Calibration | None,
+    formants: Sequence[Sequence[float]] = (),
+    noise: float = 0.0,
+    rough: float = 0.0,
+    stream: int = NOISE_SEED,
 ) -> np.ndarray:
     """One oscillator plus its own tract band(s).
 
@@ -607,17 +889,64 @@ def _voice(
     `(y/gamma) * 0.35 / ampPP`, DC-block, then bandpass on this oscillator's own
     instantaneous f0 - so a `two: true` syllable gets two tracts, each tracking its
     own voice, which is what keeps the bilateral shimmer.
+
+    `rough` perturbs alpha before integration, so it reaches the sound through the ODE
+    rather than being added to it: the oscillator answers a wobbling pressure with the
+    frequency jitter, subharmonics and — at the top of the range — the aperiodicity that
+    the model's chaotic regime already contains. `noise` and `formants` act after the
+    source, at the tract, where turbulence and resonance physically belong.
     """
     beta = beta_for(f0, pressure, calibration, gamma)
+    # ampPP is read at the *clean* beta on purpose. Its job is to divide the pitch out of
+    # the loudness so the envelope controls level; reading it at the roughened beta would
+    # divide the roughness out too, and cancel the thing we just added.
     amp = amp_pp_for(beta, pressure, alpha, calibration)
+
+    if rough > 0.0:
+        # Noise on the labial tension, not on the pressure and not on the output.
+        #
+        # This is the one addition the literature is specific about. Amador & Mindlin
+        # (Front. Neurosci. 2021) fitted this model to zebra finch song and reported that
+        # matching the fundamental and the filters "was not enough" to drive the selective
+        # forebrain neurons — noise on beta was required, and an *intermediate* amount
+        # scored best, with the response collapsing at high noise. Perturbing tension also
+        # makes the f0 and amplitude wobble arrive *correlated*, through the oscillator's
+        # own dynamics, which is what separates a rough voice from a clean voice with hiss
+        # added. Independent output-level jitter is measurably not what real birds do:
+        # rendition-to-rendition f0 and amplitude are near-uncorrelated (R^2 ~ 0.03).
+        #
+        # ROUGH_LP_HZ sits inside the 80-250 Hz band that syringeal muscle can actually
+        # follow (Riede & Goller); below 80 Hz the modulation would be respiratory, which
+        # is what `am` already models.
+        wobble = _one_pole_lp(
+            _xorshift_noise(alpha.shape[0], stream * 4 + 2), ROUGH_LP_HZ, sample_rate
+        )
+        factor = 1.0 + ROUGH_DEPTH * rough * wobble * rough_std_gain(sample_rate)
+        beta = np.clip(
+            beta * np.clip(factor, ROUGH_CLAMP[0], ROUGH_CLAMP[1]), BETA_MIN, BETA_MAX
+        )
+
     y = _ode_source(alpha, beta, gamma, oversample, sample_rate, 1.0e-4, 0.0)
-    src = _one_pole_hp((y / gamma) * SOURCE_GAIN / amp, TRACT_HP_HZ, sample_rate)
+    source = (y / gamma) * SOURCE_GAIN / amp
+
+    if noise > 0.0:
+        # Turbulent flow at the labia, so it enters *before* the tract and is shaped by it:
+        # the same noise becomes a breathy whistle under a high-Q tract band and a rasp
+        # under a low-Q formant, which is why a single `noise` scalar can serve both.
+        flow = np.maximum(pressure - NOISE_PS_FLOOR, 0.0)
+        source = source + (noise * NOISE_GAIN) * flow * _xorshift_noise(
+            alpha.shape[0], stream * 4 + 1
+        )
+
+    src = _one_pole_hp(source, TRACT_HP_HZ, sample_rate)
 
     out = _tracking_bandpass(src, f0, q, sample_rate, COEFF_UPDATE)
     if harmonic > 0.0:
         out = out + harmonic * 0.5 * _tracking_bandpass(
             src, 2.0 * f0, q, sample_rate, COEFF_UPDATE
         )
+    for hz, fq, gain in formants:
+        out = out + gain * _static_bandpass(src, float(hz), float(fq), sample_rate)
     return out
 
 
@@ -628,11 +957,17 @@ def render_syllable(
     jitter: Jitter | None = None,
     calibration: Calibration | None = None,
     envelope_gain: bool = True,
+    stream: int = NOISE_SEED,
 ) -> np.ndarray:
     """Render one syllable through the syrinx ODE and the tracking tract.
 
     `rng` + `jitter` apply the corpus variation of 8.1/corpus.py before rendering.
     gamma and oversample come from the (possibly jittered) contour via the rule in 8.1.
+
+    `stream` selects the turbulence and roughness realisation. The default 0 makes every
+    render of a given syllable identical, which is what the verification and the corpus
+    need; the browser passes a per-voice index so that two birds singing the same syllable
+    are not noisy in the same places.
     """
     syl = Syllable.from_dict(syllable) if isinstance(syllable, dict) else syllable
     if jitter is not None:
@@ -643,12 +978,18 @@ def render_syllable(
     out = _voice(
         plan.f0, plan.alpha, plan.ps, plan.q, syl.harmonic,
         plan.gamma, plan.oversample, sample_rate, calibration,
+        syl.formants, syl.noise, syl.rough, stream,
     )
     if syl.two:
         f0b = plan.f0 * (2.0 ** (DETUNE_CENTS / 1200.0))
         out = 0.5 * out + 0.5 * _voice(
             f0b, plan.alpha, plan.ps, plan.q, syl.harmonic,
             plan.gamma, plan.oversample, sample_rate, calibration,
+            # The second side gets its own noise stream. Sharing one would make the two
+            # sides correlated, and correlated noise through two nearly identical tracts
+            # sums to one louder voice instead of two — the bilateral shimmer is exactly
+            # the part that has to stay independent.
+            syl.formants, syl.noise, syl.rough, stream + 1024,
         )
 
     # 180 Hz one-pole highpass and 12 kHz one-pole lowpass on the sum
@@ -727,6 +1068,44 @@ def measure_f0_zero_crossings(
     if mean <= 0.0:
         return 0.0, math.inf
     return 1.0 / mean, float(d.std() / mean)
+
+
+def measure_f0_robust(
+    x: np.ndarray,
+    requested_hz: float,
+    sample_rate: int = SAMPLE_RATE,
+    steady: tuple[float, float] = (0.3, 0.7),
+) -> float:
+    """F0 of a possibly harmonically dense signal, for the verification of 8.5.
+
+    `measure_f0_zero_crossings` is the right tool for the calibration sweep, where every
+    solution is a clean near-sinusoid, and the wrong one here. Once 8.1a let a syllable sit
+    at low beta the waveform became pulse-like, and a pulse train crosses zero several times
+    per period: measured on a 3 kHz test tone swept across `gammaScale`, the crossing counter
+    reported errors rising to 41 % while the spectral peak stayed inside 3.7 %. The pitch was
+    never drifting — the ruler was. A shipped honesty number that reports a fault the
+    synthesis does not have is worse than no number.
+
+    So: spectral peak over the steady middle of the syllable, then corrected for octave
+    errors by testing the small integer sub-multiples and keeping whichever lands nearest
+    what was asked for. That correction can only choose between candidates the spectrum
+    actually contains, so it cannot invent agreement — if the oscillator is a fifth flat, no
+    sub-multiple rescues it.
+    """
+    if x.size < 64 or requested_hz <= 0.0:
+        return 0.0
+    seg = x[int(x.size * steady[0]) : int(x.size * steady[1])]
+    peak = spectral_peak_hz(seg, sample_rate)
+    if peak <= 0.0:
+        return 0.0
+    best = peak
+    best_err = abs(math.log2(peak / requested_hz))
+    for n in (2, 3, 4, 5):
+        for candidate in (peak / n, peak * n):
+            err = abs(math.log2(candidate / requested_hz))
+            if err < best_err:
+                best, best_err = candidate, err
+    return float(best)
 
 
 def spectral_peak_hz(x: np.ndarray, sample_rate: int = SAMPLE_RATE) -> float:

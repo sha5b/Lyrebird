@@ -577,7 +577,10 @@ def render_and_measure(
         render_syllable(t.syllable, sample_rate=sample_rate, calibration=calibration)
     )
     requested = syrinx.f0_reference(t.syllable["contour"])
-    measured, _ = syrinx.measure_f0_zero_crossings(audio, steady_from=0.2)
+    # Spectral peak with octave correction, not zero crossings: see `measure_f0_robust`.
+    # A syllable fitted to low beta is pulse-like and crosses zero several times per period,
+    # which the crossing counter reports as a pitch error the synthesis does not have.
+    measured = syrinx.measure_f0_robust(audio, requested)
     if requested > 0:
         t.f0_error_percent = round(100.0 * (measured - requested) / requested, 2)
 
@@ -617,9 +620,25 @@ def _score(
 #: sides of the syrinx were driven — and those are exactly what a median over a cluster
 #: cannot recover, because they vary within a type while the pitch does not.
 _SEARCH_AXES: list[tuple[str, list[Any]]] = [
+    # `gammaScale` goes first because it is the axis with the most leverage and the others
+    # are conditioned on it: it decides how harmonically rich the *source* is, and there is
+    # no point tuning a tract before there is something for the tract to shape. See the note
+    # on `Syllable.gamma_scale` — the 8.1 gamma rule pins every syllable near beta = 1, and
+    # measured over this harvest that put 100 % of the resynthesis in the tonal regime
+    # against 15.6 % of the real syllables being spectrally rich.
+    ("gammaScale", [0.5, 1.0, 1.5, 2.0, 3.0, 4.5, 6.0]),
     ("timbre", ["pure", "reed", "buzz"]),
+    ("tractQ", [0.0, 3.0, 6.0, 12.0, 20.0, 30.0]),
     ("level", [0.3, 0.45, 0.6, 0.75, 0.9, 1.05, 1.2, 1.35]),
     ("harmonic", [0.0, 0.1, 0.2, 0.35, 0.5, 0.7, 0.9]),
+    # The tracheal comb, as one frequency plus one gain. Relative to the syllable's own
+    # register rather than absolute, because a bird with a low voice has a long trachea:
+    # body size sets both. The stored `formants` are absolute Hz all the same, which is the
+    # whole point of them.
+    ("tracheaGain", [0.0, 0.15, 0.3, 0.6, 1.0]),
+    ("tracheaF1", [0.5, 0.75, 1.0, 1.5, 2.0, 3.0]),
+    ("noise", [0.0, 0.05, 0.12, 0.25, 0.4, 0.6, 0.85]),
+    ("rough", [0.0, 0.08, 0.2, 0.4, 0.65]),
     ("amDepth", [0.0, 0.15, 0.3, 0.45, 0.6, 0.8]),
     ("am", [12.0, 25.0, 45.0, 80.0, 140.0]),
     ("attack", [0.004, 0.008, 0.016, 0.03, 0.06]),
@@ -631,9 +650,44 @@ _SEARCH_AXES: list[tuple[str, list[Any]]] = [
 INVERT_PASSES = 3
 
 
+#: Where the tracheal comb's f1 sits when only its gain has been searched so far. One times
+#: the syllable's own reference pitch, i.e. the first tracheal resonance near the fundamental
+#: — which is where the measured combs sit for birds whose song is in their tract's first
+#: resonance (the white-throated sparrow is the exception that proves it: its f0 falls
+#: *between* the first two tracheal formants).
+TRACHEA_F1_DEFAULT = 1.0
+
+
+def _trachea(syllable: dict[str, Any], f1_ratio: float, gain: float) -> dict[str, Any]:
+    """Write the comb into `formants`, as absolute Hz, from the two searched ratios."""
+    trial = dict(syllable)
+    trial["tracheaF1"] = f1_ratio
+    trial["tracheaGain"] = gain
+    if gain <= 0.0:
+        trial.pop("formants", None)
+        return trial
+    f0_ref = syrinx.f0_reference(syllable["contour"])
+    trial["formants"] = [
+        [round(hz, 1), q, round(g, 4)]
+        for hz, q, g in syrinx.tracheal_comb(f0_ref * f1_ratio, gain)
+    ]
+    if not trial["formants"]:
+        trial.pop("formants", None)
+    return trial
+
+
 def _with(syllable: dict[str, Any], key: str, value: Any) -> dict[str, Any]:
     """A copy of the syllable with one axis moved. `vib` is nested, so it needs a case."""
     trial = dict(syllable)
+    if key == "tracheaGain":
+        return _trachea(syllable, syllable.get("tracheaF1", TRACHEA_F1_DEFAULT), value)
+    if key == "tracheaF1":
+        # Moving the frequency of a comb that is switched off is a no-op the search would
+        # otherwise spend six renders discovering.
+        gain = syllable.get("tracheaGain", 0.0)
+        if gain <= 0.0:
+            return dict(syllable)
+        return _trachea(syllable, value, gain)
     if key in ("vibDepth", "vibRate"):
         vib = dict(trial.get("vib") or {"rate": 12.0, "depth": 0.0})
         vib["depth" if key == "vibDepth" else "rate"] = value
@@ -656,6 +710,16 @@ def _axis_value(syllable: dict[str, Any], key: str) -> Any:
         return (syllable.get("vib") or {}).get("depth", 0.0)
     if key == "vibRate":
         return (syllable.get("vib") or {}).get("rate", 12.0)
+    if key == "tracheaF1":
+        return syllable.get("tracheaF1", TRACHEA_F1_DEFAULT)
+    if key == "tracheaGain":
+        return syllable.get("tracheaGain", 0.0)
+    if key == "gammaScale":
+        return syllable.get("gammaScale", 1.0)
+    if key == "tractQ":
+        return syllable.get("tractQ", 0.0)
+    if key in ("noise", "rough"):
+        return syllable.get(key, 0.0)
     return syllable.get(key)
 
 

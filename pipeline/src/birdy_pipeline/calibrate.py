@@ -55,16 +55,22 @@ def pressure_grid(n: int = N_PRESSURE) -> np.ndarray:
 
 
 def beta_grid() -> np.ndarray:
-    """The clamp range of 8.1, dense at the low end where df0/dbeta is steepest."""
-    return np.unique(
-        np.concatenate(
-            [
-                np.arange(syrinx.BETA_MIN, 1.0, 0.01),
-                np.arange(1.0, 4.0, 0.05),
-                np.arange(4.0, syrinx.BETA_MAX + 1.0e-9, 0.2),
-            ]
-        )
-    )
+    """The clamp range of 8.1, dense at the low end where df0/dbeta is steepest.
+
+    Below the contract's 0.15 floor the spacing goes geometric rather than linear. That
+    region only exists when `--beta-min` opens it, and it is where the model's spectrally
+    rich solutions live: f0 goes roughly as beta^0.39, so the interval 0.002..0.15 covers
+    about two and a half octaves of pitch and nearly the whole useful range of harmonic
+    richness. A linear 0.01 step would put fifteen samples in it and none below 0.012,
+    which is not enough to invert against.
+    """
+    parts = []
+    if syrinx.BETA_MIN < 0.15:
+        parts.append(np.geomspace(max(syrinx.BETA_MIN, 1.0e-4), 0.15, 60, endpoint=False))
+    parts.append(np.arange(max(syrinx.BETA_MIN, 0.15), 1.0, 0.01))
+    parts.append(np.arange(1.0, 4.0, 0.05))
+    parts.append(np.arange(4.0, syrinx.BETA_MAX + 1.0e-9, 0.2))
+    return np.unique(np.concatenate(parts))
 
 
 def measure_alpha_cell(

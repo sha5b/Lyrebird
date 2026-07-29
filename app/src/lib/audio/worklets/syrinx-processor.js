@@ -24,6 +24,16 @@ const PHI_AT_BETA_ONE = 0.17061; // measured f0/gamma at alpha 0.1, beta 1
 const MAX_VOICES = 12;
 const DETUNE_TWO = Math.pow(2, 7 / 1200); // +7 cents: the second syringeal side
 const FILTER_UPDATE = 32; // samples between tract coefficient updates
+// Envelope constants of §8.1. Named rather than inlined because `syrinx.py` names them too
+// and `verify-parity.mjs` is what proves the two agree.
+const DEFAULT_ATTACK = 0.008;
+const RELEASE_S = 0.006;
+const DECAY_TAU_DIVISOR = 2.5;
+const HOLD_FRACTION = 0.75;
+const TRACT_HP_HZ = 180.0;
+// The source starts here on both sides, and on both sides of the contract. It used to be
+// 0.001 and -0.001, which is a different transient from the offline renderer's 1e-4.
+const ODE_X0 = 1.0e-4;
 
 const TIMBRE = {
 	pure: { gain: 1.0, q: 9.0 },
@@ -31,17 +41,115 @@ const TIMBRE = {
 	buzz: { gain: 1.75, q: 3.0 }
 };
 
-const BETA_MIN = 0.15;
-const BETA_MAX = 16;
+/**
+ * Absolute tract resonances, turbulence and roughness — contract §8.1a, and the Python
+ * side of it is `syrinx.py`. All three default to off, so a syllable that does not carry
+ * them sounds exactly as it did before they existed.
+ *
+ * The tract above is a bandpass retuned to the instantaneous f0, so every resonance in it
+ * is *relative* to pitch and the spectral envelope is pitch-invariant: two species at the
+ * same pitch come out as the same instrument transposed. `formants` pins a resonance in Hz
+ * instead, so a contour sweeping under it changes timbre as it goes. `noise` injects
+ * turbulence at the labia, which is the only honest route to a rasp — the ODE limit cycle
+ * is periodic, so a "buzz" made by widening a bandpass is still a tone. `rough` perturbs
+ * the driving pressure, which is what reaches the subharmonic and chaotic regimes.
+ */
+const FORMANT_MAX = 4; // the tracheal comb of §8.1a wants four
+const FORMANT_Q_MIN = 0.7;
+const FORMANT_Q_MAX = 40;
+const FORMANT_HZ_MIN = 150;
+const NOISE_PS_FLOOR = 0.05;
+const SOURCE_GAIN = 0.35;
+const NOISE_GAIN = 2.0 * SOURCE_GAIN; // calibrated against the harvest; see syrinx.py
+const ROUGH_LP_HZ = 140;
+const ROUGH_DEPTH = 0.12;
+const ROUGH_CLAMP_LO = 0.5;
+const ROUGH_CLAMP_HI = 1.5;
 
 /**
- * Below BETA_MIN the oscillator is under threshold and silent (§8.6). With per-syllable
- * gamma this clamp almost never binds.
+ * xorshift32, bit-identical to `syrinx._xorshift_noise`.
+ *
+ * A PRNG rather than `Math.random` because the noise is part of the two-sided contract:
+ * the offline renderer has to be able to produce the same turbulence from the same
+ * syllable, and "some noise with the same spectrum" is not a contract anyone can test.
+ * xorshift32 is four integer ops and lands exactly on JavaScript's int32 bitwise
+ * semantics, so the two implementations cannot drift.
+ */
+class Xorshift {
+	/** @param {number} stream */
+	constructor(stream) {
+		// Math.imul, because `stream * 2654435761` exceeds 2^53 and would lose low bits —
+		// the very bits the generator depends on.
+		let state = (Math.imul(stream, 2654435761) + 1) >>> 0;
+		if (state === 0) state = 0x9e3779b9;
+		this.state = state;
+		for (let i = 0; i < 8; i++) this.next(); // adjacent streams start correlated
+	}
+
+	/** @returns {number} uniform in [-1, 1) */
+	next() {
+		let s = this.state;
+		s ^= s << 13;
+		s ^= s >>> 17;
+		s ^= s << 5;
+		this.state = s >>> 0;
+		return this.state * (2.0 / 4294967296.0) - 1.0;
+	}
+}
+
+/**
+ * Scale giving the lowpassed roughness noise unit standard deviation — analytic, so the
+ * worklet and the offline renderer arrive at the same constant. Normalising by a buffer
+ * maximum instead would need the whole syllable up front, which a worklet never has, and
+ * would make the effect depend on syllable length.
+ * @param {number} sr
+ */
+function roughStdGain(sr) {
+	const c = Math.exp((-2 * Math.PI * ROUGH_LP_HZ) / sr);
+	return Math.sqrt(3) * Math.sqrt((1 + c) / (1 - c));
+}
+
+/**
+ * `[[hz, q, gain], ...]` cleaned and clamped, dropping anything inaudible so it cannot
+ * occupy one of the FORMANT_MAX slots. Mirrors `syrinx.parse_formants`.
+ * @param {number[][] | undefined} raw
+ * @returns {number[][]}
+ */
+function parseFormants(raw) {
+	if (!raw || !raw.length) return [];
+	const out = [];
+	for (const item of raw) {
+		if (!item || item.length < 3) continue;
+		const hz = +item[0];
+		const q = +item[1];
+		const gain = +item[2];
+		if (!Number.isFinite(hz) || !Number.isFinite(q) || !Number.isFinite(gain)) continue;
+		if (hz < FORMANT_HZ_MIN || gain <= 0) continue;
+		out.push([hz, Math.min(Math.max(q, FORMANT_Q_MIN), FORMANT_Q_MAX), gain]);
+		if (out.length >= FORMANT_MAX) break;
+	}
+	return out;
+}
+
+/**
+ * Contract default clamp (§8.1). The *effective* floor is read from the calibration table's
+ * `betaClamp`, because `--beta-min` can lower it and the table is then measured over the
+ * wider range — `syrinx.py` has always said the browser should read it rather than hard-code
+ * it, and until now the browser hard-coded it. That mattered once §8.1a made low beta useful:
+ * the fit would choose a rich, low-beta voice and the worklet would clamp it back to 0.15 and
+ * play a tone instead.
+ */
+const BETA_MIN_DEFAULT = 0.15;
+const BETA_MAX = 16;
+let betaMin = BETA_MIN_DEFAULT;
+
+/**
+ * Below the floor the oscillator is under threshold and silent (§8.6).
  * @param {number} beta
  * @returns {number}
  */
 function clampBeta(beta) {
-	return Math.min(BETA_MAX, Math.max(BETA_MIN, beta));
+	return Math.min(BETA_MAX, Math.max(betaMin, beta));
 }
 
 /**
@@ -134,6 +242,26 @@ class Voice {
 		this.y = [0, 0];
 		this.tract = [new Biquad(), new Biquad()];
 		this.tractHarm = [new Biquad(), new Biquad()];
+		/** Per-side 180 Hz one-pole highpass on the source, ahead of the tract (§8.1). */
+		this.srcHpX = [0, 0];
+		this.srcHpY = [0, 0];
+		/**
+		 * One bank per syringeal side. Fixed in Hz, so unlike `tract` these are set once at
+		 * note start and never retuned — that is the whole point of them.
+		 * @type {Biquad[][]}
+		 */
+		this.formantFilters = [[], []];
+		/** @type {number[][]} */
+		this.formants = [];
+		this.noise = 0;
+		this.rough = 0;
+		/** @type {(Xorshift | null)[]} per side: turbulence */
+		this.noiseRng = [null, null];
+		/** @type {(Xorshift | null)[]} per side: pressure roughness */
+		this.roughRng = [null, null];
+		this.roughLp = [0, 0];
+		this.roughCoeff = 0;
+		this.roughScale = 0;
 		this.dcX = 0;
 		this.dcY = 0;
 		this.lpY = 0;
@@ -149,8 +277,9 @@ class Voice {
 	 * @param {number} startSample
 	 * @param {number} gain
 	 * @param {number} pan -1 hard left to +1 hard right
+	 * @param {number} stream turbulence realisation; see `render_syllable(stream=...)`
 	 */
-	start(syllable, startSample, gain, pan) {
+	start(syllable, startSample, gain, pan, stream) {
 		this.active = true;
 		this.syllable = syllable;
 		this.startSample = startSample;
@@ -160,15 +289,64 @@ class Voice {
 		const angle = ((Math.min(1, Math.max(-1, pan)) + 1) * Math.PI) / 4;
 		this.gainL = Math.cos(angle);
 		this.gainR = Math.sin(angle);
-		this.gamma = gammaForContour(syllable.contour);
+		// §8.1a: the scale is this syllable's position on the tonal-to-rich axis. Raising
+		// gamma forces beta down for the same f0, and low beta is where the model's
+		// pulse-like, harmonically dense solutions live. Clamped to the range the Euler
+		// step stays accurate over.
+		const scale = Number.isFinite(syllable.gammaScale) ? syllable.gammaScale : 1;
+		this.gamma = Math.min(
+			150000,
+			Math.max(1200, gammaForContour(syllable.contour) * (scale > 0 ? scale : 1))
+		);
 		this.oversample = oversampleForGamma(this.gamma, sampleRate);
 		this.dt = 1 / (sampleRate * this.oversample);
-		this.x = [0.001, -0.001];
+		this.x = [ODE_X0, ODE_X0];
 		this.y = [0, 0];
+		this.srcHpX = [0, 0];
+		this.srcHpY = [0, 0];
 		this.dcX = this.dcY = this.lpY = 0;
 		for (const f of this.tract) f.reset();
 		for (const f of this.tractHarm) f.reset();
 		this.env = 0;
+
+		this.formants = parseFormants(syllable.formants);
+		this.noise = Math.min(1, Math.max(0, syllable.noise ?? 0));
+		this.rough = Math.min(1, Math.max(0, syllable.rough ?? 0));
+		// Each side gets its own streams, offset exactly as the offline renderer offsets
+		// them: sharing one would correlate the two sides, and correlated noise through two
+		// near-identical tracts sums to one louder voice instead of two.
+		for (const side of [0, 1]) {
+			const s = side === 0 ? stream : stream + 1024;
+			this.noiseRng[side] = this.noise > 0 ? new Xorshift(s * 4 + 1) : null;
+			this.roughRng[side] = this.rough > 0 ? new Xorshift(s * 4 + 2) : null;
+			this.roughLp[side] = 0;
+			this.formantFilters[side] = this.formants.map(([hz, q]) => {
+				const f = new Biquad();
+				f.setBandpass(hz, q, sampleRate);
+				return f;
+			});
+		}
+		this.roughCoeff = Math.exp((-2 * Math.PI * ROUGH_LP_HZ) / sampleRate);
+		this.roughScale = roughStdGain(sampleRate);
+	}
+
+	/**
+	 * Roughness multiplier on **beta** (labial tension) for this sample, or 1 when `rough`
+	 * is off. One-pole lowpass on the noise, matching `syrinx._one_pole_lp`: white jitter at
+	 * the sample rate reads as added hiss, not as a rough voice, and ROUGH_LP_HZ sits inside
+	 * the 80-250 Hz band syringeal muscle can actually follow.
+	 *
+	 * Tension rather than pressure, and rather than the output, because that is the one
+	 * thing the literature is specific about — see the note in `syrinx._voice`.
+	 * @param {number} side
+	 */
+	roughFactor(side) {
+		const rng = this.roughRng[side];
+		if (!rng) return 1;
+		const c = this.roughCoeff;
+		this.roughLp[side] = (1 - c) * rng.next() + c * this.roughLp[side];
+		const f = 1 + ROUGH_DEPTH * this.rough * this.roughLp[side] * this.roughScale;
+		return Math.min(ROUGH_CLAMP_HI, Math.max(ROUGH_CLAMP_LO, f));
 	}
 }
 
@@ -187,11 +365,23 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 		this.reportCountdown = 0;
 		this.lastF0 = 0;
 		this.level = 0;
+		/**
+		 * Turbulence realisation for the next note. It advances per note rather than being
+		 * fixed, so a chorus singing one syllable is not noisy in the same places twice —
+		 * the *spectrum* is what the fit measured and what ships; where the noise happens to
+		 * fall is not, any more than it is for a real bird. The offline renderer defaults to
+		 * stream 0 so a verified cosine stays reproducible.
+		 */
+		this.stream = 0;
 
 		this.port.onmessage = (event) => {
 			const msg = event.data;
 			if (msg.type === 'calibration') {
 				this.calibration = msg.calibration;
+				const clamp = msg.calibration?.betaClamp;
+				if (Array.isArray(clamp) && Number.isFinite(clamp[0]) && clamp[0] > 0) {
+					betaMin = clamp[0];
+				}
 			} else if (msg.type === 'note') {
 				this.pending.push({
 					when: msg.when,
@@ -249,16 +439,19 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 	/**
 	 * Peak-to-peak swing of y/gamma, which the source is divided by so loudness follows
 	 * the envelope instead of the pitch (§8.1). Measured table when available.
-	 * @param {number} alpha
+	 * @param {number} alpha only used by the analytic fallback
 	 * @param {number} beta
+	 * @param {number} pressure passed rather than recovered from alpha: once `rough`
+	 *   modulates alpha, `(alpha - 0.05) / 0.4` is no longer the pressure the envelope
+	 *   asked for, and reading the table at a wobbling pressure would put the roughness
+	 *   into the loudness as well as into the pitch.
 	 * @returns {number}
 	 */
-	ampPP(alpha, beta) {
+	ampPP(alpha, beta, pressure) {
 		const cal = this.calibration;
 		if (!cal || !cal.ampPP || !cal.ampPP.length) return 0.5 + 3.4 * alpha + 0.62 * beta;
 		const pGrid = cal.pressureGrid;
 		const bGrid = cal.betaGrid;
-		const pressure = (alpha - 0.05) / 0.4;
 		let pi = 0;
 		while (pi < pGrid.length - 2 && pGrid[pi + 1] < pressure) pi++;
 		let bi = 0;
@@ -296,22 +489,50 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 	}
 
 	/**
+	 * The envelope of §8.1: linear attack, sustain-or-exponential-decay, 6 ms release.
+	 *
+	 * Indexed by sample rather than by seconds, and taking the syllable's sample count,
+	 * because it has to agree with `syrinx.envelope` to the last bit — that function works
+	 * on an `n`-sample grid and derives its duration from `n / sampleRate`, so computing
+	 * from a float `t` and `syllable.dur` lands somewhere slightly different.
+	 *
 	 * @param {Syllable} syllable
-	 * @param {number} t seconds since syllable onset
+	 * @param {number} sampleIndex samples since syllable onset
+	 * @param {number} n the syllable's length in samples
 	 * @returns {number}
 	 */
-	envelopeAt(syllable, t) {
-		const dur = syllable.dur;
-		const attack = syllable.attack ?? 0.008;
-		const release = 0.006;
-		if (t < attack) return t / Math.max(attack, 1e-5);
-		const body = syllable.hold
-			? t < dur * 0.75
-				? 1
-				: Math.exp(-(t - dur * 0.75) / Math.max(dur * 0.12, 1e-4))
-			: Math.exp(-(t - attack) / Math.max(dur / 2.5, 1e-4));
-		const tail = t > dur - release ? Math.max(0, (dur - t) / release) : 1;
-		return body * tail;
+	envelopeAt(syllable, sampleIndex, n) {
+		if (n <= 1) return 0;
+		// Past the grid the envelope is zero, full stop. The offline renderer's array simply
+		// ends at `n`, but a voice here keeps running for ~20 ms so the filter tails can
+		// decay — and without this the release ramp below carries on past its endpoint and
+		// goes *negative*, reaching about -4x the body level. That was an audible click on
+		// the tail of every single note, and the parity harness could not see it because it
+		// only compares the first `n` samples.
+		if (sampleIndex >= n) return 0;
+		const dur = n / sampleRate;
+		const t = sampleIndex / sampleRate;
+		const atk = Math.min(Math.max(syllable.attack ?? DEFAULT_ATTACK, 1 / sampleRate), 0.9 * dur);
+		const tau = dur / DECAY_TAU_DIVISOR;
+
+		// The attack wins over the tail, as it does in the Python (which assigns the decay
+		// first and then overwrites the rising part).
+		let env;
+		if (t < atk) {
+			env = t / atk;
+		} else if (syllable.hold) {
+			const knee = HOLD_FRACTION * dur;
+			env = t > knee ? Math.exp(-(t - knee) / tau) : 1;
+		} else {
+			env = Math.exp(-(t - atk) / tau);
+		}
+
+		const rel = Math.round(RELEASE_S * sampleRate);
+		if (rel > 1 && rel < n && sampleIndex >= n - rel) {
+			// linspace(1, 0, rel) with both endpoints included, floored at zero
+			env *= Math.max(0, 1 - (sampleIndex - (n - rel)) / (rel - 1));
+		}
+		return env;
 	}
 
 	/**
@@ -321,9 +542,10 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 	 * @param {number} alpha
 	 * @param {number} beta
 	 * @param {number} ampPP peak-to-peak swing of y/gamma, divided out of the source
+	 * @param {number} pressure drives the turbulence gate
 	 * @returns {number}
 	 */
-	stepOsc(voice, index, alpha, beta, ampPP) {
+	stepOsc(voice, index, alpha, beta, ampPP, pressure) {
 		const g = voice.gamma;
 		const g2 = g * g;
 		const dt = voice.dt;
@@ -335,23 +557,46 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 			const dy = -alpha * g2 - beta * g2 * x - g2 * x * x * x - g * x * x * y + g2 * x * x - g * x * y;
 			x += dx * dt;
 			y += dy * dt;
-			// The trajectory stays well inside these bounds across the whole usable range
-			// (§8.6); the clamp only exists so an onset transient cannot run away.
-			if (x > 40) x = 40;
-			else if (x < -40) x = -40;
-			if (y > 4e6) y = 4e6;
-			else if (y < -4e6) y = -4e6;
+		}
+		// Bounds checked once per output sample, at the offline renderer's thresholds, not
+		// clamped every Euler step at ±40/±4e6. The tight per-step clamp was a divergence
+		// from §8.1 *and* a distortion in its own right: it flattened the peaks of the very
+		// large-amplitude regimes the model reaches at high beta, so the loudest syllables
+		// were quietly being squared off. Outside these bounds there is no basin left to be
+		// in, so restarting from rest is the only useful answer.
+		if (!(Math.abs(x) < 1e6 && Math.abs(y) < 1e12)) {
+			x = ODE_X0;
+			y = 0;
 		}
 		voice.x[index] = x;
 		voice.y[index] = y;
 		if (!Number.isFinite(x) || !Number.isFinite(y)) {
-			voice.x[index] = 0.001;
+			voice.x[index] = ODE_X0;
 			voice.y[index] = 0;
 			return 0;
 		}
 		// dividing by the peak-to-peak swing keeps loudness tied to the envelope rather
 		// than to the pitch, which otherwise dominates it
-		return ((y / g) * 0.35) / ampPP;
+		let source = ((y / g) * SOURCE_GAIN) / ampPP;
+		const rng = voice.noiseRng[index];
+		if (rng) {
+			// Turbulent flow at the labia, so it enters before the tract and is shaped by
+			// it: the same noise becomes a breathy whistle under a high-Q tract band and a
+			// rasp under a low-Q formant, which is why one scalar can serve both. Gated by
+			// pressure because a bird with no airflow does not hiss.
+			const flow = Math.max(pressure - NOISE_PS_FLOOR, 0);
+			source += voice.noise * NOISE_GAIN * flow * rng.next();
+		}
+		// 180 Hz one-pole highpass on the source, ahead of the tract (§8.1). This was
+		// missing: the worklet only DC-blocked after the tract, so the offline renderer's
+		// tract saw a source with the sub-180 Hz drift already removed and the worklet's did
+		// not — audible on low-pitched syllables, where that drift is a big share of the
+		// signal the resonance is being asked to shape.
+		const r = this.dcCoeff;
+		const hp = source - voice.srcHpX[index] + r * voice.srcHpY[index];
+		voice.srcHpX[index] = source;
+		voice.srcHpY[index] = hp;
+		return hp;
 	}
 
 	/**
@@ -377,7 +622,13 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 					const voice = this.voices.find((v) => !v.active);
 					if (voice) {
 						const offset = Math.max(0, Math.round((note.when - now) * sampleRate));
-						voice.start(note.syllable, startSample + offset, note.gain, note.pan ?? 0);
+						voice.start(
+							note.syllable,
+							startSample + offset,
+							note.gain,
+							note.pan ?? 0,
+							this.stream++
+						);
 					}
 					this.pending.splice(i, 1);
 				}
@@ -392,9 +643,19 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 			if (!voice.active || !voice.syllable) continue;
 			const syl = voice.syllable;
 			const timbre = TIMBRE[syl.timbre] ?? TIMBRE.pure;
+			// A fitted Q overrides the timbre class's. See the note on `tract_q` in syrinx.py:
+			// the three classes are all broad next to the Q ~ 30 measured for the OEC
+			// resonance, and a broad band leaks the second harmonic.
+			const tractQ =
+				syl.tractQ > 0
+					? Math.min(Math.max(syl.tractQ, FORMANT_Q_MIN), FORMANT_Q_MAX)
+					: timbre.q;
 			const harmonic = syl.harmonic ?? 0;
 			const twoVoices = syl.two === true;
 			const durSamples = Math.ceil((syl.dur + 0.02) * sampleRate);
+			// The grid the envelope is defined on, matching `syrinx.render_plan`'s `n`. The
+			// voice runs ~20 ms past it so the release and the filter tails can finish.
+			const envN = Math.max(2, Math.round(syl.dur * sampleRate));
 
 			for (let i = 0; i < blockSize; i++) {
 				const sampleIndex = startSample + i - voice.startSample;
@@ -409,36 +670,63 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 				let f0 = this.contourAt(syl.contour, u);
 				if (syl.vib) f0 *= 1 + syl.vib.depth * Math.sin(2 * Math.PI * syl.vib.rate * t);
 
-				let env = this.envelopeAt(syl, t);
+				// AM gates the *pressure* only, and not the output gain.
+				//
+				// It used to be folded into `env`, which is also the output gain a few lines
+				// below — so every AM syllable had its tremolo applied twice, once through the
+				// oscillator's drive and again on the way out. That both doubled the depth and
+				// made it the largest single disagreement with the offline renderer, which
+				// modulates `ps` and leaves `plan.env` clean (§8.1).
+				const env = this.envelopeAt(syl, sampleIndex, envN);
+				let psEnv = env;
 				if (syl.am) {
 					const depth = syl.amDepth ?? 0.5;
-					env *= 1 - depth * (0.5 - 0.5 * Math.cos(2 * Math.PI * syl.am * t));
+					psEnv *= 1 - depth * (0.5 - 0.5 * Math.cos(2 * Math.PI * syl.am * t));
 				}
 				voice.env = env;
-				const pressure = Math.min(1.4, Math.max(0, syl.level * env * timbre.gain));
+				const pressure = Math.min(1.4, Math.max(0, syl.level * psEnv * timbre.gain));
 				// positive alpha is the oscillating side of the threshold here (§8.1)
 				const alpha = 0.05 + 0.4 * pressure;
 
 				if ((sampleIndex & (FILTER_UPDATE - 1)) === 0) {
-					voice.tract[0].setBandpass(f0, timbre.q, sampleRate);
-					if (twoVoices) voice.tract[1].setBandpass(f0 * DETUNE_TWO, timbre.q, sampleRate);
+					voice.tract[0].setBandpass(f0, tractQ, sampleRate);
+					if (twoVoices) voice.tract[1].setBandpass(f0 * DETUNE_TWO, tractQ, sampleRate);
 					if (harmonic > 0) {
-						voice.tractHarm[0].setBandpass(f0 * 2, timbre.q * 0.8, sampleRate);
-						if (twoVoices) voice.tractHarm[1].setBandpass(f0 * 2 * DETUNE_TWO, timbre.q * 0.8, sampleRate);
+						// The harmonic band is "a second tract band at 2*f0" (§8.1) — the same Q as
+						// the tract, not a widened one. The 0.8 factor here was local invention.
+						voice.tractHarm[0].setBandpass(f0 * 2, tractQ, sampleRate);
+						if (twoVoices) voice.tractHarm[1].setBandpass(f0 * 2 * DETUNE_TWO, tractQ, sampleRate);
 					}
 				}
 
-				const betaA = this.betaForF0(f0, pressure, voice.gamma);
-				let source = this.stepOsc(voice, 0, alpha, betaA, this.ampPP(alpha, betaA));
+				// ampPP is read at the *clean* beta: its job is to divide the pitch out of the
+				// loudness, and reading it at the roughened beta would divide the roughness
+				// out too. Only the ODE sees the roughened tension, so the wobble arrives as
+				// correlated pitch and amplitude irregularity through the oscillator's own
+				// dynamics rather than as noise laid over the top.
+				const betaClean = this.betaForF0(f0, pressure, voice.gamma);
+				const ampA = this.ampPP(alpha, betaClean, pressure);
+				const betaA = clampBeta(betaClean * voice.roughFactor(0));
+				const source = this.stepOsc(voice, 0, alpha, betaA, ampA, pressure);
 				let filtered = voice.tract[0].process(source);
 				if (harmonic > 0) filtered += harmonic * 0.5 * voice.tractHarm[0].process(source);
+				const bankA = voice.formantFilters[0];
+				for (let k = 0; k < bankA.length; k++) {
+					filtered += voice.formants[k][2] * bankA[k].process(source);
+				}
 				let sample = filtered;
 
 				if (twoVoices) {
-					const betaB = this.betaForF0(f0 * DETUNE_TWO, pressure, voice.gamma);
-					const sourceB = this.stepOsc(voice, 1, alpha, betaB, this.ampPP(alpha, betaB));
+					const betaCleanB = this.betaForF0(f0 * DETUNE_TWO, pressure, voice.gamma);
+					const ampB = this.ampPP(alpha, betaCleanB, pressure);
+					const betaB = clampBeta(betaCleanB * voice.roughFactor(1));
+					const sourceB = this.stepOsc(voice, 1, alpha, betaB, ampB, pressure);
 					let filteredB = voice.tract[1].process(sourceB);
 					if (harmonic > 0) filteredB += harmonic * 0.5 * voice.tractHarm[1].process(sourceB);
+					const bankB = voice.formantFilters[1];
+					for (let k = 0; k < bankB.length; k++) {
+						filteredB += voice.formants[k][2] * bankB[k].process(sourceB);
+					}
 					sample = 0.5 * sample + 0.5 * filteredB;
 				}
 
