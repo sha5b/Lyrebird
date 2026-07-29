@@ -64,6 +64,12 @@ function jitterSyllable(syllable: Syllable, amount: number): Syllable {
 	};
 }
 
+/**
+ * Ceiling on the master gain. Matches the slider's maximum: the limiter makes gain above
+ * unity usable, it does not make unbounded gain sensible.
+ */
+const MAX_VOLUME = 3;
+
 export class BirdyEngine {
 	readonly ctx: AudioContext;
 	readonly analyser: AnalyserNode;
@@ -73,6 +79,7 @@ export class BirdyEngine {
 	private readonly dry: GainNode;
 	private readonly wet: GainNode;
 	private readonly master: GainNode;
+	private readonly limiter: DynamicsCompressorNode;
 	private readonly analysisBus: GainNode;
 	private micStream: MediaStream | null = null;
 	private micSource: MediaStreamAudioSourceNode | null = null;
@@ -131,6 +138,29 @@ export class BirdyEngine {
 		this.master = ctx.createGain();
 		this.master.gain.value = 0.8;
 
+		/**
+		 * A limiter between the master gain and the output.
+		 *
+		 * **Unity was quiet, not loud, and that is a property of the synthesis rather than of
+		 * the mixer.** Every syllable divides its source by the measured peak-to-peak swing of
+		 * the oscillator (`ampPP`, contract §8.1) so that a high note is not twenty times
+		 * louder than a low one — which means no note ever approaches full scale on purpose.
+		 * The reverb split takes another portion, and a distant bird is filtered down again.
+		 * So the volume control needed headroom above 1.0, and raw gain above 1.0 would hard
+		 * clip the moment a twelve-voice chorus lined up.
+		 *
+		 * A fast, hard-kneed compressor is the honest way to buy that headroom: it does
+		 * nothing at all until the sum approaches full scale, so the quiet single-bird case
+		 * that all the calibration is built around passes through untouched, and only a
+		 * chorus loud enough to clip gets held back.
+		 */
+		this.limiter = ctx.createDynamicsCompressor();
+		this.limiter.threshold.value = -3;
+		this.limiter.knee.value = 0;
+		this.limiter.ratio.value = 20;
+		this.limiter.attack.value = 0.003;
+		this.limiter.release.value = 0.12;
+
 		this.analysisBus = ctx.createGain();
 		this.analyser = ctx.createAnalyser();
 		this.analyser.fftSize = assets.featureSpace.frameSize;
@@ -143,7 +173,8 @@ export class BirdyEngine {
 		convolver.connect(this.wet);
 		this.dry.connect(this.master);
 		this.wet.connect(this.master);
-		this.master.connect(ctx.destination);
+		this.master.connect(this.limiter);
+		this.limiter.connect(ctx.destination);
 		// The synth feeds the same analysis path as the microphone, so the galaxy reacts
 		// to our own bird exactly as it reacts to a real one (closed loop).
 		this.master.connect(this.analysisBus);
@@ -184,7 +215,10 @@ export class BirdyEngine {
 	}
 
 	setVolume(v: number): void {
-		this.master.gain.setTargetAtTime(v, this.ctx.currentTime, 0.02);
+		// Clamped rather than trusted: the slider is the only caller today, and a gain of 50
+		// would make the limiter the entire sound.
+		const clamped = Math.min(MAX_VOLUME, Math.max(0, v));
+		this.master.gain.setTargetAtTime(clamped, this.ctx.currentTime, 0.02);
 	}
 
 	/** Air absorption, reverb mix and pan narrowing with distance (doc 02 §2.1). */

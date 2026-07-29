@@ -104,6 +104,8 @@ export function vertexShader(clusterCount: number): string {
 		attribute float aSeed;
 		attribute float aAct;
 		attribute float aSpecies;
+		/** Which of the four claim buckets this point's cluster is filed under. */
+		attribute float aClaim;
 		/** Which build this point joined in; see the point metadata's generation array. */
 		attribute float aBorn;
 		attribute vec3 aTarget;
@@ -118,6 +120,17 @@ export function vertexShader(clusterCount: number): string {
 		uniform float uHighlight;
 		uniform float uSizeScale;
 		uniform float uFocus;
+		/**
+		 * The claim bucket to hold at full strength, or -1 for all of them.
+		 *
+		 * **Selecting a claim island did nothing to the colour, and that was the bug.** The
+		 * heading framed the camera and left every point exactly as bright as before, so
+		 * "focus on social" and "look at social from closer up" were the same gesture. A
+		 * species selection had always dimmed the others; a claim selection had no way to,
+		 * because the shader could only compare against aSpecies. Both focuses are active
+		 * at once and a point has to satisfy each one that is set.
+		 */
+		uniform float uClaimFocus;
 		uniform float uFocusDim;
 		uniform float uMorph;
 		/** The newest generation, and how far its arrival has run (0..1). */
@@ -173,8 +186,11 @@ export function vertexShader(clusterCount: number): string {
 			// could see the threads between its nodes without ever seeing *which* marks
 			// they joined. Its points now also grow and gain weight, so the bird reads as
 			// standing out of the crowd rather than the crowd receding from it.
-			bool chosen = uFocus >= 0.0 && abs(uFocus - aSpecies) < 0.5;
-			vFocus = (uFocus < 0.0 || chosen) ? 1.0 : uFocusDim;
+			bool speciesOk = uFocus < 0.0 || abs(uFocus - aSpecies) < 0.5;
+			bool claimOk = uClaimFocus < 0.0 || abs(uClaimFocus - aClaim) < 0.5;
+			bool anyFocus = uFocus >= 0.0 || uClaimFocus >= 0.0;
+			bool chosen = anyFocus && speciesOk && claimOk;
+			vFocus = (!anyFocus || chosen) ? 1.0 : uFocusDim;
 			vChosen = chosen ? 1.0 : 0.0;
 
 			// **The accent answers one question, and which question depends on the selection.**

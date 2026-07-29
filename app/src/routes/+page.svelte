@@ -17,7 +17,14 @@
 	import { createIndividual } from '$lib/audio/individual';
 	import { compilePhrase, improvise, type Phrase } from '$lib/lang/grammar';
 	import { citationsFor, confidenceLabel, type Reading } from '$lib/lang/translate';
-	import { createSignal, type VisualSignal } from '$lib/galaxy/shaders';
+	import {
+		CLAIM_HINTS,
+		CLAIM_LABELS,
+		CLAIM_NONE,
+		CLAIM_OF_FUNCTION,
+		createSignal,
+		type VisualSignal
+	} from '$lib/galaxy/shaders';
 	import { ACCENT, MONO_HOT } from '$lib/galaxy/palette';
 	import type { LayoutId } from '$lib/galaxy/layouts';
 	import { PipelineClient, type PipelineStatus } from '$lib/data/pipeline';
@@ -77,7 +84,9 @@
 	let songId = $state('abc_d');
 	let text = $state('danger — come here');
 	let distance = $state(0.15);
-	let volume = $state(0.8);
+	// Well above the old 0.8 ceiling: see the limiter note on the slider. Nothing in the
+	// synthesis path ever reaches full scale on its own, so unity was quiet rather than loud.
+	let volume = $state(1.5);
 	let chorus = $state<'off' | 'solo' | 'global'>('off');
 	let micOn = $state(false);
 	let inputSource = $state<'microphone' | 'system'>('microphone');
@@ -138,12 +147,61 @@
 	 * control.
 	 */
 	let framedIsland = $state<{ key: string; label: string; members: number[] } | null>(null);
+	/**
+	 * Which claim bucket is held at full strength, or -1 for all of them. The shader dims the
+	 * rest exactly as it does for an unselected species — see `uClaimFocus`.
+	 */
+	let claimFocus = $state(-1);
+	/**
+	 * What is actually inside the focused claim: its behavioural sub-classes, and for each of
+	 * them the distinct documented functions.
+	 *
+	 * **Zooming into "social" tells you nothing, and that was the fair complaint.** Four
+	 * buckets is the coarsest possible reading of a corpus that already carries, per cluster, a
+	 * behavioural class from an auditable keyword table *and* the sentence a researcher wrote
+	 * about what the call does. The claim was the only level ever drawn, so the chart said
+	 * "these twelve knots claim something about the singer" and stopped — which is not a
+	 * finding, it is a filing system. The sub-classes and the functions were in
+	 * `centroids.json` the whole time.
+	 *
+	 * Distinct functions rather than one per cluster, because seven clusters of the same tit
+	 * call carry the same sentence and printing it seven times is noise.
+	 */
+	const claimContents = $derived.by(() => {
+		if (claimFocus < 0 || !assets) return [];
+		const byClass = new Map<string, { messages: Set<string>; knots: number }>();
+		for (const c of assets.centroids.items) {
+			const cls = c.functionClass ?? 'unclassified';
+			const claim = c.function ? (CLAIM_OF_FUNCTION[cls] ?? CLAIM_NONE) : CLAIM_NONE;
+			if (claim !== claimFocus) continue;
+			const entry = byClass.get(cls) ?? { messages: new Set<string>(), knots: 0 };
+			entry.knots += 1;
+			if (c.function) entry.messages.add(c.function);
+			byClass.set(cls, entry);
+		}
+		return [...byClass]
+			.map(([cls, v]) => ({ cls, knots: v.knots, messages: [...v.messages].sort() }))
+			.sort((a, b) => b.knots - a.knots);
+	});
+	/**
+	 * Set for the one tick in which a species selection came from clicking its island.
+	 *
+	 * Choosing a bird normally switches the arrangement to *Sound*, which is right when the
+	 * choice came from the dropdown and wrong when it came from clicking that bird's island —
+	 * the islands would dissolve under the cursor on the way to the thing just clicked. This
+	 * is narrower than pinning the layout: it suppresses one automatic switch rather than all
+	 * of them, so the dropdown keeps behaving as it did.
+	 */
+	let islandSelection = $state(false);
 
 	function pickIsland(group: { key: string; label: string; members: number[] }) {
 		// Clicking the heading again releases it, which is the only way back to the whole
 		// galaxy without touching a different control.
 		if (framedIsland?.key === group.key) {
 			framedIsland = null;
+			claimFocus = -1;
+			if (group.key.startsWith('claim-')) return;
+			speciesId = '';
 			return;
 		}
 		// A region is a coarser request than a node or a phrase, and those outrank it in
@@ -151,6 +209,24 @@
 		pinnedCluster = -1;
 		selectedSung = null;
 		framedIsland = group.members.length ? group : null;
+
+		// **Clicking a heading is a selection, not a camera move.**
+		//
+		// It used to only fly the camera, so choosing "social" and looking at social from
+		// closer up were the same gesture: nothing dimmed, nothing recoloured, and the one
+		// thing a viewer wants from picking a category — everything else getting out of the
+		// way — did not happen. Picking a bird from the dropdown had always done that. Now
+		// both routes end in the same place, which is what makes the two feel like one app.
+		if (group.key.startsWith('claim-')) {
+			claimFocus = Number(group.key.slice('claim-'.length));
+			speciesId = '';
+		} else {
+			claimFocus = -1;
+			// `islandSelection` suppresses the effect that would otherwise switch the
+			// arrangement to Sound and dissolve the very islands being clicked.
+			islandSelection = true;
+			speciesId = group.key;
+		}
 	}
 
 	/**
@@ -286,6 +362,11 @@
 	// session. Tracks the selection only; the pin is read outside the dependency.
 	$effect(() => {
 		const chosen = speciesId;
+		if (untrack(() => islandSelection)) {
+			// Consumed: the next selection from the dropdown should switch as usual.
+			untrack(() => (islandSelection = false));
+			return;
+		}
 		if (untrack(() => layoutPinned)) return;
 		layout = chosen ? 'acoustic' : 'species';
 	});
@@ -575,6 +656,7 @@
 		selectedSung = null;
 		pinnedCluster = -1;
 		framedIsland = null;
+		claimFocus = -1;
 		refreshSelection();
 	}
 
@@ -894,6 +976,18 @@
 	let learnTypes = $state(8);
 	/** How much each pass of the loop takes on before folding it in. */
 	let loopPerPass = $state(2);
+	/**
+	 * Fitted types in the inventory `learn` last wrote, summed over species.
+	 *
+	 * Shown because the number is the whole point of the loop: it is what grows as audio
+	 * arrives, and a Learn tab that never showed it made "keep learning" unfalsifiable.
+	 */
+	const learnedTypeCount = $derived(
+		(pipelineStatus?.learned?.species ?? []).reduce((n, s) => n + (s.types ?? 0), 0)
+	);
+	/** From the loaded manifest, so both describe the galaxy currently on screen. */
+	const coverage = $derived(assets?.manifest?.typeCoverage ?? null);
+	const relationHeadline = $derived(assets?.manifest?.relations?.headline ?? '');
 	let buildUseLearned = $state(true);
 	let buildIncludeHarvest = $state(true);
 	/** Which audio the build renders from; the server has taken this since it existed. */
@@ -1119,6 +1213,7 @@ uv run birdy-pipeline build</pre>
 				{pointSize}
 				{spin}
 				{focus}
+				{claimFocus}
 				{spread}
 				speed={tempo}
 				labels={showLabels}
@@ -1206,11 +1301,7 @@ uv run birdy-pipeline build</pre>
 									<span class="lbl">Point size <b class="mono">{pointSize.toFixed(1)}</b></span>
 									<input type="range" min="1" max="10" step="0.1" bind:value={pointSize} />
 								</label>
-								<label class="field">
-									<span class="lbl">Tempo <b class="mono">{tempo.toFixed(2)}×</b></span>
-									<input type="range" min="0.1" max="2" step="0.05" bind:value={tempo} />
-								</label>
-								<div class="checks">
+									<div class="checks">
 									<label class="check"><input type="checkbox" bind:checked={spin} /> Rotate</label>
 									<label class="check"
 										><input type="checkbox" bind:checked={showLabels} /> Labels</label
@@ -1252,6 +1343,45 @@ uv run birdy-pipeline build</pre>
 					{/if}
 				</h2>
 				<div class="cardbody">
+				{#if claimFocus >= 0}
+					<!--
+						**What "social" actually contains, because the word on its own is not a finding.**
+						Zooming into a claim island showed a closer view of the same four-way filing
+						system. Every one of these knots already carries a behavioural class from the
+						pipeline's auditable keyword table and the sentence a researcher wrote about what
+						the call does; the claim was simply the only level anything was ever drawn at.
+						Distinct messages, not one per knot — seven clusters of the same tit call carry the
+						same sentence and printing it seven times is noise.
+					-->
+					<div class="claiminfo">
+						<h3 class="claimname">{CLAIM_LABELS[claimFocus] ?? 'unclaimed'}</h3>
+						<p class="note faint">{CLAIM_HINTS[claimFocus] ?? ''}</p>
+						{#each claimContents as group (group.cls)}
+							<div class="subclass">
+								<div class="subhead">
+									<span class="subname">{group.cls}</span>
+									<span class="subcount mono"
+										>{group.knots} knot{group.knots === 1 ? '' : 's'}</span
+									>
+								</div>
+								{#if group.messages.length}
+									<ul class="messages">
+										{#each group.messages as message (message)}
+											<li>{message}</li>
+										{/each}
+									</ul>
+								{:else}
+									<p class="note faint">
+										No documented function — real audio of a known bird and nothing more.
+									</p>
+								{/if}
+							</div>
+						{/each}
+						{#if !claimContents.length}
+							<p class="note faint">Nothing is filed under this claim in the current build.</p>
+						{/if}
+					</div>
+				{/if}
 				{#if panelReading?.best}
 					{@const best = panelReading.best}
 					<div class="best" class:past={!readingIsLive}>
@@ -1477,7 +1607,33 @@ uv run birdy-pipeline build</pre>
 							</label>
 							<label class="field">
 								<span class="lbl">Volume <b class="mono">{volume.toFixed(2)}</b></span>
-								<input type="range" min="0" max="1" step="0.01" bind:value={volume} />
+								<!--
+									**Ceiling raised past unity, which is only safe because of the limiter.**
+									A master gain of 1.0 was the loudest the app could go, and it was not loud:
+									every note is normalised by `ampPP` so no syllable ever approaches full
+									scale, and the reverb split takes another chunk. Above 1.0 the sum of a
+									twelve-voice chorus would hard-clip at the output, so `BirdyEngine` now
+									ends in a limiter and the extra headroom is usable rather than distorted.
+								-->
+								<input type="range" min="0" max="3" step="0.02" bind:value={volume} />
+							</label>
+							<!--
+								**Tempo belongs to the birds, so it lives with them.** It sat in the display
+								panel and multiplied the cloud's rotation as well as the song rate, which made
+								it read as a view setting: slowing the birds down to hear a call also froze the
+								picture, and the one control did two unrelated jobs. Here it does one — how
+								fast the aviary sings — and `Rotate` under display does the other.
+							-->
+							<label class="field">
+								<span class="lbl">Tempo <b class="mono">{tempo.toFixed(2)}×</b></span>
+								<input
+									type="range"
+									min="0.1"
+									max="2"
+									step="0.05"
+									bind:value={tempo}
+									title="How fast the birds sing: how long each syllable lasts, how often one starts, and trill and vibrato rates with it. Pitch is unaffected — a slowed bird keeps its pitch and simply sings longer."
+								/>
 							</label>
 						</div>
 						<p class="note">Distance drives air absorption, reverb and the viewing scale together.</p>
@@ -1781,8 +1937,15 @@ uv run birdy-pipeline serve</pre>
 						<section class="block">
 							<h3 class="blocktitle">Learn</h3>
 							<label class="field">
-								<span class="lbl">Types per species <b class="mono">{learnTypes}</b></span>
-								<input type="range" min="2" max="24" step="1" bind:value={learnTypes} />
+								<span class="lbl">Fewest types per species <b class="mono">{learnTypes}</b></span>
+								<input
+									type="range"
+									min="2"
+									max="24"
+									step="1"
+									bind:value={learnTypes}
+									title="A floor, not the answer. The repertoire size is chosen per species by silhouette over a sweep, so a well-recorded bird gets more types than a thinly recorded one; this is only where that sweep starts."
+								/>
 							</label>
 							<button
 								class="wide"
@@ -1829,17 +1992,29 @@ uv run birdy-pipeline serve</pre>
 
 						<section class="block">
 							<h3 class="blocktitle">Rebuild the galaxy</h3>
+						<!--
+								**Named by what they are for, not by their algorithm.** "Fixed k" and
+								"Density" are implementation words, and they hid the fact that these two do
+								different jobs rather than the same job differently. Every response in the
+								app goes through a cluster carrying a `(species, syllable)` name — the
+								trajectory, the tag, the reported match — and only the seeded KMeans
+								guarantees each type gets one; it currently names 236 of 239 and can never
+								say "this is a sound nobody has identified". HDBSCAN can say exactly that,
+								and cannot guarantee coverage. So one builds the galaxy you use and the
+								other looks for what is missing from it.
+							-->
 							<div class="segmented">
 								<button
 									class:on={buildClustering === 'kmeans'}
 									onclick={() => (buildClustering = 'kmeans')}
-									title="Fit exactly k groups and put every point in one of them.">Fixed k</button
+									title="One cluster per syllable type, seeded at that type's own centre, every point assigned. This is what lets the app name, label and draw a path for anything it sings — it cannot report an unidentified sound."
+									>Name everything</button
 								>
 								<button
 									class:on={buildClustering === 'hdbscan'}
 									onclick={() => (buildClustering = 'hdbscan')}
-									title="Find however many dense regions there are, and leave sounds that belong to none of them unassigned. Clusters holding both documented renders and field audio hand the field audio a candidate identity."
-									>Density</button
+									title="Find however many dense regions there are and leave the rest unassigned. Regions of real audio with nothing documented in them are flagged `unknown` — candidate new syllables. Coverage is not guaranteed, so this is for discovery rather than for the galaxy you listen in."
+									>Find the unknown</button
 								>
 							</div>
 							{#if buildClustering === 'hdbscan'}
@@ -1857,26 +2032,50 @@ uv run birdy-pipeline serve</pre>
 									/>
 								</label>
 							{/if}
-							<label class="field">
-								<span class="lbl">Render from</span>
-								<select bind:value={buildSource}>
-									<option value="synthetic">synthetic renders</option>
-									<option value="local">local audio</option>
-									<option value="harvest">harvested audio</option>
-								</select>
-							</label>
-							<div class="checks">
-								<label class="check" title="Include the syllables fitted to real recordings.">
-									<input
-										type="checkbox"
-										bind:checked={buildUseLearned}
-										disabled={!pipelineStatus.learned.exists}
-									/> Fitted
-								</label>
-								<label class="check" title="Fold the harvested descriptor store into the corpus.">
-									<input type="checkbox" bind:checked={buildIncludeHarvest} /> Harvested
-								</label>
-							</div>
+							<!--
+								**The corpus is one accumulating thing, so this is a statement rather than
+								a choice.** These were two checkboxes and a "render from" dropdown, and that
+								framing was wrong: the rendered repertoire is the *frame* — it is what
+								carries every name, function and citation, and therefore what any field
+								recording is identified against — while the harvest is what fills in the
+								shape of the real repertoire around it. Unticking either produced a galaxy
+								that was not a smaller version of the right one but a broken one: with no
+								renders, not a single cluster carries a syllable name and nothing the app
+								sings can light a knot, draw a path or be labelled at all.
+								So both are always in, and what is left to say is what the build *contains*.
+							-->
+							<p class="note faint">
+								Every build renders the current repertoire — {pipelineStatus.learned.exists
+									? `${learnedTypeCount} fitted + 44 documented`
+									: '44 documented'} syllables — and folds in every descriptor the harvest
+								has kept. The renders are the frame that names things; the field audio is
+								what gets identified against it.
+							</p>
+							<details class="diag">
+								<summary class="note faint">Leave one out (diagnostic)</summary>
+								<div class="checks">
+									<label
+										class="check"
+										title="Off: build the documented repertoire alone, without the syllables fitted to real recordings."
+									>
+										<input
+											type="checkbox"
+											bind:checked={buildUseLearned}
+											disabled={!pipelineStatus.learned.exists}
+										/> Fitted syllables
+									</label>
+									<label
+										class="check"
+										title="Off: build the renders alone. Useful for reading verify:features; the galaxy loses the real repertoire's shape."
+									>
+										<input type="checkbox" bind:checked={buildIncludeHarvest} /> Harvested audio
+									</label>
+								</div>
+								<p class="note faint">
+									Unticking is for reading a measurement, not for a galaxy to use. A build
+									with no renders can name nothing and the app will say so.
+								</p>
+							</details>
 							<button
 								class="wide"
 								disabled={jobRunning || pipelineBusy}
@@ -1885,30 +2084,64 @@ uv run birdy-pipeline serve</pre>
 										pipeline.build({
 											useLearned: buildUseLearned,
 											includeHarvest: buildIncludeHarvest,
-											source: buildSource,
 											clustering: buildClustering,
 											minClusterSize: buildMinCluster
 										})
 									)}>Rebuild</button
 							>
 							<!--
-								Growing is the cheap half of the same job: new audio is placed in the
-								frame the current galaxy already has, so nothing on screen moves and the
-								cloud gains marks around what you were looking at. It cannot discover a
-								cluster, which is what the drift figures in the job log are for.
+								**Growing is not an action, it is what learning does.**
+								
+								This was a button next to Rebuild, which framed the two as alternatives you
+								pick between. They are not: growing places new audio in the frame the current
+								galaxy already has, so nothing on screen moves and the cloud gains marks
+								around what you were looking at — it is the continuous half of learning, and
+								`loop` already does it at the end of every pass, followed by a rebuild when
+								the repertoire has moved on far enough that placing is no longer honest.
+								Asking someone to press it made a background process into a chore, and
+								pressing it at the wrong moment did nothing at all.
+								
+								Rebuild stays, because "re-place every point now" is a real thing to want.
 							-->
-							<button
-								class="wide"
-								disabled={jobRunning || pipelineBusy || !pipelineStatus.store.syllables}
-								onclick={() => runPipeline(() => pipeline.grow({}))}
-								title="Add the store's newest audio to the galaxy without rebuilding it. Existing points keep their positions."
-								>Grow it instead</button
-							>
-							{#if pipelineStatus.built.exists}
+							<p class="note faint">
+								New audio is folded into the cloud automatically at the end of every learning
+								pass, and a full rebuild follows once the repertoire has moved far enough that
+								placing it in the old frame would stop being honest. Rebuild here only forces
+								that now.
+							</p>
+						{#if pipelineStatus.built.exists}
 								<dl class="facts mono">
 									<div><dt>points</dt><dd>{pipelineStatus.built.points ?? '—'}</dd></div>
 									<div><dt>clusters</dt><dd>{pipelineStatus.built.clusters ?? '—'}</dd></div>
+									<!--
+										**The two numbers that decide whether a build is usable, which the tab
+										never showed.** Coverage is how many types got a cluster carrying their
+										name; a type with none is silently unplayable — it was 0/2 for the cuckoo
+										and the only symptom was a bird singing into an empty picture. The
+										relation headline is whether the geometry is answering a question about
+										birds or about microphones. Both come from the loaded manifest rather
+										than the control process, so they describe the galaxy on screen.
+									-->
+									{#if coverage}
+										<div>
+											<dt>named</dt>
+											<dd class:warn={coverage.share < 0.98}>
+												{coverage.withCluster}/{coverage.types}
+											</dd>
+										</div>
+									{/if}
 								</dl>
+								{#if coverage && coverage.orphans.length}
+									<p class="note faint">
+										{coverage.orphans.length} type{coverage.orphans.length === 1 ? '' : 's'} with
+										no cluster, so nothing lights when they are sung:
+										<span class="mono">{coverage.orphans.slice(0, 4).join(', ')}</span
+										>{coverage.orphans.length > 4 ? ` +${coverage.orphans.length - 4}` : ''}
+									</p>
+								{/if}
+								{#if relationHeadline}
+									<p class="note faint">Geometry: {relationHeadline}</p>
+								{/if}
 							{/if}
 							{#if corpusHealth}
 								<dl
@@ -2439,6 +2672,75 @@ uv run birdy-pipeline serve</pre>
 		gap: 0.3rem 0.75rem;
 		margin: 0;
 		font-size: 0.7rem;
+	}
+
+	/* Coverage below 98 % means some types cannot be played at all, which is worth a colour
+	   rather than a number a reader has to divide in their head. */
+	.claiminfo {
+		display: grid;
+		gap: 0.4rem;
+	}
+
+	.claimname {
+		margin: 0;
+		font-size: 0.95rem;
+		font-weight: 600;
+	}
+
+	/* Indented under a rule, so the nesting is visible rather than implied: these are what
+	   the claim is made of, not more things beside it. */
+	.subclass {
+		border-left: 2px solid var(--rule);
+		padding-left: 0.5rem;
+	}
+
+	.subhead {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		gap: 0.5rem;
+	}
+
+	.subname {
+		font-size: 0.72rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.09em;
+	}
+
+	.subcount {
+		font-size: 0.56rem;
+		color: var(--ink-faint);
+	}
+
+	/* The messages are the point of the whole panel, so they get body size rather than the
+	   metadata size everything around them uses. */
+	.messages {
+		margin: 0.15rem 0 0;
+		padding-left: 0.9rem;
+		display: grid;
+		gap: 0.1rem;
+	}
+
+	.messages li {
+		font-size: 0.72rem;
+		line-height: 1.35;
+	}
+
+	.facts dd.warn {
+		color: var(--invented);
+		font-weight: 600;
+	}
+
+	/* Folded away by default: leaving a half out of the corpus is how you read a
+	   measurement, not how you build a galaxy to use. */
+	.diag {
+		border-top: 1px dotted var(--rule);
+		padding-top: 0.35rem;
+	}
+
+	.diag summary {
+		cursor: pointer;
 	}
 
 	.facts > div {

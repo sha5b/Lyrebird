@@ -754,6 +754,62 @@ def learn_grammar(
 # --- putting it together -----------------------------------------------------------
 
 
+def choose_k(
+    observations: Sequence[SyllableObservation],
+    floor: int = DEFAULT_TYPES,
+    seed: int = 0,
+    verbose: bool = False,
+    species_id: str = "",
+) -> int:
+    """Pick the number of types by silhouette over a sweep, not by a flag or by corpus size.
+
+    The candidates are geometric between `floor` and what the data could support at
+    `OBS_PER_TYPE` observations per type, capped at `MAX_TYPES`. Geometric rather than every
+    integer because the silhouette curve over k is smooth and a six-point sweep finds the
+    shoulder as well as a sixty-point one at a tenth of the cost.
+
+    Silhouette is computed on a subsample: it is O(n^2) in distances and these species have
+    thousands of observations, while the statistic itself stabilises long before that.
+    """
+    from sklearn.metrics import silhouette_score
+
+    n = len(observations)
+    ceiling = max(2, min(MAX_TYPES, n // OBS_PER_TYPE))
+    lowest = max(2, min(floor, ceiling))
+    if ceiling <= lowest:
+        return lowest
+
+    candidates: list[int] = []
+    k = lowest
+    while k < ceiling:
+        candidates.append(k)
+        k = max(k + 1, int(round(k * 1.7)))
+    candidates.append(ceiling)
+    candidates = sorted(set(candidates))
+
+    x = np.stack([_observation_vector(o) for o in observations])
+    x = (x - x.mean(axis=0)) / np.maximum(x.std(axis=0), 1e-6)
+    rng = np.random.default_rng(seed)
+    sample = x if n <= 2000 else x[rng.choice(n, size=2000, replace=False)]
+
+    best_k, best_score = lowest, -2.0
+    scores: list[tuple[int, float]] = []
+    for cand in candidates:
+        if cand >= len(sample):
+            continue
+        labels = KMeans(n_clusters=cand, n_init=4, random_state=seed).fit_predict(sample)
+        if len(set(labels)) < 2:
+            continue
+        score = float(silhouette_score(sample, labels))
+        scores.append((cand, score))
+        if score > best_score:
+            best_k, best_score = cand, score
+    if verbose and scores:
+        shown = ", ".join(f"k={c}:{s:+.3f}" for c, s in scores)
+        log(f"  {species_id:26} type-count sweep {shown} -> {best_k}")
+    return best_k
+
+
 def learn_species(
     species_id: str,
     observations: Sequence[SyllableObservation],
@@ -773,18 +829,23 @@ def learn_species(
                 f"{MIN_OBSERVATIONS} needed, skipped")
         return None
 
-    # **How many types to fit is a question for the evidence, not for a flag.**
+    # **How many types to fit is a question for the data, and it needs a criterion.**
     #
-    # This was `min(types, n // OBS_PER_TYPE)`, so the repertoire could never exceed whatever
-    # `--types` said however much audio arrived: a species with seven thousand observations got
-    # the same eight types as one with two hundred, and a loop left running for an hour refit
-    # the same eight over and over. A repertoire that cannot grow is not learning.
+    # Two wrong answers came before this one. `min(types, n // OBS_PER_TYPE)` pinned the
+    # repertoire to a flag, so a species with seven thousand observations got the same eight
+    # types as one with two hundred and a loop could run for an hour without the repertoire
+    # growing. Replacing that with `n // OBS_PER_TYPE` swung too far the other way: one type
+    # per twelve observations is not evidence of anything, it is a linear function of corpus
+    # size, and measured on this harvest it drove every well-recorded species to the ceiling
+    # and cost half the fit quality — types landing nearest their own source audio fell from
+    # 51 % to 28 %.
     #
-    # `types` becomes the floor — what to fit once there is enough audio to fit anything — and
-    # the ceiling comes from the data at `OBS_PER_TYPE` observations each, capped so one very
-    # well recorded bird cannot ask for hundreds of one-member types.
-    evidence = len(observations) // OBS_PER_TYPE
-    k = max(2, min(max(types, evidence), MAX_TYPES))
+    # So the count is chosen by silhouette over a candidate sweep: fit each k, ask how
+    # separated the resulting types actually are in the observation space, and keep the best.
+    # That is a statement about the recordings rather than about the corpus size, it cannot
+    # be gamed by harvesting more of the same call, and `--types` becomes the floor of the
+    # sweep rather than its answer.
+    k = choose_k(observations, floor=types, seed=seed, verbose=verbose, species_id=species_id)
     fitted = fit_types(observations, k, seed=seed, previous=previous)
 
     index = {id(o): i for i, o in enumerate(observations)}

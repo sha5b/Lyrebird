@@ -5,8 +5,6 @@
 
 	interface Props {
 		spin?: boolean;
-		/** Multiplies the drift rate; 0 stops it without snapping the rotation back. */
-		speed?: number;
 		/**
 		 * Scales the whole cloud. The listening distance drives it, so a bird across the
 		 * field is further away in the picture as well as in the filters — and because
@@ -21,13 +19,22 @@
 		children?: Snippet;
 	}
 
-	let { spin = true, speed = 1, scale = 1, group = $bindable(), children }: Props = $props();
+	let { spin = true, scale = 1, group = $bindable(), children }: Props = $props();
 	let current = 1;
 
-	/** Slow drift, so the cloud reads as a volume rather than a flat picture. */
+	/**
+	 * Slow drift, so the cloud reads as a volume rather than a flat picture.
+	 *
+	 * **The drift rate is fixed and no longer follows the tempo.** Tempo used to multiply it,
+	 * on the reasoning that it "slows the whole aviary" — but tempo is a property of the
+	 * birds, and the rotation is a property of the view. Coupling them meant slowing the
+	 * birds down to hear a call also froze the picture you were trying to read it in, and
+	 * speeding them up spun the cloud out from under the cursor. `Rotate` is the control for
+	 * the rotation.
+	 */
 	useTask((delta) => {
 		if (!group) return;
-		if (spin) group.rotation.y += delta * 0.035 * speed;
+		if (spin) group.rotation.y += delta * 0.035;
 		// eased rather than snapped, so dragging the distance slider glides the cloud
 		current += (scale - current) * Math.min(1, delta * 4);
 		group.scale.setScalar(current);

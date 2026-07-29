@@ -183,6 +183,33 @@ export interface Manifest {
 	unassigned?: number;
 	/** Bumped by every `grow`; points carry the generation they joined in. */
 	generation?: number;
+	/**
+	 * How many syllable types ended up with a cluster carrying their name. A type with none
+	 * cannot light, be labelled or draw a trajectory, so this is the number that says whether
+	 * the galaxy can respond to the repertoire it was built from.
+	 */
+	typeCoverage?: { types: number; withCluster: number; share: number; orphans: string[] };
+	/**
+	 * Which groupings the geometry actually corresponds to, each against its own label
+	 * permutation. `headline` says whether the strongest one beats the recording-condition
+	 * controls — the difference between structure about birds and structure about microphones.
+	 */
+	relations?: {
+		headline: string;
+		knnK: number;
+		permutations: number;
+		relations: {
+			grouping: string;
+			space: string;
+			groups: number;
+			coverage: number;
+			knn: number | null;
+			knnNull: number | null;
+			knnP: number | null;
+			silhouette: number | null;
+			verdict: string;
+		}[];
+	};
 	files?: Record<string, string>;
 	[key: string]: unknown;
 }

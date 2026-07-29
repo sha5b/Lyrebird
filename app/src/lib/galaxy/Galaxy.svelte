@@ -33,6 +33,8 @@
 		labels?: boolean;
 		/** Species index to keep at full strength; -1 shows every species equally. */
 		focus?: number;
+		/** Claim bucket to keep at full strength; -1 shows every claim equally. */
+		claimFocus?: number;
 		pinned?: number;
 		/**
 		 * Clusters to fly the camera to and hold in frame — the nodes of a phrase picked
@@ -41,7 +43,10 @@
 		frame?: number[];
 		/** Cloud scale, driven by the listening distance. */
 		spread?: number;
-		/** Multiplies every animation rate. */
+		/**
+		 * Multiplies the per-point pulse rate, which follows the sound and so belongs with the
+		 * tempo. It no longer reaches the cloud's rotation — see `Spinner`.
+		 */
 		speed?: number;
 		/** Which arrangement to show; changing it animates the cloud into the new one. */
 		layout?: LayoutId;
@@ -66,6 +71,7 @@
 		spin = true,
 		labels = true,
 		focus = -1,
+		claimFocus = -1,
 		pinned = -1,
 		spread = 1,
 		speed = 1,
@@ -193,7 +199,7 @@
 			The cloud, the trajectories and the label anchors share one group: the rotation
 			has to apply to all of them or the lines and the tags drift off their points.
 		-->
-		<Spinner {spin} {speed} scale={spread} bind:group={cloud}>
+		<Spinner {spin} scale={spread} bind:group={cloud}>
 			<GridBurst {signal} {view} />
 			<ContextPaths {assets} {signal} {view} />
 			<PointCloud
@@ -201,6 +207,7 @@
 				{signal}
 				{pointSize}
 				{focus}
+				{claimFocus}
 				{speed}
 				{layout}
 				{view}
