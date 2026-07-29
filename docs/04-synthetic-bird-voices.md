@@ -4,7 +4,13 @@
 
 - Birds sing with the **syrinx** (at the trachea/bronchi junction), not the larynx.
   Sound = soft-tissue **labia** vibrating in airflow — a *nonlinear flow-induced
-  oscillator* with an on/off threshold (Hopf bifurcation).
+  oscillator* with an on/off threshold. **Two different bifurcations start it, and which
+  one decides the timbre**: at high tension the oscillation is born in a Hopf and is
+  tonal; at low tension it is born in a saddle-node-on-a-limit-cycle, has finite
+  amplitude at zero frequency, and is pulse-like and harmonically dense (Sitt et al.,
+  Phys Rev E 78:011905, 2008). The spectral content index — spectral centroid ÷ f0 — is
+  a function of tension alone. Treating the threshold as "just a Hopf" is what led Birdy
+  to synthesize every species as a pure tone; see `08-implementation.md` §8.1a.
 - **Two independent voices** (left/right sides): two simultaneous independently
   frequency-modulated tones, or mid-syllable side switching.
 - Two control parameters explain nearly everything: **air-sac pressure** (≈
@@ -16,7 +22,23 @@
   experiments, Nowicki 1987; Beckers et al. PNAS 2003). → a **formant that follows
   the pitch contour is scientifically mandatory**, not cosmetic. The existing
   procedural engine's tracking bandpass "throat" (see
-  `02-procedural-voice-engine.md`) is exactly right.
+  `02-procedural-voice-engine.md`) is exactly right — and X-ray cinematography of singing
+  cardinals has since confirmed the mechanism directly (Riede et al., PNAS 103:5543, 2006:
+  the oropharyngeal-esophageal cavity shrinks from 2.0 to 0.6 ml to carry its resonance from
+  1.5 to 5 kHz *within* a syllable).
+- **But a tracking formant alone is not sufficient, and this was Birdy's largest error.**
+  If every resonance follows f0, the spectral envelope is pitch-invariant: transposing a
+  syllable transposes its whole spectrum, so two species at the same pitch are the same
+  instrument. The trachea does **not** move — it is a tube closed at the syrinx, resonating
+  as a stopped quarter-wave pipe at the odd harmonics of one frequency set by the bird's
+  body: `f_n = (2n−1)·c/4L`. Measured 2.0 and 5.5 kHz in eastern towhee against 1.88 and
+  5.67 kHz predicted for its 45 mm trachea (Nelson, Beckers & Suthers, JEB 208:297, 2005);
+  ≈ 2, 5, 8, 12 kHz in cardinal. Because it is fixed per bird rather than per note, it is
+  the main carrier of **species identity** — the thing a listener uses to tell two birds
+  apart. See `08-implementation.md` §8.1a.
+- Beak gape is **not** a resonance shifter. It does not move resonances below 4 kHz at all;
+  it acts as a high-shelf on 4–7.5 kHz, `A = −5 + 32·log(B)` (Nelson et al. 2005). The
+  earlier gape-tracks-f0 correlations are real but the causation is the OEC and tongue.
 - Trills = rapid AM gated by the respiratory cycle; parrots articulate human-like
   formants with the tongue (Beckers et al. 2004) — the biological license for a
   "speaking parrot" mode.

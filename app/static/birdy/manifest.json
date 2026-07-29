@@ -1,29 +1,30 @@
 {
- "builtAt": "2026-07-29T06:16:09+00:00",
+ "builtAt": "2026-07-29T06:26:05+00:00",
  "pipeline": "birdy-pipeline",
  "contract": "docs/08-implementation.md v1",
  "inventoryVersion": 1,
  "inventorySource": {
   "path": "/home/sha5b/Documents/GitHub/Birdy/data/learned-inventory.json",
   "name": "learned-inventory.json",
-  "writtenAt": "2026-07-29T06:08:52+00:00",
+  "writtenAt": "2026-07-29T06:20:05+00:00",
   "species": 26,
   "syllables": 433
  },
  "typeCoverage": {
   "types": 433,
-  "withCluster": 425,
+  "withCluster": 424,
   "orphans": [
    "cuculus_canorus/L00",
    "cuculus_canorus/L06",
    "lonchura_punctulata/L07",
    "lonchura_punctulata/L11",
    "parus_minor/L61",
+   "poecile_cinctus/L05",
    "poecile_rufescens/L05",
-   "zosterops_japonicus/L12",
-   "zosterops_simplex/L20"
+   "troglodytes_troglodytes/L01",
+   "zosterops_japonicus/L12"
   ],
-  "share": 0.9815
+  "share": 0.9792
  },
  "relations": {
   "definition": "per grouping: share of a point's 10 nearest neighbours sharing its label, against the same statistic over 199 label permutations. Groups under 8 points and unlabelled points are excluded; coverage says how much of the corpus was testable.",
@@ -52,7 +53,7 @@
     "knn": null,
     "knnNull": null,
     "knnP": null,
-    "silhouette": 0.4426,
+    "silhouette": 0.4427,
     "verdict": "untestable (one observation per group)"
    },
    {
@@ -61,7 +62,7 @@
     "groups": 3,
     "labelled": 71740,
     "coverage": 1.0,
-    "knn": 0.9745,
+    "knn": 0.9744,
     "knnNull": 0.5112,
     "knnP": 0.005,
     "silhouette": 0.0165,
@@ -88,7 +89,7 @@
     "knn": 0.7389,
     "knnNull": 0.4828,
     "knnP": 0.005,
-    "silhouette": -0.2035,
+    "silhouette": -0.2036,
     "verdict": "strong"
    },
    {
@@ -97,7 +98,7 @@
     "groups": 254,
     "labelled": 29890,
     "coverage": 0.4166,
-    "knn": 0.3226,
+    "knn": 0.3227,
     "knnNull": 0.0181,
     "knnP": 0.005,
     "silhouette": -0.0428,
@@ -109,7 +110,7 @@
     "groups": 3,
     "labelled": 12931,
     "coverage": 0.1802,
-    "knn": 0.8671,
+    "knn": 0.8672,
     "knnNull": 0.7562,
     "knnP": 0.005,
     "silhouette": 0.0126,
@@ -157,10 +158,10 @@
     "groups": 26,
     "labelled": 71740,
     "coverage": 1.0,
-    "knn": 0.1884,
+    "knn": 0.1878,
     "knnNull": 0.053,
     "knnP": 0.005,
-    "silhouette": -0.1424,
+    "silhouette": -0.1415,
     "verdict": "clear"
    },
    {
@@ -172,7 +173,7 @@
     "knn": null,
     "knnNull": null,
     "knnP": null,
-    "silhouette": 0.2097,
+    "silhouette": 0.2117,
     "verdict": "untestable (one observation per group)"
    },
    {
@@ -181,10 +182,10 @@
     "groups": 3,
     "labelled": 71740,
     "coverage": 1.0,
-    "knn": 0.8796,
+    "knn": 0.8779,
     "knnNull": 0.5112,
     "knnP": 0.005,
-    "silhouette": 0.1047,
+    "silhouette": 0.1053,
     "verdict": "strong"
    },
    {
@@ -193,10 +194,10 @@
     "groups": 10,
     "labelled": 29577,
     "coverage": 0.4123,
-    "knn": 0.5498,
-    "knnNull": 0.4522,
+    "knn": 0.5456,
+    "knnNull": 0.4523,
     "knnP": 0.005,
-    "silhouette": -0.2524,
+    "silhouette": -0.2396,
     "verdict": "weak"
    },
    {
@@ -205,10 +206,10 @@
     "groups": 5,
     "labelled": 12931,
     "coverage": 0.1802,
-    "knn": 0.6099,
-    "knnNull": 0.4825,
+    "knn": 0.6026,
+    "knnNull": 0.4823,
     "knnP": 0.005,
-    "silhouette": -0.2059,
+    "silhouette": -0.2031,
     "verdict": "clear"
    },
    {
@@ -217,10 +218,10 @@
     "groups": 254,
     "labelled": 29890,
     "coverage": 0.4166,
-    "knn": 0.1154,
-    "knnNull": 0.018,
+    "knn": 0.1119,
+    "knnNull": 0.0181,
     "knnP": 0.005,
-    "silhouette": -0.3401,
+    "silhouette": -0.3424,
     "verdict": "weak"
    },
    {
@@ -229,10 +230,10 @@
     "groups": 3,
     "labelled": 12931,
     "coverage": 0.1802,
-    "knn": 0.8252,
-    "knnNull": 0.7564,
+    "knn": 0.8232,
+    "knnNull": 0.7563,
     "knnP": 0.005,
-    "silhouette": -0.0631,
+    "silhouette": -0.0626,
     "verdict": "weak"
    },
    {
@@ -241,8 +242,8 @@
     "groups": 2,
     "labelled": 30043,
     "coverage": 0.4188,
-    "knn": 0.7703,
-    "knnNull": 0.7631,
+    "knn": 0.7708,
+    "knnNull": 0.7632,
     "knnP": 0.005,
     "silhouette": 0.0074,
     "verdict": "negligible"
@@ -253,7 +254,7 @@
     "groups": 53,
     "labelled": 30020,
     "coverage": 0.4185,
-    "knn": 0.1812,
+    "knn": 0.1815,
     "knnNull": 0.0658,
     "knnP": 0.005,
     "silhouette": -0.2664,
@@ -265,11 +266,11 @@
     "groups": 4,
     "labelled": 12931,
     "coverage": 0.1802,
-    "knn": 0.4677,
-    "knnNull": 0.3675,
+    "knn": 0.4594,
+    "knnNull": 0.3674,
     "knnP": 0.005,
-    "silhouette": -0.0391,
-    "verdict": "clear"
+    "silhouette": -0.0403,
+    "verdict": "weak"
    }
   ]
  },
@@ -291,23 +292,23 @@
  "projection": "cmds",
  "projectionParams": {
   "eigenvalues": [
-   182.90320798950123,
-   76.20481162399336,
-   70.95815495268322
+   182.85484148167296,
+   76.2252695424975,
+   70.95790470847179
   ],
   "varianceRatio": [
-   0.26348026075624126,
-   0.10977644327989333,
-   0.10221839942133717
+   0.2634176864898729,
+   0.10980887348812218,
+   0.10222079407368549
   ],
-  "negativeEigenvalueMass": 0.3736334353760661,
+  "negativeEigenvalueMass": 0.37362774695110906,
   "landmarks": 800,
   "mode": "landmark",
   "metric": "cosine"
  },
  "faithfulness": {
-  "pearson": 0.7621,
-  "spearman": 0.7488,
+  "pearson": 0.7625,
+  "spearman": 0.7492,
   "pairs": 199998,
   "definition": "correlation between 28-d cosine distance and 3D euclidean distance over random point pairs; 1.0 = distances fully meaningful"
  },
@@ -319,33 +320,33 @@
  "tearing": {
   "measured": 541,
   "torn": 6,
-  "severe": 1,
-  "median": 2.118,
-  "worstGap": 0.387,
+  "severe": 2,
+  "median": 2.114,
+  "worstGap": 0.548,
   "definition": "clusters this projection draws in two places at once, so their centroid \u2014 where the label, the trajectory and the wave all go \u2014 lands between two blobs instead of on the points; splitting a single blob scores ~2, so 2 is the null and 'torn' counts above 5"
  },
  "projectionComparison": {
   "cmds": {
    "faithfulness": {
-    "pearson": 0.7621,
-    "spearman": 0.7488,
+    "pearson": 0.7625,
+    "spearman": 0.7492,
     "pairs": 199998
    },
    "knnAgreement": 0.5338,
-   "purity": 0.5865,
-   "meanRadius": 0.8075,
+   "purity": 0.5862,
+   "meanRadius": 0.8119,
    "params": {
     "eigenvalues": [
-     182.90320798950123,
-     76.20481162399336,
-     70.95815495268322
+     182.85484148167296,
+     76.2252695424975,
+     70.95790470847179
     ],
     "varianceRatio": [
-     0.26348026075624126,
-     0.10977644327989333,
-     0.10221839942133717
+     0.2634176864898729,
+     0.10980887348812218,
+     0.10222079407368549
     ],
-    "negativeEigenvalueMass": 0.3736334353760661,
+    "negativeEigenvalueMass": 0.37362774695110906,
     "landmarks": 800,
     "mode": "landmark",
     "metric": "cosine"
@@ -433,11 +434,10 @@
   "counts": {
    "unclassified": 509,
    "structural": 24,
+   "alarm": 9,
    "territorial": 8,
-   "alarm": 8,
    "contact": 4,
-   "recruitment": 1,
-   "courtship": 1
+   "recruitment": 1
   }
  },
  "sourceMix": {
@@ -477,9 +477,9 @@
   0.0246,
   1.8649
  ],
- "clusterPurity": 0.5865,
+ "clusterPurity": 0.5862,
  "unassigned": 0,
- "meanRadius": 0.8075,
+ "meanRadius": 0.8119,
  "files": [
   "manifest.json",
   "inventory.json",

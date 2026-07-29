@@ -631,12 +631,8 @@ _SEARCH_AXES: list[tuple[str, list[Any]]] = [
     ("tractQ", [0.0, 3.0, 6.0, 12.0, 20.0, 30.0]),
     ("level", [0.3, 0.45, 0.6, 0.75, 0.9, 1.05, 1.2, 1.35]),
     ("harmonic", [0.0, 0.1, 0.2, 0.35, 0.5, 0.7, 0.9]),
-    # The tracheal comb, as one frequency plus one gain. Relative to the syllable's own
-    # register rather than absolute, because a bird with a low voice has a long trachea:
-    # body size sets both. The stored `formants` are absolute Hz all the same, which is the
-    # whole point of them.
-    ("tracheaGain", [0.0, 0.15, 0.3, 0.6, 1.0]),
-    ("tracheaF1", [0.5, 0.75, 1.0, 1.5, 2.0, 3.0]),
+    # The tracheal comb is deliberately **not** here. It is fitted once per species by
+    # `fit_species_trachea`, because a trachea is a property of the bird and not of the note.
     ("noise", [0.0, 0.05, 0.12, 0.25, 0.4, 0.6, 0.85]),
     ("rough", [0.0, 0.08, 0.2, 0.4, 0.65]),
     ("amDepth", [0.0, 0.15, 0.3, 0.45, 0.6, 0.8]),
@@ -650,44 +646,9 @@ _SEARCH_AXES: list[tuple[str, list[Any]]] = [
 INVERT_PASSES = 3
 
 
-#: Where the tracheal comb's f1 sits when only its gain has been searched so far. One times
-#: the syllable's own reference pitch, i.e. the first tracheal resonance near the fundamental
-#: — which is where the measured combs sit for birds whose song is in their tract's first
-#: resonance (the white-throated sparrow is the exception that proves it: its f0 falls
-#: *between* the first two tracheal formants).
-TRACHEA_F1_DEFAULT = 1.0
-
-
-def _trachea(syllable: dict[str, Any], f1_ratio: float, gain: float) -> dict[str, Any]:
-    """Write the comb into `formants`, as absolute Hz, from the two searched ratios."""
-    trial = dict(syllable)
-    trial["tracheaF1"] = f1_ratio
-    trial["tracheaGain"] = gain
-    if gain <= 0.0:
-        trial.pop("formants", None)
-        return trial
-    f0_ref = syrinx.f0_reference(syllable["contour"])
-    trial["formants"] = [
-        [round(hz, 1), q, round(g, 4)]
-        for hz, q, g in syrinx.tracheal_comb(f0_ref * f1_ratio, gain)
-    ]
-    if not trial["formants"]:
-        trial.pop("formants", None)
-    return trial
-
-
 def _with(syllable: dict[str, Any], key: str, value: Any) -> dict[str, Any]:
     """A copy of the syllable with one axis moved. `vib` is nested, so it needs a case."""
     trial = dict(syllable)
-    if key == "tracheaGain":
-        return _trachea(syllable, syllable.get("tracheaF1", TRACHEA_F1_DEFAULT), value)
-    if key == "tracheaF1":
-        # Moving the frequency of a comb that is switched off is a no-op the search would
-        # otherwise spend six renders discovering.
-        gain = syllable.get("tracheaGain", 0.0)
-        if gain <= 0.0:
-            return dict(syllable)
-        return _trachea(syllable, value, gain)
     if key in ("vibDepth", "vibRate"):
         vib = dict(trial.get("vib") or {"rate": 12.0, "depth": 0.0})
         vib["depth" if key == "vibDepth" else "rate"] = value
@@ -710,10 +671,6 @@ def _axis_value(syllable: dict[str, Any], key: str) -> Any:
         return (syllable.get("vib") or {}).get("depth", 0.0)
     if key == "vibRate":
         return (syllable.get("vib") or {}).get("rate", 12.0)
-    if key == "tracheaF1":
-        return syllable.get("tracheaF1", TRACHEA_F1_DEFAULT)
-    if key == "tracheaGain":
-        return syllable.get("tracheaGain", 0.0)
     if key == "gammaScale":
         return syllable.get("gammaScale", 1.0)
     if key == "tractQ":
@@ -721,6 +678,146 @@ def _axis_value(syllable: dict[str, Any], key: str) -> Any:
     if key in ("noise", "rough"):
         return syllable.get(key, 0.0)
     return syllable.get(key)
+
+
+# --- one trachea per bird ----------------------------------------------------------
+
+#: Search range for the measured first resonance, in Hz. A range and not a list of values:
+#: `measure_trachea_f1` scans it finely against the species' own spectrum, so a bird nobody
+#: has seen before gets its trachea measured rather than matched to a table. The bounds are
+#: physical — a stopped tube resonating below 500 Hz would be longer than any bird in this
+#: corpus, and above ~4.5 kHz the second partial has already left the 12 kHz tract roll-off.
+TRACHEA_F1_LO, TRACHEA_F1_HI = 600.0, 6000.0
+TRACHEA_F1_STEPS = 96
+#: Bands the envelope is smoothed over to remove the overall spectral tilt. Without this the
+#: comb score is dominated by "the spectrum is loudest at the low end", which is true of every
+#: recording and says nothing about any bird.
+TRACHEA_DETREND_BANDS = 7
+TRACHEA_GAIN_GRID = [0.15, 0.3, 0.6, 1.0]
+#: Types the comb is fitted over. It is one shared quantity, so the best-evidenced dozen
+#: estimate it as well as sixty do and at a fifth of the cost.
+TRACHEA_FIT_TYPES = 12
+
+
+def measure_trachea_f1(observations: Sequence[SyllableObservation]) -> float:
+    """Measure the bird's first tracheal resonance from its own recordings, in Hz.
+
+    Derived, not looked up: nothing here knows which species it is being handed, so a species
+    discovered an hour ago is measured on the same footing as one that has been in the
+    inventory since the start. There is no table of birds to keep in step with the harvest.
+
+    How it works. Average the per-syllable MFCC means over every observation of the species
+    and invert them to a 26-band log spectral envelope (`features.mel_envelope`). Those
+    syllables span many recordings and a wide range of f0, so anything that follows pitch
+    averages away and anything fixed in Hz survives — the resonance is what is left standing.
+    Detrend to remove the overall spectral tilt, then score a fine grid of candidate `f1` by
+    how much envelope energy sits at the odd harmonics `(2n-1)*f1` a stopped tube would put
+    there, weighted `1/(2n-1)` as the measured combs are. The best-scoring candidate wins.
+
+    Returns 0.0 when there is nothing to measure from.
+
+    **Known limit, and why it is safe.** For a bird whose f0 barely moves — a cuckoo sings two
+    notes — the average spectrum's largest peak *is* the fundamental, so the scan can lock onto
+    f0 instead of onto a resonance. There is no way to tell those apart from a spectrum alone,
+    and coincidence is not even a fault: cardinals sing near 2 kHz and their first tracheal
+    resonance is also near 2 kHz. This is why the frequency measured here is never trusted on
+    its own — `fit_species_trachea` still has to show that the comb *improves the resynthesis*
+    before any of it ships, and a bird whose comb does not earn its place keeps none. The
+    measurement proposes; the resynthesis decides.
+    """
+    rows = [
+        np.asarray(o.descriptor, dtype=np.float64)[: features.N_MFCC]
+        for o in observations
+        if o.descriptor
+    ]
+    if len(rows) < 2:
+        return 0.0
+    envelope = features.mel_envelope(np.mean(np.stack(rows), axis=0))
+    hz = features.mel_centres_hz()
+
+    # detrend: subtract a moving average, so what is scored is the peaks and not the tilt
+    k = TRACHEA_DETREND_BANDS
+    pad = np.pad(envelope, (k // 2, k // 2), mode="edge")
+    smooth = np.convolve(pad, np.ones(k) / k, mode="valid")[: envelope.size]
+    peaks = envelope - smooth
+
+    best_f1, best = 0.0, -np.inf
+    for f1 in np.geomspace(TRACHEA_F1_LO, TRACHEA_F1_HI, TRACHEA_F1_STEPS):
+        score, weight = 0.0, 0.0
+        for n in range(1, syrinx.TRACHEA_PARTIALS + 1):
+            f = (2 * n - 1) * f1
+            if f > syrinx.TRACT_LP_HZ or f > hz[-1]:
+                break
+            w = 1.0 / (2 * n - 1)
+            score += w * float(np.interp(f, hz, peaks))
+            weight += w
+        if weight <= 0.0:
+            continue
+        score /= weight
+        if score > best:
+            best, best_f1 = score, float(f1)
+    return best_f1 if best > 0.0 else 0.0
+
+
+def fit_species_trachea(
+    fitted: Sequence[LearnedType],
+    real: Sequence[np.ndarray | None],
+    calibration: Calibration | None,
+    frame: tuple[np.ndarray, np.ndarray] | None,
+    f1_hz: float,
+    sample_rate: int = features.SAMPLE_RATE,
+) -> tuple[float, float]:
+    """One absolute tracheal comb for the whole bird. Returns `(f1_hz, gain)`, or `(0, 0)`.
+
+    **This is fitted per species, and that is the entire point.** The first version searched
+    it per syllable with `f1` as a multiple of that syllable's own pitch, which measured well
+    per type and did nothing for what the ear actually complains about: with the comb tied to
+    pitch, two species singing at the same pitch get the same resonances, so no species
+    signature ever forms. Cross-species placement stayed at 24 % while within-type cosine ran
+    to 0.78 — the syllables were individually well fitted and collectively interchangeable.
+
+    A trachea is a tube of fixed length closed at the syrinx. Its resonances belong to the
+    bird, not to the note, so one frequency is shared by every syllable that bird sings and
+    every syllable is coloured the same way. That is what a listener uses to tell two birds
+    apart, and it costs one float per species rather than nine per syllable.
+
+    `f1_hz` is *measured* from the species' own spectra by `measure_trachea_f1`, so this
+    function only decides how loudly the comb should sound — a two-stage split that matches
+    what each stage can actually know. Where the resonance sits is a fact about the recordings
+    and is read off them directly; how much of it survives into the mix depends on everything
+    else in the chain, so it is settled by resynthesis, against the same cosine the
+    verification reports.
+
+    The objective is the *mean* cosine over the species' types, because a shared parameter has
+    to earn its place across the repertoire rather than on any one call. `(0, 0)` — comb off —
+    is the incumbent, so a bird whose recordings show no tracheal colour keeps none.
+    """
+    if f1_hz <= 0.0:
+        return 0.0, 0.0
+    order = sorted(range(len(fitted)), key=lambda i: -len(fitted[i].members))
+    idx = [i for i in order if real[i] is not None][:TRACHEA_FIT_TYPES]
+    if not idx:
+        return 0.0, 0.0
+
+    def mean_score(f1: float, gain: float) -> float:
+        comb = syrinx.tracheal_comb(f1, gain) if gain > 0.0 else []
+        total = 0.0
+        for i in idx:
+            syl = dict(fitted[i].syllable)
+            if comb:
+                syl["formants"] = comb
+            else:
+                syl.pop("formants", None)
+            total += _score(syl, real[i], calibration, frame, sample_rate)
+        return total / len(idx)
+
+    best_gain = 0.0
+    best = mean_score(0.0, 0.0)
+    for gain in TRACHEA_GAIN_GRID:
+        score = mean_score(f1_hz, gain)
+        if score > best + 1.0e-4:
+            best, best_gain = score, gain
+    return (f1_hz, best_gain) if best_gain > 0.0 else (0.0, 0.0)
 
 
 def invert_gestures(
@@ -931,6 +1028,31 @@ def learn_species(
             mean_row = features.standardise(mean_row, frame[0], frame[1])
         real.append(_unit(mean_row))
 
+    # The bird's trachea, before any per-syllable gesture: it is the one parameter shared by
+    # the whole repertoire, and the gestures should be searched against a tract that is
+    # already in place rather than have one imposed on them afterwards.
+    trachea_f1, trachea_gain = (0.0, 0.0)
+    if invert:
+        # measured from this species' own spectra, then its level settled by resynthesis
+        measured_f1 = measure_trachea_f1(observations)
+        trachea_f1, trachea_gain = fit_species_trachea(
+            fitted, real, calibration, frame, measured_f1
+        )
+        if trachea_gain > 0.0:
+            comb = [
+                [round(hz, 1), q, round(g, 4)]
+                for hz, q, g in syrinx.tracheal_comb(trachea_f1, trachea_gain)
+            ]
+            for t in fitted:
+                t.syllable["formants"] = comb
+            if verbose:
+                log(f"  {species_id:26} trachea measured f1 {trachea_f1:.0f} Hz "
+                    f"(comb {', '.join(f'{c[0]:.0f}' for c in comb)} Hz), gain "
+                    f"{trachea_gain:.2f}, L_eff {34400.0 / (4.0 * trachea_f1):.1f} cm")
+        elif verbose:
+            log(f"  {species_id:26} measured f1 {measured_f1:.0f} Hz, but no comb "
+                f"earned its place in the resynthesis")
+
     gains: list[float] = []
     for i, t in enumerate(fitted):
         # Search first, then measure: the reported cosine has to describe the syllable
@@ -998,6 +1120,13 @@ def learn_species(
         "grammar": grammar,
         "observations": len(observations),
         "recordings": len({o.recording_id for o in observations}),
+        # Recorded so the fitted tract is auditable as a claim about the bird rather than an
+        # anonymous list of biquads inside each syllable.
+        "trachea": (
+            {"f1Hz": round(trachea_f1, 1), "gain": round(trachea_gain, 3)}
+            if trachea_gain > 0.0
+            else None
+        ),
     }
 
 

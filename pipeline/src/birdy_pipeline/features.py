@@ -151,6 +151,33 @@ def standardise(
     return (x - mean) / np.maximum(std, 1.0e-6)
 
 
+_DCT_PINV = np.linalg.pinv(_DCT)  # (N_MEL, N_MFCC)
+
+
+def mel_centres_hz(n_mel: int = N_MEL, sample_rate: int = SAMPLE_RATE) -> np.ndarray:
+    """Centre frequency of each mel band, in Hz — filter j peaks at `binPt[j+1]`."""
+    mel_max = float(hz_to_mel(sample_rate / 2.0))
+    j = np.arange(1, n_mel + 1, dtype=np.float64)
+    return np.asarray(mel_to_hz(j / (n_mel + 1) * mel_max), dtype=np.float64)
+
+
+def mel_envelope(mfcc_mean: np.ndarray) -> np.ndarray:
+    """The 26-band log spectral envelope behind a 13-coefficient MFCC mean.
+
+    The forward transform is an unnormalised DCT-II that keeps 13 of 26 coefficients, so it
+    is not invertible — but the pseudo-inverse recovers the *smooth* part, which is exactly
+    what a spectral envelope is. Truncating to 13 cepstral coefficients is a lowpass on the
+    spectrum, so what comes back is the formant structure with the harmonic fine structure
+    already removed.
+
+    This is what makes a tract resonance measurable from a store that kept no audio: the
+    descriptors are per-syllable means over frames whose f0 is moving, so pitch-dependent
+    structure smears out across the average while a resonance fixed in Hz survives it. That
+    is the long-term-average-spectrum argument, applied to what we actually kept.
+    """
+    return _DCT_PINV @ np.asarray(mfcc_mean, dtype=np.float64)[:N_MFCC]
+
+
 def self_test(verbose: bool = True) -> None:
     """Check the DCT-II matrix against a naive loop, plus bank/window invariants."""
     rng = np.random.default_rng(7)

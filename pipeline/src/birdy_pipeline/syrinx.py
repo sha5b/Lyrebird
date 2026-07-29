@@ -108,7 +108,10 @@ FORMANT_HZ_MIN = 150.0
 #
 # That 20 dB is why TRACHEAL_GAIN is small by default: the trachea colours the sound, the
 # tract band carries it.
-TRACHEA_F1_MIN, TRACHEA_F1_MAX = 700.0, 4000.0
+# Must span whatever `learn.measure_trachea_f1` can measure, or a measured resonance is
+# silently pinned to the bound and the comb no longer describes the bird it was measured
+# from. 6000 Hz is a 1.4 cm effective tube, which is as short as the smallest bird here.
+TRACHEA_F1_MIN, TRACHEA_F1_MAX = 600.0, 6000.0
 TRACHEA_PARTIALS = 4
 # Q of the tracheal peaks. Lower than the OEC resonance's modelled Q ~ 30 (Fletcher; Riede
 # et al. 2006) because a tube damped by soft tissue is broader than an ideal one, and

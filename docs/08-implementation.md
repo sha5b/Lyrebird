@@ -29,8 +29,13 @@ y' = -a*g^2 - b*g^2*x - g^2*x^3 - g*x^2*y + g^2*x^2 - g*x*y
 - `b` (beta) = syringeal tension — sets the fundamental frequency.
 
 Integration: forward Euler at `oversample * sampleRate` (oversample = 16 at 48 kHz,
-i.e. dt ≈ 1.3 µs); RK4 agrees to within 2 % of F0, so Euler is what ships. The source
-fed to the vocal tract is the labial velocity `y`, scaled to unit-ish amplitude:
+i.e. dt ≈ 1.3 µs); RK4 agrees to within 2 % of F0, so Euler is what ships. Both sides start
+from `(x, y) = (1e-4, 0)`. The state is bounds-checked **once per output sample** against
+`|x| < 1e6, |y| < 1e12` and reset to the start if it escapes — outside those bounds there is
+no basin left to be in. Do **not** clamp every Euler step to a tight range: that flattens the
+peaks of the large-amplitude regimes the model legitimately reaches at high `beta`.
+
+The source fed to the vocal tract is the labial velocity `y`, scaled to unit-ish amplitude:
 
 ```
 source = (y / g) * 0.35 / ampPP(a, b)
@@ -71,18 +76,25 @@ a syllable only reaches it if its contour spans more than about 3.6x in frequenc
 Verified: owl `hooLong` at 530 Hz measures 532 Hz and wren trill at 6400 Hz measures
 6391 Hz, both at `beta ≈ 1`.
 
+**Two caveats added later, both in §8.1a.** The 1.4 kHz floor above is a consequence of the
+`beta` clamp, not of the model: a table built at `--beta-min 0.002` reaches 81 Hz at
+`gamma = 24000`. And "`beta = 1`, in the middle of the well-behaved region" is the tonal end
+of the model, not its middle — pinning every syllable there is what made 100 % of the
+resynthesis tonal against 15.6 % of real syllables being spectrally rich. `gammaScale`
+exists to move off it.
+
 ### Parameter mapping (identical on both sides)
 
 | Syllable field | Model parameter |
 |---|---|
-| `contour` → `f0(t)` (log-interpolated between breakpoints) | `beta = betaForF0(f0, alpha)`, clamped to [0.15, 16] |
+| `contour` → `f0(t)` (log-interpolated between breakpoints) | `beta = betaForF0(f0, alpha)`, clamped to the table's own `betaClamp` (contract default [0.15, 16]; shipped table 0.002 — see §8.1a) |
 | `level` × envelope → `p_s(t)` | `alpha = 0.05 + 0.40 * p_s` |
 | `timbre: 'pure'` | pressure gain 1.00, tract Q 9.0 |
 | `timbre: 'reed'` | pressure gain 1.25, tract Q 5.0 |
 | `timbre: 'buzz'` | pressure gain 1.75, tract Q 3.0 (drives the nonlinear regime) |
-| `harmonic` | adds `harmonic * 0.5` of a second tract band at `2*f0` |
+| `harmonic` | adds `harmonic * 0.5` of a second tract band at `2*f0`, **at the same Q as the tract** |
 | `two: true` | second independent oscillator at `f0 * 2^(+7/1200)`, mixed 0.5/0.5 (bilateral syrinx) |
-| `am`, `amDepth` | multiplies `p_s` by `1 - amDepth*(0.5 - 0.5*cos(2*pi*am*t))` (respiratory gating) |
+| `am`, `amDepth` | multiplies `p_s` by `1 - amDepth*(0.5 - 0.5*cos(2*pi*am*t))` (respiratory gating). **`p_s` only** — never the output gain, or the tremolo is applied twice |
 | `vib: {rate, depth}` | `f0 *= 1 + depth*sin(2*pi*rate*t)` |
 | `attack` (default 0.008 s) | envelope attack time |
 | `hold: true` | envelope sustains at 1.0 until the last 25 % of the syllable, else exponential decay with tau = dur/2.5 |
@@ -92,7 +104,10 @@ Envelope: linear attack over `attack` seconds, then sustain/decay as above, then
 
 The envelope is applied **twice, on purpose**: once through `p_s` (which is what shapes
 the timbre, since pressure decides how nonlinear the oscillator is) and once as a linear
-output gain on the filtered sample. The output gain is what makes a syllable start and
+output gain on the filtered sample. The AM gate is **not** part of the second application:
+it modulates `p_s` and leaves the output gain clean. Folding it into a single envelope used
+for both doubles the tremolo depth, which is a divergence the browser carried for a while
+(§8.1a). The output gain is what makes a syllable start and
 stop: dividing the source by `ampPP` deliberately removes level from the ODE, so
 pressure alone would produce a note that never fades.
 
@@ -106,6 +121,151 @@ Beckers et al. 2003), so the tract is **not** cosmetic:
 - optional second bandpass at `2*f0` scaled by `harmonic`;
 - a fixed 180 Hz one-pole highpass (DC block) and a 12 kHz one-pole lowpass
   (tracheal roll-off) on the sum.
+
+## 8.1a Naturalness: richness, absolute resonances, turbulence, roughness
+
+Everything in this section is optional and defaults to off, so a syllable that does not
+carry these fields renders exactly as §8.1 always specified. They exist because §8.1 on
+its own has a measurable ceiling, and the measurements are below.
+
+### What was wrong, measured against 39 976 harvested syllables
+
+The fit already renders every learned syllable through the model and scores it against the
+recording it came from (§8.5). Before this section existed, that verification said:
+
+| | before | after |
+|---|---|---|
+| 28-d descriptor cosine, median | 0.533 | **0.776** |
+| types above 0.7 | 26.2 % | **66.6 %** |
+| types below 0.5 | 44.2 % | **11.1 %** |
+| nearest its own *type* | 35.7 % | **62.2 %** |
+| nearest its own *species* | 20.8 % | **24.2 %** (chance 4.5 %) |
+| median \|F0 error\| | 1.7 % | 3.8 % |
+
+Two things to read out of that. F0 was never the problem — it was already at 1–2 % while
+the timbre cosine sat near 0.5. And the last row is the one still failing: **three quarters
+of fitted syllables resynthesise closer to a different species than to their own.** See
+"still open" at the end.
+
+The two structural causes:
+
+**1. Every resonance was relative to pitch.** The tract of §8.1 is a bandpass retuned to
+the instantaneous `f0`, so the spectral envelope is pitch-invariant — transposing a
+syllable transposes its whole spectrum, and two species at the same pitch are the same
+instrument. Real birds do move a resonance with f0 (Riede et al. 2006 measured the
+oropharyngeal-esophageal cavity tracking it from 1.5 to 5 kHz within a syllable), so the
+tracking band is *not* wrong. What was missing is the part that does **not** move: the
+trachea is a tube closed at the syrinx, so it resonates as a stopped quarter-wave pipe at
+the odd harmonics of a single frequency, fixed by the bird's body.
+
+**2. Every syllable was pinned to the tonal regime.** The spectral content index
+(SCI = spectral centroid ÷ f0) is a function of `beta` alone and is invariant to `gamma`,
+because `gamma` is a pure time-scale. The §8.1 gamma rule chooses `gamma` so the syllable's
+median pitch sits at `beta ≈ 1` — which is the tonal end of the model. Oscillations born at
+low `beta` in a saddle-node-on-a-limit-cycle are pulse-like and harmonically dense; those
+born at high `beta` in a Hopf are tonal (Sitt et al. 2008).
+
+Measured, our SCI had the right *median* and no tail at all:
+
+| | real harvested syllables | our resynthesis (before) |
+|---|---|---|
+| SCI median | 1.092 | 1.099 |
+| SCI > 1.5 | **15.6 %** | 1.4 % |
+| SCI > 3 | **5.3 %** | 0 % |
+| spectral flatness, median | 0.044 | **0.0005** |
+
+Three orders of magnitude too pure. The rich half of every repertoire was not mis-fitted,
+it was *unreachable*.
+
+### The fields
+
+| Syllable field | Model parameter |
+|---|---|
+| `gammaScale` (default 1) | multiplies the per-syllable `gamma`, then clamped to [1200, 150000]. For a fixed target f0, raising `gamma` forces `beta` down — this is the tonal-to-rich axis. Needs a calibration table built with a lower `--beta-min` to have anywhere to go. |
+| `formants: [[hz, q, gain], …]` | up to **4** extra bandpasses at **absolute** frequencies, summed into the tract output. Same RBJ bandpass form as the tract, coefficients computed **once** — they do not track f0. |
+| `noise` (0..1) | turbulence at the labia, added to the source *before* the tract, scaled by `max(p_s − 0.05, 0)` so a bird with no airflow does not hiss, and by `NOISE_GAIN = 2 × SOURCE_GAIN`. |
+| `rough` (0..1) | multiplies **beta** by `clamp(1 + 0.12·rough·w·G, 0.5, 1.5)`, where `w` is xorshift noise one-pole lowpassed to 140 Hz and `G` normalises it to unit standard deviation. `ampPP` is read at the *clean* beta. |
+| `tractQ` (default: from timbre) | overrides the tract band's Q, clamped to [0.7, 40]. |
+
+The tracheal comb is the intended way to populate `formants`:
+`f_n = (2n−1) · f_1`, `n = 1…4`, gain falling as `1/(2n−1)`, `Q = 6`. One number, four
+resonances. Measured agreement that justifies the tube formula: eastern towhee, syrinx
+replaced by a loudspeaker and swept, resonances at ~2.0 and ~5.5 kHz against 1.88 and
+5.67 kHz predicted for its 45 mm trachea (Nelson, Beckers & Suthers 2005); northern
+cardinal ~2, 5, 8, 12 kHz, i.e. 1:3:5:7 (Riede et al. 2006).
+
+**`rough` acts on tension, not on pressure and not on the output.** This is the one point
+the literature is specific about: Amador & Mindlin (2021) fitted this model to zebra finch
+song and found that matching the fundamental and the filters "was not enough" to drive
+selective forebrain neurons — noise on `beta` was required, and an *intermediate* amount
+scored best. Perturbing tension also makes the f0 and amplitude wobble arrive *correlated*,
+through the oscillator's own dynamics, which is what separates a rough voice from a clean
+voice with hiss added. Rendition-to-rendition f0 and amplitude are near-uncorrelated in
+real song (R² ≈ 0.03), so independent output-level jitter and shimmer would be wrong.
+140 Hz sits inside the 80–250 Hz band syringeal muscle can actually follow; below 80 Hz the
+modulation is respiratory, which is what `am` already models.
+
+### The noise generator is part of the contract
+
+`noise` and `rough` draw from **xorshift32**, not from `Math.random` or `np.random`, seeded
+`(stream · 2654435761 + 1) mod 2³²` with the first eight outputs discarded. Both sides must
+produce bit-identical noise from the same syllable, or "the same turbulence" is not a claim
+anyone can test. The offline renderer and the verification use `stream = 0` so a fitted
+cosine is reproducible; the browser gives each voice its own index, so two birds singing
+one syllable are not noisy in the same places. The second syringeal side uses
+`stream + 1024` — sharing a stream would correlate the two sides, and correlated noise
+through two near-identical tracts sums to one louder voice instead of two.
+
+Any roughness scaling must be **analytic**, never taken from a buffer maximum: a worklet
+does not have the whole syllable, and normalising by a maximum makes the effect depend on
+syllable length.
+
+### The beta clamp is read from the table, not hard-coded
+
+`--beta-min` moves the clamp and the sweep is then measured over the wider range, so the
+value is written into `syrinx-calibration.json` as `betaClamp` and **both** renderers read
+it from there. The shipped table is built at `--beta-min 0.002`, which reaches f0 down to
+81 Hz (from 906 Hz) and opens the spectrally rich region. Below 0.15 the beta grid is
+geometric rather than linear: f0 goes roughly as `beta^0.39`, so 0.002…0.15 covers about
+two and a half octaves and a linear 0.01 step would put fifteen samples in it.
+
+### Verification: the two renderers must agree sample-for-sample
+
+`app/scripts/verify-parity.mjs` renders a case list through the real AudioWorklet and
+through the Python renderer and compares them. §8.1 has always said the two halves
+implement the same model; nothing enforced it, and six divergences had accumulated —
+including AM applied *twice* in the browser, a `hold` decay of `dur*0.12` against the
+spec's `dur/2.5`, a missing pre-tract highpass, ODE initial conditions of 0.001 against
+1e-4, a per-Euler-step clamp at ±40 that flattened the peaks of the high-amplitude
+regimes, and an invented `Q*0.8` on the harmonic band. All twelve cases now agree to
+2.8e-08, which is float32 rounding.
+
+The harness also checks the ~20 ms each voice runs *past* the envelope's grid, where
+Python has no samples to compare against. That region is a decay, so nothing in it may
+exceed the body level. This is not hypothetical: a release ramp that continued past its
+endpoint went negative there, reaching about −3.3× and reading as an audible click on the
+tail of every note, while a sample-for-sample check over the first `n` samples reported
+all-clear.
+
+### F0 of a rich waveform is not measured by counting zero crossings
+
+`measure_f0_zero_crossings` is right for the calibration sweep, where every solution is a
+clean near-sinusoid, and wrong for verifying §8.1a: a pulse train crosses zero several
+times per period. On a 3 kHz tone swept across `gammaScale` the crossing counter reported
+errors rising to 41 % while the spectral peak stayed inside 3.7 % — the pitch was never
+drifting, the ruler was. The verification uses `measure_f0_robust`: spectral peak over the
+steady middle, corrected for octave errors by testing small integer sub-multiples and
+keeping whichever lands nearest what was asked for. That correction can only choose between
+candidates the spectrum actually contains, so it cannot invent agreement.
+
+### Still open
+
+`nearest its own species` reached only 24.2 %. The cause is a parameterisation error, not
+an engine limit: the tracheal comb is currently fitted **per syllable** with `f_1` as a
+multiple of that syllable's own reference pitch, so two species singing at the same pitch
+receive the same comb and no species signature ever forms. Trachea length is a property of
+the bird, not of the note. The fix is one absolute `L_eff` fitted **per species** and shared
+by every syllable that bird sings — more physical, and fewer parameters.
 
 ### betaForF0
 
@@ -247,6 +407,11 @@ Notes that matter for the mapping:
   clamp rather than letting a contour ask for it.
 - Crossing-interval CV stays under 0.15 across this range, rising with `beta`: the
   buzzy timbres come from pushing pressure high, not from instability.
+- These numbers are all measured **above** `beta = 0.2`, i.e. in the tonal regime. Below
+  about `beta = 0.05` the waveform turns pulse-like and harmonically dense, spectral
+  flatness rises by two orders of magnitude, and zero-crossing counting stops being a valid
+  F0 estimator — see §8.1a. That region is where the model's spectrally rich voices live and
+  it is reachable only with a table built at a lower `--beta-min`.
 
 ## 8.5 Honesty rule
 
