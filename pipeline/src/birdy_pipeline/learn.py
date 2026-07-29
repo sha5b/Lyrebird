@@ -68,6 +68,11 @@ MAX_PER_RECORDING = 400
 
 MIN_OBSERVATIONS = 24  # per species, below which a repertoire is not worth fitting
 DEFAULT_TYPES = 8
+# Ceiling on the fitted repertoire of one species, however much audio there is. A nightingale
+# really has ~180 song types (docs/03-decoding-science.md), so this is generous rather than
+# principled; it exists so a KMeans on forty thousand observations cannot ask for four
+# thousand clusters and spend an hour producing types with three members each.
+MAX_TYPES = 64
 OBS_PER_TYPE = 12
 GRAMMAR_MIN_COUNT = 2
 END = "end"
@@ -768,7 +773,18 @@ def learn_species(
                 f"{MIN_OBSERVATIONS} needed, skipped")
         return None
 
-    k = max(2, min(types, len(observations) // OBS_PER_TYPE))
+    # **How many types to fit is a question for the evidence, not for a flag.**
+    #
+    # This was `min(types, n // OBS_PER_TYPE)`, so the repertoire could never exceed whatever
+    # `--types` said however much audio arrived: a species with seven thousand observations got
+    # the same eight types as one with two hundred, and a loop left running for an hour refit
+    # the same eight over and over. A repertoire that cannot grow is not learning.
+    #
+    # `types` becomes the floor — what to fit once there is enough audio to fit anything — and
+    # the ceiling comes from the data at `OBS_PER_TYPE` observations each, capped so one very
+    # well recorded bird cannot ask for hundreds of one-member types.
+    evidence = len(observations) // OBS_PER_TYPE
+    k = max(2, min(max(types, evidence), MAX_TYPES))
     fitted = fit_types(observations, k, seed=seed, previous=previous)
 
     index = {id(o): i for i, o in enumerate(observations)}

@@ -55,6 +55,37 @@ XC_API = "https://xeno-canto.org/api/3/recordings"
 XC_PAGE_PAUSE = 1.0
 USER_AGENT = "birdy-pipeline/0.1 (research; https://github.com/sha5b/Birdy)"
 DOWNLOAD_TIMEOUT = 60
+# Searching is slower than downloading, and by a lot.
+#
+# A download is a static file off a CDN; a search makes xeno-canto count and page a result
+# set, and `q:">B"` over a common European bird matches thousands of recordings. Measured
+# from here: a `Cuculus canorus` search takes about 15 s, and the common species are far
+# worse — which is why harvests kept dying on `Parus minor` with a read timeout while the
+# audio itself was never the problem. Sharing the download timeout meant the slowest step in
+# the pipeline had the tightest budget.
+SEARCH_TIMEOUT = 180
+# Decline a recording this long before downloading it. Ten minutes is well past any single
+# bout and comfortably past `DEFAULT_MAX_SECONDS` of analysis; what sits above it on
+# xeno-canto is dawn-chorus soundscapes, which are mostly other species anyway.
+DEFAULT_MAX_LENGTH_SECONDS = 600.0
+
+
+def _int_or_none(value: Any) -> int | None:
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _length_seconds(text: str) -> float | None:
+    """`"3:07"` or `"1:02:11"` to seconds; None when xeno-canto gives us nothing usable."""
+    parts = str(text or "").strip().split(":")
+    if not parts or not all(p.strip().isdigit() for p in parts):
+        return None
+    total = 0.0
+    for part in parts:
+        total = total * 60 + int(part)
+    return total
 DEFAULT_CAP = 20_000
 # Syllable observations are ~30 floats each and are the input to `learn`, which needs
 # order within a recording — so they are kept whole per recording rather than sampled,
@@ -483,7 +514,7 @@ class XenoCanto:
     def _get(self, url: str) -> Any:
         self._wait()
         req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-        with urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT) as res:
+        with urllib.request.urlopen(req, timeout=SEARCH_TIMEOUT) as res:
             return json.loads(res.read().decode("utf-8"))
 
     # A search that times out is a slow server, not a broken pipeline.
@@ -664,6 +695,8 @@ def harvest_xeno_canto(
     max_pages: int = 3,
     dry_run: bool = False,
     should_stop: Callable[[], bool] | None = None,
+    max_length_seconds: float | None = DEFAULT_MAX_LENGTH_SECONDS,
+    clean_only: bool = False,
 ) -> HarvestReport:
     """`should_stop` is polled between recordings, so a run can be asked to end.
 
@@ -688,6 +721,29 @@ def harvest_xeno_canto(
             if store.has(rid):
                 report.skipped += 1
                 continue
+            # What the API gives us and we were throwing away.
+            #
+            # xeno-canto returns 39 fields per recording; this kept nine. Four of the rest are
+            # not trivia, they are the answers to questions this project already asks out loud:
+            #
+            # - **`type`** ("song", "alarm call", "flight call", "begging call") is a real,
+            #   recordist-supplied call type for every recording. It was already stored, and it
+            #   is still the cheapest available route to labelling a field cluster with what the
+            #   call *does* rather than "unlabelled field cluster" — see the root README on how
+            #   little meaning the four claim buckets can carry when 226 clusters have none.
+            # - **`also`** lists the other species audible in the recording. The pipeline README
+            #   says the dominant axis of the descriptor space is recording conditions rather
+            #   than call identity; a recording with three other birds in it is precisely that
+            #   contamination, arriving labelled, and it was being discarded unread.
+            # - **`length`** is the duration as `m:ss`, known *before* the download. A pass
+            #   currently pushes a few hundred megabytes through memory to keep a few hundred
+            #   descriptors; the long soundscapes are most of that weight and can be declined.
+            # - **`smp`** is the sample rate. The contract fixes analysis at 48 kHz, so a
+            #   recording already at 48 kHz needs no resampling and one at 22 kHz has nothing
+            #   above 11 kHz — which a wren trill very much does.
+            #
+            # `playback-used` is kept because it bears on the honesty rule: a call elicited by
+            # playback is a response to a loudspeaker, not spontaneous behaviour.
             info = {
                 "speciesId": species_id,
                 "scientific": f"{rec.get('gen', '')} {rec.get('sp', '')}".strip(),
@@ -698,7 +754,29 @@ def harvest_xeno_canto(
                 "type": rec.get("type", ""),
                 "country": rec.get("cnt", ""),
                 "url": rec.get("url", ""),
+                "also": [a for a in (rec.get("also") or []) if a],
+                "length": rec.get("length", ""),
+                "sampleRate": _int_or_none(rec.get("smp")),
+                "sex": rec.get("sex", ""),
+                "stage": rec.get("stage", ""),
+                "playbackUsed": rec.get("playback-used", ""),
+                "automatic": rec.get("auto", ""),
+                "date": rec.get("date", ""),
             }
+            seconds = _length_seconds(info["length"])
+            if max_length_seconds and seconds and seconds > max_length_seconds:
+                # Declined before the download rather than truncated after it: `max_seconds`
+                # already caps how much of a recording is analysed, so fetching forty minutes
+                # to read ninety seconds of it is pure transfer.
+                report.skipped += 1
+                log(f"  skip {rid}: {info['length']} is longer than the "
+                    f"{max_length_seconds:.0f}s limit")
+                continue
+            if clean_only and info["also"]:
+                report.skipped += 1
+                log(f"  skip {rid}: {len(info['also'])} other species audible "
+                    f"({', '.join(info['also'][:2])})")
+                continue
             if dry_run:
                 log(f"  would fetch {rid}  q={info['quality']:1}  {info['type'][:40]:40}  {info['licence']}")
                 taken += 1

@@ -865,6 +865,8 @@ def build_galaxy(
     separation: float = DEFAULT_SEPARATION,
     build_info: dict[str, Any] | None = None,
     verbose: bool = True,
+    recordings: dict[str, Any] | None = None,
+    test_relations: bool = True,
 ) -> GalaxyStats:
     # The projection (and `min_dist` within UMAP) is purely about the picture: KMeans
     # and the activation vectors live in the standardised 28-d feature space, never in
@@ -1121,6 +1123,44 @@ def build_galaxy(
                 file=sys.stderr,
             )
 
+    # Does any way of grouping these points correspond to where they sit?
+    #
+    # Run here rather than as a separate command because this is the only place the
+    # standardised 28-d matrix, every candidate arrangement and every label exist at once —
+    # recomputing them afterwards would mean either shipping a 5 MB descriptor matrix to the
+    # browser or re-rendering the corpus. See `geometry.py` for why every figure carries a
+    # permutation p-value and why `source` is on the table.
+    relations: list[Any] = []
+    relation_summary: dict[str, Any] | None = None
+    if test_relations:
+        from . import geometry as geo
+
+        groupings = geo.label_sets(
+            species_id=kept.species_id,
+            syllable_id=kept.syllable_id,
+            # The harvest store carries each field descriptor's recording id in `song_id`;
+            # a rendered clip carries its song id there and matches no recording.
+            recording_id=kept.song_id,
+            source=kept.source,
+            recordings=recordings or {},
+        )
+        spaces = {
+            "28-d descriptors": (z, "cosine"),
+            f"3-d {projection}": (pos, "euclidean"),
+        }
+        if verbose:
+            print("testing which groupings have geometric structure", file=sys.stderr)
+        # Blocked by recording (field) and by syllable type (rendered variants): see
+        # `geometry._neighbours` for why the unblocked figures were all ~0.98 and meaningless.
+        blocks = geo.blocks_for(
+            kept.species_id, kept.syllable_id, kept.song_id, kept.source
+        )
+        relations = geo.analyse(spaces, groupings, seed=seed, blocks=blocks)
+        relation_summary = geo.summarise(relations)
+        if verbose:
+            print(geo.format_table(relations), file=sys.stderr)
+            print(f"  => {relation_summary['headline']}", file=sys.stderr)
+
     # --- write the asset set (8.3) ---
     # The frozen frame, so later audio can be added to this galaxy rather than replacing
     # it. Only cMDS carries one: UMAP and PCA have no out-of-sample extension that keeps
@@ -1258,6 +1298,11 @@ def build_galaxy(
         # Types that got a cluster carrying their name, and the ones that did not. See the
         # comment where this is computed: an orphaned type is silently unplayable.
         "typeCoverage": coverage,
+        # Which groupings actually correspond to the geometry, each against its own label
+        # permutation. `headline` says whether the best of them beats the recording-condition
+        # controls, which is the difference between structure about birds and structure about
+        # microphones.
+        "relations": relation_summary,
         "clusterPlan": plan_report,
         "points": stats.n_points,
         "pointsDropped": stats.n_dropped,

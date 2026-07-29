@@ -247,6 +247,10 @@ class Pipeline:
                     store, client, targets, per_species=per_species,
                     max_seconds=max_seconds, dry_run=dry_run,
                     should_stop=lambda: job.cancelled,
+                    max_length_seconds=float(
+                        body.get("maxLength", harvest.DEFAULT_MAX_LENGTH_SECONDS)
+                    ),
+                    clean_only=bool(body.get("cleanOnly")),
                 )
             if not dry_run:
                 store.save()
@@ -352,6 +356,8 @@ class Pipeline:
         cap = int(body.get("cap", harvest.DEFAULT_CAP))
         rebuild_at = float(body.get("rebuildAt", 0.35))
         passes = int(body.get("passes", 0))  # 0 = until stopped
+        max_length = float(body.get("maxLength", harvest.DEFAULT_MAX_LENGTH_SECONDS))
+        clean_only = bool(body.get("cleanOnly"))
 
         def run(job: Job) -> None:
             from .cli import cmd_grow
@@ -369,6 +375,8 @@ class Pipeline:
                     store, harvest.XenoCanto(key), targets, per_species=per_pass,
                     max_seconds=harvest.DEFAULT_MAX_SECONDS,
                     should_stop=lambda: job.cancelled,
+                    max_length_seconds=max_length,
+                    clean_only=clean_only,
                 )
                 store.save()
                 harvest.log(harvest.format_report(report, store))
@@ -560,7 +568,10 @@ class Pipeline:
         return self.start("grow", "adding new audio to the galaxy", run)
 
     def build(self, body: dict[str, Any]) -> dict[str, Any]:
-        use_learned = bool(body.get("useLearned"))
+        # Both default to on, because the corpus is one accumulating thing: the rendered
+        # repertoire is the frame that names everything, and the harvest is what fills it in.
+        # `useLearned=false` still exists for a documented-only galaxy, and it is a diagnostic.
+        use_learned = bool(body.get("useLearned", True))
         include_harvest = bool(body.get("includeHarvest", True))
         source = str(body.get("source", "synthetic"))
         clustering = str(body.get("clustering", "kmeans"))
@@ -577,8 +588,9 @@ class Pipeline:
                 argv += ["--inventory", str(self.learned_path)]
             else:
                 argv += ["--inventory", str(self.inventory_path)]
-            if include_harvest and (self.store_path / "state.json").exists():
-                argv += ["--harvest-store", str(self.store_path)]
+            argv += ["--harvest-store", str(self.store_path)]
+            if not include_harvest:
+                argv += ["--no-harvest"]
             from .corpus import Cancelled
 
             args = build_parser().parse_args(argv)

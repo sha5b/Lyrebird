@@ -1,5 +1,5 @@
 {
- "builtAt": "2026-07-28T20:19:52+00:00",
+ "builtAt": "2026-07-29T04:10:53+00:00",
  "pipeline": "birdy-pipeline",
  "contract": "docs/08-implementation.md v1",
  "inventoryVersion": 1,
@@ -19,6 +19,206 @@
   ],
   "share": 0.993
  },
+ "relations": {
+  "definition": "per grouping: share of a point's 10 nearest neighbours sharing its label, against the same statistic over 199 label permutations. Groups under 8 points and unlabelled points are excluded; coverage says how much of the corpus was testable.",
+  "knnK": 10,
+  "permutations": 199,
+  "headline": "source \u2014 a recording condition, not a bird \u2014 is the strongest relation in this space; every other result is suspect until the representation is invariant to it",
+  "relations": [
+   {
+    "grouping": "species",
+    "space": "28-d descriptors",
+    "groups": 12,
+    "labelled": 47357,
+    "coverage": 1.0,
+    "knn": 0.3893,
+    "knnNull": 0.0919,
+    "knnP": 0.005,
+    "silhouette": -0.0432,
+    "verdict": "strong"
+   },
+   {
+    "grouping": "syllableType",
+    "space": "28-d descriptors",
+    "groups": 284,
+    "labelled": 27264,
+    "coverage": 0.5757,
+    "knn": null,
+    "knnNull": null,
+    "knnP": null,
+    "silhouette": 0.472,
+    "verdict": "untestable (one observation per group)"
+   },
+   {
+    "grouping": "source",
+    "space": "28-d descriptors",
+    "groups": 3,
+    "labelled": 47357,
+    "coverage": 1.0,
+    "knn": 0.9776,
+    "knnNull": 0.5098,
+    "knnP": 0.005,
+    "silhouette": 0.0104,
+    "verdict": "strong"
+   },
+   {
+    "grouping": "callType",
+    "space": "28-d descriptors",
+    "groups": 10,
+    "labelled": 19696,
+    "coverage": 0.4159,
+    "knn": 0.6419,
+    "knnNull": 0.4298,
+    "knnP": 0.005,
+    "silhouette": -0.2,
+    "verdict": "clear"
+   },
+   {
+    "grouping": "sampleRate",
+    "space": "28-d descriptors",
+    "groups": 2,
+    "labelled": 21,
+    "coverage": 0.0004,
+    "knn": null,
+    "knnNull": null,
+    "knnP": null,
+    "silhouette": null,
+    "verdict": "untestable (21 labelled, need 200)"
+   },
+   {
+    "grouping": "recordist",
+    "space": "28-d descriptors",
+    "groups": 206,
+    "labelled": 19864,
+    "coverage": 0.4195,
+    "knn": 0.2882,
+    "knnNull": 0.0197,
+    "knnP": 0.005,
+    "silhouette": -0.0359,
+    "verdict": "strong"
+   },
+   {
+    "grouping": "country",
+    "space": "28-d descriptors",
+    "groups": 42,
+    "labelled": 19985,
+    "coverage": 0.422,
+    "knn": 0.3929,
+    "knnNull": 0.0748,
+    "knnP": 0.005,
+    "silhouette": -0.1955,
+    "verdict": "strong"
+   },
+   {
+    "grouping": "season",
+    "space": "28-d descriptors",
+    "groups": 2,
+    "labelled": 21,
+    "coverage": 0.0004,
+    "knn": null,
+    "knnNull": null,
+    "knnP": null,
+    "silhouette": null,
+    "verdict": "untestable (21 labelled, need 200)"
+   },
+   {
+    "grouping": "species",
+    "space": "3-d cmds",
+    "groups": 12,
+    "labelled": 47357,
+    "coverage": 1.0,
+    "knn": 0.2378,
+    "knnNull": 0.0919,
+    "knnP": 0.005,
+    "silhouette": -0.0845,
+    "verdict": "clear"
+   },
+   {
+    "grouping": "syllableType",
+    "space": "3-d cmds",
+    "groups": 284,
+    "labelled": 27264,
+    "coverage": 0.5757,
+    "knn": null,
+    "knnNull": null,
+    "knnP": null,
+    "silhouette": 0.2658,
+    "verdict": "untestable (one observation per group)"
+   },
+   {
+    "grouping": "source",
+    "space": "3-d cmds",
+    "groups": 3,
+    "labelled": 47357,
+    "coverage": 1.0,
+    "knn": 0.8928,
+    "knnNull": 0.5098,
+    "knnP": 0.005,
+    "silhouette": 0.1063,
+    "verdict": "strong"
+   },
+   {
+    "grouping": "callType",
+    "space": "3-d cmds",
+    "groups": 10,
+    "labelled": 19696,
+    "coverage": 0.4159,
+    "knn": 0.5275,
+    "knnNull": 0.4297,
+    "knnP": 0.005,
+    "silhouette": -0.275,
+    "verdict": "weak"
+   },
+   {
+    "grouping": "sampleRate",
+    "space": "3-d cmds",
+    "groups": 2,
+    "labelled": 21,
+    "coverage": 0.0004,
+    "knn": null,
+    "knnNull": null,
+    "knnP": null,
+    "silhouette": null,
+    "verdict": "untestable (21 labelled, need 200)"
+   },
+   {
+    "grouping": "recordist",
+    "space": "3-d cmds",
+    "groups": 206,
+    "labelled": 19864,
+    "coverage": 0.4195,
+    "knn": 0.0975,
+    "knnNull": 0.0198,
+    "knnP": 0.005,
+    "silhouette": -0.3097,
+    "verdict": "weak"
+   },
+   {
+    "grouping": "country",
+    "space": "3-d cmds",
+    "groups": 42,
+    "labelled": 19985,
+    "coverage": 0.422,
+    "knn": 0.1838,
+    "knnNull": 0.0747,
+    "knnP": 0.005,
+    "silhouette": -0.3011,
+    "verdict": "clear"
+   },
+   {
+    "grouping": "season",
+    "space": "3-d cmds",
+    "groups": 2,
+    "labelled": 21,
+    "coverage": 0.0004,
+    "knn": null,
+    "knnNull": null,
+    "knnP": null,
+    "silhouette": null,
+    "verdict": "untestable (21 labelled, need 200)"
+   }
+  ]
+ },
  "clusterPlan": {
   "k": 384,
   "types": 284,
@@ -37,61 +237,61 @@
  "projection": "cmds",
  "projectionParams": {
   "eigenvalues": [
-   171.41121873695892,
-   81.31102677238977,
-   72.057554318441
+   171.0306616864015,
+   81.59002048531423,
+   72.08305269974706
   ],
   "varianceRatio": [
-   0.24873642908664148,
-   0.11799119447233536,
-   0.10456339370289518
+   0.24808858085282162,
+   0.11835043023495266,
+   0.10456009508171868
   ],
-  "negativeEigenvalueMass": 0.3705714077886949,
+  "negativeEigenvalueMass": 0.3708240791337036,
   "landmarks": 800,
   "mode": "landmark",
   "metric": "cosine"
  },
  "faithfulness": {
-  "pearson": 0.7691,
-  "spearman": 0.7536,
+  "pearson": 0.7685,
+  "spearman": 0.753,
   "pairs": 199992,
   "definition": "correlation between 28-d cosine distance and 3D euclidean distance over random point pairs; 1.0 = distances fully meaningful"
  },
  "knnAgreement": {
   "k": 10,
-  "value": 0.5582,
+  "value": 0.5571,
   "definition": "share of a point's 3D k nearest neighbours sharing its type"
  },
  "tearing": {
   "measured": 373,
-  "torn": 4,
+  "torn": 5,
   "severe": 0,
-  "median": 2.19,
-  "worstGap": 0.358,
+  "median": 2.202,
+  "worstGap": 0.396,
   "definition": "clusters this projection draws in two places at once, so their centroid \u2014 where the label, the trajectory and the wave all go \u2014 lands between two blobs instead of on the points; splitting a single blob scores ~2, so 2 is the null and 'torn' counts above 5"
  },
  "projectionComparison": {
   "cmds": {
    "faithfulness": {
-    "pearson": 0.7691,
-    "spearman": 0.7536,
+    "pearson": 0.7685,
+    "spearman": 0.753,
     "pairs": 199992
    },
-   "knnAgreement": 0.5582,
-   "purity": 0.5974,
-   "meanRadius": 0.8045,
+   "knnAgreement": 0.5571,
+   "purity": 0.5986,
+   "meanRadius": 0.8071,
    "params": {
     "eigenvalues": [
-     171.41121873695892,
-     81.31102677238977,
-     72.057554318441
+     171.0306616864015,
+     81.59002048531423,
+     72.08305269974706
     ],
     "varianceRatio": [
-     0.24873642908664148,
-     0.11799119447233536,
-     0.10456339370289518
+     0.24808858085282162,
+     0.11835043023495266,
+     0.10456009508171868
     ],
-    "negativeEigenvalueMass": 0.3705714077886949,
+    "negativeEigenvalueMass": 0.3708240791337036,
     "landmarks": 800,
     "mode": "landmark",
     "metric": "cosine"
@@ -177,10 +377,10 @@
    ]
   },
   "counts": {
-   "unclassified": 339,
+   "unclassified": 338,
    "structural": 24,
    "alarm": 9,
-   "territorial": 7,
+   "territorial": 8,
    "contact": 4,
    "recruitment": 1
   }
@@ -208,9 +408,9 @@
   0.0246,
   2.081
  ],
- "clusterPurity": 0.5974,
+ "clusterPurity": 0.5986,
  "unassigned": 0,
- "meanRadius": 0.8045,
+ "meanRadius": 0.8071,
  "files": [
   "manifest.json",
   "inventory.json",
@@ -228,11 +428,11 @@
  "harvest": {
   "store": "out/harvest",
   "points": 20000,
-  "recordings": 884,
-  "descriptorsSeen": 54427,
+  "recordings": 887,
+  "descriptorsSeen": 54520,
   "sampleDrift": {
-   "meanDrift": 0.0631,
-   "stdRatio": 0.9913
+   "meanDrift": 0.063,
+   "stdRatio": 0.991
   }
  },
  "betaClamp": [

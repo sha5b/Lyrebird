@@ -201,13 +201,36 @@ def cmd_build(
     inventory = load_inventory(inventory_path)
     warn_if_stale_inventory(inventory_path)
     calibration = ensure_calibration(out, force=args.recalibrate)
-    if args.source == "synthetic":
+
+    # **The rendered inventory is not one option among several — it is the frame.**
+    #
+    # This used to be a choice: `--source synthetic` OR `harvest` OR `local`, and the harvest
+    # store folded in only if you remembered the second flag. That framing is wrong, and it
+    # has a measured cost: `--source harvest` produces a galaxy in which not one cluster
+    # carries a syllable name, so nothing the app sings can light a knot, draw a path or be
+    # labelled — a corpus with no anchor cannot identify anything. The rendered clips are what
+    # carry the names, the functions and the citations; the field audio is what fills in the
+    # shape of the real repertoire around them and is *identified by* them.
+    #
+    # So the composition is additive and the anchor is always present. What accumulates is one
+    # corpus: the current inventory rendered, plus every descriptor the harvest has kept, plus
+    # a local directory if one is given. `--no-synthetic` still exists because looking at the
+    # field audio on its own is a legitimate diagnostic, and it says loudly what it costs.
+    render_synthetic = not args.no_synthetic
+    if args.source == "harvest":
+        log("NOTE: --source harvest is now --no-synthetic; the rendered anchor is otherwise "
+            "always included, because a galaxy without it can name nothing")
+        render_synthetic = False
+    if render_synthetic:
         report_reachability(inventory, calibration)
 
     parts: list[PointSet] = []
     harvest_info: dict[str, Any] | None = None
+    # Per-recording metadata (call type, sample rate, recordist, country, date...) so the
+    # build can test which of them the geometry actually corresponds to.
+    harvest_recordings: dict[str, Any] = {}
 
-    if args.source == "synthetic":
+    if render_synthetic:
         log(f"rendering synthetic corpus (variants={args.variants}, seed={args.seed})")
         clips = synthetic_corpus(
             inventory,
@@ -221,7 +244,9 @@ def cmd_build(
         if args.wav_out:
             dump_clip_wavs(clips, Path(args.wav_out))
         parts.append(galaxy.descriptors(clips, should_stop=should_stop))
-    elif args.source == "local":
+
+    # Additive, not exclusive: a local directory sits alongside the rendered anchor.
+    if args.source == "local" or args.audio_dir:
         if not args.audio_dir:
             log("--source local requires --audio-dir")
             return 2
@@ -232,17 +257,17 @@ def cmd_build(
             dump_clip_wavs(clips, Path(args.wav_out))
         parts.append(galaxy.descriptors(clips, should_stop=should_stop))
 
-    # The harvested store can stand alone or sit alongside the rendered inventory. Mixed
-    # is the interesting case: the synthetic clips anchor the clusters that have
-    # citations, and the field descriptors fill in the shape of the real repertoire
-    # around them.
-    if args.source == "harvest" or args.harvest_store:
-        store_path = Path(args.harvest_store or DEFAULT_HARVEST_STORE)
+    # Always, when there is one. Everything collected stays in the corpus; the point of
+    # harvesting is that it accumulates, and a build that silently left it out was a build
+    # that threw away every recording since the last time someone typed the flag.
+    store_path = Path(args.harvest_store or DEFAULT_HARVEST_STORE)
+    if (store_path / "state.json").exists() and not args.no_harvest:
         store = harvest.HarvestStore(store_path)
         field = store.to_point_set()
         log(f"harvest store {store_path}: {len(field)} field descriptors "
             f"from {len(store.recordings)} recordings")
         rep = store.representativeness()
+        harvest_recordings = dict(store.recordings)
         harvest_info = {
             "store": str(store_path),
             "points": len(field),
@@ -253,7 +278,7 @@ def cmd_build(
         parts.append(field)
 
     if not parts:
-        log(f"--source {args.source} produced nothing to embed")
+        log("nothing to embed: no rendered inventory, no harvest store, no local corpus")
         return 2
     points = PointSet.concat(parts)
     log(f"embedding {len(points)} points")
@@ -281,6 +306,8 @@ def cmd_build(
             "clusterSeparation": args.separation,
             "envelopeAsOutputGain": True,
         },
+        recordings=harvest_recordings,
+        test_relations=not args.no_relations,
     )
 
     log("")
@@ -337,6 +364,8 @@ def cmd_harvest(args: argparse.Namespace) -> int:
                 max_seconds=args.max_seconds,
                 max_pages=args.max_pages,
                 dry_run=args.dry_run,
+                max_length_seconds=args.max_length,
+                clean_only=args.clean_only,
             )
         except RuntimeError as exc:
             log(str(exc))
@@ -795,9 +824,27 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="command", required=True)
 
     b = sub.add_parser("build", help="render the corpus and build the galaxy")
-    b.add_argument("--source", choices=("synthetic", "local", "harvest"), default="synthetic")
+    b.add_argument(
+        "--source",
+        choices=("synthetic", "local", "harvest"),
+        default="synthetic",
+        help="kept for compatibility; the rendered inventory is always included unless "
+             "--no-synthetic, and `harvest` is an alias for it",
+    )
+    b.add_argument(
+        "--no-synthetic",
+        action="store_true",
+        help="diagnostic: leave the rendered inventory out. The result can name nothing, so "
+             "the app cannot light, label or draw a path for anything it sings",
+    )
+    b.add_argument(
+        "--no-harvest",
+        action="store_true",
+        help="diagnostic: leave the harvested field audio out, for a galaxy of the "
+             "documented repertoire alone",
+    )
     b.add_argument("--harvest-store", default=None,
-                   help="also embed a harvested descriptor store alongside --source")
+                   help="where the harvested descriptor store lives (included by default)")
     b.add_argument("--audio-dir", default=None, help="corpus root for --source local")
     b.add_argument("--variants", type=int, default=96, help="renders per syllable")
     b.add_argument("--song-variants", type=int, default=3, help="renders per song")
@@ -819,7 +866,25 @@ def build_parser() -> argparse.ArgumentParser:
     )
     b.add_argument("--out", default=str(DEFAULT_OUT))
     b.add_argument("--wav-out", default=None, help="also write every clip as a wav")
-    b.add_argument("--inventory", default=str(DEFAULT_INVENTORY))
+    # **The accumulating inventory, not the hand-authored one.**
+    #
+    # `learn` merges its fitted types *onto* the authored ones and writes the result here, so
+    # `learned-inventory.json` is a superset: every documented call with its function and
+    # citation, plus everything fitted from field audio. Defaulting to the authored file meant
+    # the ordinary sequence — harvest, learn, build — produced a galaxy with none of the
+    # learning in it, and there was no reading of that which was what anybody wanted.
+    b.add_argument(
+        "--inventory",
+        default=str(DEFAULT_LEARNED_INVENTORY if DEFAULT_LEARNED_INVENTORY.exists()
+                    else DEFAULT_INVENTORY),
+        help="inventory to render; defaults to the learned superset when it exists",
+    )
+    b.add_argument(
+        "--no-relations",
+        action="store_true",
+        help="skip the permutation tests that say which groupings the geometry corresponds "
+             "to; they are the only part of a build that is analysis rather than output",
+    )
     b.add_argument("--recalibrate", action="store_true")
     b.add_argument("--min-dist", type=float, default=None,
                    help="UMAP min_dist; visual spread only, does not affect clustering "
@@ -862,6 +927,19 @@ def build_parser() -> argparse.ArgumentParser:
                    help="ingest files already on disk instead of downloading")
     h.add_argument("--pause", type=float, default=harvest.XC_PAGE_PAUSE,
                    help="seconds between requests; the service rate-limits")
+    h.add_argument(
+        "--max-length",
+        type=float,
+        default=harvest.DEFAULT_MAX_LENGTH_SECONDS,
+        help="decline recordings longer than this many seconds before downloading them "
+             "(0 disables); xeno-canto reports the duration in the search result",
+    )
+    h.add_argument(
+        "--clean-only",
+        action="store_true",
+        help="skip recordings with other species audible in them, which xeno-canto lists "
+             "in its `also` field — the contamination the descriptor space is most sensitive to",
+    )
     h.add_argument("--dry-run", action="store_true", help="list what would be fetched")
     h.add_argument("--stats", action="store_true", help="describe an existing store and exit")
     h.add_argument("--inventory", default=str(DEFAULT_INVENTORY))
