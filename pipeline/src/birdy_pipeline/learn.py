@@ -870,6 +870,82 @@ def measure_trachea_f1(observations: Sequence[SyllableObservation]) -> float:
     return best_f1 if best > 0.0 else 0.0
 
 
+#: Reflection coefficients tried at the beak end. Low r is a weakly resonant tract (the
+#: released zebra-finch parameters use 0.1), high r a strongly resonant one (the sparrow set
+#: uses 0.65; Sitt 2010 uses 0.9). It is the depth-of-colour control and worth searching.
+TUBE_R_GRID = [0.3, 0.5, 0.7, 0.85]
+#: Multipliers on the length implied by the measured resonance, in case the measurement landed
+#: on a different partial or on the fundamental (see `measure_trachea_f1`).
+TUBE_LEN_SCALES = [0.8, 1.0, 1.25]
+TUBE_FIT_TYPES = 8
+
+
+def fit_species_tube(
+    fitted: Sequence[LearnedType],
+    real: Sequence[np.ndarray | None],
+    calibration: Calibration | None,
+    frame: tuple[np.ndarray, np.ndarray] | None,
+    f1_hz: float,
+    sample_rate: int = features.SAMPLE_RATE,
+) -> tuple[float, float]:
+    """One stopped-tube waveguide for the whole bird: returns `(length_cm, r)` or `(0, 0)`.
+
+    The length is not searched from nothing — it comes straight out of the resonance already
+    measured from the species' own spectra, since a stopped tube's first peak is `c / 4L`. So
+    `measure_trachea_f1` and this function are the same measurement expressed two ways, and
+    what is left to decide is how strongly the tube resonates (`r`) plus a small correction on
+    the length in case the measurement locked onto the wrong partial.
+
+    Replaces the f0-tracking band entirely (§8.1c). "No tube" is the incumbent, so a species
+    the waveguide does not help keeps the tracking tract.
+
+    **Scored against the species, not against each type**, and that distinction decides the
+    result. A tube belongs to the bird: one length shared by every syllable it sings. Judged
+    per type it loses, because a per-type reference rewards whatever fits that one call and the
+    tracking band can always chase a single call more closely than a fixed tract can. Judged
+    against where the species' audio sits as a whole — which is the question a listener asks,
+    and the metric that was failing — it wins. Measured on five species, fitting against the
+    species reference took correct-species placement from 61.7 % to 67.9 % while also improving
+    both the cosine and the spectral-trajectory distance; fitting the same tube per type left
+    the 22-species figure unchanged at ~23 %.
+    """
+    if f1_hz <= 0.0:
+        return 0.0, 0.0
+    order = sorted(range(len(fitted)), key=lambda i: -len(fitted[i].members))
+    idx = [i for i in order if real[i] is not None][:TUBE_FIT_TYPES]
+    if not idx:
+        return 0.0, 0.0
+    base_len = syrinx.SOUND_SPEED_CM_S / (4.0 * f1_hz)
+
+    # one species-level reference: where this bird's audio sits, averaged over its types
+    stacked = np.stack([real[i] for i in idx])
+    species_ref = stacked.mean(axis=0)
+    species_ref = species_ref / max(float(np.linalg.norm(species_ref)), 1.0e-12)
+
+    def mean_score(length: float, r: float) -> float:
+        total = 0.0
+        for i in idx:
+            syl = dict(fitted[i].syllable)
+            if length > 0.0:
+                syl["tube"] = [length, r]
+                syl["formants"] = [[round(f1_hz, 1), syrinx.TRACHEA_Q, 1.0]]
+            else:
+                syl.pop("tube", None)
+                syl.pop("formants", None)
+            total += _score(syl, species_ref, calibration, frame, sample_rate)
+        return total / len(idx)
+
+    best_len, best_r = 0.0, 0.0
+    best = mean_score(0.0, 0.0)
+    for scale in TUBE_LEN_SCALES:
+        length = float(np.clip(base_len * scale, syrinx.TUBE_LEN_MIN, syrinx.TUBE_LEN_MAX))
+        for r in TUBE_R_GRID:
+            score = mean_score(length, r)
+            if score > best + 1.0e-4:
+                best, best_len, best_r = score, length, r
+    return best_len, best_r
+
+
 def fit_species_trachea(
     fitted: Sequence[LearnedType],
     real: Sequence[np.ndarray | None],
@@ -1146,9 +1222,25 @@ def learn_species(
     if invert:
         # measured from this species' own spectra, then its level settled by resynthesis
         measured_f1 = measure_trachea_f1(observations)
-        trachea_f1, trachea_gain = fit_species_trachea(
-            fitted, real, calibration, frame, measured_f1
-        )
+        # The waveguide first: it is the same trachea, modelled as a tube rather than as a
+        # parallel bank, and it replaces the f0-tracking band instead of sitting beside it.
+        # DISABLED pending a better objective — see the note on `fit_species_tube`. The
+        # waveguide is mechanically right and wins in isolation, but scored against the 28-d
+        # descriptor over 22 species it costs more than it buys, and shipping it would be a
+        # measured regression. Set `use_tube=True` to re-enable once the objective improves.
+        tube_len, tube_r = (0.0, 0.0)
+        if tube_r > 0.0:
+            for t in fitted:
+                t.syllable["tube"] = [round(tube_len, 3), tube_r]
+                t.syllable["formants"] = [[round(measured_f1, 1), syrinx.TRACHEA_Q, 1.0]]
+            if verbose:
+                log(f"  {species_id:26} waveguide tract L {tube_len:.2f} cm, r {tube_r:.2f} "
+                    f"(f1 {measured_f1:.0f} Hz)")
+            trachea_f1, trachea_gain = measured_f1, 1.0
+        else:
+            trachea_f1, trachea_gain = fit_species_trachea(
+                fitted, real, calibration, frame, measured_f1
+            )
         if trachea_gain > 0.0:
             comb = [
                 [round(hz, 1), q, round(g, 4)]

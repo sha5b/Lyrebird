@@ -402,8 +402,30 @@ timbres live in the antiresonances. `(L, r)` is also two *physical* numbers wher
 bank was twelve free ones, and tube length goes with body size — so it carries species
 information that free-floating triples destroy.
 
-Still to do: fit `(L, r)` properly rather than on a 7×3 grid, mirror `_tube_comb` in the
-worklet, and re-run the full 22-species comparison. Ranked next after that, from the same
+**And then it did not generalise.** Wired into `learn_species` and run over the full 22-species
+harvest, the waveguide is a regression on the shipped metrics:
+
+| | nearest own species | median cosine | types on the waveguide |
+|---|---|---|---|
+| tracking band | **23.1 %** | **0.775** | 0 / 446 |
+| waveguide, scored per type | 22.9 % | 0.750 | 68 / 446 |
+| waveguide, scored per species | 22.2 % | 0.722 | 196 / 446 |
+
+So it is **gated off by default** (`fit_species_tube` is not called; the kernel, the schema and
+the fit function all remain). Shipping it would have been a measured regression, and the five-
+species result above is real but did not survive the wider set.
+
+Worth being precise about what this does and does not show. The mechanism is not in doubt — the
+32× vs 1.3× spectral freedom is arithmetic, and in isolation the waveguide improved all three
+metrics at once. What failed is the *combination* of the waveguide with the 28-d descriptor as
+the objective. Scoring per species rather than per type roughly tripled adoption (68 → 196
+types) and still lost, which says the objective, not the scoring level, is the binding
+constraint. That is the same conclusion the four refutations above reached from the other
+direction, and it now has a second, independent line of evidence behind it: **the next thing to
+fix is what "closer to the real bird" means, not what the filter chain contains.**
+
+Still to do before the waveguide can be judged fairly: an objective that is not a 28-number
+time-averaged summary, then re-enable and re-measure; and mirror `_tube_comb` in the worklet. Ranked next after that, from the same
 review: inject `ẏ` rather than `y` at the tract input, and replace the per-syllable envelope
 with the two-state respiratory oscillator of Fainstein, Goller & Mindlin (arXiv:2509.11019),
 which generates attack shape, asymmetry and cross-syllable memory from five parameters instead
