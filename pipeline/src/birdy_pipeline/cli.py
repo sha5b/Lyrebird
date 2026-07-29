@@ -331,7 +331,10 @@ def cmd_harvest(args: argparse.Namespace) -> int:
     # Milliseconds, and it guards the two failures in this module that are silent: a cap that
     # drops whole species, and a lightweight store that saves an empty corpus over a real one.
     harvest.self_test(verbose=False)
-    store = harvest.HarvestStore(Path(args.store), cap=args.cap, seed=args.seed)
+    store = harvest.HarvestStore(
+        Path(args.store), cap=args.cap, seed=args.seed,
+        syllable_cap=getattr(args, "syllable_cap", harvest.DEFAULT_SYLLABLE_CAP),
+    )
     if args.stats:
         log(store.summary())
         return 0
@@ -1287,6 +1290,15 @@ def build_parser() -> argparse.ArgumentParser:
     h.add_argument("--store", default=str(DEFAULT_HARVEST_STORE))
     h.add_argument("--cap", type=int, default=harvest.DEFAULT_CAP,
                    help="descriptors the store may hold, over all runs (default %(default)s)")
+    # Exposed because it silently decides how much of the *learning* set survives, and it was
+    # only reachable in Python. A harvest that grew `out/harvest-gan` past this evicted whole
+    # recordings to stay under it; the eviction is now species-stratified (`add_syllables`), but
+    # the ceiling is still a ceiling, and a corpus that wants 25 species at depth needs to be
+    # told it may hold more than 40 000 syllables.
+    h.add_argument("--syllable-cap", type=int, default=harvest.DEFAULT_SYLLABLE_CAP,
+                   help="syllable observations the store may hold, over all runs. These are "
+                        "what `learn` fits and what carries the log-mel patches, so this is "
+                        "the ceiling on the learning set (default %(default)s)")
     h.add_argument("--per-species", type=int, default=20, help="recordings per species")
     h.add_argument("--max-seconds", type=float, default=harvest.DEFAULT_MAX_SECONDS,
                    help="analyse at most this much of each recording")
