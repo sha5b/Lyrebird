@@ -14,7 +14,7 @@
 	import { untrack } from 'svelte';
 	import { confidenceLabel } from '$lib/lang/translate';
 	import { speciesById } from '$lib/data/assets';
-	import type { BirdyAssets } from '$lib/data/types';
+	import type { BirdyAssets, Centroid } from '$lib/data/types';
 
 	interface Props {
 		assets: BirdyAssets;
@@ -28,6 +28,10 @@
 	// The corpus does not change while this is mounted, so the tags are built once.
 	const centroids = untrack(() => assets.centroids.items);
 	const speciesName = (id: string) => speciesById(assets.inventory, id)?.common ?? id;
+	// What a knot's extent is made of: real field syllables, or our own renders. The
+	// ρ and r figures next to it measure that extent, so the tag says which it is.
+	const evidenceLabel = (c: Centroid): string =>
+		c.sources ? ((c.sources['field'] ?? 0) > 0 ? 'measured' : 'invented') : '';
 </script>
 
 <div class="layer" aria-hidden="true">
@@ -58,6 +62,7 @@
 						<span class="match" data-match>—</span>
 						{#if centroid.cohesion !== undefined}<span>ρ {centroid.cohesion.toFixed(2)}</span>{/if}
 						{#if centroid.radius !== undefined}<span>r {centroid.radius.toFixed(2)}</span>{/if}
+						{#if evidenceLabel(centroid)}<span class="evidence">{evidenceLabel(centroid)}</span>{/if}
 						<span class="conf">{confidenceLabel(centroid.confidence).text}</span>
 					</div>
 					{#if centroid.function}
@@ -209,6 +214,11 @@
 	}
 
 	.figures .conf {
+		color: var(--ink-faint);
+		font-style: italic;
+	}
+
+	.figures .evidence {
 		color: var(--ink-faint);
 		font-style: italic;
 	}

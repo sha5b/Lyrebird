@@ -307,28 +307,59 @@ export class ActivationTracker {
 	private readonly vectors: Float32Array[];
 	private readonly temperature: number;
 	private readonly smoothing: number;
+	/**
+	 * The browser's bridge into the learned space (docs/09 phase 2): the offline-fitted
+	 * ridge that maps a live standardised 28-d descriptor to the standardised 32-d
+	 * embedding, or null when the assets predate it — or when the map failed its
+	 * held-out gate, in which case the 28-d path below is the honest one and stays.
+	 */
+	private readonly mapW: Float32Array | null;
+	private readonly mapB: Float32Array | null;
+	private readonly zMapped: Float32Array | null;
 	/** 0..1 confidence that the input matches anything in the corpus. EMA-smoothed. */
 	strength = 0;
 
 	constructor(centroids: Centroids, spec: FeatureSpace, smoothing = 0.82) {
 		this.smoothing = smoothing;
 		this.temperature = spec.temperature || 0.12;
-		// KMeans runs on standardised descriptors, but tolerate raw vectors too.
-		//
-		// Decided on the **median** component, not on whether any single one is large. The
-		// old test asked whether *some* component exceeded 12, which one three-point
-		// cluster of outliers satisfied on its own — its worst component reached 14.87 —
-		// and every centroid was then standardised a second time. That inverts the whole
-		// matcher silently: cosines go negative, the exact-match rate falls from 26/44 to
-		// 1/44, and nothing anywhere reports an error. A median is unmoved by one bad
-		// cluster, and the two cases it has to tell apart are nowhere near each other:
-		// standardised vectors sit around 0.6, raw descriptors an order of magnitude up.
-		const magnitudes = centroids.items.flatMap((c) => c.vector.map(Math.abs)).sort((a, b) => a - b);
-		const median = magnitudes[magnitudes.length >> 1] ?? 0;
-		const looksRaw = median > 4;
-		this.vectors = centroids.items.map((c) =>
-			looksRaw ? standardise(Float32Array.from(c.vector), spec) : Float32Array.from(c.vector)
+		const embedding = spec.embedding;
+		const useEmbed = Boolean(
+			embedding?.map &&
+				embedding.mapQuality?.accepted !== false &&
+				embedding.dims > 0 &&
+				centroids.items.length &&
+				centroids.items.every((c) => c.vector32?.length === embedding.dims)
 		);
+		if (useEmbed && embedding?.map) {
+			// The galaxy lives in the critic's 32-d space; the live descriptor lives in
+			// the 28-d one. The map is how a sound gets from here to there. These
+			// centroids are already standardised embedding vectors — there is no raw
+			// form to detect, unlike the 28-d path below.
+			this.mapW = Float32Array.from(embedding.map.w.flat());
+			this.mapB = Float32Array.from(embedding.map.b);
+			this.zMapped = new Float32Array(embedding.dims);
+			this.vectors = centroids.items.map((c) => Float32Array.from(c.vector32 as number[]));
+		} else {
+			this.mapW = null;
+			this.mapB = null;
+			this.zMapped = null;
+			// KMeans runs on standardised descriptors, but tolerate raw vectors too.
+			//
+			// Decided on the **median** component, not on whether any single one is large. The
+			// old test asked whether *some* component exceeded 12, which one three-point
+			// cluster of outliers satisfied on its own — its worst component reached 14.87 —
+			// and every centroid was then standardised a second time. That inverts the whole
+			// matcher silently: cosines go negative, the exact-match rate falls from 26/44 to
+			// 1/44, and nothing anywhere reports an error. A median is unmoved by one bad
+			// cluster, and the two cases it has to tell apart are nowhere near each other:
+			// standardised vectors sit around 0.6, raw descriptors an order of magnitude up.
+			const magnitudes = centroids.items.flatMap((c) => c.vector.map(Math.abs)).sort((a, b) => a - b);
+			const median = magnitudes[magnitudes.length >> 1] ?? 0;
+			const looksRaw = median > 4;
+			this.vectors = centroids.items.map((c) =>
+				looksRaw ? standardise(Float32Array.from(c.vector), spec) : Float32Array.from(c.vector)
+			);
+		}
 		this.activations = new Float32Array(centroids.items.length);
 		this.similarity = new Float32Array(centroids.items.length);
 	}
@@ -339,10 +370,23 @@ export class ActivationTracker {
 	 *   the noise test needs the physical quantity, not its z-score
 	 */
 	update(zLive: Float32Array, flatness = 0): Float32Array {
+		// When the galaxy was built in the embedding space, first carry the live
+		// descriptor into it: z32 = z28 @ W + b, then the same cosine the 28-d path uses.
+		let query = zLive;
+		if (this.mapW && this.mapB && this.zMapped) {
+			const dims32 = this.zMapped.length;
+			const dims28 = zLive.length;
+			for (let j = 0; j < dims32; j++) {
+				let acc = this.mapB[j];
+				for (let i = 0; i < dims28; i++) acc += zLive[i] * this.mapW[i * dims32 + j];
+				this.zMapped[j] = acc;
+			}
+			query = this.zMapped;
+		}
 		const k = this.vectors.length;
 		let max = -Infinity;
 		for (let i = 0; i < k; i++) {
-			this.similarity[i] = cosine(zLive, this.vectors[i]);
+			this.similarity[i] = cosine(query, this.vectors[i]);
 			if (this.similarity[i] > max) max = this.similarity[i];
 		}
 		// Two tests, and both have to pass: how close the nearest cluster is, and whether

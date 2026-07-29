@@ -1,5 +1,5 @@
 import { base } from '$app/paths';
-import type { BirdyAssets, Centroids, FeatureSpace, Inventory, Manifest, PointCloudMeta, Species, SyrinxCalibration } from './types';
+import type { BirdyAssets, Centroids, EmbeddingSpace, FeatureSpace, Inventory, Manifest, PointCloudMeta, Species, SyrinxCalibration } from './types';
 
 const ROOT = 'birdy';
 
@@ -20,6 +20,7 @@ interface NestedFeatureSpace {
 	mean: number[];
 	std: number[];
 	temperature?: number;
+	embedding?: EmbeddingSpace;
 	extractor?: {
 		sampleRate?: number;
 		frame?: number;
@@ -50,6 +51,13 @@ function normaliseFeatureSpace(raw: FeatureSpace & NestedFeatureSpace): FeatureS
 		std: raw.std,
 		temperature: raw.temperature ?? raw.activation?.softmaxTemperature ?? 0.12
 	};
+	// The learned-space block is passed through as shipped: it is optional (descriptor
+	// builds predate it) and self-gating (`mapQuality.accepted`), so there is nothing to
+	// normalise, only something to not lose.
+	const embedding = raw.embedding;
+	if (embedding && embedding.dims > 0 && embedding.map?.w?.length) {
+		space.embedding = embedding;
+	}
 	if (!(space.frameSize > 0) || (space.frameSize & (space.frameSize - 1)) !== 0) {
 		throw new Error(`feature-space.json has an unusable frame size: ${space.frameSize}`);
 	}

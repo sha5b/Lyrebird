@@ -85,6 +85,10 @@ class PointSet:
     song_id: list[str]
     duration: list[float]
     source: list[str]
+    #: 32-d critic embedding per row, aligned with `x`; NaN where a point has none.
+    #: None for a corpus that was never embedded — the descriptor-space build, which is
+    #: still the default. Only a build with `space="embed"` reads this.
+    embeddings: np.ndarray | None = None
 
     def __len__(self) -> int:
         return int(self.x.shape[0])
@@ -101,6 +105,14 @@ class PointSet:
         kept = [p for p in parts if len(p)]
         if not kept:
             raise RuntimeError("nothing to embed: every source was empty")
+        # All-or-nothing: a build in the embedding space cannot have some of its points
+        # embedded and some not, so a part without rows drops the whole matrix and the
+        # embed-mode build will say so rather than silently mixing spaces.
+        embeddings = (
+            np.concatenate([p.embeddings for p in kept], axis=0)
+            if all(p.embeddings is not None for p in kept)
+            else None
+        )
         return PointSet(
             x=np.concatenate([p.x for p in kept], axis=0),
             species_id=[v for p in kept for v in p.species_id],
@@ -108,6 +120,7 @@ class PointSet:
             song_id=[v for p in kept for v in p.song_id],
             duration=[v for p in kept for v in p.duration],
             source=[v for p in kept for v in p.source],
+            embeddings=embeddings,
         )
 
 
@@ -132,8 +145,16 @@ def descriptors(
     clips: Sequence[Clip],
     verbose: bool = True,
     should_stop: Callable[[], bool] | None = None,
+    embedder: Callable[[Clip], np.ndarray | None] | None = None,
 ) -> PointSet:
-    """28-d descriptor per clip; clips with no voiced frame are dropped (8.2)."""
+    """28-d descriptor per clip; clips with no voiced frame are dropped (8.2).
+
+    `embedder` additionally maps each *kept* clip to its 32-d critic embedding — for a
+    build that clusters in the learned space (`build --space embed`). It is a per-clip
+    callable rather than a batch so this loop stays the only place that decides which
+    clips survive; returning None gives the point a NaN row, which the embed-mode build
+    excludes and counts.
+    """
     rows: list[np.ndarray] = []
     kept: list[Clip] = []
     for i, clip in enumerate(clips):
@@ -148,6 +169,17 @@ def descriptors(
             print(f"  descriptors {i + 1}/{len(clips)}", file=sys.stderr)
     if not rows:
         raise RuntimeError("no clip produced a descriptor")
+    embeddings = None
+    if embedder is not None:
+        vectors = [embedder(clip) for clip in kept]
+        found = next((v for v in vectors if v is not None), None)
+        if found is not None:
+            dim = int(np.asarray(found).shape[0])
+            embeddings = np.stack([
+                np.full(dim, np.nan, dtype=np.float32) if v is None
+                else np.asarray(v, dtype=np.float32)
+                for v in vectors
+            ])
     return PointSet(
         x=np.stack(rows),
         species_id=[c.species_id for c in kept],
@@ -155,6 +187,7 @@ def descriptors(
         song_id=[c.song_id for c in kept],
         duration=[c.duration for c in kept],
         source=[c.source for c in kept],
+        embeddings=embeddings,
     )
 
 
@@ -477,7 +510,7 @@ def _pearson(a: np.ndarray, b: np.ndarray) -> float:
 def faithfulness(
     z: np.ndarray, pos: np.ndarray, seed: int = 0, n_pairs: int = FAITHFULNESS_PAIRS
 ) -> dict[str, Any]:
-    """Correlate 28-d cosine distance with 3D Euclidean distance over random pairs.
+    """Correlate feature-space cosine distance with 3D Euclidean distance over random pairs.
 
     This is the number that answers "do distances in the galaxy mean anything": 1.0
     would be a perfectly distance-faithful picture, ~0 a picture where only local
@@ -608,7 +641,7 @@ def _print_projection_table(results: dict[str, dict[str, Any]], chosen: str) -> 
             file=sys.stderr,
         )
     print(
-        "  pearson/spearman = 28-d cosine distance vs 3D euclidean distance over "
+        "  pearson/spearman = feature-space cosine distance vs 3D euclidean distance over "
         f"{next(iter(results.values()))['faithfulness']['pairs']} random pairs",
         file=sys.stderr,
     )
@@ -867,12 +900,26 @@ def build_galaxy(
     verbose: bool = True,
     recordings: dict[str, Any] | None = None,
     test_relations: bool = True,
+    frame: tuple[np.ndarray, np.ndarray] | None = None,
+    space: str = "descriptor",
+    embedding: dict[str, Any] | None = None,
 ) -> GalaxyStats:
     # The projection (and `min_dist` within UMAP) is purely about the picture: KMeans
-    # and the activation vectors live in the standardised 28-d feature space, never in
+    # and the activation vectors live in the standardised feature space, never in
     # these 3D positions.
+    #
+    # `space` chooses which feature space that is. "descriptor" is the hand-designed
+    # 28-d one of 8.2, as it always was. "embed" is the critic's learned 32-d embedding
+    # (docs/09 §9.7: the measurably better similarity space), carried per point in
+    # `PointSet.embeddings`. Everything downstream — projection, separation, KMeans with
+    # its type seeds, the per-point PCA — runs on the chosen matrix unchanged, because
+    # none of it ever knew what the dimensions meant. `embedding` carries the space's
+    # standardisation moments, the browser's 28-d -> 32-d map and its gate numbers; see
+    # spacemap.py.
     if projection not in PROJECTIONS:
         raise ValueError(f"unknown projection {projection!r}, expected {PROJECTIONS}")
+    if space not in ("descriptor", "embed"):
+        raise ValueError(f"unknown space {space!r}, expected 'descriptor' or 'embed'")
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -886,11 +933,69 @@ def build_galaxy(
         n_dropped = len(source) - len(kept)
 
     x = kept.x
-    mean = x.mean(axis=0)
-    std = x.std(axis=0)  # population std, floored at lookup time
-    z = features.standardise(x, mean, std)
-    if not np.all(np.isfinite(z)):
+    # `frame` pins the standardisation instead of deriving it from these points. It ships
+    # in feature-space.json and the browser standardises its live *windows* against it,
+    # so when the galaxy's field points are syllable-level observations the frame must
+    # still be measured over the window corpus — which is what cmd_build passes. With no
+    # frame the points define it, as they always did.
+    if frame is None:
+        mean = x.mean(axis=0)
+        std = x.std(axis=0)  # population std, floored at lookup time
+    else:
+        mean, std = frame
+    # The 28-d standardisation is computed in every mode: it is what feature-space.json
+    # ships for the browser's live descriptor, and in embed mode it is what each
+    # cluster's fallback `vector` is averaged from.
+    z28 = features.standardise(x, mean, std)
+    if not np.all(np.isfinite(z28)):
         raise RuntimeError("standardised descriptors contain NaN/inf")
+
+    z = z28
+    space_dims = features.DIM
+    emb_mean = emb_std = None
+    if space == "embed":
+        if embedding is None or kept.embeddings is None:
+            raise RuntimeError(
+                "space='embed' needs every point to carry a critic embedding "
+                "(PointSet.embeddings) and the space's moments in `embedding` — the "
+                "descriptor-space build is the one that needs neither"
+            )
+        e = np.asarray(kept.embeddings, dtype=np.float64)
+        finite = np.all(np.isfinite(e), axis=1)
+        n_nan = int((~finite).sum())
+        if n_nan:
+            # A point with no embedding cannot be placed in this space at all. Dropping
+            # it with a count is the honest reading of "no evidence"; pretending it sits
+            # at the space's centre would hand it to an arbitrary cluster.
+            if verbose:
+                print(
+                    f"embed space: {n_nan} points have no embedding (no mel patch) and "
+                    "are excluded from the build",
+                    file=sys.stderr,
+                )
+            kept = PointSet(
+                x=x[finite],
+                species_id=[v for v, m in zip(kept.species_id, finite) if m],
+                syllable_id=[v for v, m in zip(kept.syllable_id, finite) if m],
+                song_id=[v for v, m in zip(kept.song_id, finite) if m],
+                duration=[v for v, m in zip(kept.duration, finite) if m],
+                source=[v for v, m in zip(kept.source, finite) if m],
+            )
+            x = kept.x
+            z28 = z28[finite]
+            e = e[finite]
+            n_dropped += n_nan
+        emb_mean = np.asarray(embedding["mean"], dtype=np.float64)
+        emb_std = np.asarray(embedding["std"], dtype=np.float64)
+        z = (e - emb_mean) / np.maximum(emb_std, 1.0e-6)
+        if not np.all(np.isfinite(z)):
+            raise RuntimeError("standardised embeddings contain NaN/inf")
+        space_dims = int(z.shape[1])
+        if verbose:
+            print(
+                f"feature space: critic embedding, {len(kept)} points x {space_dims}-d",
+                file=sys.stderr,
+            )
 
     # The clustering is what the client's activation lookup uses, and it runs on the
     # standardised descriptors, so it is identical for every projection.
@@ -972,12 +1077,12 @@ def build_galaxy(
     purity = _purity(cluster_id, type_of, k_final)
 
     # The renderer's per-point response space. Built from the same standardised
-    # descriptors, after KMeans, so nothing about the clustering depends on it.
+    # matrix, after KMeans, so nothing about the clustering depends on it.
     lo_points, lo_centroids, lo_variance = point_features(z, centre_vectors)
     if verbose:
         print(
             f"per-point features: {POINT_FEATURE_DIMS}-d, "
-            f"{lo_variance * 100:.1f} % of the 28-d variance retained",
+            f"{lo_variance * 100:.1f} % of the {space_dims}-d variance retained",
             file=sys.stderr,
         )
 
@@ -1036,13 +1141,28 @@ def build_galaxy(
         # What this dense region can be said to be, and on what evidence. Only density
         # clustering produces it — KMeans has no notion of a region that anchors nothing.
         verdict = anchors[c] if anchors and c < len(anchors) else None
+        # The per-cluster vector the browser matches live audio against. In the embedding
+        # space the primary is `vector32` — the 32-d standardised embedding centroid — and
+        # `vector` is the 28-d centroid over the same members, so the browser's pre-embedding
+        # fallback path (and any asset consumer that only knows 28-d) still has a vector in
+        # the space it understands. In the descriptor space `vector` is the KMeans centroid,
+        # as it always was.
+        item_vectors: dict[str, Any] = {}
+        if space == "embed":
+            item_vectors["vector32"] = [round(float(v), 6) for v in centre_vectors[c]]
+            if sel.size:
+                item_vectors["vector"] = [
+                    round(float(v), 6) for v in z28[sel].mean(axis=0)
+                ]
+        else:
+            item_vectors["vector"] = [round(float(v), 6) for v in centre_vectors[c]]
         items.append(
             {
                 "id": c,
                 **info,
                 "position": [round(float(v), 6) for v in position],
                 "functionClass": function_class(info["function"]),
-                "vector": [round(float(v), 6) for v in centre_vectors[c]],
+                **item_vectors,
                 "featuresLo": [round(float(v), 6) for v in lo_centroids[c]],
                 "count": int(sel.size),
                 # Small per-cluster summary the interface can put on screen next to the
@@ -1145,7 +1265,10 @@ def build_galaxy(
             recordings=recordings or {},
         )
         spaces = {
-            "28-d descriptors": (z, "cosine"),
+            f"{space_dims}-d {'critic embedding' if space == 'embed' else 'descriptors'}": (
+                z,
+                "cosine",
+            ),
             f"3-d {projection}": (pos, "euclidean"),
         }
         if verbose:
@@ -1165,6 +1288,9 @@ def build_galaxy(
     # The frozen frame, so later audio can be added to this galaxy rather than replacing
     # it. Only cMDS carries one: UMAP and PCA have no out-of-sample extension that keeps
     # the existing points still, so a build with either of those can only ever be rebuilt.
+    # The basis standardisation is the *clustering* space's — 32-d embedding moments in an
+    # embed build — because the landmarks are rows of that space and `grow` has to place
+    # new points through the same transform.
     basis_parts = chosen.get("basisParts")
     if basis_parts is not None:
         from .grow import ProjectionBasis
@@ -1178,8 +1304,8 @@ def build_galaxy(
             scale=np.asarray(chosen["frame"]["scale"]),
             knee=float(chosen["frame"]["knee"]),
             peak=np.asarray(chosen["frame"]["peak"]),
-            mean=mean,
-            std=std,
+            mean=emb_mean if space == "embed" else mean,
+            std=emb_std if space == "embed" else std,
         ).save(out_dir)
         if verbose:
             print(f"wrote {out_dir / 'projection-basis.json'}", file=sys.stderr)
@@ -1202,7 +1328,56 @@ def build_galaxy(
             "source": kept.source,
         },
     )
-    _write_json(out_dir / "centroids.json", {"k": k_final, "dims": features.DIM, "items": items})
+    _write_json(out_dir / "centroids.json", {"k": k_final, "dims": space_dims, "items": items})
+
+    # The embedding block, when the build ran in the learned space: the standardisation
+    # moments of the 32-d space, the browser's 28-d -> 32-d ridge map, and the map's gate
+    # numbers — completed here with the nearest-centroid agreement against *this* galaxy's
+    # centroids, which cannot be measured before they exist.
+    embedding_json: dict[str, Any] | None = None
+    map_quality: dict[str, Any] | None = None
+    if space == "embed" and embedding is not None:
+        from . import spacemap
+
+        map_quality = dict(embedding.get("mapQuality") or {})
+        eval_mapped = embedding.get("_evalMapped")
+        eval_true = embedding.get("_evalTrue")
+        if eval_mapped is not None and len(eval_mapped):
+            agreement = spacemap.centroid_agreement(eval_mapped, eval_true, centre_vectors)
+            map_quality["centroidAgreement"] = round(agreement, 4)
+            map_quality["centroidAgreementDefinition"] = (
+                "share of held-out syllables whose nearest cluster centroid of this "
+                "galaxy is the same through the 28-d -> 32-d map as through the critic"
+            )
+        space_map = embedding["map"]
+        embedding_json = {
+            "dims": space_dims,
+            "mean": [float(v) for v in emb_mean],
+            "std": [float(v) for v in emb_std],
+            "standardisation": "z = (e - mean) / max(std, 1e-6)",
+            **({"critic": embedding["critic"]} if embedding.get("critic") else {}),
+            "map": space_map.to_json() if hasattr(space_map, "to_json") else space_map,
+            "mapQuality": map_quality,
+        }
+        if verbose:
+            print(
+                f"space map: median cosine {map_quality.get('medianCosine')} on held-out "
+                f"recordings, nearest-centroid agreement "
+                f"{map_quality.get('centroidAgreement')}",
+                file=sys.stderr,
+            )
+            if not map_quality.get("accepted", True):
+                # The number the whole phase stands on. Below the gate the map still
+                # ships — flagged — and the browser keeps using the 28-d path, which is
+                # the difference between an honest fallback and a confidently wrong one.
+                print(
+                    f"  WARNING: the 28-d -> 32-d space map is below its gate (median "
+                    f"cosine {map_quality.get('medianCosine')} < "
+                    f"{map_quality.get('target')}); it ships with accepted: false and "
+                    "the browser will stay on the 28-d descriptor path",
+                    file=sys.stderr,
+                )
+
     _write_json(
         out_dir / "feature-space.json",
         {
@@ -1252,6 +1427,7 @@ def build_galaxy(
                 "softmaxTemperature": TEMPERATURE,
                 "ema": [0.82, 0.18],
             },
+            **({"embedding": embedding_json} if embedding_json else {}),
         },
     )
     shutil.copyfile(inventory_path, out_dir / "inventory.json")
@@ -1316,8 +1492,8 @@ def build_galaxy(
         "faithfulness": {
             **chosen["faithfulness"],
             "definition": (
-                "correlation between 28-d cosine distance and 3D euclidean distance "
-                "over random point pairs; 1.0 = distances fully meaningful"
+                f"correlation between {space_dims}-d cosine distance and 3D euclidean "
+                "distance over random point pairs; 1.0 = distances fully meaningful"
             ),
         },
         "knnAgreement": {
@@ -1345,8 +1521,29 @@ def build_galaxy(
             for method, r in results.items()
         },
         "clustering": clustering,
+        "space": space,
+        **(
+            {
+                "embedding": {
+                    "dims": space_dims,
+                    "critic": embedding.get("critic") if embedding else None,
+                    "mapQuality": map_quality,
+                    # The per-cluster vector decision, stated where an auditor will look:
+                    # `vector32` is the primary centroid (32-d standardised embedding);
+                    # `vector` is the 28-d centroid over the same members, shipped so the
+                    # browser's fallback path keeps working. The assets carry both.
+                    "centroidVectors": (
+                        "vector32 = 32-d embedding centroid (primary); vector = 28-d "
+                        "centroid over the same members, for the pre-embedding fallback"
+                    ),
+                }
+            }
+            if space == "embed"
+            else {}
+        ),
         "kmeans": {"k": stats.k, "nInit": 10, "randomState": seed,
-                   "inputSpace": "standardised 28-d descriptors"},
+                   "inputSpace": f"standardised {space_dims}-d "
+                   f"{'critic embedding' if space == 'embed' else 'descriptors'}"},
         "positions": {
             "format": "little-endian float32, 3*n, xyz",
             "bytes": stats.n_points * 3 * 4,
@@ -1356,11 +1553,11 @@ def build_galaxy(
             "format": f"little-endian float32, {POINT_FEATURE_DIMS}*n, row-major",
             "bytes": stats.n_points * POINT_FEATURE_DIMS * 4,
             "dims": POINT_FEATURE_DIMS,
-            "space": "PCA of the standardised 28-d descriptors, rows unit-normalised",
+            "space": f"PCA of the standardised {space_dims}-d feature space, rows unit-normalised",
             "varianceRatioTotal": round(lo_variance, 4),
             "purpose": (
                 "per-point render response only; the reported match still uses the "
-                "28-d centroid vectors"
+                "cluster centroid vectors"
             ),
         },
         "functionClasses": {

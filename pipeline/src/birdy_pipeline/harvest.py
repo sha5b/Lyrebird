@@ -658,6 +658,50 @@ class HarvestStore:
             source=[m.get("source", SOURCE) for m in meta],
         )
 
+    def syllable_point_set(self, typing: dict[str, Any]) -> PointSet:
+        """One point per stored syllable observation, each carrying its learned type id.
+
+        **Why this exists next to `to_point_set`.** The reservoir points are 0.6 s
+        windows — the unit the browser's live path analyses, which is why they still
+        define the standardisation frame in `feature-space.json`. But a window is not a
+        measurement of a syllable: it averages the syllable with whatever silence and
+        hedgerow shared the window, and it cannot say which learned type it contains.
+        The observations can. Each was measured from its own segmented audio while that
+        audio still existed, and `learn` has already assigned it a type, so one row per
+        observation is both the sharper point and the honest one: a knot built from
+        these has the extent of what real birds sang, not of how we sliced the
+        recordings.
+
+        `typing` is the parsed `typing.json` `learn` writes into this store. An
+        observation with no entry — its species was too sparse to fit — keeps an empty
+        `syllable_id`. An observation with no descriptor is skipped: stores harvested
+        before that field existed do not have it, and a point without a vector is not a
+        point. If *no* observation carries one there is nothing to build, which is a
+        hard error rather than an empty galaxy.
+        """
+        type_of = {
+            (e["speciesId"], e["recordingId"], int(e["order"])): str(e["typeId"])
+            for e in typing.get("entries", [])
+        }
+        kept = [o for o in self.syllables if o.descriptor]
+        if not kept:
+            raise RuntimeError(
+                f"{self.root} holds {len(self.syllables)} syllable observations but none "
+                "carries a descriptor — the store predates that field, so syllable-level "
+                "field points cannot be built from it. Re-harvest, or build with "
+                "--field-source windows."
+            )
+        return PointSet(
+            x=np.stack([np.asarray(o.descriptor, dtype=np.float64) for o in kept]),
+            species_id=[o.species_id for o in kept],
+            syllable_id=[
+                type_of.get((o.species_id, o.recording_id, o.order), "") for o in kept
+            ],
+            song_id=[o.recording_id for o in kept],
+            duration=[float(o.dur) for o in kept],
+            source=[SOURCE] * len(kept),
+        )
+
     def summary(self) -> str:
         rep = self.representativeness()
         per = ", ".join(

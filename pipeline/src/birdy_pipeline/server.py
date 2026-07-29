@@ -390,6 +390,7 @@ class Pipeline:
             trained, store.syllables, self.critic_weight, self.embed_typing
         )
 
+        typing: list[dict[str, Any]] = []
         document = learn.build_learned_inventory(
             store.syllables,
             inventory,
@@ -408,6 +409,7 @@ class Pipeline:
             realism=realism,
             # Where a discovered bird's common name is; see `build_learned_inventory`.
             discovered=harvest.load_discovered(self.discovered_path),
+            typing=typing,
         )
         if not document["species"]:
             raise RuntimeError("no species had enough observations to fit")
@@ -416,6 +418,12 @@ class Pipeline:
             document if learned_only else learn.merge_learned_inventory(inventory, document),
         )
         harvest.log(f"wrote {self.learned_path}")
+        # The same table `cmd_learn` writes: a fit from the Learn tab re-keys the store's
+        # observations exactly like one from the terminal, and the build reads it either way.
+        (self.store_path / learn.TYPING_NAME).write_text(
+            json.dumps({"version": 1, "entries": typing}, indent=1) + "\n",
+            encoding="utf-8",
+        )
 
     def learn(self, body: dict[str, Any]) -> dict[str, Any]:
         types = int(body.get("types", learn.DEFAULT_TYPES))

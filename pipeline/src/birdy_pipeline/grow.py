@@ -135,7 +135,7 @@ def embed(basis: ProjectionBasis, x: np.ndarray, cluster_id: np.ndarray) -> np.n
     centre, scale per axis, compress the tail.
 
     `cluster_id` is which existing knot each row has been assigned to — nearest centroid
-    in the 28-d space, the same comparison the live matcher makes.
+    in the build's feature space, the same comparison the live matcher makes.
     """
     x = np.atleast_2d(np.asarray(x, dtype=np.float64))
     z = (x - basis.mean) / np.maximum(basis.std, 1.0e-6)
@@ -178,7 +178,13 @@ def _soft_limit_frozen(out: np.ndarray, knee: float, peak: np.ndarray) -> np.nda
 
 
 def assign_clusters(basis: ProjectionBasis, x: np.ndarray, centroids: np.ndarray) -> np.ndarray:
-    """Nearest existing centroid by cosine, in the standardised 28-d space."""
+    """Nearest existing centroid by cosine, in the basis's standardised space.
+
+    Space-agnostic by construction: `x` is standardised by the basis's own moments, so
+    the caller hands over rows of whichever space the build clustered in — 28-d
+    descriptors for a descriptor build, 32-d embeddings (the centroids' `vector32`) for
+    an embed build — and the comparison is the same cosine the live matcher makes.
+    """
     x = np.atleast_2d(np.asarray(x, dtype=np.float64))
     z = (x - basis.mean) / np.maximum(basis.std, 1.0e-6)
     u = _unit_rows(z)
@@ -254,12 +260,33 @@ def extend_build(
     points = json.loads((out_dir / "points.json").read_text(encoding="utf-8"))
     centroids = json.loads((out_dir / "centroids.json").read_text(encoding="utf-8"))
     items = centroids["items"]
-    cent = np.asarray([c["vector"] for c in items], dtype=np.float64)
-    dims = int(manifest.get("dims", basis.landmarks.shape[1]))
+    # Which per-cluster vector the assignment compares against. An embed-space build
+    # clustered in the critic's 32-d space and ships it as `vector32`; its `vector` is a
+    # 28-d fallback for the browser and would place new points in the wrong space. The
+    # basis's landmark width is the ground truth for what `new.x` must contain.
+    space = manifest.get("space", "descriptor")
+    dims = int(basis.landmarks.shape[1])
+    if space == "embed":
+        if not all("vector32" in c for c in items):
+            raise RuntimeError(
+                "this galaxy was built in the embedding space but its centroids carry "
+                "no vector32 — rebuild it with `build --space embed`"
+            )
+        cent = np.asarray([c["vector32"] for c in items], dtype=np.float64)
+    else:
+        cent = np.asarray([c["vector"] for c in items], dtype=np.float64)
 
     x = np.asarray(new.x, dtype=np.float64)
     if x.ndim != 2 or x.shape[1] != dims:
-        raise RuntimeError(f"new descriptors are {x.shape}, expected (n, {dims})")
+        raise RuntimeError(
+            f"new descriptors are {x.shape}, expected (n, {dims})"
+            + (
+                " — this is an embed-space galaxy, so new rows must be critic "
+                "embeddings, not 28-d descriptors (see cmd_grow)"
+                if space == "embed"
+                else ""
+            )
+        )
 
     report = drift(basis, x, cent)
     ids = assign_clusters(basis, x, cent)
@@ -303,7 +330,7 @@ def extend_build(
     )
     (out_dir / "points.json").write_text(json.dumps(points, indent=1), encoding="utf-8")
 
-    # The knots keep their 28-d vectors — nothing was re-fitted — but their membership
+    # The knots keep their centroid vectors — nothing was re-fitted — but their membership
     # counts have changed and the app reads those.
     added = np.bincount(ids, minlength=len(items))
     for i, item in enumerate(items):

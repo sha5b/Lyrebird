@@ -13,11 +13,12 @@ import math
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Iterable, Iterator
+from typing import Any, Callable, Iterable, Iterator, Sequence
 
 import numpy as np
 import soundfile as sf
 
+from .learn import SyllableObservation
 from .syrinx import (
     SAMPLE_RATE,
     Calibration,
@@ -134,6 +135,157 @@ def synthetic_corpus(
             print(
                 f"  {sid:24} {len(clips) - n_before:4d} clips "
                 f"({len(table)} syllables x {variants} + "
+                f"{len(species.get('songs', []))} songs x {song_variants})",
+                file=sys.stderr,
+            )
+    return clips
+
+
+def _observation_syllable(obs: SyllableObservation, type_id: str) -> dict[str, Any]:
+    """A stored observation as an inventory syllable dict, under its learned type's id.
+
+    Only what the observation measured. AM and vibrato cross the same depth thresholds
+    `learn.fit_types` uses to decide they are real rather than tracker noise, and the id
+    is the *type's*, so the render is labelled with the type it realises rather than the
+    recording it came from.
+    """
+    d: dict[str, Any] = {
+        "id": type_id,
+        "dur": obs.dur,
+        "level": obs.level,
+        "timbre": obs.timbre,
+        "contour": obs.contour,
+        "attack": obs.attack,
+        "hold": obs.hold,
+        "harmonic": obs.harmonic,
+    }
+    if obs.am_depth > 0.15:
+        d["am"] = obs.am
+        d["amDepth"] = obs.am_depth
+    if obs.vib_depth > 0.04:
+        d["vib"] = {"rate": obs.vib_rate, "depth": obs.vib_depth}
+    return d
+
+
+def measured_corpus(
+    inventory: dict[str, Any],
+    typing_observations: dict[str, dict[str, list[SyllableObservation]]],
+    calibration: Calibration | None,
+    variants: int = 24,
+    song_variants: int = 3,
+    seed: int = 0,
+    sample_rate: int = SAMPLE_RATE,
+    verbose: bool = True,
+    should_stop: Callable[[], bool] | None = None,
+) -> list[Clip]:
+    """The anchor render plus `variants` measured realisations per learned type.
+
+    **The difference from `synthetic_corpus` is what a knot's extent is made of.** There
+    it is `Jitter` — 3 % pitch, 8 % duration, 10 % level — applied to one median render
+    over and over: a sampling distribution of our own parameters. Here every variant is
+    a real bird: one stored observation's measured contour, duration, level, attack and
+    modulation, rendered exactly as measured. The knot's extent is then the repertoire's
+    actual variance, which is the only extent the galaxy can honestly claim.
+
+    The fitted median still leads, unjittered, as the anchor — it is the type's identity
+    and the point the cluster gets its name from. Songs keep the jittered `render_song`
+    path: what makes a *sequence* measured is the grammar, not the syllable acoustics,
+    and this does not touch it.
+
+    `typing_observations` maps species id -> type id -> that type's member observations,
+    built from the store and its `typing.json`. Species without an entry are skipped —
+    they are the hand-authored inventory's business and `synthetic_corpus` covers them.
+    Members are sampled without replacement while there are at least `variants` of them;
+    a type with fewer is cycled deterministically, so the same store and seed render the
+    same corpus, on the same `(seed, species, syllable, variant)` scheme as
+    `synthetic_corpus`.
+    """
+    clips: list[Clip] = []
+    for si, species in enumerate(inventory["species"]):
+        if should_stop and should_stop():
+            raise Cancelled("stopped while rendering the corpus")
+        sid = species["id"]
+        types = typing_observations.get(sid)
+        if not types:
+            continue
+        table = syllable_table(species)
+        n_before = len(clips)
+        n_types = 0
+        for yi, tid in enumerate(sorted(types)):
+            fitted = table.get(tid)
+            members = types[tid]
+            if fitted is None or not members:
+                continue
+            n_types += 1
+            # The anchor: the fitted median exactly as fitted, jitter off.
+            audio = render_syllable(
+                fitted,
+                sample_rate=sample_rate,
+                rng=_rng(seed, si, yi, 0),
+                jitter=Jitter.none(),
+                calibration=calibration,
+            )
+            clips.append(
+                Clip(
+                    audio=peak_normalise(audio),
+                    sample_rate=sample_rate,
+                    species_id=sid,
+                    syllable_id=tid,
+                    song_id="",
+                    duration=len(audio) / sample_rate,
+                    source="synthetic",
+                )
+            )
+            if len(members) >= variants:
+                picked = _rng(seed, si, yi).choice(len(members), size=variants, replace=False)
+            else:
+                picked = np.arange(variants) % len(members)
+            for v, m in enumerate(picked):
+                syl = Syllable.from_dict(_observation_syllable(members[int(m)], tid))
+                audio = render_syllable(
+                    syl,
+                    sample_rate=sample_rate,
+                    rng=_rng(seed, si, yi, v + 1),
+                    jitter=Jitter.none(),
+                    calibration=calibration,
+                )
+                clips.append(
+                    Clip(
+                        audio=peak_normalise(audio),
+                        sample_rate=sample_rate,
+                        species_id=sid,
+                        syllable_id=tid,
+                        song_id="",
+                        duration=len(audio) / sample_rate,
+                        source="synthetic",
+                    )
+                )
+        for gi, song in enumerate(species.get("songs", [])):
+            for v in range(song_variants):
+                rng = _rng(seed, si, 1000 + gi, v)
+                audio = render_song(
+                    song,
+                    table,
+                    sample_rate=sample_rate,
+                    rng=rng,
+                    jitter=Jitter() if v > 0 else Jitter.none(),
+                    calibration=calibration,
+                )
+                clips.append(
+                    Clip(
+                        audio=peak_normalise(audio),
+                        sample_rate=sample_rate,
+                        species_id=sid,
+                        syllable_id="",
+                        song_id=song["id"],
+                        duration=len(audio) / sample_rate,
+                        source="synthetic-song",
+                    )
+                )
+        if verbose:
+            print(
+                f"  {sid:24} {len(clips) - n_before:4d} clips "
+                f"({n_types} types x (1 anchor + {variants} measured) + "
                 f"{len(species.get('songs', []))} songs x {song_variants})",
                 file=sys.stderr,
             )

@@ -144,6 +144,34 @@ export interface FeatureSpace {
 	mean: number[];
 	std: number[];
 	temperature: number;
+	/**
+	 * Present when the galaxy was built in the critic's learned 32-d embedding space
+	 * (docs/09 phase 2). The browser cannot run the critic — no weights ship — so
+	 * `map` is the offline-fitted ridge that carries its live standardised 28-d
+	 * descriptor into the embedding space, and `mapQuality.accepted === false` means
+	 * the map failed its held-out gate and the 28-d path stays in charge.
+	 */
+	embedding?: EmbeddingSpace;
+}
+
+/** The learned similarity space a `--space embed` build ships in feature-space.json. */
+export interface EmbeddingSpace {
+	dims: number;
+	mean: number[];
+	std: number[];
+	map?: {
+		/** (28 x 32) ridge weights, applied to the standardised live descriptor. */
+		w: number[][];
+		/** (32) intercept. */
+		b: number[];
+		lambda?: number;
+	};
+	mapQuality?: {
+		accepted?: boolean;
+		medianCosine?: number;
+		centroidAgreement?: number;
+		[key: string]: unknown;
+	};
 }
 
 export interface PointCloudMeta {
@@ -172,6 +200,12 @@ export interface Centroid {
 	refs: string[];
 	position: [number, number, number];
 	vector: number[];
+	/**
+	 * The centroid in the critic's 32-d embedding space — the primary vector of a
+	 * `--space embed` build, where `vector` is the 28-d member centroid kept for the
+	 * fallback path. Absent in descriptor-space assets.
+	 */
+	vector32?: number[];
 	count: number;
 	/**
 	 * The centroid in the reduced space of `point-features.f32`. Used only to decide how

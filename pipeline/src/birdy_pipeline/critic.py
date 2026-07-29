@@ -784,6 +784,47 @@ class Critic:
         return critic
 
 
+# --- embedding a whole store -------------------------------------------------------
+
+
+def embed_store(store: Any, critic: "Critic", batch: int = 512, log: Any = print) -> np.ndarray:
+    """One 32-d embedding per stored syllable observation, in `store.syllables` order.
+
+    **Why this exists.** The embedding is the measurably better similarity space (docs/09
+    §9.7: typing in it moved species placement 38.4 % -> 51.7 % on the 40 k store), but
+    until now it never left the fit that produced it — the galaxy's projection, clusters
+    and centroids all still ran on the hand-designed 28-d descriptor. Embedding the store
+    once, to a file, is what lets the *build* cluster in the learned space without every
+    consumer re-running the network: `build --space embed` reads the result, and so does
+    the space map of `spacemap.py` that bridges the browser into it.
+
+    Row order is `store.syllables` exactly, which is also the row order of `patches.f16` —
+    the two files are already tied together that way (`HarvestStore._load_patches` refuses
+    a count mismatch), so an embedding file in the same order needs no index of its own.
+
+    Observations with no patch cannot be embedded — a store harvested before `mel_patch`
+    existed has none — and get a NaN row rather than being dropped, so the matrix stays
+    aligned with the store. The caller decides what NaN means; `build` excludes those
+    points and says how many.
+    """
+    observations = store.syllables
+    out = np.full((len(observations), critic.model.embed_dim), np.nan, dtype=np.float32)
+    have = [i for i, o in enumerate(observations) if o.mel_patch is not None]
+    missing = len(observations) - len(have)
+    if missing:
+        log(f"embed_store: {missing} of {len(observations)} observations have no mel "
+            f"patch and get a NaN row")
+    for start in range(0, len(have), batch):
+        chunk = have[start : start + batch]
+        patches = np.stack([
+            np.asarray(observations[i].mel_patch, dtype=np.float32) for i in chunk
+        ])
+        out[chunk] = critic.embed(patches)
+        if (start // batch) % 20 == 19:
+            log(f"  embedded {chunk[-1] + 1}/{len(observations)}")
+    return out
+
+
 # --- novelty: "is this a syllable I have not heard?" -------------------------------
 
 

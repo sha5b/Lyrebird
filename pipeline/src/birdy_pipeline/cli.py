@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -16,7 +17,14 @@ import numpy as np
 
 from . import features, syrinx
 from .calibrate import build_calibration, check_reference, monotonic_fraction, write_calibration
-from .corpus import dump_clip_wavs, load_inventory, local_corpus, synthetic_corpus, write_wav
+from .corpus import (
+    dump_clip_wavs,
+    load_inventory,
+    local_corpus,
+    measured_corpus,
+    synthetic_corpus,
+    write_wav,
+)
 from . import galaxy, harvest, learn
 from .galaxy import PointSet, build_galaxy
 from .syrinx import (
@@ -39,6 +47,10 @@ DEFAULT_LEARNED_INVENTORY = REPO_ROOT / "data" / "learned-inventory.json"
 DEFAULT_DISCOVERED = REPO_ROOT / "data" / "discovered-species.json"
 DEFAULT_CRITIC = REPO_ROOT / "pipeline" / "out" / "critic.pt"
 CALIBRATION_NAME = "syrinx-calibration.json"
+#: The store-sidecar `critic embed` writes: one 32-d embedding per stored syllable, in
+#: `syllables.jsonl`/`patches.f16` row order. Its presence is what makes `build --space
+#: auto` choose the embedding space.
+EMBEDDINGS_NAME = "embeddings.f32"
 
 DEMO_SYLLABLES = [
     ("parus_minor", "A"),
@@ -227,25 +239,153 @@ def cmd_build(
         report_reachability(inventory, calibration)
 
     parts: list[PointSet] = []
+    # The same corpus again, but with field points always as 0.6 s windows. It is used
+    # only for the standardisation frame feature-space.json ships: the browser's live
+    # path analyses windows, so the mean/std it subtracts must describe windows even
+    # when the galaxy's points are syllables. Identical to `parts` unless
+    # --field-source resolves to syllables.
+    frame_parts: list[PointSet] = []
+    frame_from_windows = False
     harvest_info: dict[str, Any] | None = None
     # Per-recording metadata (call type, sample rate, recordist, country, date...) so the
     # build can test which of them the geometry actually corresponds to.
     harvest_recordings: dict[str, Any] = {}
 
+    store_path = Path(args.harvest_store or DEFAULT_HARVEST_STORE)
+    store: harvest.HarvestStore | None = None
+    typing: dict[str, Any] | None = None
+    if (store_path / "state.json").exists() and not args.no_harvest:
+        store = harvest.HarvestStore(store_path)
+        typing_path = store_path / learn.TYPING_NAME
+        if typing_path.exists():
+            typing = json.loads(typing_path.read_text(encoding="utf-8"))
+
+    # Which species can render measured realisations: the ones `learn` typed. The store's
+    # member observations are grouped per (species, type) for `measured_corpus`.
+    members: dict[str, dict[str, list[learn.SyllableObservation]]] = {}
+    if store is not None and typing is not None:
+        type_of = {
+            (e["speciesId"], e["recordingId"], int(e["order"])): str(e["typeId"])
+            for e in typing.get("entries", [])
+        }
+        for o in store.syllables:
+            tid = type_of.get((o.species_id, o.recording_id, o.order))
+            if tid:
+                members.setdefault(o.species_id, {}).setdefault(tid, []).append(o)
+
+    if args.field_source == "syllables" and typing is None:
+        log("--field-source syllables needs the store's typing.json — run `learn` first")
+        return 2
+    syllable_points = (
+        store is not None
+        and typing is not None
+        and args.field_source in ("auto", "syllables")
+    )
+
+    # --- which feature space the galaxy is built in (docs/09 phase 2) ---
+    #
+    # The critic's 32-d embedding is the measurably better similarity space (§9.7: typing
+    # in it moved species placement 38.4 % -> 51.7 % on the 40 k store), and building in
+    # it moves the projection, the clusters and the centroids into the space the live
+    # activation will be mapped into. `auto` takes it when the prerequisites exist —
+    # stored embeddings, a typing (syllable-level field points are what carries
+    # embeddings), and a critic to embed the rendered anchor, without which the synthetic
+    # points would all be dropped and the galaxy could name nothing. Anything missing
+    # lands on the descriptor space with a logged reason, as every learned component does.
+    space = args.space
+    critic_obj: Any | None = None
+    store_embeddings: np.ndarray | None = None
+    embeddings_path = (
+        store_path / EMBEDDINGS_NAME if (store_path / "state.json").exists() else None
+    )
+    if space != "descriptor":
+        has_embeddings = (
+            store is not None and typing is not None
+            and embeddings_path is not None and embeddings_path.exists()
+        )
+        if has_embeddings or space == "embed":
+            critic_obj = load_critic(
+                args.critic or (str(DEFAULT_CRITIC) if DEFAULT_CRITIC.exists() else None),
+                prefer_gpu=not args.cpu,
+            )
+        if space == "auto":
+            if has_embeddings and critic_obj is not None:
+                space = "embed"
+            else:
+                if has_embeddings and critic_obj is None:
+                    log("NOTE: the store holds embeddings.f32 but no critic is available "
+                        "to embed the rendered inventory with — building in the 28-d "
+                        "descriptor space")
+                space = "descriptor"
+        elif space == "embed":
+            if store is None or typing is None:
+                log("--space embed needs syllable-level field points, which need the "
+                    "store's typing.json — run `learn` first")
+                return 2
+            if critic_obj is None:
+                log("--space embed needs a critic: the rendered inventory and any "
+                    "un-embedded observations must be embedded before they can join a "
+                    "galaxy that lives in the embedding space. Pass --critic, or train "
+                    "one with `birdy-pipeline critic train`")
+                return 2
+        log(f"feature space: {space}"
+            + (" (auto)" if args.space == "auto" else ""))
+
+    def clip_embedder(clip: Any) -> np.ndarray | None:
+        """The 32-d embedding of a rendered clip, through the same `mel_patch` the real
+        side was measured with — measuring the two sides differently is the one bug that
+        would invalidate the space (critic.py)."""
+        patch = features.mel_patch(peak_normalise(clip.audio))
+        return critic_obj.embed(patch)[0]
+
+    embed_clips = clip_embedder if space == "embed" else None
+
     if render_synthetic:
         log(f"rendering synthetic corpus (variants={args.variants}, seed={args.seed})")
-        clips = synthetic_corpus(
-            inventory,
-            calibration,
-            variants=args.variants,
-            song_variants=args.song_variants,
-            seed=args.seed,
-            should_stop=should_stop,
-        )
+        if members:
+            typed = [sp for sp in inventory["species"] if sp["id"] in members]
+            authored = [sp for sp in inventory["species"] if sp["id"] not in members]
+            log(f"measured realisations for the {len(typed)} typed species, "
+                f"jitter for the {len(authored)} without harvest data")
+            clips = (
+                measured_corpus(
+                    {"species": typed},
+                    members,
+                    calibration,
+                    variants=args.variants,
+                    song_variants=args.song_variants,
+                    seed=args.seed,
+                    should_stop=should_stop,
+                )
+                if typed
+                else []
+            )
+            if authored:
+                clips += synthetic_corpus(
+                    {"species": authored},
+                    calibration,
+                    variants=args.variants,
+                    song_variants=args.song_variants,
+                    seed=args.seed,
+                    should_stop=should_stop,
+                )
+        else:
+            clips = synthetic_corpus(
+                inventory,
+                calibration,
+                variants=args.variants,
+                song_variants=args.song_variants,
+                seed=args.seed,
+                should_stop=should_stop,
+            )
         log(f"corpus: {len(clips)} clips, {sum(c.duration for c in clips):.1f} s of audio")
         if args.wav_out:
             dump_clip_wavs(clips, Path(args.wav_out))
-        parts.append(galaxy.descriptors(clips, should_stop=should_stop))
+        synthetic_points = galaxy.descriptors(
+            clips, should_stop=should_stop, embedder=embed_clips
+        )
+        parts.append(synthetic_points)
+        frame_parts.append(synthetic_points)
 
     # Additive, not exclusive: a local directory sits alongside the rendered anchor.
     if args.source == "local" or args.audio_dir:
@@ -257,33 +397,124 @@ def cmd_build(
         log(f"corpus: {len(clips)} clips, {sum(c.duration for c in clips):.1f} s of audio")
         if args.wav_out:
             dump_clip_wavs(clips, Path(args.wav_out))
-        parts.append(galaxy.descriptors(clips, should_stop=should_stop))
+        local_points = galaxy.descriptors(
+            clips, should_stop=should_stop, embedder=embed_clips
+        )
+        parts.append(local_points)
+        frame_parts.append(local_points)
 
     # Always, when there is one. Everything collected stays in the corpus; the point of
     # harvesting is that it accumulates, and a build that silently left it out was a build
     # that threw away every recording since the last time someone typed the flag.
-    store_path = Path(args.harvest_store or DEFAULT_HARVEST_STORE)
-    if (store_path / "state.json").exists() and not args.no_harvest:
-        store = harvest.HarvestStore(store_path)
-        field = store.to_point_set()
-        log(f"harvest store {store_path}: {len(field)} field descriptors "
+    if store is not None:
+        windows = store.to_point_set()
+        field = windows
+        if syllable_points:
+            try:
+                field = store.syllable_point_set(typing or {})
+            except RuntimeError as exc:
+                if args.field_source == "syllables":
+                    log(str(exc))
+                    return 2
+                log(f"syllable-level field points unavailable: {exc} Using windows.")
+        used_syllables = field is not windows
+        if space == "embed":
+            if not used_syllables:
+                log("an embed-space build needs syllable-level field points — windows "
+                    "carry no mel patch and cannot be embedded")
+                return 2
+            # The embeddings are keyed by `store.syllables` row order — the same order
+            # `patches.f16` is written in — and the field points are that same list
+            # filtered to observations with a descriptor, so the two align positionally.
+            if store_embeddings is None:
+                if embeddings_path is not None and embeddings_path.exists():
+                    raw = np.frombuffer(embeddings_path.read_bytes(), dtype="<f4")
+                    store_embeddings = raw.reshape(len(store.syllables), -1).astype(np.float64)
+                else:
+                    log("no embeddings.f32 in the store; embedding it now "
+                        "(`critic embed` writes it once and for all)")
+                    from . import critic as critic_mod
+
+                    store_embeddings = critic_mod.embed_store(store, critic_obj, log=log)
+            kept_rows = [i for i, o in enumerate(store.syllables) if o.descriptor]
+            if len(kept_rows) != len(field):
+                log(f"the store changed since its field points were derived: "
+                    f"{len(kept_rows)} observations with descriptors vs {len(field)} "
+                    "points. Re-run `learn` so typing.json matches the store.")
+                return 2
+            field.embeddings = store_embeddings[kept_rows]
+        log(f"harvest store {store_path}: {len(field)} "
+            f"{'syllable-level' if used_syllables else 'window'} field points "
             f"from {len(store.recordings)} recordings")
         rep = store.representativeness()
         harvest_recordings = dict(store.recordings)
         harvest_info = {
             "store": str(store_path),
             "points": len(field),
+            "fieldPoints": "syllables" if used_syllables else "windows",
             "recordings": len(store.recordings),
             "descriptorsSeen": store.stream_n,
             "sampleDrift": {k: round(v, 4) for k, v in rep.items()},
         }
         parts.append(field)
+        frame_parts.append(windows)
+        frame_from_windows = used_syllables
 
     if not parts:
         log("nothing to embed: no rendered inventory, no harvest store, no local corpus")
         return 2
     points = PointSet.concat(parts)
     log(f"embedding {len(points)} points")
+    frame = None
+    if frame_from_windows:
+        fx = PointSet.concat(frame_parts).x
+        frame = (fx.mean(axis=0), fx.std(axis=0))
+
+    # The embedding block: the 32-d space's own standardisation moments (measured over
+    # the embedded points themselves — there is no window corpus in the learned space,
+    # unlike the 28-d frame), and the browser's 28-d -> 32-d ridge map fitted on the
+    # field syllable pairs, split and graded by recording (spacemap.py).
+    embedding_block: dict[str, Any] | None = None
+    if space == "embed":
+        if points.embeddings is None:
+            log("some corpus parts carry no embeddings, so the embed-space build cannot "
+                "run — this is a wiring error, not a data problem")
+            return 2
+        e_all = np.asarray(points.embeddings, dtype=np.float64)
+        finite_rows = np.all(np.isfinite(e_all), axis=1)
+        if not finite_rows.any():
+            log("not one point carries an embedding; cannot build in the embed space")
+            return 2
+        emb_mean = e_all[finite_rows].mean(axis=0)
+        emb_std = e_all[finite_rows].std(axis=0)
+        from . import spacemap
+
+        field_rows = np.asarray(
+            [s == harvest.SOURCE for s in points.source]
+        ) & finite_rows
+        if not field_rows.any():
+            log("no field syllable pairs to fit the browser's 28-d -> 32-d map on; the "
+                "galaxy builds, but feature-space.json ships no map and the browser "
+                "stays on the descriptor path")
+            embedding_block = {"mean": emb_mean, "std": emb_std, "map": None,
+                               "mapQuality": None}
+        else:
+            mean28, std28 = frame if frame is not None else (
+                points.x.mean(axis=0), points.x.std(axis=0)
+            )
+            x28 = features.standardise(points.x[field_rows], mean28, std28)
+            z32 = (e_all[field_rows] - emb_mean) / np.maximum(emb_std, 1.0e-6)
+            recordings_of = [points.song_id[i] for i in np.nonzero(field_rows)[0]]
+            space_map = spacemap.fit_map(x28, z32, recordings_of, seed=args.seed, log=log)
+            embedding_block = {
+                "mean": emb_mean,
+                "std": emb_std,
+                "critic": _critic_provenance(args.critic, embeddings_path),
+                "map": space_map,
+                "mapQuality": space_map.quality,
+                "_evalMapped": space_map.eval_mapped,
+                "_evalTrue": space_map.eval_true,
+            }
 
     stats = build_galaxy(
         points,
@@ -310,6 +541,9 @@ def cmd_build(
         },
         recordings=harvest_recordings,
         test_relations=not args.no_relations,
+        frame=frame,
+        space=space,
+        embedding=embedding_block,
     )
 
     log("")
@@ -424,6 +658,11 @@ def cmd_grow(args: argparse.Namespace) -> int:
     and the cloud gains marks around them. What it cannot do is discover a cluster — new
     audio joins the nearest existing knot — so the drift figures it prints are the signal
     for when a real rebuild is due.
+
+    When the galaxy was built in the critic's embedding space (`build --space embed`),
+    new audio has to be embedded before it can be placed — the frozen projection basis's
+    landmarks are embedding vectors, so a 28-d descriptor has no meaning against them.
+    That needs the critic; without it there is no honest placement and this refuses.
     """
     from datetime import datetime, timezone
 
@@ -432,11 +671,6 @@ def cmd_grow(args: argparse.Namespace) -> int:
     out = Path(args.out)
     store_path = Path(args.harvest_store or DEFAULT_HARVEST_STORE)
     store = harvest.HarvestStore(store_path)
-    field = store.to_point_set()
-    if not len(field):
-        log("the harvest store is empty; nothing to add")
-        return 1
-
     points = json.loads((out / "points.json").read_text(encoding="utf-8"))
     total = int(points["n"])
     # **Count the field points, not all of them.** This compared the store's descriptor
@@ -446,26 +680,84 @@ def cmd_grow(args: argparse.Namespace) -> int:
     # day the harvest joined the corpus, which is why an hour of learning left the galaxy
     # at exactly the size it started.
     have = sum(1 for s in points.get("source", []) if s == "field") or 0
-    take = len(field) - have if args.only_new else len(field)
-    if take <= 0:
-        log(f"the galaxy holds {have} field points of {total} and the store has "
-            f"{len(field)}; nothing new to add")
-        # A capped reservoir does not grow, it *replaces*: Algorithm R swaps random slots,
-        # so once the store is full the descriptors that changed are not a suffix and no
-        # append can express them. Saying so is the difference between "nothing happened"
-        # and "nothing can happen this way" — the second one means rebuild.
-        if len(field) >= getattr(store, "cap", 0) > 0:
-            log(f"the store is at its cap of {store.cap}, so new audio replaces old rather "
-                "than adding to it — only a rebuild can take it in")
-        return 0
-    fresh = galaxy.PointSet(
-        x=field.x[-take:],
-        species_id=field.species_id[-take:],
-        syllable_id=field.syllable_id[-take:],
-        song_id=field.song_id[-take:],
-        duration=field.duration[-take:],
-        source=field.source[-take:],
-    )
+
+    manifest = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
+    space = manifest.get("space", "descriptor")
+
+    if space == "embed":
+        trained = load_critic(
+            args.critic or (str(DEFAULT_CRITIC) if DEFAULT_CRITIC.exists() else None)
+        )
+        if trained is None:
+            log(f"{out} was built in the critic's embedding space: its projection basis "
+                "and cluster centroids are 32-d embedding vectors, and a new syllable "
+                "can only join them through the critic that defines that space. Pass "
+                "--critic (or train one) — there is no 28-d fallback that would place "
+                "the point where it belongs.")
+            return 2
+        # The pool is exactly the set an embed build draws its field points from:
+        # observations with a descriptor (the point's identity) *and* a mel patch (what
+        # makes them embeddable), in store order, so a suffix is the newest.
+        pool = [o for o in store.syllables if o.descriptor and o.mel_patch is not None]
+        if not pool:
+            log("the harvest store holds no embeddable syllable observations; nothing to add")
+            return 1
+        take = len(pool) - have if args.only_new else len(pool)
+        if take <= 0:
+            log(f"the galaxy holds {have} field points of {total} and the store has "
+                f"{len(pool)} embeddable observations; nothing new to add")
+            return 0
+        fresh_obs = pool if not args.only_new else pool[-take:]
+        typing_path = store_path / learn.TYPING_NAME
+        type_of = {}
+        if typing_path.exists():
+            typing = json.loads(typing_path.read_text(encoding="utf-8"))
+            type_of = {
+                (e["speciesId"], e["recordingId"], int(e["order"])): str(e["typeId"])
+                for e in typing.get("entries", [])
+            }
+        patches = np.stack([
+            np.asarray(o.mel_patch, dtype=np.float32) for o in fresh_obs
+        ])
+        embedded = trained.embed(patches)
+        fresh = galaxy.PointSet(
+            x=np.asarray(embedded, dtype=np.float64),
+            species_id=[o.species_id for o in fresh_obs],
+            syllable_id=[
+                type_of.get((o.species_id, o.recording_id, o.order), "")
+                for o in fresh_obs
+            ],
+            song_id=[o.recording_id for o in fresh_obs],
+            duration=[float(o.dur) for o in fresh_obs],
+            source=[harvest.SOURCE] * len(fresh_obs),
+        )
+        log(f"embedded {len(fresh)} new syllables in the critic's space")
+    else:
+        field = store.to_point_set()
+        if not len(field):
+            log("the harvest store is empty; nothing to add")
+            return 1
+
+        take = len(field) - have if args.only_new else len(field)
+        if take <= 0:
+            log(f"the galaxy holds {have} field points of {total} and the store has "
+                f"{len(field)}; nothing new to add")
+            # A capped reservoir does not grow, it *replaces*: Algorithm R swaps random slots,
+            # so once the store is full the descriptors that changed are not a suffix and no
+            # append can express them. Saying so is the difference between "nothing happened"
+            # and "nothing can happen this way" — the second one means rebuild.
+            if len(field) >= getattr(store, "cap", 0) > 0:
+                log(f"the store is at its cap of {store.cap}, so new audio replaces old rather "
+                    "than adding to it — only a rebuild can take it in")
+            return 0
+        fresh = galaxy.PointSet(
+            x=field.x[-take:],
+            species_id=field.species_id[-take:],
+            syllable_id=field.syllable_id[-take:],
+            song_id=field.song_id[-take:],
+            duration=field.duration[-take:],
+            source=field.source[-take:],
+        )
     stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
     # The newest fitted repertoire rides along, so a grown point that belongs to a syllable
     # or a species the shipped inventory has never seen arrives with a voice.
@@ -508,6 +800,7 @@ def cmd_learn(args: argparse.Namespace) -> int:
         trained, store.syllables, args.critic_weight, args.embed_typing
     )
 
+    typing: list[dict[str, Any]] = []
     document = learn.build_learned_inventory(
         store.syllables,
         inventory,
@@ -529,6 +822,7 @@ def cmd_learn(args: argparse.Namespace) -> int:
         # Where a discovered bird's common name is. Without it every species that is not in
         # the authored inventory is called by its own id everywhere in the app.
         discovered=harvest.load_discovered(DEFAULT_DISCOVERED),
+        typing=typing,
     )
     if not document["species"]:
         log("no species had enough observations to fit — harvest more recordings")
@@ -541,6 +835,15 @@ def cmd_learn(args: argparse.Namespace) -> int:
         # The default keeps the documented calls and adds the fitted ones next to them,
         # so building from this file does not cost the app its citations.
         learn.write_learned_inventory(out, learn.merge_learned_inventory(inventory, document))
+
+    # The typing belongs to the store, not to the inventory the fit produced: the build
+    # keys the store's own observations by it, so it lives beside `syllables.jsonl`.
+    typing_path = store.root / learn.TYPING_NAME
+    typing_path.write_text(
+        json.dumps({"version": 1, "entries": typing}, indent=1) + "\n", encoding="utf-8"
+    )
+    log(f"wrote {typing_path}: {len(typing)} of {len(store.syllables)} stored "
+        f"observations carry a learned type id")
 
     total = sum(len(sp["syllables"]) for sp in document["species"])
     cosines = [
@@ -602,6 +905,35 @@ def critic_default(name: str) -> Any:
         return getattr(CriticConfig(), name)
     except ImportError:
         return _CRITIC_FALLBACK_DEFAULTS[name]
+
+
+def _critic_provenance(
+    critic_arg: str | None, embeddings_path: Path | None
+) -> dict[str, Any] | None:
+    """Which critic produced the embeddings, for the assets to record.
+
+    Prefers the sidecar `embeddings.json` `critic embed` wrote (it carries the weights'
+    hash, so an embedding file can be tied to the exact checkpoint that made it); falls
+    back to the path and mtime of the critic the build itself used.
+    """
+    if embeddings_path is not None:
+        sidecar = embeddings_path.with_suffix(".json")
+        if sidecar.exists():
+            try:
+                blob = json.loads(sidecar.read_text(encoding="utf-8"))
+                if blob.get("critic"):
+                    return dict(blob["critic"])
+            except ValueError:
+                pass
+    path = Path(critic_arg) if critic_arg else (DEFAULT_CRITIC if DEFAULT_CRITIC.exists() else None)
+    if path is None or not path.exists():
+        return None
+    return {
+        "path": str(path),
+        "mtime": datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat(
+            timespec="seconds"
+        ),
+    }
 
 
 def load_critic(path: str | None, prefer_gpu: bool = True) -> Any | None:
@@ -783,6 +1115,60 @@ def cmd_critic(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_critic_embed(args: argparse.Namespace) -> int:
+    """Embed every stored syllable once, so builds can cluster in the learned space.
+
+    The expensive part of an embed-space galaxy is running the critic over the store;
+    doing it here, to a file keyed by the store's own row order, means `build`,
+    `spacemap` and `placement` all read the same embeddings instead of each re-running
+    the network. The sidecar JSON records which checkpoint produced them, so a build can
+    never silently mix embeddings from two critics.
+    """
+    try:
+        from . import critic as critic_mod
+    except ImportError as exc:
+        log(f"torch is not installed ({exc}). `uv sync --extra critic` and try again.")
+        return 2
+
+    store = harvest.HarvestStore(Path(args.store))
+    if not store.syllables:
+        log(f"{store.root} holds no syllable observations — run `harvest` first")
+        return 2
+    trained = load_critic(args.critic, prefer_gpu=not args.cpu)
+    if trained is None:
+        return 2
+
+    t0 = time.time()
+    embeddings = critic_mod.embed_store(store, trained, batch=args.batch, log=log)
+
+    out = Path(args.out) if args.out else Path(args.store) / EMBEDDINGS_NAME
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_bytes(embeddings.astype("<f4", copy=False).ravel(order="C").tobytes())
+    critic_path = Path(args.critic)
+    sidecar = {
+        "n": int(embeddings.shape[0]),
+        "dim": int(embeddings.shape[1]),
+        "store": str(store.root),
+        "order": "store.syllables row order — the same order patches.f16 is written in",
+        "critic": {
+            "path": str(critic_path),
+            "mtime": datetime.fromtimestamp(
+                critic_path.stat().st_mtime, timezone.utc
+            ).isoformat(timespec="seconds"),
+            "sha256": hashlib.sha256(critic_path.read_bytes()).hexdigest(),
+        },
+        "countNaN": int(np.isnan(embeddings[:, 0]).sum()),
+        "writtenAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+    out.with_suffix(".json").write_text(json.dumps(sidecar, indent=1), encoding="utf-8")
+    log(f"wrote {out} ({embeddings.shape[0]} x {embeddings.shape[1]} float32, "
+        f"{sidecar['countNaN']} NaN rows) + {out.with_suffix('.json')} "
+        f"in {time.time() - t0:.1f}s")
+    log("next: uv run birdy-pipeline build --harvest-store " + str(store.root) +
+        " --space embed")
+    return 0
+
+
 def cmd_placement(args: argparse.Namespace) -> int:
     """Score a fitted inventory on the four numbers of docs/09 §9.3, all at once.
 
@@ -880,6 +1266,65 @@ def cmd_placement(args: argparse.Namespace) -> int:
     log("A rise in placement with the cosine collapsing means the critic is being gamed —")
     log("check by ear (docs/09 §9.3).")
 
+    # --- render-free placement, in both spaces ---
+    #
+    # The table above places *resyntheses*; this places the stored field observations
+    # themselves against per-species mean references — the galaxy's own geometry, with no
+    # rendering involved, so it is cheap enough to run every time. It measures something
+    # different from the headline number (how separable the species are in each space,
+    # not how well the synthesiser lands in it) and says so rather than borrowing the
+    # headline's framing. Each species reference includes the points being scored against
+    # it; at hundreds of observations per species that moves nothing measurable.
+    def place(rows: np.ndarray, species: list[str]) -> tuple[float, int]:
+        """Share of rows whose nearest per-species mean reference is their own species."""
+        unit = rows / np.maximum(np.linalg.norm(rows, axis=1, keepdims=True), 1e-12)
+        names = sorted(set(species))
+        refs = np.stack([unit[[i for i, s in enumerate(species) if s == n]].mean(axis=0)
+                         for n in names])
+        refs = refs / np.maximum(np.linalg.norm(refs, axis=1, keepdims=True), 1e-12)
+        nearest = (unit @ refs.T).argmax(axis=1)
+        own = np.asarray([names.index(s) for s in species])
+        return float((nearest == own).mean()), len(names)
+
+    obs = [
+        (o.species_id, np.asarray(o.descriptor, dtype=float))
+        for o in store.syllables
+        if o.descriptor and o.species_id in references
+    ]
+    rows28 = np.stack([d for _, d in obs])
+    if frame is not None:
+        rows28 = features.standardise(rows28, frame[0], frame[1])
+    species28 = [sid for sid, _ in obs]
+    share28, n_species = place(rows28, species28)
+    log("")
+    log(f"render-free: {len(obs)} stored field syllables against per-species mean "
+        f"references, {n_species} species (chance {1.0 / n_species:.1%})")
+    log(f"  28-d descriptor space:   {share28:6.1%} nearest own species")
+    emb_path = (
+        Path(args.embeddings)
+        if args.embeddings
+        else Path(args.store) / EMBEDDINGS_NAME
+    )
+    if emb_path.exists():
+        emb = np.frombuffer(emb_path.read_bytes(), dtype="<f4").reshape(
+            len(store.syllables), -1
+        ).astype(np.float64)
+        obs_idx = [
+            i for i, o in enumerate(store.syllables)
+            if o.descriptor and o.species_id in references
+        ]
+        rows32 = emb[obs_idx]
+        finite = np.all(np.isfinite(rows32), axis=1)
+        rows32 = rows32[finite]
+        species32 = [store.syllables[i].species_id for i, m in zip(obs_idx, finite) if m]
+        rows32 = (rows32 - rows32.mean(axis=0)) / np.maximum(rows32.std(axis=0), 1e-6)
+        share32, _ = place(rows32, species32)
+        log(f"  32-d embedding space:  {share32:6.1%} nearest own species "
+            f"(the galaxy's geometry once built with --space embed)")
+    else:
+        log(f"  32-d embedding space:  not measured — no {emb_path.name}; run "
+            f"`birdy-pipeline critic embed --store {args.store}` first")
+
     if args.per_species:
         log("")
         log(f"{'species':28} {'types':>6} {'own species':>12} {'own type':>9} {'cosine':>8}")
@@ -890,6 +1335,117 @@ def cmd_placement(args: argparse.Namespace) -> int:
                 f"{sum(1 for r in mine if r[2]) / len(mine):11.0%} "
                 f"{sum(1 for r in mine if r[3]) / len(mine):8.0%} "
                 f"{(np.median(cos) if cos else float('nan')):8.3f}")
+    return 0
+
+
+def cmd_spacemap(args: argparse.Namespace) -> int:
+    """Fit the browser's 28-d -> 32-d space map on a store and grade it honestly.
+
+    The standalone version of what `build --space embed` folds into feature-space.json,
+    for iterating on the map without rebuilding a galaxy. The split is by recording, the
+    numbers are on recordings the map never fitted, and the nearest-centroid agreement
+    here is against per-species centroids — the build replaces it with the agreement
+    against the galaxy's own clusters, which is the number that ships.
+    """
+    from . import spacemap
+
+    store = harvest.HarvestStore(Path(args.store))
+    if not store.syllables:
+        log(f"{store.root} holds no syllable observations — run `harvest` first")
+        return 2
+    emb_path = (
+        Path(args.embeddings) if args.embeddings else Path(args.store) / EMBEDDINGS_NAME
+    )
+    if not emb_path.exists():
+        log(f"no embeddings at {emb_path} — run `birdy-pipeline critic embed "
+            f"--store {args.store}` first")
+        return 2
+
+    emb = np.frombuffer(emb_path.read_bytes(), dtype="<f4").reshape(
+        len(store.syllables), -1
+    ).astype(np.float64)
+    kept = [i for i, o in enumerate(store.syllables) if o.descriptor]
+    z = emb[kept]
+    finite = np.all(np.isfinite(z), axis=1)
+    if int((~finite).sum()):
+        log(f"{int((~finite).sum())} of {len(kept)} observations have no embedding and "
+            "are left out of the fit")
+    z = z[finite]
+    x = np.stack([
+        np.asarray(store.syllables[i].descriptor, dtype=np.float64)
+        for i, m in zip(kept, finite) if m
+    ])
+    recordings_of = [store.syllables[i].recording_id for i, m in zip(kept, finite) if m]
+    species_of = [store.syllables[i].species_id for i, m in zip(kept, finite) if m]
+
+    # The browser standardises its live descriptor against the *window* frame, so the
+    # map is fitted on descriptors standardised the same way — here the store's own
+    # window statistics; a build passes its shipped frame instead. The embedding moments
+    # are over the embedded points themselves, as they are in the build.
+    windows = store.to_point_set()
+    x28 = features.standardise(x, windows.x.mean(axis=0), windows.x.std(axis=0))
+    z32 = (z - z.mean(axis=0)) / np.maximum(z.std(axis=0), 1.0e-6)
+
+    t0 = time.time()
+    space_map = spacemap.fit_map(x28, z32, recordings_of, seed=args.seed, log=log)
+    quality = dict(space_map.quality)
+
+    # Species-level agreement, the standalone stand-in for the galaxy's own centroids.
+    names = sorted(set(species_of))
+    refs = np.stack([
+        spacemap._unit_rows(z32[[i for i, s in enumerate(species_of) if s == n]]).mean(axis=0)
+        for n in names
+    ])
+    quality["centroidAgreement"] = round(
+        spacemap.centroid_agreement(space_map.eval_mapped, space_map.eval_true, refs), 4
+    )
+    quality["centroidAgreementDefinition"] = (
+        "share of held-out syllables whose nearest per-species centroid is the same "
+        "through the map as through the critic (standalone; a build measures this "
+        "against the galaxy's own cluster centroids)"
+    )
+
+    deciles = quality["deciles"]
+    log("")
+    log(f"space map: {quality['pairs']} pairs, ridge lambda {quality['lambda']:g}, "
+        f"graded on {quality['evalPairs']} syllables of {quality['evalRecordings']} "
+        f"held-out recordings ({time.time() - t0:.1f}s)")
+    log(f"  median cosine mapped-vs-true: {quality['medianCosine']:.3f} "
+        f"(target >= {quality['target']})")
+    log(f"  deciles: " + " ".join(f"{d:.3f}" for d in deciles))
+    log(f"  nearest-centroid agreement (species centroids): "
+        f"{quality['centroidAgreement']:.3f}")
+    if quality["accepted"]:
+        log("  accepted: the browser may match in the embedding space")
+    else:
+        log("  BELOW GATE: the map ships with accepted: false and the browser stays on "
+            "the 28-d path. This is the honest answer, not a build failure — but the "
+            "embedding-space activation stays off until it improves.")
+
+    if args.out:
+        out = Path(args.out)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(
+            json.dumps(
+                {
+                    "map": space_map.to_json(),
+                    "mapQuality": quality,
+                    "frame": {
+                        "mean": [float(v) for v in windows.x.mean(axis=0)],
+                        "std": [float(v) for v in windows.x.std(axis=0)],
+                        "note": "the store's own window statistics; a build ships its "
+                        "own frame and recomputes the map against it",
+                    },
+                    "embeddingMoments": {
+                        "mean": [float(v) for v in z.mean(axis=0)],
+                        "std": [float(v) for v in z.std(axis=0)],
+                    },
+                },
+                indent=1,
+            ),
+            encoding="utf-8",
+        )
+        log(f"wrote {out}")
     return 0
 
 
@@ -1099,12 +1655,30 @@ def verify(out: Path) -> int:
                 f"point-features.f32 does not separate clusters: mean similarity to own "
                 f"centroid {own.mean():.3f} vs {float((lo @ lo_centroids.T).mean()):.3f} to all"
             )
-    vectors = np.asarray([it["vector"] for it in centroids["items"]], dtype=np.float64)
-    if vectors.shape != (centroids["k"], centroids["dims"]):
-        problems.append(f"centroid vectors are {vectors.shape}, expected "
-                        f"{(centroids['k'], centroids['dims'])}")
-    if not np.all(np.isfinite(vectors)):
-        problems.append("centroids.json contains NaN/inf")
+    vectors = np.asarray(
+        [it.get("vector", []) for it in centroids["items"]], dtype=np.float64
+    )
+    if centroids["dims"] == features.DIM:
+        # The descriptor-space build: `vector` is the centroid, as it always was.
+        if vectors.shape != (centroids["k"], centroids["dims"]):
+            problems.append(f"centroid vectors are {vectors.shape}, expected "
+                            f"{(centroids['k'], centroids['dims'])}")
+        elif not np.all(np.isfinite(vectors)):
+            problems.append("centroids.json contains NaN/inf")
+    else:
+        # The embed-space build: the primary centroid is `vector32`, and `vector` is the
+        # 28-d member centroid shipped for the browser's fallback path.
+        v32 = np.asarray(
+            [it.get("vector32", []) for it in centroids["items"]], dtype=np.float64
+        )
+        if v32.shape != (centroids["k"], centroids["dims"]):
+            problems.append(f"centroid vector32s are {v32.shape}, expected "
+                            f"{(centroids['k'], centroids['dims'])}")
+        elif not np.all(np.isfinite(v32)):
+            problems.append("centroids.json vector32 contains NaN/inf")
+        if vectors.size and vectors.shape != (centroids["k"], features.DIM):
+            problems.append(f"fallback 28-d centroid vectors are {vectors.shape}, "
+                            f"expected {(centroids['k'], features.DIM)}")
     empty = [it["id"] for it in centroids["items"] if not it["label"] or it["count"] == 0]
     if empty:
         problems.append(f"clusters without a label or with no members: {empty}")
@@ -1130,6 +1704,26 @@ def verify(out: Path) -> int:
         problems.append("feature-space.json dimNames do not match the extractor")
     if not np.all(np.isfinite(space["mean"] + space["std"])):
         problems.append("feature-space.json contains NaN/inf")
+    emb = space.get("embedding")
+    if emb is not None:
+        dims32 = emb.get("dims")
+        if len(emb.get("mean", [])) != dims32 or len(emb.get("std", [])) != dims32:
+            problems.append(
+                "feature-space.json embedding mean/std do not match embedding.dims"
+            )
+        elif not np.all(np.isfinite(emb["mean"] + emb["std"])):
+            problems.append("feature-space.json embedding moments contain NaN/inf")
+        space_map = emb.get("map")
+        if space_map is not None:
+            w = np.asarray(space_map.get("w", []), dtype=np.float64)
+            bias = np.asarray(space_map.get("b", []), dtype=np.float64)
+            if w.shape != (features.DIM, dims32) or bias.shape != (dims32,):
+                problems.append(
+                    f"feature-space.json embedding map is {w.shape}+{bias.shape}, "
+                    f"expected ({features.DIM}, {dims32})+({dims32},)"
+                )
+            elif not np.all(np.isfinite(w)) or not np.all(np.isfinite(bias)):
+                problems.append("feature-space.json embedding map contains NaN/inf")
 
     cal = json.loads((out / CALIBRATION_NAME).read_text())
     mono = monotonic_fraction(cal)
@@ -1220,8 +1814,40 @@ def build_parser() -> argparse.ArgumentParser:
     )
     b.add_argument("--harvest-store", default=None,
                    help="where the harvested descriptor store lives (included by default)")
+    b.add_argument(
+        "--field-source",
+        choices=("auto", "syllables", "windows"),
+        default="auto",
+        help="what a harvested field point is: one stored syllable observation carrying "
+             "its learned type id (needs <store>/typing.json, written by `learn`), or "
+             "one 0.6 s window. `auto` takes syllables when typing.json exists and "
+             "windows otherwise. The standardisation frame in feature-space.json stays "
+             "window-based either way, because the browser's live path analyses windows",
+    )
+    b.add_argument(
+        "--space",
+        choices=("auto", "descriptor", "embed"),
+        default="auto",
+        help="which similarity space the galaxy's projection, clusters and centroids "
+             "are built in: the hand-designed 28-d descriptor, or the critic's learned "
+             "32-d embedding (docs/09 phase 2 — the measurably better space). `auto` "
+             "takes the embedding when <store>/embeddings.f32 exists (`critic embed`), "
+             "typing.json is present and a critic can embed the rendered anchor, and "
+             "the descriptor otherwise",
+    )
+    b.add_argument(
+        "--critic",
+        default=None,
+        help="trained critic for --space embed (embeds the rendered inventory and any "
+             "un-embedded observations; default: out/critic.pt when it exists)",
+    )
+    b.add_argument("--cpu", action="store_true",
+                   help="run the critic on the CPU even where a GPU is available")
     b.add_argument("--audio-dir", default=None, help="corpus root for --source local")
-    b.add_argument("--variants", type=int, default=96, help="renders per syllable")
+    b.add_argument("--variants", type=int, default=24,
+                   help="renders per learned syllable type, built from measured member "
+                        "observations, and per hand-authored syllable, built by jitter "
+                        "(default %(default)s)")
     b.add_argument("--song-variants", type=int, default=3, help="renders per song")
     b.add_argument("--seed", type=int, default=0)
     b.add_argument("--k", type=int, default=None, help="clusters (default: syllable types)")
@@ -1446,6 +2072,36 @@ def build_parser() -> argparse.ArgumentParser:
                      help="do not log each species as its synthetic side renders")
     crt.set_defaults(func=cmd_critic, verbose=True)
 
+    cre = cr_sub.add_parser(
+        "embed",
+        help="embed every stored syllable once into <store>/embeddings.f32, so builds "
+             "can cluster in the learned space (docs/09 phase 2)",
+    )
+    cre.add_argument("--store", default=str(DEFAULT_HARVEST_STORE),
+                     help="harvest store holding the log-mel patches")
+    cre.add_argument("--critic", default=str(DEFAULT_CRITIC))
+    cre.add_argument("--out", default=None,
+                     help="where to write the f32 matrix (default: <store>/%s); a "
+                          "sidecar .json records the critic that produced it"
+                     % EMBEDDINGS_NAME)
+    cre.add_argument("--batch", type=int, default=512)
+    cre.add_argument("--cpu", action="store_true",
+                     help="embed on the CPU even with a GPU present")
+    cre.set_defaults(func=cmd_critic_embed)
+
+    sm = sub.add_parser(
+        "spacemap",
+        help="fit and grade the browser's 28-d -> 32-d space map on a store, split by "
+             "recording (docs/09 phase 2)",
+    )
+    sm.add_argument("--store", default=str(DEFAULT_HARVEST_STORE))
+    sm.add_argument("--embeddings", default=None,
+                    help="embedding matrix (default: <store>/%s)" % EMBEDDINGS_NAME)
+    sm.add_argument("--out", default=None,
+                    help="also write the map and its quality gate as JSON here")
+    sm.add_argument("--seed", type=int, default=0)
+    sm.set_defaults(func=cmd_spacemap)
+
     pl = sub.add_parser(
         "placement",
         help="score a fitted inventory on docs/09's four numbers, including the one `learn` "
@@ -1454,6 +2110,9 @@ def build_parser() -> argparse.ArgumentParser:
     pl.add_argument("--store", default=str(DEFAULT_HARVEST_STORE))
     pl.add_argument("--inventory", default=str(DEFAULT_LEARNED_INVENTORY))
     pl.add_argument("--calibration-dir", default=str(DEFAULT_OUT))
+    pl.add_argument("--embeddings", default=None,
+                    help="embedding matrix for the render-free 32-d placement number "
+                         "(default: <store>/%s when it exists)" % EMBEDDINGS_NAME)
     pl.add_argument("--per-species", action="store_true",
                     help="also break the placement down species by species")
     pl.set_defaults(func=cmd_placement)
@@ -1464,6 +2123,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     g.add_argument("--out", default=str(DEFAULT_OUT), help="built asset directory")
     g.add_argument("--harvest-store", default=None)
+    g.add_argument(
+        "--critic",
+        default=None,
+        help="critic that embeds new syllables when the galaxy was built in the "
+             "embedding space (default: out/critic.pt when it exists). Required for an "
+             "embed-space build: without it a new syllable cannot be placed at all",
+    )
     # Defaults to the fitted repertoire rather than the authored one: a grow only ever adds
     # field audio, and field audio is what `learn` names.
     g.add_argument(

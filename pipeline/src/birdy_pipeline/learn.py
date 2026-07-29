@@ -76,6 +76,11 @@ MAX_TYPES = 64
 OBS_PER_TYPE = 12
 GRAMMAR_MIN_COUNT = 2
 END = "end"
+#: The fit's membership table, written beside `syllables.jsonl` in the store it was
+#: fitted from. It is a property of the store's observations, not of the inventory the
+#: fit produced, so it lives with the store and a store moved elsewhere carries its
+#: typing with it.
+TYPING_NAME = "typing.json"
 
 
 def log(msg: str) -> None:
@@ -1255,6 +1260,27 @@ def learn_grammar(
 # --- putting it together -----------------------------------------------------------
 
 
+def typing_rows(fitted: Sequence[LearnedType]) -> list[dict[str, Any]]:
+    """The fit's membership as flat rows: which learned type each observation is.
+
+    This is how the clustering leaves the fit. A `LearnedType`'s members are the store's
+    own `SyllableObservation`s, so the table only has to name them — keyed by
+    `(speciesId, recordingId, order)`, exactly as the store keys them — for the build to
+    label every stored syllable with its type, and to render the measured member sets,
+    without refitting anything.
+    """
+    return [
+        {
+            "speciesId": o.species_id,
+            "recordingId": o.recording_id,
+            "order": o.order,
+            "typeId": t.id,
+        }
+        for t in fitted
+        for o in t.members
+    ]
+
+
 def choose_k(
     observations: Sequence[SyllableObservation],
     floor: int = DEFAULT_TYPES,
@@ -1522,6 +1548,9 @@ def learn_species(
             for t in fitted
         ],
         "grammar": grammar,
+        # Not part of the document: `build_learned_inventory` pops this out and hands it
+        # to the caller, who writes it as the store's typing.json.
+        "typing": typing_rows(fitted),
         "observations": len(observations),
         "recordings": len({o.recording_id for o in observations}),
         # Recorded so the fitted tract is auditable as a claim about the bird rather than an
@@ -1572,6 +1601,7 @@ def build_learned_inventory(
     realism: "RealismTerm | None" = None,
     use_tube: bool = False,
     discovered: Sequence[dict[str, Any]] | None = None,
+    typing: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """A full inventory document in the schema of `data/inventory.json`.
 
@@ -1582,6 +1612,11 @@ def build_learned_inventory(
     `prior` is the previous fit's learned syllables, per species and keyed by id, so a refit
     keeps its ids rather than renumbering them. `previous_fit` builds it from a written
     inventory. Passing nothing means "this is the first fit", which renumbers.
+
+    `typing`, when given a list, is extended with one `{speciesId, recordingId, order,
+    typeId}` row per observation the fit assigned to a type (see `typing_rows`). It is a
+    statement about the store's observations rather than about this document, which is
+    why it travels separately and lands in the store's `typing.json`.
 
     `discovered` is `data/discovered-species.json` — the registry `harvest --discover` writes.
     **It is where the common name of a discovered bird lives, and not passing it is why every
@@ -1644,6 +1679,9 @@ def build_learned_inventory(
         )
         if learned is None:
             continue
+        rows = learned.pop("typing")
+        if typing is not None:
+            typing.extend(rows)
         base = known.get(species_id, {})
         syllable_ids = [s["id"] for s in learned["syllables"]]
         species_out.append(
