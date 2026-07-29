@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import errno
 import io
 import json
 import os
@@ -97,12 +98,40 @@ class Job:
 class Pipeline:
     """Holds the paths, the current job, and the lock that keeps runs serial."""
 
-    def __init__(self, store_path: Path, inventory_path: Path, learned_path: Path, out_path: Path):
+    def __init__(
+        self,
+        store_path: Path,
+        inventory_path: Path,
+        learned_path: Path,
+        out_path: Path,
+        critic_path: Path | None = None,
+        #: 0, because the realism term measured *worse* at every weight tried — see the note
+        #: on `cli.py`'s `--critic-weight`. The critic still earns its place through
+        #: `embed_typing`, which is a different use of the same network.
+        critic_weight: float = 0.0,
+        #: **On by default whenever a critic is actually present.** The learned embedding beat
+        #: the hand-written typing vector on every measure at once — species placement
+        #: 26.6 % -> 32.9 %, own-type 63.0 % -> 63.9 %, F0 error 5.4 % -> 3.1 %, cosine held
+        #: (docs/09 §9.7) — so making it opt-in would mean the interface defaulting to the
+        #: worse of two things it has in front of it. `learn` on the command line stays
+        #: explicit, because that is the surface where a measurement gets reproduced and the
+        #: flag should be visible in the shell history; this is the surface where it should
+        #: just do the better thing. `--no-embed-typing` turns it off.
+        embed_typing: bool = True,
+    ):
         self.store_path = Path(store_path)
         self.inventory_path = Path(inventory_path)
         self.discovered_path = Path(inventory_path).parent / harvest.DISCOVERED_NAME
         self.learned_path = Path(learned_path)
         self.out_path = Path(out_path)
+        # The learned critic, if one has been trained. Loaded per fit rather than held open,
+        # because `critic train` may have rewritten it since the server started — the whole
+        # point of the alternation in docs/09 §9.3 step 6 is that the critic keeps changing.
+        # None means every fit here uses the hand-written 28-d cosine, which is what happens
+        # on a machine with no torch (§9.4) or before anything has been trained.
+        self.critic_path = Path(critic_path) if critic_path else None
+        self.critic_weight = float(critic_weight)
+        self.embed_typing = bool(embed_typing)
         self.job: Job | None = None
         self._lock = threading.Lock()
 
@@ -111,20 +140,48 @@ class Pipeline:
     def status(self) -> dict[str, Any]:
         store: dict[str, Any] = {"exists": False}
         if (self.store_path / "state.json").exists():
-            s = harvest.HarvestStore(self.store_path)
+            # **Without the syllables.** The interface polls this every 1.5 s and the only
+            # thing it wanted from that file was a count, which `state.json` already carries.
+            # Parsing 26 MB of JSONL (and now 13-57 MB of patches) per poll took a status call
+            # to 1.3 s, which is over the 600 ms probe `vite-plugin-pipeline.ts` used to decide
+            # whether a server is up — so on a large store the plugin could never see a
+            # healthy server, concluded the port was free, and tried to spawn a second one
+            # that then failed to bind. The Learn tab's "not running" panel was the visible
+            # symptom and this was the cause.
+            s = harvest.HarvestStore(self.store_path, load_syllables=False)
             rep = s.representativeness()
             store = {
                 "exists": True,
                 "path": str(self.store_path),
                 "descriptors": len(s),
                 "descriptorsSeen": s.stream_n,
-                "syllables": len(s.syllables),
+                "syllables": s.syllable_count,
                 "recordings": len(s.recordings),
                 "species": sorted(s.strata),
                 "cap": s.cap,
                 "meanDrift": round(rep["meanDrift"], 4),
                 "stdRatio": round(rep["stdRatio"], 4),
             }
+
+        # Whether a learned critic is in play, so the Learn tab can say which objective the
+        # numbers next to each syllable were produced under. Read from the sidecar JSON rather
+        # than by loading the weights: this runs on every status poll, and importing torch to
+        # answer a status request would be absurd.
+        critic: dict[str, Any] = {"exists": False}
+        if self.critic_path is not None:
+            sidecar = self.critic_path.with_suffix(".json")
+            critic = {
+                "exists": self.critic_path.exists(),
+                "path": str(self.critic_path),
+                "weight": self.critic_weight,
+                "embedTyping": self.embed_typing,
+            }
+            if sidecar.exists():
+                try:
+                    blob = json.loads(sidecar.read_text(encoding="utf-8"))
+                    critic["report"] = blob.get("report", {})
+                except (OSError, json.JSONDecodeError):
+                    pass
 
         learned: dict[str, Any] = {"exists": False}
         if self.learned_path.exists():
@@ -189,8 +246,10 @@ class Pipeline:
         # before the bird has a voice at all.
         discovered: list[dict[str, Any]] = []
         if self.discovered_path.exists():
+            # Only `strata` is read below, so this skips the syllables too — it was a second
+            # full parse of the same 26 MB in the same request.
             store_obj = (
-                harvest.HarvestStore(self.store_path)
+                harvest.HarvestStore(self.store_path, load_syllables=False)
                 if (self.store_path / "state.json").exists()
                 else None
             )
@@ -225,6 +284,7 @@ class Pipeline:
             "ffmpeg": harvest.have_ffmpeg(),
             "store": store,
             "learned": learned,
+            "critic": critic,
             "built": built,
             "inventorySpecies": species,
             "discovered": discovered,
@@ -314,6 +374,22 @@ class Pipeline:
         from .cli import ensure_calibration
 
         inventory = load_inventory(self.inventory_path)
+
+        # Re-read the critic on every fit: `critic train` alternates with `learn`, so the
+        # right weights are whichever ones are on disk *now*. `load_critic` never raises —
+        # a missing file or a missing torch logs a line and returns None.
+        from .cli import learned_components, load_critic
+
+        # `critic_path` defaults to `out/critic.pt` and is simply absent until something has
+        # been trained, so this is the ordinary path rather than the exceptional one.
+        quietly = self.critic_path is not None and not self.critic_path.exists()
+        trained = None if quietly else load_critic(
+            str(self.critic_path) if self.critic_path else None
+        )
+        realism, embedder = learned_components(
+            trained, store.syllables, self.critic_weight, self.embed_typing
+        )
+
         document = learn.build_learned_inventory(
             store.syllables,
             inventory,
@@ -328,6 +404,10 @@ class Pipeline:
             # So a refit keeps the ids the last one used. Without this every pass renamed
             # every learned syllable and the galaxy's labels stopped meaning anything.
             prior=learn.previous_fit(self.learned_path),
+            embedder=embedder,
+            realism=realism,
+            # Where a discovered bird's common name is; see `build_learned_inventory`.
+            discovered=harvest.load_discovered(self.discovered_path),
         )
         if not document["species"]:
             raise RuntimeError("no species had enough observations to fit")
@@ -830,7 +910,14 @@ def serve(pipeline: Pipeline, port: int = DEFAULT_PORT) -> None:
                 return
             super().handle_error(request, client_address)
 
-    server = QuietServer((BIND_HOST, port), make_handler(pipeline))
+    try:
+        server = QuietServer((BIND_HOST, port), make_handler(pipeline))
+    except OSError as exc:
+        if exc.errno != errno.EADDRINUSE:
+            raise
+        harvest.log(diagnose_port(port))
+        raise SystemExit(2) from None
+
     harvest.log(f"birdy pipeline control on http://{BIND_HOST}:{port} (loopback only)")
     harvest.log("the app's Learn tab will pick this up automatically; ctrl-c to stop")
     try:
@@ -839,3 +926,118 @@ def serve(pipeline: Pipeline, port: int = DEFAULT_PORT) -> None:
         harvest.log("\nstopped")
     finally:
         server.server_close()
+
+
+def probe(port: int, timeout: float = 2.0) -> str:
+    """Classify whatever holds `port`: `free`, `healthy`, `silent`, or `foreign`.
+
+    The distinction that matters is **`silent`**. A process can hold the listening socket
+    without ever answering on it — suspended, wedged, or still importing numba — and from the
+    outside that is not the same failure as nothing being there, even though both make a
+    status request fail. The kernel completes the TCP handshake from the listen backlog, so
+    `connect` succeeds and only the *reply* is missing.
+    """
+    import http.client
+
+    try:
+        conn = http.client.HTTPConnection(BIND_HOST, port, timeout=timeout)
+        conn.connect()
+    except (ConnectionRefusedError, OSError):
+        return "free"
+    try:
+        conn.request("GET", "/api/status")
+        body = json.loads(conn.getresponse().read().decode("utf-8"))
+        return "healthy" if isinstance(body, dict) and "store" in body else "foreign"
+    except (TimeoutError, OSError, ValueError, json.JSONDecodeError):
+        # Connected, then nothing came back inside the timeout.
+        return "silent"
+    finally:
+        conn.close()
+
+
+def port_holder(port: int) -> str:
+    """`pid command` of whatever is listening on `port`, or "" if it cannot be determined.
+
+    Read from `/proc` rather than by shelling out to `ss` or `lsof`, so it works on a machine
+    that has neither and cannot fail in a way that matters — this only ever decorates an
+    error message.
+    """
+    try:
+        wanted = f"{port:04X}"
+        inodes: set[str] = set()
+        for name in ("tcp", "tcp6"):
+            path = Path("/proc/net") / name
+            if not path.exists():
+                continue
+            for line in path.read_text().splitlines()[1:]:
+                parts = line.split()
+                # local_address is host:port in hex; state 0A is LISTEN
+                if len(parts) > 9 and parts[1].endswith(":" + wanted) and parts[3] == "0A":
+                    inodes.add(parts[9])
+        if not inodes:
+            return ""
+        for proc in Path("/proc").iterdir():
+            if not proc.name.isdigit():
+                continue
+            try:
+                for fd in (proc / "fd").iterdir():
+                    target = os.readlink(fd)
+                    if target.startswith("socket:[") and target[8:-1] in inodes:
+                        cmd = (proc / "cmdline").read_bytes().replace(b"\0", b" ").decode()
+                        state = ""
+                        for row in (proc / "status").read_text().splitlines():
+                            if row.startswith("State:"):
+                                state = row.split(":", 1)[1].strip()
+                                break
+                        return f"pid {proc.name} [{state}] {cmd.strip()[:110]}"
+            except (PermissionError, FileNotFoundError, OSError):
+                continue
+    except (OSError, ValueError):
+        return ""
+    return ""
+
+
+def diagnose_port(port: int) -> str:
+    """Turn "address already in use" into something with a next step in it.
+
+    Worth the code because the bare `OSError` traceback is actively misleading here. The
+    failure that produced this function: a `serve` started in the background by an editor
+    session was left **suspended** (state `T`) when that session went away. It kept the
+    listening socket, so every later `serve` died with EADDRINUSE, while the app's status
+    probe timed out and the Learn tab showed its "not running" fallback — so the interface
+    said the server was absent and the terminal said it was already there, both correctly,
+    and neither said what to do.
+    """
+    state = probe(port)
+    holder = port_holder(port)
+    where = f"\n  holder: {holder}" if holder else ""
+
+    if state == "healthy":
+        return (
+            f"a birdy pipeline server is already running on {BIND_HOST}:{port}, so this one "
+            f"is not needed.{where}\n"
+            f"  The app's Learn tab is already talking to it. Use `--port` to run a second "
+            f"one on purpose."
+        )
+    if state == "silent":
+        return (
+            f"{BIND_HOST}:{port} is held by a process that accepts connections but never "
+            f"answers.{where}\n"
+            f"  That is why the Learn tab shows the pipeline as not running: its status "
+            f"request connects and then times out.\n"
+            f"  Most often this is a `serve` from an earlier session that was suspended or "
+            f"wedged. A stopped process ignores SIGTERM, so:\n"
+            f"      kill -CONT <pid> && kill <pid>      # or: kill -9 <pid>\n"
+            f"  then start this again. `--port` runs elsewhere if you would rather leave it."
+        )
+    if state == "foreign":
+        return (
+            f"{BIND_HOST}:{port} is held by something that is not a birdy pipeline "
+            f"server.{where}\n"
+            f"  Use `--port` to pick another, or stop that process."
+        )
+    return (
+        f"could not bind {BIND_HOST}:{port}, but nothing answers there either — the socket is "
+        f"probably in TIME_WAIT from a server that just exited.{where}\n"
+        f"  Wait a few seconds and try again, or use `--port`."
+    )

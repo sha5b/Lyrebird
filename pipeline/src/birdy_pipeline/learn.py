@@ -119,13 +119,30 @@ class SyllableObservation:
     # cannot say which of them the model caught. Optional, because stores harvested
     # before this field existed do not have it.
     descriptor: list[float] | None = None
+    #: `features.mel_patch` of this syllable: a (32, 23) band-limited log-mel grid, the
+    #: critic's entire view of it (docs/09 §9.3). Deliberately **not** JSON: 736 floats per
+    #: syllable would take `syllables.jsonl` from 26 MB to about 200 MB and make every load
+    #: a JSON-parse of a matrix. `HarvestStore` writes these to a `patches.f16` sidecar in
+    #: row order instead — 1.4 KB each, ~57 MB for a 40 k store, which is the cost docs/09
+    #: budgeted. `None` on any store harvested before this field existed, and every consumer
+    #: has to handle that: the critic is optional by construction (§9.4).
+    mel_patch: np.ndarray | None = field(default=None, repr=False, compare=False)
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        """JSON-safe fields only — `mel_patch` is persisted as a binary sidecar."""
+        d = asdict(self)
+        d.pop("mel_patch", None)
+        return d
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "SyllableObservation":
-        return cls(**{k: v for k, v in d.items() if k in cls.__dataclass_fields__})
+        return cls(
+            **{
+                k: v
+                for k, v in d.items()
+                if k in cls.__dataclass_fields__ and k != "mel_patch"
+            }
+        )
 
 
 def _frames(x: np.ndarray, frame: int, hop: int) -> np.ndarray:
@@ -392,10 +409,15 @@ def extract_syllables(
         harmonic = float(np.clip(above / (at + 1e-9), 0.0, 1.0))
         mean_flatness = float(np.mean(flatness)) if flatness.size else 0.0
         harmonics, noise_frac = measure_harmonics(seg, sample_rate)
-        path = features.mel_path(peak_normalise(seg), sample_rate=sample_rate)
+        normalised = peak_normalise(seg)
+        path = features.mel_path(normalised, sample_rate=sample_rate)
+        # The critic's patch, taken here and only here: this is the last moment the audio
+        # exists. `harvest.py` deletes the recording as soon as this function returns, and
+        # nothing downstream can recover a spectrogram from the parameters.
+        patch = features.mel_patch(normalised, sample_rate=sample_rate)
 
         start = s0 / sample_rate
-        own = features.descriptor(peak_normalise(seg), sample_rate)
+        own = features.descriptor(normalised, sample_rate)
         out.append(
             SyllableObservation(
                 species_id=species_id,
@@ -418,6 +440,7 @@ def extract_syllables(
                 harmonics=harmonics,
                 noise_frac=noise_frac,
                 mel_path=[round(float(v), 3) for v in path.ravel()],
+                mel_patch=patch.astype(np.float16),
                 descriptor=(
                     [round(float(v), 5) for v in own]
                     if own is not None and np.all(np.isfinite(own))
@@ -433,7 +456,13 @@ def extract_syllables(
 
 
 def _observation_vector(o: SyllableObservation) -> np.ndarray:
-    """What makes two syllables the same type: pitch shape, length, texture, rhythm."""
+    """What makes two syllables the same type: pitch shape, length, texture, rhythm.
+
+    Seven numbers with hand-chosen weights, and the weights (`* 6.0`, `* 3.0`) were guesses.
+    Everything downstream rests on this — the fitted repertoire, the measured grammar, the
+    galaxy's clusters — which is why docs/09 §9.2b wants it replaced by something learned.
+    It stays as the fallback, and as the baseline any learned basis has to beat.
+    """
     hz = np.asarray([p[1] for p in o.contour], dtype=np.float64)
     t = np.asarray([p[0] for p in o.contour], dtype=np.float64)
     at = np.interp([0.0, 0.5, 1.0], t, np.log2(np.maximum(hz, 50.0)))
@@ -446,6 +475,114 @@ def _observation_vector(o: SyllableObservation) -> np.ndarray:
             o.harmonic * 3.0,
         ]
     )
+
+
+#: A callable turning observations into the space types are clustered in. `None` means the
+#: seven hand-weighted numbers above; `critic.Critic.embed` composed with the patches is the
+#: learned alternative of docs/09 §9.2b use 1. Typed as a plain callable on purpose, so
+#: `learn.py` never imports torch and the critic stays an optional dependency (§9.4).
+Embedder = Callable[[Sequence[SyllableObservation]], np.ndarray]
+
+
+def typing_space(
+    observations: Sequence[SyllableObservation], embedder: Embedder | None = None
+) -> np.ndarray:
+    """The standardised matrix that `fit_types` and `choose_k` cluster in.
+
+    Both used to build this inline, and they have to agree: `choose_k` picking k in one space
+    while `fit_types` clusters in another would make the silhouette that chose k a statement
+    about a different geometry. One function, called by both.
+    """
+    if embedder is not None:
+        x = np.asarray(embedder(observations), dtype=np.float64)
+        if x.ndim != 2 or x.shape[0] != len(observations):
+            raise ValueError(
+                f"embedder returned {x.shape} for {len(observations)} observations; "
+                f"expected ({len(observations)}, d)"
+            )
+    else:
+        x = np.stack([_observation_vector(o) for o in observations])
+    return (x - x.mean(axis=0)) / np.maximum(x.std(axis=0), 1e-6)
+
+
+def critic_embedder(critic: Any, fallback_ok: bool = True) -> Embedder:
+    """Wrap a trained critic as an `Embedder` over harvested observations.
+
+    **This is the part of docs/09 that worked.** Swapping `_observation_vector`'s seven
+    hand-weighted numbers for the critic's 32-d embedding, changing nothing else, moved species
+    placement 26.6 % -> 32.9 %, own-type placement 63.0 % -> 63.9 % and median F0 error
+    5.4 % -> 3.1 %, with the guardrail cosine held at 0.755 against 0.762 (docs/09 §9.7).
+    Nothing regressed. The plan expected this to be the easy half and the realism objective to
+    be the substance; it is the other way round.
+
+    Observations with no patch cannot be embedded at all. Rather than drop them — which would
+    silently shrink a species' repertoire and break the alignment between `observations` and
+    the labels `learn_grammar` needs — they are given the mean embedding, which puts them at
+    the centre of the space and lets KMeans assign them to whichever type is nearest overall.
+    That is the honest behaviour for "no evidence", and `learn_species` reports how many.
+    """
+
+    def embed(observations: Sequence[SyllableObservation]) -> np.ndarray:
+        have = [i for i, o in enumerate(observations) if o.mel_patch is not None]
+        if not have:
+            raise ValueError("no observation carries a mel_patch — cannot embed")
+        if len(have) < len(observations) and not fallback_ok:
+            raise ValueError(
+                f"only {len(have)} of {len(observations)} observations carry a mel_patch"
+            )
+        patches = np.stack([
+            np.asarray(observations[i].mel_patch, dtype=np.float32) for i in have
+        ])
+        z = np.asarray(critic.embed(patches), dtype=np.float64)
+        out = np.repeat(z.mean(axis=0, keepdims=True), len(observations), axis=0)
+        out[have] = z
+        return out
+
+    return embed
+
+
+class RealismTerm:
+    """The critic's realism logit, blended into `_score` as docs/09 §9.3 step 5 specifies.
+
+    `score = (1 - w) * cosine + w * realism`. **Keeping the cosine term is a guardrail, not
+    politeness**: it is a metric the critic cannot game, so a fit that improves the blend
+    while collapsing the cosine is visibly cheating rather than invisibly cheating. At `w = 0`
+    this class is a no-op and the objective is bit-identical to the one that shipped before it
+    existed.
+
+    **The sweep was run and it refuted the idea. `w = 0` is the default and should stay there.**
+    Measured on `out/harvest-gan` with the typing held fixed (docs/09 §9.7), every metric falls
+    monotonically as `w` rises — species placement 26.6 / 27.2 / 23.7 / 17.3 % at
+    `w = 0 / 0.25 / 0.5 / 1.0`, with the guardrail cosine going 0.762 / 0.686 / 0.655 / 0.335.
+    The collapse at `w = 1` is precisely the failure §9.5 listed as "the fit games the critic",
+    and the retained cosine is the only reason it was visible rather than a silent success.
+
+    This is not a critic that failed to train: the same network reads AUC 0.990 telling real
+    recordings from our resyntheses *on species it never saw*. Being able to separate two
+    distributions is not the same as having a gradient that points from one to the other, and
+    coordinate descent needs the second. The class is kept because the sweep should be
+    reproducible and because the same critic earns its place elsewhere — see `critic_embedder`,
+    which is a clean win on the same store.
+
+    The critic is duck-typed (`realism_unit`), so nothing here imports torch.
+    """
+
+    def __init__(self, critic: Any, weight: float, sample_rate: int = features.SAMPLE_RATE):
+        self.critic = critic
+        self.weight = float(np.clip(weight, 0.0, 1.0))
+        self.sample_rate = sample_rate
+        self.calls = 0
+
+    def blend(self, cosine: float, audio: np.ndarray) -> float:
+        if self.weight <= 0.0 or self.critic is None:
+            return cosine
+        patch = features.mel_patch(audio, sample_rate=self.sample_rate)
+        self.calls += 1
+        # `realism_unit` and not `realism`: the raw logit is unbounded and the cosine lives in
+        # [-1, 1], so mixing them directly would let the weight mean something different at
+        # every point on the surface.
+        realism = float(np.asarray(self.critic.realism_unit(patch)).ravel()[0])
+        return (1.0 - self.weight) * cosine + self.weight * realism
 
 
 def _median_contour(members: Sequence[SyllableObservation]) -> list[list[float]]:
@@ -490,14 +627,19 @@ def fit_types(
     k: int,
     seed: int = 0,
     previous: dict[str, dict[str, Any]] | None = None,
+    embedder: Embedder | None = None,
 ) -> list[LearnedType]:
     """Cluster one species' observations and take the median of each cluster.
 
     `previous` is the species' fitted syllables from the last run, keyed by id, so a refit
     can inherit its ids instead of renumbering — see `assign_ids`.
+
+    `embedder` chooses the space the clustering happens in: `None` for the seven hand-weighted
+    numbers of `_observation_vector`, or a learned one from `critic_embedder`. The *members* of
+    a type change with the space, so the median contour, duration and timbre all change with
+    it too — this parameter decides what a "syllable type" means.
     """
-    x = np.stack([_observation_vector(o) for o in observations])
-    x = (x - x.mean(axis=0)) / np.maximum(x.std(axis=0), 1e-6)
+    x = typing_space(observations, embedder)
     k = max(1, min(k, len(observations)))
     labels = (
         KMeans(n_clusters=k, n_init=10, random_state=seed).fit(x).labels_
@@ -710,8 +852,15 @@ def _score(
     calibration: Calibration | None,
     frame: tuple[np.ndarray, np.ndarray] | None,
     sample_rate: int,
+    realism: "RealismTerm | None" = None,
 ) -> float:
-    """Cosine between this syllable's resynthesis and the real audio it stands for."""
+    """How good this syllable's resynthesis is: the 28-d cosine, optionally blended.
+
+    Without `realism` this is exactly what it always was — the cosine between the resynthesis
+    and the real audio the type stands for. With it, the learned critic gets a share `w` of
+    the objective (docs/09 §9.3 step 5). The cosine never goes away entirely, so there is
+    always one term the critic cannot game.
+    """
     audio = peak_normalise(
         render_syllable(syllable, sample_rate=sample_rate, calibration=calibration)
     )
@@ -720,7 +869,8 @@ def _score(
         return -1.0
     if frame is not None:
         d = features.standardise(d, frame[0], frame[1])
-    return float(_unit(d) @ reference)
+    cosine = float(_unit(d) @ reference)
+    return cosine if realism is None else realism.blend(cosine, audio)
 
 
 #: What the search may move, and to where. The pitch *contour* is deliberately absent:
@@ -887,6 +1037,7 @@ def fit_species_tube(
     frame: tuple[np.ndarray, np.ndarray] | None,
     f1_hz: float,
     sample_rate: int = features.SAMPLE_RATE,
+    realism: "RealismTerm | None" = None,
 ) -> tuple[float, float]:
     """One stopped-tube waveguide for the whole bird: returns `(length_cm, r)` or `(0, 0)`.
 
@@ -932,7 +1083,7 @@ def fit_species_tube(
             else:
                 syl.pop("tube", None)
                 syl.pop("formants", None)
-            total += _score(syl, species_ref, calibration, frame, sample_rate)
+            total += _score(syl, species_ref, calibration, frame, sample_rate, realism)
         return total / len(idx)
 
     best_len, best_r = 0.0, 0.0
@@ -953,6 +1104,7 @@ def fit_species_trachea(
     frame: tuple[np.ndarray, np.ndarray] | None,
     f1_hz: float,
     sample_rate: int = features.SAMPLE_RATE,
+    realism: "RealismTerm | None" = None,
 ) -> tuple[float, float]:
     """One absolute tracheal comb for the whole bird. Returns `(f1_hz, gain)`, or `(0, 0)`.
 
@@ -995,7 +1147,7 @@ def fit_species_trachea(
                 syl["formants"] = comb
             else:
                 syl.pop("formants", None)
-            total += _score(syl, real[i], calibration, frame, sample_rate)
+            total += _score(syl, real[i], calibration, frame, sample_rate, realism)
         return total / len(idx)
 
     best_gain = 0.0
@@ -1014,6 +1166,7 @@ def invert_gestures(
     frame: tuple[np.ndarray, np.ndarray] | None,
     sample_rate: int = features.SAMPLE_RATE,
     passes: int = INVERT_PASSES,
+    realism: "RealismTerm | None" = None,
 ) -> tuple[float, float]:
     """Search the fitted syllable towards the audio it was fitted to. Returns (before, after).
 
@@ -1031,7 +1184,7 @@ def invert_gestures(
     the measured values and only ever moves on an improvement, so the worst case is that
     it stays exactly where the median put it.
     """
-    before = _score(t.syllable, reference, calibration, frame, sample_rate)
+    before = _score(t.syllable, reference, calibration, frame, sample_rate, realism)
     best = before
     for _ in range(max(1, passes)):
         improved = False
@@ -1041,7 +1194,7 @@ def invert_gestures(
                 if value == current:
                     continue
                 trial = _with(t.syllable, key, value)
-                score = _score(trial, reference, calibration, frame, sample_rate)
+                score = _score(trial, reference, calibration, frame, sample_rate, realism)
                 if score > best + 1.0e-4:
                     best = score
                     t.syllable = trial
@@ -1108,6 +1261,7 @@ def choose_k(
     seed: int = 0,
     verbose: bool = False,
     species_id: str = "",
+    embedder: Embedder | None = None,
 ) -> int:
     """Pick the number of types by silhouette over a sweep, not by a flag or by corpus size.
 
@@ -1135,8 +1289,7 @@ def choose_k(
     candidates.append(ceiling)
     candidates = sorted(set(candidates))
 
-    x = np.stack([_observation_vector(o) for o in observations])
-    x = (x - x.mean(axis=0)) / np.maximum(x.std(axis=0), 1e-6)
+    x = typing_space(observations, embedder)
     rng = np.random.default_rng(seed)
     sample = x if n <= 2000 else x[rng.choice(n, size=2000, replace=False)]
 
@@ -1169,8 +1322,23 @@ def learn_species(
     frame: tuple[np.ndarray, np.ndarray] | None = None,
     invert: bool = True,
     previous: dict[str, dict[str, Any]] | None = None,
+    embedder: Embedder | None = None,
+    realism: "RealismTerm | None" = None,
+    use_tube: bool = False,
 ) -> dict[str, Any] | None:
-    """Fitted syllables + a measured grammar for one species, or None if too little data."""
+    """Fitted syllables + a measured grammar for one species, or None if too little data.
+
+    `embedder` and `realism` are the two halves of docs/09 §9.2b/§9.3 and they are independent:
+    the first changes what a *type* is, the second changes what *close* means. Both default to
+    off, so a run that passes neither is bit-identical to the fit that shipped before the critic
+    existed — which is what makes the comparison in the plan's results table meaningful.
+
+    `use_tube` re-enables the waveguide tract. It is written, tested, and gated off because the
+    28-d objective rejected it (§9.1 result 5). docs/09 calls it "the cleanest available test of
+    whether the new objective is actually better", so it is a flag here rather than a constant:
+    the waveguide is known to be structurally right, and an objective that still rejects it is
+    not fixed.
+    """
     if len(observations) < MIN_OBSERVATIONS:
         if verbose:
             log(f"  {species_id:26} {len(observations)} observations — below the "
@@ -1193,8 +1361,16 @@ def learn_species(
     # That is a statement about the recordings rather than about the corpus size, it cannot
     # be gamed by harvesting more of the same call, and `--types` becomes the floor of the
     # sweep rather than its answer.
-    k = choose_k(observations, floor=types, seed=seed, verbose=verbose, species_id=species_id)
-    fitted = fit_types(observations, k, seed=seed, previous=previous)
+    #
+    # `embedder` changes the space this silhouette is computed in. That is the substance of
+    # docs/09 §9.2b use 1: the plan's own expectation is that the silhouette "becomes
+    # meaningful rather than a proxy fitted to guessed weights", so the k it picks is expected
+    # to move — and the fitted repertoire moves with it.
+    k = choose_k(
+        observations, floor=types, seed=seed, verbose=verbose, species_id=species_id,
+        embedder=embedder,
+    )
+    fitted = fit_types(observations, k, seed=seed, previous=previous, embedder=embedder)
 
     index = {id(o): i for i, o in enumerate(observations)}
     type_of = {index[id(o)]: t.id for t in fitted for o in t.members}
@@ -1224,11 +1400,28 @@ def learn_species(
         measured_f1 = measure_trachea_f1(observations)
         # The waveguide first: it is the same trachea, modelled as a tube rather than as a
         # parallel bank, and it replaces the f0-tracking band instead of sitting beside it.
-        # DISABLED pending a better objective — see the note on `fit_species_tube`. The
-        # waveguide is mechanically right and wins in isolation, but scored against the 28-d
-        # descriptor over 22 species it costs more than it buys, and shipping it would be a
-        # measured regression. Set `use_tube=True` to re-enable once the objective improves.
+        #
+        # Off by default, and the reason is a measurement rather than a doubt: the waveguide is
+        # mechanically right (32x the spectral freedom against 1.3x for the tracking band) and
+        # wins in isolation, but over 22 species of `out/harvest` it cost more than it bought,
+        # so shipping it unconditionally would have been a measured regression (docs/09 §9.1
+        # result 5).
+        #
+        # **That diagnosis has since been revised, and the revision is why this is a flag and
+        # not a deletion.** §9.1 blamed the objective: a structurally better tract, scored by a
+        # weak metric, loses. Re-measured on `out/harvest-gan` (docs/09 §9.7) the waveguide
+        # *wins* — +3.5 points of species placement with the hand-written typing vector and
+        # +4.1 with the learned embedding, reaching 37.0 % together with it. What had been
+        # rejecting it was not the objective but the **typing**: a tract fixed for the whole
+        # bird cannot match a per-type reference that is itself a blend of several different
+        # sounds, which is what seven hand-weighted numbers were producing. It still costs
+        # cosine (0.755 -> 0.706), and it has not been confirmed on a 40 k store, so it stays
+        # opt-in until it is.
         tube_len, tube_r = (0.0, 0.0)
+        if use_tube:
+            tube_len, tube_r = fit_species_tube(
+                fitted, real, calibration, frame, measured_f1, realism=realism
+            )
         if tube_r > 0.0:
             for t in fitted:
                 t.syllable["tube"] = [round(tube_len, 3), tube_r]
@@ -1239,7 +1432,7 @@ def learn_species(
             trachea_f1, trachea_gain = measured_f1, 1.0
         else:
             trachea_f1, trachea_gain = fit_species_trachea(
-                fitted, real, calibration, frame, measured_f1
+                fitted, real, calibration, frame, measured_f1, realism=realism
             )
         if trachea_gain > 0.0:
             comb = [
@@ -1261,8 +1454,16 @@ def learn_species(
         # Search first, then measure: the reported cosine has to describe the syllable
         # that ships, not the median it started from.
         if invert and real[i] is not None:
-            before, after = invert_gestures(t, real[i], calibration, frame)
+            before, after = invert_gestures(
+                t, real[i], calibration, frame, realism=realism
+            )
             gains.append(after - before)
+        # **Measured with the pure cosine, always — never with the blend.** This is the other
+        # half of the guardrail: the search may optimise a blended objective, but the number
+        # that ships next to every learned syllable, and the number docs/09's results table
+        # compares against, is the 28-d cosine the critic has no access to. A rise in
+        # placement with the cosine collapsing is the signature of a gamed critic, and it is
+        # only visible if the report keeps measuring the thing the critic cannot touch.
         z = render_and_measure(t, calibration, frame)
         if z is None or real[i] is None:
             continue
@@ -1367,6 +1568,10 @@ def build_learned_inventory(
     should_stop: Callable[[], bool] | None = None,
     invert: bool = True,
     prior: dict[str, dict[str, dict[str, Any]]] | None = None,
+    embedder: Embedder | None = None,
+    realism: "RealismTerm | None" = None,
+    use_tube: bool = False,
+    discovered: Sequence[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """A full inventory document in the schema of `data/inventory.json`.
 
@@ -1377,6 +1582,16 @@ def build_learned_inventory(
     `prior` is the previous fit's learned syllables, per species and keyed by id, so a refit
     keeps its ids rather than renumbering them. `previous_fit` builds it from a written
     inventory. Passing nothing means "this is the first fit", which renumbers.
+
+    `discovered` is `data/discovered-species.json` — the registry `harvest --discover` writes.
+    **It is where the common name of a discovered bird lives, and not passing it is why every
+    one of them was called by its own id.** `inventory` is the authored file, so a species
+    nobody has written about is deliberately absent from it; the fallback below then had
+    nothing to fall back to and wrote `common: "zosterops_simplex"` and `scientific: ""`.
+    Fourteen of the shipped corpus's twenty-six birds were named that way, in the species
+    dropdown, the island headings, every cluster tag and the history strip — all of which read
+    `common` and were correct to. Xeno-Canto had already told us the bird was Swinhoe's
+    White-eye and the answer was on disk the whole time.
     """
     grouped: dict[str, list[SyllableObservation]] = defaultdict(list)
     for o in observations:
@@ -1389,7 +1604,31 @@ def build_learned_inventory(
         log("no per-syllable descriptors in the store — the resynthesis cosine will be "
             "taken raw, where it barely separates one call from another")
 
-    known = {sp["id"]: sp for sp in inventory.get("species", [])}
+    if verbose and (embedder is not None or realism is not None):
+        with_patch = sum(1 for o in observations if o.mel_patch is not None)
+        log(
+            f"learned components active: "
+            + ", ".join(
+                filter(None, [
+                    "embedding typing" if embedder is not None else "",
+                    f"realism w={realism.weight:.2f}" if realism is not None else "",
+                    "waveguide tract" if use_tube else "",
+                ])
+            )
+            + f" — {with_patch}/{len(observations)} observations carry a mel_patch"
+        )
+        if embedder is not None and with_patch < len(observations):
+            log(
+                f"  {len(observations) - with_patch} observations have no patch and will be "
+                f"placed at the centre of the embedding, not dropped — see `critic_embedder`"
+            )
+
+    # The authored inventory wins wherever both know a bird — it is the file a person edited —
+    # and the discovery registry supplies the rest.
+    known: dict[str, dict[str, Any]] = {
+        e["id"]: e for e in (discovered or []) if e.get("id")
+    }
+    known.update({sp["id"]: sp for sp in inventory.get("species", [])})
     species_out: list[dict[str, Any]] = []
     for species_id in sorted(grouped, key=lambda s: -len(grouped[s])):
         # One species is the unit of work here, as one recording is in `harvest`: the
@@ -1401,6 +1640,7 @@ def build_learned_inventory(
             species_id, grouped[species_id], descriptors, calibration,
             types=types, seed=seed, verbose=verbose, frame=frame, invert=invert,
             previous=(prior or {}).get(species_id),
+            embedder=embedder, realism=realism, use_tube=use_tube,
         )
         if learned is None:
             continue
@@ -1409,9 +1649,12 @@ def build_learned_inventory(
         species_out.append(
             {
                 "id": species_id,
-                "common": base.get("common", species_id),
-                "scientific": base.get("scientific", ""),
-                "bank": base.get("bank", "learned"),
+                # `or` rather than a default: an entry that carries the key with an empty
+                # value is the same absence as not carrying it, and it happens — a
+                # Xeno-Canto record with no English name harvests as `"common": ""`.
+                "common": base.get("common") or species_id,
+                "scientific": base.get("scientific") or "",
+                "bank": base.get("bank") or "learned",
                 "summary": (
                     f"Learned from {learned['recordings']} field recordings: "
                     f"{len(syllable_ids)} syllable types fitted from "
@@ -1534,3 +1777,137 @@ def merge_learned_inventory(base: dict[str, Any], learned: dict[str, Any]) -> di
 def write_learned_inventory(path: Path, document: dict[str, Any]) -> None:
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     Path(path).write_text(json.dumps(document, indent=1), encoding="utf-8")
+
+
+# --- self-test ---------------------------------------------------------------------
+
+
+def self_test(verbose: bool = True) -> None:
+    """Check the learned-critic plumbing of docs/09 without needing torch.
+
+    The critic is duck-typed everywhere it is used (`embed`, `realism_unit`), so a stub with
+    a known answer tests every wire: whether the typing space is really the one that changed,
+    whether `w = 0` is exactly the old objective, and whether an observation with no patch is
+    handled rather than silently dropped. Those are the three ways this integration could be
+    wrong while still running.
+    """
+
+    def observation(hz: float, dur: float, patch: bool = True, **kw: Any) -> SyllableObservation:
+        return SyllableObservation(
+            species_id=kw.pop("species_id", "test_bird"),
+            recording_id=kw.pop("recording_id", "r0"),
+            order=kw.pop("order", 0),
+            start=0.0,
+            dur=dur,
+            level=0.9,
+            attack=0.006,
+            hold=True,
+            contour=[[0.0, hz], [1.0, hz * 1.1]],
+            am=0.0,
+            am_depth=0.0,
+            vib_rate=0.0,
+            vib_depth=0.0,
+            harmonic=0.2,
+            timbre="pure",
+            flatness=0.05,
+            gap_before=0.05,
+            mel_patch=(
+                np.full(features.PATCH_SHAPE, hz / 1000.0, dtype=np.float16) if patch else None
+            ),
+            descriptor=[0.0] * features.DIM,
+            **kw,
+        )
+
+    observations = [observation(2000.0 + 500 * i, 0.05 + 0.01 * i) for i in range(6)]
+
+    # 1. With no embedder, `typing_space` must be exactly the standardised stack of
+    #    `_observation_vector` — the computation `fit_types` and `choose_k` used to inline.
+    #    If this drifts, every previously fitted repertoire silently stops being reproducible.
+    manual = np.stack([_observation_vector(o) for o in observations])
+    manual = (manual - manual.mean(axis=0)) / np.maximum(manual.std(axis=0), 1e-6)
+    assert np.array_equal(typing_space(observations), manual), "typing_space changed the default"
+
+    # 2. An embedder must actually be used, and a badly shaped one must be caught rather than
+    #    broadcast into nonsense.
+    space = typing_space(observations, lambda obs: np.arange(len(obs) * 4).reshape(len(obs), 4))
+    assert space.shape == (6, 4)
+    for bad in (lambda obs: np.zeros((len(obs) + 1, 4)), lambda obs: np.zeros(len(obs))):
+        try:
+            typing_space(observations, bad)
+        except ValueError:
+            pass
+        else:  # pragma: no cover
+            raise AssertionError("typing_space accepted an embedder of the wrong shape")
+
+    # 3. `critic_embedder` must keep row alignment and place a patch-less observation at the
+    #    centre rather than dropping it — dropping would desynchronise `observations` from the
+    #    labels `learn_grammar` indexes by position, and silently shrink the repertoire.
+    class StubCritic:
+        """Embeds a patch as (mean, first value, 0...); realism is minus the patch mean."""
+
+        def embed(self, patches: np.ndarray) -> np.ndarray:
+            p = np.asarray(patches, dtype=np.float64)
+            out = np.zeros((p.shape[0], 4))
+            out[:, 0] = p.mean(axis=(1, 2))
+            out[:, 1] = p[:, 0, 0]
+            return out
+
+        def realism_unit(self, patches: np.ndarray) -> np.ndarray:
+            p = np.atleast_3d(np.asarray(patches, dtype=np.float64))
+            return -p.mean(axis=(1, 2))
+
+    stub = StubCritic()
+    mixed = [*observations[:4], observation(9000.0, 0.09, patch=False), *observations[4:]]
+    z = critic_embedder(stub)(mixed)
+    assert z.shape == (len(mixed), 4), f"embedder lost rows: {z.shape}"
+    assert np.allclose(z[4], z[[0, 1, 2, 3, 5, 6]].mean(axis=0)), (
+        "a patch-less observation must land at the mean embedding"
+    )
+    assert np.isclose(z[0, 0], 2.0), "embeddings are misaligned with their observations"
+
+    # 4. **`w = 0` must be bit-identical to the objective that shipped before the critic.**
+    #    This is what makes docs/09's before/after table a comparison rather than two
+    #    unrelated runs.
+    audio = np.sin(2 * np.pi * 3000.0 * np.arange(4096) / features.SAMPLE_RATE)
+    assert RealismTerm(stub, 0.0).blend(0.42, audio) == 0.42
+    assert RealismTerm(None, 0.9).blend(0.42, audio) == 0.42, "no critic must be a no-op"
+
+    # 5. ...and `w = 1` must be exactly the critic, with the cosine gone.
+    patch = features.mel_patch(audio)
+    expected = float(np.asarray(stub.realism_unit(patch)).ravel()[0])
+    assert np.isclose(RealismTerm(stub, 1.0).blend(0.42, audio), expected)
+    # a middling weight blends linearly, and clipping keeps w in range
+    half = RealismTerm(stub, 0.5).blend(0.42, audio)
+    assert np.isclose(half, 0.5 * 0.42 + 0.5 * expected)
+    assert RealismTerm(stub, 5.0).weight == 1.0 and RealismTerm(stub, -1.0).weight == 0.0
+
+    # 6. `_score` itself: passing no realism term must leave it exactly the cosine.
+    syllable = {"id": "T", "dur": 0.06, "level": 0.9, "timbre": "pure",
+                "contour": [[0.0, 3000.0], [1.0, 3200.0]], "attack": 0.006, "hold": True,
+                "harmonic": 0.2}
+    reference = _unit(np.ones(features.DIM))
+    plain = _score(syllable, reference, None, None, features.SAMPLE_RATE)
+    assert plain == _score(syllable, reference, None, None, features.SAMPLE_RATE, None)
+    assert plain == _score(syllable, reference, None, None, features.SAMPLE_RATE,
+                           RealismTerm(stub, 0.0))
+    blended = _score(syllable, reference, None, None, features.SAMPLE_RATE,
+                     RealismTerm(stub, 1.0))
+    assert blended != plain, "a w=1 realism term must change the score"
+
+    # 7. Patches must survive `to_dict` being JSON-serialisable — they go to a binary sidecar,
+    #    and an ndarray left in the dict would make `harvest.HarvestStore.save` raise.
+    d = observations[0].to_dict()
+    assert "mel_patch" not in d, "mel_patch must not reach syllables.jsonl"
+    json.dumps(d)
+    assert SyllableObservation.from_dict(d).mel_patch is None
+
+    if verbose:
+        print(
+            f"learn self-test ok: typing space unchanged by default, "
+            f"{len(mixed)} rows aligned through the embedder, "
+            f"w=0 exactly the old objective, w=1 exactly the critic"
+        )
+
+
+if __name__ == "__main__":  # pragma: no cover
+    self_test()

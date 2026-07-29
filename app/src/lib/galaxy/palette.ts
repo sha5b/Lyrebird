@@ -7,10 +7,9 @@
  * interface to choose between them. They were good palettes and they were solving a
  * problem this picture does not have. Twelve species cannot be told apart by hue on a
  * scatter where every pair appears together; under colour-vision deficiency about three
- * can. So the hues were never identifying, only orienting, and the arrangements now
- * orient far better than they did: `Bird` groups by species, `Meaning` puts the
- * unclaimed clusters on their own island. What colour was gesturing at, position says
- * outright.
+ * can. So the hues were never identifying, only orienting, and the arrangement now orients
+ * far better than they did: `Bird` gives every species an island of its own. What colour was
+ * gesturing at, position says outright.
  *
  * What is left is the distinction the view actually turns on, which was always a
  * *contrast* rather than a category:

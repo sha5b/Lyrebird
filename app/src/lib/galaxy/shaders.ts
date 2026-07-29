@@ -21,13 +21,17 @@
  * function into a behavioural class, and those classes collapse into how strong a claim
  * they make.
  *
+ * **Nothing draws with this at the moment.** The Meaning arrangement, which grouped the
+ * cloud by claim and gave the unclaimed clusters an island of their own, has been taken
+ * out; `functionClass` is still on every centroid in `centroids.json`, so the taxonomy and
+ * the reasoning below are kept intact rather than deleted with the view that used them.
+ *
  * **`none` is not a claim, and keeping it separate is the whole point.** It used to fall
  * into `structural`, which reads as "a song element carrying syntax" — a real assertion
  * about a bird. Most clusters are now fitted to field recordings and carry no documented
  * function at all, so that default silently turned "we do not know" into "we know this is
- * song structure" for two thirds of the galaxy. They are their own group now, in grey,
- * and the Meaning arrangement puts them in their own island where the size of the island
- * is the honest headline: this is how much of the corpus has no documented meaning.
+ * song structure" for two thirds of the galaxy. They are their own group now, which is what
+ * lets the share of the corpus that has no documented function be counted honestly.
  *
  * Four and not six because this is a scatter plot: only three categorical hues stay
  * separable under colour-vision deficiency (validated against the light surface — worst
@@ -41,11 +45,8 @@ export const CLAIM_NONE = 3;
 export const CLAIM_COUNT = 4;
 
 /**
- * What each claim island is called, and what its claim amounts to.
- *
- * The Meaning arrangement lays these out in order — see `orderedCentres` in `layouts.ts`
- * — so the run of islands is a gradient from the strongest claim to none at all, and the
- * hint is what tells you which end you are looking at.
+ * What each claim island is called, and what its claim amounts to. Ordered from the
+ * strongest claim to none at all.
  */
 export const CLAIM_LABELS: Record<number, string> = {
 	0: 'referential',
@@ -104,8 +105,6 @@ export function vertexShader(clusterCount: number): string {
 		attribute float aSeed;
 		attribute float aAct;
 		attribute float aSpecies;
-		/** Which of the four claim buckets this point's cluster is filed under. */
-		attribute float aClaim;
 		/** Which build this point joined in; see the point metadata's generation array. */
 		attribute float aBorn;
 		attribute vec3 aTarget;
@@ -120,17 +119,6 @@ export function vertexShader(clusterCount: number): string {
 		uniform float uHighlight;
 		uniform float uSizeScale;
 		uniform float uFocus;
-		/**
-		 * The claim bucket to hold at full strength, or -1 for all of them.
-		 *
-		 * **Selecting a claim island did nothing to the colour, and that was the bug.** The
-		 * heading framed the camera and left every point exactly as bright as before, so
-		 * "focus on social" and "look at social from closer up" were the same gesture. A
-		 * species selection had always dimmed the others; a claim selection had no way to,
-		 * because the shader could only compare against aSpecies. Both focuses are active
-		 * at once and a point has to satisfy each one that is set.
-		 */
-		uniform float uClaimFocus;
 		uniform float uFocusDim;
 		uniform float uMorph;
 		/** The newest generation, and how far its arrival has run (0..1). */
@@ -171,7 +159,13 @@ export function vertexShader(clusterCount: number): string {
 			// naively that truncates to index 0 and the whole of the unknown borrows the
 			// first knot's activation, which would light a scattered haze every time
 			// cluster 0 sounded and assert a membership the pipeline explicitly refused.
-			bool assigned = aCluster >= -0.5 + 1.0;
+			//
+			// The threshold is -0.5 and not 0.5. Written as "-0.5 + 1.0" it excluded
+			// **cluster 0** along with the unassigned: 48 points of the shipped corpus were
+			// drawn a third smaller, at half the ink, with their cluster's activation
+			// discarded and the accent withheld — flagged as "in no cluster" while sitting in
+			// the middle of one.
+			bool assigned = aCluster >= -0.5;
 			int index = assigned ? int(aCluster + 0.5) : 0;
 			vUnassigned = assigned ? 0.0 : 1.0;
 			float clusterAct = assigned ? uActivation[index] : 0.0;
@@ -186,11 +180,8 @@ export function vertexShader(clusterCount: number): string {
 			// could see the threads between its nodes without ever seeing *which* marks
 			// they joined. Its points now also grow and gain weight, so the bird reads as
 			// standing out of the crowd rather than the crowd receding from it.
-			bool speciesOk = uFocus < 0.0 || abs(uFocus - aSpecies) < 0.5;
-			bool claimOk = uClaimFocus < 0.0 || abs(uClaimFocus - aClaim) < 0.5;
-			bool anyFocus = uFocus >= 0.0 || uClaimFocus >= 0.0;
-			bool chosen = anyFocus && speciesOk && claimOk;
-			vFocus = (!anyFocus || chosen) ? 1.0 : uFocusDim;
+			bool chosen = uFocus >= 0.0 && abs(uFocus - aSpecies) < 0.5;
+			vFocus = (uFocus < 0.0 || chosen) ? 1.0 : uFocusDim;
 			vChosen = chosen ? 1.0 : 0.0;
 
 			// **The accent answers one question, and which question depends on the selection.**

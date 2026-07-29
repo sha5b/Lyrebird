@@ -92,11 +92,16 @@ in both. The scale is exponential over roughly a seven-fold range, and the camer
 reach was raised to match: at the far end the cloud is several times its own radius
 across, and a viewer that cannot back away from it turns the control into a wall.
 
-**Tempo** slows the whole aviary — the drift, the pulse, how long each syllable
-lasts and how often a bird starts. It stretches time and nothing else: pitch comes from
+**Tempo** slows the birds — how long each syllable lasts, how often one starts, and the
+per-point pulse that follows the sound. It stretches time and nothing else: pitch comes from
 a syllable's contour and length from its `dur`, so unlike a tape slowing down, a bird
 slowed here keeps its pitch and simply sings longer. Trill and vibrato rates are divided
 by the same factor, or a slowed call stops sounding like itself.
+
+It no longer touches the cloud's rotation, and it lives with Distance and Volume rather than
+under *Display*. Multiplying the drift by it made one control do two unrelated jobs: slowing
+the birds down to hear a call also froze the picture you were trying to read it in. *Rotate*
+is the control for the rotation.
 
 **What has been sung** runs along the bottom of the view, in the lane between the two
 panels: newest against the reading card and older ones extending left until they clip. A
@@ -247,6 +252,39 @@ uv run birdy-pipeline build --inventory ../data/learned-inventory.json \
                             --harvest-store out/harvest
 ```
 
+Two further commands learn *what a syllable is* from the ones already harvested, rather
+than deciding it by hand. They need `uv sync --extra critic` (PyTorch; the wheels are CUDA
+by default and CPU works too), and nothing they produce ever reaches the browser:
+
+```bash
+uv run birdy-pipeline critic train --store out/harvest-gan \
+                                   --inventory ../data/learned-inventory.json
+uv run birdy-pipeline learn --store out/harvest-gan --critic out/critic.pt --embed-typing
+uv run birdy-pipeline placement --store out/harvest-gan --inventory <the fit>
+```
+
+`critic train` trains one small CNN on log-mel patches of the harvested syllables, with
+three heads: real-versus-resynthesis, which bird it is, and whether two augmented views of
+one syllable land together. Its 32-d penultimate layer is a learned answer to "what makes
+two syllables the same type", replacing the seven hand-weighted numbers that decided it
+before. `--embed-typing` clusters in that embedding. `placement` scores a fitted inventory
+on whether each resynthesis lands nearest its own *species*, which is the number the
+resynthesis cosine cannot tell you.
+
+Measured twice, on a 9 041-syllable harvest of 25 species and a 39 993-syllable one of 13,
+learned typing moves species placement **26.6 % → 32.9 %** and **38.4 % → 51.7 %**
+respectively, both with the resynthesis cosine held and median F0 error improving. The same
+network's realism logit was also tried *as the objective the fit optimises*, which is what
+[`docs/09-learned-objective-plan.md`](docs/09-learned-objective-plan.md) set out to do, and it
+made every number worse at every weight on both stores — so `--critic-weight` defaults to 0.
+§9.7 and §9.8 of that document have the ablations, and why the negative result is the more
+useful half.
+
+The critic also answers "**is this a syllable I have not heard?**" — a distance in the
+embedding, thresholded so the false-positive rate is chosen rather than discovered
+(measured: 4.7 % against a requested 5 %). A syllable it flags is still labelled
+`unlabelled`: knowing a sound is new is not knowing what it means.
+
 `harvest` fetches, decodes, analyses and **deletes** each recording before the next one
 starts, keeping a species-stratified reservoir of 28-d descriptors capped at a size you
 choose. It also tracks statistics over every descriptor it discards, so it can tell you
@@ -363,6 +401,33 @@ code, so exposing it on a network would be handing out remote execution.
 
 The running app still needs no backend. This is a developer-facing process for driving
 the offline stage; the built site never talks to it.
+
+#### When the Learn tab says the pipeline is not running and you know it is
+
+The tab shows its "start `birdy-pipeline serve`" panel whenever a status request fails, and
+"failed" covers two different things. Both have been hit for real:
+
+- **Something holds the port but never answers.** A `serve` started in the background by an
+  editor session can be left *suspended* (process state `T`) when that session goes away. It
+  keeps the listening socket, so the kernel still completes the TCP handshake and the status
+  request connects and then waits forever — the tab reports the pipeline as absent while a new
+  `serve` fails with "address already in use". `serve` now diagnoses this instead of raising:
+  it names the holding pid and its state, and a stopped process needs
+  `kill -CONT <pid> && kill <pid>`, because it cannot act on SIGTERM while suspended. Starting
+  it with `setsid` keeps a dying parent session from suspending it in the first place.
+- **The status call was too slow to count as an answer.** It used to rebuild the whole harvest
+  store per request — a 26 MB JSON parse, 1.3 s on a 40 000-syllable store — which was over
+  the plugin's probe timeout, so on a large store a *healthy* server was never detected and
+  the plugin kept trying to spawn a second one. Status now reads the counts it needs from
+  `state.json` and skips the syllables (0.12 s), and the probe timeout matches the client's.
+
+The quick check either way — if this prints nothing, nothing is listening; if it prints a pid
+but the `curl` hangs or times out, it is the first case:
+
+```bash
+ss -tlnp | grep 8781
+curl -sS -m 5 http://127.0.0.1:8781/api/status | head -c 200
+```
 
 **A build re-places every point at once**, and there is no way around that: clustering,
 the projection and the per-point feature space are all computed over the whole corpus, so

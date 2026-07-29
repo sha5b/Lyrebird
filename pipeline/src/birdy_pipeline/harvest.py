@@ -220,15 +220,31 @@ class HarvestStore:
         cap: int = DEFAULT_CAP,
         seed: int = 0,
         syllable_cap: int = DEFAULT_SYLLABLE_CAP,
+        load_syllables: bool = True,
     ):
+        """`load_syllables=False` skips `syllables.jsonl` and `patches.f16`.
+
+        **For callers that only want to report how big the store is.** Those two files are
+        the whole weight of a store — 26 MB of JSONL and 13 MB of patches at 9 k syllables,
+        and about three times that at 40 k — while everything else here is under 2 MB. The
+        server's status endpoint was rebuilding a `HarvestStore` on *every poll*, which put a
+        1.3-second JSON parse behind a request the interface makes every 1.5 seconds; it only
+        ever read `len(self.syllables)`, and `state.json` records that count already.
+
+        `syllable_count` is the accessor that works either way. Anything that touches
+        `self.syllables` itself must load them.
+        """
         self.root = Path(root)
         self.cap = int(cap)
         self.syllable_cap = int(syllable_cap)
+        self.load_syllables = bool(load_syllables)
         self.rng = np.random.default_rng([seed, 0x8A2E])
         self.strata: dict[str, Stratum] = {}
         self.recordings: dict[str, dict[str, Any]] = {}
         # Kept in recording order. `learn` reads these; the galaxy does not.
         self.syllables: list[SyllableObservation] = []
+        #: Count from `state.json`, so it is available when the rows were not loaded.
+        self._recorded_syllable_count = 0
         # Mean descriptor per recording, so a learned syllable can be checked against
         # the acoustics it was fitted to without keeping any audio.
         self.recording_descriptors: dict[str, list[float]] = {}
@@ -256,13 +272,34 @@ class HarvestStore:
     def _syllables_path(self) -> Path:
         return self.root / "syllables.jsonl"
 
+    @property
+    def _patches_path(self) -> Path:
+        """The critic's log-mel patches, one row per syllable, in `syllables.jsonl` order.
+
+        A binary sidecar rather than a field in the JSONL because it is a matrix: 736
+        float16s per syllable is 1.4 KB here and about 7 KB as rounded JSON, and the JSONL
+        is parsed in full on every load. Row order is the only thing tying the two files
+        together, so `load` refuses a pair whose counts disagree rather than silently
+        misattributing every patch to the wrong syllable.
+
+        This is still a measurement and not a recording — log magnitudes, no phase, mean
+        centred (see `features.mel_patch`) — so the licensing property of §9.4 holds.
+        """
+        return self.root / "patches.f16"
+
+    @property
+    def syllable_count(self) -> int:
+        """How many syllable observations the store holds, loaded or not."""
+        return len(self.syllables) if self.load_syllables else self._recorded_syllable_count
+
     def load(self) -> None:
-        if self._syllables_path.exists():
+        if self.load_syllables and self._syllables_path.exists():
             self.syllables = [
                 SyllableObservation.from_dict(json.loads(line))
                 for line in self._syllables_path.read_text(encoding="utf-8").splitlines()
                 if line.strip()
             ]
+            self._load_patches()
         # Recordings that can never be fetched, and species where none of them can.
         #
         # `has()` only remembers *successes*, so a recording that 404s or is redacted was
@@ -280,10 +317,20 @@ class HarvestStore:
         if not self._state_path.exists():
             return
         state = json.loads(self._state_path.read_text(encoding="utf-8"))
+        shape = state.get("patchShape")
+        if shape is not None and tuple(shape) != features.PATCH_SHAPE:
+            raise RuntimeError(
+                f"{self.root} holds {tuple(shape)} patches but this build measures "
+                f"{features.PATCH_SHAPE}. A patch is only comparable with another taken by "
+                f"the same code, so mixing the two would train the critic on two different "
+                f"representations. Re-harvest into a fresh store, or check out the commit "
+                f"whose `features.PATCH_*` constants match."
+            )
         self.recordings = state.get("recordings", {})
         self.dead = dict(state.get("dead", {}))
         self.restricted = set(state.get("restricted", []))
         self.recording_descriptors = state.get("recordingDescriptors", {})
+        self._recorded_syllable_count = int(state.get("syllableObservations", 0))
         self.stream_n = int(state.get("streamCount", 0))
         self.stream_mean = np.asarray(state.get("streamMean", self.stream_mean), dtype=np.float64)
         self.stream_m2 = np.asarray(state.get("streamM2", self.stream_m2), dtype=np.float64)
@@ -308,7 +355,69 @@ class HarvestStore:
         for sid, n in seen_counts.items():
             self.strata.setdefault(sid, Stratum()).seen = int(n)
 
+    #: Rows whose first value is NaN mean "this syllable has no patch". float16 NaN is
+    #: representable and `features.mel_patch` can never produce one — it is the log of a
+    #: value floored at `BAND_FLOOR` — so this marks absence without a second file and
+    #: without confusing a missing patch for a silent one. It matters because a store
+    #: harvested before patches existed can still have new observations appended to it.
+    _PATCH_ABSENT = np.float16("nan")
+
+    def _load_patches(self) -> None:
+        if not self._patches_path.exists():
+            return
+        blob = self._patches_path.read_bytes()
+        # Byte length before element count: a file truncated mid-value is not a multiple of
+        # 2 either, and `np.frombuffer` would raise "buffer size must be a multiple of element
+        # size" — true, but it names neither the file nor the fix.
+        if len(blob) % (features.PATCH_DIM * 2) != 0:
+            raise RuntimeError(
+                f"{self._patches_path} is {len(blob)} bytes, which is not a whole number of "
+                f"{features.PATCH_SHAPE} float16 patches ({features.PATCH_DIM * 2} bytes "
+                f"each). It is truncated or was written by a build with different patch "
+                f"constants; delete it and re-harvest."
+            )
+        raw = np.frombuffer(blob, dtype="<f2")
+        if raw.size % features.PATCH_DIM != 0:
+            raise RuntimeError(
+                f"{self._patches_path} holds {raw.size} float16s, which is not a whole "
+                f"number of {features.PATCH_SHAPE} patches. It was written by a build with "
+                f"different patch constants; delete it and re-harvest."
+            )
+        rows = raw.reshape(-1, *features.PATCH_SHAPE)
+        if rows.shape[0] != len(self.syllables):
+            raise RuntimeError(
+                f"{self.root} is inconsistent: {rows.shape[0]} patches but "
+                f"{len(self.syllables)} syllable observations. Row order is the only thing "
+                f"pairing them, so this cannot be reconciled — delete "
+                f"{self._patches_path.name} and re-harvest to restore it."
+            )
+        for o, row in zip(self.syllables, rows):
+            o.mel_patch = None if np.isnan(row[0, 0]) else row
+
+    def _save_patches(self) -> None:
+        """Write the sidecar, or remove it when no observation carries a patch."""
+        if not any(o.mel_patch is not None for o in self.syllables):
+            self._patches_path.unlink(missing_ok=True)
+            return
+        absent = np.full(features.PATCH_SHAPE, self._PATCH_ABSENT, dtype="<f2")
+        stacked = np.stack([
+            absent if o.mel_patch is None else np.asarray(o.mel_patch, dtype="<f2")
+            for o in self.syllables
+        ])
+        self._patches_path.write_bytes(stacked.ravel(order="C").tobytes())
+
     def save(self) -> None:
+        # **A store opened without its syllables must never be written back.** `save` rewrites
+        # `syllables.jsonl` and `patches.f16` from the in-memory lists, which are empty here,
+        # so this would silently replace the most expensive thing in the repository with
+        # nothing — 40 000 observations gathered under xeno-canto's rate limits, of which
+        # there is one copy (docs/09 §9.4). Refuse loudly instead.
+        if not self.load_syllables:
+            raise RuntimeError(
+                f"refusing to save {self.root}: it was opened with load_syllables=False, so "
+                f"its {self._recorded_syllable_count} syllable observations are not in memory "
+                f"and saving would erase them. Re-open it with load_syllables=True to write."
+            )
         self.root.mkdir(parents=True, exist_ok=True)
         rows: list[np.ndarray] = []
         meta: list[dict[str, Any]] = []
@@ -331,12 +440,20 @@ class HarvestStore:
             + ("\n" if self.syllables else ""),
             encoding="utf-8",
         )
+        self._save_patches()
         self._state_path.write_text(
             json.dumps(
                 {
                     "cap": self.cap,
                     "retained": len(meta),
                     "syllableObservations": len(self.syllables),
+                    # Recorded so a store carries its own patch geometry: changing
+                    # `features.PATCH_*` invalidates every patch ever written, and this is
+                    # what lets `critic.py` say so instead of training on a reshaped mess.
+                    "patchShape": list(features.PATCH_SHAPE),
+                    "patchesWithData": sum(
+                        1 for o in self.syllables if o.mel_patch is not None
+                    ),
                     "recordingDescriptors": self.recording_descriptors,
                     "streamCount": self.stream_n,
                     "streamMean": [float(v) for v in self.stream_mean],
@@ -435,20 +552,60 @@ class HarvestStore:
         self.recordings[recording_id] = info
 
     def add_syllables(self, observations: Sequence[SyllableObservation]) -> int:
-        """Keep a recording's syllables whole, then trim the oldest recordings if over cap.
+        """Keep each recording's syllables whole, and trim **per species** when over cap.
 
         Unlike the descriptors, these cannot be sampled independently: `learn` counts
         transitions between consecutive syllables, and a reservoir would silently delete
-        the middle of every phrase and invent transitions that were never sung.
+        the middle of every phrase and invent transitions that were never sung. So whatever
+        goes has to go a whole recording at a time.
+
+        **Which recording, though, is the part that was wrong.** This used to drop the oldest
+        ones until the store fitted — and a harvest works through its species one at a time,
+        so "oldest" means "the species collected first". Growing `out/harvest-gan` from 9 k to
+        40 k syllables that way deleted **twelve of twenty-five species outright**, including
+        the two with the largest fitted repertoires, while `strata` still listed all
+        twenty-five because the descriptor reservoir trims per stratum and never had this
+        problem. The galaxy showed a bird the learning set no longer contained, and the
+        measurement taken on that store silently became a 13-species one.
+
+        So this mirrors `_rebalance`: repeatedly retire the oldest recording of whichever
+        species currently has the most syllables. That converges on an even split rather than
+        a chronological one, and because the victim is always the current largest, a species
+        cannot be emptied while another still has more than it.
         """
         self.syllables.extend(observations)
         if len(self.syllables) <= self.syllable_cap:
             return len(observations)
-        keep_from = len(self.syllables) - self.syllable_cap
-        boundary = self.syllables[keep_from].recording_id
-        while keep_from < len(self.syllables) and self.syllables[keep_from].recording_id == boundary:
-            keep_from += 1
-        self.syllables = self.syllables[keep_from:]
+
+        # recordings per species, in arrival order, with their syllable counts
+        recordings: dict[str, list[str]] = {}
+        per_recording: dict[tuple[str, str], int] = {}
+        per_species: dict[str, int] = {}
+        for o in self.syllables:
+            key = (o.species_id, o.recording_id)
+            if key not in per_recording:
+                per_recording[key] = 0
+                recordings.setdefault(o.species_id, []).append(o.recording_id)
+            per_recording[key] += 1
+            per_species[o.species_id] = per_species.get(o.species_id, 0) + 1
+
+        total = len(self.syllables)
+        dropped: set[tuple[str, str]] = set()
+        while total > self.syllable_cap:
+            available = [s for s, rids in recordings.items() if rids]
+            if not available:
+                break
+            victim = max(available, key=lambda s: per_species[s])
+            rid = recordings[victim].pop(0)
+            dropped.add((victim, rid))
+            total -= per_recording[(victim, rid)]
+            per_species[victim] -= per_recording[(victim, rid)]
+
+        if dropped:
+            self.syllables = [
+                o for o in self.syllables
+                if (o.species_id, o.recording_id) not in dropped
+            ]
         return len(observations)
 
     def descriptor_for(self, recording_id: str) -> np.ndarray | None:
@@ -1031,3 +1188,75 @@ def format_report(report: HarvestReport, store: HarvestStore) -> str:
         f"the store is {len(store) * features.DIM * 4 / 1e6:.2f} MB\n"
         f"{store.summary()}"
     )
+
+
+def self_test(verbose: bool = True) -> None:
+    """Check the two things about this store that fail *silently* when they break.
+
+    Both are cheap to assert and expensive to discover: a store that quietly drops species,
+    and a store that quietly writes back an empty syllable list. Neither raises on its own —
+    the first shows up as a fitted repertoire missing birds the galaxy still displays, and the
+    second as an erased corpus.
+    """
+    import tempfile
+
+    def obs(species: str, recording: str, order: int) -> SyllableObservation:
+        return SyllableObservation(
+            species_id=species, recording_id=recording, order=order, start=0.0, dur=0.05,
+            level=0.9, attack=0.006, hold=True, contour=[[0.0, 3000.0], [1.0, 3200.0]],
+            am=0.0, am_depth=0.0, vib_rate=0.0, vib_depth=0.0, harmonic=0.2,
+            timbre="pure", flatness=0.05, gap_before=0.0,
+        )
+
+    with tempfile.TemporaryDirectory() as tmp:
+        # --- the cap must trim per species, not chronologically ---
+        #
+        # A harvest works through its species one at a time, so a chronological trim drops
+        # whichever species came first. That is how a 25-species store became a 13-species one
+        # without saying anything; see `add_syllables`.
+        store = HarvestStore(Path(tmp) / "trim", syllable_cap=1000)
+        plan = [("sp_a", 12, 200), ("sp_b", 6, 100), ("sp_c", 3, 60), ("sp_d", 2, 30),
+                ("sp_e", 10, 150)]
+        for species, n_recordings, per in plan:
+            for r in range(n_recordings):
+                store.add_syllables(
+                    [obs(species, f"{species}-r{r}", i) for i in range(per)]
+                )
+
+        kept = {o.species_id for o in store.syllables}
+        assert kept == {p[0] for p in plan}, f"the cap deleted whole species: {kept}"
+        assert len(store.syllables) <= 1000, f"over cap: {len(store.syllables)}"
+
+        # Whole recordings only: `learn_grammar` counts transitions between consecutive
+        # syllables, so half a recording invents transitions that were never sung.
+        sizes: dict[str, int] = {}
+        for o in store.syllables:
+            sizes[o.recording_id] = sizes.get(o.recording_id, 0) + 1
+        expected = {f"{s}-r{r}": per for s, n, per in plan for r in range(n)}
+        for rid, n in sizes.items():
+            assert n == expected[rid], f"{rid} was split: kept {n} of {expected[rid]}"
+
+        # --- a store opened without its syllables must refuse to save ---
+        full = HarvestStore(Path(tmp) / "guard")
+        full.add_syllables([obs("sp_a", "sp_a-r0", i) for i in range(5)])
+        full.save()
+        light = HarvestStore(Path(tmp) / "guard", load_syllables=False)
+        assert light.syllable_count == 5, f"count not read from state.json: {light.syllable_count}"
+        assert not light.syllables, "load_syllables=False still loaded the rows"
+        try:
+            light.save()
+        except RuntimeError:
+            pass
+        else:  # pragma: no cover
+            raise AssertionError("a lightweight store saved, which would erase the corpus")
+        assert HarvestStore(Path(tmp) / "guard").syllable_count == 5, "the store was damaged"
+
+    if verbose:
+        print(
+            f"harvest self-test ok: cap trims per species ({len(plan)} survived), "
+            f"recordings stay whole, a lightweight store refuses to save"
+        )
+
+
+if __name__ == "__main__":  # pragma: no cover
+    self_test()

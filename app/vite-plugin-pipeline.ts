@@ -28,16 +28,62 @@ const PIPELINE_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'pip
 const DEFAULT_PORT = 8781;
 const START_TIMEOUT_MS = 20_000;
 
+/**
+ * Ceiling on the "is one already up?" probe.
+ *
+ * **600 ms was too tight, and being too tight here is not a slow probe but a wrong answer.**
+ * The status endpoint used to rebuild the harvest store per request, so on a 40 000-syllable
+ * store it answered in ~1.3 s: every probe timed out, the plugin concluded the port was free,
+ * and it spawned a second server that could not bind. The server side is fixed, but the
+ * margin belongs here too — this decides whether a *healthy* server is seen, and the cost of
+ * being generous is a few hundred milliseconds of dev startup on the one path where nothing
+ * is listening (which fails fast anyway, by connection refused rather than by timeout).
+ *
+ * Matches `REQUEST_TIMEOUT_MS` in `src/lib/data/pipeline.ts`: the client and this should not
+ * disagree about how long a status call may take.
+ */
+const PROBE_TIMEOUT_MS = 4000;
+
 /** True when something already answers `/api/status` on the port. */
 async function alreadyServing(port: number): Promise<boolean> {
 	try {
 		const res = await fetch(`http://127.0.0.1:${port}/api/status`, {
-			signal: AbortSignal.timeout(600)
+			signal: AbortSignal.timeout(PROBE_TIMEOUT_MS)
 		});
 		return res.ok;
 	} catch {
 		return false;
 	}
+}
+
+/**
+ * True when the port accepts a connection but does not answer in time.
+ *
+ * **"Nothing is listening" and "something is listening but wedged" need different messages,
+ * and `alreadyServing` returns false for both.** That conflation produced a genuinely
+ * baffling session: a `serve` left over from an earlier editor window sat suspended (state
+ * `T`), holding the socket. `alreadyServing` timed out, so this plugin concluded the port was
+ * free and spawned a replacement — which died on `EADDRINUSE`, because the suspended process
+ * still had it. The result was an interface reporting the pipeline as absent and a terminal
+ * reporting the address as taken, with nothing connecting the two.
+ *
+ * The distinction is cheap to make: the kernel completes the TCP handshake from the listen
+ * backlog whether or not the process is alive enough to read from it, so a raw connect
+ * succeeding while the HTTP request times out is exactly the wedged case.
+ */
+async function portIsSilent(port: number): Promise<boolean> {
+	const socket = await import('node:net');
+	return new Promise((resolve) => {
+		const probe = socket.createConnection({ host: '127.0.0.1', port });
+		const done = (answer: boolean) => {
+			probe.destroy();
+			resolve(answer);
+		};
+		probe.setTimeout(PROBE_TIMEOUT_MS);
+		probe.once('connect', () => done(true)); // connectable, yet /api/status did not reply
+		probe.once('error', () => done(false)); // refused: genuinely nothing there
+		probe.once('timeout', () => done(false));
+	});
 }
 
 export function birdyPipeline(): Plugin {
@@ -66,6 +112,23 @@ export function birdyPipeline(): Plugin {
 
 			if (await alreadyServing(port)) {
 				info(`already running on 127.0.0.1:${port}, leaving it alone`);
+				return;
+			}
+
+			// Spawning into an occupied port cannot succeed, so say what is wrong instead of
+			// producing a second, more confusing failure. See `portIsSilent`.
+			if (await portIsSilent(port)) {
+				warn(
+					`127.0.0.1:${port} is held by a process that accepts connections but never ` +
+						`answers — most likely a suspended or wedged \`birdy-pipeline serve\` from an ` +
+						`earlier session. The Learn tab will show the pipeline as not running until ` +
+						`it is cleared.`
+				);
+				warn(
+					`  find it with:  ss -tlnp | grep ${port}      ` +
+						`then:  kill -CONT <pid> && kill <pid>`
+				);
+				warn(`  or set BIRDY_PIPELINE_PORT to use a different port.`);
 				return;
 			}
 

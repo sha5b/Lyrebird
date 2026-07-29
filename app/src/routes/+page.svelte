@@ -17,14 +17,7 @@
 	import { createIndividual } from '$lib/audio/individual';
 	import { compilePhrase, improvise, type Phrase } from '$lib/lang/grammar';
 	import { citationsFor, confidenceLabel, type Reading } from '$lib/lang/translate';
-	import {
-		CLAIM_HINTS,
-		CLAIM_LABELS,
-		CLAIM_NONE,
-		CLAIM_OF_FUNCTION,
-		createSignal,
-		type VisualSignal
-	} from '$lib/galaxy/shaders';
+	import { createSignal, type VisualSignal } from '$lib/galaxy/shaders';
 	import { ACCENT, MONO_HOT } from '$lib/galaxy/palette';
 	import type { LayoutId } from '$lib/galaxy/layouts';
 	import { PipelineClient, type PipelineStatus } from '$lib/data/pipeline';
@@ -136,9 +129,9 @@
 	 * The island heading whose region the camera is holding, if any.
 	 *
 	 * An island heading names the only thing on screen at the scale a viewer navigates by —
-	 * a whole bird, or every call that claims the same kind of meaning — and until now it
-	 * was the one mark that did nothing when clicked. Reaching that region meant finding the
-	 * bird in a dropdown and trusting the island under the cursor was the same one.
+	 * a whole bird — and until now it was the one mark that did nothing when clicked.
+	 * Reaching that region meant finding the bird in a dropdown and trusting the island under
+	 * the cursor was the same one.
 	 *
 	 * Framing only. It deliberately does **not** select the bird, because selecting one
 	 * switches the arrangement to *Sound* (see the effect below) and the islands you just
@@ -147,42 +140,6 @@
 	 * control.
 	 */
 	let framedIsland = $state<{ key: string; label: string; members: number[] } | null>(null);
-	/**
-	 * Which claim bucket is held at full strength, or -1 for all of them. The shader dims the
-	 * rest exactly as it does for an unselected species — see `uClaimFocus`.
-	 */
-	let claimFocus = $state(-1);
-	/**
-	 * What is actually inside the focused claim: its behavioural sub-classes, and for each of
-	 * them the distinct documented functions.
-	 *
-	 * **Zooming into "social" tells you nothing, and that was the fair complaint.** Four
-	 * buckets is the coarsest possible reading of a corpus that already carries, per cluster, a
-	 * behavioural class from an auditable keyword table *and* the sentence a researcher wrote
-	 * about what the call does. The claim was the only level ever drawn, so the chart said
-	 * "these twelve knots claim something about the singer" and stopped — which is not a
-	 * finding, it is a filing system. The sub-classes and the functions were in
-	 * `centroids.json` the whole time.
-	 *
-	 * Distinct functions rather than one per cluster, because seven clusters of the same tit
-	 * call carry the same sentence and printing it seven times is noise.
-	 */
-	const claimContents = $derived.by(() => {
-		if (claimFocus < 0 || !assets) return [];
-		const byClass = new Map<string, { messages: Set<string>; knots: number }>();
-		for (const c of assets.centroids.items) {
-			const cls = c.functionClass ?? 'unclassified';
-			const claim = c.function ? (CLAIM_OF_FUNCTION[cls] ?? CLAIM_NONE) : CLAIM_NONE;
-			if (claim !== claimFocus) continue;
-			const entry = byClass.get(cls) ?? { messages: new Set<string>(), knots: 0 };
-			entry.knots += 1;
-			if (c.function) entry.messages.add(c.function);
-			byClass.set(cls, entry);
-		}
-		return [...byClass]
-			.map(([cls, v]) => ({ cls, knots: v.knots, messages: [...v.messages].sort() }))
-			.sort((a, b) => b.knots - a.knots);
-	});
 	/**
 	 * Set for the one tick in which a species selection came from clicking its island.
 	 *
@@ -199,8 +156,6 @@
 		// galaxy without touching a different control.
 		if (framedIsland?.key === group.key) {
 			framedIsland = null;
-			claimFocus = -1;
-			if (group.key.startsWith('claim-')) return;
 			speciesId = '';
 			return;
 		}
@@ -212,21 +167,16 @@
 
 		// **Clicking a heading is a selection, not a camera move.**
 		//
-		// It used to only fly the camera, so choosing "social" and looking at social from
+		// It used to only fly the camera, so choosing a bird's island and looking at it from
 		// closer up were the same gesture: nothing dimmed, nothing recoloured, and the one
-		// thing a viewer wants from picking a category — everything else getting out of the
+		// thing a viewer wants from picking a region — everything else getting out of the
 		// way — did not happen. Picking a bird from the dropdown had always done that. Now
 		// both routes end in the same place, which is what makes the two feel like one app.
-		if (group.key.startsWith('claim-')) {
-			claimFocus = Number(group.key.slice('claim-'.length));
-			speciesId = '';
-		} else {
-			claimFocus = -1;
-			// `islandSelection` suppresses the effect that would otherwise switch the
-			// arrangement to Sound and dissolve the very islands being clicked.
-			islandSelection = true;
-			speciesId = group.key;
-		}
+		//
+		// `islandSelection` suppresses the effect that would otherwise switch the arrangement
+		// to Sound and dissolve the very islands being clicked.
+		islandSelection = true;
+		speciesId = group.key;
 	}
 
 	/**
@@ -656,7 +606,6 @@
 		selectedSung = null;
 		pinnedCluster = -1;
 		framedIsland = null;
-		claimFocus = -1;
 		refreshSelection();
 	}
 
@@ -1215,7 +1164,6 @@ uv run birdy-pipeline build</pre>
 				{pointSize}
 				{spin}
 				{focus}
-				{claimFocus}
 				{spread}
 				speed={tempo}
 				labels={showLabels}
@@ -1281,9 +1229,6 @@ uv run birdy-pipeline build</pre>
 									<button class:on={layout === 'species'} onclick={() => chooseLayout('species')}>
 										Bird
 									</button>
-									<button class:on={layout === 'meaning'} onclick={() => chooseLayout('meaning')}>
-										Meaning
-									</button>
 								</div>
 								<!--
 									One line, because the arrangement is on screen the moment you pick it and
@@ -1293,11 +1238,8 @@ uv run birdy-pipeline build</pre>
 								<p class="note faint">
 									{#if layout === 'acoustic'}
 										Distance is acoustic distance.
-									{:else if layout === 'species'}
-										One island per bird. Distance is arrangement, not measurement.
 									{:else}
-										Grouped by how much meaning is documented; the big island has none.
-										Distance is arrangement, not measurement.
+										One island per bird. Distance is arrangement, not measurement.
 									{/if}
 									{#if !layoutPinned}
 										<br />Following the selection until you pick one here.
@@ -1352,45 +1294,6 @@ uv run birdy-pipeline build</pre>
 					{/if}
 				</h2>
 				<div class="cardbody">
-				{#if claimFocus >= 0}
-					<!--
-						**What "social" actually contains, because the word on its own is not a finding.**
-						Zooming into a claim island showed a closer view of the same four-way filing
-						system. Every one of these knots already carries a behavioural class from the
-						pipeline's auditable keyword table and the sentence a researcher wrote about what
-						the call does; the claim was simply the only level anything was ever drawn at.
-						Distinct messages, not one per knot — seven clusters of the same tit call carry the
-						same sentence and printing it seven times is noise.
-					-->
-					<div class="claiminfo">
-						<h3 class="claimname">{CLAIM_LABELS[claimFocus] ?? 'unclaimed'}</h3>
-						<p class="note faint">{CLAIM_HINTS[claimFocus] ?? ''}</p>
-						{#each claimContents as group (group.cls)}
-							<div class="subclass">
-								<div class="subhead">
-									<span class="subname">{group.cls}</span>
-									<span class="subcount mono"
-										>{group.knots} knot{group.knots === 1 ? '' : 's'}</span
-									>
-								</div>
-								{#if group.messages.length}
-									<ul class="messages">
-										{#each group.messages as message (message)}
-											<li>{message}</li>
-										{/each}
-									</ul>
-								{:else}
-									<p class="note faint">
-										No documented function — real audio of a known bird and nothing more.
-									</p>
-								{/if}
-							</div>
-						{/each}
-						{#if !claimContents.length}
-							<p class="note faint">Nothing is filed under this claim in the current build.</p>
-						{/if}
-					</div>
-				{/if}
 				{#if panelReading?.best}
 					{@const best = panelReading.best}
 					<div class="best" class:past={!readingIsLive}>
@@ -1819,6 +1722,38 @@ uv run birdy-pipeline serve</pre>
 								>
 									drift <b class="mono">{pipelineStatus.store.meanDrift?.toFixed(3)}</b> sd · spread
 									<b class="mono">{pipelineStatus.store.stdRatio?.toFixed(3)}</b>
+								</p>
+							{/if}
+							<!--
+								Which basis the next fit will use to decide what a syllable *type* is.
+								Worth its own line because it is not a setting, it is a claim about the
+								numbers: types clustered in the learned embedding are not the same types
+								as ones clustered by the seven hand-weighted values in
+								`learn._observation_vector`, so the resynthesis cosines beside them are
+								not comparable across a switch. Silently changing that basis and leaving
+								the old figures on screen would be the misleading version of this.
+							-->
+							{#if pipelineStatus.critic?.exists}
+								<p
+									class="note faint"
+									title="A small CNN trained on log-mel patches of the harvested syllables. It scores and embeds; it never generates, and none of it reaches this browser — every note you hear is still integrated from the syrinx model."
+								>
+									typing <b class="mono"
+										>{pipelineStatus.critic.embedTyping ? 'learned embedding' : 'hand-written'}</b
+									>
+									{#if pipelineStatus.critic.report?.realism_auc_holdout}
+										· critic AUC
+										<b class="mono"
+											>{pipelineStatus.critic.report.realism_auc_holdout.toFixed(3)}</b
+										> on held-out species
+									{/if}
+								</p>
+							{:else}
+								<p
+									class="note faint"
+									title="Run `birdy-pipeline critic train` to learn a syllable embedding from the harvested patches. Until then, syllable types are decided by seven hand-weighted numbers."
+								>
+									typing <b class="mono">hand-written</b> · no critic trained
 								</p>
 							{/if}
 						{/if}
@@ -2669,65 +2604,14 @@ uv run birdy-pipeline serve</pre>
 		font-size: 0.7rem;
 	}
 
-	/* Coverage below 98 % means some types cannot be played at all, which is worth a colour
-	   rather than a number a reader has to divide in their head. */
-	.claiminfo {
-		display: grid;
-		gap: 0.4rem;
-	}
-
-	.claimname {
-		margin: 0;
-		font-size: 0.95rem;
-		font-weight: 600;
-	}
-
-	/* Indented under a rule, so the nesting is visible rather than implied: these are what
-	   the claim is made of, not more things beside it. */
-	.subclass {
-		border-left: 2px solid var(--rule);
-		padding-left: 0.5rem;
-	}
-
-	.subhead {
-		display: flex;
-		justify-content: space-between;
-		align-items: baseline;
-		gap: 0.5rem;
-	}
-
-	.subname {
-		font-size: 0.72rem;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.09em;
-	}
-
-	.subcount {
-		font-size: 0.56rem;
-		color: var(--ink-faint);
-	}
-
-	/* The messages are the point of the whole panel, so they get body size rather than the
-	   metadata size everything around them uses. */
-	.messages {
-		margin: 0.15rem 0 0;
-		padding-left: 0.9rem;
-		display: grid;
-		gap: 0.1rem;
-	}
-
-	.messages li {
-		font-size: 0.72rem;
-		line-height: 1.35;
-	}
-
 	/* One per row rather than the two-column default: a species name plus a stage does not
 	   fit half a panel width. */
 	.facts.discovered {
 		grid-template-columns: 1fr;
 	}
 
+	/* Coverage below 98 % means some types cannot be played at all, which is worth a colour
+	   rather than a number a reader has to divide in their head. */
 	.facts dd.warn {
 		color: var(--invented);
 		font-weight: 600;

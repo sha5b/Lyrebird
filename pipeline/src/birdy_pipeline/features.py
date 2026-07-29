@@ -41,6 +41,13 @@ def mel_to_hz(mel: float | np.ndarray) -> float | np.ndarray:
     return 700.0 * (np.exp(np.asarray(mel, dtype=np.float64) / 1125.0) - 1.0)
 
 
+def mel_centres_hz(n_mel: int = N_MEL, sample_rate: int = SAMPLE_RATE) -> np.ndarray:
+    """Centre frequency of each mel band, in Hz — filter j peaks at `binPt[j+1]`."""
+    mel_max = float(hz_to_mel(sample_rate / 2.0))
+    j = np.arange(1, n_mel + 1, dtype=np.float64)
+    return np.asarray(mel_to_hz(j / (n_mel + 1) * mel_max), dtype=np.float64)
+
+
 def hann_window(n: int = FRAME) -> np.ndarray:
     """Symmetric Hann: w[i] = 0.5 - 0.5*cos(2*pi*i/(n-1))."""
     i = np.arange(n, dtype=np.float64)
@@ -147,6 +154,48 @@ def descriptor(audio: np.ndarray, sample_rate: int = SAMPLE_RATE) -> np.ndarray 
 MEL_KNOTS = 4
 
 
+def _voiced_log_mel(
+    audio: np.ndarray, frame: int, hop: int, window: np.ndarray, bank: np.ndarray
+) -> np.ndarray | None:
+    """(n_voiced_frames, n_mel) natural-log mel energies, or None if nothing is voiced.
+
+    The voicing rule and the peak normalisation are the ones `frame_features` uses, so a
+    clip's patch and its 28-d descriptor are computed over the same set of frames.
+    """
+    x = np.asarray(audio, dtype=np.float64).ravel()
+    if x.size < frame:
+        return None
+    peak = float(np.max(np.abs(x)))
+    if peak <= 0.0:
+        return None
+    x = x * (PEAK_NORM / peak)
+    starts = np.arange(0, x.size - frame + 1, hop)
+    frames = np.stack([x[s : s + frame] for s in starts])
+    rms = np.sqrt(np.mean(frames * frames, axis=1))
+    clip_max = float(rms.max()) if rms.size else 0.0
+    voiced = (rms > RMS_FLOOR) & (rms > RMS_REL * clip_max)
+    if not np.any(voiced):
+        return None
+    mag = np.abs(np.fft.rfft(frames[voiced] * window, axis=1))[:, : frame // 2]
+    return np.log(np.maximum((mag * mag) @ bank.T, BAND_FLOOR))
+
+
+def _resample_knots(logmel: np.ndarray, knots: int) -> np.ndarray:
+    """Average `logmel`'s frames into `knots` equal shares of its own length, then centre.
+
+    Centring by the single scalar mean — not per band, not per knot — is what makes this a
+    description of spectral *shape over time* rather than of loudness, while leaving the
+    overall spectral tilt visible. The tilt is a measured real-versus-synthetic difference
+    (docs/09 §9.1 result 2: real recordings sit at -1.59 relative energy above 6 kHz and we
+    sit at -0.01), so removing it here would hide the very thing a critic should see.
+    """
+    edges = np.linspace(0, logmel.shape[0], knots + 1).astype(int)
+    out = np.stack([
+        logmel[edges[i] : max(edges[i] + 1, edges[i + 1])].mean(axis=0) for i in range(knots)
+    ])
+    return out - out.mean()
+
+
 def mel_path(audio: np.ndarray, knots: int = MEL_KNOTS, sample_rate: int = SAMPLE_RATE) -> np.ndarray:
     """Log-mel energies at `knots` points across the clip: shape (knots, N_MEL).
 
@@ -160,29 +209,58 @@ def mel_path(audio: np.ndarray, knots: int = MEL_KNOTS, sample_rate: int = SAMPL
     Comparing two clips of different durations is therefore well defined: both are resampled
     onto the same `knots` fractions of their own length.
     """
-    x = np.asarray(audio, dtype=np.float64).ravel()
-    if x.size < FRAME:
+    logmel = _voiced_log_mel(audio, FRAME, HOP, _WINDOW, _BANK)
+    if logmel is None:
         return np.zeros((knots, N_MEL))
-    peak = float(np.max(np.abs(x)))
-    if peak <= 0.0:
-        return np.zeros((knots, N_MEL))
-    x = x * (PEAK_NORM / peak)
-    starts = np.arange(0, x.size - FRAME + 1, HOP)
-    frames = np.stack([x[s : s + FRAME] for s in starts])
-    rms = np.sqrt(np.mean(frames * frames, axis=1))
-    clip_max = float(rms.max()) if rms.size else 0.0
-    voiced = (rms > RMS_FLOOR) & (rms > RMS_REL * clip_max)
-    if not np.any(voiced):
-        return np.zeros((knots, N_MEL))
-    frames = frames[voiced]
-    mag = np.abs(np.fft.rfft(frames * _WINDOW, axis=1))[:, :N_BINS]
-    energy = np.maximum((mag * mag) @ _BANK.T, BAND_FLOOR)
-    logmel = np.log(energy)
-    edges = np.linspace(0, logmel.shape[0], knots + 1).astype(int)
-    out = np.stack([
-        logmel[edges[i] : max(edges[i] + 1, edges[i + 1])].mean(axis=0) for i in range(knots)
-    ])
-    return out - out.mean()
+    return _resample_knots(logmel, knots)
+
+
+# --- the critic's patch (docs/09 §9.3 Part 1) --------------------------------------
+
+#: Time steps across the syllable's own duration. 32 as specified in docs/09.
+PATCH_KNOTS = 32
+#: The patch gets its own, shorter analysis frame. `FRAME` is 21.3 ms, and the median
+#: harvested syllable is 60 ms — three windows, which smears a sweep into a smudge and
+#: would hand the critic a representation blind to the exact thing docs/09 §9.2 says the
+#: 28-d mean is blind to. 512 samples is 10.7 ms and 94 Hz per bin: still finer than the
+#: 400 Hz f0 floor of `learn.F0_MIN_HZ`, and four times the time resolution.
+PATCH_FRAME = 512
+PATCH_HOP = 128
+#: Bands above this are dropped before anything sees the patch. **This is the single most
+#: important line in the file for docs/09 §9.5.** xeno-canto is largely mp3, which cuts hard
+#: near 16 kHz, so its top mel bands floor at `log(BAND_FLOOR)` = -23; our renders roll off
+#: gently from `syrinx.TRACT_LP_HZ` and leave them finite. That is a twenty-log-unit gap that
+#: has nothing to do with birds, and a critic handed it would learn "is it an mp3" in one
+#: epoch and teach the fit nothing. Only bands whose centre is below the cut survive.
+PATCH_LP_HZ = 15000.0
+
+_PATCH_WINDOW = hann_window(PATCH_FRAME)
+_PATCH_BANK = mel_filterbank(N_MEL, PATCH_FRAME, SAMPLE_RATE)
+#: How many low bands survive `PATCH_LP_HZ` — 23 of 26 at the shipped constants.
+PATCH_MEL = int(np.sum(mel_centres_hz() <= PATCH_LP_HZ))
+PATCH_SHAPE = (PATCH_KNOTS, PATCH_MEL)
+PATCH_DIM = PATCH_KNOTS * PATCH_MEL
+
+
+def mel_patch(
+    audio: np.ndarray, knots: int = PATCH_KNOTS, sample_rate: int = SAMPLE_RATE
+) -> np.ndarray:
+    """The critic's view of one syllable: `(knots, PATCH_MEL)` band-limited log-mel.
+
+    This is a **measurement, not a recording**: log magnitudes only, no phase, mean-centred,
+    resampled off the syllable's own duration. You cannot reconstruct recognisable audio from
+    it, so `harvest.py`'s decode -> describe -> delete loop and its licensing consequences
+    are untouched (docs/09 §9.4).
+
+    Real syllables and resyntheses must both come through *this* function. Measuring the two
+    sides differently is the one bug that would invalidate the whole exercise, which is why
+    the band limit, the frame, the hop and the centring all live here rather than in the
+    caller.
+    """
+    logmel = _voiced_log_mel(audio, PATCH_FRAME, PATCH_HOP, _PATCH_WINDOW, _PATCH_BANK)
+    if logmel is None:
+        return np.zeros((knots, PATCH_MEL))
+    return _resample_knots(logmel[:, :PATCH_MEL], knots)
 
 
 def standardise(
@@ -193,13 +271,6 @@ def standardise(
 
 
 _DCT_PINV = np.linalg.pinv(_DCT)  # (N_MEL, N_MFCC)
-
-
-def mel_centres_hz(n_mel: int = N_MEL, sample_rate: int = SAMPLE_RATE) -> np.ndarray:
-    """Centre frequency of each mel band, in Hz — filter j peaks at `binPt[j+1]`."""
-    mel_max = float(hz_to_mel(sample_rate / 2.0))
-    j = np.arange(1, n_mel + 1, dtype=np.float64)
-    return np.asarray(mel_to_hz(j / (n_mel + 1) * mel_max), dtype=np.float64)
 
 
 def mel_envelope(mfcc_mean: np.ndarray) -> np.ndarray:
@@ -250,10 +321,62 @@ def self_test(verbose: bool = True) -> None:
     assert abs(centroid_hz - 4000.0) < 250.0, f"centroid off: {centroid_hz}"
     assert d[27] < 0.05, f"a sine should not be spectrally flat: {d[27]}"
 
+    # --- the critic's patch (docs/09 §9.3 Part 1 step 1) ---
+    #
+    # The patch exists to see what the 28-d mean cannot, so the test is exactly that: a tone
+    # that sweeps and a tone that holds still, chosen to have the *same* mean frequency, so
+    # nothing but the time axis can separate them.
+    n = int(0.20 * SAMPLE_RATE)
+    tt = np.arange(n) / SAMPLE_RATE
+    steady = np.sin(2 * np.pi * 4000.0 * tt)
+    # 2 kHz -> 6 kHz linear sweep: instantaneous phase is the integral of the frequency.
+    sweep = np.sin(2 * np.pi * (2000.0 * tt + 0.5 * (4000.0 / (n / SAMPLE_RATE)) * tt * tt))
+
+    p_steady = mel_patch(steady)
+    p_sweep = mel_patch(sweep)
+    assert p_steady.shape == PATCH_SHAPE, f"patch shape {p_steady.shape} != {PATCH_SHAPE}"
+    assert float(np.max(np.abs(mel_patch(steady) - p_steady))) == 0.0, "patch not deterministic"
+    moved = float(np.linalg.norm(p_sweep - p_steady))
+    assert moved > 5.0, f"a sweep and a steady tone must differ in the patch: {moved:.3f}"
+
+    # ...and the 28-d descriptor must be the one that struggles, or the patch buys nothing.
+    d_steady, d_sweep = descriptor(steady), descriptor(sweep)
+    assert d_steady is not None and d_sweep is not None
+    # Same claim in a comparable unit: relative distance within each representation.
+    patch_rel = moved / max(float(np.linalg.norm(p_steady)), 1e-9)
+    desc_rel = float(np.linalg.norm(d_sweep - d_steady)) / max(
+        float(np.linalg.norm(d_steady)), 1e-9
+    )
+    assert patch_rel > desc_rel, (
+        f"the patch must separate a sweep more sharply than the 28-d mean does: "
+        f"patch {patch_rel:.3f} vs descriptor {desc_rel:.3f}"
+    )
+
+    # The band limit is load-bearing for §9.5: nothing above PATCH_LP_HZ may reach the critic.
+    assert PATCH_MEL < N_MEL, "the patch must drop at least one band, or the mp3 tell survives"
+    assert float(mel_centres_hz()[PATCH_MEL - 1]) <= PATCH_LP_HZ < float(
+        mel_centres_hz()[PATCH_MEL]
+    ), "PATCH_MEL must be exactly the bands centred below PATCH_LP_HZ"
+    # A 20 kHz tone lives only in dropped bands, so it must read as silence to the patch.
+    ultrasonic = np.sin(2 * np.pi * 20000.0 * tt)
+    assert float(np.max(np.abs(mel_patch(ultrasonic)))) < float(
+        np.max(np.abs(p_steady))
+    ), "energy above the band limit must not dominate the patch"
+
+    # Silence and a too-short clip must return the right shape rather than raise: the harvest
+    # hands this whatever a segmenter produced, including 12-sample slivers.
+    assert mel_patch(np.zeros(n)).shape == PATCH_SHAPE
+    assert mel_patch(np.zeros(8)).shape == PATCH_SHAPE
+
     if verbose:
         print(
             f"features self-test ok: DCT-II max err {err:.2e}, "
             f"tone centroid {centroid_hz:.0f} Hz, flatness {d[27]:.4f}"
+        )
+        print(
+            f"  patch {PATCH_KNOTS}x{PATCH_MEL} (<= {PATCH_LP_HZ / 1000:.0f} kHz, "
+            f"{PATCH_FRAME}/{PATCH_HOP} frame/hop): sweep-vs-steady {patch_rel:.3f} "
+            f"relative, against {desc_rel:.3f} for the 28-d mean"
         )
 
 

@@ -15,6 +15,14 @@ dependencies = [
     "soundfile>=0.12",
 ]
 
+[project.optional-dependencies]
+# The learned critic of docs/09. Deliberately optional: `critic.py` is the only module
+# that imports torch, it imports it lazily, and every caller degrades to the hand-written
+# 28-d cosine when it is absent. Harvesting, fitting, building and serving must all keep
+# working in an environment that has never seen torch — no weights ever reach the browser,
+# so a machine that only builds the app has no reason to download 200 MB of wheels.
+critic = ["torch>=2.2"]
+
 [project.scripts]
 birdy-pipeline = "birdy_pipeline.cli:main"
 
@@ -24,3 +32,15 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/birdy_pipeline"]
+
+# CUDA 12.8 wheels: the development machine is an RTX 3500 Ada (compute 8.9, 12 GB).
+# `critic.py` picks the device at runtime and falls back to CPU when no GPU is visible, so
+# this only decides which wheel gets downloaded, never whether the code runs. Swap the index
+# for `.../whl/cpu` on a machine with no NVIDIA card to save ~2 GB of download.
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu128" }]

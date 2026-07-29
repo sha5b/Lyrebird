@@ -5,8 +5,6 @@
 	import { buildSpeciesIndex } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
 	import {
-		CLAIM_NONE,
-		CLAIM_OF_FUNCTION,
 		SIZE_REFERENCE,
 		WAVE_SOURCES,
 		fragmentShader,
@@ -22,8 +20,6 @@
 		pointSize?: number;
 		/** Species index to keep at full strength; -1 shows every species equally. */
 		focus?: number;
-		/** Claim bucket to hold at full strength; -1 shows every claim equally. */
-		claimFocus?: number;
 		/** Multiplies the animation clock, so the pulse can be slowed down. */
 		speed?: number;
 		/** Which arrangement to show. Changing it animates the cloud into the new one. */
@@ -44,7 +40,6 @@
 		signal,
 		pointSize = 3,
 		focus = -1,
-		claimFocus = -1,
 		speed = 1,
 		layout = 'acoustic',
 		view,
@@ -62,15 +57,6 @@
 	const activation = untrack(() => new Float32Array(assets.points.n));
 	const activationAttribute = new THREE.BufferAttribute(activation, 1).setUsage(
 		THREE.DynamicDrawUsage
-	);
-
-	// How much meaning each cluster claims, which is what the Meaning arrangement groups
-	// by. A cluster with no documented function gets `none` rather than the weakest real
-	// claim — see the note in `shaders.ts`.
-	const claimOfCluster = untrack(() =>
-		assets.centroids.items.map((c) =>
-			c.function ? (CLAIM_OF_FUNCTION[c.functionClass ?? ''] ?? CLAIM_NONE) : CLAIM_NONE
-		)
 	);
 
 	// `position` holds where the cloud is coming *from* and is rewritten at the start of
@@ -99,7 +85,6 @@
 		const cluster = new Float32Array(assets.points.n);
 		const seed = seeds;
 		const species = new Float32Array(assets.points.n);
-		const claim = new Float32Array(assets.points.n);
 		// -1 survives into the attribute rather than being clamped to 0: a point in no
 		// cluster is a result the density clustering went out of its way to produce, and
 		// the shader is what respects it.
@@ -110,12 +95,10 @@
 			cluster[i] = assets.points.clusterId[i] ?? -1;
 			species[i] = speciesIndex.get(assets.points.speciesId[i] ?? '') ?? -1;
 			born[i] = generation?.[i] ?? 0;
-			claim[i] = claimOfCluster[assets.points.clusterId[i] ?? -1] ?? CLAIM_NONE;
 		}
 		g.setAttribute('aCluster', new THREE.BufferAttribute(cluster, 1));
 		g.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
 		g.setAttribute('aSpecies', new THREE.BufferAttribute(species, 1));
-		g.setAttribute('aClaim', new THREE.BufferAttribute(claim, 1));
 		g.setAttribute('aBorn', new THREE.BufferAttribute(born, 1));
 		g.setAttribute('aAct', activationAttribute);
 		g.computeBoundingSphere();
@@ -145,7 +128,6 @@
 			uGeneration: { value: untrack(() => assets.manifest?.generation ?? 0) },
 			uArrival: { value: untrack(() => (assets.manifest?.generation ? 0 : 1)) },
 			uFocus: { value: -1 },
-			uClaimFocus: { value: -1 },
 			// Enough that an unselected species still reads as part of the same corpus.
 			//
 			// Pushed down to 0.07 while chasing "make the selection stand out" and that was
@@ -179,16 +161,13 @@
 
 	$effect(() => {
 		material.uniforms.uFocus.value = focus;
-		material.uniforms.uClaimFocus.value = claimFocus;
 	});
 
 	$effect(() => {
 		material.uniforms.uSizeScale.value = SIZE_REFERENCE * spread;
 	});
 
-	const layouts = untrack(() =>
-		buildLayouts(assets, buildSpeciesIndex(assets), claimOfCluster)
-	);
+	const layouts = untrack(() => buildLayouts(assets, buildSpeciesIndex(assets)));
 
 	/**
 	 * Seed the buffers from the layout, not from the raw asset.

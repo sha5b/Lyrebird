@@ -61,6 +61,43 @@ export interface JobStatus {
 	log: string[];
 }
 
+/**
+ * The learned critic, when one has been trained (`birdy-pipeline critic train`).
+ *
+ * Present so the interface can say *which objective* produced the numbers next to each
+ * learned syllable — a fit run with `--embed-typing` defines syllable types differently from
+ * one run without it, and the resynthesis cosines are not comparable across the two. No
+ * weights are involved: the server reads this from the sidecar JSON written next to them, and
+ * nothing about the critic ever reaches the browser.
+ */
+export interface CriticStatus {
+	exists: boolean;
+	path?: string;
+	/** Share of the fit's objective the realism logit was given. 0 is the measured default. */
+	weight?: number;
+	/** Whether syllable types were clustered in the learned embedding. */
+	embedTyping?: boolean;
+	/**
+	 * The training report, verbatim from the sidecar JSON.
+	 *
+	 * `snake_case` because it is `dataclasses.asdict(TrainingReport)` and the field names come
+	 * straight through — everything else the server sends is hand-assembled and camelCase, so
+	 * this is the one block that is not. Kept as-is rather than renamed on the way out: the
+	 * same JSON is what `critic train` writes next to the weights for a human to read, and
+	 * having two spellings of one report is worse than one inconsistent spelling.
+	 */
+	report?: {
+		train_species?: string[];
+		holdout_species?: string[];
+		/** Real-vs-resynthesis AUC on species held out of training. 0.5 is chance. */
+		realism_auc_holdout?: number;
+		species_accuracy?: number;
+		species_chance?: number;
+		/** Retrieval of a syllable's own augmented view out of 256. Chance is 0.004. */
+		contrastive_top1?: number;
+	};
+}
+
 export interface PipelineStatus {
 	ok: true;
 	hasKey: boolean;
@@ -68,6 +105,8 @@ export interface PipelineStatus {
 	store: StoreStatus;
 	learned: LearnedStatus;
 	built: BuiltStatus;
+	/** Absent on a control process started before the critic existed. */
+	critic?: CriticStatus;
 	discovered?: {
 		id: string;
 		common: string;

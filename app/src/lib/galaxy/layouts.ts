@@ -17,9 +17,8 @@
  * click away.
  */
 import type { BirdyAssets } from '$lib/data/types';
-import { CLAIM_COUNT } from './shaders';
 
-export type LayoutId = 'acoustic' | 'species' | 'meaning';
+export type LayoutId = 'acoustic' | 'species';
 
 /**
  * Where the cluster centroids are *right now*, shared between the point cloud (which
@@ -66,30 +65,6 @@ export interface Layout {
  * distributes by equal area. Same radius, same shrink, no overlaps, and the minimum
  * centre gap goes from 0.445 to 0.606.
  */
-/**
- * Group centres in a line, for a grouping that has an order.
- *
- * A sphere is right when the groups are merely different — twelve birds have no natural
- * sequence, and putting them on a ring or a line would assert one. How much meaning is
- * claimed *is* a sequence: referential names something outside the bird, social says
- * something about the singer, structural carries syntax and no reference, and the last
- * group claims nothing at all. Scattered over a sphere that ordering is invisible and the
- * arrangement answers "which group" without answering "how much" — which is the only
- * question it exists to answer. Laid along an axis you can read the gradient off the
- * screen, and the size of the island at the far end is the headline.
- *
- * Tilted rather than axis-aligned so the run still has depth to orbit through, and so it
- * does not read as a bar chart drawn in a 3D scene.
- */
-function orderedCentres(count: number, radius: number): [number, number, number][] {
-	const out: [number, number, number][] = [];
-	for (let i = 0; i < count; i++) {
-		const t = count === 1 ? 0 : (i / (count - 1)) * 2 - 1;
-		out.push([t * radius, t * radius * 0.28, t * radius * 0.42]);
-	}
-	return out;
-}
-
 function groupCentres(count: number, radius: number): [number, number, number][] {
 	const out: [number, number, number][] = [];
 	const golden = Math.PI * (3 - Math.sqrt(5));
@@ -123,9 +98,7 @@ function groupCentres(count: number, radius: number): [number, number, number][]
  *
  * Averaging the modal group instead puts the knot inside the island where most of the
  * cluster is actually drawn, which is also the island the pipeline named it after:
- * `label_cluster` picks the majority species too, so the tag and its text now agree. The
- * Meaning layout is unaffected either way, because a claim is a property of the cluster,
- * so all of its points always share one group.
+ * `label_cluster` picks the majority species too, so the tag and its text now agree.
  */
 function centroidsOf(
 	positions: Float32Array,
@@ -201,12 +174,85 @@ function centroidsOf(
 }
 
 /**
+ * How much of the gap between two island centres is left empty at the tightest pair.
+ *
+ * Below 1 the islands are provably disjoint; at 1 the closest pair just touches. A tenth
+ * of the gap is enough clear paper to read the boundary as a boundary rather than as two
+ * clouds that happen to end at the same place.
+ */
+const ISLAND_CLEARANCE = 0.9;
+
+/**
+ * The largest `shrink` at which no island reaches into another one, capped by what was
+ * asked for.
+ *
+ * **This was a hand-tuned constant, and the tuning was done against twelve birds.** The
+ * corpus is twenty-six now. Adding groups to a Fibonacci sphere pulls the centres closer
+ * together — the minimum gap falls from 0.606 of the radius at twelve to 0.523 at
+ * twenty-six — while each island is still nearly as wide as the acoustic layout's whole
+ * box, because a bird's renders spread right across it. So the fixed 0.28 overshot the
+ * limit by more than half, and 54 of the 325 island pairs interpenetrated: 1 920 points,
+ * 2.7 % of the corpus, drawn nearer another bird's centre than their own. That is the
+ * "particles sitting in the wrong bird" fault, and it is arithmetic rather than taste, so
+ * it is measured instead of chosen — which also means it cannot come back the next time
+ * the corpus grows.
+ *
+ * The condition is the obvious one: two islands are disjoint when the sum of their radii
+ * is less than the distance between their centres. Because every member of A is within
+ * r(A) of A's centre, that is also exactly the condition for no member of A to land inside
+ * B, which is the thing being complained about rather than a proxy for it.
+ *
+ * The radius is the **furthest** member, not a percentile. A single point of one bird
+ * hanging inside another bird's island is precisely the artefact this exists to remove, so
+ * trimming the tail would be answering a different question. Measured on the shipped
+ * corpus the two differ by 1 % anyway: these clouds have no thin tail to cut.
+ */
+function fitShrink(
+	source: Float32Array,
+	groupOf: number[],
+	groupCount: number,
+	counts: Uint32Array,
+	means: Float64Array,
+	centres: [number, number, number][],
+	requested: number
+): number {
+	// Each group's reach at shrink = 1, so a reach scales linearly with the shrink applied.
+	const reach = new Float64Array(groupCount);
+	for (let i = 0; i < groupOf.length; i++) {
+		const g = groupOf[i];
+		if (g < 0 || g >= groupCount) continue;
+		const dx = source[i * 3] - means[g * 3];
+		const dy = source[i * 3 + 1] - means[g * 3 + 1];
+		const dz = source[i * 3 + 2] - means[g * 3 + 2];
+		const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+		if (d > reach[g]) reach[g] = d;
+	}
+
+	let limit = Infinity;
+	for (let a = 0; a < groupCount; a++) {
+		if (!counts[a]) continue;
+		for (let b = a + 1; b < groupCount; b++) {
+			if (!counts[b]) continue;
+			const both = reach[a] + reach[b];
+			if (both <= 0) continue;
+			const dx = centres[a][0] - centres[b][0];
+			const dy = centres[a][1] - centres[b][1];
+			const dz = centres[a][2] - centres[b][2];
+			limit = Math.min(limit, Math.sqrt(dx * dx + dy * dy + dz * dz) / both);
+		}
+	}
+	if (!Number.isFinite(limit)) return requested;
+	return Math.min(requested, limit * ISLAND_CLEARANCE);
+}
+
+/**
  * Pull each group away from the others while keeping its internal shape.
  *
- * `shrink` tightens each group around its own centre so the islands do not overlap once
- * they are moved; `radius` is how far apart the centres go. Both are chosen so the whole
- * arrangement still fits the same |coord| <= 1 box the acoustic one does, which keeps
- * the camera framing valid through the morph.
+ * `radius` is how far out the centres go and `shrink` tightens each group around its own
+ * centre. **Only their ratio matters**: the result is renormalised to the same
+ * |coord| <= 1 box the acoustic layout occupies, so scaling both by the same factor gives
+ * a pixel-identical arrangement. `shrink` is therefore the whole control, and it is
+ * requested rather than obeyed — see `fitShrink`.
  */
 function grouped(
 	assets: BirdyAssets,
@@ -215,38 +261,49 @@ function grouped(
 	radius = 0.72,
 	shrink = 0.42,
 	/** Per cluster, the group its tag claims. See `centroidsOf`. */
-	claimedGroup?: Int32Array,
-	/** `ordered` when the groups form a sequence rather than a set. */
-	arrangement: 'sphere' | 'ordered' = 'sphere'
+	claimedGroup?: Int32Array
 ): Layout {
 	const n = assets.points.n;
 	const source = assets.positions;
-	const centres =
-		arrangement === 'ordered'
-			? orderedCentres(groupCount, radius)
-			: groupCentres(groupCount, radius);
+	const centres = groupCentres(groupCount, radius);
 
 	// each group's own centre of mass in the acoustic layout
 	const sums = new Float64Array(groupCount * 3);
 	const counts = new Uint32Array(groupCount);
 	for (let i = 0; i < n; i++) {
 		const g = groupOf[i];
-		if (g < 0) continue;
+		if (g < 0 || g >= groupCount) continue;
 		sums[g * 3] += source[i * 3];
 		sums[g * 3 + 1] += source[i * 3 + 1];
 		sums[g * 3 + 2] += source[i * 3 + 2];
 		counts[g]++;
 	}
+	const means = new Float64Array(groupCount * 3);
+	for (let g = 0; g < groupCount; g++) {
+		const c = counts[g] || 1;
+		for (let a = 0; a < 3; a++) means[g * 3 + a] = sums[g * 3 + a] / c;
+	}
+
+	const fitted = fitShrink(source, groupOf, groupCount, counts, means, centres, shrink);
 
 	const positions = new Float32Array(n * 3);
 	let extent = 0;
 	for (let i = 0; i < n; i++) {
 		const g = groupOf[i];
-		const c = counts[g] || 1;
-		const centre = centres[g] ?? [0, 0, 0];
+		// A point in no group has no island to be moved into, so it keeps the place the
+		// projection gave it. Reading `sums[-3]` here is how this used to produce NaN
+		// coordinates, which a Float32Array carries all the way to the vertex buffer.
+		if (g < 0 || g >= groupCount) {
+			for (let a = 0; a < 3; a++) {
+				const v = source[i * 3 + a];
+				positions[i * 3 + a] = v;
+				extent = Math.max(extent, Math.abs(v));
+			}
+			continue;
+		}
+		const centre = centres[g];
 		for (let a = 0; a < 3; a++) {
-			const mean = sums[g * 3 + a] / c;
-			const v = centre[a] + (source[i * 3 + a] - mean) * shrink;
+			const v = centre[a] + (source[i * 3 + a] - means[g * 3 + a]) * fitted;
 			positions[i * 3 + a] = v;
 			extent = Math.max(extent, Math.abs(v));
 		}
@@ -312,25 +369,24 @@ function expandClusters(
 
 export function buildLayouts(
 	assets: BirdyAssets,
-	speciesIndex: Map<string, number>,
-	claimOfCluster: number[]
+	speciesIndex: Map<string, number>
 ): Record<LayoutId, Layout> {
 	const n = assets.points.n;
 
+	// -1 for a species the index does not know, matching the `aSpecies` attribute the shader
+	// reads. It used to be 0, which drew those points inside the *first* bird's island while
+	// telling the shader they belonged to no bird — a point in a place the data does not put
+	// it. `buildSpeciesIndex` appends every species the point cloud mentions, so on a
+	// consistent asset set this branch is unreachable; it is here so that an inconsistent one
+	// leaves the strays where the projection put them instead of filing them under a bird.
 	const speciesOf: number[] = new Array(n);
 	for (let i = 0; i < n; i++) {
-		speciesOf[i] = speciesIndex.get(assets.points.speciesId[i] ?? '') ?? 0;
+		speciesOf[i] = speciesIndex.get(assets.points.speciesId[i] ?? '') ?? -1;
 	}
-	const claimOf: number[] = new Array(n);
-	for (let i = 0; i < n; i++) {
-		claimOf[i] = claimOfCluster[assets.points.clusterId[i]] ?? CLAIM_COUNT - 1;
-	}
-	// The island each cluster's tag belongs in: the bird it is named after, and — for the
-	// Meaning layout — the claim it is filed under, which every one of its points shares.
+	// The island each cluster's tag belongs in: the bird it is named after. See `centroidsOf`.
 	const claimedSpecies = Int32Array.from(
 		assets.centroids.items.map((c) => speciesIndex.get(c.speciesId) ?? -1)
 	);
-	const claimedClaim = Int32Array.from(claimOfCluster);
 
 	const acoustic = expandClusters(
 		assets.positions,
@@ -348,30 +404,12 @@ export function buildLayouts(
 			// drift if that ever stops being true.
 			centroids: centroidsOf(acoustic, assets.points.clusterId, assets.centroids.k)
 		},
-		// Tighter and further apart for twelve groups than for four. The centres go out
-		// further than the groups are wide on purpose: the whole point of the rearrangement
-		// is that you can see which species tore apart, and that is only visible if the
-		// islands clear each other.
-		species: grouped(
-			assets,
-			speciesOf,
-			Math.max(1, speciesIndex.size),
-			0.92,
-			0.28,
-			claimedSpecies
-		),
-		// Further out and tighter than the four groups would suggest, because the four are
-		// wildly unequal in *spread* as well as in size. The six clusters that claim a
-		// social meaning are scattered right across the acoustic layout — they are the same
-		// bird's territorial call and another's contact note, which have no reason to sound
-		// alike — so that island reached 0.617 where the other three sat near 0.33, and it
-		// ran into both of its neighbours. The claim being made here is how much of the
-		// corpus falls in each group, and an island that bleeds into the next one cannot
-		// make it. Every island shrinks by the same factor, so their relative spread, which
-		// is the other thing worth reading, survives.
-		// Along a line, and tighter than the sphere needed: four islands strung out in
-		// order have to clear each other along one axis rather than in three, so the same
-		// shrink that worked on a sphere overlaps badly here.
-		meaning: grouped(assets, claimOf, CLAIM_COUNT, 1.0, 0.3, claimedClaim, 'ordered')
+		// The centres go out further than the groups are wide on purpose: the whole point of
+		// the rearrangement is that you can see which species tore apart, and that is only
+		// visible if the islands clear each other. `shrink` is an upper bound rather than the
+		// figure used — `fitShrink` lowers it to whatever this many birds actually allows, and
+		// every island shrinks by that one factor, so their relative spread, which is the
+		// other thing worth reading here, survives.
+		species: grouped(assets, speciesOf, Math.max(1, speciesIndex.size), 0.92, 0.28, claimedSpecies)
 	};
 }

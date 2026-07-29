@@ -18,15 +18,14 @@
 	interface Props {
 		/** Filled by this component, positioned every frame by `IslandProjector`. */
 		elements: (HTMLElement | null)[];
-		groups: { key: string; label: string; count: number; hint?: string }[];
+		groups: { key: string; label: string; count: number }[];
 		/**
 		 * Fired when a heading is clicked, so the page can frame the region it names.
 		 *
 		 * A heading is the only mark on screen that names something at the scale a viewer
-		 * actually navigates by — a whole bird, or every call that claims the same kind of
-		 * meaning — and it was the one mark that did nothing when clicked. Reaching that
-		 * region otherwise meant finding the species in a dropdown and trusting that the
-		 * island under the cursor was the same one.
+		 * actually navigates by — a whole bird — and it was the one mark that did nothing when
+		 * clicked. Reaching that region otherwise meant finding the species in a dropdown and
+		 * trusting that the island under the cursor was the same one.
 		 */
 		onpick?: (key: string) => void;
 		/** The heading whose region is currently framed, drawn as held down. */
@@ -46,11 +45,7 @@
 			title="Frame this region"
 		>
 			<span class="name">{group.label}</span>
-			<span class="meta mono">
-				<!-- Separator inside the expression: Svelte trims a text node's leading space,
-				     so the markup form of this rendered "226 knots· real audio". -->
-				{group.count} knots{#if group.hint}<span class="hint">{` · ${group.hint}`}</span>{/if}
-			</span>
+			<span class="meta mono">{group.count} knots</span>
 		</button>
 	{/each}
 </div>
@@ -137,10 +132,5 @@
 		text-transform: uppercase;
 		letter-spacing: 0.11em;
 		color: color-mix(in srgb, var(--ink-faint) calc(65% + var(--act, 0) * 35%), transparent);
-	}
-
-	.hint {
-		text-transform: none;
-		letter-spacing: 0.02em;
 	}
 </style>
