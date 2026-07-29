@@ -23,6 +23,14 @@ dependencies = [
 # so a machine that only builds the app has no reason to download 200 MB of wheels.
 critic = ["torch>=2.2"]
 
+# The multi-source fetchers of `sources.py`. Same pattern as the critic: `sources.py`
+# is the only module that touches these packages, it imports them lazily inside the
+# adapters, and `sources list`/`sources fetch` degrade to a logged
+# `skip <source>: <reason>` when they are absent — Zenodo and the Internet Archive
+# need nothing but urllib, so a machine harvesting only keyless sources has no reason
+# to install either.
+sources = ["kaggle>=1.6", "huggingface_hub>=0.24"]
+
 [project.scripts]
 birdy-pipeline = "birdy_pipeline.cli:main"
 

@@ -309,12 +309,18 @@ export class ActivationTracker {
 	private readonly smoothing: number;
 	/**
 	 * The browser's bridge into the learned space (docs/09 phase 2): the offline-fitted
-	 * ridge that maps a live standardised 28-d descriptor to the standardised 32-d
+	 * map that carries a live standardised 28-d descriptor to the standardised 32-d
 	 * embedding, or null when the assets predate it — or when the map failed its
 	 * held-out gate, in which case the 28-d path below is the honest one and stays.
+	 * Two kinds ship: the original linear ridge (inline `w`/`b`) and the rff-ridge
+	 * (weights from the f32 sidecar, attached by loadAssets — spacemap.py chose it on
+	 * held-out recordings when the 47 k critic's space stopped being linearly
+	 * recoverable: 0.7997 < the 0.8 gate, rff measures 0.93).
 	 */
 	private readonly mapW: Float32Array | null;
 	private readonly mapB: Float32Array | null;
+	private readonly rff: { R: Float32Array; phase: Float32Array; w: Float32Array } | null;
+	private readonly rffZ: Float32Array | null;
 	private readonly zMapped: Float32Array | null;
 	/** 0..1 confidence that the input matches anything in the corpus. EMA-smoothed. */
 	strength = 0;
@@ -323,8 +329,13 @@ export class ActivationTracker {
 		this.smoothing = smoothing;
 		this.temperature = spec.temperature || 0.12;
 		const embedding = spec.embedding;
+		const map = embedding?.map;
+		const mapReady = Boolean(
+			map && ('w' in map ? map.w?.length : map.kind === 'rff-ridge' && map.rff)
+		);
 		const useEmbed = Boolean(
-			embedding?.map &&
+			embedding &&
+				mapReady &&
 				embedding.mapQuality?.accepted !== false &&
 				embedding.dims > 0 &&
 				centroids.items.length &&
@@ -335,13 +346,26 @@ export class ActivationTracker {
 			// the 28-d one. The map is how a sound gets from here to there. These
 			// centroids are already standardised embedding vectors — there is no raw
 			// form to detect, unlike the 28-d path below.
-			this.mapW = Float32Array.from(embedding.map.w.flat());
-			this.mapB = Float32Array.from(embedding.map.b);
+			if ('w' in embedding.map) {
+				this.mapW = Float32Array.from(embedding.map.w.flat());
+				this.mapB = Float32Array.from(embedding.map.b);
+				this.rff = null;
+				this.rffZ = null;
+			} else {
+				const rff = embedding.map.rff;
+				if (!rff) throw new Error('rff-ridge map without its sidecar weights');
+				this.mapW = null;
+				this.mapB = Float32Array.from(rff.b);
+				this.rff = { R: rff.R, phase: rff.phase, w: rff.w };
+				this.rffZ = new Float32Array(embedding.map.D);
+			}
 			this.zMapped = new Float32Array(embedding.dims);
 			this.vectors = centroids.items.map((c) => Float32Array.from(c.vector32 as number[]));
 		} else {
 			this.mapW = null;
 			this.mapB = null;
+			this.rff = null;
+			this.rffZ = null;
 			this.zMapped = null;
 			// KMeans runs on standardised descriptors, but tolerate raw vectors too.
 			//
@@ -371,15 +395,33 @@ export class ActivationTracker {
 	 */
 	update(zLive: Float32Array, flatness = 0): Float32Array {
 		// When the galaxy was built in the embedding space, first carry the live
-		// descriptor into it: z32 = z28 @ W + b, then the same cosine the 28-d path uses.
+		// descriptor into it, then the same cosine the 28-d path uses.
 		let query = zLive;
 		if (this.mapW && this.mapB && this.zMapped) {
+			// Linear map: z32 = z28 @ W + b.
 			const dims32 = this.zMapped.length;
 			const dims28 = zLive.length;
 			for (let j = 0; j < dims32; j++) {
 				let acc = this.mapB[j];
 				for (let i = 0; i < dims28; i++) acc += zLive[i] * this.mapW[i * dims32 + j];
 				this.zMapped[j] = acc;
+			}
+			query = this.zMapped;
+		} else if (this.rff && this.rffZ && this.mapB && this.zMapped) {
+			// RFF map: f = sqrt(2/D) cos(z28 @ R + phase); z32 = f @ w + b.
+			const D = this.rffZ.length;
+			const dims32 = this.zMapped.length;
+			const dims28 = zLive.length;
+			const scale = Math.sqrt(2 / D);
+			for (let j = 0; j < D; j++) {
+				let acc = this.rff.phase[j];
+				for (let i = 0; i < dims28; i++) acc += zLive[i] * this.rff.R[i * D + j];
+				this.rffZ[j] = scale * Math.cos(acc);
+			}
+			for (let o = 0; o < dims32; o++) {
+				let acc = this.mapB[o];
+				for (let j = 0; j < D; j++) acc += this.rffZ[j] * this.rff.w[j * dims32 + o];
+				this.zMapped[o] = acc;
 			}
 			query = this.zMapped;
 		}

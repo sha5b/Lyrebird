@@ -1,94 +1,281 @@
 {
  "version": 1,
  "space": "critic-embedding-32d",
- "sharedTypeThreshold": 0.0299,
+ "sharedTypeThreshold": 0.0535,
  "sharedTypeDefinition": "cross-species type pairs nearer than the median within-species nearest-type distance of this corpus \u2014 nearer than two types of one bird usually are. A distance, not a claim of borrowing or kinship.",
  "speciesPairs": [
+  {
+   "a": "luscinia_megarhynchos",
+   "b": "turdus_philomelos",
+   "aCommon": "Common nightingale",
+   "bCommon": "Song Thrush",
+   "distance": 0.0806,
+   "centroidDistance": 0.0426,
+   "nearestNeighbourDistance": 0.1187,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "luscinia_megarhynchos",
+      "typeId": "L21"
+     },
+     "b": {
+      "species": "turdus_philomelos",
+      "typeId": "L04"
+     },
+     "distance": 0.0249
+    },
+    {
+     "a": {
+      "species": "luscinia_megarhynchos",
+      "typeId": "L46"
+     },
+     "b": {
+      "species": "turdus_philomelos",
+      "typeId": "L01"
+     },
+     "distance": 0.0356
+    },
+    {
+     "a": {
+      "species": "luscinia_megarhynchos",
+      "typeId": "L21"
+     },
+     "b": {
+      "species": "turdus_philomelos",
+      "typeId": "L06"
+     },
+     "distance": 0.0359
+    },
+    {
+     "a": {
+      "species": "luscinia_megarhynchos",
+      "typeId": "L46"
+     },
+     "b": {
+      "species": "turdus_philomelos",
+      "typeId": "L00"
+     },
+     "distance": 0.0369
+    },
+    {
+     "a": {
+      "species": "luscinia_megarhynchos",
+      "typeId": "L20"
+     },
+     "b": {
+      "species": "turdus_philomelos",
+      "typeId": "L03"
+     },
+     "distance": 0.0391
+    },
+    {
+     "a": {
+      "species": "luscinia_megarhynchos",
+      "typeId": "L20"
+     },
+     "b": {
+      "species": "turdus_philomelos",
+      "typeId": "L02"
+     },
+     "distance": 0.0414
+    },
+    {
+     "a": {
+      "species": "luscinia_megarhynchos",
+      "typeId": "L20"
+     },
+     "b": {
+      "species": "turdus_philomelos",
+      "typeId": "L05"
+     },
+     "distance": 0.0444
+    },
+    {
+     "a": {
+      "species": "luscinia_megarhynchos",
+      "typeId": "L21"
+     },
+     "b": {
+      "species": "turdus_philomelos",
+      "typeId": "L07"
+     },
+     "distance": 0.0457
+    },
+    {
+     "a": {
+      "species": "luscinia_megarhynchos",
+      "typeId": "L14"
+     },
+     "b": {
+      "species": "turdus_philomelos",
+      "typeId": "L10"
+     },
+     "distance": 0.0471
+    },
+    {
+     "a": {
+      "species": "luscinia_megarhynchos",
+      "typeId": "L20"
+     },
+     "b": {
+      "species": "turdus_philomelos",
+      "typeId": "L14"
+     },
+     "distance": 0.05
+    },
+    {
+     "a": {
+      "species": "luscinia_megarhynchos",
+      "typeId": "L21"
+     },
+     "b": {
+      "species": "turdus_philomelos",
+      "typeId": "L18"
+     },
+     "distance": 0.0512
+    }
+   ]
+  },
+  {
+   "a": "luscinia_megarhynchos",
+   "b": "turdus_merula",
+   "aCommon": "Common nightingale",
+   "bCommon": "Common blackbird",
+   "distance": 0.0933,
+   "centroidDistance": 0.0745,
+   "nearestNeighbourDistance": 0.1122,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "luscinia_megarhynchos",
+      "typeId": "L46"
+     },
+     "b": {
+      "species": "turdus_merula",
+      "typeId": "L26"
+     },
+     "distance": 0.0234
+    },
+    {
+     "a": {
+      "species": "luscinia_megarhynchos",
+      "typeId": "L46"
+     },
+     "b": {
+      "species": "turdus_merula",
+      "typeId": "L38"
+     },
+     "distance": 0.0282
+    },
+    {
+     "a": {
+      "species": "luscinia_megarhynchos",
+      "typeId": "L46"
+     },
+     "b": {
+      "species": "turdus_merula",
+      "typeId": "L30"
+     },
+     "distance": 0.032
+    },
+    {
+     "a": {
+      "species": "luscinia_megarhynchos",
+      "typeId": "L20"
+     },
+     "b": {
+      "species": "turdus_merula",
+      "typeId": "L05"
+     },
+     "distance": 0.0347
+    }
+   ]
+  },
+  {
+   "a": "turdus_merula",
+   "b": "turdus_philomelos",
+   "aCommon": "Common blackbird",
+   "bCommon": "Song Thrush",
+   "distance": 0.0948,
+   "centroidDistance": 0.0884,
+   "nearestNeighbourDistance": 0.1013,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "turdus_merula",
+      "typeId": "L30"
+     },
+     "b": {
+      "species": "turdus_philomelos",
+      "typeId": "L01"
+     },
+     "distance": 0.0091
+    },
+    {
+     "a": {
+      "species": "turdus_merula",
+      "typeId": "L38"
+     },
+     "b": {
+      "species": "turdus_philomelos",
+      "typeId": "L01"
+     },
+     "distance": 0.0192
+    },
+    {
+     "a": {
+      "species": "turdus_merula",
+      "typeId": "L06"
+     },
+     "b": {
+      "species": "turdus_philomelos",
+      "typeId": "L19"
+     },
+     "distance": 0.0287
+    },
+    {
+     "a": {
+      "species": "turdus_merula",
+      "typeId": "L05"
+     },
+     "b": {
+      "species": "turdus_philomelos",
+      "typeId": "L03"
+     },
+     "distance": 0.0372
+    },
+    {
+     "a": {
+      "species": "turdus_merula",
+      "typeId": "L30"
+     },
+     "b": {
+      "species": "turdus_philomelos",
+      "typeId": "L14"
+     },
+     "distance": 0.0504
+    }
+   ]
+  },
   {
    "a": "cuculus_clamosus",
    "b": "cuculus_solitarius",
    "aCommon": "Black Cuckoo",
    "bCommon": "Red-chested Cuckoo",
-   "distance": 0.0544,
-   "centroidDistance": 0.0504,
-   "nearestNeighbourDistance": 0.0583,
+   "distance": 0.1151,
+   "centroidDistance": 0.1335,
+   "nearestNeighbourDistance": 0.0966,
    "sharedTypes": [
     {
      "a": {
       "species": "cuculus_clamosus",
-      "typeId": "L08"
+      "typeId": "L10"
      },
      "b": {
       "species": "cuculus_solitarius",
-      "typeId": "L08"
+      "typeId": "L28"
      },
-     "distance": 0.0103
-    },
-    {
-     "a": {
-      "species": "cuculus_clamosus",
-      "typeId": "L08"
-     },
-     "b": {
-      "species": "cuculus_solitarius",
-      "typeId": "L09"
-     },
-     "distance": 0.0124
-    },
-    {
-     "a": {
-      "species": "cuculus_clamosus",
-      "typeId": "L07"
-     },
-     "b": {
-      "species": "cuculus_solitarius",
-      "typeId": "L06"
-     },
-     "distance": 0.0137
-    },
-    {
-     "a": {
-      "species": "cuculus_clamosus",
-      "typeId": "L08"
-     },
-     "b": {
-      "species": "cuculus_solitarius",
-      "typeId": "L13"
-     },
-     "distance": 0.0137
-    },
-    {
-     "a": {
-      "species": "cuculus_clamosus",
-      "typeId": "L08"
-     },
-     "b": {
-      "species": "cuculus_solitarius",
-      "typeId": "L11"
-     },
-     "distance": 0.0155
-    },
-    {
-     "a": {
-      "species": "cuculus_clamosus",
-      "typeId": "L07"
-     },
-     "b": {
-      "species": "cuculus_solitarius",
-      "typeId": "L07"
-     },
-     "distance": 0.0167
-    },
-    {
-     "a": {
-      "species": "cuculus_clamosus",
-      "typeId": "L08"
-     },
-     "b": {
-      "species": "cuculus_solitarius",
-      "typeId": "L07"
-     },
-     "distance": 0.0177
+     "distance": 0.0181
     },
     {
      "a": {
@@ -97,9 +284,9 @@
      },
      "b": {
       "species": "cuculus_solitarius",
-      "typeId": "L33"
+      "typeId": "L32"
      },
-     "distance": 0.0228
+     "distance": 0.0287
     },
     {
      "a": {
@@ -110,62 +297,7 @@
       "species": "cuculus_solitarius",
       "typeId": "L31"
      },
-     "distance": 0.0235
-    },
-    {
-     "a": {
-      "species": "cuculus_clamosus",
-      "typeId": "L10"
-     },
-     "b": {
-      "species": "cuculus_solitarius",
-      "typeId": "L24"
-     },
-     "distance": 0.0249
-    },
-    {
-     "a": {
-      "species": "cuculus_clamosus",
-      "typeId": "L06"
-     },
-     "b": {
-      "species": "cuculus_solitarius",
-      "typeId": "L05"
-     },
-     "distance": 0.0261
-    },
-    {
-     "a": {
-      "species": "cuculus_clamosus",
-      "typeId": "L06"
-     },
-     "b": {
-      "species": "cuculus_solitarius",
-      "typeId": "L08"
-     },
-     "distance": 0.0271
-    },
-    {
-     "a": {
-      "species": "cuculus_clamosus",
-      "typeId": "L10"
-     },
-     "b": {
-      "species": "cuculus_solitarius",
-      "typeId": "L28"
-     },
-     "distance": 0.028
-    },
-    {
-     "a": {
-      "species": "cuculus_clamosus",
-      "typeId": "L10"
-     },
-     "b": {
-      "species": "cuculus_solitarius",
-      "typeId": "L22"
-     },
-     "distance": 0.0284
+     "distance": 0.0287
     },
     {
      "a": {
@@ -174,283 +306,130 @@
      },
      "b": {
       "species": "cuculus_solitarius",
-      "typeId": "L04"
+      "typeId": "L12"
      },
-     "distance": 0.0292
+     "distance": 0.0321
     },
     {
      "a": {
       "species": "cuculus_clamosus",
-      "typeId": "L04"
+      "typeId": "L08"
      },
      "b": {
       "species": "cuculus_solitarius",
-      "typeId": "L04"
+      "typeId": "L42"
      },
-     "distance": 0.0296
-    }
-   ]
-  },
-  {
-   "a": "zosterops_japonicus",
-   "b": "zosterops_simplex",
-   "aCommon": "Japanese white-eye (mejiro)",
-   "bCommon": "Swinhoe's White-eye",
-   "distance": 0.058,
-   "centroidDistance": 0.0258,
-   "nearestNeighbourDistance": 0.0903,
-   "sharedTypes": []
-  },
-  {
-   "a": "luscinia_megarhynchos",
-   "b": "turdus_merula",
-   "aCommon": "Common nightingale",
-   "bCommon": "Common blackbird",
-   "distance": 0.0596,
-   "centroidDistance": 0.0419,
-   "nearestNeighbourDistance": 0.0773,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "luscinia_megarhynchos",
-      "typeId": "L48"
-     },
-     "b": {
-      "species": "turdus_merula",
-      "typeId": "L30"
-     },
-     "distance": 0.0046
+     "distance": 0.0328
     },
     {
      "a": {
-      "species": "luscinia_megarhynchos",
-      "typeId": "L24"
+      "species": "cuculus_clamosus",
+      "typeId": "L10"
      },
      "b": {
-      "species": "turdus_merula",
-      "typeId": "L38"
+      "species": "cuculus_solitarius",
+      "typeId": "L44"
      },
-     "distance": 0.0134
+     "distance": 0.0355
     },
     {
      "a": {
-      "species": "luscinia_megarhynchos",
-      "typeId": "L24"
+      "species": "cuculus_clamosus",
+      "typeId": "L08"
      },
      "b": {
-      "species": "turdus_merula",
-      "typeId": "L05"
+      "species": "cuculus_solitarius",
+      "typeId": "L09"
      },
-     "distance": 0.0297
-    }
-   ]
-  },
-  {
-   "a": "parus_minor",
-   "b": "troglodytes_troglodytes",
-   "aCommon": "Japanese great tit",
-   "bCommon": "Eurasian wren",
-   "distance": 0.0605,
-   "centroidDistance": 0.0356,
-   "nearestNeighbourDistance": 0.0854,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "parus_minor",
-      "typeId": "L07"
-     },
-     "b": {
-      "species": "troglodytes_troglodytes",
-      "typeId": "L61"
-     },
-     "distance": 0.0174
+     "distance": 0.0435
     },
     {
      "a": {
-      "species": "parus_minor",
-      "typeId": "L04"
+      "species": "cuculus_clamosus",
+      "typeId": "L08"
      },
      "b": {
-      "species": "troglodytes_troglodytes",
-      "typeId": "L05"
+      "species": "cuculus_solitarius",
+      "typeId": "L17"
      },
-     "distance": 0.026
+     "distance": 0.0455
     },
     {
      "a": {
-      "species": "parus_minor",
-      "typeId": "L04"
+      "species": "cuculus_clamosus",
+      "typeId": "L08"
      },
      "b": {
-      "species": "troglodytes_troglodytes",
-      "typeId": "L33"
+      "species": "cuculus_solitarius",
+      "typeId": "L14"
      },
-     "distance": 0.027
-    }
-   ]
-  },
-  {
-   "a": "luscinia_svecica",
-   "b": "parus_major",
-   "aCommon": "Bluethroat",
-   "bCommon": "Great Tit",
-   "distance": 0.0616,
-   "centroidDistance": 0.0315,
-   "nearestNeighbourDistance": 0.0917,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "luscinia_svecica",
-      "typeId": "L32"
-     },
-     "b": {
-      "species": "parus_major",
-      "typeId": "L13"
-     },
-     "distance": 0.0118
+     "distance": 0.0482
     },
     {
      "a": {
-      "species": "luscinia_svecica",
-      "typeId": "L49"
+      "species": "cuculus_clamosus",
+      "typeId": "L10"
      },
      "b": {
-      "species": "parus_major",
-      "typeId": "L23"
+      "species": "cuculus_solitarius",
+      "typeId": "L43"
      },
-     "distance": 0.0131
+     "distance": 0.0489
     },
     {
      "a": {
-      "species": "luscinia_svecica",
-      "typeId": "L57"
+      "species": "cuculus_clamosus",
+      "typeId": "L10"
      },
      "b": {
-      "species": "parus_major",
+      "species": "cuculus_solitarius",
       "typeId": "L29"
      },
-     "distance": 0.0165
-    }
-   ]
-  },
-  {
-   "a": "luscinia_megarhynchos",
-   "b": "turdus_philomelos",
-   "aCommon": "Common nightingale",
-   "bCommon": "Song Thrush",
-   "distance": 0.0617,
-   "centroidDistance": 0.0392,
-   "nearestNeighbourDistance": 0.0841,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "luscinia_megarhynchos",
-      "typeId": "L12"
-     },
-     "b": {
-      "species": "turdus_philomelos",
-      "typeId": "L04"
-     },
-     "distance": 0.0082
+     "distance": 0.0499
     },
     {
      "a": {
-      "species": "luscinia_megarhynchos",
-      "typeId": "L07"
+      "species": "cuculus_clamosus",
+      "typeId": "L06"
      },
      "b": {
-      "species": "turdus_philomelos",
-      "typeId": "L13"
-     },
-     "distance": 0.0142
-    },
-    {
-     "a": {
-      "species": "luscinia_megarhynchos",
-      "typeId": "L48"
-     },
-     "b": {
-      "species": "turdus_philomelos",
-      "typeId": "L01"
-     },
-     "distance": 0.0147
-    },
-    {
-     "a": {
-      "species": "luscinia_megarhynchos",
-      "typeId": "L24"
-     },
-     "b": {
-      "species": "turdus_philomelos",
-      "typeId": "L01"
-     },
-     "distance": 0.0215
-    },
-    {
-     "a": {
-      "species": "luscinia_megarhynchos",
-      "typeId": "L20"
-     },
-     "b": {
-      "species": "turdus_philomelos",
+      "species": "cuculus_solitarius",
       "typeId": "L05"
      },
-     "distance": 0.0289
+     "distance": 0.051
     },
     {
      "a": {
-      "species": "luscinia_megarhynchos",
-      "typeId": "L23"
+      "species": "cuculus_clamosus",
+      "typeId": "L10"
      },
      "b": {
-      "species": "turdus_philomelos",
-      "typeId": "L07"
+      "species": "cuculus_solitarius",
+      "typeId": "L24"
      },
-     "distance": 0.0294
-    }
-   ]
-  },
-  {
-   "a": "turdus_merula",
-   "b": "turdus_philomelos",
-   "aCommon": "Common blackbird",
-   "bCommon": "Song Thrush",
-   "distance": 0.0621,
-   "centroidDistance": 0.0451,
-   "nearestNeighbourDistance": 0.079,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "turdus_merula",
-      "typeId": "L30"
-     },
-     "b": {
-      "species": "turdus_philomelos",
-      "typeId": "L01"
-     },
-     "distance": 0.023
+     "distance": 0.0515
     },
     {
      "a": {
-      "species": "turdus_merula",
-      "typeId": "L38"
+      "species": "cuculus_clamosus",
+      "typeId": "L08"
      },
      "b": {
-      "species": "turdus_philomelos",
-      "typeId": "L03"
+      "species": "cuculus_solitarius",
+      "typeId": "L34"
      },
-     "distance": 0.0232
+     "distance": 0.0516
     },
     {
      "a": {
-      "species": "turdus_merula",
-      "typeId": "L55"
+      "species": "cuculus_clamosus",
+      "typeId": "L08"
      },
      "b": {
-      "species": "turdus_philomelos",
-      "typeId": "L12"
+      "species": "cuculus_solitarius",
+      "typeId": "L13"
      },
-     "distance": 0.0238
+     "distance": 0.0534
     }
    ]
   },
@@ -459,42 +438,20 @@
    "b": "troglodytes_troglodytes",
    "aCommon": "Great Tit",
    "bCommon": "Eurasian wren",
-   "distance": 0.0655,
-   "centroidDistance": 0.0555,
-   "nearestNeighbourDistance": 0.0756,
+   "distance": 0.1237,
+   "centroidDistance": 0.1119,
+   "nearestNeighbourDistance": 0.1356,
    "sharedTypes": [
     {
      "a": {
       "species": "parus_major",
-      "typeId": "L13"
+      "typeId": "L48"
      },
      "b": {
       "species": "troglodytes_troglodytes",
-      "typeId": "L15"
+      "typeId": "L63"
      },
-     "distance": 0.0097
-    },
-    {
-     "a": {
-      "species": "parus_major",
-      "typeId": "L29"
-     },
-     "b": {
-      "species": "troglodytes_troglodytes",
-      "typeId": "L24"
-     },
-     "distance": 0.0209
-    },
-    {
-     "a": {
-      "species": "parus_major",
-      "typeId": "L40"
-     },
-     "b": {
-      "species": "troglodytes_troglodytes",
-      "typeId": "L59"
-     },
-     "distance": 0.0222
+     "distance": 0.0338
     },
     {
      "a": {
@@ -503,9 +460,86 @@
      },
      "b": {
       "species": "troglodytes_troglodytes",
-      "typeId": "L57"
+      "typeId": "L82"
      },
-     "distance": 0.0228
+     "distance": 0.0346
+    },
+    {
+     "a": {
+      "species": "parus_major",
+      "typeId": "L38"
+     },
+     "b": {
+      "species": "troglodytes_troglodytes",
+      "typeId": "L59"
+     },
+     "distance": 0.0352
+    },
+    {
+     "a": {
+      "species": "parus_major",
+      "typeId": "L32"
+     },
+     "b": {
+      "species": "troglodytes_troglodytes",
+      "typeId": "L49"
+     },
+     "distance": 0.0433
+    },
+    {
+     "a": {
+      "species": "parus_major",
+      "typeId": "L39"
+     },
+     "b": {
+      "species": "troglodytes_troglodytes",
+      "typeId": "L58"
+     },
+     "distance": 0.0433
+    },
+    {
+     "a": {
+      "species": "parus_major",
+      "typeId": "L47"
+     },
+     "b": {
+      "species": "troglodytes_troglodytes",
+      "typeId": "L63"
+     },
+     "distance": 0.0461
+    },
+    {
+     "a": {
+      "species": "parus_major",
+      "typeId": "L38"
+     },
+     "b": {
+      "species": "troglodytes_troglodytes",
+      "typeId": "L84"
+     },
+     "distance": 0.0486
+    },
+    {
+     "a": {
+      "species": "parus_major",
+      "typeId": "L62"
+     },
+     "b": {
+      "species": "troglodytes_troglodytes",
+      "typeId": "L60"
+     },
+     "distance": 0.0488
+    },
+    {
+     "a": {
+      "species": "parus_major",
+      "typeId": "L50"
+     },
+     "b": {
+      "species": "troglodytes_troglodytes",
+      "typeId": "L43"
+     },
+     "distance": 0.051
     },
     {
      "a": {
@@ -516,71 +550,117 @@
       "species": "troglodytes_troglodytes",
       "typeId": "L59"
      },
-     "distance": 0.027
+     "distance": 0.0516
     },
     {
      "a": {
       "species": "parus_major",
-      "typeId": "L25"
-     },
-     "b": {
-      "species": "troglodytes_troglodytes",
       "typeId": "L51"
      },
-     "distance": 0.0274
+     "b": {
+      "species": "troglodytes_troglodytes",
+      "typeId": "L49"
+     },
+     "distance": 0.052
     },
     {
      "a": {
       "species": "parus_major",
-      "typeId": "L25"
+      "typeId": "L39"
      },
      "b": {
       "species": "troglodytes_troglodytes",
-      "typeId": "L19"
+      "typeId": "L84"
      },
-     "distance": 0.0283
+     "distance": 0.052
+    },
+    {
+     "a": {
+      "species": "parus_major",
+      "typeId": "L58"
+     },
+     "b": {
+      "species": "troglodytes_troglodytes",
+      "typeId": "L33"
+     },
+     "distance": 0.0525
     }
    ]
-  },
-  {
-   "a": "parus_minor",
-   "b": "zosterops_simplex",
-   "aCommon": "Japanese great tit",
-   "bCommon": "Swinhoe's White-eye",
-   "distance": 0.0674,
-   "centroidDistance": 0.0384,
-   "nearestNeighbourDistance": 0.0963,
-   "sharedTypes": []
   },
   {
    "a": "poecile_atricapillus",
    "b": "poecile_cinctus",
    "aCommon": "Black-capped chickadee",
    "bCommon": "Grey-headed Chickadee",
-   "distance": 0.0695,
-   "centroidDistance": 0.0611,
-   "nearestNeighbourDistance": 0.0778,
-   "sharedTypes": []
-  },
-  {
-   "a": "parus_major",
-   "b": "parus_minor",
-   "aCommon": "Great Tit",
-   "bCommon": "Japanese great tit",
-   "distance": 0.0707,
-   "centroidDistance": 0.0416,
-   "nearestNeighbourDistance": 0.0999,
+   "distance": 0.1245,
+   "centroidDistance": 0.1271,
+   "nearestNeighbourDistance": 0.122,
    "sharedTypes": [
     {
      "a": {
-      "species": "parus_major",
-      "typeId": "L36"
+      "species": "poecile_atricapillus",
+      "typeId": "L03"
      },
      "b": {
-      "species": "parus_minor",
+      "species": "poecile_cinctus",
+      "typeId": "L04"
+     },
+     "distance": 0.041
+    }
+   ]
+  },
+  {
+   "a": "luscinia_svecica",
+   "b": "parus_major",
+   "aCommon": "Bluethroat",
+   "bCommon": "Great Tit",
+   "distance": 0.1308,
+   "centroidDistance": 0.1225,
+   "nearestNeighbourDistance": 0.139,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "luscinia_svecica",
+      "typeId": "L32"
+     },
+     "b": {
+      "species": "parus_major",
+      "typeId": "L48"
+     },
+     "distance": 0.0362
+    },
+    {
+     "a": {
+      "species": "luscinia_svecica",
+      "typeId": "L51"
+     },
+     "b": {
+      "species": "parus_major",
+      "typeId": "L51"
+     },
+     "distance": 0.0512
+    }
+   ]
+  },
+  {
+   "a": "zosterops_erythropleurus",
+   "b": "zosterops_japonicus",
+   "aCommon": "Chestnut-flanked White-eye",
+   "bCommon": "Japanese white-eye (mejiro)",
+   "distance": 0.1327,
+   "centroidDistance": 0.1087,
+   "nearestNeighbourDistance": 0.1567,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "zosterops_erythropleurus",
       "typeId": "L06"
      },
-     "distance": 0.0271
+     "b": {
+      "species": "zosterops_japonicus",
+      "typeId": "L02"
+     },
+     "distance": 0.0492
     }
    ]
   },
@@ -589,86 +669,108 @@
    "b": "horornis_diphone",
    "aCommon": "Red-chested Cuckoo",
    "bCommon": "Japanese bush warbler (uguisu)",
-   "distance": 0.0735,
-   "centroidDistance": 0.0479,
-   "nearestNeighbourDistance": 0.0991,
+   "distance": 0.1359,
+   "centroidDistance": 0.1425,
+   "nearestNeighbourDistance": 0.1294,
    "sharedTypes": [
     {
      "a": {
       "species": "cuculus_solitarius",
-      "typeId": "L07"
+      "typeId": "L44"
      },
      "b": {
       "species": "horornis_diphone",
-      "typeId": "L01"
+      "typeId": "L02"
      },
-     "distance": 0.0066
+     "distance": 0.0364
     },
     {
      "a": {
       "species": "cuculus_solitarius",
-      "typeId": "L09"
+      "typeId": "L31"
      },
      "b": {
       "species": "horornis_diphone",
-      "typeId": "L01"
+      "typeId": "L02"
      },
-     "distance": 0.0167
+     "distance": 0.0368
     },
     {
      "a": {
       "species": "cuculus_solitarius",
-      "typeId": "L08"
+      "typeId": "L44"
      },
      "b": {
       "species": "horornis_diphone",
-      "typeId": "L01"
+      "typeId": "L03"
      },
-     "distance": 0.0211
+     "distance": 0.0423
     },
     {
      "a": {
       "species": "cuculus_solitarius",
-      "typeId": "L04"
+      "typeId": "L28"
      },
      "b": {
       "species": "horornis_diphone",
-      "typeId": "L01"
+      "typeId": "L03"
      },
-     "distance": 0.023
+     "distance": 0.0434
     },
     {
      "a": {
       "species": "cuculus_solitarius",
-      "typeId": "L13"
+      "typeId": "L32"
      },
      "b": {
       "species": "horornis_diphone",
-      "typeId": "L01"
+      "typeId": "L02"
      },
-     "distance": 0.0249
+     "distance": 0.0466
     },
     {
      "a": {
       "species": "cuculus_solitarius",
-      "typeId": "L16"
+      "typeId": "L28"
      },
      "b": {
       "species": "horornis_diphone",
-      "typeId": "L01"
+      "typeId": "L02"
      },
-     "distance": 0.0261
+     "distance": 0.0507
+    }
+   ]
+  },
+  {
+   "a": "cuculus_solitarius",
+   "b": "turdus_merula",
+   "aCommon": "Red-chested Cuckoo",
+   "bCommon": "Common blackbird",
+   "distance": 0.1414,
+   "centroidDistance": 0.1611,
+   "nearestNeighbourDistance": 0.1216,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L24"
+     },
+     "b": {
+      "species": "turdus_merula",
+      "typeId": "L19"
+     },
+     "distance": 0.0208
     },
     {
      "a": {
       "species": "cuculus_solitarius",
-      "typeId": "L15"
+      "typeId": "L26"
      },
      "b": {
-      "species": "horornis_diphone",
-      "typeId": "L01"
+      "species": "turdus_merula",
+      "typeId": "L19"
      },
-     "distance": 0.0267
+     "distance": 0.0263
     },
     {
      "a": {
@@ -676,546 +778,10 @@
       "typeId": "L20"
      },
      "b": {
-      "species": "horornis_diphone",
-      "typeId": "L01"
-     },
-     "distance": 0.0277
-    },
-    {
-     "a": {
-      "species": "cuculus_solitarius",
-      "typeId": "L11"
-     },
-     "b": {
-      "species": "horornis_diphone",
-      "typeId": "L01"
-     },
-     "distance": 0.0282
-    },
-    {
-     "a": {
-      "species": "cuculus_solitarius",
-      "typeId": "L28"
-     },
-     "b": {
-      "species": "horornis_diphone",
-      "typeId": "L03"
-     },
-     "distance": 0.0296
-    }
-   ]
-  },
-  {
-   "a": "parus_minor",
-   "b": "zosterops_japonicus",
-   "aCommon": "Japanese great tit",
-   "bCommon": "Japanese white-eye (mejiro)",
-   "distance": 0.0756,
-   "centroidDistance": 0.0557,
-   "nearestNeighbourDistance": 0.0954,
-   "sharedTypes": []
-  },
-  {
-   "a": "troglodytes_troglodytes",
-   "b": "zosterops_simplex",
-   "aCommon": "Eurasian wren",
-   "bCommon": "Swinhoe's White-eye",
-   "distance": 0.077,
-   "centroidDistance": 0.0527,
-   "nearestNeighbourDistance": 0.1013,
-   "sharedTypes": []
-  },
-  {
-   "a": "parus_minor",
-   "b": "poecile_cinctus",
-   "aCommon": "Japanese great tit",
-   "bCommon": "Grey-headed Chickadee",
-   "distance": 0.0841,
-   "centroidDistance": 0.0581,
-   "nearestNeighbourDistance": 0.11,
-   "sharedTypes": []
-  },
-  {
-   "a": "parus_major",
-   "b": "zosterops_simplex",
-   "aCommon": "Great Tit",
-   "bCommon": "Swinhoe's White-eye",
-   "distance": 0.0871,
-   "centroidDistance": 0.054,
-   "nearestNeighbourDistance": 0.1202,
-   "sharedTypes": []
-  },
-  {
-   "a": "parus_major",
-   "b": "zosterops_japonicus",
-   "aCommon": "Great Tit",
-   "bCommon": "Japanese white-eye (mejiro)",
-   "distance": 0.0881,
-   "centroidDistance": 0.0636,
-   "nearestNeighbourDistance": 0.1125,
-   "sharedTypes": []
-  },
-  {
-   "a": "poecile_rufescens",
-   "b": "troglodytes_troglodytes",
-   "aCommon": "Chestnut-backed Chickadee",
-   "bCommon": "Eurasian wren",
-   "distance": 0.089,
-   "centroidDistance": 0.0866,
-   "nearestNeighbourDistance": 0.0914,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "poecile_rufescens",
-      "typeId": "L02"
-     },
-     "b": {
-      "species": "troglodytes_troglodytes",
-      "typeId": "L35"
-     },
-     "distance": 0.0154
-    },
-    {
-     "a": {
-      "species": "poecile_rufescens",
-      "typeId": "L00"
-     },
-     "b": {
-      "species": "troglodytes_troglodytes",
-      "typeId": "L54"
-     },
-     "distance": 0.0247
-    },
-    {
-     "a": {
-      "species": "poecile_rufescens",
-      "typeId": "L05"
-     },
-     "b": {
-      "species": "troglodytes_troglodytes",
-      "typeId": "L42"
-     },
-     "distance": 0.0269
-    }
-   ]
-  },
-  {
-   "a": "luscinia_megarhynchos",
-   "b": "luscinia_svecica",
-   "aCommon": "Common nightingale",
-   "bCommon": "Bluethroat",
-   "distance": 0.0903,
-   "centroidDistance": 0.0733,
-   "nearestNeighbourDistance": 0.1073,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "luscinia_megarhynchos",
-      "typeId": "L37"
-     },
-     "b": {
-      "species": "luscinia_svecica",
-      "typeId": "L32"
-     },
-     "distance": 0.0085
-    },
-    {
-     "a": {
-      "species": "luscinia_megarhynchos",
-      "typeId": "L12"
-     },
-     "b": {
-      "species": "luscinia_svecica",
-      "typeId": "L03"
-     },
-     "distance": 0.0287
-    }
-   ]
-  },
-  {
-   "a": "luscinia_svecica",
-   "b": "zosterops_japonicus",
-   "aCommon": "Bluethroat",
-   "bCommon": "Japanese white-eye (mejiro)",
-   "distance": 0.0924,
-   "centroidDistance": 0.0707,
-   "nearestNeighbourDistance": 0.1142,
-   "sharedTypes": []
-  },
-  {
-   "a": "luscinia_megarhynchos",
-   "b": "parus_major",
-   "aCommon": "Common nightingale",
-   "bCommon": "Great Tit",
-   "distance": 0.0937,
-   "centroidDistance": 0.0739,
-   "nearestNeighbourDistance": 0.1136,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "luscinia_megarhynchos",
-      "typeId": "L37"
-     },
-     "b": {
-      "species": "parus_major",
-      "typeId": "L13"
-     },
-     "distance": 0.0127
-    },
-    {
-     "a": {
-      "species": "luscinia_megarhynchos",
-      "typeId": "L37"
-     },
-     "b": {
-      "species": "parus_major",
-      "typeId": "L16"
-     },
-     "distance": 0.0241
-    }
-   ]
-  },
-  {
-   "a": "parus_minor",
-   "b": "poecile_rufescens",
-   "aCommon": "Japanese great tit",
-   "bCommon": "Chestnut-backed Chickadee",
-   "distance": 0.0945,
-   "centroidDistance": 0.0851,
-   "nearestNeighbourDistance": 0.1039,
-   "sharedTypes": []
-  },
-  {
-   "a": "troglodytes_troglodytes",
-   "b": "zosterops_japonicus",
-   "aCommon": "Eurasian wren",
-   "bCommon": "Japanese white-eye (mejiro)",
-   "distance": 0.0951,
-   "centroidDistance": 0.0871,
-   "nearestNeighbourDistance": 0.103,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "troglodytes_troglodytes",
-      "typeId": "L33"
-     },
-     "b": {
-      "species": "zosterops_japonicus",
-      "typeId": "L07"
-     },
-     "distance": 0.0298
-    }
-   ]
-  },
-  {
-   "a": "luscinia_svecica",
-   "b": "troglodytes_troglodytes",
-   "aCommon": "Bluethroat",
-   "bCommon": "Eurasian wren",
-   "distance": 0.0952,
-   "centroidDistance": 0.1033,
-   "nearestNeighbourDistance": 0.087,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "luscinia_svecica",
-      "typeId": "L57"
-     },
-     "b": {
-      "species": "troglodytes_troglodytes",
-      "typeId": "L24"
-     },
-     "distance": 0.0069
-    },
-    {
-     "a": {
-      "species": "luscinia_svecica",
-      "typeId": "L32"
-     },
-     "b": {
-      "species": "troglodytes_troglodytes",
-      "typeId": "L15"
-     },
-     "distance": 0.0145
-    },
-    {
-     "a": {
-      "species": "luscinia_svecica",
-      "typeId": "L59"
-     },
-     "b": {
-      "species": "troglodytes_troglodytes",
-      "typeId": "L27"
-     },
-     "distance": 0.0242
-    }
-   ]
-  },
-  {
-   "a": "cuculus_solitarius",
-   "b": "perisoreus_infaustus",
-   "aCommon": "Red-chested Cuckoo",
-   "bCommon": "Siberian jay",
-   "distance": 0.0959,
-   "centroidDistance": 0.0915,
-   "nearestNeighbourDistance": 0.1003,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "cuculus_solitarius",
-      "typeId": "L03"
-     },
-     "b": {
-      "species": "perisoreus_infaustus",
-      "typeId": "L00"
-     },
-     "distance": 0.0179
-    },
-    {
-     "a": {
-      "species": "cuculus_solitarius",
-      "typeId": "L18"
-     },
-     "b": {
-      "species": "perisoreus_infaustus",
-      "typeId": "L02"
-     },
-     "distance": 0.0234
-    },
-    {
-     "a": {
-      "species": "cuculus_solitarius",
-      "typeId": "L13"
-     },
-     "b": {
-      "species": "perisoreus_infaustus",
-      "typeId": "L02"
-     },
-     "distance": 0.0256
-    },
-    {
-     "a": {
-      "species": "cuculus_solitarius",
-      "typeId": "L12"
-     },
-     "b": {
-      "species": "perisoreus_infaustus",
-      "typeId": "L02"
-     },
-     "distance": 0.0286
-    }
-   ]
-  },
-  {
-   "a": "horornis_diphone",
-   "b": "perisoreus_infaustus",
-   "aCommon": "Japanese bush warbler (uguisu)",
-   "bCommon": "Siberian jay",
-   "distance": 0.0969,
-   "centroidDistance": 0.0551,
-   "nearestNeighbourDistance": 0.1387,
-   "sharedTypes": []
-  },
-  {
-   "a": "poecile_cinctus",
-   "b": "zosterops_japonicus",
-   "aCommon": "Grey-headed Chickadee",
-   "bCommon": "Japanese white-eye (mejiro)",
-   "distance": 0.0996,
-   "centroidDistance": 0.0817,
-   "nearestNeighbourDistance": 0.1175,
-   "sharedTypes": []
-  },
-  {
-   "a": "parus_minor",
-   "b": "poecile_atricapillus",
-   "aCommon": "Japanese great tit",
-   "bCommon": "Black-capped chickadee",
-   "distance": 0.1008,
-   "centroidDistance": 0.0966,
-   "nearestNeighbourDistance": 0.1051,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "parus_minor",
-      "typeId": "L06"
-     },
-     "b": {
-      "species": "poecile_atricapillus",
-      "typeId": "L07"
-     },
-     "distance": 0.0276
-    }
-   ]
-  },
-  {
-   "a": "luscinia_svecica",
-   "b": "turdus_philomelos",
-   "aCommon": "Bluethroat",
-   "bCommon": "Song Thrush",
-   "distance": 0.1021,
-   "centroidDistance": 0.0979,
-   "nearestNeighbourDistance": 0.1062,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "luscinia_svecica",
-      "typeId": "L03"
-     },
-     "b": {
-      "species": "turdus_philomelos",
-      "typeId": "L04"
-     },
-     "distance": 0.0204
-    }
-   ]
-  },
-  {
-   "a": "poecile_cinctus",
-   "b": "zosterops_simplex",
-   "aCommon": "Grey-headed Chickadee",
-   "bCommon": "Swinhoe's White-eye",
-   "distance": 0.1036,
-   "centroidDistance": 0.082,
-   "nearestNeighbourDistance": 0.1253,
-   "sharedTypes": []
-  },
-  {
-   "a": "perisoreus_infaustus",
-   "b": "turdus_merula",
-   "aCommon": "Siberian jay",
-   "bCommon": "Common blackbird",
-   "distance": 0.1045,
-   "centroidDistance": 0.0961,
-   "nearestNeighbourDistance": 0.1128,
-   "sharedTypes": []
-  },
-  {
-   "a": "luscinia_svecica",
-   "b": "zosterops_simplex",
-   "aCommon": "Bluethroat",
-   "bCommon": "Swinhoe's White-eye",
-   "distance": 0.1062,
-   "centroidDistance": 0.0797,
-   "nearestNeighbourDistance": 0.1328,
-   "sharedTypes": []
-  },
-  {
-   "a": "luscinia_svecica",
-   "b": "parus_minor",
-   "aCommon": "Bluethroat",
-   "bCommon": "Japanese great tit",
-   "distance": 0.1078,
-   "centroidDistance": 0.0958,
-   "nearestNeighbourDistance": 0.1199,
-   "sharedTypes": []
-  },
-  {
-   "a": "horornis_diphone",
-   "b": "turdus_merula",
-   "aCommon": "Japanese bush warbler (uguisu)",
-   "bCommon": "Common blackbird",
-   "distance": 0.1102,
-   "centroidDistance": 0.0951,
-   "nearestNeighbourDistance": 0.1253,
-   "sharedTypes": []
-  },
-  {
-   "a": "parus_major",
-   "b": "turdus_philomelos",
-   "aCommon": "Great Tit",
-   "bCommon": "Song Thrush",
-   "distance": 0.1109,
-   "centroidDistance": 0.1078,
-   "nearestNeighbourDistance": 0.114,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "parus_major",
-      "typeId": "L36"
-     },
-     "b": {
-      "species": "turdus_philomelos",
-      "typeId": "L13"
-     },
-     "distance": 0.022
-    }
-   ]
-  },
-  {
-   "a": "cuculus_solitarius",
-   "b": "turdus_merula",
-   "aCommon": "Red-chested Cuckoo",
-   "bCommon": "Common blackbird",
-   "distance": 0.1114,
-   "centroidDistance": 0.1391,
-   "nearestNeighbourDistance": 0.0837,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "cuculus_solitarius",
-      "typeId": "L32"
-     },
-     "b": {
-      "species": "turdus_merula",
-      "typeId": "L26"
-     },
-     "distance": 0.0117
-    },
-    {
-     "a": {
-      "species": "cuculus_solitarius",
-      "typeId": "L26"
-     },
-     "b": {
       "species": "turdus_merula",
       "typeId": "L19"
      },
-     "distance": 0.0131
-    },
-    {
-     "a": {
-      "species": "cuculus_solitarius",
-      "typeId": "L24"
-     },
-     "b": {
-      "species": "turdus_merula",
-      "typeId": "L19"
-     },
-     "distance": 0.0154
-    },
-    {
-     "a": {
-      "species": "cuculus_solitarius",
-      "typeId": "L28"
-     },
-     "b": {
-      "species": "turdus_merula",
-      "typeId": "L19"
-     },
-     "distance": 0.0169
-    },
-    {
-     "a": {
-      "species": "cuculus_solitarius",
-      "typeId": "L18"
-     },
-     "b": {
-      "species": "turdus_merula",
-      "typeId": "L19"
-     },
-     "distance": 0.0234
-    },
-    {
-     "a": {
-      "species": "cuculus_solitarius",
-      "typeId": "L34"
-     },
-     "b": {
-      "species": "turdus_merula",
-      "typeId": "L26"
-     },
-     "distance": 0.0276
+     "distance": 0.0281
     },
     {
      "a": {
@@ -1226,18 +792,710 @@
       "species": "turdus_merula",
       "typeId": "L19"
      },
-     "distance": 0.028
+     "distance": 0.03
+    },
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L31"
+     },
+     "b": {
+      "species": "turdus_merula",
+      "typeId": "L26"
+     },
+     "distance": 0.0323
+    },
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L32"
+     },
+     "b": {
+      "species": "turdus_merula",
+      "typeId": "L26"
+     },
+     "distance": 0.0332
+    },
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L29"
+     },
+     "b": {
+      "species": "turdus_merula",
+      "typeId": "L19"
+     },
+     "distance": 0.0396
+    },
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L29"
+     },
+     "b": {
+      "species": "turdus_merula",
+      "typeId": "L26"
+     },
+     "distance": 0.0402
+    },
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L43"
+     },
+     "b": {
+      "species": "turdus_merula",
+      "typeId": "L19"
+     },
+     "distance": 0.0433
+    },
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L28"
+     },
+     "b": {
+      "species": "turdus_merula",
+      "typeId": "L26"
+     },
+     "distance": 0.0468
     }
    ]
+  },
+  {
+   "a": "horornis_diphone",
+   "b": "turdus_merula",
+   "aCommon": "Japanese bush warbler (uguisu)",
+   "bCommon": "Common blackbird",
+   "distance": 0.1486,
+   "centroidDistance": 0.1386,
+   "nearestNeighbourDistance": 0.1586,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "horornis_diphone",
+      "typeId": "L02"
+     },
+     "b": {
+      "species": "turdus_merula",
+      "typeId": "L26"
+     },
+     "distance": 0.0366
+    },
+    {
+     "a": {
+      "species": "horornis_diphone",
+      "typeId": "L02"
+     },
+     "b": {
+      "species": "turdus_merula",
+      "typeId": "L30"
+     },
+     "distance": 0.0405
+    }
+   ]
+  },
+  {
+   "a": "parus_minor",
+   "b": "poecile_cinctus",
+   "aCommon": "Japanese great tit",
+   "bCommon": "Grey-headed Chickadee",
+   "distance": 0.1556,
+   "centroidDistance": 0.1298,
+   "nearestNeighbourDistance": 0.1813,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_solitarius",
+   "b": "perisoreus_infaustus",
+   "aCommon": "Red-chested Cuckoo",
+   "bCommon": "Siberian jay",
+   "distance": 0.1565,
+   "centroidDistance": 0.171,
+   "nearestNeighbourDistance": 0.142,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L26"
+     },
+     "b": {
+      "species": "perisoreus_infaustus",
+      "typeId": "L08"
+     },
+     "distance": 0.0405
+    },
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L32"
+     },
+     "b": {
+      "species": "perisoreus_infaustus",
+      "typeId": "L08"
+     },
+     "distance": 0.0406
+    },
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L29"
+     },
+     "b": {
+      "species": "perisoreus_infaustus",
+      "typeId": "L08"
+     },
+     "distance": 0.0434
+    },
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L24"
+     },
+     "b": {
+      "species": "perisoreus_infaustus",
+      "typeId": "L08"
+     },
+     "distance": 0.0455
+    },
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L20"
+     },
+     "b": {
+      "species": "perisoreus_infaustus",
+      "typeId": "L08"
+     },
+     "distance": 0.0473
+    },
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L03"
+     },
+     "b": {
+      "species": "perisoreus_infaustus",
+      "typeId": "L00"
+     },
+     "distance": 0.0475
+    },
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L28"
+     },
+     "b": {
+      "species": "perisoreus_infaustus",
+      "typeId": "L08"
+     },
+     "distance": 0.0494
+    },
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L43"
+     },
+     "b": {
+      "species": "perisoreus_infaustus",
+      "typeId": "L08"
+     },
+     "distance": 0.051
+    }
+   ]
+  },
+  {
+   "a": "luscinia_svecica",
+   "b": "troglodytes_troglodytes",
+   "aCommon": "Bluethroat",
+   "bCommon": "Eurasian wren",
+   "distance": 0.1583,
+   "centroidDistance": 0.1728,
+   "nearestNeighbourDistance": 0.1439,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "luscinia_svecica",
+      "typeId": "L50"
+     },
+     "b": {
+      "species": "troglodytes_troglodytes",
+      "typeId": "L02"
+     },
+     "distance": 0.0313
+    },
+    {
+     "a": {
+      "species": "luscinia_svecica",
+      "typeId": "L48"
+     },
+     "b": {
+      "species": "troglodytes_troglodytes",
+      "typeId": "L47"
+     },
+     "distance": 0.0369
+    },
+    {
+     "a": {
+      "species": "luscinia_svecica",
+      "typeId": "L33"
+     },
+     "b": {
+      "species": "troglodytes_troglodytes",
+      "typeId": "L43"
+     },
+     "distance": 0.0393
+    }
+   ]
+  },
+  {
+   "a": "perisoreus_infaustus",
+   "b": "turdus_merula",
+   "aCommon": "Siberian jay",
+   "bCommon": "Common blackbird",
+   "distance": 0.1646,
+   "centroidDistance": 0.1882,
+   "nearestNeighbourDistance": 0.1409,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "perisoreus_infaustus",
+      "typeId": "L08"
+     },
+     "b": {
+      "species": "turdus_merula",
+      "typeId": "L19"
+     },
+     "distance": 0.0265
+    }
+   ]
+  },
+  {
+   "a": "cuculus_clamosus",
+   "b": "strix_leptogrammica",
+   "aCommon": "Black Cuckoo",
+   "bCommon": "Brown Wood Owl",
+   "distance": 0.1663,
+   "centroidDistance": 0.1607,
+   "nearestNeighbourDistance": 0.1719,
+   "sharedTypes": []
+  },
+  {
+   "a": "zosterops_japonicus",
+   "b": "zosterops_simplex",
+   "aCommon": "Japanese white-eye (mejiro)",
+   "bCommon": "Swinhoe's White-eye",
+   "distance": 0.1673,
+   "centroidDistance": 0.173,
+   "nearestNeighbourDistance": 0.1615,
+   "sharedTypes": []
+  },
+  {
+   "a": "perisoreus_infaustus",
+   "b": "strix_aluco",
+   "aCommon": "Siberian jay",
+   "bCommon": "Tawny owl",
+   "distance": 0.1699,
+   "centroidDistance": 0.1608,
+   "nearestNeighbourDistance": 0.179,
+   "sharedTypes": []
+  },
+  {
+   "a": "parus_minor",
+   "b": "poecile_atricapillus",
+   "aCommon": "Japanese great tit",
+   "bCommon": "Black-capped chickadee",
+   "distance": 0.1721,
+   "centroidDistance": 0.1841,
+   "nearestNeighbourDistance": 0.1601,
+   "sharedTypes": []
+  },
+  {
+   "a": "horornis_diphone",
+   "b": "perisoreus_infaustus",
+   "aCommon": "Japanese bush warbler (uguisu)",
+   "bCommon": "Siberian jay",
+   "distance": 0.1726,
+   "centroidDistance": 0.1614,
+   "nearestNeighbourDistance": 0.1838,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "horornis_diphone",
+      "typeId": "L03"
+     },
+     "b": {
+      "species": "perisoreus_infaustus",
+      "typeId": "L08"
+     },
+     "distance": 0.0505
+    }
+   ]
+  },
+  {
+   "a": "parus_minor",
+   "b": "zosterops_japonicus",
+   "aCommon": "Japanese great tit",
+   "bCommon": "Japanese white-eye (mejiro)",
+   "distance": 0.1734,
+   "centroidDistance": 0.1729,
+   "nearestNeighbourDistance": 0.1738,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "parus_minor",
+      "typeId": "L05"
+     },
+     "b": {
+      "species": "zosterops_japonicus",
+      "typeId": "L07"
+     },
+     "distance": 0.0519
+    }
+   ]
+  },
+  {
+   "a": "poecile_cinctus",
+   "b": "zosterops_erythropleurus",
+   "aCommon": "Grey-headed Chickadee",
+   "bCommon": "Chestnut-flanked White-eye",
+   "distance": 0.1735,
+   "centroidDistance": 0.1698,
+   "nearestNeighbourDistance": 0.1772,
+   "sharedTypes": []
   },
   {
    "a": "poecile_atricapillus",
    "b": "zosterops_erythropleurus",
    "aCommon": "Black-capped chickadee",
    "bCommon": "Chestnut-flanked White-eye",
-   "distance": 0.115,
-   "centroidDistance": 0.1084,
-   "nearestNeighbourDistance": 0.1217,
+   "distance": 0.1746,
+   "centroidDistance": 0.1903,
+   "nearestNeighbourDistance": 0.1588,
+   "sharedTypes": []
+  },
+  {
+   "a": "luscinia_megarhynchos",
+   "b": "luscinia_svecica",
+   "aCommon": "Common nightingale",
+   "bCommon": "Bluethroat",
+   "distance": 0.1749,
+   "centroidDistance": 0.1975,
+   "nearestNeighbourDistance": 0.1522,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "luscinia_megarhynchos",
+      "typeId": "L21"
+     },
+     "b": {
+      "species": "luscinia_svecica",
+      "typeId": "L06"
+     },
+     "distance": 0.0354
+    }
+   ]
+  },
+  {
+   "a": "zosterops_erythropleurus",
+   "b": "zosterops_simplex",
+   "aCommon": "Chestnut-flanked White-eye",
+   "bCommon": "Swinhoe's White-eye",
+   "distance": 0.1801,
+   "centroidDistance": 0.1993,
+   "nearestNeighbourDistance": 0.1608,
+   "sharedTypes": []
+  },
+  {
+   "a": "parus_major",
+   "b": "parus_minor",
+   "aCommon": "Great Tit",
+   "bCommon": "Japanese great tit",
+   "distance": 0.1837,
+   "centroidDistance": 0.1886,
+   "nearestNeighbourDistance": 0.1788,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "parus_major",
+      "typeId": "L63"
+     },
+     "b": {
+      "species": "parus_minor",
+      "typeId": "L39"
+     },
+     "distance": 0.0432
+    }
+   ]
+  },
+  {
+   "a": "cuculus_solitarius",
+   "b": "strix_leptogrammica",
+   "aCommon": "Red-chested Cuckoo",
+   "bCommon": "Brown Wood Owl",
+   "distance": 0.1849,
+   "centroidDistance": 0.2225,
+   "nearestNeighbourDistance": 0.1472,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L03"
+     },
+     "b": {
+      "species": "strix_leptogrammica",
+      "typeId": "L02"
+     },
+     "distance": 0.0365
+    },
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L03"
+     },
+     "b": {
+      "species": "strix_leptogrammica",
+      "typeId": "L11"
+     },
+     "distance": 0.0398
+    },
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L21"
+     },
+     "b": {
+      "species": "strix_leptogrammica",
+      "typeId": "L21"
+     },
+     "distance": 0.0411
+    },
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L41"
+     },
+     "b": {
+      "species": "strix_leptogrammica",
+      "typeId": "L08"
+     },
+     "distance": 0.0422
+    },
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L26"
+     },
+     "b": {
+      "species": "strix_leptogrammica",
+      "typeId": "L21"
+     },
+     "distance": 0.0449
+    },
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L24"
+     },
+     "b": {
+      "species": "strix_leptogrammica",
+      "typeId": "L21"
+     },
+     "distance": 0.0513
+    },
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L22"
+     },
+     "b": {
+      "species": "strix_leptogrammica",
+      "typeId": "L19"
+     },
+     "distance": 0.0518
+    }
+   ]
+  },
+  {
+   "a": "luscinia_megarhynchos",
+   "b": "perisoreus_infaustus",
+   "aCommon": "Common nightingale",
+   "bCommon": "Siberian jay",
+   "distance": 0.185,
+   "centroidDistance": 0.1891,
+   "nearestNeighbourDistance": 0.1808,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "luscinia_megarhynchos",
+      "typeId": "L46"
+     },
+     "b": {
+      "species": "perisoreus_infaustus",
+      "typeId": "L08"
+     },
+     "distance": 0.0441
+    }
+   ]
+  },
+  {
+   "a": "parus_minor",
+   "b": "zosterops_simplex",
+   "aCommon": "Japanese great tit",
+   "bCommon": "Swinhoe's White-eye",
+   "distance": 0.1883,
+   "centroidDistance": 0.1915,
+   "nearestNeighbourDistance": 0.185,
+   "sharedTypes": []
+  },
+  {
+   "a": "luscinia_megarhynchos",
+   "b": "parus_major",
+   "aCommon": "Common nightingale",
+   "bCommon": "Great Tit",
+   "distance": 0.1907,
+   "centroidDistance": 0.2028,
+   "nearestNeighbourDistance": 0.1786,
+   "sharedTypes": []
+  },
+  {
+   "a": "luscinia_megarhynchos",
+   "b": "poecile_atricapillus",
+   "aCommon": "Common nightingale",
+   "bCommon": "Black-capped chickadee",
+   "distance": 0.1917,
+   "centroidDistance": 0.1979,
+   "nearestNeighbourDistance": 0.1856,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "luscinia_megarhynchos",
+      "typeId": "L44"
+     },
+     "b": {
+      "species": "poecile_atricapillus",
+      "typeId": "L00"
+     },
+     "distance": 0.0377
+    }
+   ]
+  },
+  {
+   "a": "cuculus_clamosus",
+   "b": "perisoreus_infaustus",
+   "aCommon": "Black Cuckoo",
+   "bCommon": "Siberian jay",
+   "distance": 0.1956,
+   "centroidDistance": 0.2267,
+   "nearestNeighbourDistance": 0.1644,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "cuculus_clamosus",
+      "typeId": "L10"
+     },
+     "b": {
+      "species": "perisoreus_infaustus",
+      "typeId": "L08"
+     },
+     "distance": 0.0411
+    }
+   ]
+  },
+  {
+   "a": "horornis_diphone",
+   "b": "luscinia_megarhynchos",
+   "aCommon": "Japanese bush warbler (uguisu)",
+   "bCommon": "Common nightingale",
+   "distance": 0.1976,
+   "centroidDistance": 0.2061,
+   "nearestNeighbourDistance": 0.1891,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "horornis_diphone",
+      "typeId": "L02"
+     },
+     "b": {
+      "species": "luscinia_megarhynchos",
+      "typeId": "L46"
+     },
+     "distance": 0.0317
+    }
+   ]
+  },
+  {
+   "a": "parus_minor",
+   "b": "troglodytes_troglodytes",
+   "aCommon": "Japanese great tit",
+   "bCommon": "Eurasian wren",
+   "distance": 0.1978,
+   "centroidDistance": 0.2095,
+   "nearestNeighbourDistance": 0.186,
+   "sharedTypes": []
+  },
+  {
+   "a": "poecile_cinctus",
+   "b": "zosterops_japonicus",
+   "aCommon": "Grey-headed Chickadee",
+   "bCommon": "Japanese white-eye (mejiro)",
+   "distance": 0.1986,
+   "centroidDistance": 0.1948,
+   "nearestNeighbourDistance": 0.2024,
+   "sharedTypes": []
+  },
+  {
+   "a": "perisoreus_infaustus",
+   "b": "turdus_philomelos",
+   "aCommon": "Siberian jay",
+   "bCommon": "Song Thrush",
+   "distance": 0.2026,
+   "centroidDistance": 0.2243,
+   "nearestNeighbourDistance": 0.1808,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "perisoreus_infaustus",
+      "typeId": "L08"
+     },
+     "b": {
+      "species": "turdus_philomelos",
+      "typeId": "L00"
+     },
+     "distance": 0.0358
+    }
+   ]
+  },
+  {
+   "a": "horornis_diphone",
+   "b": "turdus_philomelos",
+   "aCommon": "Japanese bush warbler (uguisu)",
+   "bCommon": "Song Thrush",
+   "distance": 0.2042,
+   "centroidDistance": 0.2315,
+   "nearestNeighbourDistance": 0.1769,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "horornis_diphone",
+      "typeId": "L03"
+     },
+     "b": {
+      "species": "turdus_philomelos",
+      "typeId": "L00"
+     },
+     "distance": 0.0423
+    }
+   ]
+  },
+  {
+   "a": "parus_major",
+   "b": "turdus_philomelos",
+   "aCommon": "Great Tit",
+   "bCommon": "Song Thrush",
+   "distance": 0.2071,
+   "centroidDistance": 0.2392,
+   "nearestNeighbourDistance": 0.1749,
    "sharedTypes": []
   },
   {
@@ -1245,21 +1503,10 @@
    "b": "horornis_diphone",
    "aCommon": "Black Cuckoo",
    "bCommon": "Japanese bush warbler (uguisu)",
-   "distance": 0.1184,
-   "centroidDistance": 0.132,
-   "nearestNeighbourDistance": 0.1048,
+   "distance": 0.2122,
+   "centroidDistance": 0.2597,
+   "nearestNeighbourDistance": 0.1647,
    "sharedTypes": [
-    {
-     "a": {
-      "species": "cuculus_clamosus",
-      "typeId": "L08"
-     },
-     "b": {
-      "species": "horornis_diphone",
-      "typeId": "L01"
-     },
-     "distance": 0.0131
-    },
     {
      "a": {
       "species": "cuculus_clamosus",
@@ -1269,7 +1516,133 @@
       "species": "horornis_diphone",
       "typeId": "L03"
      },
-     "distance": 0.0248
+     "distance": 0.0238
+    },
+    {
+     "a": {
+      "species": "cuculus_clamosus",
+      "typeId": "L10"
+     },
+     "b": {
+      "species": "horornis_diphone",
+      "typeId": "L02"
+     },
+     "distance": 0.0395
+    }
+   ]
+  },
+  {
+   "a": "luscinia_svecica",
+   "b": "turdus_philomelos",
+   "aCommon": "Bluethroat",
+   "bCommon": "Song Thrush",
+   "distance": 0.2122,
+   "centroidDistance": 0.2634,
+   "nearestNeighbourDistance": 0.161,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "luscinia_svecica",
+      "typeId": "L03"
+     },
+     "b": {
+      "species": "turdus_philomelos",
+      "typeId": "L04"
+     },
+     "distance": 0.0447
+    },
+    {
+     "a": {
+      "species": "luscinia_svecica",
+      "typeId": "L02"
+     },
+     "b": {
+      "species": "turdus_philomelos",
+      "typeId": "L01"
+     },
+     "distance": 0.0484
+    }
+   ]
+  },
+  {
+   "a": "parus_minor",
+   "b": "zosterops_erythropleurus",
+   "aCommon": "Japanese great tit",
+   "bCommon": "Chestnut-flanked White-eye",
+   "distance": 0.2138,
+   "centroidDistance": 0.2076,
+   "nearestNeighbourDistance": 0.22,
+   "sharedTypes": []
+  },
+  {
+   "a": "horornis_diphone",
+   "b": "strix_leptogrammica",
+   "aCommon": "Japanese bush warbler (uguisu)",
+   "bCommon": "Brown Wood Owl",
+   "distance": 0.215,
+   "centroidDistance": 0.251,
+   "nearestNeighbourDistance": 0.1791,
+   "sharedTypes": []
+  },
+  {
+   "a": "poecile_atricapillus",
+   "b": "zosterops_japonicus",
+   "aCommon": "Black-capped chickadee",
+   "bCommon": "Japanese white-eye (mejiro)",
+   "distance": 0.2207,
+   "centroidDistance": 0.2558,
+   "nearestNeighbourDistance": 0.1856,
+   "sharedTypes": []
+  },
+  {
+   "a": "luscinia_megarhynchos",
+   "b": "zosterops_japonicus",
+   "aCommon": "Common nightingale",
+   "bCommon": "Japanese white-eye (mejiro)",
+   "distance": 0.2212,
+   "centroidDistance": 0.267,
+   "nearestNeighbourDistance": 0.1753,
+   "sharedTypes": []
+  },
+  {
+   "a": "poecile_cinctus",
+   "b": "zosterops_simplex",
+   "aCommon": "Grey-headed Chickadee",
+   "bCommon": "Swinhoe's White-eye",
+   "distance": 0.2219,
+   "centroidDistance": 0.2404,
+   "nearestNeighbourDistance": 0.2034,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_canorus",
+   "b": "cuculus_clamosus",
+   "aCommon": "Common cuckoo",
+   "bCommon": "Black Cuckoo",
+   "distance": 0.2225,
+   "centroidDistance": 0.2117,
+   "nearestNeighbourDistance": 0.2333,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_canorus",
+   "b": "cuculus_solitarius",
+   "aCommon": "Common cuckoo",
+   "bCommon": "Red-chested Cuckoo",
+   "distance": 0.2234,
+   "centroidDistance": 0.2163,
+   "nearestNeighbourDistance": 0.2304,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "cuculus_canorus",
+      "typeId": "L05"
+     },
+     "b": {
+      "species": "cuculus_solitarius",
+      "typeId": "L44"
+     },
+     "distance": 0.0384
     }
    ]
   },
@@ -1278,103 +1651,126 @@
    "b": "poecile_atricapillus",
    "aCommon": "Great Tit",
    "bCommon": "Black-capped chickadee",
-   "distance": 0.1223,
-   "centroidDistance": 0.0943,
-   "nearestNeighbourDistance": 0.1503,
+   "distance": 0.2254,
+   "centroidDistance": 0.2449,
+   "nearestNeighbourDistance": 0.2059,
    "sharedTypes": [
     {
      "a": {
       "species": "parus_major",
-      "typeId": "L36"
+      "typeId": "L06"
      },
      "b": {
       "species": "poecile_atricapillus",
-      "typeId": "L07"
+      "typeId": "L02"
      },
-     "distance": 0.0257
-    }
-   ]
-  },
-  {
-   "a": "perisoreus_infaustus",
-   "b": "strix_aluco",
-   "aCommon": "Siberian jay",
-   "bCommon": "Tawny owl",
-   "distance": 0.1232,
-   "centroidDistance": 0.1214,
-   "nearestNeighbourDistance": 0.1249,
-   "sharedTypes": []
-  },
-  {
-   "a": "luscinia_megarhynchos",
-   "b": "zosterops_simplex",
-   "aCommon": "Common nightingale",
-   "bCommon": "Swinhoe's White-eye",
-   "distance": 0.1239,
-   "centroidDistance": 0.1231,
-   "nearestNeighbourDistance": 0.1247,
-   "sharedTypes": []
-  },
-  {
-   "a": "parus_major",
-   "b": "poecile_cinctus",
-   "aCommon": "Great Tit",
-   "bCommon": "Grey-headed Chickadee",
-   "distance": 0.1246,
-   "centroidDistance": 0.0884,
-   "nearestNeighbourDistance": 0.1608,
-   "sharedTypes": [
+     "distance": 0.0371
+    },
     {
      "a": {
       "species": "parus_major",
-      "typeId": "L40"
+      "typeId": "L47"
      },
      "b": {
-      "species": "poecile_cinctus",
-      "typeId": "L13"
+      "species": "poecile_atricapillus",
+      "typeId": "L09"
      },
-     "distance": 0.0206
+     "distance": 0.0504
     }
    ]
   },
   {
-   "a": "zosterops_erythropleurus",
-   "b": "zosterops_japonicus",
-   "aCommon": "Chestnut-flanked White-eye",
-   "bCommon": "Japanese white-eye (mejiro)",
-   "distance": 0.1251,
-   "centroidDistance": 0.1354,
-   "nearestNeighbourDistance": 0.1147,
-   "sharedTypes": []
-  },
-  {
-   "a": "perisoreus_infaustus",
-   "b": "turdus_philomelos",
-   "aCommon": "Siberian jay",
-   "bCommon": "Song Thrush",
-   "distance": 0.1274,
-   "centroidDistance": 0.1153,
-   "nearestNeighbourDistance": 0.1394,
-   "sharedTypes": []
-  },
-  {
-   "a": "poecile_atricapillus",
-   "b": "zosterops_japonicus",
-   "aCommon": "Black-capped chickadee",
-   "bCommon": "Japanese white-eye (mejiro)",
-   "distance": 0.1276,
-   "centroidDistance": 0.1364,
-   "nearestNeighbourDistance": 0.1188,
-   "sharedTypes": []
-  },
-  {
    "a": "luscinia_megarhynchos",
-   "b": "zosterops_japonicus",
+   "b": "poecile_cinctus",
    "aCommon": "Common nightingale",
-   "bCommon": "Japanese white-eye (mejiro)",
-   "distance": 0.1282,
-   "centroidDistance": 0.1448,
-   "nearestNeighbourDistance": 0.1116,
+   "bCommon": "Grey-headed Chickadee",
+   "distance": 0.226,
+   "centroidDistance": 0.2245,
+   "nearestNeighbourDistance": 0.2275,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_solitarius",
+   "b": "luscinia_megarhynchos",
+   "aCommon": "Red-chested Cuckoo",
+   "bCommon": "Common nightingale",
+   "distance": 0.2266,
+   "centroidDistance": 0.2682,
+   "nearestNeighbourDistance": 0.185,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L32"
+     },
+     "b": {
+      "species": "luscinia_megarhynchos",
+      "typeId": "L46"
+     },
+     "distance": 0.0498
+    },
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L31"
+     },
+     "b": {
+      "species": "luscinia_megarhynchos",
+      "typeId": "L46"
+     },
+     "distance": 0.0506
+    },
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L28"
+     },
+     "b": {
+      "species": "luscinia_megarhynchos",
+      "typeId": "L46"
+     },
+     "distance": 0.0525
+    }
+   ]
+  },
+  {
+   "a": "cuculus_canorus",
+   "b": "turdus_merula",
+   "aCommon": "Common cuckoo",
+   "bCommon": "Common blackbird",
+   "distance": 0.2268,
+   "centroidDistance": 0.2469,
+   "nearestNeighbourDistance": 0.2067,
+   "sharedTypes": []
+  },
+  {
+   "a": "parus_minor",
+   "b": "poecile_rufescens",
+   "aCommon": "Japanese great tit",
+   "bCommon": "Chestnut-backed Chickadee",
+   "distance": 0.2323,
+   "centroidDistance": 0.2653,
+   "nearestNeighbourDistance": 0.1993,
+   "sharedTypes": []
+  },
+  {
+   "a": "strix_leptogrammica",
+   "b": "strix_ocellata",
+   "aCommon": "Brown Wood Owl",
+   "bCommon": "Mottled Wood Owl",
+   "distance": 0.2323,
+   "centroidDistance": 0.2263,
+   "nearestNeighbourDistance": 0.2384,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_canorus",
+   "b": "strix_aluco",
+   "aCommon": "Common cuckoo",
+   "bCommon": "Tawny owl",
+   "distance": 0.2325,
+   "centroidDistance": 0.2622,
+   "nearestNeighbourDistance": 0.2028,
    "sharedTypes": []
   },
   {
@@ -1382,593 +1778,73 @@
    "b": "parus_minor",
    "aCommon": "Common nightingale",
    "bCommon": "Japanese great tit",
-   "distance": 0.1311,
-   "centroidDistance": 0.1445,
-   "nearestNeighbourDistance": 0.1177,
-   "sharedTypes": []
-  },
-  {
-   "a": "poecile_rufescens",
-   "b": "zosterops_simplex",
-   "aCommon": "Chestnut-backed Chickadee",
-   "bCommon": "Swinhoe's White-eye",
-   "distance": 0.1313,
-   "centroidDistance": 0.142,
-   "nearestNeighbourDistance": 0.1206,
-   "sharedTypes": []
-  },
-  {
-   "a": "horornis_diphone",
-   "b": "turdus_philomelos",
-   "aCommon": "Japanese bush warbler (uguisu)",
-   "bCommon": "Song Thrush",
-   "distance": 0.1401,
-   "centroidDistance": 0.138,
-   "nearestNeighbourDistance": 0.1422,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_clamosus",
-   "b": "perisoreus_infaustus",
-   "aCommon": "Black Cuckoo",
-   "bCommon": "Siberian jay",
-   "distance": 0.1418,
-   "centroidDistance": 0.158,
-   "nearestNeighbourDistance": 0.1256,
-   "sharedTypes": []
-  },
-  {
-   "a": "luscinia_svecica",
-   "b": "poecile_atricapillus",
-   "aCommon": "Bluethroat",
-   "bCommon": "Black-capped chickadee",
-   "distance": 0.1459,
-   "centroidDistance": 0.1363,
-   "nearestNeighbourDistance": 0.1556,
-   "sharedTypes": []
-  },
-  {
-   "a": "poecile_atricapillus",
-   "b": "zosterops_simplex",
-   "aCommon": "Black-capped chickadee",
-   "bCommon": "Swinhoe's White-eye",
-   "distance": 0.146,
-   "centroidDistance": 0.1655,
-   "nearestNeighbourDistance": 0.1266,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "poecile_atricapillus",
-      "typeId": "L07"
-     },
-     "b": {
-      "species": "zosterops_simplex",
-      "typeId": "L07"
-     },
-     "distance": 0.0283
-    }
-   ]
-  },
-  {
-   "a": "luscinia_megarhynchos",
-   "b": "perisoreus_infaustus",
-   "aCommon": "Common nightingale",
-   "bCommon": "Siberian jay",
-   "distance": 0.1465,
-   "centroidDistance": 0.153,
-   "nearestNeighbourDistance": 0.1401,
-   "sharedTypes": []
-  },
-  {
-   "a": "turdus_philomelos",
-   "b": "zosterops_japonicus",
-   "aCommon": "Song Thrush",
-   "bCommon": "Japanese white-eye (mejiro)",
-   "distance": 0.1477,
-   "centroidDistance": 0.1778,
-   "nearestNeighbourDistance": 0.1177,
-   "sharedTypes": []
-  },
-  {
-   "a": "poecile_cinctus",
-   "b": "troglodytes_troglodytes",
-   "aCommon": "Grey-headed Chickadee",
-   "bCommon": "Eurasian wren",
-   "distance": 0.1478,
-   "centroidDistance": 0.1426,
-   "nearestNeighbourDistance": 0.153,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "poecile_cinctus",
-      "typeId": "L13"
-     },
-     "b": {
-      "species": "troglodytes_troglodytes",
-      "typeId": "L59"
-     },
-     "distance": 0.0201
-    }
-   ]
-  },
-  {
-   "a": "strix_leptogrammica",
-   "b": "strix_ocellata",
-   "aCommon": "Brown Wood Owl",
-   "bCommon": "Mottled Wood Owl",
-   "distance": 0.1482,
-   "centroidDistance": 0.1273,
-   "nearestNeighbourDistance": 0.1691,
-   "sharedTypes": []
-  },
-  {
-   "a": "luscinia_megarhynchos",
-   "b": "troglodytes_troglodytes",
-   "aCommon": "Common nightingale",
-   "bCommon": "Eurasian wren",
-   "distance": 0.1506,
-   "centroidDistance": 0.1708,
-   "nearestNeighbourDistance": 0.1305,
+   "distance": 0.2387,
+   "centroidDistance": 0.2787,
+   "nearestNeighbourDistance": 0.1986,
    "sharedTypes": [
     {
      "a": {
       "species": "luscinia_megarhynchos",
-      "typeId": "L07"
+      "typeId": "L46"
      },
      "b": {
-      "species": "troglodytes_troglodytes",
-      "typeId": "L35"
+      "species": "parus_minor",
+      "typeId": "L10"
      },
-     "distance": 0.0181
-    },
-    {
-     "a": {
-      "species": "luscinia_megarhynchos",
-      "typeId": "L37"
-     },
-     "b": {
-      "species": "troglodytes_troglodytes",
-      "typeId": "L15"
-     },
-     "distance": 0.0191
+     "distance": 0.043
     }
    ]
-  },
-  {
-   "a": "parus_major",
-   "b": "zosterops_erythropleurus",
-   "aCommon": "Great Tit",
-   "bCommon": "Chestnut-flanked White-eye",
-   "distance": 0.1507,
-   "centroidDistance": 0.139,
-   "nearestNeighbourDistance": 0.1624,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_clamosus",
-   "b": "strix_leptogrammica",
-   "aCommon": "Black Cuckoo",
-   "bCommon": "Brown Wood Owl",
-   "distance": 0.1515,
-   "centroidDistance": 0.1932,
-   "nearestNeighbourDistance": 0.1097,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "cuculus_clamosus",
-      "typeId": "L04"
-     },
-     "b": {
-      "species": "strix_leptogrammica",
-      "typeId": "L06"
-     },
-     "distance": 0.0278
-    },
-    {
-     "a": {
-      "species": "cuculus_clamosus",
-      "typeId": "L06"
-     },
-     "b": {
-      "species": "strix_leptogrammica",
-      "typeId": "L06"
-     },
-     "distance": 0.0294
-    }
-   ]
-  },
-  {
-   "a": "poecile_cinctus",
-   "b": "zosterops_erythropleurus",
-   "aCommon": "Grey-headed Chickadee",
-   "bCommon": "Chestnut-flanked White-eye",
-   "distance": 0.1522,
-   "centroidDistance": 0.1684,
-   "nearestNeighbourDistance": 0.1361,
-   "sharedTypes": []
-  },
-  {
-   "a": "turdus_philomelos",
-   "b": "zosterops_simplex",
-   "aCommon": "Song Thrush",
-   "bCommon": "Swinhoe's White-eye",
-   "distance": 0.1548,
-   "centroidDistance": 0.1847,
-   "nearestNeighbourDistance": 0.1248,
-   "sharedTypes": []
-  },
-  {
-   "a": "luscinia_svecica",
-   "b": "turdus_merula",
-   "aCommon": "Bluethroat",
-   "bCommon": "Common blackbird",
-   "distance": 0.1558,
-   "centroidDistance": 0.1741,
-   "nearestNeighbourDistance": 0.1375,
-   "sharedTypes": []
-  },
-  {
-   "a": "luscinia_megarhynchos",
-   "b": "poecile_atricapillus",
-   "aCommon": "Common nightingale",
-   "bCommon": "Black-capped chickadee",
-   "distance": 0.156,
-   "centroidDistance": 0.174,
-   "nearestNeighbourDistance": 0.138,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "luscinia_megarhynchos",
-      "typeId": "L07"
-     },
-     "b": {
-      "species": "poecile_atricapillus",
-      "typeId": "L07"
-     },
-     "distance": 0.0234
-    }
-   ]
-  },
-  {
-   "a": "luscinia_megarhynchos",
-   "b": "poecile_cinctus",
-   "aCommon": "Common nightingale",
-   "bCommon": "Grey-headed Chickadee",
-   "distance": 0.1568,
-   "centroidDistance": 0.149,
-   "nearestNeighbourDistance": 0.1646,
-   "sharedTypes": []
-  },
-  {
-   "a": "zosterops_erythropleurus",
-   "b": "zosterops_simplex",
-   "aCommon": "Chestnut-flanked White-eye",
-   "bCommon": "Swinhoe's White-eye",
-   "distance": 0.1575,
-   "centroidDistance": 0.1955,
-   "nearestNeighbourDistance": 0.1194,
-   "sharedTypes": []
-  },
-  {
-   "a": "luscinia_svecica",
-   "b": "poecile_cinctus",
-   "aCommon": "Bluethroat",
-   "bCommon": "Grey-headed Chickadee",
-   "distance": 0.1582,
-   "centroidDistance": 0.1297,
-   "nearestNeighbourDistance": 0.1867,
-   "sharedTypes": []
-  },
-  {
-   "a": "poecile_cinctus",
-   "b": "poecile_rufescens",
-   "aCommon": "Grey-headed Chickadee",
-   "bCommon": "Chestnut-backed Chickadee",
-   "distance": 0.1586,
-   "centroidDistance": 0.1903,
-   "nearestNeighbourDistance": 0.1269,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "poecile_cinctus",
-      "typeId": "L13"
-     },
-     "b": {
-      "species": "poecile_rufescens",
-      "typeId": "L07"
-     },
-     "distance": 0.0211
-    }
-   ]
-  },
-  {
-   "a": "parus_minor",
-   "b": "zosterops_erythropleurus",
-   "aCommon": "Japanese great tit",
-   "bCommon": "Chestnut-flanked White-eye",
-   "distance": 0.1645,
-   "centroidDistance": 0.1902,
-   "nearestNeighbourDistance": 0.1389,
-   "sharedTypes": []
-  },
-  {
-   "a": "parus_major",
-   "b": "turdus_merula",
-   "aCommon": "Great Tit",
-   "bCommon": "Common blackbird",
-   "distance": 0.1658,
-   "centroidDistance": 0.1727,
-   "nearestNeighbourDistance": 0.1588,
-   "sharedTypes": []
-  },
-  {
-   "a": "poecile_rufescens",
-   "b": "zosterops_japonicus",
-   "aCommon": "Chestnut-backed Chickadee",
-   "bCommon": "Japanese white-eye (mejiro)",
-   "distance": 0.167,
-   "centroidDistance": 0.2052,
-   "nearestNeighbourDistance": 0.1288,
-   "sharedTypes": []
-  },
-  {
-   "a": "poecile_atricapillus",
-   "b": "troglodytes_troglodytes",
-   "aCommon": "Black-capped chickadee",
-   "bCommon": "Eurasian wren",
-   "distance": 0.1707,
-   "centroidDistance": 0.1747,
-   "nearestNeighbourDistance": 0.1667,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "poecile_atricapillus",
-      "typeId": "L07"
-     },
-     "b": {
-      "species": "troglodytes_troglodytes",
-      "typeId": "L34"
-     },
-     "distance": 0.0183
-    },
-    {
-     "a": {
-      "species": "poecile_atricapillus",
-      "typeId": "L07"
-     },
-     "b": {
-      "species": "troglodytes_troglodytes",
-      "typeId": "L42"
-     },
-     "distance": 0.0252
-    },
-    {
-     "a": {
-      "species": "poecile_atricapillus",
-      "typeId": "L07"
-     },
-     "b": {
-      "species": "troglodytes_troglodytes",
-      "typeId": "L57"
-     },
-     "distance": 0.0287
-    }
-   ]
-  },
-  {
-   "a": "parus_minor",
-   "b": "turdus_philomelos",
-   "aCommon": "Japanese great tit",
-   "bCommon": "Song Thrush",
-   "distance": 0.1723,
-   "centroidDistance": 0.2143,
-   "nearestNeighbourDistance": 0.1302,
-   "sharedTypes": []
   },
   {
    "a": "perisoreus_infaustus",
    "b": "poecile_atricapillus",
    "aCommon": "Siberian jay",
    "bCommon": "Black-capped chickadee",
-   "distance": 0.1724,
-   "centroidDistance": 0.2124,
-   "nearestNeighbourDistance": 0.1324,
+   "distance": 0.2461,
+   "centroidDistance": 0.3023,
+   "nearestNeighbourDistance": 0.19,
    "sharedTypes": []
   },
   {
-   "a": "poecile_atricapillus",
-   "b": "turdus_philomelos",
-   "aCommon": "Black-capped chickadee",
-   "bCommon": "Song Thrush",
-   "distance": 0.1741,
-   "centroidDistance": 0.1832,
-   "nearestNeighbourDistance": 0.1649,
+   "a": "cuculus_canorus",
+   "b": "horornis_diphone",
+   "aCommon": "Common cuckoo",
+   "bCommon": "Japanese bush warbler (uguisu)",
+   "distance": 0.2494,
+   "centroidDistance": 0.2739,
+   "nearestNeighbourDistance": 0.2249,
    "sharedTypes": [
     {
      "a": {
-      "species": "poecile_atricapillus",
-      "typeId": "L07"
+      "species": "cuculus_canorus",
+      "typeId": "L05"
      },
      "b": {
-      "species": "turdus_philomelos",
-      "typeId": "L13"
-     },
-     "distance": 0.0198
-    }
-   ]
-  },
-  {
-   "a": "parus_major",
-   "b": "poecile_rufescens",
-   "aCommon": "Great Tit",
-   "bCommon": "Chestnut-backed Chickadee",
-   "distance": 0.1748,
-   "centroidDistance": 0.1942,
-   "nearestNeighbourDistance": 0.1555,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "parus_major",
-      "typeId": "L37"
-     },
-     "b": {
-      "species": "poecile_rufescens",
-      "typeId": "L04"
-     },
-     "distance": 0.0156
-    },
-    {
-     "a": {
-      "species": "parus_major",
-      "typeId": "L40"
-     },
-     "b": {
-      "species": "poecile_rufescens",
-      "typeId": "L07"
-     },
-     "distance": 0.0165
-    },
-    {
-     "a": {
-      "species": "parus_major",
-      "typeId": "L30"
-     },
-     "b": {
-      "species": "poecile_rufescens",
-      "typeId": "L01"
-     },
-     "distance": 0.0182
-    },
-    {
-     "a": {
-      "species": "parus_major",
-      "typeId": "L37"
-     },
-     "b": {
-      "species": "poecile_rufescens",
-      "typeId": "L02"
-     },
-     "distance": 0.0221
-    }
-   ]
-  },
-  {
-   "a": "cuculus_solitarius",
-   "b": "strix_leptogrammica",
-   "aCommon": "Red-chested Cuckoo",
-   "bCommon": "Brown Wood Owl",
-   "distance": 0.1752,
-   "centroidDistance": 0.2444,
-   "nearestNeighbourDistance": 0.106,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "cuculus_solitarius",
-      "typeId": "L03"
-     },
-     "b": {
-      "species": "strix_leptogrammica",
-      "typeId": "L02"
-     },
-     "distance": 0.0143
-    },
-    {
-     "a": {
-      "species": "cuculus_solitarius",
-      "typeId": "L02"
-     },
-     "b": {
-      "species": "strix_leptogrammica",
-      "typeId": "L02"
-     },
-     "distance": 0.0297
-    }
-   ]
-  },
-  {
-   "a": "horornis_diphone",
-   "b": "luscinia_megarhynchos",
-   "aCommon": "Japanese bush warbler (uguisu)",
-   "bCommon": "Common nightingale",
-   "distance": 0.1791,
-   "centroidDistance": 0.199,
-   "nearestNeighbourDistance": 0.1591,
-   "sharedTypes": [
-    {
-     "a": {
       "species": "horornis_diphone",
-      "typeId": "L03"
+      "typeId": "L02"
      },
-     "b": {
-      "species": "luscinia_megarhynchos",
-      "typeId": "L45"
-     },
-     "distance": 0.0208
+     "distance": 0.0487
     }
    ]
   },
   {
-   "a": "luscinia_svecica",
-   "b": "zosterops_erythropleurus",
-   "aCommon": "Bluethroat",
-   "bCommon": "Chestnut-flanked White-eye",
-   "distance": 0.1805,
-   "centroidDistance": 0.1726,
-   "nearestNeighbourDistance": 0.1885,
+   "a": "poecile_atricapillus",
+   "b": "turdus_philomelos",
+   "aCommon": "Black-capped chickadee",
+   "bCommon": "Song Thrush",
+   "distance": 0.2501,
+   "centroidDistance": 0.262,
+   "nearestNeighbourDistance": 0.2381,
    "sharedTypes": []
   },
   {
-   "a": "troglodytes_troglodytes",
-   "b": "turdus_philomelos",
-   "aCommon": "Eurasian wren",
-   "bCommon": "Song Thrush",
-   "distance": 0.1811,
-   "centroidDistance": 0.2329,
-   "nearestNeighbourDistance": 0.1293,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "troglodytes_troglodytes",
-      "typeId": "L42"
-     },
-     "b": {
-      "species": "turdus_philomelos",
-      "typeId": "L13"
-     },
-     "distance": 0.0079
-    },
-    {
-     "a": {
-      "species": "troglodytes_troglodytes",
-      "typeId": "L58"
-     },
-     "b": {
-      "species": "turdus_philomelos",
-      "typeId": "L13"
-     },
-     "distance": 0.0262
-    },
-    {
-     "a": {
-      "species": "troglodytes_troglodytes",
-      "typeId": "L34"
-     },
-     "b": {
-      "species": "turdus_philomelos",
-      "typeId": "L13"
-     },
-     "distance": 0.0271
-    }
-   ]
-  },
-  {
-   "a": "turdus_philomelos",
-   "b": "zosterops_erythropleurus",
-   "aCommon": "Song Thrush",
-   "bCommon": "Chestnut-flanked White-eye",
-   "distance": 0.1826,
-   "centroidDistance": 0.1737,
-   "nearestNeighbourDistance": 0.1914,
+   "a": "parus_major",
+   "b": "zosterops_japonicus",
+   "aCommon": "Great Tit",
+   "bCommon": "Japanese white-eye (mejiro)",
+   "distance": 0.254,
+   "centroidDistance": 0.2935,
+   "nearestNeighbourDistance": 0.2145,
    "sharedTypes": []
   },
   {
@@ -1976,29 +1852,101 @@
    "b": "zosterops_erythropleurus",
    "aCommon": "Common nightingale",
    "bCommon": "Chestnut-flanked White-eye",
-   "distance": 0.1872,
-   "centroidDistance": 0.2006,
-   "nearestNeighbourDistance": 0.1739,
+   "distance": 0.2546,
+   "centroidDistance": 0.2729,
+   "nearestNeighbourDistance": 0.2363,
    "sharedTypes": []
   },
   {
-   "a": "perisoreus_infaustus",
-   "b": "poecile_cinctus",
-   "aCommon": "Siberian jay",
-   "bCommon": "Grey-headed Chickadee",
-   "distance": 0.1882,
-   "centroidDistance": 0.2253,
-   "nearestNeighbourDistance": 0.1512,
+   "a": "cuculus_clamosus",
+   "b": "turdus_merula",
+   "aCommon": "Black Cuckoo",
+   "bCommon": "Common blackbird",
+   "distance": 0.2586,
+   "centroidDistance": 0.3066,
+   "nearestNeighbourDistance": 0.2105,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "cuculus_clamosus",
+      "typeId": "L10"
+     },
+     "b": {
+      "species": "turdus_merula",
+      "typeId": "L26"
+     },
+     "distance": 0.0459
+    }
+   ]
+  },
+  {
+   "a": "poecile_atricapillus",
+   "b": "zosterops_simplex",
+   "aCommon": "Black-capped chickadee",
+   "bCommon": "Swinhoe's White-eye",
+   "distance": 0.2586,
+   "centroidDistance": 0.3249,
+   "nearestNeighbourDistance": 0.1923,
    "sharedTypes": []
   },
   {
-   "a": "poecile_cinctus",
+   "a": "parus_minor",
    "b": "turdus_philomelos",
-   "aCommon": "Grey-headed Chickadee",
+   "aCommon": "Japanese great tit",
    "bCommon": "Song Thrush",
-   "distance": 0.1882,
-   "centroidDistance": 0.2058,
-   "nearestNeighbourDistance": 0.1707,
+   "distance": 0.2594,
+   "centroidDistance": 0.3261,
+   "nearestNeighbourDistance": 0.1926,
+   "sharedTypes": []
+  },
+  {
+   "a": "strix_ocellata",
+   "b": "zosterops_erythropleurus",
+   "aCommon": "Mottled Wood Owl",
+   "bCommon": "Chestnut-flanked White-eye",
+   "distance": 0.2611,
+   "centroidDistance": 0.3132,
+   "nearestNeighbourDistance": 0.209,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_clamosus",
+   "b": "strix_aluco",
+   "aCommon": "Black Cuckoo",
+   "bCommon": "Tawny owl",
+   "distance": 0.262,
+   "centroidDistance": 0.2655,
+   "nearestNeighbourDistance": 0.2585,
+   "sharedTypes": []
+  },
+  {
+   "a": "luscinia_svecica",
+   "b": "parus_minor",
+   "aCommon": "Bluethroat",
+   "bCommon": "Japanese great tit",
+   "distance": 0.2629,
+   "centroidDistance": 0.3246,
+   "nearestNeighbourDistance": 0.2011,
+   "sharedTypes": []
+  },
+  {
+   "a": "strix_aluco",
+   "b": "turdus_merula",
+   "aCommon": "Tawny owl",
+   "bCommon": "Common blackbird",
+   "distance": 0.2629,
+   "centroidDistance": 0.2972,
+   "nearestNeighbourDistance": 0.2286,
+   "sharedTypes": []
+  },
+  {
+   "a": "turdus_philomelos",
+   "b": "zosterops_japonicus",
+   "aCommon": "Song Thrush",
+   "bCommon": "Japanese white-eye (mejiro)",
+   "distance": 0.263,
+   "centroidDistance": 0.3369,
+   "nearestNeighbourDistance": 0.1891,
    "sharedTypes": []
   },
   {
@@ -2006,9 +1954,9 @@
    "b": "turdus_philomelos",
    "aCommon": "Red-chested Cuckoo",
    "bCommon": "Song Thrush",
-   "distance": 0.1932,
-   "centroidDistance": 0.2111,
-   "nearestNeighbourDistance": 0.1753,
+   "distance": 0.2635,
+   "centroidDistance": 0.3099,
+   "nearestNeighbourDistance": 0.217,
    "sharedTypes": [
     {
      "a": {
@@ -2019,265 +1967,98 @@
       "species": "turdus_philomelos",
       "typeId": "L00"
      },
-     "distance": 0.022
+     "distance": 0.0402
     }
    ]
   },
   {
-   "a": "cuculus_solitarius",
-   "b": "luscinia_megarhynchos",
-   "aCommon": "Red-chested Cuckoo",
-   "bCommon": "Common nightingale",
-   "distance": 0.1956,
-   "centroidDistance": 0.2443,
-   "nearestNeighbourDistance": 0.1469,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "cuculus_solitarius",
-      "typeId": "L24"
-     },
-     "b": {
-      "species": "luscinia_megarhynchos",
-      "typeId": "L45"
-     },
-     "distance": 0.0151
-    },
-    {
-     "a": {
-      "species": "cuculus_solitarius",
-      "typeId": "L22"
-     },
-     "b": {
-      "species": "luscinia_megarhynchos",
-      "typeId": "L45"
-     },
-     "distance": 0.021
-    },
-    {
-     "a": {
-      "species": "cuculus_solitarius",
-      "typeId": "L28"
-     },
-     "b": {
-      "species": "luscinia_megarhynchos",
-      "typeId": "L45"
-     },
-     "distance": 0.0233
-    },
-    {
-     "a": {
-      "species": "cuculus_solitarius",
-      "typeId": "L18"
-     },
-     "b": {
-      "species": "luscinia_megarhynchos",
-      "typeId": "L45"
-     },
-     "distance": 0.0289
-    }
-   ]
-  },
-  {
-   "a": "turdus_merula",
-   "b": "zosterops_simplex",
-   "aCommon": "Common blackbird",
-   "bCommon": "Swinhoe's White-eye",
-   "distance": 0.1963,
-   "centroidDistance": 0.2493,
-   "nearestNeighbourDistance": 0.1434,
-   "sharedTypes": []
-  },
-  {
-   "a": "turdus_merula",
-   "b": "zosterops_japonicus",
-   "aCommon": "Common blackbird",
-   "bCommon": "Japanese white-eye (mejiro)",
-   "distance": 0.1984,
-   "centroidDistance": 0.2622,
-   "nearestNeighbourDistance": 0.1346,
-   "sharedTypes": []
-  },
-  {
-   "a": "horornis_diphone",
-   "b": "strix_leptogrammica",
-   "aCommon": "Japanese bush warbler (uguisu)",
-   "bCommon": "Brown Wood Owl",
-   "distance": 0.1999,
-   "centroidDistance": 0.2622,
-   "nearestNeighbourDistance": 0.1376,
-   "sharedTypes": []
-  },
-  {
-   "a": "poecile_atricapillus",
-   "b": "turdus_merula",
-   "aCommon": "Black-capped chickadee",
-   "bCommon": "Common blackbird",
-   "distance": 0.2031,
-   "centroidDistance": 0.2309,
-   "nearestNeighbourDistance": 0.1754,
-   "sharedTypes": []
-  },
-  {
-   "a": "horornis_diphone",
-   "b": "strix_aluco",
-   "aCommon": "Japanese bush warbler (uguisu)",
-   "bCommon": "Tawny owl",
-   "distance": 0.2041,
-   "centroidDistance": 0.2158,
-   "nearestNeighbourDistance": 0.1923,
-   "sharedTypes": []
-  },
-  {
-   "a": "perisoreus_infaustus",
-   "b": "zosterops_erythropleurus",
-   "aCommon": "Siberian jay",
-   "bCommon": "Chestnut-flanked White-eye",
-   "distance": 0.206,
-   "centroidDistance": 0.2353,
-   "nearestNeighbourDistance": 0.1768,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_solitarius",
-   "b": "strix_aluco",
-   "aCommon": "Red-chested Cuckoo",
-   "bCommon": "Tawny owl",
-   "distance": 0.207,
-   "centroidDistance": 0.2143,
-   "nearestNeighbourDistance": 0.1997,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_clamosus",
-   "b": "strix_aluco",
-   "aCommon": "Black Cuckoo",
-   "bCommon": "Tawny owl",
-   "distance": 0.2092,
-   "centroidDistance": 0.2299,
-   "nearestNeighbourDistance": 0.1885,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_clamosus",
-   "b": "turdus_merula",
-   "aCommon": "Black Cuckoo",
-   "bCommon": "Common blackbird",
-   "distance": 0.2093,
-   "centroidDistance": 0.261,
-   "nearestNeighbourDistance": 0.1575,
-   "sharedTypes": []
-  },
-  {
-   "a": "turdus_merula",
-   "b": "zosterops_erythropleurus",
-   "aCommon": "Common blackbird",
-   "bCommon": "Chestnut-flanked White-eye",
-   "distance": 0.2119,
-   "centroidDistance": 0.2425,
-   "nearestNeighbourDistance": 0.1813,
-   "sharedTypes": []
-  },
-  {
-   "a": "poecile_atricapillus",
-   "b": "poecile_rufescens",
-   "aCommon": "Black-capped chickadee",
-   "bCommon": "Chestnut-backed Chickadee",
-   "distance": 0.2136,
-   "centroidDistance": 0.2867,
-   "nearestNeighbourDistance": 0.1405,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "poecile_atricapillus",
-      "typeId": "L07"
-     },
-     "b": {
-      "species": "poecile_rufescens",
-      "typeId": "L05"
-     },
-     "distance": 0.0296
-    }
-   ]
-  },
-  {
-   "a": "horornis_diphone",
-   "b": "zosterops_erythropleurus",
-   "aCommon": "Japanese bush warbler (uguisu)",
-   "bCommon": "Chestnut-flanked White-eye",
-   "distance": 0.2143,
-   "centroidDistance": 0.236,
-   "nearestNeighbourDistance": 0.1926,
-   "sharedTypes": []
-  },
-  {
-   "a": "luscinia_svecica",
-   "b": "perisoreus_infaustus",
-   "aCommon": "Bluethroat",
-   "bCommon": "Siberian jay",
-   "distance": 0.2148,
-   "centroidDistance": 0.2429,
-   "nearestNeighbourDistance": 0.1868,
-   "sharedTypes": []
-  },
-  {
-   "a": "horornis_diphone",
-   "b": "poecile_atricapillus",
-   "aCommon": "Japanese bush warbler (uguisu)",
-   "bCommon": "Black-capped chickadee",
-   "distance": 0.2172,
-   "centroidDistance": 0.261,
-   "nearestNeighbourDistance": 0.1734,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_clamosus",
-   "b": "strix_ocellata",
-   "aCommon": "Black Cuckoo",
-   "bCommon": "Mottled Wood Owl",
-   "distance": 0.2176,
-   "centroidDistance": 0.2429,
-   "nearestNeighbourDistance": 0.1924,
-   "sharedTypes": []
-  },
-  {
-   "a": "perisoreus_infaustus",
-   "b": "zosterops_japonicus",
-   "aCommon": "Siberian jay",
-   "bCommon": "Japanese white-eye (mejiro)",
-   "distance": 0.2178,
-   "centroidDistance": 0.2743,
-   "nearestNeighbourDistance": 0.1614,
+   "a": "poecile_cinctus",
+   "b": "turdus_philomelos",
+   "aCommon": "Grey-headed Chickadee",
+   "bCommon": "Song Thrush",
+   "distance": 0.2651,
+   "centroidDistance": 0.3067,
+   "nearestNeighbourDistance": 0.2235,
    "sharedTypes": []
   },
   {
    "a": "parus_major",
-   "b": "perisoreus_infaustus",
+   "b": "poecile_cinctus",
    "aCommon": "Great Tit",
-   "bCommon": "Siberian jay",
-   "distance": 0.2182,
-   "centroidDistance": 0.2668,
-   "nearestNeighbourDistance": 0.1695,
+   "bCommon": "Grey-headed Chickadee",
+   "distance": 0.2653,
+   "centroidDistance": 0.269,
+   "nearestNeighbourDistance": 0.2617,
    "sharedTypes": []
   },
   {
-   "a": "strix_aluco",
+   "a": "luscinia_svecica",
+   "b": "poecile_atricapillus",
+   "aCommon": "Bluethroat",
+   "bCommon": "Black-capped chickadee",
+   "distance": 0.2663,
+   "centroidDistance": 0.3324,
+   "nearestNeighbourDistance": 0.2002,
+   "sharedTypes": []
+  },
+  {
+   "a": "horornis_diphone",
+   "b": "poecile_atricapillus",
+   "aCommon": "Japanese bush warbler (uguisu)",
+   "bCommon": "Black-capped chickadee",
+   "distance": 0.2678,
+   "centroidDistance": 0.313,
+   "nearestNeighbourDistance": 0.2225,
+   "sharedTypes": []
+  },
+  {
+   "a": "poecile_atricapillus",
    "b": "turdus_merula",
-   "aCommon": "Tawny owl",
+   "aCommon": "Black-capped chickadee",
    "bCommon": "Common blackbird",
-   "distance": 0.2186,
-   "centroidDistance": 0.2536,
-   "nearestNeighbourDistance": 0.1835,
+   "distance": 0.2718,
+   "centroidDistance": 0.3083,
+   "nearestNeighbourDistance": 0.2353,
+   "sharedTypes": []
+  },
+  {
+   "a": "troglodytes_troglodytes",
+   "b": "zosterops_japonicus",
+   "aCommon": "Eurasian wren",
+   "bCommon": "Japanese white-eye (mejiro)",
+   "distance": 0.2748,
+   "centroidDistance": 0.3309,
+   "nearestNeighbourDistance": 0.2187,
    "sharedTypes": []
   },
   {
    "a": "cuculus_canorus",
-   "b": "strix_ocellata",
+   "b": "perisoreus_infaustus",
    "aCommon": "Common cuckoo",
+   "bCommon": "Siberian jay",
+   "distance": 0.2749,
+   "centroidDistance": 0.3042,
+   "nearestNeighbourDistance": 0.2456,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_clamosus",
+   "b": "strix_ocellata",
+   "aCommon": "Black Cuckoo",
    "bCommon": "Mottled Wood Owl",
-   "distance": 0.2193,
-   "centroidDistance": 0.2783,
-   "nearestNeighbourDistance": 0.1604,
+   "distance": 0.2754,
+   "centroidDistance": 0.3257,
+   "nearestNeighbourDistance": 0.225,
+   "sharedTypes": []
+  },
+  {
+   "a": "horornis_diphone",
+   "b": "strix_aluco",
+   "aCommon": "Japanese bush warbler (uguisu)",
+   "bCommon": "Tawny owl",
+   "distance": 0.2784,
+   "centroidDistance": 0.3068,
+   "nearestNeighbourDistance": 0.2499,
    "sharedTypes": []
   },
   {
@@ -2285,131 +2066,81 @@
    "b": "strix_leptogrammica",
    "aCommon": "Common cuckoo",
    "bCommon": "Brown Wood Owl",
-   "distance": 0.2202,
-   "centroidDistance": 0.2587,
-   "nearestNeighbourDistance": 0.1817,
+   "distance": 0.2799,
+   "centroidDistance": 0.3114,
+   "nearestNeighbourDistance": 0.2485,
    "sharedTypes": []
   },
   {
-   "a": "parus_minor",
-   "b": "turdus_merula",
-   "aCommon": "Japanese great tit",
-   "bCommon": "Common blackbird",
-   "distance": 0.2239,
-   "centroidDistance": 0.2699,
-   "nearestNeighbourDistance": 0.1779,
-   "sharedTypes": []
-  },
-  {
-   "a": "poecile_cinctus",
-   "b": "turdus_merula",
-   "aCommon": "Grey-headed Chickadee",
-   "bCommon": "Common blackbird",
-   "distance": 0.2264,
-   "centroidDistance": 0.2466,
-   "nearestNeighbourDistance": 0.2062,
-   "sharedTypes": []
-  },
-  {
-   "a": "troglodytes_troglodytes",
-   "b": "zosterops_erythropleurus",
-   "aCommon": "Eurasian wren",
-   "bCommon": "Chestnut-flanked White-eye",
-   "distance": 0.2292,
-   "centroidDistance": 0.261,
-   "nearestNeighbourDistance": 0.1975,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_canorus",
-   "b": "cuculus_clamosus",
-   "aCommon": "Common cuckoo",
-   "bCommon": "Black Cuckoo",
-   "distance": 0.232,
-   "centroidDistance": 0.2677,
-   "nearestNeighbourDistance": 0.1964,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_canorus",
-   "b": "horornis_diphone",
-   "aCommon": "Common cuckoo",
-   "bCommon": "Japanese bush warbler (uguisu)",
-   "distance": 0.2329,
-   "centroidDistance": 0.3076,
-   "nearestNeighbourDistance": 0.1583,
-   "sharedTypes": []
-  },
-  {
-   "a": "horornis_diphone",
-   "b": "strix_ocellata",
-   "aCommon": "Japanese bush warbler (uguisu)",
-   "bCommon": "Mottled Wood Owl",
-   "distance": 0.233,
-   "centroidDistance": 0.2447,
-   "nearestNeighbourDistance": 0.2214,
-   "sharedTypes": []
-  },
-  {
-   "a": "troglodytes_troglodytes",
-   "b": "turdus_merula",
-   "aCommon": "Eurasian wren",
-   "bCommon": "Common blackbird",
-   "distance": 0.2336,
-   "centroidDistance": 0.2968,
-   "nearestNeighbourDistance": 0.1704,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_canorus",
-   "b": "cuculus_solitarius",
-   "aCommon": "Common cuckoo",
-   "bCommon": "Red-chested Cuckoo",
-   "distance": 0.2361,
-   "centroidDistance": 0.2566,
-   "nearestNeighbourDistance": 0.2157,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_canorus",
+   "a": "cuculus_solitarius",
    "b": "strix_aluco",
-   "aCommon": "Common cuckoo",
+   "aCommon": "Red-chested Cuckoo",
    "bCommon": "Tawny owl",
-   "distance": 0.2367,
-   "centroidDistance": 0.321,
-   "nearestNeighbourDistance": 0.1523,
+   "distance": 0.28,
+   "centroidDistance": 0.2853,
+   "nearestNeighbourDistance": 0.2747,
+   "sharedTypes": []
+  },
+  {
+   "a": "turdus_philomelos",
+   "b": "zosterops_erythropleurus",
+   "aCommon": "Song Thrush",
+   "bCommon": "Chestnut-flanked White-eye",
+   "distance": 0.2805,
+   "centroidDistance": 0.3221,
+   "nearestNeighbourDistance": 0.2388,
+   "sharedTypes": []
+  },
+  {
+   "a": "luscinia_svecica",
+   "b": "zosterops_japonicus",
+   "aCommon": "Bluethroat",
+   "bCommon": "Japanese white-eye (mejiro)",
+   "distance": 0.2812,
+   "centroidDistance": 0.3311,
+   "nearestNeighbourDistance": 0.2314,
+   "sharedTypes": []
+  },
+  {
+   "a": "luscinia_svecica",
+   "b": "turdus_merula",
+   "aCommon": "Bluethroat",
+   "bCommon": "Common blackbird",
+   "distance": 0.2839,
+   "centroidDistance": 0.3801,
+   "nearestNeighbourDistance": 0.1877,
    "sharedTypes": [
     {
      "a": {
-      "species": "cuculus_canorus",
-      "typeId": "L03"
+      "species": "luscinia_svecica",
+      "typeId": "L02"
      },
      "b": {
-      "species": "strix_aluco",
-      "typeId": "L00"
+      "species": "turdus_merula",
+      "typeId": "L30"
      },
-     "distance": 0.0117
+     "distance": 0.0524
     }
    ]
   },
   {
-   "a": "luscinia_svecica",
-   "b": "poecile_rufescens",
-   "aCommon": "Bluethroat",
-   "bCommon": "Chestnut-backed Chickadee",
-   "distance": 0.2408,
-   "centroidDistance": 0.2847,
-   "nearestNeighbourDistance": 0.197,
+   "a": "luscinia_megarhynchos",
+   "b": "zosterops_simplex",
+   "aCommon": "Common nightingale",
+   "bCommon": "Swinhoe's White-eye",
+   "distance": 0.2886,
+   "centroidDistance": 0.3705,
+   "nearestNeighbourDistance": 0.2068,
    "sharedTypes": []
   },
   {
-   "a": "perisoreus_infaustus",
+   "a": "troglodytes_troglodytes",
    "b": "zosterops_simplex",
-   "aCommon": "Siberian jay",
+   "aCommon": "Eurasian wren",
    "bCommon": "Swinhoe's White-eye",
-   "distance": 0.2437,
-   "centroidDistance": 0.3228,
-   "nearestNeighbourDistance": 0.1646,
+   "distance": 0.2888,
+   "centroidDistance": 0.3656,
+   "nearestNeighbourDistance": 0.212,
    "sharedTypes": []
   },
   {
@@ -2417,61 +2148,41 @@
    "b": "poecile_atricapillus",
    "aCommon": "Red-chested Cuckoo",
    "bCommon": "Black-capped chickadee",
-   "distance": 0.2487,
-   "centroidDistance": 0.3197,
-   "nearestNeighbourDistance": 0.1778,
+   "distance": 0.2889,
+   "centroidDistance": 0.3704,
+   "nearestNeighbourDistance": 0.2073,
    "sharedTypes": [
     {
      "a": {
       "species": "cuculus_solitarius",
-      "typeId": "L02"
+      "typeId": "L03"
      },
      "b": {
       "species": "poecile_atricapillus",
       "typeId": "L00"
      },
-     "distance": 0.0188
+     "distance": 0.0324
     }
    ]
   },
   {
-   "a": "cuculus_canorus",
-   "b": "perisoreus_infaustus",
-   "aCommon": "Common cuckoo",
-   "bCommon": "Siberian jay",
-   "distance": 0.2602,
-   "centroidDistance": 0.3371,
-   "nearestNeighbourDistance": 0.1834,
+   "a": "poecile_rufescens",
+   "b": "troglodytes_troglodytes",
+   "aCommon": "Chestnut-backed Chickadee",
+   "bCommon": "Eurasian wren",
+   "distance": 0.2904,
+   "centroidDistance": 0.3538,
+   "nearestNeighbourDistance": 0.2269,
    "sharedTypes": []
   },
   {
-   "a": "poecile_atricapillus",
-   "b": "strix_leptogrammica",
-   "aCommon": "Black-capped chickadee",
-   "bCommon": "Brown Wood Owl",
-   "distance": 0.265,
-   "centroidDistance": 0.3608,
-   "nearestNeighbourDistance": 0.1692,
-   "sharedTypes": []
-  },
-  {
-   "a": "luscinia_megarhynchos",
-   "b": "strix_aluco",
-   "aCommon": "Common nightingale",
-   "bCommon": "Tawny owl",
-   "distance": 0.2665,
-   "centroidDistance": 0.3358,
-   "nearestNeighbourDistance": 0.1972,
-   "sharedTypes": []
-  },
-  {
-   "a": "horornis_diphone",
-   "b": "poecile_cinctus",
-   "aCommon": "Japanese bush warbler (uguisu)",
-   "bCommon": "Grey-headed Chickadee",
-   "distance": 0.2667,
-   "centroidDistance": 0.3288,
-   "nearestNeighbourDistance": 0.2046,
+   "a": "troglodytes_troglodytes",
+   "b": "turdus_philomelos",
+   "aCommon": "Eurasian wren",
+   "bCommon": "Song Thrush",
+   "distance": 0.2906,
+   "centroidDistance": 0.3816,
+   "nearestNeighbourDistance": 0.1997,
    "sharedTypes": []
   },
   {
@@ -2479,59 +2190,153 @@
    "b": "strix_leptogrammica",
    "aCommon": "Siberian jay",
    "bCommon": "Brown Wood Owl",
-   "distance": 0.2692,
-   "centroidDistance": 0.3704,
-   "nearestNeighbourDistance": 0.168,
+   "distance": 0.2923,
+   "centroidDistance": 0.3454,
+   "nearestNeighbourDistance": 0.2392,
    "sharedTypes": []
   },
   {
-   "a": "parus_minor",
-   "b": "perisoreus_infaustus",
-   "aCommon": "Japanese great tit",
-   "bCommon": "Siberian jay",
-   "distance": 0.2704,
-   "centroidDistance": 0.3573,
-   "nearestNeighbourDistance": 0.1835,
+   "a": "perisoreus_infaustus",
+   "b": "zosterops_erythropleurus",
+   "aCommon": "Siberian jay",
+   "bCommon": "Chestnut-flanked White-eye",
+   "distance": 0.2931,
+   "centroidDistance": 0.3676,
+   "nearestNeighbourDistance": 0.2186,
    "sharedTypes": []
   },
   {
-   "a": "cuculus_clamosus",
-   "b": "turdus_philomelos",
-   "aCommon": "Black Cuckoo",
-   "bCommon": "Song Thrush",
-   "distance": 0.2705,
-   "centroidDistance": 0.3145,
-   "nearestNeighbourDistance": 0.2265,
+   "a": "horornis_diphone",
+   "b": "strix_ocellata",
+   "aCommon": "Japanese bush warbler (uguisu)",
+   "bCommon": "Mottled Wood Owl",
+   "distance": 0.2946,
+   "centroidDistance": 0.3349,
+   "nearestNeighbourDistance": 0.2544,
+   "sharedTypes": []
+  },
+  {
+   "a": "parus_major",
+   "b": "zosterops_erythropleurus",
+   "aCommon": "Great Tit",
+   "bCommon": "Chestnut-flanked White-eye",
+   "distance": 0.2961,
+   "centroidDistance": 0.3383,
+   "nearestNeighbourDistance": 0.2539,
+   "sharedTypes": []
+  },
+  {
+   "a": "poecile_rufescens",
+   "b": "zosterops_simplex",
+   "aCommon": "Chestnut-backed Chickadee",
+   "bCommon": "Swinhoe's White-eye",
+   "distance": 0.2962,
+   "centroidDistance": 0.3738,
+   "nearestNeighbourDistance": 0.2187,
    "sharedTypes": []
   },
   {
    "a": "luscinia_megarhynchos",
-   "b": "poecile_rufescens",
+   "b": "troglodytes_troglodytes",
    "aCommon": "Common nightingale",
-   "bCommon": "Chestnut-backed Chickadee",
-   "distance": 0.2728,
-   "centroidDistance": 0.3418,
-   "nearestNeighbourDistance": 0.2037,
+   "bCommon": "Eurasian wren",
+   "distance": 0.2965,
+   "centroidDistance": 0.3725,
+   "nearestNeighbourDistance": 0.2204,
    "sharedTypes": []
   },
   {
-   "a": "cuculus_solitarius",
-   "b": "strix_ocellata",
-   "aCommon": "Red-chested Cuckoo",
-   "bCommon": "Mottled Wood Owl",
-   "distance": 0.2736,
-   "centroidDistance": 0.289,
-   "nearestNeighbourDistance": 0.2581,
+   "a": "parus_major",
+   "b": "turdus_merula",
+   "aCommon": "Great Tit",
+   "bCommon": "Common blackbird",
+   "distance": 0.2965,
+   "centroidDistance": 0.3493,
+   "nearestNeighbourDistance": 0.2436,
    "sharedTypes": []
   },
   {
    "a": "cuculus_canorus",
-   "b": "poecile_atricapillus",
+   "b": "luscinia_megarhynchos",
    "aCommon": "Common cuckoo",
-   "bCommon": "Black-capped chickadee",
-   "distance": 0.2756,
-   "centroidDistance": 0.3812,
-   "nearestNeighbourDistance": 0.17,
+   "bCommon": "Common nightingale",
+   "distance": 0.298,
+   "centroidDistance": 0.3142,
+   "nearestNeighbourDistance": 0.2818,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "cuculus_canorus",
+      "typeId": "L05"
+     },
+     "b": {
+      "species": "luscinia_megarhynchos",
+      "typeId": "L46"
+     },
+     "distance": 0.0445
+    }
+   ]
+  },
+  {
+   "a": "perisoreus_infaustus",
+   "b": "poecile_cinctus",
+   "aCommon": "Siberian jay",
+   "bCommon": "Grey-headed Chickadee",
+   "distance": 0.2997,
+   "centroidDistance": 0.3877,
+   "nearestNeighbourDistance": 0.2116,
+   "sharedTypes": []
+  },
+  {
+   "a": "parus_major",
+   "b": "zosterops_simplex",
+   "aCommon": "Great Tit",
+   "bCommon": "Swinhoe's White-eye",
+   "distance": 0.301,
+   "centroidDistance": 0.365,
+   "nearestNeighbourDistance": 0.237,
+   "sharedTypes": []
+  },
+  {
+   "a": "poecile_atricapillus",
+   "b": "troglodytes_troglodytes",
+   "aCommon": "Black-capped chickadee",
+   "bCommon": "Eurasian wren",
+   "distance": 0.3028,
+   "centroidDistance": 0.3553,
+   "nearestNeighbourDistance": 0.2502,
+   "sharedTypes": []
+  },
+  {
+   "a": "poecile_cinctus",
+   "b": "poecile_rufescens",
+   "aCommon": "Grey-headed Chickadee",
+   "bCommon": "Chestnut-backed Chickadee",
+   "distance": 0.3031,
+   "centroidDistance": 0.4245,
+   "nearestNeighbourDistance": 0.1816,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "poecile_cinctus",
+      "typeId": "L12"
+     },
+     "b": {
+      "species": "poecile_rufescens",
+      "typeId": "L07"
+     },
+     "distance": 0.0391
+    }
+   ]
+  },
+  {
+   "a": "horornis_diphone",
+   "b": "zosterops_erythropleurus",
+   "aCommon": "Japanese bush warbler (uguisu)",
+   "bCommon": "Chestnut-flanked White-eye",
+   "distance": 0.3057,
+   "centroidDistance": 0.3958,
+   "nearestNeighbourDistance": 0.2155,
    "sharedTypes": []
   },
   {
@@ -2539,9 +2344,9 @@
    "b": "luscinia_megarhynchos",
    "aCommon": "Black Cuckoo",
    "bCommon": "Common nightingale",
-   "distance": 0.2756,
-   "centroidDistance": 0.3464,
-   "nearestNeighbourDistance": 0.2049,
+   "distance": 0.3075,
+   "centroidDistance": 0.3686,
+   "nearestNeighbourDistance": 0.2464,
    "sharedTypes": [
     {
      "a": {
@@ -2550,113 +2355,258 @@
      },
      "b": {
       "species": "luscinia_megarhynchos",
-      "typeId": "L45"
+      "typeId": "L46"
      },
-     "distance": 0.0277
+     "distance": 0.0468
     }
    ]
+  },
+  {
+   "a": "luscinia_svecica",
+   "b": "poecile_cinctus",
+   "aCommon": "Bluethroat",
+   "bCommon": "Grey-headed Chickadee",
+   "distance": 0.3076,
+   "centroidDistance": 0.3439,
+   "nearestNeighbourDistance": 0.2714,
+   "sharedTypes": []
+  },
+  {
+   "a": "luscinia_megarhynchos",
+   "b": "strix_aluco",
+   "aCommon": "Common nightingale",
+   "bCommon": "Tawny owl",
+   "distance": 0.3077,
+   "centroidDistance": 0.3326,
+   "nearestNeighbourDistance": 0.2829,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_canorus",
+   "b": "strix_ocellata",
+   "aCommon": "Common cuckoo",
+   "bCommon": "Mottled Wood Owl",
+   "distance": 0.3106,
+   "centroidDistance": 0.3643,
+   "nearestNeighbourDistance": 0.2569,
+   "sharedTypes": []
+  },
+  {
+   "a": "strix_leptogrammica",
+   "b": "turdus_merula",
+   "aCommon": "Brown Wood Owl",
+   "bCommon": "Common blackbird",
+   "distance": 0.3116,
+   "centroidDistance": 0.366,
+   "nearestNeighbourDistance": 0.2572,
+   "sharedTypes": []
+  },
+  {
+   "a": "turdus_philomelos",
+   "b": "zosterops_simplex",
+   "aCommon": "Song Thrush",
+   "bCommon": "Swinhoe's White-eye",
+   "distance": 0.3117,
+   "centroidDistance": 0.422,
+   "nearestNeighbourDistance": 0.2015,
+   "sharedTypes": []
+  },
+  {
+   "a": "horornis_diphone",
+   "b": "poecile_cinctus",
+   "aCommon": "Japanese bush warbler (uguisu)",
+   "bCommon": "Grey-headed Chickadee",
+   "distance": 0.3118,
+   "centroidDistance": 0.3883,
+   "nearestNeighbourDistance": 0.2353,
+   "sharedTypes": []
+  },
+  {
+   "a": "turdus_merula",
+   "b": "zosterops_japonicus",
+   "aCommon": "Common blackbird",
+   "bCommon": "Japanese white-eye (mejiro)",
+   "distance": 0.3159,
+   "centroidDistance": 0.4427,
+   "nearestNeighbourDistance": 0.1892,
+   "sharedTypes": []
+  },
+  {
+   "a": "poecile_atricapillus",
+   "b": "strix_leptogrammica",
+   "aCommon": "Black-capped chickadee",
+   "bCommon": "Brown Wood Owl",
+   "distance": 0.3165,
+   "centroidDistance": 0.3914,
+   "nearestNeighbourDistance": 0.2416,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "poecile_atricapillus",
+      "typeId": "L00"
+     },
+     "b": {
+      "species": "strix_leptogrammica",
+      "typeId": "L11"
+     },
+     "distance": 0.0461
+    }
+   ]
+  },
+  {
+   "a": "poecile_cinctus",
+   "b": "turdus_merula",
+   "aCommon": "Grey-headed Chickadee",
+   "bCommon": "Common blackbird",
+   "distance": 0.3176,
+   "centroidDistance": 0.3692,
+   "nearestNeighbourDistance": 0.266,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_canorus",
+   "b": "turdus_philomelos",
+   "aCommon": "Common cuckoo",
+   "bCommon": "Song Thrush",
+   "distance": 0.3189,
+   "centroidDistance": 0.3902,
+   "nearestNeighbourDistance": 0.2475,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "cuculus_canorus",
+      "typeId": "L05"
+     },
+     "b": {
+      "species": "turdus_philomelos",
+      "typeId": "L00"
+     },
+     "distance": 0.0433
+    }
+   ]
+  },
+  {
+   "a": "parus_minor",
+   "b": "turdus_merula",
+   "aCommon": "Japanese great tit",
+   "bCommon": "Common blackbird",
+   "distance": 0.3202,
+   "centroidDistance": 0.3869,
+   "nearestNeighbourDistance": 0.2535,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "parus_minor",
+      "typeId": "L10"
+     },
+     "b": {
+      "species": "turdus_merula",
+      "typeId": "L26"
+     },
+     "distance": 0.0218
+    }
+   ]
+  },
+  {
+   "a": "turdus_merula",
+   "b": "zosterops_erythropleurus",
+   "aCommon": "Common blackbird",
+   "bCommon": "Chestnut-flanked White-eye",
+   "distance": 0.3227,
+   "centroidDistance": 0.4308,
+   "nearestNeighbourDistance": 0.2145,
+   "sharedTypes": []
+  },
+  {
+   "a": "poecile_cinctus",
+   "b": "troglodytes_troglodytes",
+   "aCommon": "Grey-headed Chickadee",
+   "bCommon": "Eurasian wren",
+   "distance": 0.3259,
+   "centroidDistance": 0.3799,
+   "nearestNeighbourDistance": 0.2719,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_canorus",
+   "b": "poecile_atricapillus",
+   "aCommon": "Common cuckoo",
+   "bCommon": "Black-capped chickadee",
+   "distance": 0.3276,
+   "centroidDistance": 0.4048,
+   "nearestNeighbourDistance": 0.2504,
+   "sharedTypes": []
+  },
+  {
+   "a": "strix_aluco",
+   "b": "turdus_philomelos",
+   "aCommon": "Tawny owl",
+   "bCommon": "Song Thrush",
+   "distance": 0.3285,
+   "centroidDistance": 0.3998,
+   "nearestNeighbourDistance": 0.2572,
+   "sharedTypes": []
+  },
+  {
+   "a": "luscinia_svecica",
+   "b": "zosterops_erythropleurus",
+   "aCommon": "Bluethroat",
+   "bCommon": "Chestnut-flanked White-eye",
+   "distance": 0.3378,
+   "centroidDistance": 0.4103,
+   "nearestNeighbourDistance": 0.2653,
+   "sharedTypes": []
+  },
+  {
+   "a": "poecile_atricapillus",
+   "b": "poecile_rufescens",
+   "aCommon": "Black-capped chickadee",
+   "bCommon": "Chestnut-backed Chickadee",
+   "distance": 0.3381,
+   "centroidDistance": 0.4917,
+   "nearestNeighbourDistance": 0.1845,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_clamosus",
+   "b": "turdus_philomelos",
+   "aCommon": "Black Cuckoo",
+   "bCommon": "Song Thrush",
+   "distance": 0.3443,
+   "centroidDistance": 0.3983,
+   "nearestNeighbourDistance": 0.2902,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "cuculus_clamosus",
+      "typeId": "L10"
+     },
+     "b": {
+      "species": "turdus_philomelos",
+      "typeId": "L00"
+     },
+     "distance": 0.0377
+    }
+   ]
+  },
+  {
+   "a": "perisoreus_infaustus",
+   "b": "zosterops_japonicus",
+   "aCommon": "Siberian jay",
+   "bCommon": "Japanese white-eye (mejiro)",
+   "distance": 0.3449,
+   "centroidDistance": 0.4671,
+   "nearestNeighbourDistance": 0.2226,
+   "sharedTypes": []
   },
   {
    "a": "cuculus_clamosus",
    "b": "poecile_atricapillus",
    "aCommon": "Black Cuckoo",
    "bCommon": "Black-capped chickadee",
-   "distance": 0.2762,
-   "centroidDistance": 0.3795,
-   "nearestNeighbourDistance": 0.1729,
-   "sharedTypes": []
-  },
-  {
-   "a": "horornis_diphone",
-   "b": "parus_major",
-   "aCommon": "Japanese bush warbler (uguisu)",
-   "bCommon": "Great Tit",
-   "distance": 0.277,
-   "centroidDistance": 0.3282,
-   "nearestNeighbourDistance": 0.2258,
-   "sharedTypes": []
-  },
-  {
-   "a": "strix_aluco",
-   "b": "turdus_philomelos",
-   "aCommon": "Tawny owl",
-   "bCommon": "Song Thrush",
-   "distance": 0.2781,
-   "centroidDistance": 0.3491,
-   "nearestNeighbourDistance": 0.2071,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_solitarius",
-   "b": "zosterops_erythropleurus",
-   "aCommon": "Red-chested Cuckoo",
-   "bCommon": "Chestnut-flanked White-eye",
-   "distance": 0.2803,
-   "centroidDistance": 0.3435,
-   "nearestNeighbourDistance": 0.2172,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_solitarius",
-   "b": "luscinia_svecica",
-   "aCommon": "Red-chested Cuckoo",
-   "bCommon": "Bluethroat",
-   "distance": 0.2815,
-   "centroidDistance": 0.35,
-   "nearestNeighbourDistance": 0.213,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "cuculus_solitarius",
-      "typeId": "L03"
-     },
-     "b": {
-      "species": "luscinia_svecica",
-      "typeId": "L01"
-     },
-     "distance": 0.0161
-    },
-    {
-     "a": {
-      "species": "cuculus_solitarius",
-      "typeId": "L00"
-     },
-     "b": {
-      "species": "luscinia_svecica",
-      "typeId": "L00"
-     },
-     "distance": 0.0183
-    }
-   ]
-  },
-  {
-   "a": "horornis_diphone",
-   "b": "luscinia_svecica",
-   "aCommon": "Japanese bush warbler (uguisu)",
-   "bCommon": "Bluethroat",
-   "distance": 0.2881,
-   "centroidDistance": 0.3333,
-   "nearestNeighbourDistance": 0.243,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_solitarius",
-   "b": "parus_major",
-   "aCommon": "Red-chested Cuckoo",
-   "bCommon": "Great Tit",
-   "distance": 0.2898,
-   "centroidDistance": 0.3569,
-   "nearestNeighbourDistance": 0.2228,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_solitarius",
-   "b": "poecile_cinctus",
-   "aCommon": "Red-chested Cuckoo",
-   "bCommon": "Grey-headed Chickadee",
-   "distance": 0.2899,
-   "centroidDistance": 0.3667,
-   "nearestNeighbourDistance": 0.2131,
+   "distance": 0.3461,
+   "centroidDistance": 0.4742,
+   "nearestNeighbourDistance": 0.2179,
    "sharedTypes": []
   },
   {
@@ -2664,201 +2614,9 @@
    "b": "strix_ocellata",
    "aCommon": "Siberian jay",
    "bCommon": "Mottled Wood Owl",
-   "distance": 0.2955,
-   "centroidDistance": 0.3264,
-   "nearestNeighbourDistance": 0.2645,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_clamosus",
-   "b": "poecile_cinctus",
-   "aCommon": "Black Cuckoo",
-   "bCommon": "Grey-headed Chickadee",
-   "distance": 0.3045,
-   "centroidDistance": 0.3983,
-   "nearestNeighbourDistance": 0.2108,
-   "sharedTypes": []
-  },
-  {
-   "a": "strix_ocellata",
-   "b": "zosterops_erythropleurus",
-   "aCommon": "Mottled Wood Owl",
-   "bCommon": "Chestnut-flanked White-eye",
-   "distance": 0.3052,
-   "centroidDistance": 0.3832,
-   "nearestNeighbourDistance": 0.2272,
-   "sharedTypes": []
-  },
-  {
-   "a": "horornis_diphone",
-   "b": "zosterops_japonicus",
-   "aCommon": "Japanese bush warbler (uguisu)",
-   "bCommon": "Japanese white-eye (mejiro)",
-   "distance": 0.3065,
-   "centroidDistance": 0.3843,
-   "nearestNeighbourDistance": 0.2288,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_clamosus",
-   "b": "zosterops_erythropleurus",
-   "aCommon": "Black Cuckoo",
-   "bCommon": "Chestnut-flanked White-eye",
-   "distance": 0.3072,
-   "centroidDistance": 0.3984,
-   "nearestNeighbourDistance": 0.216,
-   "sharedTypes": []
-  },
-  {
-   "a": "poecile_cinctus",
-   "b": "strix_aluco",
-   "aCommon": "Grey-headed Chickadee",
-   "bCommon": "Tawny owl",
-   "distance": 0.3075,
-   "centroidDistance": 0.4195,
-   "nearestNeighbourDistance": 0.1955,
-   "sharedTypes": []
-  },
-  {
-   "a": "strix_leptogrammica",
-   "b": "turdus_merula",
-   "aCommon": "Brown Wood Owl",
-   "bCommon": "Common blackbird",
-   "distance": 0.3083,
-   "centroidDistance": 0.4453,
-   "nearestNeighbourDistance": 0.1713,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_canorus",
-   "b": "turdus_merula",
-   "aCommon": "Common cuckoo",
-   "bCommon": "Common blackbird",
-   "distance": 0.3088,
-   "centroidDistance": 0.4278,
-   "nearestNeighbourDistance": 0.1898,
-   "sharedTypes": []
-  },
-  {
-   "a": "poecile_atricapillus",
-   "b": "strix_aluco",
-   "aCommon": "Black-capped chickadee",
-   "bCommon": "Tawny owl",
-   "distance": 0.3165,
-   "centroidDistance": 0.4369,
-   "nearestNeighbourDistance": 0.1961,
-   "sharedTypes": []
-  },
-  {
-   "a": "strix_leptogrammica",
-   "b": "zosterops_erythropleurus",
-   "aCommon": "Brown Wood Owl",
-   "bCommon": "Chestnut-flanked White-eye",
-   "distance": 0.3172,
-   "centroidDistance": 0.436,
-   "nearestNeighbourDistance": 0.1983,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_solitarius",
-   "b": "zosterops_japonicus",
-   "aCommon": "Red-chested Cuckoo",
-   "bCommon": "Japanese white-eye (mejiro)",
-   "distance": 0.319,
-   "centroidDistance": 0.4225,
-   "nearestNeighbourDistance": 0.2155,
-   "sharedTypes": []
-  },
-  {
-   "a": "perisoreus_infaustus",
-   "b": "troglodytes_troglodytes",
-   "aCommon": "Siberian jay",
-   "bCommon": "Eurasian wren",
-   "distance": 0.3204,
-   "centroidDistance": 0.4287,
-   "nearestNeighbourDistance": 0.2121,
-   "sharedTypes": []
-  },
-  {
-   "a": "horornis_diphone",
-   "b": "zosterops_simplex",
-   "aCommon": "Japanese bush warbler (uguisu)",
-   "bCommon": "Swinhoe's White-eye",
-   "distance": 0.3221,
-   "centroidDistance": 0.4279,
-   "nearestNeighbourDistance": 0.2163,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_clamosus",
-   "b": "luscinia_svecica",
-   "aCommon": "Black Cuckoo",
-   "bCommon": "Bluethroat",
-   "distance": 0.3249,
-   "centroidDistance": 0.4047,
-   "nearestNeighbourDistance": 0.2451,
-   "sharedTypes": []
-  },
-  {
-   "a": "poecile_cinctus",
-   "b": "strix_leptogrammica",
-   "aCommon": "Grey-headed Chickadee",
-   "bCommon": "Brown Wood Owl",
-   "distance": 0.3318,
-   "centroidDistance": 0.4645,
-   "nearestNeighbourDistance": 0.1992,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_solitarius",
-   "b": "zosterops_simplex",
-   "aCommon": "Red-chested Cuckoo",
-   "bCommon": "Swinhoe's White-eye",
-   "distance": 0.3364,
-   "centroidDistance": 0.4534,
-   "nearestNeighbourDistance": 0.2195,
-   "sharedTypes": []
-  },
-  {
-   "a": "poecile_rufescens",
-   "b": "turdus_philomelos",
-   "aCommon": "Chestnut-backed Chickadee",
-   "bCommon": "Song Thrush",
-   "distance": 0.3388,
-   "centroidDistance": 0.4634,
-   "nearestNeighbourDistance": 0.2142,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "poecile_rufescens",
-      "typeId": "L05"
-     },
-     "b": {
-      "species": "turdus_philomelos",
-      "typeId": "L13"
-     },
-     "distance": 0.0197
-    }
-   ]
-  },
-  {
-   "a": "cuculus_canorus",
-   "b": "luscinia_megarhynchos",
-   "aCommon": "Common cuckoo",
-   "bCommon": "Common nightingale",
-   "distance": 0.3431,
-   "centroidDistance": 0.5072,
-   "nearestNeighbourDistance": 0.1791,
-   "sharedTypes": []
-  },
-  {
-   "a": "poecile_rufescens",
-   "b": "zosterops_erythropleurus",
-   "aCommon": "Chestnut-backed Chickadee",
-   "bCommon": "Chestnut-flanked White-eye",
-   "distance": 0.3443,
-   "centroidDistance": 0.449,
-   "nearestNeighbourDistance": 0.2396,
+   "distance": 0.3497,
+   "centroidDistance": 0.402,
+   "nearestNeighbourDistance": 0.2974,
    "sharedTypes": []
   },
   {
@@ -2866,159 +2624,99 @@
    "b": "strix_ocellata",
    "aCommon": "Black-capped chickadee",
    "bCommon": "Mottled Wood Owl",
-   "distance": 0.3457,
-   "centroidDistance": 0.4369,
-   "nearestNeighbourDistance": 0.2544,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_clamosus",
-   "b": "zosterops_japonicus",
-   "aCommon": "Black Cuckoo",
-   "bCommon": "Japanese white-eye (mejiro)",
-   "distance": 0.3459,
-   "centroidDistance": 0.4497,
-   "nearestNeighbourDistance": 0.2422,
-   "sharedTypes": []
-  },
-  {
-   "a": "horornis_diphone",
-   "b": "parus_minor",
-   "aCommon": "Japanese bush warbler (uguisu)",
-   "bCommon": "Japanese great tit",
-   "distance": 0.3475,
-   "centroidDistance": 0.4413,
-   "nearestNeighbourDistance": 0.2537,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_clamosus",
-   "b": "parus_major",
-   "aCommon": "Black Cuckoo",
-   "bCommon": "Great Tit",
-   "distance": 0.3496,
-   "centroidDistance": 0.4283,
-   "nearestNeighbourDistance": 0.2709,
-   "sharedTypes": []
-  },
-  {
-   "a": "strix_leptogrammica",
-   "b": "turdus_philomelos",
-   "aCommon": "Brown Wood Owl",
-   "bCommon": "Song Thrush",
-   "distance": 0.3518,
-   "centroidDistance": 0.4642,
-   "nearestNeighbourDistance": 0.2395,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_canorus",
-   "b": "turdus_philomelos",
-   "aCommon": "Common cuckoo",
-   "bCommon": "Song Thrush",
-   "distance": 0.3533,
-   "centroidDistance": 0.497,
-   "nearestNeighbourDistance": 0.2096,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_solitarius",
-   "b": "troglodytes_troglodytes",
-   "aCommon": "Red-chested Cuckoo",
-   "bCommon": "Eurasian wren",
-   "distance": 0.3572,
-   "centroidDistance": 0.4845,
-   "nearestNeighbourDistance": 0.2299,
+   "distance": 0.3555,
+   "centroidDistance": 0.4215,
+   "nearestNeighbourDistance": 0.2895,
    "sharedTypes": []
   },
   {
    "a": "luscinia_svecica",
-   "b": "strix_aluco",
-   "aCommon": "Bluethroat",
-   "bCommon": "Tawny owl",
-   "distance": 0.36,
-   "centroidDistance": 0.4546,
-   "nearestNeighbourDistance": 0.2655,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_clamosus",
    "b": "zosterops_simplex",
-   "aCommon": "Black Cuckoo",
+   "aCommon": "Bluethroat",
    "bCommon": "Swinhoe's White-eye",
-   "distance": 0.3601,
-   "centroidDistance": 0.4817,
-   "nearestNeighbourDistance": 0.2385,
+   "distance": 0.3566,
+   "centroidDistance": 0.4587,
+   "nearestNeighbourDistance": 0.2544,
    "sharedTypes": []
   },
   {
-   "a": "cuculus_solitarius",
-   "b": "parus_minor",
-   "aCommon": "Red-chested Cuckoo",
-   "bCommon": "Japanese great tit",
-   "distance": 0.3644,
-   "centroidDistance": 0.4746,
-   "nearestNeighbourDistance": 0.2542,
+   "a": "strix_leptogrammica",
+   "b": "turdus_philomelos",
+   "aCommon": "Brown Wood Owl",
+   "bCommon": "Song Thrush",
+   "distance": 0.3578,
+   "centroidDistance": 0.4415,
+   "nearestNeighbourDistance": 0.2742,
    "sharedTypes": []
   },
   {
-   "a": "strix_aluco",
-   "b": "strix_ocellata",
-   "aCommon": "Tawny owl",
-   "bCommon": "Mottled Wood Owl",
-   "distance": 0.3682,
-   "centroidDistance": 0.4191,
-   "nearestNeighbourDistance": 0.3174,
+   "a": "turdus_merula",
+   "b": "zosterops_simplex",
+   "aCommon": "Common blackbird",
+   "bCommon": "Swinhoe's White-eye",
+   "distance": 0.3592,
+   "centroidDistance": 0.5039,
+   "nearestNeighbourDistance": 0.2145,
    "sharedTypes": []
   },
   {
-   "a": "cuculus_canorus",
-   "b": "poecile_cinctus",
-   "aCommon": "Common cuckoo",
-   "bCommon": "Grey-headed Chickadee",
-   "distance": 0.3692,
-   "centroidDistance": 0.5177,
-   "nearestNeighbourDistance": 0.2207,
-   "sharedTypes": []
-  },
-  {
-   "a": "strix_aluco",
+   "a": "poecile_rufescens",
    "b": "zosterops_japonicus",
-   "aCommon": "Tawny owl",
+   "aCommon": "Chestnut-backed Chickadee",
    "bCommon": "Japanese white-eye (mejiro)",
-   "distance": 0.3693,
-   "centroidDistance": 0.5196,
-   "nearestNeighbourDistance": 0.2189,
+   "distance": 0.3616,
+   "centroidDistance": 0.4783,
+   "nearestNeighbourDistance": 0.2449,
    "sharedTypes": []
   },
   {
-   "a": "strix_aluco",
+   "a": "strix_ocellata",
+   "b": "zosterops_simplex",
+   "aCommon": "Mottled Wood Owl",
+   "bCommon": "Swinhoe's White-eye",
+   "distance": 0.3628,
+   "centroidDistance": 0.4533,
+   "nearestNeighbourDistance": 0.2723,
+   "sharedTypes": []
+  },
+  {
+   "a": "strix_leptogrammica",
+   "b": "zosterops_simplex",
+   "aCommon": "Brown Wood Owl",
+   "bCommon": "Swinhoe's White-eye",
+   "distance": 0.3639,
+   "centroidDistance": 0.4943,
+   "nearestNeighbourDistance": 0.2335,
+   "sharedTypes": []
+  },
+  {
+   "a": "luscinia_svecica",
+   "b": "perisoreus_infaustus",
+   "aCommon": "Bluethroat",
+   "bCommon": "Siberian jay",
+   "distance": 0.3703,
+   "centroidDistance": 0.4952,
+   "nearestNeighbourDistance": 0.2454,
+   "sharedTypes": []
+  },
+  {
+   "a": "poecile_atricapillus",
+   "b": "strix_aluco",
+   "aCommon": "Black-capped chickadee",
+   "bCommon": "Tawny owl",
+   "distance": 0.3732,
+   "centroidDistance": 0.4518,
+   "nearestNeighbourDistance": 0.2946,
+   "sharedTypes": []
+  },
+  {
+   "a": "troglodytes_troglodytes",
    "b": "zosterops_erythropleurus",
-   "aCommon": "Tawny owl",
+   "aCommon": "Eurasian wren",
    "bCommon": "Chestnut-flanked White-eye",
-   "distance": 0.3729,
-   "centroidDistance": 0.4862,
-   "nearestNeighbourDistance": 0.2595,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_canorus",
-   "b": "zosterops_erythropleurus",
-   "aCommon": "Common cuckoo",
-   "bCommon": "Chestnut-flanked White-eye",
-   "distance": 0.3746,
-   "centroidDistance": 0.5118,
-   "nearestNeighbourDistance": 0.2374,
-   "sharedTypes": []
-  },
-  {
-   "a": "strix_aluco",
-   "b": "strix_leptogrammica",
-   "aCommon": "Tawny owl",
-   "bCommon": "Brown Wood Owl",
-   "distance": 0.3825,
-   "centroidDistance": 0.5025,
-   "nearestNeighbourDistance": 0.2624,
+   "distance": 0.3768,
+   "centroidDistance": 0.463,
+   "nearestNeighbourDistance": 0.2906,
    "sharedTypes": []
   },
   {
@@ -3026,101 +2724,19 @@
    "b": "strix_leptogrammica",
    "aCommon": "Common nightingale",
    "bCommon": "Brown Wood Owl",
-   "distance": 0.3837,
-   "centroidDistance": 0.5288,
-   "nearestNeighbourDistance": 0.2386,
+   "distance": 0.3783,
+   "centroidDistance": 0.4345,
+   "nearestNeighbourDistance": 0.3221,
    "sharedTypes": []
   },
   {
-   "a": "horornis_diphone",
-   "b": "troglodytes_troglodytes",
-   "aCommon": "Japanese bush warbler (uguisu)",
-   "bCommon": "Eurasian wren",
-   "distance": 0.3868,
-   "centroidDistance": 0.4916,
-   "nearestNeighbourDistance": 0.2821,
-   "sharedTypes": []
-  },
-  {
-   "a": "parus_major",
-   "b": "strix_aluco",
-   "aCommon": "Great Tit",
-   "bCommon": "Tawny owl",
-   "distance": 0.3898,
-   "centroidDistance": 0.5251,
-   "nearestNeighbourDistance": 0.2544,
-   "sharedTypes": []
-  },
-  {
-   "a": "strix_aluco",
-   "b": "zosterops_simplex",
-   "aCommon": "Tawny owl",
-   "bCommon": "Swinhoe's White-eye",
-   "distance": 0.3919,
-   "centroidDistance": 0.5494,
-   "nearestNeighbourDistance": 0.2344,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_canorus",
-   "b": "luscinia_svecica",
-   "aCommon": "Common cuckoo",
-   "bCommon": "Bluethroat",
-   "distance": 0.394,
-   "centroidDistance": 0.5275,
-   "nearestNeighbourDistance": 0.2605,
-   "sharedTypes": []
-  },
-  {
-   "a": "poecile_rufescens",
-   "b": "turdus_merula",
-   "aCommon": "Chestnut-backed Chickadee",
-   "bCommon": "Common blackbird",
-   "distance": 0.3977,
-   "centroidDistance": 0.5171,
-   "nearestNeighbourDistance": 0.2782,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_canorus",
-   "b": "parus_major",
-   "aCommon": "Common cuckoo",
-   "bCommon": "Great Tit",
-   "distance": 0.4001,
-   "centroidDistance": 0.5473,
-   "nearestNeighbourDistance": 0.2528,
-   "sharedTypes": [
-    {
-     "a": {
-      "species": "cuculus_canorus",
-      "typeId": "L00"
-     },
-     "b": {
-      "species": "parus_major",
-      "typeId": "L00"
-     },
-     "distance": 0.0126
-    }
-   ]
-  },
-  {
-   "a": "parus_minor",
-   "b": "strix_aluco",
-   "aCommon": "Japanese great tit",
-   "bCommon": "Tawny owl",
-   "distance": 0.4001,
-   "centroidDistance": 0.6089,
-   "nearestNeighbourDistance": 0.1912,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_canorus",
-   "b": "parus_minor",
-   "aCommon": "Common cuckoo",
-   "bCommon": "Japanese great tit",
-   "distance": 0.402,
-   "centroidDistance": 0.6189,
-   "nearestNeighbourDistance": 0.1851,
+   "a": "poecile_cinctus",
+   "b": "strix_ocellata",
+   "aCommon": "Grey-headed Chickadee",
+   "bCommon": "Mottled Wood Owl",
+   "distance": 0.3792,
+   "centroidDistance": 0.4652,
+   "nearestNeighbourDistance": 0.2931,
    "sharedTypes": []
   },
   {
@@ -3128,39 +2744,479 @@
    "b": "turdus_philomelos",
    "aCommon": "Mottled Wood Owl",
    "bCommon": "Song Thrush",
-   "distance": 0.4054,
-   "centroidDistance": 0.4843,
-   "nearestNeighbourDistance": 0.3265,
+   "distance": 0.38,
+   "centroidDistance": 0.452,
+   "nearestNeighbourDistance": 0.308,
    "sharedTypes": []
   },
   {
-   "a": "cuculus_clamosus",
-   "b": "troglodytes_troglodytes",
-   "aCommon": "Black Cuckoo",
-   "bCommon": "Eurasian wren",
-   "distance": 0.4123,
-   "centroidDistance": 0.5292,
-   "nearestNeighbourDistance": 0.2955,
+   "a": "parus_major",
+   "b": "perisoreus_infaustus",
+   "aCommon": "Great Tit",
+   "bCommon": "Siberian jay",
+   "distance": 0.3802,
+   "centroidDistance": 0.4941,
+   "nearestNeighbourDistance": 0.2664,
    "sharedTypes": []
   },
   {
-   "a": "cuculus_clamosus",
-   "b": "parus_minor",
-   "aCommon": "Black Cuckoo",
-   "bCommon": "Japanese great tit",
-   "distance": 0.4192,
-   "centroidDistance": 0.5314,
-   "nearestNeighbourDistance": 0.3069,
+   "a": "strix_aluco",
+   "b": "strix_leptogrammica",
+   "aCommon": "Tawny owl",
+   "bCommon": "Brown Wood Owl",
+   "distance": 0.3807,
+   "centroidDistance": 0.4315,
+   "nearestNeighbourDistance": 0.33,
    "sharedTypes": []
   },
   {
    "a": "strix_leptogrammica",
-   "b": "zosterops_simplex",
+   "b": "zosterops_erythropleurus",
    "aCommon": "Brown Wood Owl",
+   "bCommon": "Chestnut-flanked White-eye",
+   "distance": 0.3848,
+   "centroidDistance": 0.5115,
+   "nearestNeighbourDistance": 0.258,
+   "sharedTypes": []
+  },
+  {
+   "a": "parus_major",
+   "b": "poecile_rufescens",
+   "aCommon": "Great Tit",
+   "bCommon": "Chestnut-backed Chickadee",
+   "distance": 0.3854,
+   "centroidDistance": 0.4799,
+   "nearestNeighbourDistance": 0.2908,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "parus_major",
+      "typeId": "L37"
+     },
+     "b": {
+      "species": "poecile_rufescens",
+      "typeId": "L05"
+     },
+     "distance": 0.0479
+    }
+   ]
+  },
+  {
+   "a": "perisoreus_infaustus",
+   "b": "zosterops_simplex",
+   "aCommon": "Siberian jay",
    "bCommon": "Swinhoe's White-eye",
-   "distance": 0.4209,
-   "centroidDistance": 0.6429,
-   "nearestNeighbourDistance": 0.199,
+   "distance": 0.3864,
+   "centroidDistance": 0.5435,
+   "nearestNeighbourDistance": 0.2292,
+   "sharedTypes": []
+  },
+  {
+   "a": "poecile_rufescens",
+   "b": "strix_leptogrammica",
+   "aCommon": "Chestnut-backed Chickadee",
+   "bCommon": "Brown Wood Owl",
+   "distance": 0.3888,
+   "centroidDistance": 0.5333,
+   "nearestNeighbourDistance": 0.2444,
+   "sharedTypes": []
+  },
+  {
+   "a": "parus_minor",
+   "b": "perisoreus_infaustus",
+   "aCommon": "Japanese great tit",
+   "bCommon": "Siberian jay",
+   "distance": 0.3911,
+   "centroidDistance": 0.5305,
+   "nearestNeighbourDistance": 0.2518,
+   "sharedTypes": []
+  },
+  {
+   "a": "poecile_cinctus",
+   "b": "strix_leptogrammica",
+   "aCommon": "Grey-headed Chickadee",
+   "bCommon": "Brown Wood Owl",
+   "distance": 0.3946,
+   "centroidDistance": 0.5164,
+   "nearestNeighbourDistance": 0.2728,
+   "sharedTypes": []
+  },
+  {
+   "a": "troglodytes_troglodytes",
+   "b": "turdus_merula",
+   "aCommon": "Eurasian wren",
+   "bCommon": "Common blackbird",
+   "distance": 0.3965,
+   "centroidDistance": 0.5236,
+   "nearestNeighbourDistance": 0.2694,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_canorus",
+   "b": "poecile_cinctus",
+   "aCommon": "Common cuckoo",
+   "bCommon": "Grey-headed Chickadee",
+   "distance": 0.3966,
+   "centroidDistance": 0.5119,
+   "nearestNeighbourDistance": 0.2812,
+   "sharedTypes": []
+  },
+  {
+   "a": "horornis_diphone",
+   "b": "zosterops_japonicus",
+   "aCommon": "Japanese bush warbler (uguisu)",
+   "bCommon": "Japanese white-eye (mejiro)",
+   "distance": 0.3978,
+   "centroidDistance": 0.5291,
+   "nearestNeighbourDistance": 0.2665,
+   "sharedTypes": []
+  },
+  {
+   "a": "luscinia_megarhynchos",
+   "b": "poecile_rufescens",
+   "aCommon": "Common nightingale",
+   "bCommon": "Chestnut-backed Chickadee",
+   "distance": 0.3987,
+   "centroidDistance": 0.5342,
+   "nearestNeighbourDistance": 0.2633,
+   "sharedTypes": []
+  },
+  {
+   "a": "poecile_cinctus",
+   "b": "strix_aluco",
+   "aCommon": "Grey-headed Chickadee",
+   "bCommon": "Tawny owl",
+   "distance": 0.4005,
+   "centroidDistance": 0.5023,
+   "nearestNeighbourDistance": 0.2988,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_canorus",
+   "b": "parus_minor",
+   "aCommon": "Common cuckoo",
+   "bCommon": "Japanese great tit",
+   "distance": 0.4032,
+   "centroidDistance": 0.5476,
+   "nearestNeighbourDistance": 0.2588,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_clamosus",
+   "b": "zosterops_erythropleurus",
+   "aCommon": "Black Cuckoo",
+   "bCommon": "Chestnut-flanked White-eye",
+   "distance": 0.4034,
+   "centroidDistance": 0.5718,
+   "nearestNeighbourDistance": 0.235,
+   "sharedTypes": []
+  },
+  {
+   "a": "poecile_rufescens",
+   "b": "turdus_philomelos",
+   "aCommon": "Chestnut-backed Chickadee",
+   "bCommon": "Song Thrush",
+   "distance": 0.4037,
+   "centroidDistance": 0.5408,
+   "nearestNeighbourDistance": 0.2665,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "poecile_rufescens",
+      "typeId": "L06"
+     },
+     "b": {
+      "species": "turdus_philomelos",
+      "typeId": "L13"
+     },
+     "distance": 0.0493
+    }
+   ]
+  },
+  {
+   "a": "strix_ocellata",
+   "b": "zosterops_japonicus",
+   "aCommon": "Mottled Wood Owl",
+   "bCommon": "Japanese white-eye (mejiro)",
+   "distance": 0.4055,
+   "centroidDistance": 0.4863,
+   "nearestNeighbourDistance": 0.3247,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_solitarius",
+   "b": "zosterops_erythropleurus",
+   "aCommon": "Red-chested Cuckoo",
+   "bCommon": "Chestnut-flanked White-eye",
+   "distance": 0.4097,
+   "centroidDistance": 0.5812,
+   "nearestNeighbourDistance": 0.2382,
+   "sharedTypes": []
+  },
+  {
+   "a": "horornis_diphone",
+   "b": "zosterops_simplex",
+   "aCommon": "Japanese bush warbler (uguisu)",
+   "bCommon": "Swinhoe's White-eye",
+   "distance": 0.4102,
+   "centroidDistance": 0.5644,
+   "nearestNeighbourDistance": 0.2561,
+   "sharedTypes": []
+  },
+  {
+   "a": "horornis_diphone",
+   "b": "parus_minor",
+   "aCommon": "Japanese bush warbler (uguisu)",
+   "bCommon": "Japanese great tit",
+   "distance": 0.4113,
+   "centroidDistance": 0.5066,
+   "nearestNeighbourDistance": 0.316,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "horornis_diphone",
+      "typeId": "L02"
+     },
+     "b": {
+      "species": "parus_minor",
+      "typeId": "L10"
+     },
+     "distance": 0.04
+    }
+   ]
+  },
+  {
+   "a": "cuculus_canorus",
+   "b": "zosterops_erythropleurus",
+   "aCommon": "Common cuckoo",
+   "bCommon": "Chestnut-flanked White-eye",
+   "distance": 0.4127,
+   "centroidDistance": 0.5415,
+   "nearestNeighbourDistance": 0.284,
+   "sharedTypes": []
+  },
+  {
+   "a": "poecile_rufescens",
+   "b": "turdus_merula",
+   "aCommon": "Chestnut-backed Chickadee",
+   "bCommon": "Common blackbird",
+   "distance": 0.4144,
+   "centroidDistance": 0.5223,
+   "nearestNeighbourDistance": 0.3065,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_solitarius",
+   "b": "poecile_cinctus",
+   "aCommon": "Red-chested Cuckoo",
+   "bCommon": "Grey-headed Chickadee",
+   "distance": 0.4201,
+   "centroidDistance": 0.5391,
+   "nearestNeighbourDistance": 0.3011,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_canorus",
+   "b": "parus_major",
+   "aCommon": "Common cuckoo",
+   "bCommon": "Great Tit",
+   "distance": 0.4226,
+   "centroidDistance": 0.4906,
+   "nearestNeighbourDistance": 0.3545,
+   "sharedTypes": []
+  },
+  {
+   "a": "parus_minor",
+   "b": "strix_leptogrammica",
+   "aCommon": "Japanese great tit",
+   "bCommon": "Brown Wood Owl",
+   "distance": 0.4229,
+   "centroidDistance": 0.5223,
+   "nearestNeighbourDistance": 0.3234,
+   "sharedTypes": []
+  },
+  {
+   "a": "luscinia_megarhynchos",
+   "b": "strix_ocellata",
+   "aCommon": "Common nightingale",
+   "bCommon": "Mottled Wood Owl",
+   "distance": 0.4275,
+   "centroidDistance": 0.4666,
+   "nearestNeighbourDistance": 0.3884,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_solitarius",
+   "b": "strix_ocellata",
+   "aCommon": "Red-chested Cuckoo",
+   "bCommon": "Mottled Wood Owl",
+   "distance": 0.4287,
+   "centroidDistance": 0.4783,
+   "nearestNeighbourDistance": 0.379,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_solitarius",
+   "b": "parus_major",
+   "aCommon": "Red-chested Cuckoo",
+   "bCommon": "Great Tit",
+   "distance": 0.4391,
+   "centroidDistance": 0.5447,
+   "nearestNeighbourDistance": 0.3336,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_solitarius",
+   "b": "parus_minor",
+   "aCommon": "Red-chested Cuckoo",
+   "bCommon": "Japanese great tit",
+   "distance": 0.4399,
+   "centroidDistance": 0.594,
+   "nearestNeighbourDistance": 0.2859,
+   "sharedTypes": [
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L31"
+     },
+     "b": {
+      "species": "parus_minor",
+      "typeId": "L10"
+     },
+     "distance": 0.0351
+    },
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L00"
+     },
+     "b": {
+      "species": "parus_minor",
+      "typeId": "L08"
+     },
+     "distance": 0.0465
+    },
+    {
+     "a": {
+      "species": "cuculus_solitarius",
+      "typeId": "L40"
+     },
+     "b": {
+      "species": "parus_minor",
+      "typeId": "L06"
+     },
+     "distance": 0.0518
+    }
+   ]
+  },
+  {
+   "a": "strix_leptogrammica",
+   "b": "zosterops_japonicus",
+   "aCommon": "Brown Wood Owl",
+   "bCommon": "Japanese white-eye (mejiro)",
+   "distance": 0.4426,
+   "centroidDistance": 0.5726,
+   "nearestNeighbourDistance": 0.3127,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_clamosus",
+   "b": "poecile_cinctus",
+   "aCommon": "Black Cuckoo",
+   "bCommon": "Grey-headed Chickadee",
+   "distance": 0.4441,
+   "centroidDistance": 0.6065,
+   "nearestNeighbourDistance": 0.2818,
+   "sharedTypes": []
+  },
+  {
+   "a": "strix_aluco",
+   "b": "zosterops_erythropleurus",
+   "aCommon": "Tawny owl",
+   "bCommon": "Chestnut-flanked White-eye",
+   "distance": 0.4458,
+   "centroidDistance": 0.5487,
+   "nearestNeighbourDistance": 0.343,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_solitarius",
+   "b": "zosterops_japonicus",
+   "aCommon": "Red-chested Cuckoo",
+   "bCommon": "Japanese white-eye (mejiro)",
+   "distance": 0.4482,
+   "centroidDistance": 0.6282,
+   "nearestNeighbourDistance": 0.2682,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_solitarius",
+   "b": "luscinia_svecica",
+   "aCommon": "Red-chested Cuckoo",
+   "bCommon": "Bluethroat",
+   "distance": 0.4531,
+   "centroidDistance": 0.5957,
+   "nearestNeighbourDistance": 0.3105,
+   "sharedTypes": []
+  },
+  {
+   "a": "strix_aluco",
+   "b": "strix_ocellata",
+   "aCommon": "Tawny owl",
+   "bCommon": "Mottled Wood Owl",
+   "distance": 0.4627,
+   "centroidDistance": 0.5152,
+   "nearestNeighbourDistance": 0.4103,
+   "sharedTypes": []
+  },
+  {
+   "a": "parus_minor",
+   "b": "strix_ocellata",
+   "aCommon": "Japanese great tit",
+   "bCommon": "Mottled Wood Owl",
+   "distance": 0.4644,
+   "centroidDistance": 0.5241,
+   "nearestNeighbourDistance": 0.4046,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_canorus",
+   "b": "zosterops_simplex",
+   "aCommon": "Common cuckoo",
+   "bCommon": "Swinhoe's White-eye",
+   "distance": 0.4691,
+   "centroidDistance": 0.6147,
+   "nearestNeighbourDistance": 0.3234,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_clamosus",
+   "b": "zosterops_simplex",
+   "aCommon": "Black Cuckoo",
+   "bCommon": "Swinhoe's White-eye",
+   "distance": 0.4698,
+   "centroidDistance": 0.6438,
+   "nearestNeighbourDistance": 0.2957,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_canorus",
+   "b": "luscinia_svecica",
+   "aCommon": "Common cuckoo",
+   "bCommon": "Bluethroat",
+   "distance": 0.4712,
+   "centroidDistance": 0.5994,
+   "nearestNeighbourDistance": 0.343,
+   "sharedTypes": []
+  },
+  {
+   "a": "poecile_rufescens",
+   "b": "zosterops_erythropleurus",
+   "aCommon": "Chestnut-backed Chickadee",
+   "bCommon": "Chestnut-flanked White-eye",
+   "distance": 0.473,
+   "centroidDistance": 0.6244,
+   "nearestNeighbourDistance": 0.3215,
    "sharedTypes": []
   },
   {
@@ -3168,9 +3224,249 @@
    "b": "turdus_merula",
    "aCommon": "Mottled Wood Owl",
    "bCommon": "Common blackbird",
-   "distance": 0.4229,
-   "centroidDistance": 0.488,
+   "distance": 0.4751,
+   "centroidDistance": 0.5167,
+   "nearestNeighbourDistance": 0.4334,
+   "sharedTypes": []
+  },
+  {
+   "a": "luscinia_svecica",
+   "b": "strix_aluco",
+   "aCommon": "Bluethroat",
+   "bCommon": "Tawny owl",
+   "distance": 0.4781,
+   "centroidDistance": 0.6056,
+   "nearestNeighbourDistance": 0.3506,
+   "sharedTypes": []
+  },
+  {
+   "a": "horornis_diphone",
+   "b": "parus_major",
+   "aCommon": "Japanese bush warbler (uguisu)",
+   "bCommon": "Great Tit",
+   "distance": 0.4786,
+   "centroidDistance": 0.5838,
+   "nearestNeighbourDistance": 0.3734,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_clamosus",
+   "b": "parus_major",
+   "aCommon": "Black Cuckoo",
+   "bCommon": "Great Tit",
+   "distance": 0.4831,
+   "centroidDistance": 0.6133,
+   "nearestNeighbourDistance": 0.3528,
+   "sharedTypes": []
+  },
+  {
+   "a": "parus_major",
+   "b": "strix_aluco",
+   "aCommon": "Great Tit",
+   "bCommon": "Tawny owl",
+   "distance": 0.4839,
+   "centroidDistance": 0.5917,
+   "nearestNeighbourDistance": 0.3762,
+   "sharedTypes": []
+  },
+  {
+   "a": "parus_minor",
+   "b": "strix_aluco",
+   "aCommon": "Japanese great tit",
+   "bCommon": "Tawny owl",
+   "distance": 0.4852,
+   "centroidDistance": 0.6621,
+   "nearestNeighbourDistance": 0.3083,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_canorus",
+   "b": "zosterops_japonicus",
+   "aCommon": "Common cuckoo",
+   "bCommon": "Japanese white-eye (mejiro)",
+   "distance": 0.4876,
+   "centroidDistance": 0.65,
+   "nearestNeighbourDistance": 0.3252,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_clamosus",
+   "b": "luscinia_svecica",
+   "aCommon": "Black Cuckoo",
+   "bCommon": "Bluethroat",
+   "distance": 0.4883,
+   "centroidDistance": 0.6662,
+   "nearestNeighbourDistance": 0.3104,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_solitarius",
+   "b": "zosterops_simplex",
+   "aCommon": "Red-chested Cuckoo",
+   "bCommon": "Swinhoe's White-eye",
+   "distance": 0.4889,
+   "centroidDistance": 0.692,
+   "nearestNeighbourDistance": 0.2859,
+   "sharedTypes": []
+  },
+  {
+   "a": "horornis_diphone",
+   "b": "luscinia_svecica",
+   "aCommon": "Japanese bush warbler (uguisu)",
+   "bCommon": "Bluethroat",
+   "distance": 0.495,
+   "centroidDistance": 0.6176,
+   "nearestNeighbourDistance": 0.3724,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_clamosus",
+   "b": "parus_minor",
+   "aCommon": "Black Cuckoo",
+   "bCommon": "Japanese great tit",
+   "distance": 0.4968,
+   "centroidDistance": 0.6469,
+   "nearestNeighbourDistance": 0.3467,
+   "sharedTypes": []
+  },
+  {
+   "a": "strix_aluco",
+   "b": "zosterops_simplex",
+   "aCommon": "Tawny owl",
+   "bCommon": "Swinhoe's White-eye",
+   "distance": 0.4983,
+   "centroidDistance": 0.6651,
+   "nearestNeighbourDistance": 0.3316,
+   "sharedTypes": []
+  },
+  {
+   "a": "perisoreus_infaustus",
+   "b": "troglodytes_troglodytes",
+   "aCommon": "Siberian jay",
+   "bCommon": "Eurasian wren",
+   "distance": 0.5066,
+   "centroidDistance": 0.7169,
+   "nearestNeighbourDistance": 0.2963,
+   "sharedTypes": []
+  },
+  {
+   "a": "luscinia_svecica",
+   "b": "poecile_rufescens",
+   "aCommon": "Bluethroat",
+   "bCommon": "Chestnut-backed Chickadee",
+   "distance": 0.5079,
+   "centroidDistance": 0.6498,
+   "nearestNeighbourDistance": 0.366,
+   "sharedTypes": []
+  },
+  {
+   "a": "strix_aluco",
+   "b": "zosterops_japonicus",
+   "aCommon": "Tawny owl",
+   "bCommon": "Japanese white-eye (mejiro)",
+   "distance": 0.5102,
+   "centroidDistance": 0.6936,
+   "nearestNeighbourDistance": 0.3268,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_clamosus",
+   "b": "zosterops_japonicus",
+   "aCommon": "Black Cuckoo",
+   "bCommon": "Japanese white-eye (mejiro)",
+   "distance": 0.5141,
+   "centroidDistance": 0.686,
+   "nearestNeighbourDistance": 0.3423,
+   "sharedTypes": []
+  },
+  {
+   "a": "horornis_diphone",
+   "b": "poecile_rufescens",
+   "aCommon": "Japanese bush warbler (uguisu)",
+   "bCommon": "Chestnut-backed Chickadee",
+   "distance": 0.5271,
+   "centroidDistance": 0.6827,
+   "nearestNeighbourDistance": 0.3716,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_solitarius",
+   "b": "troglodytes_troglodytes",
+   "aCommon": "Red-chested Cuckoo",
+   "bCommon": "Eurasian wren",
+   "distance": 0.5425,
+   "centroidDistance": 0.734,
+   "nearestNeighbourDistance": 0.351,
+   "sharedTypes": []
+  },
+  {
+   "a": "parus_major",
+   "b": "strix_ocellata",
+   "aCommon": "Great Tit",
+   "bCommon": "Mottled Wood Owl",
+   "distance": 0.5433,
+   "centroidDistance": 0.6103,
+   "nearestNeighbourDistance": 0.4763,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_canorus",
+   "b": "troglodytes_troglodytes",
+   "aCommon": "Common cuckoo",
+   "bCommon": "Eurasian wren",
+   "distance": 0.553,
+   "centroidDistance": 0.7253,
+   "nearestNeighbourDistance": 0.3807,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_clamosus",
+   "b": "poecile_rufescens",
+   "aCommon": "Black Cuckoo",
+   "bCommon": "Chestnut-backed Chickadee",
+   "distance": 0.5589,
+   "centroidDistance": 0.7327,
+   "nearestNeighbourDistance": 0.3851,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_solitarius",
+   "b": "poecile_rufescens",
+   "aCommon": "Red-chested Cuckoo",
+   "bCommon": "Chestnut-backed Chickadee",
+   "distance": 0.5646,
+   "centroidDistance": 0.7377,
+   "nearestNeighbourDistance": 0.3915,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_canorus",
+   "b": "poecile_rufescens",
+   "aCommon": "Common cuckoo",
+   "bCommon": "Chestnut-backed Chickadee",
+   "distance": 0.5683,
+   "centroidDistance": 0.7398,
+   "nearestNeighbourDistance": 0.3968,
+   "sharedTypes": []
+  },
+  {
+   "a": "perisoreus_infaustus",
+   "b": "poecile_rufescens",
+   "aCommon": "Siberian jay",
+   "bCommon": "Chestnut-backed Chickadee",
+   "distance": 0.5975,
+   "centroidDistance": 0.8371,
    "nearestNeighbourDistance": 0.3578,
+   "sharedTypes": []
+  },
+  {
+   "a": "horornis_diphone",
+   "b": "troglodytes_troglodytes",
+   "aCommon": "Japanese bush warbler (uguisu)",
+   "bCommon": "Eurasian wren",
+   "distance": 0.6005,
+   "centroidDistance": 0.7627,
+   "nearestNeighbourDistance": 0.4383,
    "sharedTypes": []
   },
   {
@@ -3178,9 +3474,29 @@
    "b": "strix_leptogrammica",
    "aCommon": "Great Tit",
    "bCommon": "Brown Wood Owl",
-   "distance": 0.4281,
-   "centroidDistance": 0.5152,
-   "nearestNeighbourDistance": 0.341,
+   "distance": 0.6049,
+   "centroidDistance": 0.7058,
+   "nearestNeighbourDistance": 0.5041,
+   "sharedTypes": []
+  },
+  {
+   "a": "cuculus_clamosus",
+   "b": "troglodytes_troglodytes",
+   "aCommon": "Black Cuckoo",
+   "bCommon": "Eurasian wren",
+   "distance": 0.6081,
+   "centroidDistance": 0.7925,
+   "nearestNeighbourDistance": 0.4236,
+   "sharedTypes": []
+  },
+  {
+   "a": "poecile_rufescens",
+   "b": "strix_ocellata",
+   "aCommon": "Chestnut-backed Chickadee",
+   "bCommon": "Mottled Wood Owl",
+   "distance": 0.6095,
+   "centroidDistance": 0.7543,
+   "nearestNeighbourDistance": 0.4647,
    "sharedTypes": []
   },
   {
@@ -3188,9 +3504,9 @@
    "b": "strix_leptogrammica",
    "aCommon": "Bluethroat",
    "bCommon": "Brown Wood Owl",
-   "distance": 0.4294,
-   "centroidDistance": 0.584,
-   "nearestNeighbourDistance": 0.2748,
+   "distance": 0.618,
+   "centroidDistance": 0.8002,
+   "nearestNeighbourDistance": 0.4358,
    "sharedTypes": [
     {
      "a": {
@@ -3201,98 +3517,18 @@
       "species": "strix_leptogrammica",
       "typeId": "L02"
      },
-     "distance": 0.012
+     "distance": 0.048
     }
    ]
   },
   {
-   "a": "poecile_cinctus",
+   "a": "luscinia_svecica",
    "b": "strix_ocellata",
-   "aCommon": "Grey-headed Chickadee",
+   "aCommon": "Bluethroat",
    "bCommon": "Mottled Wood Owl",
-   "distance": 0.4311,
-   "centroidDistance": 0.5419,
-   "nearestNeighbourDistance": 0.3202,
-   "sharedTypes": []
-  },
-  {
-   "a": "parus_minor",
-   "b": "strix_leptogrammica",
-   "aCommon": "Japanese great tit",
-   "bCommon": "Brown Wood Owl",
-   "distance": 0.4338,
-   "centroidDistance": 0.5824,
-   "nearestNeighbourDistance": 0.2852,
-   "sharedTypes": []
-  },
-  {
-   "a": "strix_leptogrammica",
-   "b": "zosterops_japonicus",
-   "aCommon": "Brown Wood Owl",
-   "bCommon": "Japanese white-eye (mejiro)",
-   "distance": 0.4451,
-   "centroidDistance": 0.6294,
-   "nearestNeighbourDistance": 0.2608,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_canorus",
-   "b": "zosterops_japonicus",
-   "aCommon": "Common cuckoo",
-   "bCommon": "Japanese white-eye (mejiro)",
-   "distance": 0.449,
-   "centroidDistance": 0.6487,
-   "nearestNeighbourDistance": 0.2494,
-   "sharedTypes": []
-  },
-  {
-   "a": "perisoreus_infaustus",
-   "b": "poecile_rufescens",
-   "aCommon": "Siberian jay",
-   "bCommon": "Chestnut-backed Chickadee",
-   "distance": 0.465,
-   "centroidDistance": 0.6467,
-   "nearestNeighbourDistance": 0.2833,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_canorus",
-   "b": "zosterops_simplex",
-   "aCommon": "Common cuckoo",
-   "bCommon": "Swinhoe's White-eye",
-   "distance": 0.4776,
-   "centroidDistance": 0.7122,
-   "nearestNeighbourDistance": 0.243,
-   "sharedTypes": []
-  },
-  {
-   "a": "luscinia_megarhynchos",
-   "b": "strix_ocellata",
-   "aCommon": "Common nightingale",
-   "bCommon": "Mottled Wood Owl",
-   "distance": 0.4822,
-   "centroidDistance": 0.5921,
-   "nearestNeighbourDistance": 0.3722,
-   "sharedTypes": []
-  },
-  {
-   "a": "parus_major",
-   "b": "strix_ocellata",
-   "aCommon": "Great Tit",
-   "bCommon": "Mottled Wood Owl",
-   "distance": 0.4958,
-   "centroidDistance": 0.6022,
-   "nearestNeighbourDistance": 0.3895,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_canorus",
-   "b": "troglodytes_troglodytes",
-   "aCommon": "Common cuckoo",
-   "bCommon": "Eurasian wren",
-   "distance": 0.5002,
-   "centroidDistance": 0.7014,
-   "nearestNeighbourDistance": 0.2991,
+   "distance": 0.6228,
+   "centroidDistance": 0.7427,
+   "nearestNeighbourDistance": 0.503,
    "sharedTypes": []
   },
   {
@@ -3300,9 +3536,9 @@
    "b": "troglodytes_troglodytes",
    "aCommon": "Tawny owl",
    "bCommon": "Eurasian wren",
-   "distance": 0.5015,
-   "centroidDistance": 0.7094,
-   "nearestNeighbourDistance": 0.2936,
+   "distance": 0.6236,
+   "centroidDistance": 0.8611,
+   "nearestNeighbourDistance": 0.3861,
    "sharedTypes": []
   },
   {
@@ -3310,109 +3546,9 @@
    "b": "troglodytes_troglodytes",
    "aCommon": "Brown Wood Owl",
    "bCommon": "Eurasian wren",
-   "distance": 0.5033,
-   "centroidDistance": 0.6148,
-   "nearestNeighbourDistance": 0.3919,
-   "sharedTypes": []
-  },
-  {
-   "a": "poecile_rufescens",
-   "b": "strix_leptogrammica",
-   "aCommon": "Chestnut-backed Chickadee",
-   "bCommon": "Brown Wood Owl",
-   "distance": 0.5094,
-   "centroidDistance": 0.7375,
-   "nearestNeighbourDistance": 0.2814,
-   "sharedTypes": []
-  },
-  {
-   "a": "strix_ocellata",
-   "b": "zosterops_japonicus",
-   "aCommon": "Mottled Wood Owl",
-   "bCommon": "Japanese white-eye (mejiro)",
-   "distance": 0.519,
-   "centroidDistance": 0.6399,
-   "nearestNeighbourDistance": 0.3982,
-   "sharedTypes": []
-  },
-  {
-   "a": "luscinia_svecica",
-   "b": "strix_ocellata",
-   "aCommon": "Bluethroat",
-   "bCommon": "Mottled Wood Owl",
-   "distance": 0.5236,
-   "centroidDistance": 0.6463,
-   "nearestNeighbourDistance": 0.4008,
-   "sharedTypes": []
-  },
-  {
-   "a": "strix_ocellata",
-   "b": "zosterops_simplex",
-   "aCommon": "Mottled Wood Owl",
-   "bCommon": "Swinhoe's White-eye",
-   "distance": 0.534,
-   "centroidDistance": 0.7124,
-   "nearestNeighbourDistance": 0.3557,
-   "sharedTypes": []
-  },
-  {
-   "a": "horornis_diphone",
-   "b": "poecile_rufescens",
-   "aCommon": "Japanese bush warbler (uguisu)",
-   "bCommon": "Chestnut-backed Chickadee",
-   "distance": 0.5446,
-   "centroidDistance": 0.7383,
-   "nearestNeighbourDistance": 0.351,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_solitarius",
-   "b": "poecile_rufescens",
-   "aCommon": "Red-chested Cuckoo",
-   "bCommon": "Chestnut-backed Chickadee",
-   "distance": 0.5465,
-   "centroidDistance": 0.7305,
-   "nearestNeighbourDistance": 0.3625,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_clamosus",
-   "b": "poecile_rufescens",
-   "aCommon": "Black Cuckoo",
-   "bCommon": "Chestnut-backed Chickadee",
-   "distance": 0.5542,
-   "centroidDistance": 0.7529,
-   "nearestNeighbourDistance": 0.3556,
-   "sharedTypes": []
-  },
-  {
-   "a": "parus_minor",
-   "b": "strix_ocellata",
-   "aCommon": "Japanese great tit",
-   "bCommon": "Mottled Wood Owl",
-   "distance": 0.566,
-   "centroidDistance": 0.7009,
-   "nearestNeighbourDistance": 0.431,
-   "sharedTypes": []
-  },
-  {
-   "a": "cuculus_canorus",
-   "b": "poecile_rufescens",
-   "aCommon": "Common cuckoo",
-   "bCommon": "Chestnut-backed Chickadee",
-   "distance": 0.5905,
-   "centroidDistance": 0.8363,
-   "nearestNeighbourDistance": 0.3446,
-   "sharedTypes": []
-  },
-  {
-   "a": "poecile_rufescens",
-   "b": "strix_aluco",
-   "aCommon": "Chestnut-backed Chickadee",
-   "bCommon": "Tawny owl",
-   "distance": 0.609,
-   "centroidDistance": 0.888,
-   "nearestNeighbourDistance": 0.33,
+   "distance": 0.626,
+   "centroidDistance": 0.7647,
+   "nearestNeighbourDistance": 0.4872,
    "sharedTypes": []
   },
   {
@@ -3420,21 +3556,21 @@
    "b": "troglodytes_troglodytes",
    "aCommon": "Mottled Wood Owl",
    "bCommon": "Eurasian wren",
-   "distance": 0.6455,
-   "centroidDistance": 0.7933,
-   "nearestNeighbourDistance": 0.4978,
+   "distance": 0.6388,
+   "centroidDistance": 0.7721,
+   "nearestNeighbourDistance": 0.5054,
    "sharedTypes": []
   },
   {
    "a": "poecile_rufescens",
-   "b": "strix_ocellata",
+   "b": "strix_aluco",
    "aCommon": "Chestnut-backed Chickadee",
-   "bCommon": "Mottled Wood Owl",
-   "distance": 0.7151,
-   "centroidDistance": 0.9439,
-   "nearestNeighbourDistance": 0.4863,
+   "bCommon": "Tawny owl",
+   "distance": 0.7038,
+   "centroidDistance": 0.9332,
+   "nearestNeighbourDistance": 0.4743,
    "sharedTypes": []
   }
  ],
- "generatedAt": "2026-07-29T16:04:34+00:00"
+ "generatedAt": "2026-07-29T16:26:31+00:00"
 }

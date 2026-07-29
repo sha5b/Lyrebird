@@ -159,19 +159,40 @@ export interface EmbeddingSpace {
 	dims: number;
 	mean: number[];
 	std: number[];
-	map?: {
-		/** (28 x 32) ridge weights, applied to the standardised live descriptor. */
-		w: number[][];
-		/** (32) intercept. */
-		b: number[];
-		lambda?: number;
-	};
+	map?: LinearSpaceMap | RffSpaceMap;
 	mapQuality?: {
 		accepted?: boolean;
 		medianCosine?: number;
 		centroidAgreement?: number;
 		[key: string]: unknown;
 	};
+}
+
+export interface LinearSpaceMap {
+	kind?: 'linear';
+	/** (28 x 32) ridge weights, applied to the standardised live descriptor. */
+	w: number[][];
+	/** (32) intercept. */
+	b: number[];
+	lambda?: number;
+}
+
+/**
+ * The nonlinear map (spacemap.py): random Fourier features of the standardised live
+ * descriptor, then ridge — `sqrt(2/D) * cos(x @ R + phase) @ w + b`. The 123 k floats
+ * ship in the f32 sidecar `file` (layout `R (28 x D) | phase (D) | w (D x 32) | b (32)`,
+ * row-major little-endian); `rff` is attached by loadAssets once the sidecar is parsed,
+ * and the map is unusable until it is.
+ */
+export interface RffSpaceMap {
+	kind: 'rff-ridge';
+	file: string;
+	sigma: number;
+	D: number;
+	lambda?: number;
+	layout?: string;
+	apply?: string;
+	rff?: { R: Float32Array; phase: Float32Array; w: Float32Array; b: Float32Array };
 }
 
 export interface PointCloudMeta {

@@ -916,6 +916,7 @@ def build_galaxy(
     frame: tuple[np.ndarray, np.ndarray] | None = None,
     space: str = "descriptor",
     embedding: dict[str, Any] | None = None,
+    dump_points: Path | None = None,
 ) -> GalaxyStats:
     # The projection (and `min_dist` within UMAP) is purely about the picture: KMeans
     # and the activation vectors live in the standardised feature space, never in
@@ -1014,6 +1015,23 @@ def build_galaxy(
                 f"feature space: critic embedding, {len(kept)} points x {space_dims}-d",
                 file=sys.stderr,
             )
+
+    if dump_points is not None:
+        # The clustering/placement iteration set: the exact matrix and labels KMeans
+        # sees, so cluster_plan changes can be measured against a fixed corpus instead
+        # of re-rendering ~400 s of audio per idea (evidence discipline, docs/09 §9.7).
+        np.savez(
+            dump_points,
+            z=z.astype(np.float32),
+            z28=z28.astype(np.float32),
+            species_id=np.asarray(kept.species_id),
+            syllable_id=np.asarray(kept.syllable_id),
+            song_id=np.asarray(kept.song_id),
+            source=np.asarray(kept.source),
+            duration=np.asarray(kept.duration, dtype=np.float32),
+        )
+        if verbose:
+            print(f"dumped {len(kept)} clustering points to {dump_points}", file=sys.stderr)
 
     # The clustering is what the client's activation lookup uses, and it runs on the
     # standardised descriptors, so it is identical for every projection.
@@ -1354,6 +1372,7 @@ def build_galaxy(
     # centroids, which cannot be measured before they exist.
     embedding_json: dict[str, Any] | None = None
     map_quality: dict[str, Any] | None = None
+    map_file: str | None = None
     if space == "embed" and embedding is not None:
         from . import spacemap
 
@@ -1368,13 +1387,21 @@ def build_galaxy(
                 "galaxy is the same through the 28-d -> 32-d map as through the critic"
             )
         space_map = embedding["map"]
+        map_json = space_map.to_json() if hasattr(space_map, "to_json") else space_map
+        map_file = None
+        if hasattr(space_map, "to_f32"):
+            # The RFF map's 123 k floats ship as a binary beside feature-space.json —
+            # the JSON block keeps the layout and the apply formula, the app already
+            # loads f32 assets, and a 1 MB JSON is nobody's friend.
+            (out_dir / spacemap.RFF_FILE).write_bytes(space_map.to_f32())
+            map_file = spacemap.RFF_FILE
         embedding_json = {
             "dims": space_dims,
             "mean": [float(v) for v in emb_mean],
             "std": [float(v) for v in emb_std],
             "standardisation": "z = (e - mean) / max(std, 1e-6)",
             **({"critic": embedding["critic"]} if embedding.get("critic") else {}),
-            "map": space_map.to_json() if hasattr(space_map, "to_json") else space_map,
+            "map": map_json,
             "mapQuality": map_quality,
         }
         if verbose:
@@ -1604,6 +1631,7 @@ def build_galaxy(
             "point-features.f32",
             "points.json",
             "centroids.json",
+            *([map_file] if map_file else []),
         ],
         **(build_info or {}),
     }

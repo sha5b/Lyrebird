@@ -545,6 +545,7 @@ def cmd_build(
         frame=frame,
         space=space,
         embedding=embedding_block,
+        dump_points=Path(args.dump_points) if args.dump_points else None,
     )
 
     # Cross-species relations (phase 4): shared/convergent types and species similarity
@@ -685,6 +686,54 @@ def cmd_harvest(args: argparse.Namespace) -> int:
     log(f"\nstore written to {store.root} in {time.time() - t0:.1f}s "
         f"(attribution in {store.root / 'CREDITS.md'})")
     log("next: uv run birdy-pipeline build --harvest-store " + str(store.root))
+    return 0
+
+
+def cmd_sources_list(args: argparse.Namespace) -> int:
+    """Which audio sources this machine can use right now, and why not for the rest."""
+    from . import sources
+
+    log(f"{'source':<18} {'available':<9} {'why not / what it would unlock'}")
+    for name, ok, reason, summary in sources.availability_table():
+        detail = summary if ok else f"skipped: {reason}"
+        log(f"{name:<18} {'yes' if ok else 'no':<9} {detail}")
+    log("\nan unfilled key is a skip, never an error; the keys live in pipeline/.env "
+        "(see .env.example)")
+    return 0
+
+
+def cmd_sources_fetch(args: argparse.Namespace) -> int:
+    """Fetch from one open source through the same decode -> describe -> delete loop."""
+    from . import sources
+
+    src = sources.SOURCES.get(args.source)
+    if src is None:
+        log(f"unknown source {args.source!r}; known: {', '.join(sorted(sources.SOURCES))}")
+        return 2
+    ok, reason = src.available()
+    if not ok:
+        # A missing key or package is a configuration fact, not a failure — the command
+        # succeeds so a script can ask every source in turn and keep what answers.
+        log(f"skip {args.source}: {reason}")
+        return 0
+    # The guard that watches the two silent store failures (see cmd_harvest).
+    harvest.self_test(verbose=False)
+    store = harvest.HarvestStore(
+        Path(args.store), cap=args.cap, seed=args.seed,
+        syllable_cap=getattr(args, "syllable_cap", harvest.DEFAULT_SYLLABLE_CAP),
+    )
+    t0 = time.time()
+    report = src.fetch(
+        store,
+        species=args.species,
+        limit=args.limit,
+        max_seconds=args.max_seconds,
+        item=args.item,
+    )
+    store.save()
+    log(harvest.format_report(report, store))
+    log(f"\nstore written to {store.root} in {time.time() - t0:.1f}s "
+        f"(attribution in {store.root / 'CREDITS.md'})")
     return 0
 
 
@@ -2011,15 +2060,33 @@ def verify(out: Path) -> int:
             problems.append("feature-space.json embedding moments contain NaN/inf")
         space_map = emb.get("map")
         if space_map is not None:
-            w = np.asarray(space_map.get("w", []), dtype=np.float64)
-            bias = np.asarray(space_map.get("b", []), dtype=np.float64)
-            if w.shape != (features.DIM, dims32) or bias.shape != (dims32,):
-                problems.append(
-                    f"feature-space.json embedding map is {w.shape}+{bias.shape}, "
-                    f"expected ({features.DIM}, {dims32})+({dims32},)"
-                )
-            elif not np.all(np.isfinite(w)) or not np.all(np.isfinite(bias)):
-                problems.append("feature-space.json embedding map contains NaN/inf")
+            if space_map.get("kind") == "rff-ridge":
+                # Weights live in the f32 sidecar: R (28 x D) | phase (D) | w (D x 32)
+                # | b (32), row-major — check the file is exactly that long and finite.
+                D = int(space_map.get("D", 0))
+                want = features.DIM * D + D + D * dims32 + dims32
+                f32_path = out / space_map.get("file", "")
+                if not f32_path.exists():
+                    problems.append(f"{f32_path.name} is missing for the rff-ridge map")
+                else:
+                    raw = np.frombuffer(f32_path.read_bytes(), dtype="<f4")
+                    if raw.size != want:
+                        problems.append(
+                            f"{f32_path.name} holds {raw.size} floats, expected {want} "
+                            f"for D={D}"
+                        )
+                    elif not np.all(np.isfinite(raw)):
+                        problems.append(f"{f32_path.name} contains NaN/inf")
+            else:
+                w = np.asarray(space_map.get("w", []), dtype=np.float64)
+                bias = np.asarray(space_map.get("b", []), dtype=np.float64)
+                if w.shape != (features.DIM, dims32) or bias.shape != (dims32,):
+                    problems.append(
+                        f"feature-space.json embedding map is {w.shape}+{bias.shape}, "
+                        f"expected ({features.DIM}, {dims32})+({dims32},)"
+                    )
+                elif not np.all(np.isfinite(w)) or not np.all(np.isfinite(bias)):
+                    problems.append("feature-space.json embedding map contains NaN/inf")
 
     cal = json.loads((out / CALIBRATION_NAME).read_text())
     mono = monotonic_fraction(cal)
@@ -2196,6 +2263,10 @@ def build_parser() -> argparse.ArgumentParser:
                         "only (default %s)" % galaxy.DEFAULT_PROJECTION)
     b.add_argument("--no-compare-projections", action="store_true",
                    help="skip building the other projections just to measure them")
+    b.add_argument("--dump-points", default=None, metavar="NPZ",
+                   help="also write the standardised clustering matrix + labels to this "
+                        ".npz, so cluster_plan iterations run on a fixed corpus instead "
+                        "of re-rendering per idea")
     b.add_argument("--beta-min", type=float, default=syrinx.BETA_MIN,
                    help="beta clamp floor (contract default 0.15; -0.45 unlocks sub-kHz f0)")
     b.set_defaults(func=cmd_build)
@@ -2273,6 +2344,43 @@ def build_parser() -> argparse.ArgumentParser:
     h.add_argument("--inventory", default=str(DEFAULT_INVENTORY))
     h.add_argument("--seed", type=int, default=0)
     h.set_defaults(func=cmd_harvest)
+
+    src = sub.add_parser(
+        "sources",
+        help="multi-source audio fetching: open datasets alongside xeno-canto "
+             "(sources.py; staged audio is decoded, described and deleted, as in harvest)",
+    )
+    src_sub = src.add_subparsers(dest="sources_command", required=True)
+    sl = src_sub.add_parser(
+        "list",
+        help="which sources this machine can use right now, and why not for the rest",
+    )
+    sl.set_defaults(func=cmd_sources_list)
+    sf = src_sub.add_parser(
+        "fetch",
+        help="fetch from one source into a store via the harvest's ingest loop",
+    )
+    sf.add_argument("--source", required=True,
+                    help="zenodo | internet-archive | kaggle | huggingface | xeno-canto")
+    sf.add_argument("--species", default=None,
+                    help='"Genus species" (zenodo/internet-archive), an eBird folder code '
+                         "or prefix (kaggle), or a BirdSet member-path species id "
+                         "(huggingface)")
+    sf.add_argument("--limit", type=int, default=5,
+                    help="recordings to fetch (default %(default)s; these are proofs and "
+                         "production top-ups, not bulk harvests)")
+    sf.add_argument("--item", default=None,
+                    help="source-specific dataset: a Zenodo record id (default XCDC "
+                         "15420487), an archive.org item (xccoverbl_2014 | "
+                         "warblrb10k_public | ff1010bird), a BirdCLEF slug "
+                         "(birdclef-2021..2025), or a BirdSet config (XCM | XCL)")
+    sf.add_argument("--store", default=str(DEFAULT_HARVEST_STORE))
+    sf.add_argument("--cap", type=int, default=harvest.DEFAULT_CAP)
+    sf.add_argument("--syllable-cap", type=int, default=harvest.DEFAULT_SYLLABLE_CAP)
+    sf.add_argument("--max-seconds", type=float, default=harvest.DEFAULT_MAX_SECONDS,
+                    help="analyse at most this much of each recording")
+    sf.add_argument("--seed", type=int, default=0)
+    sf.set_defaults(func=cmd_sources_fetch)
 
     lrn = sub.add_parser(
         "learn",

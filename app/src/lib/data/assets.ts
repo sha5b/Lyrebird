@@ -53,9 +53,14 @@ function normaliseFeatureSpace(raw: FeatureSpace & NestedFeatureSpace): FeatureS
 	};
 	// The learned-space block is passed through as shipped: it is optional (descriptor
 	// builds predate it) and self-gating (`mapQuality.accepted`), so there is nothing to
-	// normalise, only something to not lose.
+	// normalise, only something to not lose. A linear map must carry its weights inline;
+	// an rff-ridge map declares them in a sidecar that loadAssets fetches next.
 	const embedding = raw.embedding;
-	if (embedding && embedding.dims > 0 && embedding.map?.w?.length) {
+	const map = embedding?.map;
+	const hasMap = Boolean(
+		map && ('w' in map ? map.w?.length : map.kind === 'rff-ridge' && map.D > 0)
+	);
+	if (embedding && embedding.dims > 0 && hasMap) {
 		space.embedding = embedding;
 	}
 	if (!(space.frameSize > 0) || (space.frameSize & (space.frameSize - 1)) !== 0) {
@@ -104,6 +109,33 @@ export async function loadAssets(
 		getJson<Centroids>('centroids.json', fetcher, stamp)
 	]);
 	const featureSpace = normaliseFeatureSpace(rawFeatureSpace);
+
+	// The rff-ridge map's weights ship in a binary sidecar (123 k floats are nobody's
+	// JSON). Fetched under the same build stamp, checked against the declared layout,
+	// and treated as absent on any mismatch — a wrong map is worse than no map, because
+	// the 28-d fallback is honest and a mismatched one lights the wrong knots.
+	const embMap = featureSpace.embedding?.map;
+	if (embMap && 'kind' in embMap && embMap.kind === 'rff-ridge' && !embMap.rff) {
+		try {
+			const res = await fetcher(assetUrl(embMap.file, stamp));
+			if (!res.ok) throw new Error(embMap.file);
+			const raw = new Float32Array(await res.arrayBuffer());
+			const D = embMap.D;
+			const dims = featureSpace.embedding?.dims ?? 0;
+			const want = 28 * D + D + D * dims + dims;
+			if (raw.length !== want || dims <= 0) {
+				throw new Error(`${embMap.file} holds ${raw.length} floats, expected ${want}`);
+			}
+			embMap.rff = {
+				R: raw.subarray(0, 28 * D),
+				phase: raw.subarray(28 * D, 28 * D + D),
+				w: raw.subarray(28 * D + D, 28 * D + D + D * dims),
+				b: raw.subarray(28 * D + D + D * dims, want)
+			};
+		} catch {
+			delete featureSpace.embedding;
+		}
+	}
 
 	// The calibration table only refines the synth; the analytic fallback covers its absence.
 	let calibration: SyrinxCalibration | null = null;
