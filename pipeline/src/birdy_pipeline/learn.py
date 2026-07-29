@@ -103,6 +103,15 @@ class SyllableObservation:
     timbre: str
     flatness: float
     gap_before: float
+    #: Measured amplitude of each partial, `harmonics[0]` = 1 (§8.1b), and the share of
+    #: in-band energy sitting between the partials. Both optional: stores harvested before
+    #: they existed do not have them, and the renderer falls back to `harmonic`/`timbre`.
+    harmonics: list[float] = field(default_factory=list)
+    noise_frac: float = 0.0
+    #: Log-mel energies at MEL_KNOTS points across the syllable, flattened row-major
+    #: (knots x 26). The time-resolved spectral target the fit optimises against; the 28-d
+    #: `descriptor` is a mean over frames and cannot say whether a spectrum moved.
+    mel_path: list[float] = field(default_factory=list)
     # The 28-d descriptor of this syllable's own audio (§8.2), taken while the recording
     # is still in memory. It is what `verify_type` compares a resynthesis against: the
     # recording-level descriptor averages five-second windows over everything that
@@ -198,6 +207,84 @@ def track_f0(seg: np.ndarray, sample_rate: int) -> tuple[np.ndarray, np.ndarray]
     flatness = np.exp(np.mean(np.log(mag + 1e-10), axis=1)) / (np.mean(mag, axis=1) + 1e-10)
     tonal = (centre > 4.0 * np.median(mag, axis=1)) & (f0 > F0_MIN_HZ) & (f0 < F0_MAX_HZ)
     return f0[tonal], flatness[tonal]
+
+
+def measure_harmonics(
+    seg: np.ndarray, sample_rate: int, n_harmonics: int = syrinx.HARMONIC_MAX
+) -> tuple[list[float], float]:
+    """Amplitude of each partial and the noise fraction, measured from the audio (§8.1b).
+
+    Returns `([a1..aK] normalised so a1 = 1, noise_fraction)`.
+
+    **Why per frame and not over the whole segment.** A syllable's f0 sweeps, so a single FFT
+    of the whole segment smears every partial across a band and the harmonic structure is gone
+    before it can be read. Instead the pitch is tracked per frame and the partials are sampled
+    at `k * f0(t)` in that frame, so each measurement is taken where the partial actually is.
+    The per-frame amplitudes are normalised by the fundamental *before* averaging — otherwise
+    loud frames dominate and the result is a loudness profile rather than a spectral one — and
+    combined with a median, because octave errors in the tracker are common and move a mean.
+
+    The noise fraction is the share of in-band energy that sits *between* the partials: total
+    magnitude minus what the harmonic peaks account for. That is the quantity `noise` models,
+    and measuring it is what lets a rasp be fitted rather than searched for.
+    """
+    f = _frames(seg, F0_FRAME, F0_HOP)
+    if not f.size:
+        return [], 0.0
+    window = 0.5 - 0.5 * np.cos(2.0 * np.pi * np.arange(F0_FRAME) / (F0_FRAME - 1))
+    mag = np.abs(np.fft.rfft(f * window, axis=1))
+    bin_hz = sample_rate / F0_FRAME
+    nyq_bin = mag.shape[1] - 2
+
+    lo = max(1, int(F0_MIN_HZ / bin_hz))
+    hi = min(nyq_bin, int(F0_MAX_HZ / bin_hz))
+    if hi <= lo:
+        return [], 0.0
+    k0 = mag[:, lo:hi].argmax(axis=1) + lo
+    rows = np.arange(mag.shape[0])
+    tonal = mag[rows, k0] > 4.0 * np.median(mag, axis=1)
+    if not np.any(tonal):
+        return [], 0.0
+
+    profiles: list[np.ndarray] = []
+    noise_shares: list[float] = []
+    for r in np.flatnonzero(tonal):
+        f0_bin = float(k0[r])
+        amps = np.zeros(n_harmonics)
+        for k in range(1, n_harmonics + 1):
+            centre = int(round(k * f0_bin))
+            if centre >= nyq_bin:
+                break
+            # +/- 1 bin, because a swept partial does not sit exactly on a bin centre
+            amps[k - 1] = float(mag[r, max(0, centre - 1) : centre + 2].max())
+        if amps[0] <= 0.0:
+            continue
+        profiles.append(amps / amps[0])
+        # Energy *between* the partials, as a share of the total.
+        #
+        # In power, and over the window's main lobe rather than a single bin: a Hann window
+        # spreads a pure sinusoid over about four bins, so comparing single-bin peaks against
+        # a full-band sum charges that leakage to "noise" and reports a clean tone as half
+        # noise. Summing +/-2 bins per partial captures the lobe, and what is left over is
+        # genuinely inharmonic.
+        power = mag[r] * mag[r]
+        total = float(power[lo:hi].sum()) or 1.0
+        harmonic_power = 0.0
+        for k in range(1, n_harmonics + 1):
+            centre = int(round(k * f0_bin))
+            if centre >= nyq_bin:
+                break
+            harmonic_power += float(power[max(0, centre - 2) : centre + 3].sum())
+        noise_shares.append(float(np.clip(1.0 - harmonic_power / total, 0.0, 1.0)))
+
+    if not profiles:
+        return [], 0.0
+    median = np.median(np.stack(profiles), axis=0)
+    median[0] = 1.0
+    out = [float(round(v, 4)) for v in median]
+    while out and out[-1] < syrinx.HARMONIC_FLOOR:
+        out.pop()
+    return out, float(round(float(np.median(noise_shares)), 4))
 
 
 def fit_contour(f0: np.ndarray, knots: int = CONTOUR_KNOTS) -> list[list[float]]:
@@ -304,6 +391,8 @@ def extract_syllables(
         at = spectrum[(bins > 0.6 * centre) & (bins <= 1.6 * centre)].sum()
         harmonic = float(np.clip(above / (at + 1e-9), 0.0, 1.0))
         mean_flatness = float(np.mean(flatness)) if flatness.size else 0.0
+        harmonics, noise_frac = measure_harmonics(seg, sample_rate)
+        path = features.mel_path(peak_normalise(seg), sample_rate=sample_rate)
 
         start = s0 / sample_rate
         own = features.descriptor(peak_normalise(seg), sample_rate)
@@ -326,6 +415,9 @@ def extract_syllables(
                 timbre=_timbre(mean_flatness, harmonic),
                 flatness=round(mean_flatness, 5),
                 gap_before=round(max(0.0, start - previous_end), 4),
+                harmonics=harmonics,
+                noise_frac=noise_frac,
+                mel_path=[round(float(v), 3) for v in path.ravel()],
                 descriptor=(
                     [round(float(v), 5) for v in own]
                     if own is not None and np.all(np.isfinite(own))
@@ -437,6 +529,25 @@ def fit_types(
             "hold": bool(np.mean([o.hold for o in members]) > 0.5),
             "harmonic": round(float(np.median([o.harmonic for o in members])), 3),
         }
+        # **The measured harmonic spectrum is deliberately NOT written into the syllable.**
+        #
+        # `measure_harmonics` works — validated against synthetic signals it recovers a
+        # 1 / 0.5 / 0.25 series exactly and reads a pure tone as a single partial with zero
+        # noise — and the observations carry it, so it is available for analysis. But feeding
+        # it to the fit made the fit *worse*. Ablated over five acoustically distinct species
+        # (wren, tawny owl, cuckoo, blackbird, great tit; 1562 syllables), median cosine went
+        # 0.776 -> 0.768 and correct-species placement 61.7 % -> 55.6 %.
+        #
+        # The reason is in the measurement itself: real syllables here resolve to a mean of
+        # **2.2 partials**. Birdsong is genuinely near-sinusoidal — that is the whole point of
+        # the tract in 8.1 — so a measured partial series carries almost nothing the single
+        # `harmonic` scalar did not already carry, while `harmonics` supersedes that scalar and
+        # so costs the search a degree of freedom it had been using productively.
+        #
+        # Recorded here rather than deleted because the hypothesis was reasonable and the
+        # refutation is the useful part: the missing evidence is not the harmonic structure.
+        # Whatever is still wrong lives in the noise residual, the time envelope of the
+        # spectrum, or somewhere that is not the partial amplitudes at all.
         if float(np.median(am_depths)) > 0.15:
             t.syllable["am"] = round(float(np.median([o.am for o in members])), 2)
             t.syllable["amDepth"] = round(float(np.median(am_depths)), 3)

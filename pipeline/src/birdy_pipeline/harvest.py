@@ -263,10 +263,6 @@ class HarvestStore:
                 for line in self._syllables_path.read_text(encoding="utf-8").splitlines()
                 if line.strip()
             ]
-        if not self._state_path.exists():
-            return
-        state = json.loads(self._state_path.read_text(encoding="utf-8"))
-        self.recordings = state.get("recordings", {})
         # Recordings that can never be fetched, and species where none of them can.
         #
         # `has()` only remembers *successes*, so a recording that 404s or is redacted was
@@ -274,6 +270,17 @@ class HarvestStore:
         # withholds as a restricted species, burned a search plus seventeen skips per pass to
         # arrive at the same answer. Neither is an error worth retrying: a redaction is policy
         # and a 404 is a deleted file.
+        #
+        # Initialised before the early return, because a store with no `state.json` is a
+        # *new* store, and a new store still has to answer `restricted` and `dead` — the
+        # harvest asks both before it has written anything. Setting them only on the load
+        # path meant the very first harvest into a fresh directory raised AttributeError.
+        self.dead: dict[str, Any] = {}
+        self.restricted: set[str] = set()
+        if not self._state_path.exists():
+            return
+        state = json.loads(self._state_path.read_text(encoding="utf-8"))
+        self.recordings = state.get("recordings", {})
         self.dead = dict(state.get("dead", {}))
         self.restricted = set(state.get("restricted", []))
         self.recording_descriptors = state.get("recordingDescriptors", {})

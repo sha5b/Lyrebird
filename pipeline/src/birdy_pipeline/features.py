@@ -144,6 +144,47 @@ def descriptor(audio: np.ndarray, sample_rate: int = SAMPLE_RATE) -> np.ndarray 
     )
 
 
+MEL_KNOTS = 4
+
+
+def mel_path(audio: np.ndarray, knots: int = MEL_KNOTS, sample_rate: int = SAMPLE_RATE) -> np.ndarray:
+    """Log-mel energies at `knots` points across the clip: shape (knots, N_MEL).
+
+    The 28-d descriptor of 8.2 is a *mean* over frames, so it cannot distinguish a syllable
+    whose spectrum sweeps from one that holds still with the same average. That mean is
+    simultaneously the fit's only evidence and its objective, which is why the fit saturates
+    against it while the sound is still wrong. This keeps the time axis, coarsely.
+
+    Each knot is the mean log-mel over its share of the voiced frames, and the whole path is
+    centred by its own mean so it describes spectral *shape over time* rather than loudness.
+    Comparing two clips of different durations is therefore well defined: both are resampled
+    onto the same `knots` fractions of their own length.
+    """
+    x = np.asarray(audio, dtype=np.float64).ravel()
+    if x.size < FRAME:
+        return np.zeros((knots, N_MEL))
+    peak = float(np.max(np.abs(x)))
+    if peak <= 0.0:
+        return np.zeros((knots, N_MEL))
+    x = x * (PEAK_NORM / peak)
+    starts = np.arange(0, x.size - FRAME + 1, HOP)
+    frames = np.stack([x[s : s + FRAME] for s in starts])
+    rms = np.sqrt(np.mean(frames * frames, axis=1))
+    clip_max = float(rms.max()) if rms.size else 0.0
+    voiced = (rms > RMS_FLOOR) & (rms > RMS_REL * clip_max)
+    if not np.any(voiced):
+        return np.zeros((knots, N_MEL))
+    frames = frames[voiced]
+    mag = np.abs(np.fft.rfft(frames * _WINDOW, axis=1))[:, :N_BINS]
+    energy = np.maximum((mag * mag) @ _BANK.T, BAND_FLOOR)
+    logmel = np.log(energy)
+    edges = np.linspace(0, logmel.shape[0], knots + 1).astype(int)
+    out = np.stack([
+        logmel[edges[i] : max(edges[i] + 1, edges[i + 1])].mean(axis=0) for i in range(knots)
+    ])
+    return out - out.mean()
+
+
 def standardise(
     x: np.ndarray, mean: np.ndarray, std: np.ndarray
 ) -> np.ndarray:

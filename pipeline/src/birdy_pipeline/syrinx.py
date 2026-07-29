@@ -117,6 +117,23 @@ TRACHEA_PARTIALS = 4
 # et al. 2006) because a tube damped by soft tissue is broader than an ideal one, and
 # because these have to colour a sweeping harmonic rather than track it.
 TRACHEA_Q = 6.0
+
+# --- the measured harmonic bank (8.1b) ---------------------------------------------
+#
+# `harmonic` is a single scalar: "add this much of a band at 2*f0". That is a two-point
+# spectrum, and it is the whole of what the source's harmonic structure could say. Fitting it
+# against the stored 28-d descriptor saturated at a median cosine of 0.775 while the sound was
+# still wrong, because the descriptor's own spectral envelope is 13 smoothed cepstral
+# coefficients — the fit had run out of evidence, not out of parameters.
+#
+# `harmonics` replaces the scalar with the amplitude of each partial, measured from the real
+# audio while it is briefly in memory. It is the same mechanism the scalar already used — a
+# bandpass tracking k*f0 — so k = 1 is the tract band of 8.1 and `harmonic` is the special
+# case `[1, 2*harmonic*0.5]`. Tracking rather than absolute on purpose: these are the
+# harmonics of the source, and the resonance that shapes them *does* follow f0 (Riede et al.
+# 2006). The trachea's fixed contribution is separate, in `formants`.
+HARMONIC_MAX = 12
+HARMONIC_FLOOR = 1.0e-3  # below this a partial is inaudible and not worth a biquad
 NOISE_MAX = 1.0
 # Turbulence scales with airflow, so the noise is gated by pressure rather than added flat:
 # a bird at rest does not hiss. Below this pressure there is no flow to be turbulent.
@@ -540,6 +557,20 @@ def tracheal_comb(
     return out
 
 
+def parse_harmonics(raw: Any) -> list[float]:
+    """Relative partial amplitudes, `a[0]` the fundamental. Cleaned, clamped, trailing
+    inaudible partials dropped so they cost no filters."""
+    if not raw:
+        return []
+    out: list[float] = []
+    for v in list(raw)[:HARMONIC_MAX]:
+        f = float(v)
+        out.append(max(0.0, f) if math.isfinite(f) else 0.0)
+    while out and out[-1] < HARMONIC_FLOOR:
+        out.pop()
+    return out
+
+
 def parse_formants(raw: Any) -> list[list[float]]:
     """`[[hz, q, gain], ...]` cleaned and clamped, dropping anything unusable.
 
@@ -606,6 +637,9 @@ class Syllable:
     #: scale is how a syllable gets out of the tonal regime, and it needs a calibration
     #: table built with a lower `--beta-min` to have anywhere to go.
     gamma_scale: float = 1.0
+    #: Measured amplitude of each partial, `harmonics[0]` the fundamental (§8.1b). When
+    #: present it supersedes `harmonic`.
+    harmonics: list[float] = field(default_factory=list)
     #: Q of the f0-tracking tract band, overriding the timbre class's default when > 0.
     #: The three classes offer 9, 5 and 3, all of them broad next to the Q ~ 30 that
     #: Fletcher's model and Riede et al. (PNAS 2006) put on the oropharyngeal-esophageal
@@ -639,6 +673,7 @@ class Syllable:
             noise=float(np.clip(float(d.get("noise", 0.0)), 0.0, NOISE_MAX)),
             rough=float(np.clip(float(d.get("rough", 0.0)), 0.0, ROUGH_MAX)),
             gamma_scale=float(d.get("gammaScale", 1.0) or 1.0),
+            harmonics=parse_harmonics(d.get("harmonics")),
             tract_q=float(d.get("tractQ", 0.0) or 0.0),
             label=str(d.get("label", "")),
             function=str(d.get("function", "")),
@@ -771,6 +806,7 @@ def jitter_syllable(syl: Syllable, rng: np.random.Generator, j: Jitter) -> Sylla
         noise=syl.noise,
         rough=syl.rough,
         gamma_scale=syl.gamma_scale,
+        harmonics=list(syl.harmonics),
         tract_q=syl.tract_q,
         label=syl.label,
         function=syl.function,
@@ -882,6 +918,7 @@ def _voice(
     sample_rate: int,
     calibration: Calibration | None,
     formants: Sequence[Sequence[float]] = (),
+    harmonics: Sequence[float] = (),
     noise: float = 0.0,
     rough: float = 0.0,
     stream: int = NOISE_SEED,
@@ -943,11 +980,23 @@ def _voice(
 
     src = _one_pole_hp(source, TRACT_HP_HZ, sample_rate)
 
-    out = _tracking_bandpass(src, f0, q, sample_rate, COEFF_UPDATE)
-    if harmonic > 0.0:
-        out = out + harmonic * 0.5 * _tracking_bandpass(
-            src, 2.0 * f0, q, sample_rate, COEFF_UPDATE
-        )
+    if harmonics:
+        # measured partials (§8.1b): one tracking band per partial, at its own amplitude
+        nyq = 0.45 * sample_rate
+        out = np.zeros_like(src)
+        for k, gain in enumerate(harmonics, start=1):
+            if gain < HARMONIC_FLOOR:
+                continue
+            centre = float(k) * f0
+            if np.median(centre) > nyq:
+                break
+            out = out + gain * _tracking_bandpass(src, centre, q, sample_rate, COEFF_UPDATE)
+    else:
+        out = _tracking_bandpass(src, f0, q, sample_rate, COEFF_UPDATE)
+        if harmonic > 0.0:
+            out = out + harmonic * 0.5 * _tracking_bandpass(
+                src, 2.0 * f0, q, sample_rate, COEFF_UPDATE
+            )
     for hz, fq, gain in formants:
         out = out + gain * _static_bandpass(src, float(hz), float(fq), sample_rate)
     return out
@@ -981,7 +1030,7 @@ def render_syllable(
     out = _voice(
         plan.f0, plan.alpha, plan.ps, plan.q, syl.harmonic,
         plan.gamma, plan.oversample, sample_rate, calibration,
-        syl.formants, syl.noise, syl.rough, stream,
+        syl.formants, syl.harmonics, syl.noise, syl.rough, stream,
     )
     if syl.two:
         f0b = plan.f0 * (2.0 ** (DETUNE_CENTS / 1200.0))
@@ -992,7 +1041,7 @@ def render_syllable(
             # sides correlated, and correlated noise through two nearly identical tracts
             # sums to one louder voice instead of two — the bilateral shimmer is exactly
             # the part that has to stay independent.
-            syl.formants, syl.noise, syl.rough, stream + 1024,
+            syl.formants, syl.harmonics, syl.noise, syl.rough, stream + 1024,
         )
 
     # 180 Hz one-pole highpass and 12 kHz one-pole lowpass on the sum

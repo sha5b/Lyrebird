@@ -83,6 +83,27 @@ export interface PipelineStatus {
 	job: JobStatus | null;
 }
 
+/**
+ * Ceiling on a control-surface request.
+ *
+ * **Without one, "not running" and "not answering" are different failures and only the first
+ * degrades gracefully.** A refused connection rejects immediately, which is the case this
+ * client was written for; a process that holds the socket open and never replies — starting
+ * up, wedged, or a stale build compiling its kernels — leaves `fetch` pending forever. The
+ * Learn tab sets `pipelineChecked` only after the status call settles, so it sat on
+ * "checking…" indefinitely instead of falling through to the message that explains how to
+ * start the process.
+ *
+ * Generous, because a status call on a busy machine is allowed to be slow; the point is only
+ * that it must end.
+ *
+ * Applied to reads only. A POST starts work — a harvest, a fit, a build — and how long the
+ * process takes to acknowledge that is not something this client should have an opinion
+ * about; cutting one off mid-flight risks leaving a job running that the interface has
+ * stopped believing in. Reads are polled on a timer, so dropping one costs nothing.
+ */
+const REQUEST_TIMEOUT_MS = 4000;
+
 export class PipelineClient {
 	constructor(readonly origin: string = DEFAULT_ORIGIN) {}
 
@@ -90,7 +111,8 @@ export class PipelineClient {
 		const res = await fetch(`${this.origin}${path}`, {
 			method: body === undefined ? 'GET' : 'POST',
 			headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
-			body: body === undefined ? undefined : JSON.stringify(body)
+			body: body === undefined ? undefined : JSON.stringify(body),
+			signal: body === undefined ? AbortSignal.timeout(REQUEST_TIMEOUT_MS) : undefined
 		});
 		const data = (await res.json()) as T & { ok?: boolean; error?: string };
 		if (data.ok === false) {

@@ -135,17 +135,18 @@ recording it came from (§8.5). Before this section existed, that verification s
 
 | | before | after |
 |---|---|---|
-| 28-d descriptor cosine, median | 0.533 | **0.776** |
-| types above 0.7 | 26.2 % | **66.6 %** |
-| types below 0.5 | 44.2 % | **11.1 %** |
-| nearest its own *type* | 35.7 % | **62.2 %** |
-| nearest its own *species* | 20.8 % | **24.2 %** (chance 4.5 %) |
+| 28-d descriptor cosine, median | 0.533 | **0.775** |
+| types above 0.7 | 26.2 % | **66 %** |
+| types below 0.5 | 44.2 % | **11 %** |
+| nearest its own *type* | 35.7 % | **56.5 %** |
+| nearest its own *species* | 20.8 % | 23.1 % (chance 4.5 %) |
 | median \|F0 error\| | 1.7 % | 3.8 % |
 
 Two things to read out of that. F0 was never the problem — it was already at 1–2 % while
-the timbre cosine sat near 0.5. And the last row is the one still failing: **three quarters
-of fitted syllables resynthesise closer to a different species than to their own.** See
-"still open" at the end.
+the timbre cosine sat near 0.5. And the last row is the one that **did not move**: three
+quarters of fitted syllables still resynthesise closer to a different species than to their
+own. See "still open" at the end — it is a real limit, not a tuning issue, and it is the
+next thing to fix.
 
 The two structural causes:
 
@@ -193,6 +194,26 @@ resonances. Measured agreement that justifies the tube formula: eastern towhee, 
 replaced by a loudspeaker and swept, resonances at ~2.0 and ~5.5 kHz against 1.88 and
 5.67 kHz predicted for its 45 mm trachea (Nelson, Beckers & Suthers 2005); northern
 cardinal ~2, 5, 8, 12 kHz, i.e. 1:3:5:7 (Riede et al. 2006).
+
+**The comb is fitted once per species, and `f_1` is measured rather than searched.** A
+trachea is a tube of fixed length belonging to the bird, not to the note, so every syllable
+that species sings carries the same absolute resonances. `learn.measure_trachea_f1` averages
+the per-syllable MFCC means over all of a species' observations, inverts them to a 26-band log
+spectral envelope, detrends the overall tilt and scans for the `f_1` whose odd-harmonic series
+best aligns with what is left. Because those syllables span many recordings and a wide range
+of f0, pitch-dependent structure averages away and only resonances fixed in Hz survive — the
+long-term-average-spectrum argument applied to a store that kept no audio.
+
+Nothing in that function knows which species it is looking at, so **a bird discovered an hour
+ago is measured on the same footing as one that has been in the inventory from the start.**
+There is no per-species table to keep in step with the harvest. Sanity check on this corpus:
+implied effective tube lengths of 1.7–6.6 cm, against 3.4–4.5 cm measured in the literature.
+
+The measurement proposes and the resynthesis decides: `fit_species_trachea` chooses the comb's
+gain by rendering, with "comb off" as the incumbent, so a species whose recordings show no
+tracheal colour keeps none — 10 of 22 species here earned one. That gate matters because for a
+bird whose f0 barely moves, the largest peak in an average spectrum *is* the fundamental and no
+spectral method can tell that from a resonance.
 
 **`rough` acts on tension, not on pressure and not on the output.** This is the one point
 the literature is specific about: Amador & Mindlin (2021) fitted this model to zebra finch
@@ -258,14 +279,87 @@ steady middle, corrected for octave errors by testing small integer sub-multiple
 keeping whichever lands nearest what was asked for. That correction can only choose between
 candidates the spectrum actually contains, so it cannot invent agreement.
 
-### Still open
+### Still open: species identity
 
-`nearest its own species` reached only 24.2 %. The cause is a parameterisation error, not
-an engine limit: the tracheal comb is currently fitted **per syllable** with `f_1` as a
-multiple of that syllable's own reference pitch, so two species singing at the same pitch
-receive the same comb and no species signature ever forms. Trachea length is a property of
-the bird, not of the note. The fix is one absolute `L_eff` fitted **per species** and shared
-by every syllable that bird sings — more physical, and fewer parameters.
+`nearest its own species` sits at 23.1 % against 4.5 % chance. Everything above improved
+within-bird timbre and left this almost untouched, so it is worth writing down what has
+already been ruled out.
+
+The first hypothesis was that the tracheal comb was fitted **per syllable**, with `f_1` as a
+multiple of that syllable's own pitch — so two species at the same pitch got the same
+resonances and no signature could form. That was a genuine error and it is fixed: the comb is
+now measured once per species at absolute Hz by `learn.measure_trachea_f1` and shared by every
+syllable that bird sings. The measurement is sane (implied effective tube lengths of 1.7–6.6 cm,
+against 3.4–4.5 cm measured in the literature for towhee, cardinal and white-throated sparrow).
+**It moved cross-species placement by about two points.** So the parameterisation was wrong,
+and fixing it was not sufficient.
+
+Two further hypotheses were tested and **both are disproved**, which is worth recording so
+they are not tried again.
+
+*"Our syntheses are all narrowband tones clustered together, so which real centroid is nearest
+is near-arbitrary."* Measured on mean mel envelopes (`features.mel_envelope`) over the 22
+species: between-species spread is 1.92 for our resynthesis against 1.87 for the real
+recordings, and within-envelope detail 1.13 against 1.06. **We express 103 % of the real
+between-species variation and 106 % of the spectral shape.** The envelopes are not collapsed
+and not smooth — they are as varied and as detailed as the real ones. They are varied along
+*different axes*.
+
+*"There is a systematic spectral tilt error."* There is one — relative energy above 6 kHz sits
+at −0.01 for us against −1.59 for the recordings, so our tract roll-off is far too gentle (one
+pole at 12 kHz). But correcting it does not help: a 6 kHz two-pole roll-off lands the bias at
+−1.588, essentially exactly on the real figure, and cross-species placement *falls* from
+23.1 % to 20.2 %. Every roll-off tried was worse than none. (Part of that −1.59 is a recording
+artifact rather than a bird: xeno-canto is largely mp3, which lowpasses.)
+
+So the error is neither a lack of spectral variety nor a global bias. It is per-species and
+per-syllable, and that points at the **evidence** rather than at the filter chain. A harvested
+syllable is kept as 28 numbers, of which the spectral envelope is 13 heavily smoothed cepstral
+coefficients — and that vector is simultaneously the fit's only evidence *and* its objective.
+A median cosine of 0.775 against it therefore means the fit has largely saturated what the
+stored descriptor can express, while the sound is still not right. **The ceiling is the
+descriptor, not the synthesiser.** Going further requires measuring more from the audio while
+it is briefly in memory — a harmonic-amplitude trajectory and a noise residual per syllable
+type, on the order of 60–80 extra floats — rather than another parameter fitted against the
+same 28 numbers.
+
+### Four hypotheses tested, four refuted — and what that leaves
+
+Written down as a list because each cost real work and each is worth not repeating. All were
+measured on the same two numbers: median resynthesis cosine, and how often a resynthesis lands
+nearest its own species.
+
+1. **"The envelopes are collapsed."** Refuted. We produce 103 % of the real between-species
+   spread and 106 % of the spectral detail. Not collapsed — varied along different axes.
+2. **"There is a systematic spectral tilt."** There is (relative energy above 6 kHz: −0.01 for
+   us, −1.59 for the recordings) but correcting it *hurts*. A 6 kHz two-pole roll-off lands the
+   bias at −1.588, essentially exactly right, and drops placement from 23.1 % to 20.2 %. Every
+   roll-off tried was worse than none.
+3. **"The harmonic structure is missing."** Refuted, with a measurement to explain why. Real
+   syllables resolve to a mean of **2.2 partials** — birdsong is genuinely near-sinusoidal —
+   so a measured partial series adds almost nothing over the single `harmonic` scalar. Feeding
+   it to the fit moved median cosine 0.776 → 0.768 and placement 61.7 % → 55.6 %.
+4. **"The objective is too coarse — it is a time *average*, so it cannot see a spectrum
+   move."** The premise is true and the fix does not help. `features.mel_path` gives a
+   time-resolved target (4 knots × 26 log-mel bands, 104 floats, harvested per syllable) and
+   optimising against it improves the thing it measures by 36 % — mel-path distance 3.67 → 2.33
+   — while placement in the 28-d space *falls* from 61.7 % to 43.2 %.
+
+Point 4 is the informative one. **The two objectives conflict**: matching the spectral
+trajectory costs the spectral average and vice versa. That is not a bad proxy being replaced by
+a better one, it is the synthesiser being unable to satisfy both at once. Combined with points
+1–3 — variety is not lacking, no global correction helps, and richer evidence does not help —
+the remaining constraint is the **expressive capacity of the filter chain**, not the fit, not
+the objective and not the measurements.
+
+Which finally makes the structural change the one worth doing, because it is the only candidate
+that adds capacity instead of re-aiming the search at a fixed capacity.
+
+The delay-line waveguide the Mindlin implementations use (`Pi[n] = src[n] − r·Pi[n−N]`,
+`N = round(2L·fs/c)`, cascaded into a fixed resonator; Sitt et al. 2010 `L = 1.9 cm, r = −0.9`)
+remains worth trying, because it passes a whole harmonic comb instead of isolating one partial.
+But on the evidence above it should be expected to change *which* axes we vary along, not how
+much we vary — and it cannot be verified beyond the descriptor's own resolution either.
 
 ### betaForF0
 
