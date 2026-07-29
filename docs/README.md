@@ -31,3 +31,10 @@ both follow it. Date: 2026-07-28.
 8. [`08-implementation.md`](08-implementation.md) — **the contract**: the syrinx model and
    its measured parameter space, the shared 28-d feature extractor, the generated asset
    formats, and the honesty rule. Both halves of the codebase implement this document.
+9. [`09-learned-objective-plan.md`](09-learned-objective-plan.md) — the critic: a learned
+   syllable embedding (works, shipped for typing), a realism objective (refuted twice),
+   and novelty detection, with the full ablations.
+10. [`10-real-data-galaxy.md`](10-real-data-galaxy.md) — the galaxy becomes a measurement:
+    syllable-level real clouds, the embedding-space build and browser space map, live
+    novelty with an honest ROC, label-free typing/chunks/relations, and the learned
+    inverse's failed bake-off.

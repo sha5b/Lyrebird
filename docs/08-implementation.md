@@ -510,14 +510,41 @@ The pipeline writes only into `app/static/birdy/`. Everything is fetched at runt
 
 ```
 app/static/birdy/
-  manifest.json            what was built, when, with which parameters
+  manifest.json            what was built, when, with which parameters (incl. `space`)
   inventory.json           verbatim copy of data/inventory.json
   syrinx-calibration.json  beta <-> f0 table (§8.4)
   feature-space.json       extractor spec + corpus mean/std + temperature
+                           (+ `embedding` block in embed builds, see below)
   positions.f32            Float32Array, 3*N, xyz per point, max|coord| = 1
   points.json              parallel metadata arrays, length N
-  centroids.json           K labelled clusters with 3D position + 28-d vector
+  centroids.json           K labelled clusters with 3D position + cluster vector
+  relations.json           cross-species shared types + species similarity (doc 10 §10.4)
+  novel-pool.json          grow's pending novel embeddings awaiting quorum (doc 10 §10.3)
 ```
+
+Since doc 10, a point is **one syllable**, not one 0.6 s window: field rows come from
+`HarvestStore.syllable_point_set` (each observation's own descriptor/embedding, typed by
+`<store>/typing.json`), and synthetic rows are the type's median anchor plus renders of
+measured member realisations (`corpus.measured_corpus`) — jitter is retained only for
+hand-authored species with no harvest data. The window reservoir still feeds
+`feature-space.json`'s mean/std, because the live browser path analyses windows.
+
+In an **embed-space build** (`build --space embed`, the default when the store carries
+`embeddings.f32` written by `critic embed`): projection, clustering and centroids run on
+the critic's 32-d embedding; `centroids.json` items carry `vector32` (32-d standardised)
+with `vector` kept as a 28-d fallback where members carry descriptors; and
+`feature-space.json` gains
+
+```json
+"embedding": { "dims": 32, "mean": [], "std": [],
+  "map": { "w": [[]], "b": [] },
+  "mapQuality": { "accepted": true, "medianCosine": 0.0, "deciles": [], "centroidAgreement": 0.0 } }
+```
+
+`map` is a ridge regression R^28 → R^32 fitted on (descriptor, embedding) pairs of the
+store — plain numbers, not weights, so the browser can place live audio in the learned
+space without torch. `mapQuality` is measured on held-out **recordings**; when
+`accepted` is false the browser must stay on the 28-d path.
 
 `points.json`:
 
@@ -590,3 +617,10 @@ Every rendered phrase carries its `confidence` from `data/inventory.json`:
 literature), `inferred` (plausible, not established). Word-driven phrases are always
 labelled as an invented mapping. This is a product requirement, not a nicety — see
 `03-decoding-science.md` §3.1 and Rutz et al. 2023.
+
+Two additions from doc 10. A syllable flagged novel at ingest, and any knot founded from
+such syllables ("unheard syllable"), is `unlabelled`: real acoustics, no documented
+function — detecting that a sound is new is not knowing what it means, and the interface
+must keep saying so. And a knot's measured extent (radius/cohesion) is only a claim about
+real birds when the knot is backed by field observations or measured realisations; knots
+rendered from hand-authored jitter are "invented" and labelled as such.
