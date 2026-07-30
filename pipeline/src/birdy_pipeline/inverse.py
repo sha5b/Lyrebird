@@ -541,15 +541,6 @@ def build_dataset(
     }
 
 
-def save_dataset(data: dict[str, np.ndarray], path: Path) -> None:
-    np.savez_compressed(Path(path), **data)
-
-
-def load_dataset(path: Path) -> dict[str, np.ndarray]:
-    with np.load(Path(path)) as z:
-        return {k: z[k] for k in z.files}
-
-
 # --- the network -------------------------------------------------------------------------
 
 

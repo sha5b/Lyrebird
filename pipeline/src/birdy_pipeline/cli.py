@@ -723,12 +723,19 @@ def cmd_sources_fetch(args: argparse.Namespace) -> int:
         syllable_cap=getattr(args, "syllable_cap", harvest.DEFAULT_SYLLABLE_CAP),
     )
     t0 = time.time()
+    fetch_kw: dict[str, Any] = {}
+    if getattr(args, "per_species", None) is not None:
+        # Only the sources whose archive order is biased (iNatSounds streams
+        # taxonomically) accept a per-species cap; passing it elsewhere would be a
+        # silent no-op, so it is wired exactly where it means something.
+        fetch_kw["per_species"] = args.per_species
     report = src.fetch(
         store,
         species=args.species,
         limit=args.limit,
         max_seconds=args.max_seconds,
         item=args.item,
+        **fetch_kw,
     )
     store.save()
     log(harvest.format_report(report, store))
@@ -2291,17 +2298,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="stream real recordings into a bounded descriptor store (keeps no audio)",
     )
     h.add_argument("--store", default=str(DEFAULT_HARVEST_STORE))
-    h.add_argument("--cap", type=int, default=harvest.DEFAULT_CAP,
-                   help="descriptors the store may hold, over all runs (default %(default)s)")
+    h.add_argument("--cap", type=int, default=None,
+                   help="descriptors the store may hold, over all runs (default: the "
+                        "store's own saved cap, or 60000 for a fresh store)")
     # Exposed because it silently decides how much of the *learning* set survives, and it was
     # only reachable in Python. A harvest that grew `out/harvest-gan` past this evicted whole
     # recordings to stay under it; the eviction is now species-stratified (`add_syllables`), but
     # the ceiling is still a ceiling, and a corpus that wants 25 species at depth needs to be
     # told it may hold more than 40 000 syllables.
-    h.add_argument("--syllable-cap", type=int, default=harvest.DEFAULT_SYLLABLE_CAP,
+    h.add_argument("--syllable-cap", type=int, default=None,
                    help="syllable observations the store may hold, over all runs. These are "
                         "what `learn` fits and what carries the log-mel patches, so this is "
-                        "the ceiling on the learning set (default %(default)s)")
+                        "the ceiling on the learning set (default: the store's own saved "
+                        "cap, or 40000 for a fresh store)")
     h.add_argument("--per-species", type=int, default=20, help="recordings per species")
     h.add_argument("--max-seconds", type=float, default=harvest.DEFAULT_MAX_SECONDS,
                    help="analyse at most this much of each recording")
@@ -2371,22 +2380,31 @@ def build_parser() -> argparse.ArgumentParser:
         help="fetch from one source into a store via the harvest's ingest loop",
     )
     sf.add_argument("--source", required=True,
-                    help="zenodo | internet-archive | kaggle | huggingface | xeno-canto")
+                    help="zenodo | internet-archive | kaggle | huggingface | "
+                         "inat-sounds | gbif | xeno-canto")
     sf.add_argument("--species", default=None,
-                    help='"Genus species" (zenodo/internet-archive), an eBird folder code '
-                         "or prefix (kaggle), or a BirdSet member-path species id "
-                         "(huggingface)")
+                    help='"Genus species" (zenodo/internet-archive/inat-sounds/gbif), '
+                         "an eBird folder code or prefix (kaggle), or a BirdSet "
+                         "member-path species id (huggingface)")
     sf.add_argument("--limit", type=int, default=5,
                     help="recordings to fetch (default %(default)s; these are proofs and "
                          "production top-ups, not bulk harvests)")
+    sf.add_argument("--per-species", type=int, default=None,
+                    help="inat-sounds only: cap recordings per species, so a large "
+                         "--limit is a balanced take instead of the archive's first "
+                         "species in taxonomic order")
     sf.add_argument("--item", default=None,
                     help="source-specific dataset: a Zenodo record id (default XCDC "
                          "15420487), an archive.org item (xccoverbl_2014 | "
                          "warblrb10k_public | ff1010bird), a BirdCLEF slug "
                          "(birdclef-2021..2025), or a BirdSet config (XCM | XCL)")
     sf.add_argument("--store", default=str(DEFAULT_HARVEST_STORE))
-    sf.add_argument("--cap", type=int, default=harvest.DEFAULT_CAP)
-    sf.add_argument("--syllable-cap", type=int, default=harvest.DEFAULT_SYLLABLE_CAP)
+    sf.add_argument("--cap", type=int, default=None,
+                    help="descriptors the store may hold (default: the store's own "
+                         "saved cap, or 60000 for a fresh store)")
+    sf.add_argument("--syllable-cap", type=int, default=None,
+                    help="syllable observations the store may hold (default: the "
+                         "store's own saved cap, or 40000 for a fresh store)")
     sf.add_argument("--max-seconds", type=float, default=harvest.DEFAULT_MAX_SECONDS,
                     help="analyse at most this much of each recording")
     sf.add_argument("--seed", type=int, default=0)

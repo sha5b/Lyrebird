@@ -217,9 +217,9 @@ class HarvestStore:
     def __init__(
         self,
         root: Path,
-        cap: int = DEFAULT_CAP,
+        cap: int | None = None,
         seed: int = 0,
-        syllable_cap: int = DEFAULT_SYLLABLE_CAP,
+        syllable_cap: int | None = None,
         load_syllables: bool = True,
     ):
         """`load_syllables=False` skips `syllables.jsonl` and `patches.f16`.
@@ -233,10 +233,19 @@ class HarvestStore:
 
         `syllable_count` is the accessor that works either way. Anything that touches
         `self.syllables` itself must load them.
+
+        `cap=None` (the default) means "the store's own caps": whatever the last writer
+        saved into `state.json`, falling back to the module defaults for a fresh store.
+        Passing a number is an explicit override and is persisted on save. This ordering
+        exists because the alternative — every caller defaulting to the module constants —
+        is a silent trap: fetch with raised caps once, and the next default-cap ingest
+        trims the enlarged store back down without a word.
         """
         self.root = Path(root)
-        self.cap = int(cap)
-        self.syllable_cap = int(syllable_cap)
+        self._cap_override = None if cap is None else int(cap)
+        self._syllable_cap_override = None if syllable_cap is None else int(syllable_cap)
+        self.cap = self._cap_override or DEFAULT_CAP
+        self.syllable_cap = self._syllable_cap_override or DEFAULT_SYLLABLE_CAP
         self.load_syllables = bool(load_syllables)
         self.rng = np.random.default_rng([seed, 0x8A2E])
         self.strata: dict[str, Stratum] = {}
@@ -317,6 +326,14 @@ class HarvestStore:
         if not self._state_path.exists():
             return
         state = json.loads(self._state_path.read_text(encoding="utf-8"))
+        if self._cap_override is not None:
+            self.cap = self._cap_override
+        else:
+            self.cap = int(state.get("cap", DEFAULT_CAP))
+        if self._syllable_cap_override is not None:
+            self.syllable_cap = self._syllable_cap_override
+        else:
+            self.syllable_cap = int(state.get("syllableCap", DEFAULT_SYLLABLE_CAP))
         shape = state.get("patchShape")
         if shape is not None and tuple(shape) != features.PATCH_SHAPE:
             raise RuntimeError(
@@ -445,6 +462,7 @@ class HarvestStore:
             json.dumps(
                 {
                     "cap": self.cap,
+                    "syllableCap": self.syllable_cap,
                     "retained": len(meta),
                     "syllableObservations": len(self.syllables),
                     # Recorded so a store carries its own patch geometry: changing

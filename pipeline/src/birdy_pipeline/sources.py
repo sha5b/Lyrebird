@@ -1,13 +1,14 @@
-"""Audio sources beyond xeno-canto: one registry, four adapters, zero retained audio.
+"""Audio sources beyond xeno-canto: one registry, six adapters, zero retained audio.
 
 xeno-canto is the bottleneck of the harvest: v3 requires a personal key, rate-limits
 per account, and paces a pass at `--pause` seconds a request. The open-dataset world
 carries a great deal of bird audio that costs no key at all — the xccoverbl
 xeno-canto mirror (264 flacs over 88 UK species, with a metadata csv), warblr and
 ff1010bird (bird/no-bird control sets), BirdCLEF's competition archives, BirdSet's
-~520 000-recording xeno-canto repackaging, the XCDC dawn-chorus set. This module puts
-them behind one interface so `birdy-pipeline sources list` can say, honestly, which of
-them this machine can use right now.
+~520 000-recording xeno-canto repackaging, the XCDC dawn-chorus set, iNatSounds'
+230 000-observation iNaturalist dump. This module puts them behind one interface so
+`birdy-pipeline sources list` can say, honestly, which of them this machine can use
+right now.
 
 Two rules bind every adapter, and they are the same rules `harvest.py` lives by:
 
@@ -36,6 +37,7 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
+import urllib.parse
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -696,6 +698,224 @@ class HuggingFaceSource(Source):
         return report
 
 
+# --- inat-sounds ------------------------------------------------------------------
+
+
+class InatSoundsSource(Source):
+    """iNatSounds 2024 (visipedia/inat_sounds), via the AWS Open Data S3 bucket — keyless.
+
+    Verified against the live bucket on 2026-07-30: 230k WAVs (22.05 kHz, one species
+    per file) as train/val/test tar.gz archives (81/25/27 GB) plus COCO-style
+    annotation JSONs with per-file CC licence, rights holder and location
+    (https://github.com/visipedia/inat_sounds/tree/main/2024). Terms: non-commercial
+    research/education, recordings are never redistributed — which is exactly what the
+    decode → describe → delete loop guarantees anyway.
+
+    Shape of the access: a tar.gz has no directory, so a fetch is one sequential stream
+    — the 14 MB annotation JSON first (it maps every member path to species, licence
+    and rights holder), then the archive, keeping wanted members as they pass. A
+    `--limit` near the archive's start costs little; a species whose members sit at
+    the end costs the whole 81 GB stream, and the log says what was transferred so the
+    cost is never hidden. Only the train split is fetched: val/test are the dataset's
+    benchmark splits, worth more as future *evaluation* ground truth than as harvest.
+
+    Two filters, both stated rather than assumed. **Aves only** — the archive also
+    holds insects, amphibians, mammals and reptiles, and a bird project's store is not
+    where they belong (a "not-a-bird" control stratum would file them as one, like
+    warblr). **No NoDerivatives licences** — ids 2 and 5 (CC-BY-NC-ND, CC-BY-ND):
+    decoding a recording into descriptors is arguably a derivative, so the 531 ND
+    files of 111 029 Aves are skipped; every ingested recording's exact licence lands
+    in the store's CREDITS.md via `note_recording`.
+    """
+
+    name = "inat-sounds"
+    summary = "iNatSounds 2024 (AWS Open Data): 111k Aves recordings, 3 846 species, keyless"
+
+    BASE = "https://ml-inat-competition-datasets.s3.amazonaws.com/sounds/2024"
+    #: Licence ids the ingest accepts (see class docstring): BY, BY-NC, BY-NC-SA, CC0,
+    #: BY-SA — everything except the two NoDerivatives variants.
+    LICENCES_OK = {0, 1, 3, 4, 6}
+
+    def available(self) -> tuple[bool, str]:
+        return True, "no key needed (AWS Open Data); ~131 GB of archives, streamed"
+
+    def _wanted(self, staging: Path, species: str | None) -> dict[str, dict[str, Any]]:
+        """Member path → ingest info, for every Aves recording with an acceptable licence."""
+        archive = _download(f"{self.BASE}/train.json.tar.gz", staging / "train.json.tar.gz")
+        with tarfile.open(archive) as tar:
+            member = tar.extractfile("train.json")
+            meta = json.loads(member.read().decode("utf-8"))
+        categories = {c["id"]: c for c in meta["categories"]}
+        licences = {lic["id"]: lic for lic in meta["licenses"]}
+        category_of = {a["audio_id"]: a["category_id"] for a in meta["annotations"]}
+        wanted_species = species_id_for(species) if species else ""
+        out: dict[str, dict[str, Any]] = {}
+        for audio in meta["audio"]:
+            cat = categories.get(category_of.get(audio["id"]))
+            if not cat or cat["supercategory"] != "Aves":
+                continue
+            lic = licences[audio["license"]]
+            if audio["license"] not in self.LICENCES_OK:
+                continue
+            sid = species_id_for(cat["name"]) or "unlabelled"
+            if wanted_species and sid != wanted_species:
+                continue
+            out[audio["file_name"]] = {
+                "speciesId": sid,
+                "scientific": cat["name"],
+                "english": cat.get("common_name", ""),
+                "recordist": audio.get("rights_holder", ""),
+                "licence": f"{lic['name']} ({lic['url']})",
+                "country": "",
+                "type": "inatsounds train",
+                "url": "https://github.com/visipedia/inat_sounds/tree/main/2024",
+                "_audio_id": audio["id"],
+            }
+        return out
+
+    def fetch(self, store, species=None, limit=5,
+              max_seconds=harvest.DEFAULT_MAX_SECONDS, item=None,
+              per_species: int | None = None) -> HarvestReport:
+        report = HarvestReport()
+        with tempfile.TemporaryDirectory() as tmp:
+            staging = Path(tmp)
+            wanted = self._wanted(staging, species)
+            if not wanted:
+                log("  no acceptable Aves recordings"
+                    + (f" for {species!r}" if species else "")
+                    + " in iNatSounds train")
+                return report
+            # Members stream in taxonomic order (the tar is laid out by category
+            # directory), so a bare `--limit 5000` would be "the first ~50 species
+            # alphabetically", not a sample. A per-species cap turns the same stream
+            # into a balanced take: every species passes its first `per_species`
+            # members, and the archive order stops mattering to what is kept.
+            budget: dict[str, int] = {}
+            if per_species is not None:
+                for info in wanted.values():
+                    budget[info["speciesId"]] = int(per_species)
+            log(f"  iNatSounds train: {len(wanted)} acceptable Aves recordings"
+                + (f" for {species!r}" if species else "")
+                + (f", at most {per_species} per species" if per_species is not None else "")
+                + f"; streaming the 81 GB archive until {limit} ingested")
+            req = urllib.request.Request(
+                f"{self.BASE}/train.tar.gz", headers={"User-Agent": USER_AGENT})
+            taken = 0
+            transferred = 0
+            with urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT) as res:
+                stream = tarfile.open(fileobj=res, mode="r|gz")
+                for member in stream:
+                    if taken >= limit:
+                        break
+                    if not member.isfile():
+                        continue
+                    info = wanted.get(member.name)
+                    if info is None or not budget.get(info["speciesId"], True):
+                        continue
+                    audio_id = info["_audio_id"]
+                    staged = staging / Path(member.name).name
+                    src = stream.extractfile(member)
+                    with staged.open("wb") as fh:
+                        shutil.copyfileobj(src, fh, length=1 << 16)
+                    transferred += member.size
+                    info = {k: v for k, v in info.items() if not k.startswith("_")}
+                    if _ingest_staged(store, staged, info["speciesId"],
+                                      f"INAT{audio_id}", info, max_seconds, report):
+                        taken += 1
+                        if per_species is not None:
+                            budget[info["speciesId"]] -= 1
+                    staged.unlink(missing_ok=True)
+        log(f"  transferred ~{transferred / 1e6:.0f} MB of member data for "
+            f"{taken} recording(s)")
+        return report
+
+
+# --- gbif sound archives ------------------------------------------------------------
+
+
+class GbifSource(Source):
+    """GBIF-hosted sound archives, via the keyless occurrence-search API.
+
+    Verified against the live API on 2026-07-30: `occurrence/search` with
+    `dataset_key` + `media_type=Sound` needs no account (unlike GBIF's DwC-A download,
+    which does), paginates 300 records a page, and each record carries the media URL,
+    its per-file licence, the recordist and the country. The Tierstimmenarchiv
+    (Animal Sound Archive, Museum für Naturkunde Berlin, DOI 10.15468/0bpalr) answers
+    16 385 sound records — historic European and captive recordings, a provenance
+    regime xeno-canto and iNaturalist do not have. One adapter, any GBIF dataset key
+    (`--item`): Borror (f11db245-3f9f-4fc6-a0cc-12b4124d081b) is the same shape.
+
+    What the media URL actually is matters: the archive serves `_short.mp3` excerpts,
+    not full masters. That is still syllable-length material — the store's own
+    `DEFAULT_MAX_SECONDS` window is shorter than most excerpts — but the type field
+    says so, and a full-length harvest of the same bird elsewhere dedups nothing
+    because these ids are the archive's own.
+    """
+
+    name = "gbif"
+    summary = "GBIF sound archives (Tierstimmenarchiv: 16k historic/captive recordings)"
+
+    #: Named dataset keys for `--item`; any other GBIF dataset key works as-is.
+    DATASETS = {
+        "tierstimmenarchiv": "b7ec1bf8-819b-11e2-bad2-00145eb45e9a",
+        "borror": "f11db245-3f9f-4fc6-a0cc-12b4124d081b",
+    }
+
+    def available(self) -> tuple[bool, str]:
+        return True, "no key needed (occurrence-search API, unlike the DwC-A download)"
+
+    def fetch(self, store, species=None, limit=5,
+              max_seconds=harvest.DEFAULT_MAX_SECONDS, item=None) -> HarvestReport:
+        dataset = self.DATASETS.get(item or "tierstimmenarchiv", item)
+        report = HarvestReport()
+        params = f"dataset_key={dataset}&media_type=Sound&limit=300"
+        if species:
+            params += f"&scientific_name={urllib.parse.quote(species)}"
+        with tempfile.TemporaryDirectory() as tmp:
+            staging = Path(tmp)
+            taken = 0
+            offset = 0
+            while taken < limit:
+                page = _get_json(
+                    f"https://api.gbif.org/v1/occurrence/search?{params}&offset={offset}")
+                results = page.get("results", [])
+                if not results:
+                    break
+                for rec in results:
+                    if taken >= limit:
+                        break
+                    media = [m for m in rec.get("media", [])
+                             if m.get("type") == "Sound" and m.get("identifier")]
+                    if not media:
+                        continue
+                    m = media[0]
+                    sid = species_id_for(rec.get("scientificName", "")) or "unlabelled"
+                    rid = f"GBIF-{rec.get('key')}"
+                    info = {
+                        "speciesId": sid,
+                        "scientific": rec.get("scientificName", ""),
+                        "english": rec.get("vernacularName", "") or "",
+                        "recordist": rec.get("recordedBy", ""),
+                        "licence": m.get("license") or rec.get("license", ""),
+                        "country": rec.get("country", ""),
+                        "type": f"gbif {item or 'tierstimmenarchiv'} excerpt",
+                        "url": m.get("references") or m["identifier"],
+                    }
+                    try:
+                        staged = _download(m["identifier"], staging / f"{rid}.mp3")
+                    except Exception as exc:
+                        report.failed += 1
+                        log(f"  skip {rid}: {exc}")
+                        continue
+                    if _ingest_staged(store, staged, sid, rid, info, max_seconds, report):
+                        taken += 1
+                    staged.unlink(missing_ok=True)
+                offset += len(results)
+                if page.get("endOfRecords"):
+                    break
+        return report
+
+
 # --- xeno-canto (listing only) ------------------------------------------------------
 
 
@@ -725,7 +945,8 @@ class XenoCantoListing(Source):
 SOURCES: dict[str, Source] = {
     s.name: s
     for s in (ZenodoSource(), ArchiveSource(), KaggleSource(),
-              HuggingFaceSource(), XenoCantoListing())
+              HuggingFaceSource(), InatSoundsSource(), GbifSource(),
+              XenoCantoListing())
 }
 
 

@@ -352,7 +352,10 @@ class Pipeline:
         species = body.get("species") or None
         per_species = int(body.get("perSpecies", 10))
         quality = str(body.get("quality", "A"))
-        cap = int(body.get("cap", harvest.DEFAULT_CAP))
+        # None = the store's own saved caps (harvest.HarvestStore resolves them);
+        # defaulting to DEFAULT_CAP here would trim an enlarged store back on save.
+        cap = body.get("cap")
+        cap = None if cap is None else int(cap)
         max_seconds = float(body.get("maxSeconds", harvest.DEFAULT_MAX_SECONDS))
         from_dir = body.get("fromDir") or None
         dry_run = bool(body.get("dryRun"))
@@ -717,7 +720,10 @@ class Pipeline:
         per_pass = max(1, int(body.get("perSpecies", 2)))
         quality = str(body.get("quality", ">B"))
         types = int(body.get("types", learn.DEFAULT_TYPES))
-        cap = int(body.get("cap", harvest.DEFAULT_CAP))
+        # None = the store's own saved caps (harvest.HarvestStore resolves them);
+        # defaulting to DEFAULT_CAP here would trim an enlarged store back on save.
+        cap = body.get("cap")
+        cap = None if cap is None else int(cap)
         rebuild_at = float(body.get("rebuildAt", 0.35))
         passes = int(body.get("passes", 0))  # 0 = until stopped
         max_length = float(body.get("maxLength", harvest.DEFAULT_MAX_LENGTH_SECONDS))
