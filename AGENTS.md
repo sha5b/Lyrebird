@@ -84,6 +84,11 @@ Notes:
   (`respiration.py`: air-sac oscillator replacing the envelope, √ps tract drive) to
   every fitted type. Off by default until the pre-registered per-species fit wins —
   the bake-off numbers are in docs/15 §1's status note.
+- `learn --two-voice` attaches the hand-set default second voice of docs/15 §5
+  (`twovoice.py`: the type's contour shifted by the Fig. 6 ratio, Table I's trachea,
+  Laje & Mindlin coupling through the shared tracheal pressure) to every fitted
+  type. Off by default until the pre-registered per-species fit wins — the bake-off
+  numbers are in docs/15 §5's status note.
 - **`serve` holds the pipeline in memory: restart it after every pipeline code change**,
   or its Learn-tab learn/build jobs run the code it started with (docs/11 §11.1 — this
   cost a galaxy once). It also defaults to the *old* store: run it as

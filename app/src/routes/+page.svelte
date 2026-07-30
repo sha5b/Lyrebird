@@ -112,8 +112,6 @@
 	// How often the chorus starts a song, as a multiplier on its Poisson rate. Read by
 	// the scheduler per gap, so the slider retunes the next pause live (engine.songRate).
 	let songRate = $state(1);
-	// What the galaxy's colour encodes; 'species' is the long-standing default look.
-	let colorMode = $state<'species' | 'provenance'>('species');
 	let lastPhrase = $state<Phrase | null>(null);
 	let nowSinging = $state<ScheduledSyllable[]>([]);
 	let voices = $state(0);
@@ -148,6 +146,37 @@
 	);
 	const songs = $derived(currentSpecies?.songs ?? []);
 	const currentSong = $derived(songs.find((s) => s.id === songId) ?? songs[0]);
+
+	/**
+	 * The song tally's tooltip, honest about which repertoire is which. A documented
+	 * song (authored syllable ids) can read "0 of 4 placed" while the bird visibly
+	 * owns knots: those knots are its *learned* types, fitted from field audio, and
+	 * saying so is the difference between "the galaxy failed" and "this call is from
+	 * the other inventory". The clarification only appears in exactly that situation —
+	 * every syllable unplaced, the species owning clusters, and the song built from
+	 * documented (not learned) ids.
+	 */
+	const songCoverageHint = $derived.by(() => {
+		if (!songCoverage || !currentSpecies || !currentSong) return '';
+		const base =
+			`${songCoverage.placed} of this call's ${songCoverage.total} syllables have a place in the galaxy. ` +
+			'The thread joins those and skips the rest rather than guessing at them; below two there is no thread to draw. ' +
+			'It plays either way — the synthesis does not need the galaxy.';
+		if (songCoverage.placed > 0) return base;
+		const knots = (clustersOfSpecies.get(currentSpecies.id) ?? []).length;
+		if (!knots) return base;
+		const resolved = songSyllables(currentSpecies, currentSong.id);
+		const documented = Boolean(
+			resolved?.syllables.length &&
+				resolved.syllables.every((s) => !s.id.startsWith('L') && !s.id.startsWith('U'))
+		);
+		if (!documented) return base;
+		return (
+			base +
+			` This call is from the documented inventory, which won no knot of its own; the bird's ${knots} ` +
+			`knot${knots === 1 ? '' : 's'} in the galaxy are its learned types, fitted from field audio.`
+		);
+	});
 
 	/**
 	 * How much of the selected call the galaxy can actually place.
@@ -1345,7 +1374,6 @@ uv run birdy-pipeline build</pre>
 				{spin}
 				{focus}
 				{spread}
-				{colorMode}
 				speed={tempo}
 				labels={showLabels}
 				pinned={pinnedCluster}
@@ -1391,34 +1419,23 @@ uv run birdy-pipeline build</pre>
 										<input type="checkbox" bind:checked={showLabels} /> Labels
 									</label>
 								</div>
-								<label class="field">
-									<span class="lbl">Colour <b class="mono">{colorMode}</b></span>
-									<div class="segmented">
-										<button
-											class:on={colorMode === 'species'}
-											onclick={() => (colorMode = 'species')}
-											title="The default look: a neutral response ramp, with the accent reserved for the note being sung or the bird you chose."
-										>Species</button>
-										<button
-											class:on={colorMode === 'provenance'}
-											onclick={() => (colorMode = 'provenance')}
-											title="Tint every point by where its sound comes from: blue for calls from the authored inventory, grey for types fitted to field recordings, amber for field audio nothing has identified, green for unlabelled arrivals with no species tag."
-										>Provenance</button>
-									</div>
-								</label>
-								{#if colorMode === 'provenance'}
-									<p class="note faint">
-										Colour now says where each sound comes from:
-										<b style:color="var(--documented)">documented</b> (authored inventory),
-										<b style:color="var(--unlabelled)">learned</b> (fitted to field audio),
-										<b style:color="var(--invented)">unidentified</b> (field audio with no
-										fitted identity — the candidate pool; per-point novelty flags are not in
-										this build yet),
-										<b style:color="var(--experimental)">unlabelled arrivals</b> (real audio,
-										no species tag, typed by similarity{#if !hasArrivals} — none in this
-										galaxy yet{/if}).
-									</p>
-								{/if}
+								<!--
+									One colour language, no toggle: the points always say where a
+									sound comes from, the labels always say which bird. The old
+									species/provenance switch died when the species hue moved off
+									the points — it no longer changed anything real.
+								-->
+								<p class="note faint">
+									Point colour says where each sound comes from:
+									<b style:color="var(--documented)">documented</b> (authored inventory),
+									<b style:color="var(--unlabelled)">learned</b> (fitted to field audio),
+									<b style:color="var(--invented)">unidentified</b> (field audio with no
+									fitted identity — the candidate pool; per-point novelty flags are not in
+									this build yet),
+									<b style:color="var(--experimental)">unlabelled arrivals</b> (real audio,
+									no species tag, typed by similarity{#if !hasArrivals} — none in this
+									galaxy yet{/if}). Label colour says which bird.
+								</p>
 								<p class="note faint">
 									A point breathing grey without a knot is a syllable that was played but
 									has no cluster of its own — heard, not placed.
@@ -1677,7 +1694,7 @@ uv run birdy-pipeline build</pre>
 											<span
 												class="tally mono"
 												class:none={songCoverage.placed < 2}
-												title="{songCoverage.placed} of this call's {songCoverage.total} syllables have a place in the galaxy. The thread joins those and skips the rest rather than guessing at them; below two there is no thread to draw. It plays either way — the synthesis does not need the galaxy."
+												title={songCoverageHint}
 											>{songCoverage.placed}/{songCoverage.total}</span>
 										{/if}
 									</span>

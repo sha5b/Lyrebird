@@ -97,7 +97,7 @@ export const WAVE_SOURCES = 3;
  */
 export const SIZE_REFERENCE = 4.0;
 
-export function vertexShader(clusterCount: number, speciesCount: number): string {
+export function vertexShader(clusterCount: number): string {
 	return /* glsl */ `
 		#define WAVE_SOURCES ${WAVE_SOURCES}
 
@@ -105,13 +105,6 @@ export function vertexShader(clusterCount: number, speciesCount: number): string
 		attribute float aSeed;
 		attribute float aAct;
 		attribute float aSpecies;
-		/**
-		 * Where inside its own species this point sits: 0 at the species' core, 1 at its
-		 * edge — the point's true distance from the species' component-wise median
-		 * position, normalised by the species' own median distance. Drives the *slight*
-		 * lightness gradient inside a bird, never its hue.
-		 */
-		attribute float aHeat;
 		/** Which build this point joined in; see the point metadata's generation array. */
 		attribute float aBorn;
 		/** Provenance category: 0 documented, 1 learned, 2 candidate (assets.pointProvenance). */
@@ -137,13 +130,6 @@ export function vertexShader(clusterCount: number, speciesCount: number): string
 		 * a match, and silent pipeline work read as knots dancing for no reason.
 		 */
 		uniform float uLearning[${Math.max(1, clusterCount)}];
-		/**
-		 * One hue per species, indexed by aSpecies: the species heat field. Hue belongs
-		 * to the bird — every point of a species ramps toward the same colour — and the
-		 * only variation inside a bird is aHeat's slight lightness gradient. The hues
-		 * are id-hashed (see speciesColour in palette.ts), so they survive refits.
-		 */
-		uniform vec3 uSpeciesColor[${Math.max(1, speciesCount)}];
 		uniform float uTime;
 		uniform float uLevel;
 		uniform float uPointSize;
@@ -201,20 +187,11 @@ export function vertexShader(clusterCount: number, speciesCount: number): string
 		 * cancel like water rather than each playing at full strength independently.
 		 */
 		varying float vRipple;
-		/** This point's species hue (see uSpeciesColor). */
-		varying vec3 vSpeciesCol;
-		/** 0 at the species' core, 1 at its edge (see aHeat). */
-		varying float vHeat;
 
 		void main() {
 			vProv = aProv;
 			vOrphan = aOrphan;
 			vWave = aFront;
-			// A point with no species index (the corpus never ships one, but a partial
-			// asset could) falls back to a neutral grey rather than borrowing species 0's
-			// hue — the same discipline as the unassigned-cluster threshold below.
-			vSpeciesCol = aSpecies >= -0.5 ? uSpeciesColor[int(aSpecies + 0.5)] : vec3(0.62, 0.66, 0.71);
-			vHeat = aHeat;
 			// **A point can belong to no cluster, and that is a result, not a gap.**
 			//
 			// Density clustering leaves sounds in no dense region — too rare or too unlike
@@ -415,8 +392,6 @@ export const fragmentShader = /* glsl */ `
 	uniform float uOpacity;
 	/** Live pitch, 0..1 over the corpus's range. Shapes the gradient inside each mark. */
 	uniform float uPitch;
-	/** 1 in provenance colour mode, 0 in the default species/response mode. */
-	uniform float uProvMode;
 	/** Provenance category colours: authored inventory, fitted-to-field, unidentified,
 	 * and the unlabelled pseudo-species. */
 	uniform vec3 uProvDoc;
@@ -446,8 +421,6 @@ export const fragmentShader = /* glsl */ `
 	varying float vOrphan;
 	varying float vWave;
 	varying float vRipple;
-	varying vec3 vSpeciesCol;
-	varying float vHeat;
 
 	void main() {
 		vec2 uv = gl_PointCoord - 0.5;
@@ -500,26 +473,18 @@ export const fragmentShader = /* glsl */ `
 		// Nothing is hidden by this: the resembling clusters light exactly as brightly as
 		// they would have, and the reading panel still names them. Only the colour is
 		// withheld, and only from the points that did not earn it.
-		// **The species heat field: hue belongs to the bird, response moves lightness.**
-		//
-		// Every point of a species ramps toward the same hue — rest is a wash of the
-		// bird's colour, hot is the colour itself — so a lit knot reads as *that bird*
-		// answering, and neighbouring knots are told apart by hue before any label is
-		// read. Inside a bird the ONLY variation is aHeat's slight lightness gradient
-		// (±10 %, an RGB scale: hue and saturation hold; the core runs a little hotter
-		// than the edge). Hue never varies within a species — that was the explicit
-		// brief — and the only cross-hue gradients are the wave and the trajectory
-		// crossing between knots, and the accent easing between subjects.
-		//
-		// Provenance mode keeps its own rule on top of the same ramp: every point
-		// carries its class colour at REST (the 0.34 wash — high enough that the four
-		// classes stay told apart on the paper, low enough that a response still walks
-		// somewhere), and activation shifts TONE — brighter crest, darker trough via
-		// vRipple below — never hue. The accent is untouched: one meaning, as always.
-		vec3 spCol = vSpeciesCol * (1.1 - vHeat * 0.2);
+		// **The point cloud speaks provenance, always.** Every point rests as a wash of
+		// its class colour and ramps to the class colour itself as it responds — the
+		// class tint says *what kind of thing* this sound is (authored inventory,
+		// fitted-to-field, unidentified field audio, unlabelled arrival), and "which
+		// bird" is the labels' question, answered there in the species hue. The 0.34
+		// wash keeps the four classes told apart on the paper while leaving the
+		// response somewhere to walk to; activation shifts TONE — brighter crest,
+		// darker trough via vRipple below — never hue. The accent is untouched: it
+		// keeps meaning exactly one thing.
 		vec3 prov = vProv < 0.5 ? uProvDoc : (vProv < 1.5 ? uProvLearned : (vProv < 2.5 ? uProvCand : uProvArrivals));
-		vec3 ink = mix(spCol, prov, uProvMode);
-		vec3 rest = mix(mix(uSurface, spCol, 0.32), mix(uSurface, prov, 0.34), uProvMode);
+		vec3 ink = prov;
+		vec3 rest = mix(uSurface, prov, 0.34);
 		vec3 end = mix(ink, uAccent, clamp(vAccent, 0.0, 1.0));
 
 		// A chosen bird's points sit most of the way along their own ramp even at rest, so
@@ -577,10 +542,10 @@ export const fragmentShader = /* glsl */ `
 		float alpha =
 			uOpacity * mask * (0.55 + vAct * 0.45) * vFocus * (1.0 + 0.35 * vChosen) *
 			(1.0 - fog * 0.45) * (1.0 - 0.45 * vUnassigned) * vArrive;
-		// In provenance mode a resting point also gives up a quarter of its weight, so
-		// "this knot is answering" moves two channels at once — class colour to full
-		// brightness above, ink weight here — the way species mode's response does.
-		alpha *= mix(1.0, 0.75 + 0.25 * vAct, uProvMode);
+		// A resting point also gives up a quarter of its weight, so "this knot is
+		// answering" moves two channels at once — class colour to full brightness
+		// above, ink weight here.
+		alpha *= 0.75 + 0.25 * vAct;
 		// The dim half of the orphan pulse: it breathes the mark *down* against the
 		// paper, the opposite direction from a response.
 		alpha *= 1.0 - 0.55 * oPulse;

@@ -100,6 +100,26 @@ export interface Syllable {
 		alphaRel: number;
 		forcing: number;
 	};
+	/**
+	 * The second syringeal voice and its tracheal coupling (docs/15 §5; Laje & Mindlin
+	 * 2005, docs/13 B2). When present, the syllable renders two independently-gestured
+	 * sources — the syllable's contour drives the first voice, `contour`/`gamma` the
+	 * second — coupled through the shared tracheal pressure: each source injects
+	 * `betaInj · √ps · y/γ`, and the sum, plus one fractional-delay round trip
+	 * (`tracheaCm` one-way, reflection `refl`), acts back on both sources' restitution.
+	 * `level` is the second bronchus's share of the shared air-sac pressure; 0 is a
+	 * closed right side (the paper's single-source-plus-feedback case). When absent
+	 * the syllable renders exactly as it always has, and `two` stays the uncoupled
+	 * 7-cent shimmer (ignored when this block exists).
+	 */
+	voices?: {
+		contour: ContourPoint[];
+		gamma: number;
+		level: number;
+		tracheaCm: number;
+		refl: number;
+		betaInj: number;
+	};
 }
 
 export interface Song {

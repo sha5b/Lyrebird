@@ -36,12 +36,6 @@
 		 * shows where the work is happening rather than leaving it to a progress bar.
 		 */
 		learning?: number[];
-		/**
-		 * What the cloud's colour encodes: the default response/selection look, or a tint
-		 * by where each sound comes from (assets.pointProvenance). Species is the default
-		 * because position and focus already carry the bird; provenance is the opt-in.
-		 */
-		colorMode?: 'species' | 'provenance';
 	}
 
 	let {
@@ -52,8 +46,7 @@
 		speed = 1,
 		view,
 		spread = 1,
-		learning = [],
-		colorMode = 'species'
+		learning = []
 	}: Props = $props();
 
 	// The corpus never changes while the component is alive, so the buffers are built once
@@ -128,18 +121,6 @@
 		return s;
 	});
 
-	// One hue per species, in the same index order the aSpecies attribute uses — the
-	// lookup the shader's uSpeciesColor array is built from.
-	const speciesColours = untrack(() => {
-		const out: THREE.Vector3[] = [];
-		buildSpeciesIndex(assets).forEach((i, id) => {
-			const c = new THREE.Color(speciesColour(id));
-			out[i] = new THREE.Vector3(c.r, c.g, c.b);
-		});
-		return out;
-	});
-	const speciesCount = untrack(() => Math.max(1, speciesColours.length));
-
 	const geometry = untrack(() => {
 		const g = new THREE.BufferGeometry();
 		g.setAttribute('position', positionAttribute);
@@ -170,17 +151,15 @@
 	});
 
 	const material = new THREE.ShaderMaterial({
-		vertexShader: vertexShader(clusterCount, speciesCount),
+		vertexShader: vertexShader(clusterCount),
 		fragmentShader,
 		uniforms: {
 			uActivation: { value: new Float32Array(clusterCount) },
 			uSung: { value: new Float32Array(clusterCount) },
 			uLearning: { value: new Float32Array(clusterCount) },
-			uSpeciesColor: { value: speciesColours },
 			// The live accent: `accentNow` below is mutated in place each frame, and the
 			// renderer reads the colour object's channels when it uploads the uniform.
 			uAccent: { value: new THREE.Color(ACCENT) },
-			uProvMode: { value: untrack(() => (colorMode === 'provenance' ? 1 : 0)) },
 			uProvDoc: { value: new THREE.Color(PROV_DOCUMENTED) },
 			uProvLearned: { value: new THREE.Color(PROV_LEARNED) },
 			uProvCand: { value: new THREE.Color(PROV_CANDIDATE) },
@@ -237,10 +216,6 @@
 
 	$effect(() => {
 		material.uniforms.uFocus.value = focus;
-	});
-
-	$effect(() => {
-		material.uniforms.uProvMode.value = colorMode === 'provenance' ? 1 : 0;
 	});
 
 	$effect(() => {
@@ -328,55 +303,6 @@
 		}
 		geometry.setAttribute('aFront', frontAttribute);
 		geometry.setAttribute('aRadDir', new THREE.BufferAttribute(radDir, 3));
-
-		/**
-		 * The heat coordinate inside each species: the point's true distance from its
-		 * species' component-wise median position in the layout, normalised by the
-		 * species' own median distance and capped at twice it. 0 sits at the species'
-		 * core, 1 at its far edge; the shader maps it to a ±10 % lightness scale and
-		 * nothing else — the gradient inside a bird is its colour going slightly
-		 * hotter at the core, never a different hue. A species whose members all sit
-		 * on one spot (median distance ~0) gets the flat mid value rather than a
-		 * divide-by-zero gradient.
-		 */
-		const heat = new Float32Array(n).fill(0.5);
-		const speciesIndex = buildSpeciesIndex(assets);
-		const bySpecies = new Map<number, number[]>();
-		for (let i = 0; i < n; i++) {
-			const s = speciesIndex.get(assets.points.speciesId[i] ?? '') ?? -1;
-			if (s < 0) continue;
-			const list = bySpecies.get(s);
-			if (list) list.push(i);
-			else bySpecies.set(s, [i]);
-		}
-		const medianOf = (values: Float32Array): number => {
-			const sorted = Float32Array.from(values).sort();
-			return sorted[sorted.length >> 1] ?? 0;
-		};
-		for (const members of bySpecies.values()) {
-			const m = members.length;
-			const xs = new Float32Array(m);
-			const ys = new Float32Array(m);
-			const zs = new Float32Array(m);
-			for (let j = 0; j < m; j++) {
-				xs[j] = layout.positions[members[j] * 3];
-				ys[j] = layout.positions[members[j] * 3 + 1];
-				zs[j] = layout.positions[members[j] * 3 + 2];
-			}
-			const mx = medianOf(xs);
-			const my = medianOf(ys);
-			const mz = medianOf(zs);
-			const ds = new Float32Array(m);
-			for (let j = 0; j < m; j++) {
-				ds[j] = Math.hypot(xs[j] - mx, ys[j] - my, zs[j] - mz);
-			}
-			const md = medianOf(ds);
-			if (md < 1e-6) continue;
-			for (let j = 0; j < m; j++) {
-				heat[members[j]] = Math.min(1, ds[j] / (2 * md));
-			}
-		}
-		geometry.setAttribute('aHeat', new THREE.BufferAttribute(heat, 1));
 	});
 
 	/**

@@ -85,10 +85,16 @@ DEFAULT_RATIO = math.sqrt(2.4 / 1.4)  # ≈ 1.309
 DEFAULT_LEVEL = 0.7  # the second bronchus breathes the same sacs, a little weaker
 DEFAULT_TRACHEA_CM = 2.0  # Table I's L
 DEFAULT_REFL = 0.9  # Table I's gamma_refl
-#: Measured, not guessed — see the module note in `syrinx._voice_pair`. At this
-#: strength a two-voice syllable at ps ~ 1 carries pi at a few percent of ps: below
-#: the threshold where the sources quench each other outright, inside the regime
-#: where sum/difference lines and single-source period-doubling are measurable.
+#: Measured, not guessed. On a 120 ms two-voice syllable at ps ~ 0.85 (the parity
+#: fixture's parameters), the shared tracheal pressure runs at mean |pi| ~ 0.04 of
+#: peak ps with transients to ~0.2 — the paper's weak-coupling regime, and already
+#: enough to triple the difference-frequency line |f_a - f_b| and quadruple the
+#: subharmonic at f_a/2 against the uncoupled render. The ceiling of the regime is
+#: visible in the same sweep: at betaInj = 0.25, pi reaches ~4x ps and the
+#: fundamental collapses into the period-doubled regime (f_a/2 carries 4x the
+#: fundamental's magnitude) — strong coupling, where the implicit terms the
+#: approximation drops are no longer small. The default sits at 0.05: measurable
+#: nonlinearities, nowhere near quenching.
 DEFAULT_BETA_INJ = 0.05
 
 

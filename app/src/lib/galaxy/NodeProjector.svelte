@@ -11,9 +11,9 @@
 	import { T, useTask, useThrelte } from '@threlte/core';
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
-	import { buildSpeciesIndex } from '$lib/data/assets';
+	import { buildSpeciesIndex, knotHeat } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
-	import { MONO_HOT, speciesColour } from './palette';
+	import { speciesColourScaled } from './palette';
 	import type { LayoutView } from './layouts';
 	import type { VisualSignal } from './shaders';
 
@@ -41,6 +41,16 @@
 	});
 	/** Has a documented function: worth a tag before an unnamed field cluster is. */
 	const namedOf = untrack(() => centroids.map((c) => Boolean(c.function)));
+	/**
+	 * The tag's hue, precomputed per knot: the bird's id-hashed colour with the heat
+	 * rule's slight lightness shift (see knotColour in NodeLabels — same mapping, kept
+	 * here because the projector writes --accent every frame and a string rebuild per
+	 * frame per tag would churn).
+	 */
+	const knotColour = untrack(() => {
+		const heat = knotHeat(assets);
+		return centroids.map((c, i) => speciesColourScaled(c.speciesId, 0.9 + (heat[i] ?? 0.5) * 0.2));
+	});
 
 	let anchor = $state<THREE.Object3D | undefined>();
 
@@ -193,17 +203,12 @@
 			node.style.zIndex = String(Math.round((1 - (p.z + 1) / 2) * 1000) + (hot ? 2000 : 0));
 			node.style.setProperty('--hot', open ? '1' : '0');
 			node.style.setProperty('--act', shown[i].toFixed(3));
-			// A tag wears the accent on the same rule its knot does: the selected bird's
-			// tags, or — with nothing selected — whichever tag is currently responding. Any
-			// other tag is ink, so the sheet never claims more than one thing at a time.
-			// The accent's *hue* is the subject bird's own (see `speciesColour`): the tag
-			// and the knot its cloud is lighting say the same thing in the same colour,
-			// and the name is still there in words — hue is presentation, not the carrier.
-			const live = focus >= 0 ? speciesOf[i] === focus : hot;
-			node.style.setProperty(
-				'--accent',
-				live ? speciesColour(centroids[i].speciesId) : MONO_HOT
-			);
+			// Every tag wears its bird's hue, all the time — hue answers "which bird" on
+			// the labels, and the per-knot lightness marks the knot's place inside its
+			// own species (core a touch darker, edge a touch lighter). Hot still decides
+			// whether the tag is open; the colour no longer changes when it opens, so an
+			// answering tag does not snap — it deepens through the CSS mix on --hot.
+			node.style.setProperty('--accent', knotColour[i]);
 
 			// The one piece of text that changes while running. Written only when the
 			// rounded percentage actually moves, and only for a label that is open.

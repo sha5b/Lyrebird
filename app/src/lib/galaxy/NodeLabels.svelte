@@ -13,24 +13,18 @@
 	 */
 	import { untrack } from 'svelte';
 	import { confidenceLabel } from '$lib/lang/translate';
-	import { centroidProvenance, speciesById } from '$lib/data/assets';
-	import { speciesColour } from './palette';
+	import { knotHeat, speciesById } from '$lib/data/assets';
+	import { speciesColourScaled } from './palette';
 	import type { BirdyAssets, Centroid } from '$lib/data/types';
 
 	interface Props {
 		assets: BirdyAssets;
 		/** Written into by this component, read by NodeProjector. Plain array, not state. */
 		elements: (HTMLElement | null)[];
-		/**
-		 * What the tag dot's colour encodes. The default keeps the dot on the cluster's
-		 * confidence, as it always has; `provenance` re-tints it to the same three
-		 * categories the cloud is showing, so tag and knot say the same thing.
-		 */
-		colorMode?: 'species' | 'provenance';
 		onpick?: (cluster: number) => void;
 	}
 
-	let { assets, elements, colorMode = 'species', onpick }: Props = $props();
+	let { assets, elements, onpick }: Props = $props();
 
 	// The corpus does not change while this is mounted, so the tags are built once.
 	const centroids = untrack(() => assets.centroids.items);
@@ -39,6 +33,17 @@
 	// ρ and r figures next to it measure that extent, so the tag says which it is.
 	const evidenceLabel = (c: Centroid): string =>
 		c.sources ? ((c.sources['field'] ?? 0) > 0 ? 'measured' : 'invented') : '';
+
+	/**
+	 * The tag's hue is the bird's hue — labels are where "which bird" is answered, and
+	 * the points no longer carry it. The per-knot lightness is the heat rule moved off
+	 * the points: the species' core knot carries the hue a touch darker (0.9), its far
+	 * edge a touch lighter (1.1), same hue and saturation throughout — a slight
+	 * gradient of the label colour, never a different one.
+	 */
+	const heat = untrack(() => knotHeat(assets));
+	const knotColour = (c: Centroid, i: number): string =>
+		speciesColourScaled(c.speciesId, 0.9 + (heat[i] ?? 0.5) * 0.2);
 </script>
 
 <div class="layer" aria-hidden="true">
@@ -47,16 +52,7 @@
 		<div class="tag" bind:this={elements[i]}>
 			<button
 				class="dot"
-				class:conf-experimental={colorMode !== 'provenance' && centroid.confidence === 'experimental'}
-				class:conf-documented={colorMode !== 'provenance' && centroid.confidence === 'documented'}
-				class:conf-inferred={colorMode !== 'provenance' && centroid.confidence === 'inferred'}
-				class:conf-invented={colorMode !== 'provenance' && centroid.confidence === 'invented'}
-				class:conf-unlabelled={colorMode !== 'provenance' && (!centroid.confidence || centroid.confidence === 'unlabelled')}
-				class:prov-documented={colorMode === 'provenance' && centroidProvenance(centroid) === 0}
-				class:prov-learned={colorMode === 'provenance' && centroidProvenance(centroid) === 1}
-				class:prov-candidate={colorMode === 'provenance' && centroidProvenance(centroid) === 2}
-				class:prov-arrivals={colorMode === 'provenance' && centroidProvenance(centroid) === 3}
-				style:color={colorMode === 'provenance' ? undefined : speciesColour(centroid.speciesId)}
+				style:color={knotColour(centroid, i)}
 				type="button"
 				tabindex="-1"
 				aria-label={centroid.label}
@@ -115,7 +111,9 @@
 	}
 
 	/* Everything that reacts is driven by `--hot` through calc/color-mix rather than by a
-	   class, so the transitions are the browser's and no state has to cross into Svelte. */
+	   class, so the transitions are the browser's and no state has to cross into Svelte.
+	   The dot's own colour is set inline per tag: the bird's hue, with the per-knot
+	   lightness shift (see knotColour above). */
 	.dot {
 		flex: none;
 		width: 7px;
@@ -131,39 +129,6 @@
 		transition:
 			transform 120ms ease,
 			background 120ms ease;
-	}
-
-	.conf-experimental {
-		color: var(--experimental);
-	}
-	.conf-documented {
-		color: var(--documented);
-	}
-	.conf-inferred {
-		color: var(--inferred);
-	}
-	.conf-invented {
-		color: var(--invented);
-	}
-	.conf-unlabelled {
-		color: var(--unlabelled);
-	}
-
-	/* The provenance mode's four categories — the same hues the cloud tints by,
-	   which are the interface's existing confidence colours. */
-	.prov-documented {
-		color: var(--documented);
-	}
-	.prov-learned {
-		color: var(--unlabelled);
-	}
-	.prov-candidate {
-		color: var(--invented);
-	}
-	/* The unlabelled pseudo-species gets --experimental's green: a real interface
-	   hue, and the one of the five not already speaking for another category. */
-	.prov-arrivals {
-		color: var(--experimental);
 	}
 
 	.card {
@@ -198,7 +163,14 @@
 	.name {
 		font-size: 0.72rem;
 		letter-spacing: 0.01em;
-		color: color-mix(in srgb, var(--ink) calc(var(--hot, 0) * 100%), var(--ink-dim));
+		/* The bird's hue, whispering at rest and full when the knot answers: the tag
+		   names the species in words AND carries its colour, so hue is never the sole
+		   carrier of "which bird". */
+		color: color-mix(
+			in srgb,
+			var(--accent, var(--ink)) calc(30% + var(--hot, 0) * 70%),
+			var(--ink-dim)
+		);
 		transition: color 140ms ease;
 		/* Learned labels carry the whole provenance sentence ("fulica_atra - learned
 		   L01 · 1468 Hz · 69 ms"): far past the 15rem card cap on one line. The old

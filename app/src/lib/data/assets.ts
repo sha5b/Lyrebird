@@ -359,25 +359,44 @@ export function pointProvenance(assets: BirdyAssets): Float32Array {
 }
 
 /**
- * The same question for a cluster tag. The pseudo-species and documented confidence
- * win outright; among fitted knots, an `anchored`/`unknown`/`mixed` verdict means
- * the identity is inherited or contested rather than fitted, which is the candidate
- * claim.
+ * Where each knot sits inside its own species, for the label hue's slight lightness
+ * variation (speciesColourScaled). Same rule the point cloud's aHeat used before the
+ * hue moved to the labels: the knot's true distance from its species' component-wise
+ * median knot position, normalised by the species' own median knot distance and
+ * capped at twice it. 0 is the species' core knot, 1 its far edge; a species with a
+ * single knot — or all its knots on one spot — gets the flat mid value.
  */
-export function centroidProvenance(centroid: Centroid): number {
-	if (isUnlabelledArrival(centroid.speciesId, centroid.syllableId ?? '')) {
-		return PROVENANCE.unlabelled;
+export function knotHeat(assets: BirdyAssets): Float32Array {
+	const items = assets.centroids.items;
+	const out = new Float32Array(items.length).fill(0.5);
+	const bySpecies = new Map<string, number[]>();
+	items.forEach((c, i) => {
+		const list = bySpecies.get(c.speciesId);
+		if (list) list.push(i);
+		else bySpecies.set(c.speciesId, [i]);
+	});
+	const medianOf = (values: number[]): number => {
+		const sorted = [...values].sort((a, b) => a - b);
+		return sorted[sorted.length >> 1] ?? 0;
+	};
+	for (const members of bySpecies.values()) {
+		const mx = medianOf(members.map((i) => items[i].position[0] ?? 0));
+		const my = medianOf(members.map((i) => items[i].position[1] ?? 0));
+		const mz = medianOf(members.map((i) => items[i].position[2] ?? 0));
+		const ds = members.map((i) =>
+			Math.hypot(
+				(items[i].position[0] ?? 0) - mx,
+				(items[i].position[1] ?? 0) - my,
+				(items[i].position[2] ?? 0) - mz
+			)
+		);
+		const md = medianOf(ds);
+		if (md < 1e-6) continue;
+		members.forEach((i, j) => {
+			out[i] = Math.min(1, ds[j] / (2 * md));
+		});
 	}
-	if (
-		centroid.confidence === 'documented' ||
-		centroid.confidence === 'experimental' ||
-		centroid.confidence === 'inferred'
-	) {
-		return PROVENANCE.documented;
-	}
-	const kind = centroid.anchor?.kind;
-	if (kind === 'anchored' || kind === 'unknown' || kind === 'mixed') return PROVENANCE.candidate;
-	return PROVENANCE.learned;
+	return out;
 }
 
 /**

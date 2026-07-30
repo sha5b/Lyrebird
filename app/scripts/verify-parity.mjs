@@ -87,6 +87,44 @@ const CASES = [
 			amDepth: 0.9,
 			respiration: { tauX: 0.2, tauP: 0.05, alphaI: 0.2, alphaRel: 0.1, forcing: 80 }
 		}
+	},
+	// docs/15 §5: two independently-gestured sources coupled through the shared
+	// tracheal pressure. The second voice has its own contour and gamma, so the two
+	// fundamentals are genuinely independent; betaInj carries the coupling.
+	{
+		name: 'voices',
+		syllable: {
+			...base,
+			voices: {
+				contour: [
+					[0.0, 2350],
+					[1.0, 2100]
+				],
+				gamma: 13800,
+				level: 0.7,
+				tracheaCm: 2.0,
+				refl: 0.9,
+				betaInj: 0.08
+			}
+		}
+	},
+	// One active side: the right bronchus closed (level 0), so the shared trachea
+	// feeds the active source its own pressure back and nothing else — Laje &
+	// Mindlin's single-source period-doubling configuration.
+	{
+		name: 'voices one active',
+		syllable: {
+			...base,
+			dur: 0.2,
+			voices: {
+				contour: [[0.0, 2400]],
+				gamma: 14000,
+				level: 0.0,
+				tracheaCm: 2.0,
+				refl: 0.9,
+				betaInj: 0.12
+			}
+		}
 	}
 ];
 

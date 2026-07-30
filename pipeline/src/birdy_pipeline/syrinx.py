@@ -1382,15 +1382,15 @@ def _voice_pair(
     is dropped from the mix — Laje & Mindlin's single-source-plus-feedback case, the
     configuration their period-doubling result lives in.
 
-    **The measured strength of the coupling.** At the default `betaInj = 0.05`, a
-    120 ms two-voice syllable at ps ~ 1 carries `pi` at ~2-6 % of ps (peak |pi| /
-    peak ps measured over the parity fixtures' parameter ranges), rising to ~15 % at
-    `betaInj = 0.25` — inside the paper's weak-coupling regime (their beta/tau ratio
-    is 0.15) and already enough to put sum/difference sidebands at multiples of the
-    two fundamentals' separation and to period-double a lone source. That is the
-    paper's own verdict — weak but consequential — and it is why the default sits
-    where it does: below the strength where the sources quench each other, inside the
-    regime where the nonlinearities the feature exists for are measurable.
+    **The measured strength of the coupling.** Swept on a 120 ms two-voice syllable
+    at ps ~ 0.85 (the parity fixture's parameters), the default `betaInj = 0.05` puts
+    the shared pressure at mean |pi| ~ 0.04 of peak ps with transients to ~0.2 —
+    weak, and consequential: the difference-frequency line |f_a - f_b| triples and
+    the subharmonic at f_a/2 quadruples against the uncoupled render. At
+    `betaInj = 0.25` pi reaches ~4x ps and the fundamental collapses into the
+    period-doubled regime — the strong-coupling boundary the paper's small-coupling
+    approximation is no longer valid past, and the reason the ceiling in
+    `twovoice.py` is a stability guard rather than a fit bound.
     """
     t_norm = plan.t / (plan.n / sample_rate)
     f0_b = contour_f0(voices.contour, t_norm)

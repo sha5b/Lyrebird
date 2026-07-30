@@ -106,6 +106,73 @@ const MINI_BREATH_MIN_S = 0.012; // below this a gap is a pulse edge, not a brea
 const SILENCE_FRACTION = 0.05; // of the command's maximum: what "silence" means
 
 /**
+ * The two-voice coupling of Laje & Mindlin 2005 — docs/15 §5, docs/13 B2, mirrored
+ * from `twovoice.py` and `syrinx._ode_source_coupled`. A syllable carrying a
+ * `voices` block renders two independently-gestured sources — the syllable's contour
+ * drives the first voice, the block's own contour and gamma the second — coupled
+ * through the shared tracheal pressure pi(t):
+ *
+ *   pi[i]      = betaInj * (sqrt(ps_a)*y_a/gamma_a + sqrt(ps_b)*y_b/gamma_b)
+ *                - refl * pi(i - T),        T = 2L/c (fractional samples)
+ *   alpha_j(i) = alpha_j[i] - 0.40 * pi[i]
+ *
+ * Each source's injection is velocity times root pressure — the low-frequency
+ * inertive limit of the paper's eqs. 62-67, the same result that put sqrt(ps) at the
+ * tract input on the respiration path — and the back-action lands on `alpha`,
+ * because in this model the restitution constant IS the air-sac pressure. The
+ * weak-coupling approximation (Table I: beta 1.5e3 against 1/tau 1e4) is what keeps
+ * the integration plain explicit Euler, refreshed once per output sample from the
+ * states at the top of the sample, exactly the way alpha and beta are per-sample
+ * constants on both sides of the contract. A `level` of 0 is a closed right
+ * bronchus: it injects nothing (sqrt(0) * y = 0) and is dropped from the mix, while
+ * the shared trachea still feeds the active side its own pressure back — the
+ * paper's single-source period-doubling configuration. Ranges are `twovoice.py`'s.
+ */
+const TWOVOICE_LEVEL_MAX = 1.0;
+const TWOVOICE_TRACHEA_CM_MIN = 0.8; // keeps the round trip above two samples at 48 kHz
+const TWOVOICE_TRACHEA_CM_MAX = 20.0;
+const TWOVOICE_REFL_MAX = 0.95;
+const TWOVOICE_BETA_INJ_MAX = 0.5;
+const SOUND_SPEED_CM_S = 34400.0;
+
+/**
+ * A syllable's `voices` block, clamped into `twovoice.py`'s ranges, or null — in
+ * which case the syllable renders single-voiced, bit-identically to before. Contour
+ * points are sorted by time fraction and floored at 1 Hz, so the log-interpolation
+ * both renderers do cannot disagree about a degenerate point. Mirrors
+ * `twovoice.parse`.
+ * @param {any} raw
+ * @returns {{contour: ContourPoint[], gamma: number, level: number, tracheaCm: number, refl: number, betaInj: number} | null}
+ */
+function parseTwoVoice(raw) {
+	if (!raw || typeof raw !== 'object' || !Array.isArray(raw.contour) || !raw.contour.length) {
+		return null;
+	}
+	const v = [raw.gamma, raw.level, raw.tracheaCm, raw.refl, raw.betaInj].map(Number);
+	if (v.some((x) => !Number.isFinite(x))) return null;
+	/** @type {(x: number, lo: number, hi: number) => number} */
+	const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+	/** @type {ContourPoint[]} */
+	const contour = [];
+	for (const p of raw.contour) {
+		if (!Array.isArray(p) || p.length < 2) return null;
+		const f = Number(p[0]);
+		const hz = Number(p[1]);
+		if (!Number.isFinite(f) || !Number.isFinite(hz)) return null;
+		contour.push([f, Math.max(1, hz)]);
+	}
+	contour.sort((a, b) => a[0] - b[0]);
+	return {
+		contour,
+		gamma: clamp(v[0], 1200, 150000),
+		level: clamp(v[1], 0, TWOVOICE_LEVEL_MAX),
+		tracheaCm: clamp(v[2], TWOVOICE_TRACHEA_CM_MIN, TWOVOICE_TRACHEA_CM_MAX),
+		refl: clamp(v[3], 0, TWOVOICE_REFL_MAX),
+		betaInj: clamp(v[4], 0, TWOVOICE_BETA_INJ_MAX)
+	};
+}
+
+/**
  * A syllable's `respiration` block, clamped into the Table S2 ranges, or null — in
  * which case the syllable renders on the envelope path, bit-identically to before.
  * Mirrors `respiration.parse`.
@@ -468,6 +535,22 @@ class Voice {
 		 * @type {{ps: Float64Array, drive: Float64Array} | null}
 		 */
 		this.resp = null;
+		/**
+		 * The parsed second voice of docs/15 §5, or null on the single-voice path.
+		 * `gammaB`/`dtB`/`oversampleB` are the second oscillator's own time-scale;
+		 * `piRing` is the shared tracheal pressure's fractional-delay line (the
+		 * round trip T = 2L/c), indexed by sample since syllable start, mirroring
+		 * the ring in `syrinx._ode_source_coupled`.
+		 * @type {{contour: ContourPoint[], gamma: number, level: number, tracheaCm: number, refl: number, betaInj: number} | null}
+		 */
+		this.voices = null;
+		this.gammaB = CALIBRATION_GAMMA;
+		this.oversampleB = 16;
+		this.dtB = 1 / (48000 * 16);
+		this.piDelay = 0;
+		this.piRingLen = 2;
+		/** @type {Float64Array} */
+		this.piRing = new Float64Array(2);
 		this.gamma = CALIBRATION_GAMMA;
 		this.oversample = 16;
 		this.dt = 1 / (48000 * 16);
@@ -532,6 +615,22 @@ class Voice {
 		}
 		this.roughCoeff = Math.exp((-2 * Math.PI * ROUGH_LP_HZ) / sampleRate);
 		this.roughScale = roughStdGain(sampleRate);
+
+		// docs/15 §5: the second voice's own time-scale and the shared trachea's
+		// fractional-delay ring, or null and the syllable renders single-voiced as it
+		// always has. The ring starts at zero — silence before the bird — exactly as
+		// the offline kernel's does, and two slots past the delay are enough (the
+		// 0.8 cm floor keeps the delay above two samples, so a read never touches the
+		// slot being written).
+		this.voices = parseTwoVoice(syllable.voices);
+		if (this.voices) {
+			this.gammaB = this.voices.gamma;
+			this.oversampleB = oversampleForGamma(this.gammaB, sampleRate);
+			this.dtB = 1 / (sampleRate * this.oversampleB);
+			this.piDelay = (2 * this.voices.tracheaCm * sampleRate) / SOUND_SPEED_CM_S;
+			this.piRingLen = Math.floor(this.piDelay) + 2;
+			this.piRing = new Float64Array(this.piRingLen);
+		}
 	}
 
 	/**
@@ -749,13 +848,20 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 	 * @param {number} pressure drives the turbulence gate
 	 * @param {number} drive √ps at the tract input (docs/15 §1); exactly 1 on the
 	 *   envelope path, where multiplying by it changes nothing
+	 * @param {number} [g] time-scale override — the second voice of docs/15 §5 runs at
+	 *   its own gamma; defaults to the syllable's, which keeps the single-voice and
+	 *   `two: true` paths bit-identical
+	 * @param {number} [dt]
+	 * @param {number} [oversample]
 	 * @returns {number}
 	 */
-	stepOsc(voice, index, alpha, beta, ampPP, pressure, drive) {
-		const g = voice.gamma;
+	stepOsc(voice, index, alpha, beta, ampPP, pressure, drive, g = 0, dt = 0, oversample = 0) {
+		if (g === 0) {
+			g = voice.gamma;
+			dt = voice.dt;
+			oversample = voice.oversample;
+		}
 		const g2 = g * g;
-		const dt = voice.dt;
-		const oversample = voice.oversample;
 		let x = voice.x[index];
 		let y = voice.y[index];
 		for (let s = 0; s < oversample; s++) {
@@ -929,14 +1035,22 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 				// positive alpha is the oscillating side of the threshold here (§8.1)
 				const alpha = 0.05 + 0.4 * pressure;
 
+				// docs/15 §5: the second voice's own contour, per sample — the tract
+				// coefficient block and the coupled branch both need it. Its tract band
+				// tracks ITS f0, the way `two: true`'s second band tracks the detuned one.
+				const coupled = voice.voices;
+				const f0b = coupled ? this.contourAt(coupled.contour, u) : 0;
+
 				if ((sampleIndex & (FILTER_UPDATE - 1)) === 0) {
 					voice.tract[0].setBandpass(f0, tractQ, sampleRate);
-					if (twoVoices) voice.tract[1].setBandpass(f0 * DETUNE_TWO, tractQ, sampleRate);
+					if (coupled) voice.tract[1].setBandpass(f0b, tractQ, sampleRate);
+					else if (twoVoices) voice.tract[1].setBandpass(f0 * DETUNE_TWO, tractQ, sampleRate);
 					if (harmonic > 0) {
 						// The harmonic band is "a second tract band at 2*f0" (§8.1) — the same Q as
 						// the tract, not a widened one. The 0.8 factor here was local invention.
 						voice.tractHarm[0].setBandpass(f0 * 2, tractQ, sampleRate);
-						if (twoVoices) voice.tractHarm[1].setBandpass(f0 * 2 * DETUNE_TWO, tractQ, sampleRate);
+						if (coupled) voice.tractHarm[1].setBandpass(f0b * 2, tractQ, sampleRate);
+						else if (twoVoices) voice.tractHarm[1].setBandpass(f0 * 2 * DETUNE_TWO, tractQ, sampleRate);
 					}
 				}
 
@@ -947,28 +1061,85 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 				// dynamics rather than as noise laid over the top.
 				const betaClean = this.betaForF0(f0, pressure, voice.gamma);
 				const ampA = this.ampPP(alpha, betaClean, pressure);
-				const betaA = clampBeta(betaClean * voice.roughFactor(0));
-				const source = this.stepOsc(voice, 0, alpha, betaA, ampA, pressure, drive);
-				let filtered = voice.tract[0].process(source);
-				if (harmonic > 0) filtered += harmonic * 0.5 * voice.tractHarm[0].process(source);
-				const bankA = voice.formantFilters[0];
-				for (let k = 0; k < bankA.length; k++) {
-					filtered += voice.formants[k][2] * bankA[k].process(source);
-				}
-				let sample = filtered;
-
-				if (twoVoices) {
-					const betaCleanB = this.betaForF0(f0 * DETUNE_TWO, pressure, voice.gamma);
-					const ampB = this.ampPP(alpha, betaCleanB, pressure);
-					const betaB = clampBeta(betaCleanB * voice.roughFactor(1));
-					const sourceB = this.stepOsc(voice, 1, alpha, betaB, ampB, pressure, drive);
-					let filteredB = voice.tract[1].process(sourceB);
-					if (harmonic > 0) filteredB += harmonic * 0.5 * voice.tractHarm[1].process(sourceB);
-					const bankB = voice.formantFilters[1];
-					for (let k = 0; k < bankB.length; k++) {
-						filteredB += voice.formants[k][2] * bankB[k].process(sourceB);
+				let sample;
+				if (coupled) {
+					// docs/15 §5: the shared tracheal pressure, from the oscillator states
+					// at the TOP of the sample — explicit Euler, the offline kernel's exact
+					// order (`syrinx._ode_source_coupled`). One pair of air sacs feeds both
+					// bronchi, so the second voice's pressure is the first's scaled by
+					// `level`; the coupling then moves each side's alpha, because the
+					// restitution constant IS the air-sac pressure.
+					const pressureB = Math.min(1.4, Math.max(0, pressure * coupled.level));
+					const gpos = sampleIndex - voice.piDelay;
+					let delayed = 0;
+					if (gpos >= 0) {
+						const i0 = Math.floor(gpos);
+						const frac = gpos - i0;
+						delayed =
+							voice.piRing[i0 % voice.piRingLen] * (1 - frac) +
+							voice.piRing[(i0 + 1) % voice.piRingLen] * frac;
 					}
-					sample = 0.5 * sample + 0.5 * filteredB;
+					const pi =
+						coupled.betaInj *
+							(Math.sqrt(pressure) * (voice.y[0] / voice.gamma) +
+								Math.sqrt(pressureB) * (voice.y[1] / voice.gammaB)) -
+						coupled.refl * delayed;
+					voice.piRing[sampleIndex % voice.piRingLen] = pi;
+					const alphaB = 0.05 + 0.4 * pressureB;
+
+					const betaA = clampBeta(betaClean * voice.roughFactor(0));
+					const sourceA = this.stepOsc(voice, 0, alpha - 0.4 * pi, betaA, ampA, pressure, drive);
+					let filteredA = voice.tract[0].process(sourceA);
+					if (harmonic > 0) filteredA += harmonic * 0.5 * voice.tractHarm[0].process(sourceA);
+					const bankA = voice.formantFilters[0];
+					for (let k = 0; k < bankA.length; k++) {
+						filteredA += voice.formants[k][2] * bankA[k].process(sourceA);
+					}
+					sample = filteredA;
+
+					if (coupled.level > 0) {
+						// A closed right bronchus (level 0) injects nothing — sqrt(0)*y = 0 —
+						// and is not heard: the single-source-plus-feedback case. Its
+						// oscillator need not advance then; its state never reaches pi.
+						const betaCleanB = this.betaForF0(f0b, pressureB, voice.gammaB);
+						const ampB = this.ampPP(alphaB, betaCleanB, pressureB);
+						const betaB = clampBeta(betaCleanB * voice.roughFactor(1));
+						const sourceB = this.stepOsc(
+							voice, 1, alphaB - 0.4 * pi, betaB, ampB, pressureB, drive,
+							voice.gammaB, voice.dtB, voice.oversampleB
+						);
+						let filteredB = voice.tract[1].process(sourceB);
+						if (harmonic > 0) filteredB += harmonic * 0.5 * voice.tractHarm[1].process(sourceB);
+						const bankB = voice.formantFilters[1];
+						for (let k = 0; k < bankB.length; k++) {
+							filteredB += voice.formants[k][2] * bankB[k].process(sourceB);
+						}
+						sample = 0.5 * sample + 0.5 * filteredB;
+					}
+				} else {
+					const betaA = clampBeta(betaClean * voice.roughFactor(0));
+					const source = this.stepOsc(voice, 0, alpha, betaA, ampA, pressure, drive);
+					let filtered = voice.tract[0].process(source);
+					if (harmonic > 0) filtered += harmonic * 0.5 * voice.tractHarm[0].process(source);
+					const bankA = voice.formantFilters[0];
+					for (let k = 0; k < bankA.length; k++) {
+						filtered += voice.formants[k][2] * bankA[k].process(source);
+					}
+					sample = filtered;
+
+					if (twoVoices) {
+						const betaCleanB = this.betaForF0(f0 * DETUNE_TWO, pressure, voice.gamma);
+						const ampB = this.ampPP(alpha, betaCleanB, pressure);
+						const betaB = clampBeta(betaCleanB * voice.roughFactor(1));
+						const sourceB = this.stepOsc(voice, 1, alpha, betaB, ampB, pressure, drive);
+						let filteredB = voice.tract[1].process(sourceB);
+						if (harmonic > 0) filteredB += harmonic * 0.5 * voice.tractHarm[1].process(sourceB);
+						const bankB = voice.formantFilters[1];
+						for (let k = 0; k < bankB.length; k++) {
+							filteredB += voice.formants[k][2] * bankB[k].process(sourceB);
+						}
+						sample = 0.5 * sample + 0.5 * filteredB;
+					}
 				}
 
 				// DC block, then tracheal roll-off

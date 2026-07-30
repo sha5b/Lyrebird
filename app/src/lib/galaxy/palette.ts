@@ -58,34 +58,51 @@ export const PROV_CANDIDATE = '#b45309';
 export const PROV_ARRIVALS = '#0b7a55';
 
 /**
- * A stable hue per species, for the *moving* accent only.
+ * A stable hue per species, for the *labels* of the galaxy.
  *
  * This needs a defence, because the note at the top of this file argues against species
  * hues, and it still stands: on a static scatter, hue cannot identify a hundred species,
- * and pretending it can is how the old islands view lied. What the accent does is a
- * different job. It marks the current *subject* — the bird that is singing or selected,
- * one at a time — and letting that mark take the subject's hue is presentation, not
- * identification: nobody is asked to learn the hue, the tag still names the bird in
- * words, and position still says where it lives. The gradient between hues as the
- * subject changes is what makes "the subject changed" visible without a snap.
+ * and pretending it can is how the old islands view lied. So the POINTS do not wear
+ * species hues — they wear their provenance class, always. The hue lives on the label:
+ * the tag dot, the tag name, the trajectory thread, the accent, and nowhere else. Hue
+ * answers "which bird", the class tint answers "what kind of thing" — and a label is
+ * where "which bird" is a question with a text answer right next to it, so the hue is
+ * presentation, never the sole carrier.
  *
  * The hue is a hash of the species id, not an index into the inventory: learned ids
  * renumber across refits, and a colour that silently moved between two birds after a
  * rebuild would be a claim nobody made. Hashing keeps a bird's hue stable across
  * rebuilds and across machines. Lightness is held at 38 % so every hue keeps enough
  * contrast against the paper to read as a mark, and stays clear of the ink (16 %) the
- * rest of the cloud is drawn in.
+ * rest of the interface is drawn in.
  */
-export function speciesColour(id: string): string {
+export function speciesHue(id: string): number {
 	// FNV-1a, then a golden-angle turn from the hash so near hashes still land apart.
 	let h = 2166136261;
 	for (let i = 0; i < id.length; i++) {
 		h ^= id.charCodeAt(i);
 		h = Math.imul(h, 16777619);
 	}
-	const hue = ((h >>> 0) * 137.508) % 360;
+	return ((h >>> 0) * 137.508) % 360;
+}
+
+export function speciesColour(id: string): string {
 	// Comma form, not the modern space form: THREE's Color.setStyle only parses the
 	// comma grammar (the space form is silently ignored and reads as white).
-	return `hsl(${hue.toFixed(1)}, 58%, 38%)`;
+	return `hsl(${speciesHue(id).toFixed(1)}, 58%, 38%)`;
 }
+
+/**
+ * The bird's hue with its lightness shifted a little — the only variation allowed
+ * inside a species. Used for the bird's knots and songs, so two knots of one bird are
+ * the same colour at slightly different depths rather than two colours: scale 0.9 is
+ * the species' core knot (a touch darker, more ink), 1.1 its far edge. Anything past
+ * ±20 % would start reading as a different bird, which is exactly what the mapping
+ * forbids; the clamp keeps a bad input from inventing one.
+ */
+export function speciesColourScaled(id: string, lightScale: number): string {
+	const scale = Math.min(1.2, Math.max(0.8, lightScale));
+	return `hsl(${speciesHue(id).toFixed(1)}, 58%, ${(38 * scale).toFixed(1)}%)`;
+}
+
 
