@@ -635,6 +635,11 @@ def extend_build(
             )
         else:
             shutil.copyfile(Path(inventory_path), out_dir / "inventory.json")
+            # The app's lazy view must track the whole file, or a grow silently
+            # strands the shards of every changed species (see galaxy.py's writer).
+            from .galaxy import _write_inventory_shards
+
+            _write_inventory_shards(out_dir, json.loads(Path(inventory_path).read_text()))
             inventory_copied = True
 
     manifest.update(

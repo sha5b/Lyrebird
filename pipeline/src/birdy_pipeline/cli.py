@@ -748,6 +748,53 @@ def cmd_sources_fetch(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_subset(args: argparse.Namespace) -> int:
+    """Write a debug store holding the N biggest species, recordings whole.
+
+    The debug cycle the user asked for: `subset --species 100` → `learn` → `build`
+    on the subset proves the mechanics in minutes, and only then does the full run
+    happen. The subset keeps each chosen species complete — every syllable, every
+    recording's metadata and descriptor, the descriptor strata — because a partial
+    species would test a store shape the full run never has. Stream statistics are
+    the parent store's (they report on the harvest stream, not on this slice).
+    """
+    store = harvest.HarvestStore(Path(args.store))
+    if not store.syllables:
+        log(f"{store.root} holds no syllable observations")
+        return 2
+    counts: dict[str, int] = {}
+    for o in store.syllables:
+        counts[o.species_id] = counts.get(o.species_id, 0) + 1
+    keep = set(sorted(counts, key=lambda s: -counts[s])[: args.species])
+    out = Path(args.out)
+    if out.resolve() == Path(args.store).resolve():
+        log("a subset cannot overwrite its source store")
+        return 2
+
+    sub = harvest.HarvestStore(out)
+    sub.strata = {sid: store.strata[sid] for sid in keep if sid in store.strata}
+    sub.syllables = [o for o in store.syllables if o.species_id in keep]
+    sub.recordings = {
+        rid: info for rid, info in store.recordings.items()
+        if info.get("speciesId") in keep
+    }
+    sub.recording_descriptors = {
+        rid: d for rid, d in store.recording_descriptors.items()
+        if rid in sub.recordings
+    }
+    sub.stream_n = store.stream_n
+    sub.stream_mean = store.stream_mean
+    sub.stream_m2 = store.stream_m2
+    sub.save()
+    log(f"wrote {out}: {len(keep)} species, {len(sub.syllables)} syllables, "
+        f"{sum(len(st.rows) for st in sub.strata.values())} descriptors "
+        f"(of {len(counts)} / {len(store.syllables)} / {len(store)} in {store.root})")
+    log(f"debug cycle: uv run birdy-pipeline learn --store {out} --jobs 8")
+    log(f"         then uv run birdy-pipeline build --harvest-store {out} "
+        f"--inventory <learned.json> --space embed")
+    return 0
+
+
 def cmd_grow(args: argparse.Namespace) -> int:
     """Add the harvest store's newest descriptors to the built galaxy, in place.
 
@@ -2903,6 +2950,16 @@ def build_parser() -> argparse.ArgumentParser:
     pl.add_argument("--per-species", action="store_true",
                     help="also break the placement down species by species")
     pl.set_defaults(func=cmd_placement)
+
+    sb = sub.add_parser(
+        "subset",
+        help="write a debug store with the N biggest species, recordings whole",
+    )
+    sb.add_argument("--store", default=str(DEFAULT_HARVEST_STORE))
+    sb.add_argument("--species", type=int, default=100,
+                    help="how many of the biggest species to keep (default %(default)s)")
+    sb.add_argument("--out", required=True, help="target store directory (never the source)")
+    sb.set_defaults(func=cmd_subset)
 
     g = sub.add_parser(
         "grow",
