@@ -369,9 +369,14 @@ class Pipeline:
                 client = harvest.XenoCanto(key)
                 # Discovered species are collected exactly like the authored ones — that is
                 # the whole point of the registry, and a loop that ignored it would keep
-                # harvesting twelve birds while the file said fifteen.
+                # harvesting twelve birds while the file said fifteen. Both are loaded here,
+                # inside the job: this closure once referenced the *loop* route's
+                # `inventory`/`registry` locals instead, and every hand harvest died on the
+                # NameError before it fetched a thing.
                 targets = harvest.species_queries(
-                    inventory, quality=quality, extra=registry
+                    load_inventory(self.inventory_path),
+                    quality=quality,
+                    extra=harvest.load_discovered(self.discovered_path),
                 )
                 if species:
                     targets = [t for t in targets if t[0] == species]

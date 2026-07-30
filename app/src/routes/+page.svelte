@@ -916,6 +916,31 @@
 	);
 
 	/**
+	 * What a hand harvest can aim at: the documented inventory *and* the discovered
+	 * registry, because that is the union the harvest route fetches.
+	 *
+	 * This used to list `inventorySpecies` alone — the documented birds — while the route
+	 * harvested the registry alongside them, so the picker hid every species the learning
+	 * loop had found, including ones the Sing tab already sings (a fitted species gets its
+	 * voice through the registry), and offered no way to aim a hand harvest at a bird still
+	 * waiting for audio. `inventorySpecies` itself stays documented-only: the discovered
+	 * rollup counts it as the number of documented birds.
+	 */
+	const harvestOptions = $derived.by(() => {
+		const seen = new Set<string>();
+		const out: { id: string; common: string }[] = [];
+		for (const s of [
+			...(pipelineStatus?.inventorySpecies ?? []),
+			...(pipelineStatus?.discovered ?? [])
+		]) {
+			if (seen.has(s.id)) continue;
+			seen.add(s.id);
+			out.push({ id: s.id, common: s.common });
+		}
+		return out;
+	});
+
+	/**
 	 * One line standing in for eleven paragraphs.
 	 *
 	 * The fitted repertoire was printed a species at a time, two lines each, and on a
@@ -1799,8 +1824,8 @@ uv run birdy-pipeline serve</pre>
 							<label class="field">
 								<span class="lbl">Species</span>
 								<select bind:value={harvestSpecies}>
-									<option value="">every species in the inventory</option>
-									{#each pipelineStatus.inventorySpecies as s (s.id)}
+									<option value="">every species the pipeline knows</option>
+									{#each harvestOptions as s (s.id)}
 										<option value={s.id}>{s.common}</option>
 									{/each}
 								</select>
