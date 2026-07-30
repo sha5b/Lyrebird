@@ -46,3 +46,12 @@ both follow it. Date: 2026-07-28.
     clustering bouts of type ids into song types (50 types, 13 species, 92 % own-medoid
     separation), the two measured failure modes and their gates, and the permutation
     control that sets the recurrence floor (0.2 % at the shipped setting).
+13. [`13-sources-and-complexification.md`](13-sources-and-complexification.md) — research
+    report: new audio sources ranked by variety × integration cost (iNatSounds, GBIF
+    sound archives, NBM flight calls, lab-bird ground truth), complexification routes
+    (Perch 2.0 pseudo-labelling, per-taxon renderers, song-level generation), and the
+    evidenced don'ts.
+14. [`14-xccoverbl-ingest.md`](14-xccoverbl-ingest.md) — the first `sources fetch`:
+    xccoverbl takes the store 36 → 121 species; species placement 8.8× → 12.8× over
+    chance, novelty ROC 0.786 on a harder test, coverage 54 % (harvest-depth problem,
+    not clustering), and the source-invariance warning that sets up the next retrain.
