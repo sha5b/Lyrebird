@@ -1,0 +1,80 @@
+{
+ "id": "troglodytes_troglodytes",
+ "common": "Eurasian wren",
+ "scientific": "Troglodytes troglodytes",
+ "bank": "west",
+ "summary": "Extremely loud, fast trill from a tiny bird; trills are amplitude modulation gated by the respiratory cycle.",
+ "syllables": [
+  {
+   "id": "wrenTrill",
+   "label": "machine-gun trill",
+   "function": "territorial song core",
+   "confidence": "inferred",
+   "refs": [],
+   "dur": 0.55,
+   "level": 1.0,
+   "timbre": "buzz",
+   "am": 28,
+   "amDepth": 0.95,
+   "contour": [
+    [
+     0.0,
+     4200
+    ],
+    [
+     0.3,
+     6400
+    ],
+    [
+     0.6,
+     5000
+    ],
+    [
+     1.0,
+     5800
+    ]
+   ]
+  },
+  {
+   "id": "wrenChip",
+   "label": "chip",
+   "function": "contact / scold note",
+   "confidence": "inferred",
+   "refs": [],
+   "dur": 0.05,
+   "level": 0.9,
+   "timbre": "buzz",
+   "am": 180,
+   "amDepth": 0.7,
+   "contour": [
+    [
+     0.0,
+     5200
+    ],
+    [
+     1.0,
+     3600
+    ]
+   ]
+  }
+ ],
+ "songs": [
+  {
+   "id": "wren_song",
+   "label": "wren song",
+   "gloss": "territorial song",
+   "function": "territory advertisement",
+   "confidence": "inferred",
+   "refs": [],
+   "sequence": [
+    "wrenChip",
+    "wrenChip",
+    "wrenTrill"
+   ],
+   "gaps": [
+    0.05,
+    0.06
+   ]
+  }
+ ]
+}

@@ -1,0 +1,70 @@
+{
+ "id": "cuculus_canorus",
+ "common": "Common cuckoo",
+ "scientific": "Cuculus canorus",
+ "bank": "east",
+ "summary": "Two-note male advertisement call, close to a pure tone with a fixed falling interval.",
+ "syllables": [
+  {
+   "id": "cuck",
+   "label": "cuc",
+   "function": "advertisement call, note 1",
+   "confidence": "inferred",
+   "refs": [],
+   "dur": 0.17,
+   "level": 0.9,
+   "timbre": "pure",
+   "attack": 0.02,
+   "hold": true,
+   "contour": [
+    [
+     0.0,
+     700
+    ],
+    [
+     1.0,
+     690
+    ]
+   ]
+  },
+  {
+   "id": "oo",
+   "label": "koo",
+   "function": "advertisement call, note 2",
+   "confidence": "inferred",
+   "refs": [],
+   "dur": 0.24,
+   "level": 0.8,
+   "timbre": "pure",
+   "attack": 0.03,
+   "hold": true,
+   "contour": [
+    [
+     0.0,
+     555
+    ],
+    [
+     1.0,
+     545
+    ]
+   ]
+  }
+ ],
+ "songs": [
+  {
+   "id": "cuckoo_call",
+   "label": "cuc-koo",
+   "gloss": "I am here, this is my area",
+   "function": "male advertisement",
+   "confidence": "inferred",
+   "refs": [],
+   "sequence": [
+    "cuck",
+    "oo"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ]
+}

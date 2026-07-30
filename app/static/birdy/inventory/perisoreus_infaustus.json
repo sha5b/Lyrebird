@@ -1,0 +1,134 @@
+{
+ "id": "perisoreus_infaustus",
+ "common": "Siberian jay",
+ "scientific": "Perisoreus infaustus",
+ "bank": "east",
+ "summary": "Alarm calls encode what the predator is doing (perched, searching, attacking), and each elicits a different escape response.",
+ "syllables": [
+  {
+   "id": "hawkPerched",
+   "label": "perched-hawk call",
+   "function": "a hawk is sitting nearby; receivers stay put and watch",
+   "confidence": "experimental",
+   "refs": [
+    "griesser2008"
+   ],
+   "dur": 0.22,
+   "level": 0.85,
+   "timbre": "reed",
+   "harmonic": 0.35,
+   "contour": [
+    [
+     0.0,
+     2200
+    ],
+    [
+     0.5,
+     2450
+    ],
+    [
+     1.0,
+     2150
+    ]
+   ]
+  },
+  {
+   "id": "hawkSearching",
+   "label": "searching-hawk call",
+   "function": "a hawk is hunting in the area; receivers flee to cover",
+   "confidence": "experimental",
+   "refs": [
+    "griesser2008"
+   ],
+   "dur": 0.16,
+   "level": 0.9,
+   "timbre": "buzz",
+   "am": 38,
+   "amDepth": 0.5,
+   "harmonic": 0.45,
+   "contour": [
+    [
+     0.0,
+     2600
+    ],
+    [
+     0.4,
+     3400
+    ],
+    [
+     1.0,
+     2500
+    ]
+   ]
+  },
+  {
+   "id": "hawkAttacking",
+   "label": "attacking-hawk call",
+   "function": "attack in progress; receivers dive into dense cover",
+   "confidence": "experimental",
+   "refs": [
+    "griesser2008"
+   ],
+   "dur": 0.11,
+   "level": 1.0,
+   "timbre": "buzz",
+   "am": 120,
+   "amDepth": 0.8,
+   "harmonic": 0.7,
+   "contour": [
+    [
+     0.0,
+     4200
+    ],
+    [
+     0.3,
+     5200
+    ],
+    [
+     1.0,
+     3000
+    ]
+   ]
+  }
+ ],
+ "songs": [
+  {
+   "id": "jay_perched",
+   "label": "perched-hawk series",
+   "gloss": "a hawk is watching",
+   "function": "vigilance, no flight",
+   "confidence": "experimental",
+   "refs": [
+    "griesser2008"
+   ],
+   "sequence": [
+    "hawkPerched",
+    "hawkPerched"
+   ],
+   "gaps": [
+    0.3
+   ]
+  },
+  {
+   "id": "jay_attack",
+   "label": "attack series",
+   "gloss": "attack, take cover now",
+   "function": "immediate escape",
+   "confidence": "experimental",
+   "refs": [
+    "griesser2008"
+   ],
+   "sequence": [
+    "hawkAttacking",
+    "hawkAttacking",
+    "hawkAttacking",
+    "hawkAttacking"
+   ],
+   "gaps": [
+    0.07,
+    0.07,
+    0.07
+   ]
+  }
+ ]
+}
