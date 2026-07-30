@@ -537,8 +537,16 @@ export const fragmentShader = /* glsl */ `
 		// The plain look swaps the class colours for a neutral pair and keeps every
 		// other rule — same wash, same ramp, same tone shifts — so "coloured / plain"
 		// changes what the points *say about provenance*, never how they respond.
+		//
+		// The pale end of that neutral pair is quoted against the class colours rather
+		// than picked by eye, because picked by eye it was much too light: at its old
+		// value the resting plain point landed at L* 85.3 on the paper, against a mean
+		// of L* 75.0 for the five class colours at the same wash, so switching the
+		// colours off also quietly faded the cloud by ten lightness units and the plain
+		// mode read as a haze. Matching the mean puts the two modes at the same weight,
+		// which is what "only the colour language changes" was always supposed to mean.
 		vec3 ink = mix(prov, vec3(0.13, 0.16, 0.21), uPlain);
-		vec3 rest = mix(uSurface, mix(prov, vec3(0.66, 0.69, 0.74), uPlain), 0.5);
+		vec3 rest = mix(uSurface, mix(prov, vec3(0.45, 0.47, 0.50), uPlain), 0.5);
 		vec3 end = mix(ink, uAccent, clamp(vAccent, 0.0, 1.0));
 
 		// A chosen bird's points sit most of the way along their own ramp even at rest, so

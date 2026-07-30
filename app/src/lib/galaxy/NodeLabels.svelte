@@ -13,18 +13,24 @@
 	 */
 	import { untrack } from 'svelte';
 	import { confidenceLabel } from '$lib/lang/translate';
-	import { knotHeat } from '$lib/data/assets';
-	import { speciesColourScaled } from './palette';
+	import { clusterProvenance, knotHeat } from '$lib/data/assets';
+	import { provenanceColourScaled, speciesColourScaled } from './palette';
 	import type { BirdyAssets, Centroid } from '$lib/data/types';
 
 	interface Props {
 		assets: BirdyAssets;
 		/** Written into by this component, read by NodeProjector. Plain array, not state. */
 		elements: (HTMLElement | null)[];
+		/**
+		 * Colour the tags by the knot's provenance class instead of by its bird, to match
+		 * the point cloud while the provenance mode is on. Reactive, not baked: this is a
+		 * switch the viewer flips, so the tags have to follow it live.
+		 */
+		prov?: boolean;
 		onpick?: (cluster: number) => void;
 	}
 
-	let { assets, elements, onpick }: Props = $props();
+	let { assets, elements, prov = false, onpick }: Props = $props();
 
 	// The corpus does not change while this is mounted, so the tags are built once.
 	// Names come from the inventory index: a tag must name its bird without fetching
@@ -42,10 +48,23 @@
 	 * the points: the species' core knot carries the hue a touch darker (0.9), its far
 	 * edge a touch lighter (1.1), same hue and saturation throughout — a slight
 	 * gradient of the label colour, never a different one.
+	 *
+	 * With the provenance mode on, the same tag answers the other question instead: the
+	 * hue becomes the knot's class, matching the points under it. Leaving the tags in
+	 * species hues while the cloud switched to classes put two colour languages on the
+	 * screen at once, and a violet tag over an amber knot invites the reading that the
+	 * two colours are related — so the whole picture speaks one language at a time.
+	 * Either way the tag still *names* the bird in words right beside the dot, which is
+	 * why hue is free to carry the other axis.
 	 */
 	const heat = untrack(() => knotHeat(assets));
-	const knotColour = (c: Centroid, i: number): string =>
-		speciesColourScaled(c.speciesId, 0.9 + (heat[i] ?? 0.5) * 0.2);
+	const knotClass = untrack(() => clusterProvenance(assets));
+	const knotColour = (c: Centroid, i: number): string => {
+		const light = 0.9 + (heat[i] ?? 0.5) * 0.2;
+		return prov
+			? provenanceColourScaled(knotClass[i] ?? 4, light)
+			: speciesColourScaled(c.speciesId, light);
+	};
 </script>
 
 <div class="layer" aria-hidden="true">

@@ -6,8 +6,11 @@
 		buildClusterLookup,
 		buildSpeciesIndex,
 		buildSyllablePointIndex,
+		CLASS_COUNT,
+		PROVENANCE,
 		clusterIndexFor,
 		loadAssets,
+		pointProvenance,
 		songSyllables,
 		speciesById,
 		syllableCoverage,
@@ -28,7 +31,12 @@
 	} from '$lib/lang/compose';
 	import { citationsFor, confidenceLabel, type Reading } from '$lib/lang/translate';
 	import { createSignal, type VisualSignal } from '$lib/galaxy/shaders';
-	import { MONO_HOT, speciesColour as speciesHue } from '$lib/galaxy/palette';
+	import {
+		MONO_HOT,
+		PROV_NAMES,
+		provenanceColour,
+		speciesColour as speciesHue
+	} from '$lib/galaxy/palette';
 	import { PipelineClient, type PipelineStatus } from '$lib/data/pipeline';
 	import type { BirdyAssets, SongType, Species } from '$lib/data/types';
 
@@ -1328,16 +1336,39 @@
 		60 / ((chorus === 'solo' ? 12 : 22) * Math.max(0.05, tempo) * Math.max(0.05, songRate))
 	);
 	/**
-	 * Whether the loaded galaxy holds any of the unlabelled pseudo-species — arrivals
-	 * with no species tag, typed by the label-free path (speciesId `unlabelled`, U*
-	 * candidate types). The legend says when it does not, so an absent colour is read
-	 * as an empty pool rather than a broken one.
+	 * Which provenance classes the loaded galaxy actually holds, and how much of it each
+	 * one is. The legend quotes the share and marks the empty classes, so a colour you
+	 * cannot find on screen reads as an empty pool rather than a broken renderer — and
+	 * so the two classes that carry the galaxy are named as such instead of sitting in a
+	 * flat list beside three that are absent.
+	 *
+	 * Counted from the same function the shader attribute is built from, so the legend
+	 * can never drift from what is drawn.
 	 */
-	const hasArrivals = $derived.by(() => {
-		if (!assets) return false;
-		if (assets.points.speciesId.some((id) => id === 'unlabelled')) return true;
-		return assets.points.syllableId.some((s) => s?.[0] === 'U');
+	const provShare = $derived.by(() => {
+		const share = new Float64Array(CLASS_COUNT);
+		if (!assets) return share;
+		const classes = pointProvenance(assets);
+		for (let i = 0; i < classes.length; i++) share[classes[i]]++;
+		if (classes.length) for (let c = 0; c < CLASS_COUNT; c++) share[c] /= classes.length;
+		return share;
 	});
+
+	/** The legend's rows, strongest-carrying class first so the eye starts where the mass is. */
+	const provLegend = $derived.by(() =>
+		[
+			PROVENANCE.learned,
+			PROVENANCE.field,
+			PROVENANCE.documented,
+			PROVENANCE.unlabelled,
+			PROVENANCE.candidate
+		].map((cls) => ({
+			cls,
+			name: PROV_NAMES[cls],
+			colour: provenanceColour(cls),
+			share: provShare[cls] ?? 0
+		}))
+	);
 	$effect(() => {
 		// Tempo is one control over the whole aviary: the drift, the pulse, how long each
 		// syllable lasts and how often a bird starts. Restarting the scheduler is what
@@ -1550,41 +1581,38 @@ uv run birdy-pipeline build</pre>
 									<label class="check" title="Name tags on the knots a syllable can be sung into.">
 										<input type="checkbox" bind:checked={showLabels} /> Labels
 									</label>
-									<label class="check" title="Tint each point by where its sound comes from — the classes the note below names. Off: every point is neutral grey.">
-										<input type="checkbox" bind:checked={provColours} /> Provenance colours
+									<label class="check" title="Colour the points, the tags and the threads by where each sound comes from, instead of by which bird it is. Off: neutral ink points, and hue on the tags says the bird.">
+										<input type="checkbox" bind:checked={provColours} /> Provenance
 									</label>
 								</div>
 								<!--
-									One colour language: when the tint is on, the points say where a
-									sound comes from, the labels always say which bird. The
-									species/provenance switch died when the species hue moved off the
-									points; "Provenance colours" only dims that one language to
-									neutral grey — it changes no meaning.
+									One colour language at a time. Off, hue answers "which bird" on the
+									tags and threads and the points are neutral ink; on, hue answers "what
+									kind of thing" on all three at once. Two languages on screen together
+									invite the reading that their hues are related, which is why the
+									switch moves the whole stage rather than only the cloud.
 								-->
-								<p class="note faint">
-									With Provenance colours on, point colour says where each sound comes
-									from. The loudest division is whether a bird made the sound or we did:
-									<b style:color="var(--invented)">synthesized</b> (our render of a type
-									the pipeline fitted) against
-									<b style:color="var(--experimental)">recorded</b> (real field audio
-									carrying that same fitted type) — a little over half the galaxy each.
-									Then
-									<b style:color="var(--documented)">documented</b> (authored inventory —
-									a person named it),
-									<b style:color="var(--arrival)">unlabelled arrivals</b> (real audio,
-									typed by similarity, no species tag{#if !hasArrivals} — none in this
-									galaxy yet{/if}), and
-									<b style:color="var(--unlabelled)">unidentified</b> (field audio with no
-									fitted identity at all — the candidate pool; per-point novelty flags are
-									not in this build yet). Label colour says which bird.
-								</p>
-								<p class="note faint">
-									A point breathing on its own, with no knot lighting around it, is a
-									syllable that was played but has no cluster of its own — heard, not
-									placed. It breathes in its own class colour above, or in plain ink with
-									the colours off. A slow grey breath near a knot is a different thing: a
-									sound was heard but matched nothing — not a claim.
-								</p>
+								{#if provColours}
+									<ul class="legend">
+										{#each provLegend as row (row.cls)}
+											<li class:absent={row.share === 0}>
+												<i style:background={row.colour}></i>
+												<b>{row.name}</b>
+												<span class="mono"
+													>{row.share === 0 ? 'none' : `${Math.round(row.share * 100)}%`}</span
+												>
+											</li>
+										{/each}
+									</ul>
+									<p class="note faint">
+										Hue says what kind of thing a sound is; the tag beside it names the
+										bird. The big split is whether a bird made the sound or we did.
+									</p>
+								{:else}
+									<p class="note faint">
+										Points are neutral ink. Hue on the tags and threads says which bird.
+									</p>
+								{/if}
 							</section>
 						</div>
 					</div>
@@ -3135,9 +3163,15 @@ uv run birdy-pipeline serve</pre>
 		margin-left: -1px;
 	}
 
+	/* Wrapping is load-bearing, not tidiness. These sit inside a panel that is a fixed
+	   16rem wide and clips its overflow, so a row that refuses to wrap does not merely
+	   look cramped — it stretches the panel's content box past the clip and takes the
+	   prose under it along, which is how a third checkbox left every paragraph in the
+	   Display panel cut off down the right-hand edge. */
 	.checks {
 		display: flex;
-		gap: 1rem;
+		flex-wrap: wrap;
+		gap: 0.5rem 1rem;
 	}
 
 	.check {
@@ -3150,6 +3184,52 @@ uv run birdy-pipeline serve</pre>
 
 	.check input {
 		width: auto;
+	}
+
+	/* The provenance key. A swatch, the class, and its share of the corpus — the share
+	   is the point: it is what turns a flat list of five names into "these two are the
+	   galaxy and these three are edge cases", which three paragraphs of prose were
+	   trying and failing to say. `minmax(0, 1fr)` on the name column lets a long class
+	   name shrink rather than push the row past the panel's clip. */
+	.legend {
+		display: grid;
+		gap: 0.3rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.legend li {
+		display: grid;
+		grid-template-columns: 0.6rem minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.74rem;
+		color: var(--ink-dim);
+	}
+
+	.legend i {
+		width: 0.6rem;
+		height: 0.6rem;
+		border-radius: 50%;
+	}
+
+	.legend b {
+		font-weight: 500;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.legend span {
+		font-size: 0.7rem;
+		color: var(--ink-faint);
+	}
+
+	/* An empty class keeps its row: knowing the pool exists and is empty is a different
+	   fact from the colour simply being missing, and only one of them is a bug. */
+	.legend li.absent {
+		opacity: 0.5;
 	}
 
 	.note {

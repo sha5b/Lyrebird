@@ -417,6 +417,9 @@ export const PROVENANCE = {
 	candidate: 4
 } as const;
 
+/** How many provenance classes there are; the shader's selector chain matches it. */
+export const CLASS_COUNT = 5;
+
 /** True for the unlabelled pool's own markers: the pseudo-species or a U* type id. */
 function isUnlabelledArrival(speciesId: string, syllableId: string): boolean {
 	return speciesId === 'unlabelled' || syllableId[0] === 'U';
@@ -464,6 +467,49 @@ export function pointProvenance(assets: BirdyAssets): Float32Array {
 		// An authored identity stays `documented` whatever the source: the class is
 		// defined by who named the sound, and a person did.
 		out[i] = PROVENANCE.documented;
+	}
+	return out;
+}
+
+/**
+ * One provenance category per *knot*, so the tags and the trajectory threads can speak
+ * the same colour language as the points while the provenance mode is on.
+ *
+ * The rule is a plurality of the knot's own member points, which is the only honest
+ * summary available: a cluster is a region of the acoustic space, and nothing says its
+ * members must share a provenance — a type fitted to field audio typically holds both
+ * the recordings it was fitted to and our renders of it. The plurality names what the
+ * knot is *mostly* made of, and it is a knot-level claim, not a promise about every
+ * member. The points themselves keep telling the exact truth per point.
+ *
+ * Ties break toward the stronger claim (the lower PROVENANCE index), so a knot that is
+ * half authored and half fitted is called authored rather than the reverse.
+ */
+export function clusterProvenance(assets: BirdyAssets, k?: number): Float32Array {
+	const classes = pointProvenance(assets);
+	const count = k ?? assets.centroids.items.length;
+	const { clusterId } = assets.points;
+	const tally = Array.from({ length: count }, () => new Uint32Array(CLASS_COUNT));
+	for (let i = 0; i < classes.length; i++) {
+		const c = clusterId[i];
+		if (c >= 0 && c < count) tally[c][classes[i]]++;
+	}
+	const out = new Float32Array(count);
+	for (let c = 0; c < count; c++) {
+		let best = 0;
+		let total = 0;
+		// Strictly greater, walking upward from the strongest claim, is what makes a tie
+		// fall to the stronger one.
+		for (let cls = 0; cls < CLASS_COUNT; cls++) {
+			total += tally[c][cls];
+			if (cls > 0 && tally[c][cls] > tally[c][best]) best = cls;
+		}
+		// A knot with no members has nothing to summarise, and the all-zero tally would
+		// otherwise tie its way to `documented` — the strongest claim in the set, asserted
+		// about a knot that holds no sound at all. It gets the neutral, which is the class
+		// that claims nothing. (No shipped build has one; the rest of the renderer already
+		// refuses to launch waves or fronts from empty knots for the same reason.)
+		out[c] = total ? best : PROVENANCE.candidate;
 	}
 	return out;
 }

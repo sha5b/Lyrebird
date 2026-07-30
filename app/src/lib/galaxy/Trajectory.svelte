@@ -2,9 +2,9 @@
 	import { T, useTask } from '@threlte/core';
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
-	import { knotHeat } from '$lib/data/assets';
+	import { clusterProvenance, knotHeat } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
-	import { ACCENT, speciesColourScaled } from './palette';
+	import { ACCENT, provenanceColourScaled, speciesColourScaled } from './palette';
 	import type { LayoutView } from './layouts';
 	import {
 		MAX_PATHS,
@@ -26,9 +26,11 @@
 		spread?: number;
 		/** The cloud's particle size; the beads are quoted against it. */
 		pointSize?: number;
+		/** Colour the threads by the knot's provenance class instead of by its bird. */
+		prov?: boolean;
 	}
 
-	let { assets, signal, view, spread = 1, pointSize = 3 }: Props = $props();
+	let { assets, signal, view, spread = 1, pointSize = 3, prov = false }: Props = $props();
 
 	/** Samples per segment: enough that the travelling highlight moves smoothly. */
 	const SUBDIVISIONS = 14;
@@ -40,12 +42,23 @@
 	 * trajectory gradient's endpoints. Computed once; the walk between two knots is
 	 * baked per vertex in `rebuild`.
 	 */
-	const knotColours = untrack(() => {
+	//
+	// Both languages are built once and the switch picks between them, rather than
+	// rebuilding a palette every time the viewer flips it: the two arrays together are a
+	// few thousand floats, and a rebuild during a chorus is the one thing this component
+	// is written to avoid.
+	const knotPalettes = untrack(() => {
 		const heat = knotHeat(assets);
-		return centroids.map((c, i) =>
-			new THREE.Color(speciesColourScaled(c.speciesId, 0.9 + (heat[i] ?? 0.5) * 0.2))
-		);
+		const classes = clusterProvenance(assets);
+		const light = (i: number) => 0.9 + (heat[i] ?? 0.5) * 0.2;
+		return {
+			species: centroids.map((c, i) => new THREE.Color(speciesColourScaled(c.speciesId, light(i)))),
+			provenance: centroids.map(
+				(_, i) => new THREE.Color(provenanceColourScaled(classes[i] ?? 4, light(i)))
+			)
+		};
 	});
+	const knotColours = $derived(prov ? knotPalettes.provenance : knotPalettes.species);
 	// Preallocated to every path we will ever draw at once, then a draw range is set per
 	// rebuild — reallocating buffers on every note would churn GPU memory during a chorus.
 	// Line *segments* rather than a strip, so separate paths are never joined together.
@@ -123,6 +136,13 @@
 
 	let builtVersion = -1;
 	let builtLayout = -1;
+
+	// The gradient is baked per vertex, so switching the colour language has to invalidate
+	// what was baked. Without this the threads keep the old hues until the next note.
+	$effect(() => {
+		void prov;
+		builtVersion = -1;
+	});
 
 	/** Lays every active path out as a run of short segments between cluster centroids. */
 	function rebuild(paths: VisualSignal['paths']): void {

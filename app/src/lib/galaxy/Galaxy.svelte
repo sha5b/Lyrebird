@@ -40,10 +40,15 @@
 		/** Clusters the learning pipeline is working on, pulsed live in the cloud. */
 		learning?: number[];
 		/**
-		 * Neutral ink points instead of the provenance class tint. Owned by the page's
-		 * display settings (the "Provenance colours" switch); it changes only what this
-		 * stage draws — the labels' species hues and every activation rule are
-		 * unaffected either way.
+		 * Neutral ink instead of the provenance class tint. Owned by the page's display
+		 * settings (the "Provenance colours" switch).
+		 *
+		 * It switches the whole stage's colour *language*, not just the cloud: the points,
+		 * the tags and the trajectory threads move together, because two languages on
+		 * screen at once invite the reading that their hues are related. Off, hue answers
+		 * "which bird" on the tags and threads and the points are neutral; on, hue answers
+		 * "what kind of thing" everywhere. No activation rule changes either way, and the
+		 * accent keeps meaning exactly one thing in both.
 		 */
 		plain?: boolean;
 		onpick?: (cluster: number) => void;
@@ -139,7 +144,7 @@
 			<GridBurst {signal} {view} />
 			<ContextPaths {assets} {signal} {view} />
 			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} />
-			<Trajectory {assets} {signal} {view} {spread} {pointSize} />
+			<Trajectory {assets} {signal} {view} {spread} {pointSize} prov={!plain} />
 			{#if labels}
 				<NodeProjector {assets} {signal} elements={labelElements} {focus} {pinned} {view} />
 			{/if}
@@ -149,7 +154,7 @@
 	</Canvas>
 
 	{#if labels}
-		<NodeLabels {assets} elements={labelElements} {onpick} />
+		<NodeLabels {assets} elements={labelElements} prov={!plain} {onpick} />
 	{/if}
 </div>
 

@@ -80,6 +80,52 @@ export const PROV_FIELD = '#0b7a55';
 export const PROV_ARRIVALS = '#da9a76';
 export const PROV_CANDIDATE = '#7b8794';
 
+/** The five class colours in PROVENANCE order, for the label and thread lookups. */
+const PROV_ORDER = [
+	PROV_DOCUMENTED,
+	PROV_LEARNED,
+	PROV_FIELD,
+	PROV_ARRIVALS,
+	PROV_CANDIDATE
+] as const;
+
+/** Short names for the classes, so the legend and the tags agree on the wording. */
+export const PROV_NAMES = [
+	'documented',
+	'synthesized',
+	'recorded',
+	'unlabelled arrival',
+	'unidentified'
+] as const;
+
+/**
+ * A provenance class as a colour string. Out-of-range falls back to the neutral, which
+ * is the class that claims nothing — the safe thing to say when the class is unknown.
+ */
+export function provenanceColour(cls: number): string {
+	return PROV_ORDER[cls] ?? PROV_CANDIDATE;
+}
+
+/**
+ * The class colour with the same slight per-knot lightness walk the species hue gets,
+ * so switching the mode changes the *hue language* of the tags and threads without
+ * changing anything else about how they are drawn.
+ *
+ * The lightness scale arrives as the same 0.9..1.1 the species version takes. It is
+ * applied in sRGB rather than HSL because these are fixed hex brand hues rather than
+ * generated HSL, and re-deriving them through HSL would shift the hues the CVD
+ * measurements in the note above were taken on.
+ */
+export function provenanceColourScaled(cls: number, lightScale: number): string {
+	const scale = Math.min(1.2, Math.max(0.8, lightScale));
+	const hex = provenanceColour(cls).slice(1);
+	const channels = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));
+	const shifted = channels.map((c) =>
+		Math.round(Math.min(255, Math.max(0, scale <= 1 ? c * scale : c + (255 - c) * (scale - 1))))
+	);
+	return `rgb(${shifted[0]}, ${shifted[1]}, ${shifted[2]})`;
+}
+
 /**
  * A stable hue per species, for the *labels* of the galaxy.
  *
