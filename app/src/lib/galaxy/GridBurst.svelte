@@ -21,7 +21,7 @@
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
 	import type { LayoutView } from './layouts';
-	import type { VisualSignal } from './shaders';
+	import { waveClaim, type VisualSignal } from './shaders';
 
 	interface Props {
 		signal: VisualSignal;

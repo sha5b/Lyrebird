@@ -12,6 +12,21 @@ time-scale, so `f0 = gamma * PHI(alpha, beta)` and `ampPP` does not depend on it
 calibration table is measured once at `GAMMA_REFERENCE = 24000`; a voice at another
 gamma looks up `f0 * GAMMA_REFERENCE / gamma` and the returned beta is correct because
 the mapping is dimensionless.
+
+**Respiration (docs/15 §1, docs/13 B1).** A syllable carrying a `respiration` block
+replaces the designed envelope with the air-sac pressure gesture of
+`respiration.py` (Fainstein, Goller & Mindlin 2025): `ps(t) = scale * p(t)`, clamped
+to the usual [0, 1.4], with `scale` mapping the gesture's peak to the peak the envelope
+path would have reached. The pressure then also drives the tract **multiplicatively at
+the injection point**: the source is scaled by `sqrt(ps)` before the tract, which is
+the Laje & Mindlin 2005 low-frequency result — in the inertive limit (crossover
+~55 kHz, far above anything here) the tract-input pressure is `s(t) ≈ √ps · y`, the
+labial *velocity* times root pressure. Be precise about the lineage, because docs/09
+§9.6 was not: birdsongs injects the acceleration `ẏ × envelope`, syrinxsynth injects
+`y × √envelope`, and the physics says velocity × √ps — "every reference implementation
+injects ẏ" is wrong, and this module follows the physics rather than the louder half
+of the references. A syllable without a `respiration` block renders exactly as before:
+the envelope path is untouched and bit-identical.
 """
 
 from __future__ import annotations
@@ -21,6 +36,9 @@ from dataclasses import dataclass, field
 from typing import Any, Sequence
 
 import numpy as np
+
+from . import respiration as respiration_mod
+from .respiration import RespirationParams
 
 # --- contract constants (8.1 / 8.4) -----------------------------------------------
 # The gamma the calibration table is measured at, and the reference for the lookup
@@ -715,6 +733,11 @@ class Syllable:
     #: measured. A band that broad leaks the second harmonic, which is most of what makes a
     #: whistle sound like an oscillator instead of a bird.
     tract_q: float = 0.0
+    #: The species' respiratory set (respiration.py, docs/15 §1). When present, the
+    #: designed envelope no longer drives `ps`: the air-sac pressure gesture does, and
+    #: the tract is driven by sqrt of it at the injection point. When absent the
+    #: syllable renders exactly as it always has.
+    respiration: RespirationParams | None = None
     label: str = ""
     function: str = ""
     confidence: str = ""
@@ -751,6 +774,7 @@ class Syllable:
                 else []
             ),
             tract_q=float(d.get("tractQ", 0.0) or 0.0),
+            respiration=respiration_mod.parse(d.get("respiration")),
             label=str(d.get("label", "")),
             function=str(d.get("function", "")),
             confidence=str(d.get("confidence", "")),
@@ -885,6 +909,11 @@ def jitter_syllable(syl: Syllable, rng: np.random.Generator, j: Jitter) -> Sylla
         harmonics=list(syl.harmonics),
         tube=list(syl.tube),
         tract_q=syl.tract_q,
+        # The respiratory set is a property of the species' air sacs, not of this
+        # rendition, so jitter leaves it alone — the same argument as the formants,
+        # inverted: those scale because they follow body size, this stays because a
+        # slightly sharper bird breathes with the same lungs.
+        respiration=syl.respiration,
         label=syl.label,
         function=syl.function,
         confidence=syl.confidence,
@@ -908,6 +937,14 @@ class RenderPlan:
     q: float
     gamma: float
     oversample: int
+    #: sqrt of the un-gated air-sac pressure, normalised to 1 at its peak — the
+    #: multiplicative tract-input drive of docs/15 §1 (Laje & Mindlin 2005's √ps · y).
+    #: None on the envelope path, where no such drive exists.
+    drive: np.ndarray | None = None
+    #: True when `ps` came from the respiratory oscillator. The renderer skips the
+    #: final envelope gain then: the drive already carries the amplitude shape, and
+    #: multiplying by it a second time would square the gesture.
+    respiratory: bool = False
 
 
 def render_plan(
@@ -929,10 +966,44 @@ def render_plan(
 
     # p_s(t): level * envelope * timbre gain * respiratory AM gate, clamped
     env = envelope(n, sample_rate, syl.attack, syl.hold)
-    ps = syl.level * env * gain
-    if syl.am > 0.0 and syl.am_depth > 0.0:
-        ps = ps * (1.0 - syl.am_depth * (0.5 - 0.5 * np.cos(2.0 * np.pi * syl.am * t)))
-    ps = np.clip(ps, PS_MIN, PS_MAX)
+    drive: np.ndarray | None = None
+    respiratory = False
+    if syl.respiration is not None:
+        # docs/15 §1: the designed envelope becomes the expiratory *muscle command*,
+        # and the respiratory oscillator turns it into the air-sac pressure gesture
+        # that ps actually is. The gesture is in the paper's percentile normalisation,
+        # so it is scaled to peak where the envelope path would have peaked — the
+        # mapping keeps loudness calibration while the ODE owns the shape.
+        #
+        # The AM gate is NOT in the command: air-sac pressure cannot swing at
+        # syringeal AM rates (respiration.py's module docstring), so the gate acts on
+        # ps at the labia afterwards, exactly as on the envelope path. The tract-input
+        # drive below uses the un-gated pressure, because that is what the air sacs
+        # hold; the gate is syringeal, downstream of the sac.
+        ps0 = float(np.clip(syl.level * gain, PS_MIN, PS_MAX))
+        p, _ = respiration_mod.pressure(syl.respiration, env, sample_rate)
+        peak = float(np.max(p)) if p.size else 0.0
+        scale = ps0 / peak if peak > 1.0e-9 else 0.0
+        ps_air = np.clip(p * scale, PS_MIN, PS_MAX)
+        drive = np.sqrt(ps_air / ps0) if ps0 > 0.0 else np.zeros(n)
+        ps = ps_air
+        if syl.am > 0.0 and syl.am_depth > 0.0:
+            ps = ps * (
+                1.0 - syl.am_depth * (0.5 - 0.5 * np.cos(2.0 * np.pi * syl.am * t))
+            )
+        ps = np.clip(ps, PS_MIN, PS_MAX)
+        # `env` is the amplitude shape a diagnostic reads (`clamp_incidence`'s audible
+        # mask); on this path that shape is the drive. It is NOT applied as an output
+        # gain — the drive already acted at the tract input (see RenderPlan).
+        env = drive
+        respiratory = True
+    else:
+        ps = syl.level * env * gain
+        if syl.am > 0.0 and syl.am_depth > 0.0:
+            ps = ps * (
+                1.0 - syl.am_depth * (0.5 - 0.5 * np.cos(2.0 * np.pi * syl.am * t))
+            )
+        ps = np.clip(ps, PS_MIN, PS_MAX)
 
     # per syllable (8.1), then scaled to choose where on the tonal-to-rich axis this
     # syllable sits (§8.1a). Still clamped to the range the Euler step stays accurate over.
@@ -949,6 +1020,8 @@ def render_plan(
         q=q,
         gamma=gamma,
         oversample=oversample_for_gamma(gamma, sample_rate),
+        drive=drive,
+        respiratory=respiratory,
     )
 
 
@@ -1000,6 +1073,7 @@ def _voice(
     noise: float = 0.0,
     rough: float = 0.0,
     stream: int = NOISE_SEED,
+    drive: np.ndarray | None = None,
 ) -> np.ndarray:
     """One oscillator plus its own tract band(s).
 
@@ -1013,6 +1087,11 @@ def _voice(
     frequency jitter, subharmonics and — at the top of the range — the aperiodicity that
     the model's chaotic regime already contains. `noise` and `formants` act after the
     source, at the tract, where turbulence and resonance physically belong.
+
+    `drive` is the respiration path's √ps (docs/15 §1): it scales the source — oscillator
+    and turbulence together, one airflow — at the tract input, so the tract is genuinely
+    driven harder at higher air-sac pressure rather than having an envelope painted on
+    after the fact. None on the envelope path, which is then bit-identical to before.
     """
     beta = beta_for(f0, pressure, calibration, gamma)
     # ampPP is read at the *clean* beta on purpose. Its job is to divide the pitch out of
@@ -1055,6 +1134,12 @@ def _voice(
         source = source + (noise * NOISE_GAIN) * flow * _xorshift_noise(
             alpha.shape[0], stream * 4 + 1
         )
+
+    if drive is not None:
+        # √ps at the tract input (docs/15 §1): the one point where pressure enters
+        # multiplicatively, ahead of the DC block and every resonance. Turbulence is
+        # scaled with the oscillator — both are the same airflow.
+        source = source * drive
 
     src = _one_pole_hp(source, TRACT_HP_HZ, sample_rate)
 
@@ -1116,6 +1201,7 @@ def render_syllable(
         plan.f0, plan.alpha, plan.ps, plan.q, syl.harmonic,
         plan.gamma, plan.oversample, sample_rate, calibration,
         syl.formants, syl.tube, syl.harmonics, syl.noise, syl.rough, stream,
+        plan.drive,
     )
     if syl.two:
         f0b = plan.f0 * (2.0 ** (DETUNE_CENTS / 1200.0))
@@ -1125,14 +1211,16 @@ def render_syllable(
             # The second side gets its own noise stream. Sharing one would make the two
             # sides correlated, and correlated noise through two nearly identical tracts
             # sums to one louder voice instead of two — the bilateral shimmer is exactly
-            # the part that has to stay independent.
+            # the part that has to stay independent. The drive is shared: one pair of
+            # air sacs feeds both sides of the syrinx.
             syl.formants, syl.tube, syl.harmonics, syl.noise, syl.rough, stream + 1024,
+            plan.drive,
         )
 
     # 180 Hz one-pole highpass and 12 kHz one-pole lowpass on the sum
     out = _one_pole_lp(_one_pole_hp(out, TRACT_HP_HZ, sample_rate), TRACT_LP_HZ, sample_rate)
 
-    if envelope_gain:  # see module docstring
+    if envelope_gain and not plan.respiratory:  # see module docstring
         out = out * plan.env
     return out
 

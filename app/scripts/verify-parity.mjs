@@ -65,6 +65,28 @@ const CASES = [
 			noise: 0.35,
 			rough: 0.25
 		}
+	},
+	// docs/15 §1: the respiratory oscillator replaces the envelope, and √ps drives the
+	// tract. The default hand-set (Table S2 ranges) is what `learn --respiration` ships.
+	{
+		name: 'respiration',
+		syllable: {
+			...base,
+			respiration: { tauX: 0.25, tauP: 0.08, alphaI: 0.05, alphaRel: 0.125, forcing: 50 }
+		}
+	},
+	// Same path under AM: the gate must act on ps at the labia while the tract drive
+	// keeps the un-gated air-sac pressure — the split both sides have to agree on.
+	{
+		name: 'respiration+am',
+		syllable: {
+			...base,
+			dur: 0.3,
+			hold: true,
+			am: 12,
+			amDepth: 0.9,
+			respiration: { tauX: 0.2, tauP: 0.05, alphaI: 0.2, alphaRel: 0.1, forcing: 80 }
+		}
 	}
 ];
 

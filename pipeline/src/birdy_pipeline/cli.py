@@ -26,7 +26,7 @@ from .corpus import (
     synthetic_corpus,
     write_wav,
 )
-from . import galaxy, harvest, learn
+from . import galaxy, harvest, learn, respiration
 from .galaxy import PointSet, build_galaxy
 from .syrinx import (
     Calibration,
@@ -901,6 +901,7 @@ def cmd_learn(args: argparse.Namespace) -> int:
     # with no critic is bit-identical to the one that shipped before the critic existed.
     features.self_test(verbose=False)
     learn.self_test(verbose=False)
+    respiration.self_test(verbose=False)
 
     t0 = time.time()
     with_own = sum(1 for o in store.syllables if o.descriptor)
@@ -939,6 +940,7 @@ def cmd_learn(args: argparse.Namespace) -> int:
         embedder=embedder,
         realism=realism,
         use_tube=args.use_tube,
+        use_respiration=args.respiration,
         prior=prior,
         # Where a discovered bird's common name is. Without it every species that is not in
         # the authored inventory is called by its own id everywhere in the app.
@@ -2465,6 +2467,13 @@ def build_parser() -> argparse.ArgumentParser:
                      help="re-enable the waveguide tract, gated off because the 28-d "
                           "objective rejected it. Turning this on together with --critic is "
                           "the plan's own test of whether the learned objective is better")
+    lrn.add_argument("--respiration", action="store_true",
+                     help="attach the default respiratory set of docs/15 §1 (Fainstein, "
+                          "Goller & Mindlin 2025: air-sac pressure gesture replacing the "
+                          "designed envelope, sqrt-pressure tract drive) to every fitted "
+                          "type. Hand-set, one set per species, until the pre-registered "
+                          "per-species fit exists; the reported cosine measures the "
+                          "respiratory render, which is the bake-off comparison")
     lrn.add_argument("--cpu", action="store_true",
                      help="run the critic on the CPU even where a GPU is available")
     lrn.set_defaults(func=cmd_learn)

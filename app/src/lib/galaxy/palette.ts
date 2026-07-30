@@ -56,3 +56,34 @@ export const PROV_DOCUMENTED = '#1f5fbf';
 export const PROV_LEARNED = '#7b8794';
 export const PROV_CANDIDATE = '#b45309';
 export const PROV_ARRIVALS = '#0b7a55';
+
+/**
+ * A stable hue per species, for the *moving* accent only.
+ *
+ * This needs a defence, because the note at the top of this file argues against species
+ * hues, and it still stands: on a static scatter, hue cannot identify a hundred species,
+ * and pretending it can is how the old islands view lied. What the accent does is a
+ * different job. It marks the current *subject* — the bird that is singing or selected,
+ * one at a time — and letting that mark take the subject's hue is presentation, not
+ * identification: nobody is asked to learn the hue, the tag still names the bird in
+ * words, and position still says where it lives. The gradient between hues as the
+ * subject changes is what makes "the subject changed" visible without a snap.
+ *
+ * The hue is a hash of the species id, not an index into the inventory: learned ids
+ * renumber across refits, and a colour that silently moved between two birds after a
+ * rebuild would be a claim nobody made. Hashing keeps a bird's hue stable across
+ * rebuilds and across machines. Lightness is held at 38 % so every hue keeps enough
+ * contrast against the paper to read as a mark, and stays clear of the ink (16 %) the
+ * rest of the cloud is drawn in.
+ */
+export function speciesColour(id: string): string {
+	// FNV-1a, then a golden-angle turn from the hash so near hashes still land apart.
+	let h = 2166136261;
+	for (let i = 0; i < id.length; i++) {
+		h ^= id.charCodeAt(i);
+		h = Math.imul(h, 16777619);
+	}
+	const hue = ((h >>> 0) * 137.508) % 360;
+	return `hsl(${hue.toFixed(1)} 58% 38%)`;
+}
+

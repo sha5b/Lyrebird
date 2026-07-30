@@ -85,6 +85,21 @@ export interface Syllable {
 	 * oropharyngeal-esophageal resonance, and a broad band leaks the second harmonic.
 	 */
 	tractQ?: number;
+	/**
+	 * The species' respiratory set (docs/15 §1; Fainstein, Goller & Mindlin 2025, Table
+	 * S2). When present, the designed envelope no longer drives `ps`: the two-state
+	 * air-sac oscillator produces the pressure gesture, and the tract is driven by its
+	 * square root at the injection point (Laje & Mindlin 2005's √ps · y). When absent
+	 * the syllable renders exactly as it always has. `forcing` is the paper's F0 —
+	 * the forcing amplitude, not a pitch.
+	 */
+	respiration?: {
+		tauX: number;
+		tauP: number;
+		alphaI: number;
+		alphaRel: number;
+		forcing: number;
+	};
 }
 
 export interface Song {

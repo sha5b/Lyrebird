@@ -5,13 +5,21 @@
 	import { buildSpeciesIndex, pointProvenance } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
 	import {
+		FRONT_LIFE,
+		FRONT_ONSET,
 		SIZE_REFERENCE,
 		WAVE_SOURCES,
+		buildClusterGraph,
 		fragmentShader,
+		frontRing,
+		frontTrail,
+		linkFragmentShader,
+		linkVertexShader,
 		vertexShader,
+		waveClaim,
 		type VisualSignal
 	} from './shaders';
-	import { ACCENT, MONO_HOT, MONO_REST, PROV_ARRIVALS, PROV_CANDIDATE, PROV_DOCUMENTED, PROV_LEARNED } from './palette';
+	import { ACCENT, MONO_HOT, MONO_REST, PROV_ARRIVALS, PROV_CANDIDATE, PROV_DOCUMENTED, PROV_LEARNED, speciesColour } from './palette';
 	import { buildLayout, type LayoutView } from './layouts';
 
 	interface Props {
@@ -55,6 +63,34 @@
 	// from the initial props rather than tracked.
 	const clusterCount = untrack(() => Math.max(1, assets.centroids.items.length));
 
+	// Species index (as `focus` carries it) back to species id, for the accent's target.
+	const speciesIdByIndex = untrack(() => {
+		const ids: string[] = [];
+		buildSpeciesIndex(assets).forEach((index, id) => (ids[index] = id));
+		return ids;
+	});
+
+	/**
+	 * The accent's colour is a *subject* marker, and a subject that changes without a
+	 * snap. Its hue follows whoever the accent currently belongs to — the selected bird,
+	 * or the species of the cluster the sound just landed on — easing over about half a
+	 * second so a chorus reads as one colour walking between birds rather than a frame
+	 * of strobe. With no subject it settles back to the interface violet, which is the
+	 * "no claim about who" state. Hue here is presentation: the tag still names the
+	 * bird, position still says where it lives (see the note on `speciesColour`).
+	 */
+	const accentNow = untrack(() => new THREE.Color(ACCENT));
+	const accentTarget = new THREE.Color(ACCENT);
+
+	function easeAccent(delta: number) {
+		let subject = '';
+		if (focus >= 0) subject = speciesIdByIndex[focus] ?? '';
+		else if (waveClaim(signal)) subject = assets.centroids.items[signal.best]?.speciesId ?? '';
+		accentTarget.set(subject ? speciesColour(subject) : ACCENT);
+		const eased = accentNow.lerp(accentTarget, Math.min(1, delta * 4));
+		material.uniforms.uAccent.value = eased;
+	}
+
 	// One float per point, rewritten every frame from the listener's per-point response.
 	// A dynamic attribute rather than a texture: 4287 floats is 17 kB, and going through
 	// a data texture would cost a fetch per vertex to save an upload that is already free.
@@ -68,6 +104,14 @@
 	// attribute shape as `activation`, for the same reason.
 	const orphan = untrack(() => new Float32Array(assets.points.n));
 	const orphanAttribute = new THREE.BufferAttribute(orphan, 1).setUsage(THREE.DynamicDrawUsage);
+
+	// The wavefront channel: one float per point, rewritten every frame from the front
+	// pass below. The third dynamic per-point attribute — same 75 k floats, same free
+	// upload as `activation` and `orphan`.
+	const front = untrack(() => new Float32Array(assets.points.n));
+	const frontAttribute = new THREE.BufferAttribute(front, 1).setUsage(THREE.DynamicDrawUsage);
+	/** Wake values for the link lines, per link vertex (see `frontTrail`). */
+	const trail = untrack(() => new Float32Array(assets.points.n));
 
 	// `position` and `aTarget` hold the same arrangement: the shader still interpolates
 	// between them, but with the islands layout gone there is nothing to morph to, so
@@ -127,6 +171,8 @@
 			uLearning: { value: new Float32Array(clusterCount) },
 			uRest: { value: new THREE.Color(MONO_REST) },
 			uInk: { value: new THREE.Color(MONO_HOT) },
+			// The live accent: `accentNow` below is mutated in place each frame, and the
+			// renderer reads the colour object's channels when it uploads the uniform.
 			uAccent: { value: new THREE.Color(ACCENT) },
 			uProvMode: { value: untrack(() => (colorMode === 'provenance' ? 1 : 0)) },
 			uProvDoc: { value: new THREE.Color(PROV_DOCUMENTED) },
@@ -209,6 +255,153 @@
 		view.centroids.set(layout.centroids);
 		view.version++;
 	});
+
+	/**
+	 * The wavefront's static half: per-cluster membership, true radii, each member's
+	 * unit radial direction, and the same-cluster neighbourhood links. Built once from
+	 * the shipped geometry — the front pass below only ever recomputes the *timing*,
+	 * never the structure. The links are measured in the 8-d response space when the
+	 * build ships one (see `buildClusterGraph`), and drawn in the one arrangement the
+	 * cloud has, so their positions never move: `uMorph` never leaves zero.
+	 */
+	const graph = untrack(() =>
+		buildClusterGraph(
+			layout.positions,
+			assets.points.clusterId,
+			clusterCount,
+			assets.pointFeatures,
+			assets.pointFeatureDims
+		)
+	);
+
+	const linkFront = untrack(() => new Float32Array(graph.links.point.length));
+	const linkFrontAttribute = new THREE.BufferAttribute(linkFront, 1).setUsage(
+		THREE.DynamicDrawUsage
+	);
+
+	// Registered after construction rather than in the geometry block above, because
+	// the radial directions need the layout, which needs the assets, which the block
+	// above only reads raw. Same one-time cost either way.
+	untrack(() => {
+		const radDir = new Float32Array(assets.points.n * 3);
+		for (let i = 0; i < assets.points.n; i++) {
+			const c = assets.points.clusterId[i];
+			if (c < 0 || c >= clusterCount) continue;
+			const dx = layout.positions[i * 3] - layout.centroids[c * 3];
+			const dy = layout.positions[i * 3 + 1] - layout.centroids[c * 3 + 1];
+			const dz = layout.positions[i * 3 + 2] - layout.centroids[c * 3 + 2];
+			const d = Math.hypot(dx, dy, dz);
+			if (d < 1e-6) continue;
+			radDir[i * 3] = dx / d;
+			radDir[i * 3 + 1] = dy / d;
+			radDir[i * 3 + 2] = dz / d;
+		}
+		geometry.setAttribute('aFront', frontAttribute);
+		geometry.setAttribute('aRadDir', new THREE.BufferAttribute(radDir, 3));
+	});
+
+	const linkGeometry = untrack(() => {
+		const g = new THREE.BufferGeometry();
+		g.setAttribute('position', new THREE.BufferAttribute(graph.links.positions, 3));
+		g.setAttribute('aLinkFront', linkFrontAttribute);
+		return g;
+	});
+
+	const linkMaterial = new THREE.ShaderMaterial({
+		vertexShader: linkVertexShader,
+		fragmentShader: linkFragmentShader,
+		uniforms: { uInk: { value: new THREE.Color(MONO_HOT) } },
+		transparent: true,
+		depthWrite: false
+	});
+
+	/**
+	 * Per-cluster front state. `frontAge` is seconds since the cluster's activation
+	 * crossed the onset threshold (Infinity = idle); `prevAct` is last frame's
+	 * activation, so the rising edge fires exactly one front per onset rather than a
+	 * front per frame for as long as a note holds.
+	 */
+	const frontAge = new Float32Array(clusterCount).fill(Number.POSITIVE_INFINITY);
+	const prevAct = new Float32Array(clusterCount);
+
+	/**
+	 * The per-frame front pass. Everything it draws with is a measurement:
+	 *
+	 * - onset: the cluster's activation crossing FRONT_ONSET upward (live match or
+	 *   scheduled pulse — both arrive through `signal.activations`);
+	 * - origin: the response-weighted centroid of the cluster's members, i.e. where
+	 *   inside the knot the sound actually landed; the geometric centroid when the
+	 *   per-point response is flat (a scheduled note, or a cluster lit by the floor);
+	 * - timing: each member's true distance from that origin, normalised by the
+	 *   cluster's true radius — arrival order is distance order;
+	 * - amplitude: the member's own measured response, with the cluster activation as
+	 *   floor, so the front ignites the most-similar members hardest.
+	 *
+	 * Cost is bounded by the live clusters' members, not the corpus: a resting frame
+	 * touches only the two fill(0)s, and a chorus frame a few hundred points.
+	 */
+	function updateFronts(delta: number) {
+		const acts = signal.activations;
+		const pointAct = signal.pointActivation;
+		for (let c = 0; c < clusterCount; c++) {
+			const a = acts[c] ?? 0;
+			if (a > FRONT_ONSET && prevAct[c] <= FRONT_ONSET) frontAge[c] = 0;
+			else if (frontAge[c] < FRONT_LIFE) frontAge[c] += delta;
+			prevAct[c] = a;
+		}
+		front.fill(0);
+		trail.fill(0);
+		linkFront.fill(0);
+		for (let c = 0; c < clusterCount; c++) {
+			const age = frontAge[c];
+			if (!(age < FRONT_LIFE)) continue;
+			const mem = graph.members[c];
+			if (!mem.length) continue;
+			let w = 0;
+			let ox = 0;
+			let oy = 0;
+			let oz = 0;
+			for (let m = 0; m < mem.length; m++) {
+				const i = mem[m];
+				const wi = pointAct[i] ?? 0;
+				if (wi <= 0) continue;
+				w += wi;
+				ox += wi * current[i * 3];
+				oy += wi * current[i * 3 + 1];
+				oz += wi * current[i * 3 + 2];
+			}
+			if (w < 1e-4) {
+				ox = view.centroids[c * 3];
+				oy = view.centroids[c * 3 + 1];
+				oz = view.centroids[c * 3 + 2];
+			} else {
+				ox /= w;
+				oy /= w;
+				oz /= w;
+			}
+			const radius = graph.radii[c];
+			const floor = (acts[c] ?? 0) * 0.3;
+			for (let m = 0; m < mem.length; m++) {
+				const i = mem[m];
+				const d =
+					Math.hypot(
+						current[i * 3] - ox,
+						current[i * 3 + 1] - oy,
+						current[i * 3 + 2] - oz
+					) / radius;
+				const amp = Math.min(1, Math.max(pointAct[i] ?? 0, floor) * 1.2);
+				front[i] = frontRing(d, age) * amp;
+				trail[i] = frontTrail(d, age) * amp;
+			}
+			const verts = graph.links.byCluster[c];
+			const linkPoint = graph.links.point;
+			for (let v = 0; v < verts.length; v++) {
+				linkFront[verts[v]] = trail[linkPoint[verts[v]]];
+			}
+		}
+		frontAttribute.needsUpdate = true;
+		linkFrontAttribute.needsUpdate = true;
+	}
 
 	const { camera } = useThrelte();
 	/** Scratch, so the per-frame fog fit allocates nothing. */
@@ -300,9 +493,12 @@
 
 		// A new note from a different knot starts its own front; the same knot holding on
 		// does not, or a sustained call would emit a front every frame and the interference
-		// would be mush rather than two crossing shells.
+		// would be mush rather than two crossing shells. The gate is the claim, not the
+		// loudness — see `waveClaim`: a front that launched whenever the input was loud
+		// moved across knots whose points stayed dark ("the wave moves but nothing
+		// activates"), because loud is all a fan or a weak self-match ever is.
 		const best = signal.best;
-		if (best >= 0 && best !== lastLaunch && signal.level > 0.04) {
+		if (best >= 0 && best !== lastLaunch && waveClaim(signal)) {
 			// Deliberately small. A front is meant to be read as movement, and displacement
 			// large enough to see in a still frame is large enough to smear a knot into a
 			// streak — which stops being animation and starts being a wrong position.
@@ -349,6 +545,7 @@
 		}
 		fitFog(points);
 		fitWave(delta * speed);
+		easeAccent(delta);
 
 		u.uLevel.value = signal.level;
 		u.uHighlight.value = signal.best;
@@ -374,12 +571,16 @@
 		activationAttribute.needsUpdate = true;
 		orphan.set(signal.orphanPulse.subarray(0, orphan.length));
 		orphanAttribute.needsUpdate = true;
+		updateFronts(delta * speed);
 	});
 
 	$effect(() => () => {
 		geometry.dispose();
+		linkGeometry.dispose();
+		linkMaterial.dispose();
 		material.dispose();
 	});
 </script>
 
 <T.Points bind:ref={points} {geometry} {material} frustumCulled={false} />
+<T.LineSegments geometry={linkGeometry} material={linkMaterial} renderOrder={-1} frustumCulled={false} />

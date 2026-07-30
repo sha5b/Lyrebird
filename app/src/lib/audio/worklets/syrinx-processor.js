@@ -67,6 +67,201 @@ const ROUGH_CLAMP_LO = 0.5;
 const ROUGH_CLAMP_HI = 1.5;
 
 /**
+ * The respiratory oscillator of Fainstein, Goller & Mindlin (2025) — docs/15 §1, the top
+ * bet of docs/09 §9.6, mirrored from `respiration.py`. A syllable carrying a
+ * `respiration` block replaces the designed envelope with the two-state air-sac
+ * dynamics:
+ *
+ *   tau_x * dx/dt = -(1 + x^2)*x - p + F0*f(t)
+ *   tau_p * dp/dt = -(1 + x^2)*x - (1 + alpha(p))*p + F0*f(t)
+ *   alpha(p)      = alpha_i - (alpha_i - alpha_o) * Theta(p)
+ *
+ * with the cubic restitution the paper measured and the Heaviside giving inflow and
+ * outflow different conductances. The gesture p(t) is scaled so its peak lands where
+ * the envelope path's ps peaked, and it drives the tract **multiplicatively at the
+ * injection point** as sqrt(ps) — Laje & Mindlin 2005's low-frequency result
+ * (s(t) ≈ √ps · y). Note the correction `syrinx.py` also carries: "every reference
+ * injects ẏ" is wrong — birdsongs injects the acceleration, syrinxsynth the velocity,
+ * and the physics says velocity × √ps. The whole gesture is precomputed at note start
+ * (the P10/P90 normalisation needs the full command, which a worklet never has sample
+ * by sample), integrating at the audio rate exactly as the paper specifies.
+ *
+ * The AM gate stays out of the forcing on purpose: air-sac pressure cannot swing at
+ * syringeal AM rates, so `am` keeps gating ps at the labia, and the tract drive uses
+ * the un-gated pressure. Defaults and ranges are Table S2 of the paper.
+ */
+const TAU_X_MIN = 0.01;
+const TAU_X_MAX = 0.25;
+const TAU_P_MIN = 0.005;
+const TAU_P_MAX = 0.2;
+const ALPHA_I_MIN = 0.05;
+const ALPHA_I_MAX = 6.0;
+const ALPHA_REL_MIN = 0.025;
+const ALPHA_REL_MAX = 0.125;
+const FORCING_MIN = 20.0;
+const FORCING_MAX = 200.0;
+const FORCING_TAU_S = 0.005; // the paper's critically damped expiratory filter, 5 ms
+const MINI_BREATH_DEPTH = 0.5;
+const MINI_BREATH_MIN_S = 0.012; // below this a gap is a pulse edge, not a breath
+const SILENCE_FRACTION = 0.05; // of the command's maximum: what "silence" means
+
+/**
+ * A syllable's `respiration` block, clamped into the Table S2 ranges, or null — in
+ * which case the syllable renders on the envelope path, bit-identically to before.
+ * Mirrors `respiration.parse`.
+ * @param {any} raw
+ * @returns {{tauX: number, tauP: number, alphaI: number, alphaRel: number, forcing: number} | null}
+ */
+function parseRespiration(raw) {
+	if (!raw || typeof raw !== 'object') return null;
+	const v = [raw.tauX, raw.tauP, raw.alphaI, raw.alphaRel, raw.forcing].map(Number);
+	if (v.some((x) => !Number.isFinite(x))) return null;
+	/** @type {(x: number, lo: number, hi: number) => number} */
+	const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+	return {
+		tauX: clamp(v[0], TAU_X_MIN, TAU_X_MAX),
+		tauP: clamp(v[1], TAU_P_MIN, TAU_P_MAX),
+		alphaI: clamp(v[2], ALPHA_I_MIN, ALPHA_I_MAX),
+		alphaRel: clamp(v[3], ALPHA_REL_MIN, ALPHA_REL_MAX),
+		forcing: clamp(v[4], FORCING_MIN, FORCING_MAX)
+	};
+}
+
+/**
+ * Fill each interior expiratory silence with a negative half-sine — a mini-breath.
+ * Interior only: a run touching the edges is the attack or the release, and putting an
+ * inhalation there would move the onset. Mirrors `respiration._insert_mini_breaths`.
+ * @param {Float64Array} m
+ * @param {number} sr
+ * @returns {Float64Array}
+ */
+function insertMiniBreaths(m, sr) {
+	const n = m.length;
+	let peak = 0;
+	for (let i = 0; i < n; i++) peak = Math.max(peak, m[i]);
+	const out = Float64Array.from(m);
+	if (peak <= 0) return out;
+	const threshold = SILENCE_FRACTION * peak;
+	const minLen = Math.trunc(MINI_BREATH_MIN_S * sr);
+	let i = 0;
+	while (i < n) {
+		if (m[i] < threshold) {
+			let j = i;
+			while (j < n && m[j] < threshold) j++;
+			const length = j - i;
+			if (i > 0 && j < n && length >= minLen) {
+				for (let k = 0; k < length; k++) {
+					out[i + k] = -MINI_BREATH_DEPTH * Math.sin((Math.PI * (k + 1)) / (length + 1));
+				}
+			}
+			i = j;
+		} else {
+			i++;
+		}
+	}
+	return out;
+}
+
+/**
+ * Linear-interpolation percentile on an already-sorted array, position (n-1)*q/100.
+ * Written by hand because this number is part of the contract — see
+ * `respiration._percentile`, which this mirrors.
+ * @param {Float64Array} sorted
+ * @param {number} q percent
+ */
+function percentileOf(sorted, q) {
+	const n = sorted.length;
+	if (n === 0) return 0;
+	const pos = (n - 1) * (q / 100);
+	const lo = Math.floor(pos);
+	const hi = Math.min(lo + 1, n - 1);
+	const frac = pos - lo;
+	return sorted[lo] + (sorted[hi] - sorted[lo]) * frac;
+}
+
+/**
+ * The air-sac pressure gesture for one syllable, precomputed at note start.
+ *
+ * Returns `{ps, drive}` — `ps` the clipped, un-gated air-sac pressure in the synth's
+ * [0, 1.4] range, `drive` its square root normalised to 1 at the peak, the
+ * multiplicative tract-input of docs/15 §1 — or null when the syllable carries no
+ * valid respiration block. Mirrors `syrinx.render_plan`'s respiratory branch, which
+ * calls `respiration.pressure`; the arithmetic and its order are the same.
+ * @param {Syllable} syl
+ * @param {number} gain the timbre class's pressure gain
+ * @param {(i: number, n: number) => number} envelopeAt the §8.1 envelope, per sample
+ * @returns {{ps: Float64Array, drive: Float64Array} | null}
+ */
+function respirationGesture(syl, gain, envelopeAt) {
+	const params = parseRespiration(syl.respiration);
+	if (!params) return null;
+	const n = Math.max(2, Math.round(syl.dur * sampleRate));
+	const dt = 1 / sampleRate;
+
+	// the designed envelope is the expiratory muscle command; mini-breaths fill its
+	// interior silences before the filter smooths everything alike
+	const m = insertMiniBreaths(
+		Float64Array.from({ length: n }, (_, i) => envelopeAt(i, n)),
+		sampleRate
+	);
+
+	// the paper's eqs. (3)-(4): critically damped 2nd-order filter, tau = 5 ms
+	const f = new Float64Array(n);
+	const tau2 = FORCING_TAU_S * FORCING_TAU_S;
+	let x1 = 0;
+	let x2 = 0;
+	for (let i = 0; i < n; i++) {
+		const dx1 = x2;
+		const dx2 = (m[i] - x1) / tau2 - (2 * x2) / FORCING_TAU_S;
+		x1 += dx1 * dt;
+		x2 += dx2 * dt;
+		f[i] = x1;
+	}
+
+	// P10/P90 normalisation: P10 maps to 0, P90 to 1
+	const ordered = Float64Array.from(f).sort();
+	const lo = percentileOf(ordered, 10);
+	const hi = percentileOf(ordered, 90);
+	const span = hi - lo;
+	if (span < 1e-9) f.fill(0);
+	else for (let i = 0; i < n; i++) f[i] = (f[i] - lo) / span;
+
+	// the respiratory states, forward Euler, one step per output sample
+	const alphaO = params.alphaI / params.alphaRel;
+	const p = new Float64Array(n);
+	let x = 0;
+	let pp = 0;
+	for (let i = 0; i < n; i++) {
+		const a = params.alphaI - (params.alphaI - alphaO) * (pp > 0 ? 1 : 0);
+		const rest = (1 + x * x) * x;
+		const ff = params.forcing * f[i];
+		const dx = (-rest - pp + ff) / params.tauX;
+		const dp = (-rest - (1 + a) * pp + ff) / params.tauP;
+		x += dx * dt;
+		pp += dp * dt;
+		if (!(Math.abs(x) < 1e6 && Math.abs(pp) < 1e6)) {
+			x = 0;
+			pp = 0;
+		}
+		p[i] = pp;
+	}
+
+	// scale the gesture so its peak lands where the envelope path's ps peaked
+	const ps0 = Math.min(1.4, Math.max(0, syl.level * gain));
+	let peak = 0;
+	for (let i = 0; i < n; i++) peak = Math.max(peak, p[i]);
+	const scale = peak > 1e-9 ? ps0 / peak : 0;
+	const ps = new Float64Array(n);
+	const drive = new Float64Array(n);
+	for (let i = 0; i < n; i++) {
+		ps[i] = Math.min(1.4, Math.max(0, p[i] * scale));
+		drive[i] = ps0 > 0 ? Math.sqrt(ps[i] / ps0) : 0;
+	}
+	return { ps, drive };
+}
+
+
+/**
  * xorshift32, bit-identical to `syrinx._xorshift_noise`.
  *
  * A PRNG rather than `Math.random` because the noise is part of the two-sided contract:
@@ -267,6 +462,12 @@ class Voice {
 		this.lpY = 0;
 		this.f0 = 0;
 		this.env = 0;
+		/**
+		 * The precomputed air-sac pressure gesture of docs/15 §1, or null on the
+		 * envelope path: `{ps, drive}` Float64Arrays over the syllable's sample grid.
+		 * @type {{ps: Float64Array, drive: Float64Array} | null}
+		 */
+		this.resp = null;
 		this.gamma = CALIBRATION_GAMMA;
 		this.oversample = 16;
 		this.dt = 1 / (48000 * 16);
@@ -278,12 +479,15 @@ class Voice {
 	 * @param {number} gain
 	 * @param {number} pan -1 hard left to +1 hard right
 	 * @param {number} stream turbulence realisation; see `render_syllable(stream=...)`
+	 * @param {{ps: Float64Array, drive: Float64Array} | null} resp the precomputed
+	 *   respiratory gesture of docs/15 §1, or null on the envelope path
 	 */
-	start(syllable, startSample, gain, pan, stream) {
+	start(syllable, startSample, gain, pan, stream, resp = null) {
 		this.active = true;
 		this.syllable = syllable;
 		this.startSample = startSample;
 		this.gain = gain;
+		this.resp = resp;
 		// equal-power pan, held per voice: birds in a chorus overlap, and a single shared
 		// panner would drag every one of them to wherever the newest note was placed
 		const angle = ((Math.min(1, Math.max(-1, pan)) + 1) * Math.PI) / 4;
@@ -543,9 +747,11 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 	 * @param {number} beta
 	 * @param {number} ampPP peak-to-peak swing of y/gamma, divided out of the source
 	 * @param {number} pressure drives the turbulence gate
+	 * @param {number} drive √ps at the tract input (docs/15 §1); exactly 1 on the
+	 *   envelope path, where multiplying by it changes nothing
 	 * @returns {number}
 	 */
-	stepOsc(voice, index, alpha, beta, ampPP, pressure) {
+	stepOsc(voice, index, alpha, beta, ampPP, pressure, drive) {
 		const g = voice.gamma;
 		const g2 = g * g;
 		const dt = voice.dt;
@@ -587,6 +793,11 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 			const flow = Math.max(pressure - NOISE_PS_FLOOR, 0);
 			source += voice.noise * NOISE_GAIN * flow * rng.next();
 		}
+		// √ps at the tract input (docs/15 §1): the one point where pressure enters
+		// multiplicatively, ahead of the DC block and every resonance, and it scales
+		// oscillator and turbulence together — both are the same airflow. Exactly 1 on
+		// the envelope path, which is then bit-identical to before.
+		source *= drive;
 		// 180 Hz one-pole highpass on the source, ahead of the tract (§8.1). This was
 		// missing: the worklet only DC-blocked after the tract, so the offline renderer's
 		// tract saw a source with the sub-180 Hz drift already removed and the worklet's did
@@ -622,12 +833,19 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 					const voice = this.voices.find((v) => !v.active);
 					if (voice) {
 						const offset = Math.max(0, Math.round((note.when - now) * sampleRate));
+						// docs/15 §1: the respiratory gesture is precomputed whole — its
+						// P10/P90 normalisation needs the full command — or is null, and
+						// the voice renders on the envelope path as it always has.
+						const timbre = TIMBRE[note.syllable.timbre] ?? TIMBRE.pure;
 						voice.start(
 							note.syllable,
 							startSample + offset,
 							note.gain,
 							note.pan ?? 0,
-							this.stream++
+							this.stream++,
+							respirationGesture(note.syllable, timbre.gain, (i, n) =>
+								this.envelopeAt(note.syllable, i, n)
+							)
 						);
 					}
 					this.pending.splice(i, 1);
@@ -677,14 +895,37 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 				// oscillator's drive and again on the way out. That both doubled the depth and
 				// made it the largest single disagreement with the offline renderer, which
 				// modulates `ps` and leaves `plan.env` clean (§8.1).
-				const env = this.envelopeAt(syl, sampleIndex, envN);
-				let psEnv = env;
-				if (syl.am) {
-					const depth = syl.amDepth ?? 0.5;
-					psEnv *= 1 - depth * (0.5 - 0.5 * Math.cos(2 * Math.PI * syl.am * t));
+				let env, pressure, drive;
+				if (voice.resp) {
+					// docs/15 §1: ps comes from the air-sac pressure gesture, and the
+					// amplitude shaping is the drive's job at the tract input, so the
+					// output gain is 1. The AM gate acts at the labia on this path too —
+					// air-sac pressure cannot swing at syringeal AM rates — while the
+					// drive keeps the un-gated pressure the sacs actually hold.
+					env = 1;
+					if (sampleIndex < envN) {
+						pressure = voice.resp.ps[sampleIndex];
+						drive = voice.resp.drive[sampleIndex];
+					} else {
+						pressure = 0;
+						drive = 0;
+					}
+					if (syl.am) {
+						const depth = syl.amDepth ?? 0.5;
+						pressure *= 1 - depth * (0.5 - 0.5 * Math.cos(2 * Math.PI * syl.am * t));
+					}
+					pressure = Math.min(1.4, Math.max(0, pressure));
+				} else {
+					env = this.envelopeAt(syl, sampleIndex, envN);
+					let psEnv = env;
+					if (syl.am) {
+						const depth = syl.amDepth ?? 0.5;
+						psEnv *= 1 - depth * (0.5 - 0.5 * Math.cos(2 * Math.PI * syl.am * t));
+					}
+					pressure = Math.min(1.4, Math.max(0, syl.level * psEnv * timbre.gain));
+					drive = 1;
 				}
 				voice.env = env;
-				const pressure = Math.min(1.4, Math.max(0, syl.level * psEnv * timbre.gain));
 				// positive alpha is the oscillating side of the threshold here (§8.1)
 				const alpha = 0.05 + 0.4 * pressure;
 
@@ -707,7 +948,7 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 				const betaClean = this.betaForF0(f0, pressure, voice.gamma);
 				const ampA = this.ampPP(alpha, betaClean, pressure);
 				const betaA = clampBeta(betaClean * voice.roughFactor(0));
-				const source = this.stepOsc(voice, 0, alpha, betaA, ampA, pressure);
+				const source = this.stepOsc(voice, 0, alpha, betaA, ampA, pressure, drive);
 				let filtered = voice.tract[0].process(source);
 				if (harmonic > 0) filtered += harmonic * 0.5 * voice.tractHarm[0].process(source);
 				const bankA = voice.formantFilters[0];
@@ -720,7 +961,7 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 					const betaCleanB = this.betaForF0(f0 * DETUNE_TWO, pressure, voice.gamma);
 					const ampB = this.ampPP(alpha, betaCleanB, pressure);
 					const betaB = clampBeta(betaCleanB * voice.roughFactor(1));
-					const sourceB = this.stepOsc(voice, 1, alpha, betaB, ampB, pressure);
+					const sourceB = this.stepOsc(voice, 1, alpha, betaB, ampB, pressure, drive);
 					let filteredB = voice.tract[1].process(sourceB);
 					if (harmonic > 0) filteredB += harmonic * 0.5 * voice.tractHarm[1].process(sourceB);
 					const bankB = voice.formantFilters[1];

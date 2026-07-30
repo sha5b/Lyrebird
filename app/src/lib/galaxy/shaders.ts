@@ -111,6 +111,14 @@ export function vertexShader(clusterCount: number): string {
 		attribute float aProv;
 		/** 1 while a scheduled orphan note — a type with points but no cluster — sounds. */
 		attribute float aOrphan;
+		/**
+		 * The wavefront ring at this point, 0..1. Computed on the CPU from the point's
+		 * true distance to the front's origin — see the note above frontRing for what
+		 * drives what. Never a random phase: arrival order is distance order.
+		 */
+		attribute float aFront;
+		/** Unit direction from the point's own cluster centroid — true geometry, at load. */
+		attribute vec3 aRadDir;
 		attribute vec3 aTarget;
 
 		uniform float uActivation[${Math.max(1, clusterCount)}];
@@ -164,10 +172,13 @@ export function vertexShader(clusterCount: number): string {
 		varying float vProv;
 		/** 1 while this point's orphan type is being played (see aOrphan). */
 		varying float vOrphan;
+		/** The wavefront ring passing through this point (see aFront). */
+		varying float vWave;
 
 		void main() {
 			vProv = aProv;
 			vOrphan = aOrphan;
+			vWave = aFront;
 			// **A point can belong to no cluster, and that is a result, not a gap.**
 			//
 			// Density clustering leaves sounds in no dense region — too rare or too unlike
@@ -236,32 +247,35 @@ export function vertexShader(clusterCount: number): string {
 			float lead = mix(0.75, 1.25, aSeed);
 			vec3 base = mix(position, aTarget, clamp(uMorph * lead, 0.0, 1.0));
 
-			// Active points breathe and jump with the input level — the "it jumps" behaviour
-			// of the reference visualisation, per point rather than per knot.
+			// **The wavefront is the primary motion now; the per-point jitter is texture.**
 			//
-			// Each point takes its own fixed direction on the unit sphere, so a responding
-			// knot *inflates* in three dimensions. The previous version pushed every point
-			// along normalize(base) — away from the centre of the whole box — and then
-			// added a term straight up Y. For a knot sitting off-centre those are nearly
-			// the same direction for all of its members, so the knot slid bodily sideways
-			// and upward instead of swelling: a three-dimensional response rendered as a
-			// one-dimensional twitch.
+			// An active knot used to animate as independent random-phase jumps — every
+			// point on its own clock, so the eye read "these points are agitated" and
+			// nothing else. What the data actually says is ordered: the sound landed at a
+			// place in the knot, and the response reaches each member when the front
+			// crosses its true distance from that place. That propagation is aFront,
+			// computed on the CPU from real distances (see frontRing), and it moves the
+			// point along its true radial direction, so the knot visibly inflates outward
+			// in arrival order.
 			//
-			// The amplitude has to fit inside the knot. Calibrated at 0.07·(0.6+2·level) on
-			// the 44-cluster hand-authored galaxy, it reached 0.18 box units at full level —
-			// but the learned corpus packs its knots far tighter: measured on the shipped
-			// 149-cluster build, the mean member sits 0.079 from its own centroid, and a
-			// sixth of the assigned points already rest nearer a *neighbouring* centroid
-			// than that. A jump of 2.3 cluster radii landed lit points inside the knot next
-			// door while the wave, the grid cross and the label all stayed at the true one —
-			// reported as active particles firing at the wrong position. Capped at half a
-			// radius (0.045 at full level), the knot still visibly breathes and its members
-			// stay on it.
+			// The random-phase term survives only as a small unevenness on top, because a
+			// knot where every member moves identically reads as one rigid disc. Its
+			// amplitude is capped well under the front's, so the coherent wave is what you
+			// see and the jitter only keeps the spray countable.
+			//
+			// The amplitude budget still has to fit inside the knot. Measured on the
+			// shipped 149-cluster build, the mean member sits 0.079 from its own centroid
+			// and a sixth of the assigned points already rest nearer a *neighbouring*
+			// centroid than that, so the sum of both terms stays under half a cluster
+			// radius (0.011 texture + 0.032 front = 0.043 at full level): a responding
+			// knot swells hard in order, and never spills into the knot next door.
 			float pulse = act * (0.5 + 0.5 * sin(uTime * 9.0 + aSeed * 6.2831853));
 			float za = aSeed * 6.2831853 * 1.7;
 			float zb = aSeed * 6.2831853 * 2.9;
 			vec3 burst = normalize(vec3(cos(za) * sin(zb), cos(zb), sin(za) * sin(zb)) + vec3(1e-4));
-			vec3 p = base + burst * pulse * 0.03 * (0.6 + uLevel * 0.9);
+			vec3 p = base
+				+ burst * pulse * 0.007 * (0.6 + uLevel * 0.9)
+				+ aRadDir * aFront * 0.032;
 
 			// Waves, plural, each expanding from the knot that is actually sounding.
 			//
@@ -311,7 +325,11 @@ export function vertexShader(clusterCount: number): string {
 			// made a lit knot read as one swollen disc: it has to breathe with the sound,
 			// and unevenly, or the per-point response is invisible in the size channel too.
 			// The learning swell joins in here — size, not colour, is how slow work shows.
-			float grow = max(act, learn * 0.6) * (0.35 + 0.9 * uLevel) * (0.5 + 1.0 * aSeed);
+			// The wavefront's own term is the strongest of the three: a point nearly
+			// doubles as the ring passes through it, which is what makes the propagation
+			// readable across the whole knot rather than only at its landing spot.
+			float grow = max(act, learn * 0.6) * (0.35 + 0.9 * uLevel) * (0.5 + 1.0 * aSeed)
+				+ aFront * 0.9;
 			// Unassigned marks are drawn smaller: they are real measurements and they are
 			// not structure, and at the same weight a third of the corpus in no cluster
 			// reads as a cloud that has one.
@@ -373,6 +391,7 @@ export const fragmentShader = /* glsl */ `
 	varying float vArrive;
 	varying float vProv;
 	varying float vOrphan;
+	varying float vWave;
 
 	void main() {
 		vec2 uv = gl_PointCoord - 0.5;
@@ -404,7 +423,10 @@ export const fragmentShader = /* glsl */ `
 		// faint halos are indistinguishable from the fog this shader just stopped drawing:
 		// after any sound the cloud stopped looking like it did on load. Below a quarter
 		// response there is no glow at all.
-		float glow = smoothstep(0.25, 0.75, vAct);
+		// The wavefront earns it outright: where the ring is passing, the halo rides it,
+		// so the propagation shows as a bright ring crossing the knot and not only as
+		// motion — the visible ordering is the measured one (distance from the landing).
+		float glow = max(smoothstep(0.25, 0.75, vAct), vWave);
 		float halo = smoothstep(0.5, 0.24, d) * glow;
 		float mask = disc * 0.88 + centre * (0.22 + 0.5 * glow) + halo * 0.45;
 
@@ -426,9 +448,16 @@ export const fragmentShader = /* glsl */ `
 		// rest->ink to a pale wash of the point's provenance colour -> the colour
 		// itself, so response still reads as light-to-strong inside each category.
 		// The accent is untouched: it keeps meaning exactly one thing.
+		//
+		// The wash sits at 0.26, not the 0.38 it started at: at 0.38 a resting knot
+		// already carried most of the class colour, so a response moved it almost
+		// nowhere and the mode read as static — "the colours do not change when a
+		// knot activates". Lower, the four classes stay distinguishable at rest and
+		// a response is a visible walk to full class colour; the alpha term below
+		// adds the dim half of the same contrast.
 		vec3 prov = vProv < 0.5 ? uProvDoc : (vProv < 1.5 ? uProvLearned : (vProv < 2.5 ? uProvCand : uProvArrivals));
 		vec3 ink = mix(uInk, prov, uProvMode);
-		vec3 rest = mix(uRest, mix(uSurface, prov, 0.38), uProvMode);
+		vec3 rest = mix(uRest, mix(uSurface, prov, 0.26), uProvMode);
 		vec3 end = mix(ink, uAccent, clamp(vAccent, 0.0, 1.0));
 
 		// A chosen bird's points sit most of the way along their own ramp even at rest, so
@@ -476,6 +505,10 @@ export const fragmentShader = /* glsl */ `
 		float alpha =
 			uOpacity * mask * (0.55 + vAct * 0.45) * vFocus * (1.0 + 0.35 * vChosen) *
 			(1.0 - fog * 0.45) * (1.0 - 0.45 * vUnassigned) * vArrive;
+		// In provenance mode a resting point also gives up a quarter of its weight, so
+		// "this knot is answering" moves two channels at once — class colour to full
+		// brightness above, ink weight here — the way species mode's response does.
+		alpha *= mix(1.0, 0.75 + 0.25 * vAct, uProvMode);
 		// The dim half of the orphan pulse: it breathes the mark *down* against the
 		// paper, the opposite direction from a response.
 		alpha *= 1.0 - 0.55 * oPulse;
@@ -584,6 +617,234 @@ export function createSignal(clusterCount: number, pointCount = 0): VisualSignal
 
 /** Trajectories are drawn as disconnected segments so separate paths never join up. */
 export const MAX_PATHS = 10;
+
+/**
+ * The activation wavefront: when a cluster starts responding, a ring leaves the place
+ * the sound landed and crosses the knot, and each member pulses as the ring reaches it.
+ * Every quantity in it is a measurement, mapped as follows:
+ *
+ * - **origin** — the response-weighted centroid of the cluster's members (computed in
+ *   PointCloud from `signal.pointActivation`, the per-point measured similarity): the
+ *   front starts where inside the knot the input actually landed, not at a decoration
+ *   point. Falls back to the geometric centroid for a scheduled note, whose per-point
+ *   response is flat by construction.
+ * - **pulse time** — the point's true 3-d distance from that origin, divided by the
+ *   cluster's true radius (its farthest member), so `d` is 0 at the landing spot and 1
+ *   at the rim whatever the knot's real extent. The ring arrives at `d = age ·
+ *   FRONT_SPEED`, so arrival order *is* distance order — the harness asserts the
+ *   monotonicity.
+ * - **amplitude** — the ring's height at a point is scaled by that point's own measured
+ *   response (`pointActivation[i]`, with the cluster activation as floor), so the front
+ *   ignites the members that really sound like the input hardest instead of switching
+ *   the knot on as one blob.
+ *
+ * The positions below are *normalized radial units* (share of the knot's own radius),
+ * not box units, because the knot's extent is the measurement that sets the scale.
+ */
+
+/** Ring speed in knot-radii per second: the front crosses a knot in about 0.42 s. */
+export const FRONT_SPEED = 2.4;
+/** Ring thickness in knot-radii: broad enough to read as a front, tight enough to order neighbours. */
+export const FRONT_WIDTH = 0.16;
+/** Seconds a front lives from onset; the ring has crossed and faded by then. */
+export const FRONT_LIFE = 0.95;
+/** Cluster activation rising through this starts a front; falling back through it re-arms. */
+export const FRONT_ONSET = 0.15;
+
+/**
+ * Front amplitude over its life: a fast attack so the onset is visible the frame it
+ * happens, then a decay once the ring has reached the rim (age ≈ 1/FRONT_SPEED), so a
+ * fired front leaves the knot to its steady response rather than shimmering on.
+ */
+export function frontEnvelope(age: number): number {
+	if (age < 0 || age > FRONT_LIFE) return 0;
+	const attack = Math.min(1, age / 0.04);
+	const decay = Math.exp(-Math.max(0, age - 1 / FRONT_SPEED) * 4);
+	return attack * decay;
+}
+
+/**
+ * The ring itself: a gaussian in normalized distance, centred where the front has
+ * travelled to at `age`. This is the only place pulse time is set — true distance from
+ * the origin, never a per-point random phase.
+ */
+export function frontRing(distNorm: number, age: number): number {
+	const x = (distNorm - age * FRONT_SPEED) / FRONT_WIDTH;
+	return Math.exp(-x * x) * frontEnvelope(age);
+}
+
+/**
+ * Does the current best match carry enough of a claim to draw the wave at all.
+ *
+ * The wave and the grid cross say "a sound landed *here*" — they are the same claim
+ * the points make when they light, so they must answer to the same evidence. Both used
+ * to fire on loudness (`signal.level > 0.04`), which loud room tone and a weak
+ * self-match of the synth both pass: the front launched from the nearest knot while
+ * that knot's points stayed dark, reported as "the wave moves but nothing activates".
+ * Now the gate is the claim itself: either the best cluster is visibly responding
+ * (a scheduled note, or a strong match's softmax share), or the match strength is past
+ * the floor at which a response becomes visible at all.
+ */
+export function waveClaim(signal: VisualSignal): boolean {
+	const best = signal.best;
+	if (best < 0) return false;
+	return (signal.activations[best] ?? 0) > 0.08 || signal.strength > 0.15;
+}
+
+/**
+ * What a connecting vector shows once the ring has passed: it ignites when the front
+ * reaches it and dims over about a third of a second, so the local graph reads as the
+ * *wake* of the front rather than flashing with it. One-sided by construction — a line
+ * the front has not reached yet is dark.
+ */
+export function frontTrail(distNorm: number, age: number): number {
+	const t = age - distNorm / FRONT_SPEED;
+	if (t <= 0) return 0;
+	return Math.exp(-t * 3.5) * frontEnvelope(age);
+}
+
+/** Per-cluster neighbourhood graph for the wavefront and the connecting vectors. */
+export interface ClusterGraph {
+	/** Point indices per cluster, in points.json order. */
+	members: Int32Array[];
+	/** Farthest member's true distance from the geometric centroid, per cluster. */
+	radii: Float32Array;
+	links: {
+		/** Segment endpoints (xyz pairs) in the drawn layout, static. */
+		positions: Float32Array;
+		/** The point behind each vertex, so the front can light its lines. */
+		point: Uint32Array;
+		/** Per cluster: the vertex indices of its segments. */
+		byCluster: Int32Array[];
+	};
+}
+
+/**
+ * Each member's few nearest same-cluster neighbours, computed once at load.
+ *
+ * The neighbourhood is measured in the 8-d reduced feature space (`point-features.f32`)
+ * when the build ships one — that is the space the per-point response itself is
+ * measured in, so a line says "these two renders are acoustically alike", not merely
+ * "these two dots project close together". Without that asset it falls back to the
+ * drawn 3-d positions, which is the weaker statement and says so.
+ *
+ * Same-cluster only, on purpose: a cross-cluster edge would assert a closeness the
+ * clustering explicitly declined to claim. Clusters larger than the candidate cap are
+ * searched against a deterministic stride sample, which keeps the one-time cost flat
+ * in the largest knot instead of quadratic in it — measured on the shipped corpus in
+ * the harness, not guessed.
+ */
+export function buildClusterGraph(
+	positions: Float32Array,
+	clusterId: ArrayLike<number>,
+	k: number,
+	features: Float32Array | null,
+	featureDims: number,
+	knn = 3
+): ClusterGraph {
+	const n = clusterId.length;
+	const lists: number[][] = Array.from({ length: k }, () => []);
+	for (let i = 0; i < n; i++) {
+		const c = clusterId[i];
+		if (c >= 0 && c < k) lists[c].push(i);
+	}
+	const members = lists.map((l) => Int32Array.from(l));
+	const radii = new Float32Array(k);
+
+	const useFeatures = features !== null && featureDims > 0;
+	const dims = useFeatures ? featureDims : 3;
+	const vecOf = (i: number, out: Float32Array) => {
+		if (useFeatures) {
+			const off = i * dims;
+			for (let a = 0; a < dims; a++) out[a] = (features as Float32Array)[off + a];
+		} else {
+			out[0] = positions[i * 3];
+			out[1] = positions[i * 3 + 1];
+			out[2] = positions[i * 3 + 2];
+		}
+	};
+
+	const CANDIDATE_CAP = 400;
+	const linkPositions: number[] = [];
+	const linkPoint: number[] = [];
+	const byClusterLists: number[][] = Array.from({ length: k }, () => []);
+	const vi = new Float32Array(dims);
+	const vj = new Float32Array(dims);
+
+	for (let c = 0; c < k; c++) {
+		const mem = members[c];
+		if (!mem.length) continue;
+		// True geometric centroid and radius, for the front's normalization.
+		let cx = 0,
+			cy = 0,
+			cz = 0;
+		for (const i of mem) {
+			cx += positions[i * 3];
+			cy += positions[i * 3 + 1];
+			cz += positions[i * 3 + 2];
+		}
+		cx /= mem.length;
+		cy /= mem.length;
+		cz /= mem.length;
+		let radius = 0;
+		for (const i of mem) {
+			const d = Math.hypot(positions[i * 3] - cx, positions[i * 3 + 1] - cy, positions[i * 3 + 2] - cz);
+			if (d > radius) radius = d;
+		}
+		radii[c] = Math.max(radius, 1e-4);
+
+		// k nearest same-cluster neighbours. Deterministic stride sample over the same
+		// member list when the knot is huge, so the cap never changes small knots.
+		const stride = Math.max(1, Math.ceil(mem.length / CANDIDATE_CAP));
+		const candidates = stride === 1 ? mem : mem.filter((_, j) => j % stride === 0);
+		const seen = new Set<number>();
+		const best: { j: number; d: number }[] = [];
+		for (const i of mem) {
+			vecOf(i, vi);
+			best.length = 0;
+			for (const j of candidates) {
+				if (j === i) continue;
+				vecOf(j, vj);
+				let d = 0;
+				for (let a = 0; a < dims; a++) d += (vi[a] - vj[a]) ** 2;
+				// insertion into a knn-long sorted list; knn is 3, so this stays tiny
+				let at = best.length;
+				while (at > 0 && best[at - 1].d > d) at--;
+				if (at < knn) {
+					best.splice(at, 0, { j, d });
+					if (best.length > knn) best.pop();
+				}
+			}
+			for (const { j } of best) {
+				const key = i < j ? i * n + j : j * n + i;
+				if (seen.has(key)) continue;
+				seen.add(key);
+				const v = linkPoint.length;
+				linkPoint.push(i, j);
+				linkPositions.push(
+					positions[i * 3],
+					positions[i * 3 + 1],
+					positions[i * 3 + 2],
+					positions[j * 3],
+					positions[j * 3 + 1],
+					positions[j * 3 + 2]
+				);
+				byClusterLists[c].push(v, v + 1);
+			}
+		}
+	}
+
+	return {
+		members,
+		radii,
+		links: {
+			positions: Float32Array.from(linkPositions),
+			point: Uint32Array.from(linkPoint),
+			byCluster: byClusterLists.map((l) => Int32Array.from(l))
+		}
+	};
+}
+
 
 export const trajectoryVertexShader = /* glsl */ `
 	attribute float aIndex;
@@ -720,5 +981,33 @@ export const trajectoryPointsFragmentShader = /* glsl */ `
 		vec3 colour = mix(uColdColor, vColour, clamp(0.35 + vPeak, 0.0, 1.0));
 		float alpha = vAlpha * core * (0.35 + 0.25 * passed + vPeak * 0.8);
 		gl_FragColor = vec4(colour, clamp(alpha, 0.0, 1.0));
+	}
+`;
+
+/**
+ * The connecting vectors inside a knot: each member's few nearest same-cluster
+ * neighbours (see `buildClusterGraph` for the space they are measured in). They carry
+ * no brightness of their own — a vertex is lit only by the wavefront's wake reaching
+ * the point behind it, so the local graph appears in arrival order and fades behind
+ * the front, and a knot at rest shows none of them.
+ */
+export const linkVertexShader = /* glsl */ `
+	/** The wavefront wake at the point behind this vertex (see frontTrail). */
+	attribute float aLinkFront;
+	varying float vLink;
+	void main() {
+		vLink = aLinkFront;
+		gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+	}
+`;
+
+export const linkFragmentShader = /* glsl */ `
+	uniform vec3 uInk;
+	varying float vLink;
+	void main() {
+		// A GL line is one pixel at any zoom, so the link carries a little less ink than
+		// a point's halo or it would out-shout the marks it joins.
+		if (vLink <= 0.004) discard;
+		gl_FragColor = vec4(uInk, vLink * 0.5);
 	}
 `;

@@ -40,7 +40,7 @@ from typing import Any, Callable, Iterable, Sequence
 import numpy as np
 from sklearn.cluster import KMeans
 
-from . import density, features, syrinx
+from . import density, features, respiration, syrinx
 from .syrinx import Calibration, peak_normalise, render_syllable
 
 # --- segmentation ------------------------------------------------------------------
@@ -2163,6 +2163,7 @@ def learn_species(
     embedder: Embedder | None = None,
     realism: "RealismTerm | None" = None,
     use_tube: bool = False,
+    use_respiration: bool = False,
 ) -> dict[str, Any] | None:
     """Fitted syllables + a measured grammar for one species, or None if too little data.
 
@@ -2170,6 +2171,12 @@ def learn_species(
     the first changes what a *type* is, the second changes what *close* means. Both default to
     off, so a run that passes neither is bit-identical to the fit that shipped before the critic
     existed — which is what makes the comparison in the plan's results table meaningful.
+
+    `use_respiration` attaches the default respiratory set of docs/15 §1 to every fitted
+    type: hand-set, one set for every species, until the pre-registered per-species fit
+    exists (respiration.py's module docstring says how it will be fitted). The reported
+    resynthesis cosine then measures the respiratory render, which is the comparison the
+    bake-off is run on.
 
     `use_tube` re-enables the waveguide tract. It is written, tested, and gated off because the
     28-d objective rejected it (§9.1 result 5). docs/09 calls it "the cleanest available test of
@@ -2209,6 +2216,15 @@ def learn_species(
         embedder=embedder,
     )
     fitted = fit_types(observations, k, seed=seed, previous=previous, embedder=embedder)
+
+    if use_respiration:
+        # docs/15 §1's top bet, hand-set until the per-species fit exists: every fitted
+        # type carries the default respiratory set, so the pressure gesture the reported
+        # cosine measures is the one the syllable ships with — the air sacs' own
+        # dynamics, not the designed envelope. Attached before any tract or gesture
+        # step so everything downstream is searched against the render that ships.
+        for t in fitted:
+            t.syllable["respiration"] = respiration.DEFAULT_PARAMS.as_dict()
 
     index = {id(o): i for i, o in enumerate(observations)}
     type_of = {index[id(o)]: t.id for t in fitted for o in t.members}
@@ -2413,6 +2429,7 @@ def build_learned_inventory(
     embedder: Embedder | None = None,
     realism: "RealismTerm | None" = None,
     use_tube: bool = False,
+    use_respiration: bool = False,
     discovered: Sequence[dict[str, Any]] | None = None,
     typing: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
@@ -2497,6 +2514,7 @@ def build_learned_inventory(
             types=types, seed=seed, verbose=verbose, frame=frame, invert=invert,
             previous=(prior or {}).get(species_id),
             embedder=embedder, realism=realism, use_tube=use_tube,
+            use_respiration=use_respiration,
         )
         if learned is None:
             continue
@@ -2752,6 +2770,33 @@ def self_test(verbose: bool = True) -> None:
     blended = _score(syllable, reference, None, None, features.SAMPLE_RATE,
                      RealismTerm(stub, 1.0))
     assert blended != plain, "a w=1 realism term must change the score"
+
+    # 6b. Respiration (docs/15 §1): a syllable carrying the default respiratory set
+    #     renders through the same pipeline and lands somewhere different from the
+    #     envelope render — the gesture is not the envelope. A block that fails to
+    #     parse must fall back to the envelope path *bit-identically*, because that
+    #     fallback is what keeps every inventory written before this feature valid.
+    resp_syllable = {**syllable, "respiration": respiration.DEFAULT_PARAMS.as_dict()}
+    parsed = syrinx.Syllable.from_dict(resp_syllable)
+    assert parsed.respiration == respiration.DEFAULT_PARAMS
+    env_audio = render_syllable(syllable)
+    resp_audio = render_syllable(resp_syllable)
+    assert resp_audio.shape == env_audio.shape and np.all(np.isfinite(resp_audio))
+    assert not np.allclose(env_audio, resp_audio), (
+        "the respiratory gesture must actually change the sound"
+    )
+    for junk in ({"respiration": {"tauX": 0.1}}, {"respiration": "yes"}):
+        assert np.array_equal(render_syllable({**syllable, **junk}), env_audio), (
+            f"an unparseable respiration block must be the envelope path: {junk}"
+        )
+    # ...and the plan tells the renderer not to apply the envelope twice.
+    plan = syrinx.render_plan(resp_syllable)
+    assert plan.respiratory and plan.drive is not None
+    assert np.array_equal(plan.env, plan.drive), (
+        "on the respiratory path `env` is the diagnostic amplitude shape: the drive"
+    )
+    assert not syrinx.render_plan(syllable).respiratory
+
 
     # 7. Patches must survive `to_dict` being JSON-serialisable — they go to a binary sidecar,
     #    and an ndarray left in the dict would make `harvest.HarvestStore.save` raise.
