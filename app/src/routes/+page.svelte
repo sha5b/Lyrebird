@@ -1563,20 +1563,27 @@ uv run birdy-pipeline build</pre>
 								-->
 								<p class="note faint">
 									With Provenance colours on, point colour says where each sound comes
-									from:
-									<b style:color="var(--documented)">documented</b> (authored inventory),
-									<b style:color="var(--unlabelled)">learned</b> (fitted to field audio),
-									<b style:color="var(--invented)">unidentified</b> (field audio with no
-									fitted identity — the candidate pool; per-point novelty flags are not in
-									this build yet),
-									<b style:color="var(--experimental)">unlabelled arrivals</b> (real audio,
-									no species tag, typed by similarity{#if !hasArrivals} — none in this
-									galaxy yet{/if}). Label colour says which bird.
+									from. The loudest division is whether a bird made the sound or we did:
+									<b style:color="var(--invented)">synthesized</b> (our render of a type
+									the pipeline fitted) against
+									<b style:color="var(--experimental)">recorded</b> (real field audio
+									carrying that same fitted type) — a little over half the galaxy each.
+									Then
+									<b style:color="var(--documented)">documented</b> (authored inventory —
+									a person named it),
+									<b style:color="var(--arrival)">unlabelled arrivals</b> (real audio,
+									typed by similarity, no species tag{#if !hasArrivals} — none in this
+									galaxy yet{/if}), and
+									<b style:color="var(--unlabelled)">unidentified</b> (field audio with no
+									fitted identity at all — the candidate pool; per-point novelty flags are
+									not in this build yet). Label colour says which bird.
 								</p>
 								<p class="note faint">
-									A point breathing grey without a knot is a syllable that was played but
-									has no cluster of its own — heard, not placed. A slow grey breath
-									near a knot means a sound was heard but matched nothing — not a claim.
+									A point breathing on its own, with no knot lighting around it, is a
+									syllable that was played but has no cluster of its own — heard, not
+									placed. It breathes in its own class colour above, or in plain ink with
+									the colours off. A slow grey breath near a knot is a different thing: a
+									sound was heard but matched nothing — not a claim.
 								</p>
 							</section>
 						</div>

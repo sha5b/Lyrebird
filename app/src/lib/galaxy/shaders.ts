@@ -107,7 +107,11 @@ export function vertexShader(clusterCount: number): string {
 		attribute float aSpecies;
 		/** Which build this point joined in; see the point metadata's generation array. */
 		attribute float aBorn;
-		/** Provenance category: 0 documented, 1 learned, 2 candidate (assets.pointProvenance). */
+		/**
+		 * Provenance category (assets.PROVENANCE): 0 documented, 1 learned (our
+		 * synthesis of a fitted type), 2 field (a real recording of one), 3 unlabelled,
+		 * 4 candidate.
+		 */
 		attribute float aProv;
 		/** 1 while a scheduled orphan note — a type with points but no cluster — sounds. */
 		attribute float aOrphan;
@@ -424,12 +428,14 @@ export const fragmentShader = /* glsl */ `
 	uniform float uOpacity;
 	/** Live pitch, 0..1 over the corpus's range. Shapes the gradient inside each mark. */
 	uniform float uPitch;
-	/** Provenance category colours: authored inventory, fitted-to-field, unidentified,
-	 * and the unlabelled pseudo-species. */
+	/** Provenance category colours, in PROVENANCE order: authored inventory, our
+	 * synthesis of a fitted type, a real recording of one, the unlabelled
+	 * pseudo-species, and unidentified field audio. */
 	uniform vec3 uProvDoc;
 	uniform vec3 uProvLearned;
-	uniform vec3 uProvCand;
+	uniform vec3 uProvField;
 	uniform vec3 uProvArrivals;
+	uniform vec3 uProvCand;
 	/** 1 for neutral ink/plain points, 0 for the provenance class tint. */
 	uniform float uPlain;
 	/** The same clock the vertex stage pulses by; the orphan pulse breathes on it. */
@@ -524,7 +530,10 @@ export const fragmentShader = /* glsl */ `
 		// brightening is unmistakable rather than a nuance. Activation shifts TONE —
 		// brighter crest, darker trough via vRipple below — never hue. The accent is
 		// untouched: it keeps meaning exactly one thing.
-		vec3 prov = vProv < 0.5 ? uProvDoc : (vProv < 1.5 ? uProvLearned : (vProv < 2.5 ? uProvCand : uProvArrivals));
+		vec3 prov = vProv < 0.5 ? uProvDoc
+			: (vProv < 1.5 ? uProvLearned
+			: (vProv < 2.5 ? uProvField
+			: (vProv < 3.5 ? uProvArrivals : uProvCand)));
 		// The plain look swaps the class colours for a neutral pair and keeps every
 		// other rule — same wash, same ramp, same tone shifts — so "coloured / plain"
 		// changes what the points *say about provenance*, never how they respond.
@@ -554,8 +563,14 @@ export const fragmentShader = /* glsl */ `
 		// with the alpha dipping rather than rising, and with none of the growth, halo
 		// or ring a responding cluster gets. "Played, but not placed in the galaxy" is
 		// a different claim from "this knot is answering" and must look like one (§8.5).
+		//
+		// It breathes toward ink, not prov, so the plain mode stays plain. Against
+		// prov the pulse kept its class hue even with the colours switched off, which
+		// went unnoticed only because the class colour of nearly every point used to be
+		// the same grey the plain mode draws; now that the classes carry real hues, that
+		// would be an amber or green flash in the mode whose whole promise is neutrality.
 		float oPulse = vOrphan * (0.35 + 0.65 * (0.5 + 0.5 * sin(uTime * 7.0 + vSeed * 6.2831853)));
-		colour = mix(colour, prov, oPulse * 0.85);
+		colour = mix(colour, ink, oPulse * 0.85);
 
 		// The signed ripple, as brightness: a crest darkens toward ink, a trough pales
 		// toward the paper, and a cancellation — crest meeting trough — lands back at

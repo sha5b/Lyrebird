@@ -16,7 +16,15 @@
 		waveClaim,
 		type VisualSignal
 	} from './shaders';
-	import { ACCENT, PROV_ARRIVALS, PROV_CANDIDATE, PROV_DOCUMENTED, PROV_LEARNED, speciesColour } from './palette';
+	import {
+		ACCENT,
+		PROV_ARRIVALS,
+		PROV_CANDIDATE,
+		PROV_DOCUMENTED,
+		PROV_FIELD,
+		PROV_LEARNED,
+		speciesColour
+	} from './palette';
 	import { buildLayout, type LayoutView } from './layouts';
 
 	interface Props {
@@ -168,8 +176,9 @@
 			uAccent: { value: new THREE.Color(ACCENT) },
 			uProvDoc: { value: new THREE.Color(PROV_DOCUMENTED) },
 			uProvLearned: { value: new THREE.Color(PROV_LEARNED) },
-			uProvCand: { value: new THREE.Color(PROV_CANDIDATE) },
+			uProvField: { value: new THREE.Color(PROV_FIELD) },
 			uProvArrivals: { value: new THREE.Color(PROV_ARRIVALS) },
+			uProvCand: { value: new THREE.Color(PROV_CANDIDATE) },
 			uPlain: { value: untrack(() => (plain ? 1 : 0)) },
 			// "Heard, but nothing claimed": where the nearest region breathes, and how
 			// strongly. Eased in the frame task; 0 means silent.

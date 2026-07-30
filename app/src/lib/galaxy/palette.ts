@@ -43,19 +43,42 @@ export const MONO_HOT = '#1e2836';
 export const ACCENT = '#5b3fd6';
 
 /**
- * The provenance quartet, used by the "colour: provenance" mode and by the orphan
- * pulse. The first three are the interface's existing confidence hues
- * (`--documented`, `--unlabelled`, `--invented` in app.css) repeated as numbers for
- * the shader, kept in step by hand exactly like `ACCENT`: blue for the authored
- * inventory, grey for types fitted to field recordings, amber for field audio with
- * no identity. The fourth reuses `--experimental`'s green for the unlabelled
- * pseudo-species — far enough from the blue, the amber and the violet accent to stay
- * separable, and an interface hue rather than a new invention.
+ * The provenance set, used by the "colour: provenance" mode and by the orphan pulse.
+ * These are the interface's existing confidence hues (app.css) repeated as numbers for
+ * the shader, kept in step by hand exactly like `ACCENT`.
+ *
+ * The mapping is read as two questions rather than five arbitrary tags:
+ *
+ * - **blue** (`--documented`) — a person named this sound.
+ * - **amber** (`--invented`) — we synthesized it from a type the pipeline fitted.
+ * - **green** (`--experimental`) — it is a real recording, carrying a fitted type.
+ * - **rose** (`--arrival`) — real audio, typed, but with no species tag at all.
+ * - **grey** (`--unlabelled`) — nothing is known about it. The neutral, on the one
+ *   class that genuinely makes no claim.
+ *
+ * **Amber and green are deliberately the widest-separated pair in the set**, because
+ * they carry the two classes that between them are 97 % of the shipped corpus (53 %
+ * synthesized, 44 % recorded). Measured on the light surface at the resting 0.5 wash,
+ * their worst case across normal, deutan, protan and tritan vision is ΔE 29.4 — the
+ * strongest pair here by a wide margin, so the division a viewer sees first is the one
+ * that actually partitions the galaxy. Every class also sits at least ΔE 20 from the
+ * plain mode's neutral, which is the property the previous palette lacked: its
+ * majority class was ΔE 5.3 from plain, so turning provenance colours on changed
+ * nothing anyone could see.
+ *
+ * The set does not pretend all five separate equally. Five categorical hues cannot
+ * survive colour-vision deficiency — the note at the top of this file is the same
+ * argument — and two pairs here are weak (documented/field ΔE 7.3 tritan, and
+ * learned/unlabelled ΔE 8.6 deutan). Both weak pairs involve classes that are a small
+ * minority or absent from the shipped build, the documented/green weakness is one the
+ * previous palette already had, and the classes are named in the reading panel and the
+ * legend, so hue is never the sole carrier.
  */
 export const PROV_DOCUMENTED = '#1f5fbf';
-export const PROV_LEARNED = '#7b8794';
-export const PROV_CANDIDATE = '#b45309';
-export const PROV_ARRIVALS = '#0b7a55';
+export const PROV_LEARNED = '#b45309';
+export const PROV_FIELD = '#0b7a55';
+export const PROV_ARRIVALS = '#da9a76';
+export const PROV_CANDIDATE = '#7b8794';
 
 /**
  * A stable hue per species, for the *labels* of the galaxy.

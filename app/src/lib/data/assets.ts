@@ -382,18 +382,40 @@ export interface Coverage {
  *
  * - `documented` (0) — a render of a call from the authored inventory: its identity
  *   was written down by a person, with a confidence the inventory states.
- * - `learned` (1) — a type the pipeline fitted to field recordings of a known
- *   species (ids start with L), or field audio assigned to one. Real acoustics, no
- *   documented function.
- * - `candidate` (2) — the honest remainder: harvested field audio with no identity at
- *   all. A per-point novelty flag would live here too, but no shipped build writes
- *   one yet, so unidentified field points are the whole of this category for now.
+ * - `learned` (1) — *our synthesis* of a type the pipeline fitted (ids start with L).
+ *   The type is measured; the sound at this point is one we generated from it.
+ * - `field` (2) — *real recorded audio* carrying a fitted type. Same measured
+ *   identity as `learned`, but the point is a recording rather than a render.
  * - `unlabelled` (3) — the pseudo-species: arrivals with no species label, typed by
  *   the label-free path (`learn_unlabelled`). Keyed on the markers the pipeline
  *   actually writes — speciesId `unlabelled` and the U-prefixed candidate type ids
  *   (learn.py `UNLABELLED_SPECIES` / `unlabelled_entry`) — not on a guess.
+ * - `candidate` (4) — the honest remainder: harvested field audio with no identity at
+ *   all. A per-point novelty flag would live here too, but no shipped build writes
+ *   one yet, so unidentified field points are the whole of this category for now.
+ *
+ * **Why `learned` and `field` are two classes and not one.** They were one, and that
+ * single class held 97.2 % of the shipped corpus (44 293 of 45 592 points) — so the
+ * provenance mode painted the whole galaxy in one colour and told you nothing. It was
+ * worse than nothing: the colour was the neutral grey, which at the resting wash is
+ * ΔE 5.3 from the plain mode's neutral, i.e. indistinguishable, so switching the mode
+ * on appeared to do nothing at all except tint the 2.8 % documented minority blue.
+ * The class was hiding a real and nearly even division the assets already carry in
+ * `source`: 24 100 of those points are renders we synthesized and 20 193 are actual
+ * recordings. "Did a machine make this sound, or did a bird?" is the first question
+ * provenance is asked, and it is now the one the mode answers most loudly.
+ *
+ * The ordering is by strength of claim, strongest first, and the neutral grey now sits
+ * on `candidate` — the class that genuinely claims nothing — rather than on the
+ * majority, which is what a neutral means everywhere else in this interface.
  */
-export const PROVENANCE = { documented: 0, learned: 1, candidate: 2, unlabelled: 3 } as const;
+export const PROVENANCE = {
+	documented: 0,
+	learned: 1,
+	field: 2,
+	unlabelled: 3,
+	candidate: 4
+} as const;
 
 /** True for the unlabelled pool's own markers: the pseudo-species or a U* type id. */
 function isUnlabelledArrival(speciesId: string, syllableId: string): boolean {
@@ -432,7 +454,16 @@ export function pointProvenance(assets: BirdyAssets): Float32Array {
 			out[i] = source[i] === 'field' ? PROVENANCE.candidate : PROVENANCE.documented;
 			continue;
 		}
-		out[i] = syl[0] === 'L' ? PROVENANCE.learned : PROVENANCE.documented;
+		// A fitted type splits on where this particular point's audio came from: the
+		// identity is the same measurement either way, but one is a recording of a bird
+		// and the other is our synthesis of it, and the mode exists to say which.
+		if (syl[0] === 'L') {
+			out[i] = source[i] === 'field' ? PROVENANCE.field : PROVENANCE.learned;
+			continue;
+		}
+		// An authored identity stays `documented` whatever the source: the class is
+		// defined by who named the sound, and a person did.
+		out[i] = PROVENANCE.documented;
 	}
 	return out;
 }
