@@ -93,6 +93,12 @@
 	let cloud = $state<THREE.Group | undefined>();
 	/** Bumped on every grab of the view, which is what ends a camera flight. */
 	let grabbed = $state(0);
+	/**
+	 * Points: coloured (provenance class tint) or plain (neutral ink). Lives here rather
+	 * than in the page's settings because it changes only what this stage draws — the
+	 * labels' species hues and every activation rule are unaffected either way.
+	 */
+	let plain = $state(false);
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -130,7 +136,7 @@
 		<Spinner {spin} scale={spread} bind:group={cloud}>
 			<GridBurst {signal} {view} />
 			<ContextPaths {assets} {signal} {view} />
-			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} />
+			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} />
 			<Trajectory {assets} {signal} {view} {spread} {pointSize} />
 			{#if labels}
 				<NodeProjector {assets} {signal} elements={labelElements} {focus} {pinned} {view} />
@@ -143,9 +149,41 @@
 	{#if labels}
 		<NodeLabels {assets} elements={labelElements} {onpick} />
 	{/if}
+
+	<!--
+		Points: coloured / plain. Small and quiet on purpose — a display nicety, not a
+		mode; the labels' hues and the response rules do not change with it.
+	-->
+	<button
+		class="ptoggle"
+		class:on={!plain}
+		onclick={() => (plain = !plain)}
+		title="Coloured: points tinted by where each sound comes from. Plain: neutral ink points. Labels and activation behave the same either way."
+	>
+		points: {plain ? 'plain' : 'coloured'}
+	</button>
 </div>
 
 <style>
+	.ptoggle {
+		position: absolute;
+		right: 0.6rem;
+		bottom: 0.6rem;
+		z-index: 2;
+		padding: 0.2rem 0.5rem;
+		font-size: 0.66rem;
+		color: var(--ink-faint);
+		background: color-mix(in srgb, var(--paper) 82%, transparent);
+		border: 1px solid var(--rule);
+		border-radius: var(--radius);
+		cursor: pointer;
+	}
+
+	.ptoggle.on {
+		color: var(--ink-dim);
+		border-color: var(--rule-strong);
+	}
+
 	.stage {
 		position: absolute;
 		inset: 0;

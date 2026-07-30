@@ -1,7 +1,7 @@
 import { PitchDetector } from 'pitchy';
 import { ActivationTracker, FeatureExtractor, PointTracker, standardise } from './features.ts';
 import { readActivations, type Reading } from '$lib/lang/translate';
-import { createSignal, MAX_PATHS, type LivePath, type VisualSignal } from '$lib/galaxy/shaders';
+import { createSignal, MAX_PATHS, unmatchedCluster, type LivePath, type VisualSignal } from '$lib/galaxy/shaders';
 import type { BirdyAssets } from '$lib/data/types';
 import type { BirdyEngine } from './engine';
 
@@ -334,6 +334,12 @@ export class Listener {
 		}
 		this.signal.strength = this.tracker.strength;
 		if (this.tracker.strength < 1e-3) this.signal.best = -1;
+
+		// Heard, but nothing claimed: below the claim gate yet not silence, the nearest
+		// region gets the slow grey breath instead of the wave — a third state the
+		// picture used to show as plain nothing. A scheduled note is known, so it never
+		// lands here; a confident match claims its knot and never lands here either.
+		this.signal.unmatched = unmatchedCluster(this.signal, active);
 
 		// While Birdy sings, it knows the score, so the trajectories are driven by the
 		// schedule rather than by matching — a cluster lights exactly on the note instead

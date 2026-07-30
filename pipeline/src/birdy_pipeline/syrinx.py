@@ -833,6 +833,11 @@ class Syllable:
     formants: list[list[float]] = field(default_factory=list)
     #: Turbulence at the labia, 0..1, gated by pressure.
     noise: float = 0.0
+    #: The fricative routing of docs/16 §16.7: the turbulence bypasses the f0-tracking
+    #: tract band and is shaped by the syllable's own formant set instead — a
+    #: fricative is a noise burst filtered by the tract, not a tone with noise added.
+    #: A no-op when `noise` is 0; absent (False) renders bit-identically to before.
+    fricative: bool = False
     #: Cycle-to-cycle tension irregularity, 0..1.
     rough: float = 0.0
     #: Multiplier on the per-syllable gamma of 8.1, and the syllable's harmonic-richness
@@ -899,6 +904,7 @@ class Syllable:
             am_depth=float(d.get("amDepth", 0.0)),
             vib_rate=float(vib.get("rate", 0.0)),
             vib_depth=float(vib.get("depth", 0.0)),
+            fricative=bool(d.get("fricative", False)),
             formants=parse_formants(d.get("formants")),
             noise=float(np.clip(float(d.get("noise", 0.0)), 0.0, NOISE_MAX)),
             rough=float(np.clip(float(d.get("rough", 0.0)), 0.0, ROUGH_MAX)),
@@ -1036,6 +1042,10 @@ def jitter_syllable(syl: Syllable, rng: np.random.Generator, j: Jitter) -> Sylla
         am_depth=syl.am_depth,
         vib_rate=syl.vib_rate,
         vib_depth=syl.vib_depth,
+        # The fricative routing is a property of the type's sound-production class,
+        # not of this rendition — the same argument as `timbre`, which jitter also
+        # leaves alone.
+        fricative=syl.fricative,
         # Formants ride the pitch jitter. They are a property of the tract, and a bird whose
         # syrinx is a few per cent sharp today has the same trachea it had yesterday — but
         # the individual variation that `pitch` stands in for is body size, and a larger
@@ -1226,6 +1236,7 @@ def _voice(
     rough: float = 0.0,
     stream: int = NOISE_SEED,
     drive: np.ndarray | None = None,
+    fricative: bool = False,
 ) -> np.ndarray:
     """One oscillator plus its own tract band(s).
 
@@ -1271,7 +1282,7 @@ def _voice(
     y = _ode_source(alpha, beta, gamma, oversample, sample_rate, 1.0e-4, 0.0)
     return _voice_tract(
         f0, y, gamma, amp, pressure, q, harmonic, sample_rate,
-        formants, tube, harmonics, noise, stream, drive,
+        formants, tube, harmonics, noise, stream, drive, fricative,
     )
 
 
@@ -1290,6 +1301,7 @@ def _voice_tract(
     noise: float = 0.0,
     stream: int = NOISE_SEED,
     drive: np.ndarray | None = None,
+    fricative: bool = False,
 ) -> np.ndarray:
     """The post-integration half of `_voice`: source gain, turbulence, drive, tract.
 
@@ -1305,25 +1317,67 @@ def _voice_tract(
     tract input, so the tract is genuinely driven harder at higher air-sac pressure
     rather than having an envelope painted on after the fact. None on the envelope
     path, which is then bit-identical to before.
+
+    **The fricative path (docs/16 §16.7).** A fricative call is not "tone plus noise":
+    it is a noise burst *filtered by the vocal tract and driven by the pressure
+    gesture* — a whispered vowel, not static. The evidence is two species whose fits
+    parked at the noise ceiling (0.85) and still scored 0.12-0.60: the model was
+    reporting that the *shape* was missing, not the amount, because its only noise
+    shaping was the f0-tracking band — a filter tuned to a pitch a broadband burst
+    does not have. With `fricative` the turbulence is routed around the tracking band
+    and gets the syllable's own formant set instead:
+
+        tonal *= drive ;  noise_src *= drive        one airflow, one pressure gesture
+        src  = HP(tonal) ; nsrc = HP(noise_src)     the same 180 Hz DC block, each
+        out  = tract(src) + Σ_k gain_k · BP(nsrc; hz_k, q_k)
+
+    The tonal side's chain is untouched (tracking band, harmonic, formants, tube).
+    The noise side skips the tracking and harmonic bands — those are pitch-shaped,
+    and a fricative's shape is the tract's, not the pitch's — and passes through the
+    same formant bank the tonal side sees, because the formants ARE the tract: one
+    set of resonances filtering both sources, which is the anatomy. The pressure
+    handling is the point of the routing change (§16.7 piece 2): separated, the
+    noise would no longer ride `source * drive`, so the drive is applied to it
+    explicitly — on the respiration path the air-sac gesture shapes the burst's
+    envelope exactly as it shapes the tonal source's, and on the envelope path the
+    existing output envelope drives it, as it always has. The `flow` gate stays:
+    a bird with no airflow does not hiss. Without formants the flag renders
+    DC-blocked white noise — exactly what the fit was already producing at the
+    ceiling, which is why the flag exists to carry formants, not to replace them.
+    A syllable without the flag renders bit-identically to before; the flag with
+    `noise = 0` is a no-op by construction.
     """
     source = (y / gamma) * SOURCE_GAIN / amp
+    noise_src: np.ndarray | None = None
 
     if noise > 0.0:
         # Turbulent flow at the labia, so it enters *before* the tract and is shaped by it:
         # the same noise becomes a breathy whistle under a high-Q tract band and a rasp
         # under a low-Q formant, which is why a single `noise` scalar can serve both.
         flow = np.maximum(pressure - NOISE_PS_FLOOR, 0.0)
-        source = source + (noise * NOISE_GAIN) * flow * _xorshift_noise(
+        turbulence = (noise * NOISE_GAIN) * flow * _xorshift_noise(
             f0.shape[0], stream * 4 + 1
         )
+        if fricative:
+            noise_src = turbulence
+        else:
+            source = source + turbulence
 
     if drive is not None:
         # √ps at the tract input (docs/15 §1): the one point where pressure enters
         # multiplicatively, ahead of the DC block and every resonance. Turbulence is
-        # scaled with the oscillator — both are the same airflow.
+        # scaled with the oscillator — both are the same airflow — and that holds on
+        # the fricative path too, where the turbulence is scaled explicitly.
         source = source * drive
+        if noise_src is not None:
+            noise_src = noise_src * drive
 
     src = _one_pole_hp(source, TRACT_HP_HZ, sample_rate)
+    nsrc = (
+        _one_pole_hp(noise_src, TRACT_HP_HZ, sample_rate)
+        if noise_src is not None
+        else None
+    )
 
     if tube:
         # §8.1c: fixed waveguide, then resonators in CASCADE. No f0-tracking band at all.
@@ -1331,6 +1385,13 @@ def _voice_tract(
         out = _tube_comb(src, delay, float(tube[1]))
         for hz, fq, _gain in formants:
             out = _static_bandpass(out, float(hz), float(fq), sample_rate)
+        if nsrc is not None:
+            # The cascade shapes the tonal side; the turbulence gets the same
+            # resonances in the parallel form the non-tube path uses.
+            for hz, fq, gain in formants:
+                out = out + gain * _static_bandpass(
+                    nsrc, float(hz), float(fq), sample_rate
+                )
         return out
     if harmonics:
         # measured partials (§8.1b): one tracking band per partial, at its own amplitude
@@ -1351,6 +1412,12 @@ def _voice_tract(
             )
     for hz, fq, gain in formants:
         out = out + gain * _static_bandpass(src, float(hz), float(fq), sample_rate)
+    if nsrc is not None:
+        # The fricative's tract: the same formant set the tonal side just saw, applied
+        # to the turbulence — and nothing else. Added last so the summation order is
+        # tonal-tract-then-shaped-noise on both sides of the contract.
+        for hz, fq, gain in formants:
+            out = out + gain * _static_bandpass(nsrc, float(hz), float(fq), sample_rate)
     return out
 
 
@@ -1438,6 +1505,7 @@ def _voice_pair(
     out_a = _voice_tract(
         plan.f0, y_a, plan.gamma, amp_a, plan.ps, plan.q, syl.harmonic, sample_rate,
         syl.formants, syl.tube, syl.harmonics, syl.noise, stream, plan.drive,
+        syl.fricative,
     )
     if voices.level <= 0.0:
         # A closed right bronchus injects nothing and is not heard; the shared
@@ -1448,8 +1516,11 @@ def _voice_pair(
         # The second side gets its own noise stream, for the same reason `two: true`
         # gives it one: correlated turbulence through two near-identical tracts sums
         # to one louder voice instead of two. The drive is shared — one pair of air
-        # sacs feeds both sides of the syrinx.
+        # sacs feeds both sides of the syrinx. The fricative routing is shared too:
+        # it is a property of the call's production class, and both sides breathe
+        # through the same formant set.
         syl.formants, syl.tube, syl.harmonics, syl.noise, stream + 1024, plan.drive,
+        syl.fricative,
     )
     return 0.5 * out_a + 0.5 * out_b
 
@@ -1489,7 +1560,7 @@ def render_syllable(
             plan.f0, plan.alpha, plan.ps, plan.q, syl.harmonic,
             plan.gamma, plan.oversample, sample_rate, calibration,
             syl.formants, syl.tube, syl.harmonics, syl.noise, syl.rough, stream,
-            plan.drive,
+            plan.drive, syl.fricative,
         )
         if syl.two:
             f0b = plan.f0 * (2.0 ** (DETUNE_CENTS / 1200.0))
@@ -1502,7 +1573,7 @@ def render_syllable(
                 # the part that has to stay independent. The drive is shared: one pair of
                 # air sacs feeds both sides of the syrinx.
                 syl.formants, syl.tube, syl.harmonics, syl.noise, syl.rough, stream + 1024,
-                plan.drive,
+                plan.drive, syl.fricative,
             )
 
     # 180 Hz one-pole highpass and 12 kHz one-pole lowpass on the sum

@@ -96,6 +96,40 @@ design). Smoke sanity: a flagged crossbill syllable → *Loxia curvirostra* 0.88
 Measured caveat: Perch labels the 5-s window, not the syllable — background birds
 can dominate.
 
+## 16.7 The fricative path (design, pre-registered)
+
+**The evidence.** Two independent species parked their fits at the noise ceiling and
+still failed: chestnut-headed oropendola (L02/L04 `noise=0.85`, cos 0.12–0.77) and
+Algerian nuthatch (5 of 8 types at `noise=0.60–0.85`, cos 0.16–0.60). The debug
+spectrogram comparison (real vs render on cached iNat audio) shows the class: real
+chip notes are **broadband bursts with formant structure**; our renders of them are
+tonal — or, when the fit gives up and maxes the axis, flat white noise.
+
+**The diagnosis.** A fricative call is not "tone plus noise": it is a *noise burst
+filtered by the vocal tract and driven by the pressure gesture* — whispered vowels,
+not static. The current `noise` axis injects turbulence at the labia (broadband,
+weakly shaped). The fit pushing it to the ceiling and still scoring 0.16 is the
+model reporting that the *shape* is missing, not the amount.
+
+**The work, one path:**
+
+1. **Formant-filtered noise** — the fricative gets its own tract filtering: band
+   shape from the fitted formant set, applied to the noise source, not only to the
+   tonal one.
+2. **Pressure-driven noise envelope** — the respiratory gesture (B1) drives the
+   noise burst's envelope exactly as it drives the tonal source: a fricative burst
+   *is* a pressure event.
+3. **A noise-first fit strategy** — the inversion currently searches "tone, plus how
+   much noise" from the median; this class starts at "noise, shaped how" and fits
+   the filter. Same pre-registered judgment: resynthesis cosine + placement on a
+   fixed store, ship only where it wins, starting with nuthatch L00/L02 and
+   oropendola L02/L04 as the test bench.
+
+**Verdict history:** this is the third measured gap in the same family (docs/11
+coverage, docs/14 source-invariance, §16.7 shaped noise) — all three say the corpus
+grew past the representation. The first two have their fixes in flight; this one is
+the acoustic half.
+
 ## 16.6 The build (filled when it lands)
 
 _Production build of the 2 423-species galaxy — points, clusters, coverage, purity,

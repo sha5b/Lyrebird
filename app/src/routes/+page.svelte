@@ -282,8 +282,29 @@
 	 * Guarded on the current mode because `setChorus` toggles — calling it with the mode
 	 * that is already running is how you stop it, which would make selecting a bird that
 	 * is already singing switch it off.
+	 *
+	 * Two leaks this guard used to leave open:
+	 *
+	 * - Switching bird *while* solo ran only refreshed the display: the ambient pool
+	 *   still held the previous species, so the old bird — not the new one — kept
+	 *   singing, sometimes for as long as its shard took to load.
+	 * - `stopAmbient` stops the scheduler but not the notes already posted to the
+	 *   worklet, so the aviary's in-flight songs played on into the solo. Only the
+	 *   selected bird (and its same-species duet partners) may be heard in solo, so
+	 *   the voices are cut when a selection change takes the chorus over.
+	 *
+	 * And one state machine for the way back: returning to all birds restores the
+	 * whole-aviary chorus if it was running when the selection began, and stays
+	 * silent if the user had stopped it — both are "how it was", which is the only
+	 * honest answer to "what should all birds sound like".
 	 */
 	let lastSpeciesChoice = $state('');
+	/**
+	 * Whether the whole-aviary chorus had the air when the current selection took it.
+	 * Written here, read on the way back; `silence` and any toggle to 'off' clear it,
+	 * because an explicit stop must survive the round trip.
+	 */
+	let resumeGlobal = false;
 	$effect(() => {
 		const chosen = speciesId;
 		if (chosen === lastSpeciesChoice) return;
@@ -291,10 +312,29 @@
 		untrack(() => {
 			if (!engine) return;
 			if (chosen) {
-				if (chorus !== 'solo') setChorus('solo');
-				else refreshSelection();
+				if (chorus !== 'solo') {
+					resumeGlobal = chorus === 'global';
+					// Cut in-flight notes only when a chorus was actually running — with
+					// the chorus off, what is playing is something the user asked for
+					// by hand, and selecting a bird must not silence it.
+					if (chorus !== 'off') engine.panic();
+					void setChorus('solo');
+				} else {
+					// A different bird while solo runs: rebuild the pool for it. The
+					// shard may still be in flight, so wait for it like setChorus does.
+					engine.panic();
+					const eng = engine;
+					void assets?.loadSpecies(chosen).then((bird) => {
+						if (bird && speciesId === chosen && chorus === 'solo') {
+							eng.startAmbient([bird.id], 12 * tempo, 3);
+						}
+					});
+					refreshSelection();
+				}
 			} else if (chorus === 'solo') {
-				setChorus('off');
+				if (resumeGlobal) void setChorus('global');
+				else void setChorus('off');
+				resumeGlobal = false;
 			}
 		});
 	});
@@ -390,8 +430,16 @@
 		};
 		refreshDevices();
 		navigator.mediaDevices?.addEventListener('devicechange', refreshDevices);
+		// Capture phase, so it runs before the stage's own pointer handlers: the
+		// background click-away needs to know what the gesture started on (a node
+		// tag's click is a selection, not empty space).
+		const trackDown = (e: PointerEvent) => {
+			downTarget = e.target;
+		};
+		window.addEventListener('pointerdown', trackDown, true);
 		return () => {
 			navigator.mediaDevices?.removeEventListener('devicechange', refreshDevices);
+			window.removeEventListener('pointerdown', trackDown, true);
 			listener?.stop();
 			engine?.dispose();
 			// The hold is a timer, and a timer that outlives the component writes state
@@ -580,8 +628,14 @@
 		listener?.setPreview(entry.nodes, entry.speciesId, entry.label);
 	}
 
+	/**
+	 * Clicking empty space in the view clears whatever the view is about: a phrase
+	 * picked from the history, a pinned knot — or simply the bird chosen in the
+	 * dropdown, which is a selection like the others. Releasing it returns to all
+	 * birds, and the `speciesId` effect then hands the chorus back the way it came.
+	 */
 	function clearSelection() {
-		if (selectedSung === null && pinnedCluster < 0) return;
+		if (selectedSung === null && pinnedCluster < 0 && !speciesId) return;
 		selectedSung = null;
 		pinnedCluster = -1;
 		// Back to the whole corpus: the selection had narrowed it to one bird.
@@ -589,8 +643,20 @@
 		refreshSelection();
 		// `setChorus` toggles, so guard the mode as well: starting the aviary chorus by
 		// hand already clears the selection, and this must never switch it back off.
-		if (chorusToResume && engine && chorus !== 'global') setChorus('global');
+		if (chorusToResume && engine && chorus !== 'global') void setChorus('global');
 		chorusToResume = false;
+	}
+
+	/**
+	 * What the pointer went down on, tracked in the capture phase so the background
+	 * handler can tell a click on empty space from one that merely *ended* over the
+	 * stage. The node tags live inside it, so their clicks bubble up here — and a tag
+	 * click is a selection (pickCluster), not a request to clear one.
+	 */
+	let downTarget: EventTarget | null = null;
+	function backgroundClicked() {
+		if (downTarget instanceof Element && downTarget.closest('.tag')) return;
+		clearSelection();
 	}
 
 	/**
@@ -697,13 +763,18 @@
 	}
 
 	/**
-	 * The faint backdrop of songs behind the live ones.
+	 * The faint backdrop of songs behind the live ones — for a chosen bird, never for
+	 * the whole aviary at once.
 	 *
-	 * Passing no bird draws every bird's, rather than nothing. "All birds" is a selection
-	 * like any other and should behave like one — the backdrop is how you see which
-	 * transitions a repertoire reuses, and at the whole-corpus scale it is how you see
-	 * that the aviary has a shape at all. Leaving it empty made the entry that shows the
-	 * most look like the entry that shows the least.
+	 * The whole-corpus backdrop (every bird's every song and grammar pair, drawn at
+	 * 0.28 with overlap-darkening) was written when the galaxy held a dozen species
+	 * and read as "the aviary has a shape". At 116 species it is thousands of static
+	 * segments that never fade, and it buried the point cloud under a grey tangle —
+	 * measured by looking at it: the cloud, which is the subject, was invisible
+	 * behind threads, which are context. A thread is a current event: the backdrop
+	 * now answers a question about *one* bird (selected or pinned), and a global
+	 * chorus shows only the live trajectories, which have a lifecycle (capped, and
+	 * faded out ~1.4 s after their phrase ends — see `advancePaths` in listener.ts).
 	 */
 	function showContext(id: string) {
 		if (!listener) return;
@@ -721,7 +792,7 @@
 			listener.setContext([...songPathsOf(id), ...grammarPathsOf(id)]);
 			return;
 		}
-		listener.setContext(species.flatMap((s) => [...songPathsOf(s.id), ...grammarPathsOf(s.id)]));
+		listener.setContext([]);
 	}
 
 	function sing() {
@@ -956,6 +1027,9 @@
 		engine.stopAmbient();
 		listener?.clearPaths();
 		if (chorus === 'off') {
+			// An explicit stop survives a later deselect: the aviary must not resume
+			// behind a chorus the user deliberately ended.
+			resumeGlobal = false;
 			contextSpecies = null;
 			refreshSelection();
 			return;
@@ -998,6 +1072,7 @@
 	function silence() {
 		engine?.panic();
 		chorus = 'off';
+		resumeGlobal = false;
 		listener?.clearPaths();
 		contextSpecies = null;
 		refreshSelection();
@@ -1432,7 +1507,7 @@ uv run birdy-pipeline build</pre>
 				frame={frameNodes}
 				learning={learningClusters}
 				onpick={pickCluster}
-				onbackground={clearSelection}
+				onbackground={backgroundClicked}
 			/>
 			{/key}
 
@@ -1472,10 +1547,11 @@ uv run birdy-pipeline build</pre>
 									</label>
 								</div>
 								<!--
-									One colour language, no toggle: the points always say where a
-									sound comes from, the labels always say which bird. The old
-									species/provenance switch died when the species hue moved off
-									the points — it no longer changed anything real.
+									One colour language: the points always say where a sound comes
+									from, the labels always say which bird. The species/provenance
+									switch died when the species hue moved off the points; the
+									"points: coloured / plain" button on the stage only dims that
+									one language to neutral ink — it changes no meaning.
 								-->
 								<p class="note faint">
 									Point colour says where each sound comes from:
@@ -1490,7 +1566,8 @@ uv run birdy-pipeline build</pre>
 								</p>
 								<p class="note faint">
 									A point breathing grey without a knot is a syllable that was played but
-									has no cluster of its own — heard, not placed.
+									has no cluster of its own — heard, not placed. A slow grey breath
+									near a knot means a sound was heard but matched nothing — not a claim.
 								</p>
 							</section>
 						</div>
@@ -1800,8 +1877,13 @@ uv run birdy-pipeline build</pre>
 							</div>
 						{:else}
 							<div class="row">
+								<!--
+									Not `primary`: Chorus is a toggle, and the filled style is
+									reserved for one-shot actions — on a toggle it made the *off*
+									state render black, which reads as pressed. The `.on` class
+									carries the active look, as it does for the solo Chorus above.
+								-->
 								<button
-									class="primary"
 									class:on={chorus === 'global'}
 									disabled={!engine}
 									onclick={() => setChorus('global')}

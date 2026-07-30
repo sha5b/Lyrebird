@@ -51,6 +51,16 @@ export interface Syllable {
 	/** Turbulence at the labia, 0..1, gated by pressure. The only route to a real rasp:
 	 *  the ODE limit cycle is periodic, so a "buzz" made by widening a bandpass is a tone. */
 	noise?: number;
+	/**
+	 * The fricative routing of docs/16 §16.7: the turbulence bypasses the f0-tracking
+	 * tract band and is shaped by this syllable's own formant set instead — a
+	 * fricative is a noise burst filtered by the vocal tract and driven by the
+	 * pressure gesture (whispered vowels, not static), not a tone with noise added.
+	 * On the respiration path the √ps drive scales the burst exactly as it scales the
+	 * tonal source; on the envelope path the existing output envelope drives it.
+	 * A no-op when `noise` is 0; absent renders bit-identically to before.
+	 */
+	fricative?: boolean;
 	/** Cycle-to-cycle tension irregularity, 0..1, which reaches the sound through the
 	 *  oscillator as jitter, subharmonics and — at the top — aperiodicity. */
 	rough?: number;

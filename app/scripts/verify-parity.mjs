@@ -125,6 +125,39 @@ const CASES = [
 				betaInj: 0.12
 			}
 		}
+	},
+	// docs/16 §16.7: the fricative path — turbulence routed around the f0-tracking
+	// band into the syllable's own formant set. The chip-note case the whole feature
+	// exists for: broadband burst, tract-shaped, pressure-driven.
+	{
+		name: 'fricative',
+		syllable: {
+			...base,
+			noise: 0.6,
+			fricative: true,
+			formants: [
+				[2400, 4, 1.0],
+				[5200, 6, 0.6]
+			]
+		}
+	},
+	// Piece 2 on the respiration path: the air-sac gesture shapes the separated
+	// noise burst's envelope exactly as it shapes the tonal source's — the drive is
+	// applied to the turbulence explicitly once it no longer rides `source * drive`.
+	{
+		name: 'fricative+respiration',
+		syllable: {
+			...base,
+			dur: 0.25,
+			hold: true,
+			noise: 0.85,
+			fricative: true,
+			formants: [
+				[1800, 3, 1.0],
+				[4600, 5, 0.8]
+			],
+			respiration: { tauX: 0.25, tauP: 0.2, alphaI: 0.05, alphaRel: 0.125, forcing: 35 }
+		}
 	}
 ];
 

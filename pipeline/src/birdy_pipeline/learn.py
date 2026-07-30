@@ -3038,6 +3038,35 @@ def self_test(verbose: bool = True) -> None:
     )
     assert syrinx.Syllable.from_dict({**syllable, "voices": attached}).voices is not None
 
+    # 6d. The fricative path (docs/16 §16.7): a flagged syllable with turbulence
+    #     renders somewhere different from the mixed path — routing the noise
+    #     through the formant set instead of the f0-tracking band is not the same
+    #     filter. With `noise = 0` the flag must be a no-op *bit for bit* (there is
+    #     no turbulence to route), and an unflagged syllable renders exactly as it
+    #     always has — all eighteen parity fixtures stand on that.
+    fric_syllable = {
+        **syllable,
+        "noise": 0.6,
+        "fricative": True,
+        "formants": [[2400.0, 4.0, 1.0], [5200.0, 6.0, 0.6]],
+    }
+    parsed = syrinx.Syllable.from_dict(fric_syllable)
+    assert parsed.fricative is True
+    mixed_audio = render_syllable({k: v for k, v in fric_syllable.items() if k != "fricative"})
+    fric_audio = render_syllable(fric_syllable)
+    assert fric_audio.shape == mixed_audio.shape and np.all(np.isfinite(fric_audio))
+    assert not np.allclose(mixed_audio, fric_audio), (
+        "formant-shaped noise must not equal tracking-band noise"
+    )
+    quiet = {**fric_syllable, "noise": 0.0}
+    assert np.array_equal(
+        render_syllable(quiet),
+        render_syllable({k: v for k, v in quiet.items() if k != "fricative"}),
+    ), "fricative with noise=0 must be a no-op, bit for bit"
+    # ...and the respiration path stays deterministic with the burst separated.
+    resp_fric = {**fric_syllable, "respiration": respiration.DEFAULT_PARAMS.as_dict()}
+    assert np.array_equal(render_syllable(resp_fric), render_syllable(resp_fric))
+
 
     # 7. Patches must survive `to_dict` being JSON-serialisable — they go to a binary sidecar,
     #    and an ndarray left in the dict would make `harvest.HarvestStore.save` raise.

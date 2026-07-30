@@ -119,6 +119,14 @@ export function vertexShader(clusterCount: number): string {
 		attribute float aFront;
 		/** Unit direction from the point's own cluster centroid — true geometry, at load. */
 		attribute vec3 aRadDir;
+		/**
+		 * How far this point may bloom as the front passes: 45 % of its knot's own
+		 * radius (median knot on the shipped 1024-cluster build: radius 0.185 → 0.083),
+		 * capped at 0.045 — about 0.8 × the median knot spacing (0.057) — so a dense
+		 * knot's members clearly separate as the ring crosses, yet a blooming member
+		 * still lands inside its own knot's neighbourhood rather than the next knot's.
+		 */
+		attribute float aBloom;
 		attribute vec3 aTarget;
 
 		uniform float uActivation[${Math.max(1, clusterCount)}];
@@ -159,6 +167,15 @@ export function vertexShader(clusterCount: number): string {
 		 * wash — the measured numbers behind the scale are recorded where it is set.
 		 */
 		uniform float uWaveLocal;
+		/**
+		 * The "heard, but nothing claimed" state: where the nearest region is and how
+		 * strongly it should breathe. Only ever driven below the claim gate — a match
+		 * never sets it, so its slow grey breath cannot be mistaken for a response.
+		 */
+		uniform vec3 uUnmatchedOrigin;
+		uniform float uUnmatchedStrength;
+		/** 1 for neutral ink/plain points, 0 for the provenance class tint. */
+		uniform float uPlain;
 
 		varying float vAct;
 		varying float vSeed;
@@ -187,6 +204,8 @@ export function vertexShader(clusterCount: number): string {
 		 * cancel like water rather than each playing at full strength independently.
 		 */
 		varying float vRipple;
+		/** The slow grey breath of the nearest region when input is heard but unclaimed. */
+		varying float vUnmatchedRing;
 
 		void main() {
 			vProv = aProv;
@@ -288,7 +307,7 @@ export function vertexShader(clusterCount: number): string {
 			vec3 burst = normalize(vec3(cos(za) * sin(zb), cos(zb), sin(za) * sin(zb)) + vec3(1e-4));
 			vec3 p = base
 				+ burst * pulse * 0.007 * (0.6 + uLevel * 0.9)
-				+ aRadDir * aFront * 0.032;
+				+ aRadDir * aFront * aBloom;
 
 			// Waves, plural, each expanding from the knot that is actually sounding.
 			//
@@ -337,6 +356,19 @@ export function vertexShader(clusterCount: number): string {
 			}
 			vRipple = ripple;
 
+			// **Heard, but nothing claimed.** Below the claim gate the points stay dark
+			// and no wave launches, which used to read exactly like silence — a bird the
+			// corpus could not place produced the same picture as no bird at all. This
+			// is the honest third state: a slow, low, grey breath around the *nearest*
+			// region (where the unmatched sound would land if it were anything), never
+			// the fast signed ripple of a match and never the class colour of a
+			// response, so it cannot be misread as one. The breath is deliberately slow
+			// (about 0.5 Hz against the ripple's several) — calm, not an event.
+			float uDist = length(base - uUnmatchedOrigin) + 1e-4;
+			float uNear = exp(-pow(uDist / (uWaveLocal * 1.6), 2.0));
+			float uBreath = 0.5 + 0.5 * sin(uTime * 3.1);
+			vUnmatchedRing = uNear * uBreath * uUnmatchedStrength;
+
 			// The old drift survives only as what the cloud does in silence, and fades out
 			// as the waves come up so the two never fight.
 			float idle = 0.004 * (1.0 - clamp(waveTotal * 40.0, 0.0, 1.0));
@@ -363,7 +395,7 @@ export function vertexShader(clusterCount: number): string {
 			// The signed field moves size too: a crest swells, a trough pinches, and where
 			// two fronts cancel the mark keeps its resting size — the interference is
 			// readable in the still frame, not only in the motion.
-			grow += clamp(ripple * 4.0, -0.3, 0.6);
+			grow += clamp(ripple * 5.0, -0.35, 0.7);
 			// Unassigned marks are drawn smaller: they are real measurements and they are
 			// not structure, and at the same weight a third of the corpus in no cluster
 			// reads as a cloud that has one.
@@ -398,6 +430,8 @@ export const fragmentShader = /* glsl */ `
 	uniform vec3 uProvLearned;
 	uniform vec3 uProvCand;
 	uniform vec3 uProvArrivals;
+	/** 1 for neutral ink/plain points, 0 for the provenance class tint. */
+	uniform float uPlain;
 	/** The same clock the vertex stage pulses by; the orphan pulse breathes on it. */
 	uniform float uTime;
 
@@ -421,6 +455,7 @@ export const fragmentShader = /* glsl */ `
 	varying float vOrphan;
 	varying float vWave;
 	varying float vRipple;
+	varying float vUnmatchedRing;
 
 	void main() {
 		vec2 uv = gl_PointCoord - 0.5;
@@ -477,14 +512,24 @@ export const fragmentShader = /* glsl */ `
 		// its class colour and ramps to the class colour itself as it responds — the
 		// class tint says *what kind of thing* this sound is (authored inventory,
 		// fitted-to-field, unidentified field audio, unlabelled arrival), and "which
-		// bird" is the labels' question, answered there in the species hue. The 0.34
-		// wash keeps the four classes told apart on the paper while leaving the
-		// response somewhere to walk to; activation shifts TONE — brighter crest,
-		// darker trough via vRipple below — never hue. The accent is untouched: it
-		// keeps meaning exactly one thing.
+		// bird" is the labels' question, answered there in the species hue.
+		//
+		// The wash sits at 0.5, raised from 0.34: at 0.34 the resting cloud read as a
+		// grey mist on the paper (headless screenshots, confirmed by eye — the learned
+		// grey majority was nearly invisible and the blue/amber/green minorities were
+		// lost entirely). At 0.5 the four classes are plainly told apart at rest —
+		// pairwise class distance scales linearly with the wash, 0.146 → 0.215 — and
+		// activation keeps its headroom: the colour still walks the whole remaining
+		// half of the ramp, and the alpha below nearly doubles on response, so a
+		// brightening is unmistakable rather than a nuance. Activation shifts TONE —
+		// brighter crest, darker trough via vRipple below — never hue. The accent is
+		// untouched: it keeps meaning exactly one thing.
 		vec3 prov = vProv < 0.5 ? uProvDoc : (vProv < 1.5 ? uProvLearned : (vProv < 2.5 ? uProvCand : uProvArrivals));
-		vec3 ink = prov;
-		vec3 rest = mix(uSurface, prov, 0.34);
+		// The plain look swaps the class colours for a neutral pair and keeps every
+		// other rule — same wash, same ramp, same tone shifts — so "coloured / plain"
+		// changes what the points *say about provenance*, never how they respond.
+		vec3 ink = mix(prov, vec3(0.13, 0.16, 0.21), uPlain);
+		vec3 rest = mix(uSurface, mix(prov, vec3(0.66, 0.69, 0.74), uPlain), 0.5);
 		vec3 end = mix(ink, uAccent, clamp(vAccent, 0.0, 1.0));
 
 		// A chosen bird's points sit most of the way along their own ramp even at rest, so
@@ -519,8 +564,13 @@ export const fragmentShader = /* glsl */ `
 		// independent events stacked at full strength. Bounded well under the response
 		// ramp: the ripple is motion, not a claim about the point. It darkens toward
 		// ink, the mode's own hot end, so provenance colours stay in charge of hue.
-		colour = mix(colour, ink, clamp(vRipple * 3.0, 0.0, 0.22));
-		colour = mix(colour, uSurface, clamp(-vRipple * 3.0, 0.0, 0.22));
+		colour = mix(colour, ink, clamp(vRipple * 4.5, 0.0, 0.28));
+		colour = mix(colour, uSurface, clamp(-vRipple * 4.5, 0.0, 0.28));
+
+		// The unmatched breath, in a flat mid grey at low weight: *visible* where a
+		// sound landed-nearly, and unmistakably not a response — no class colour, no
+		// brightness walk, no halo, a fifth of the ripple's tone swing at most.
+		colour = mix(colour, vec3(0.45, 0.48, 0.53), clamp(vUnmatchedRing, 0.0, 1.0) * 0.28);
 
 		// Aerial perspective: far points wash toward the paper and thin out, near ones keep
 		// their weight. This is what makes a rotating scatter read as a volume rather than
@@ -540,12 +590,14 @@ export const fragmentShader = /* glsl */ `
 		// A chosen point also carries more ink than the same point unselected, so the bird
 		// separates from the crowd by weight as well as by everyone else fading.
 		float alpha =
-			uOpacity * mask * (0.55 + vAct * 0.45) * vFocus * (1.0 + 0.35 * vChosen) *
+			uOpacity * mask * (0.62 + vAct * 0.38) * vFocus * (1.0 + 0.35 * vChosen) *
 			(1.0 - fog * 0.45) * (1.0 - 0.45 * vUnassigned) * vArrive;
-		// A resting point also gives up a quarter of its weight, so "this knot is
+		// The resting point also gives up a fifth of its weight, so "this knot is
 		// answering" moves two channels at once — class colour to full brightness
-		// above, ink weight here.
-		alpha *= 0.75 + 0.25 * vAct;
+		// above, ink weight here. Rest lands at 0.62 × 0.8 ≈ 0.50 of full alpha
+		// (raised from 0.41 when the rest wash went up: the mist needed presence,
+		// and the 2× jump on response is what keeps activation legible above it).
+		alpha *= 0.8 + 0.2 * vAct;
 		// The dim half of the orphan pulse: it breathes the mark *down* against the
 		// paper, the opposite direction from a response.
 		alpha *= 1.0 - 0.55 * oPulse;
@@ -619,6 +671,12 @@ export interface VisualSignal {
 	strength: number;
 	/** Index of the most active cluster, or -1. */
 	best: number;
+	/**
+	 * Index of the cluster *nearest* the live input while it is heard but below the
+	 * claim gate, or -1. The renderer gives that region the slow grey unmatched
+	 * breath — a third state that is neither a match nor silence (§8.5).
+	 */
+	unmatched: number;
 	/** Active trajectories, most recent last. */
 	paths: LivePath[];
 	/** Bumped whenever the set of paths changes, so the renderer rebuilds its geometry. */
@@ -644,6 +702,7 @@ export function createSignal(clusterCount: number, pointCount = 0): VisualSignal
 		f0: 0,
 		strength: 0,
 		best: -1,
+		unmatched: -1,
 		paths: [],
 		pathsVersion: 0,
 		context: [],
@@ -654,6 +713,16 @@ export function createSignal(clusterCount: number, pointCount = 0): VisualSignal
 
 /** Trajectories are drawn as disconnected segments so separate paths never join up. */
 export const MAX_PATHS = 10;
+
+/**
+ * Linear RGB interpolation for the trajectory gradient: t = 0 is the segment's start
+ * knot, t = 1 its end knot, and the midpoint is the even blend. The gradient's whole
+ * truth is in its endpoints (each knot's own species colour); the walk between them
+ * is presentation.
+ */
+export function mixRgb(a: readonly number[], b: readonly number[], t: number): number[] {
+	return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+}
 
 /**
  * The activation wavefront: when a cluster starts responding, a ring leaves the place
@@ -728,6 +797,18 @@ export function waveClaim(signal: VisualSignal): boolean {
 	return (signal.activations[best] ?? 0) > 0.08 || signal.strength > 0.15;
 }
 
+/**
+ * The third state between a match and silence: input is voiced (`active`), something
+ * is audible above the noise floor (strength > 0.02), yet the claim gate stays shut —
+ * so the *nearest* cluster's region gets the slow grey unmatched breath. Returns the
+ * nearest cluster's index, or -1 for either of the other two states: a claim (which
+ * lights its knot and must never also breathe grey) and silence (which shows nothing).
+ */
+export function unmatchedCluster(signal: VisualSignal, active: boolean): number {
+	if (!active || waveClaim(signal) || signal.strength <= 0.02 || signal.best < 0) return -1;
+	return signal.best;
+}
+
 /** Per-cluster membership for the wavefront. */
 export interface ClusterMembers {
 	/** Point indices per cluster, in points.json order. */
@@ -787,10 +868,16 @@ export function buildClusterMembers(
 export const trajectoryVertexShader = /* glsl */ `
 	attribute float aIndex;
 	attribute float aPath;
+	/**
+	 * This vertex's hue: the gradient between the two knots the segment joins, baked
+	 * at rebuild from each knot's species colour (the same mapping the labels use,
+	 * knot-lightness included). The thread's colour walk along a phrase is the one
+	 * place hues legitimately blend — it is the bird's path crossing its own knots.
+	 */
+	attribute vec3 aColour;
 
 	uniform float uProgress[${MAX_PATHS}];
 	uniform float uAlpha[${MAX_PATHS}];
-	uniform vec3 uPathColour[${MAX_PATHS}];
 
 	varying float vIndex;
 	varying float vProgress;
@@ -802,9 +889,7 @@ export const trajectoryVertexShader = /* glsl */ `
 		vIndex = aIndex;
 		vProgress = uProgress[p];
 		vAlpha = uAlpha[p];
-		// Each thread wears the colour of the bird singing it, so a chorus of six reads
-		// as six birds rather than six identical wires.
-		vColour = uPathColour[p];
+		vColour = aColour;
 		gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 	}
 `;
@@ -841,10 +926,11 @@ export const trajectoryFragmentShader = /* glsl */ `
 export const trajectoryPointsVertexShader = /* glsl */ `
 	attribute float aIndex;
 	attribute float aPath;
+	/** This vertex's hue along the thread's gradient (see the line shader's aColour). */
+	attribute vec3 aColour;
 
 	uniform float uProgress[${MAX_PATHS}];
 	uniform float uAlpha[${MAX_PATHS}];
-	uniform vec3 uPathColour[${MAX_PATHS}];
 	uniform float uPixelRatio;
 	uniform float uSizeScale;
 	/**
@@ -867,7 +953,9 @@ export const trajectoryPointsVertexShader = /* glsl */ `
 		vIndex = aIndex;
 		vProgress = uProgress[p];
 		vAlpha = uAlpha[p];
-		vColour = uPathColour[p];
+		// The bead and the wave it rides share the segment's gradient colour, so the
+		// travelling highlight is the same hue as the knot it is leaving and becoming.
+		vColour = aColour;
 		bool singing = vProgress >= 0.0;
 		vPeak = singing ? exp(-pow((aIndex - vProgress) / 0.45, 2.0)) : 0.0;
 

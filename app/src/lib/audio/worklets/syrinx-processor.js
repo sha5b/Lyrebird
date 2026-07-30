@@ -508,6 +508,17 @@ class Voice {
 		this.srcHpX = [0, 0];
 		this.srcHpY = [0, 0];
 		/**
+		 * The fricative path's own DC blocks and formant banks, per side (docs/16 §16.7).
+		 * A fricative's turbulence is routed around the f0-tracking band and shaped by
+		 * the syllable's formant set instead, so it needs filter state of its own —
+		 * sharing the tonal bank would interleave two signals through one biquad.
+		 * @type {number[]}
+		 */
+		this.noiseHpX = [0, 0];
+		this.noiseHpY = [0, 0];
+		/** @type {Biquad[][]} */
+		this.noiseFormantFilters = [[], []];
+		/**
 		 * One bank per syringeal side. Fixed in Hz, so unlike `tract` these are set once at
 		 * note start and never retuned — that is the whole point of them.
 		 * @type {Biquad[][]}
@@ -591,6 +602,8 @@ class Voice {
 		this.y = [0, 0];
 		this.srcHpX = [0, 0];
 		this.srcHpY = [0, 0];
+		this.noiseHpX = [0, 0];
+		this.noiseHpY = [0, 0];
 		this.dcX = this.dcY = this.lpY = 0;
 		for (const f of this.tract) f.reset();
 		for (const f of this.tractHarm) f.reset();
@@ -608,6 +621,13 @@ class Voice {
 			this.roughRng[side] = this.rough > 0 ? new Xorshift(s * 4 + 2) : null;
 			this.roughLp[side] = 0;
 			this.formantFilters[side] = this.formants.map(([hz, q]) => {
+				const f = new Biquad();
+				f.setBandpass(hz, q, sampleRate);
+				return f;
+			});
+			// The fricative path's bank (docs/16 §16.7): the same resonances as the tonal
+			// bank, on their own state, because a biquad cannot carry two signals.
+			this.noiseFormantFilters[side] = this.formants.map(([hz, q]) => {
 				const f = new Biquad();
 				f.setBandpass(hz, q, sampleRate);
 				return f;
@@ -853,9 +873,14 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 	 *   `two: true` paths bit-identical
 	 * @param {number} [dt]
 	 * @param {number} [oversample]
+	 * @param {{noise?: number} | null} [split] when given (the fricative path of
+	 *   docs/16 §16.7), the turbulence is NOT mixed into the returned source: it gets
+	 *   the same √ps drive and its own 180 Hz DC block, and lands in `split.noise`,
+	 *   so the caller can route it around the f0-tracking band into the formant set.
+	 *   Null keeps the old mixed path bit-identical.
 	 * @returns {number}
 	 */
-	stepOsc(voice, index, alpha, beta, ampPP, pressure, drive, g = 0, dt = 0, oversample = 0) {
+	stepOsc(voice, index, alpha, beta, ampPP, pressure, drive, g = 0, dt = 0, oversample = 0, split = null) {
 		if (g === 0) {
 			g = voice.gamma;
 			dt = voice.dt;
@@ -891,18 +916,22 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 		// than to the pitch, which otherwise dominates it
 		let source = ((y / g) * SOURCE_GAIN) / ampPP;
 		const rng = voice.noiseRng[index];
+		let noiseSrc = 0;
 		if (rng) {
 			// Turbulent flow at the labia, so it enters before the tract and is shaped by
 			// it: the same noise becomes a breathy whistle under a high-Q tract band and a
 			// rasp under a low-Q formant, which is why one scalar can serve both. Gated by
 			// pressure because a bird with no airflow does not hiss.
 			const flow = Math.max(pressure - NOISE_PS_FLOOR, 0);
-			source += voice.noise * NOISE_GAIN * flow * rng.next();
+			noiseSrc = voice.noise * NOISE_GAIN * flow * rng.next();
+			if (!split) source += noiseSrc;
 		}
 		// √ps at the tract input (docs/15 §1): the one point where pressure enters
 		// multiplicatively, ahead of the DC block and every resonance, and it scales
 		// oscillator and turbulence together — both are the same airflow. Exactly 1 on
-		// the envelope path, which is then bit-identical to before.
+		// the envelope path, which is then bit-identical to before. On the fricative
+		// path the turbulence is scaled explicitly, to the same end (docs/16 §16.7
+		// piece 2: a fricative burst IS a pressure event).
 		source *= drive;
 		// 180 Hz one-pole highpass on the source, ahead of the tract (§8.1). This was
 		// missing: the worklet only DC-blocked after the tract, so the offline renderer's
@@ -913,7 +942,44 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 		const hp = source - voice.srcHpX[index] + r * voice.srcHpY[index];
 		voice.srcHpX[index] = source;
 		voice.srcHpY[index] = hp;
+		if (split) {
+			noiseSrc *= drive;
+			const nhp = noiseSrc - voice.noiseHpX[index] + r * voice.noiseHpY[index];
+			voice.noiseHpX[index] = noiseSrc;
+			voice.noiseHpY[index] = nhp;
+			split.noise = nhp;
+		}
 		return hp;
+	}
+
+	/**
+	 * One side's tract for one sample: the f0-tracking band, the harmonic band and the
+	 * formant set on the tonal source — and, on the fricative path (docs/16 §16.7),
+	 * the same formant set once more on the separated turbulence, added last. The
+	 * noise never sees the tracking band: that filter is pitch-shaped, and a
+	 * fricative's shape is the tract's, not the pitch's.
+	 * @param {Voice} voice
+	 * @param {number} index
+	 * @param {number} source tonal source sample (HP'd, drive applied)
+	 * @param {number} harmonic
+	 * @param {number | null} noiseSrc the fricative path's separated turbulence, or
+	 *   null on the mixed path
+	 * @returns {number}
+	 */
+	filterSide(voice, index, source, harmonic, noiseSrc) {
+		let filtered = voice.tract[index].process(source);
+		if (harmonic > 0) filtered += harmonic * 0.5 * voice.tractHarm[index].process(source);
+		const bank = voice.formantFilters[index];
+		for (let k = 0; k < bank.length; k++) {
+			filtered += voice.formants[k][2] * bank[k].process(source);
+		}
+		if (noiseSrc !== null) {
+			const nbank = voice.noiseFormantFilters[index];
+			for (let k = 0; k < nbank.length; k++) {
+				filtered += voice.formants[k][2] * nbank[k].process(noiseSrc);
+			}
+		}
+		return filtered;
 	}
 
 	/**
@@ -976,6 +1042,10 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 					: timbre.q;
 			const harmonic = syl.harmonic ?? 0;
 			const twoVoices = syl.two === true;
+			// docs/16 §16.7: the fricative routing — turbulence bypasses the f0-tracking
+			// band and is shaped by the formant set. With no turbulence it is a no-op,
+			// matching `syrinx._voice_tract`.
+			const fricative = syl.fricative === true && voice.noise > 0;
 			const durSamples = Math.ceil((syl.dur + 0.02) * sampleRate);
 			// The grid the envelope is defined on, matching `syrinx.render_plan`'s `n`. The
 			// voice runs ~20 ms past it so the release and the filter tails can finish.
@@ -1088,14 +1158,9 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 					const alphaB = 0.05 + 0.4 * pressureB;
 
 					const betaA = clampBeta(betaClean * voice.roughFactor(0));
-					const sourceA = this.stepOsc(voice, 0, alpha - 0.4 * pi, betaA, ampA, pressure, drive);
-					let filteredA = voice.tract[0].process(sourceA);
-					if (harmonic > 0) filteredA += harmonic * 0.5 * voice.tractHarm[0].process(sourceA);
-					const bankA = voice.formantFilters[0];
-					for (let k = 0; k < bankA.length; k++) {
-						filteredA += voice.formants[k][2] * bankA[k].process(sourceA);
-					}
-					sample = filteredA;
+					const splitA = fricative ? {} : null;
+					const sourceA = this.stepOsc(voice, 0, alpha - 0.4 * pi, betaA, ampA, pressure, drive, 0, 0, 0, splitA);
+					sample = this.filterSide(voice, 0, sourceA, harmonic, splitA ? splitA.noise ?? 0 : null);
 
 					if (coupled.level > 0) {
 						// A closed right bronchus (level 0) injects nothing — sqrt(0)*y = 0 —
@@ -1104,40 +1169,27 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 						const betaCleanB = this.betaForF0(f0b, pressureB, voice.gammaB);
 						const ampB = this.ampPP(alphaB, betaCleanB, pressureB);
 						const betaB = clampBeta(betaCleanB * voice.roughFactor(1));
+						const splitB = fricative ? {} : null;
 						const sourceB = this.stepOsc(
 							voice, 1, alphaB - 0.4 * pi, betaB, ampB, pressureB, drive,
-							voice.gammaB, voice.dtB, voice.oversampleB
+							voice.gammaB, voice.dtB, voice.oversampleB, splitB
 						);
-						let filteredB = voice.tract[1].process(sourceB);
-						if (harmonic > 0) filteredB += harmonic * 0.5 * voice.tractHarm[1].process(sourceB);
-						const bankB = voice.formantFilters[1];
-						for (let k = 0; k < bankB.length; k++) {
-							filteredB += voice.formants[k][2] * bankB[k].process(sourceB);
-						}
+						const filteredB = this.filterSide(voice, 1, sourceB, harmonic, splitB ? splitB.noise ?? 0 : null);
 						sample = 0.5 * sample + 0.5 * filteredB;
 					}
 				} else {
 					const betaA = clampBeta(betaClean * voice.roughFactor(0));
-					const source = this.stepOsc(voice, 0, alpha, betaA, ampA, pressure, drive);
-					let filtered = voice.tract[0].process(source);
-					if (harmonic > 0) filtered += harmonic * 0.5 * voice.tractHarm[0].process(source);
-					const bankA = voice.formantFilters[0];
-					for (let k = 0; k < bankA.length; k++) {
-						filtered += voice.formants[k][2] * bankA[k].process(source);
-					}
-					sample = filtered;
+					const split = fricative ? {} : null;
+					const source = this.stepOsc(voice, 0, alpha, betaA, ampA, pressure, drive, 0, 0, 0, split);
+					sample = this.filterSide(voice, 0, source, harmonic, split ? split.noise ?? 0 : null);
 
 					if (twoVoices) {
 						const betaCleanB = this.betaForF0(f0 * DETUNE_TWO, pressure, voice.gamma);
 						const ampB = this.ampPP(alpha, betaCleanB, pressure);
 						const betaB = clampBeta(betaCleanB * voice.roughFactor(1));
-						const sourceB = this.stepOsc(voice, 1, alpha, betaB, ampB, pressure, drive);
-						let filteredB = voice.tract[1].process(sourceB);
-						if (harmonic > 0) filteredB += harmonic * 0.5 * voice.tractHarm[1].process(sourceB);
-						const bankB = voice.formantFilters[1];
-						for (let k = 0; k < bankB.length; k++) {
-							filteredB += voice.formants[k][2] * bankB[k].process(sourceB);
-						}
+						const splitB = fricative ? {} : null;
+						const sourceB = this.stepOsc(voice, 1, alpha, betaB, ampB, pressure, drive, 0, 0, 0, splitB);
+						const filteredB = this.filterSide(voice, 1, sourceB, harmonic, splitB ? splitB.noise ?? 0 : null);
 						sample = 0.5 * sample + 0.5 * filteredB;
 					}
 				}

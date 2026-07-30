@@ -36,6 +36,11 @@
 		 * shows where the work is happening rather than leaving it to a progress bar.
 		 */
 		learning?: number[];
+		/**
+		 * Neutral ink points instead of the provenance class tint. Only the points'
+		 * colour language changes; activation, wave and labels keep their meanings.
+		 */
+		plain?: boolean;
 	}
 
 	let {
@@ -46,7 +51,8 @@
 		speed = 1,
 		view,
 		spread = 1,
-		learning = []
+		learning = [],
+		plain = false
 	}: Props = $props();
 
 	// The corpus never changes while the component is alive, so the buffers are built once
@@ -164,6 +170,11 @@
 			uProvLearned: { value: new THREE.Color(PROV_LEARNED) },
 			uProvCand: { value: new THREE.Color(PROV_CANDIDATE) },
 			uProvArrivals: { value: new THREE.Color(PROV_ARRIVALS) },
+			uPlain: { value: untrack(() => (plain ? 1 : 0)) },
+			// "Heard, but nothing claimed": where the nearest region breathes, and how
+			// strongly. Eased in the frame task; 0 means silent.
+			uUnmatchedOrigin: { value: new THREE.Vector3() },
+			uUnmatchedStrength: { value: 0 },
 			uTime: { value: 0 },
 			uLevel: { value: 0 },
 			uPointSize: { value: untrack(() => pointSize) },
@@ -219,6 +230,10 @@
 	});
 
 	$effect(() => {
+		material.uniforms.uPlain.value = plain ? 1 : 0;
+	});
+
+	$effect(() => {
 		material.uniforms.uSizeScale.value = SIZE_REFERENCE * spread;
 	});
 
@@ -254,12 +269,13 @@
 	 * nearest-neighbour centroid distance of the loaded build, so it adapts when a
 	 * rebuild packs the knots tighter or looser instead of being tuned per build.
 	 *
-	 * The number on the shipped 149-cluster build: median nearest-neighbour centroid
-	 * distance 0.135 box units (median knot radius 0.142), so the falloff scale is
-	 * 0.27. A gaussian at that scale weighs 1.0 at the source knot's centre, ~0.78 at
-	 * the rim of the nearest neighbouring knot, ~0.37 two knot-spacings out, and under
-	 * 2 % past 0.54 — a quarter of the box. The ripple reads as an event *at* the
-	 * sounding knot and its immediate neighbours, never as a cloud-wide wash.
+	 * The number on the shipped 1024-cluster build: median nearest-neighbour centroid
+	 * distance 0.057 box units, so the falloff scale is 0.11. A gaussian at that scale
+	 * weighs 1.0 at the source knot's centre, ~0.78 at the rim of the nearest
+	 * neighbouring knot, ~0.37 two knot-spacings out, and under 2 % at twice the
+	 * scale. (On the earlier 149-cluster build the same rule produced 0.27 — tighter
+	 * knots get a tighter ripple automatically.) The ripple reads as an event *at*
+	 * the sounding knot and its immediate neighbours, never as a cloud-wide wash.
 	 */
 	untrack(() => {
 		const cents = layout.centroids;
@@ -303,6 +319,18 @@
 		}
 		geometry.setAttribute('aFront', frontAttribute);
 		geometry.setAttribute('aRadDir', new THREE.BufferAttribute(radDir, 3));
+
+		// The per-point bloom budget, from the knot's own radius: 45 % of it, floored
+		// so a tiny knot still separates visibly, capped at 0.045 (≈ 0.8 × the median
+		// knot spacing on the shipped build) so the bloom stays inside the knot's
+		// neighbourhood. See aBloom in shaders.ts for the measured numbers.
+		const bloom = new Float32Array(n);
+		for (let i = 0; i < n; i++) {
+			const c = assets.points.clusterId[i];
+			if (c < 0 || c >= clusterCount) continue;
+			bloom[i] = Math.min(0.045, Math.max(0.015, 0.45 * graph.radii[c]));
+		}
+		geometry.setAttribute('aBloom', new THREE.BufferAttribute(bloom, 1));
 	});
 
 	/**
@@ -419,7 +447,7 @@
 	 */
 	const WAVE_REFERENCE_HZ = 900;
 	/** Seconds a front keeps travelling before it is retired. */
-	const WAVE_LIFETIME = 2.6;
+	const WAVE_LIFETIME = 3.2;
 	let waveK = 6;
 	let pitch = 0.5;
 
@@ -480,10 +508,14 @@
 		// activates"), because loud is all a fan or a weak self-match ever is.
 		const best = signal.best;
 		if (best >= 0 && best !== lastLaunch && waveClaim(signal)) {
-			// Deliberately small. A front is meant to be read as movement, and displacement
-			// large enough to see in a still frame is large enough to smear a knot into a
-			// streak — which stops being animation and starts being a wrong position.
-			launch(best, Math.min(0.03, 0.012 + signal.level * 0.035));
+			// Deliberately small — but bigger than it used to be: 0.03 was lost inside the
+			// denser 1024-knot corpus, so the cap moved to 0.04, still coherent motion of
+			// a whole region rather than a per-point jump (the knot-local budget lives in
+			// the wavefront, not here). A front is meant to be read as movement, and
+			// displacement large enough to see in a still frame is large enough to smear
+			// a knot into a streak — which stops being animation and starts being a
+			// wrong position.
+			launch(best, Math.min(0.04, 0.015 + signal.level * 0.04));
 		}
 		if (best !== lastLaunch) lastLaunch = best;
 
@@ -499,11 +531,12 @@
 				s.origin.set(view.centroids[c * 3], view.centroids[c * 3 + 1], view.centroids[c * 3 + 2]);
 			}
 			s.age += delta;
-			// Fade over the life rather than cutting off, so a front thins out as it
-			// crosses the far side instead of vanishing mid-cloud.
+			// Fade over the life rather than cutting off — linear, not squared, since the
+			// life went up: a squared fade at 3.2 s spent its first second near full
+			// strength and its last two as a ghost, which read as the wave "sticking".
 			const life = Math.max(0, 1 - s.age / WAVE_LIFETIME);
 			ages[i] = s.age;
-			amps[i] = s.amp * life * life;
+			amps[i] = s.amp * life;
 			origins[i].copy(s.origin);
 		}
 		u.uWaveK.value = waveK;
@@ -553,6 +586,21 @@
 		orphan.set(signal.orphanPulse.subarray(0, orphan.length));
 		orphanAttribute.needsUpdate = true;
 		updateFronts(delta * speed);
+
+		// "Heard, but nothing claimed": ease the regional breath toward the nearest
+		// knot the listener reports, or back to silence. Eased rather than switched,
+		// for the same reason the accent is — a state that steps reads as a glitch.
+		const uStr = material.uniforms.uUnmatchedStrength;
+		const uGoal = signal.unmatched >= 0 ? 0.8 : 0;
+		uStr.value += (uGoal - uStr.value) * Math.min(1, delta * 4);
+		if (uStr.value < 0.01 && uGoal === 0) uStr.value = 0;
+		if (signal.unmatched >= 0 && signal.unmatched * 3 + 2 < view.centroids.length) {
+			material.uniforms.uUnmatchedOrigin.value.set(
+				view.centroids[signal.unmatched * 3],
+				view.centroids[signal.unmatched * 3 + 1],
+				view.centroids[signal.unmatched * 3 + 2]
+			);
+		}
 	});
 
 	$effect(() => () => {

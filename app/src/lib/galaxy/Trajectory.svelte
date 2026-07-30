@@ -2,12 +2,14 @@
 	import { T, useTask } from '@threlte/core';
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
+	import { knotHeat } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
-	import { ACCENT, MONO_HOT, speciesColour } from './palette';
+	import { ACCENT, speciesColourScaled } from './palette';
 	import type { LayoutView } from './layouts';
 	import {
 		MAX_PATHS,
 		SIZE_REFERENCE,
+		mixRgb,
 		trajectoryFragmentShader,
 		trajectoryPointsFragmentShader,
 		trajectoryPointsVertexShader,
@@ -33,6 +35,17 @@
 	const MAX_NODES = 64;
 
 	const centroids = untrack(() => assets.centroids.items);
+	/**
+	 * Each knot's hue as RGB, with the label mapping's per-knot lightness shift — the
+	 * trajectory gradient's endpoints. Computed once; the walk between two knots is
+	 * baked per vertex in `rebuild`.
+	 */
+	const knotColours = untrack(() => {
+		const heat = knotHeat(assets);
+		return centroids.map((c, i) =>
+			new THREE.Color(speciesColourScaled(c.speciesId, 0.9 + (heat[i] ?? 0.5) * 0.2))
+		);
+	});
 	// Preallocated to every path we will ever draw at once, then a draw range is set per
 	// rebuild — reallocating buffers on every note would churn GPU memory during a chorus.
 	// Line *segments* rather than a strip, so separate paths are never joined together.
@@ -40,12 +53,14 @@
 	const positions = new Float32Array(maxVertices * 3);
 	const indices = new Float32Array(maxVertices);
 	const pathIds = new Float32Array(maxVertices);
+	const colours = new Float32Array(maxVertices * 3);
 
 	const geometry = untrack(() => {
 		const g = new THREE.BufferGeometry();
 		g.setAttribute('position', new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage));
 		g.setAttribute('aIndex', new THREE.BufferAttribute(indices, 1).setUsage(THREE.DynamicDrawUsage));
 		g.setAttribute('aPath', new THREE.BufferAttribute(pathIds, 1).setUsage(THREE.DynamicDrawUsage));
+		g.setAttribute('aColour', new THREE.BufferAttribute(colours, 3).setUsage(THREE.DynamicDrawUsage));
 		g.setDrawRange(0, 0);
 		return g;
 	});
@@ -60,22 +75,10 @@
 	 */
 	const beadAlpha = new Float32Array(MAX_PATHS);
 	const beadWanted = new Float32Array(MAX_PATHS);
-	/**
-	 * The thread and the bead running along it are coloured separately.
-	 *
-	 * A thread is structure — which knots this phrase visits, and in what order — and it
-	 * is there whether or not anything is happening on it, so it is drawn in ink. The bead
-	 * is the live position, the one thing on the line that is happening *now*, and it gets
-	 * the accent. Colouring both the same made the whole path look equally live and hid
-	 * the only part of it that was.
-	 */
-	const pathColour = Array.from({ length: MAX_PATHS }, () => new THREE.Color(MONO_HOT));
-	const beadColour = Array.from({ length: MAX_PATHS }, () => new THREE.Color(ACCENT));
 
 	const shared = () => ({
 		uProgress: { value: progress },
 		uAlpha: { value: alpha },
-		uPathColour: { value: pathColour },
 		uColdColor: { value: new THREE.Color('#9aa6b8') }
 	});
 
@@ -93,9 +96,8 @@
 		fragmentShader: trajectoryPointsFragmentShader,
 		uniforms: {
 			...shared(),
-			// its own colour and weight arrays: the bead is the live position, the thread is
-			// structure, and they neither look nor fade the same
-			uPathColour: { value: beadColour },
+			// its own weight array: the bead is the live position, the thread is
+			// structure, and they do not fade on the same rule
 			uAlpha: { value: beadAlpha },
 			uColdColor: { value: new THREE.Color(ACCENT) },
 			uPixelRatio: { value: typeof window === 'undefined' ? 1 : Math.min(2, window.devicePixelRatio) },
@@ -133,6 +135,10 @@
 				const bi = nodes[n + 1] * 3;
 				const a = [view.centroids[ai], view.centroids[ai + 1], view.centroids[ai + 2]];
 				const b = [view.centroids[bi], view.centroids[bi + 1], view.centroids[bi + 2]];
+				// The segment's gradient: the start knot's hue at t=0, the end knot's at
+				// t=1, baked per vertex (mixRgb keeps the blend linear and assertable).
+				const colA = knotColours[nodes[n]];
+				const colB = knotColours[nodes[n + 1]];
 				for (let s = 0; s < SUBDIVISIONS; s++) {
 					// each subdivision contributes both of its endpoints, which is what
 					// LineSegments expects and what keeps one path from joining the next
@@ -140,6 +146,10 @@
 						positions[v * 3] = a[0] + (b[0] - a[0]) * t;
 						positions[v * 3 + 1] = a[1] + (b[1] - a[1]) * t;
 						positions[v * 3 + 2] = a[2] + (b[2] - a[2]) * t;
+						const c = mixRgb([colA.r, colA.g, colA.b], [colB.r, colB.g, colB.b], t);
+						colours[v * 3] = c[0];
+						colours[v * 3 + 1] = c[1];
+						colours[v * 3 + 2] = c[2];
 						indices[v] = n + t;
 						pathIds[v] = p;
 						v++;
@@ -150,6 +160,7 @@
 		geometry.attributes.position.needsUpdate = true;
 		geometry.attributes.aIndex.needsUpdate = true;
 		geometry.attributes.aPath.needsUpdate = true;
+		geometry.attributes.aColour.needsUpdate = true;
 		geometry.setDrawRange(0, v);
 		geometry.computeBoundingSphere();
 	}
@@ -187,13 +198,6 @@
 			progress[i] = path.progress;
 			wanted[i] = path.alpha * crowd;
 			beadWanted[i] = path.alpha * beadCrowd;
-			// Thread and bead both wear the bird's own hue — the heat field's rule,
-			// applied to the one thing that *is* the bird's phrase crossing the galaxy.
-			// The bead stays the brighter of the two through the peak term in its shader;
-			// a path with no species falls back to ink rather than borrowing a hue.
-			const hue = path.speciesId ? speciesColour(path.speciesId) : MONO_HOT;
-			pathColour[i].set(hue);
-			beadColour[i].set(hue);
 		});
 
 		// Weight is eased rather than assigned, so a thread never steps in brightness —
