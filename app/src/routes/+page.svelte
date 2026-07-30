@@ -16,11 +16,20 @@
 	import { Listener } from '$lib/audio/listener';
 	import { createIndividual } from '$lib/audio/individual';
 	import { compilePhrase, improvise, type Phrase } from '$lib/lang/grammar';
+	import {
+		applyTextRhythm,
+		chunkCompletions,
+		expandSongType,
+		nextOptions,
+		tokensToPhrase,
+		type Provenance,
+		type Token
+	} from '$lib/lang/compose';
 	import { citationsFor, confidenceLabel, type Reading } from '$lib/lang/translate';
 	import { createSignal, type VisualSignal } from '$lib/galaxy/shaders';
 	import { ACCENT, MONO_HOT } from '$lib/galaxy/palette';
 	import { PipelineClient, type PipelineStatus } from '$lib/data/pipeline';
-	import type { BirdyAssets } from '$lib/data/types';
+	import type { BirdyAssets, SongType } from '$lib/data/types';
 
 	// $state.raw, not $state: a deep reactive proxy of the corpus cannot be structured-cloned
 	// into the AudioWorklet, and there is nothing here that benefits from deep reactivity.
@@ -75,6 +84,12 @@
 	let speciesId = $state('');
 	let songId = $state('abc_d');
 	let text = $state('danger — come here');
+	// The composer (Compose tab): one chip strip, three ways to fill it. `tokens` is the
+	// sequence being edited; `provenance` is why it holds what it holds, which is what
+	// decides the honesty label `tokensToPhrase` writes — so every edit path updates it.
+	let composeMode = $state<'free' | 'guided' | 'types'>('guided');
+	let composeTokens = $state<Token[]>([]);
+	let composeProvenance = $state<Provenance>({ kind: 'guided' });
 	let distance = $state(0.15);
 	// Well above the old 0.8 ceiling: see the limiter note on the slider. Nothing in the
 	// synthesis path ever reaches full scale on its own, so unity was quiet rather than loud.
@@ -309,7 +324,16 @@
 			.catch((err: unknown) => {
 				loadError = err instanceof Error ? err.message : String(err);
 			});
+		// The device list is readable before any permission — only the labels are
+		// withheld — so the picker can show what is plugged in straight away, and track
+		// it when hardware comes and goes.
+		const refreshDevices = () => {
+			BirdyEngine.inputDevices().then((d) => (inputDevices = d));
+		};
+		refreshDevices();
+		navigator.mediaDevices?.addEventListener('devicechange', refreshDevices);
 		return () => {
+			navigator.mediaDevices?.removeEventListener('devicechange', refreshDevices);
 			listener?.stop();
 			engine?.dispose();
 			// The hold is a timer, and a timer that outlives the component writes state
@@ -674,6 +698,89 @@
 		singPhrase(improvise(assets.inventory, speciesId));
 	}
 
+	// --- Compose tab ---------------------------------------------------------------
+
+	/**
+	 * Audition one fitted type: the same render the strip would schedule, voice and
+	 * distance included, so the keyboard is a keyboard and not a list of names.
+	 */
+	function auditionSyllable(typeId: string) {
+		if (!engine || !currentSpecies) return;
+		const syllable = currentSpecies.syllables.find((s) => s.id === typeId);
+		if (syllable) engine.playSyllable(syllable, { voice: soloVoice ?? undefined, distance });
+	}
+
+	/**
+	 * A manual edit invalidates a loaded song type or rhythm: the strip is no longer the
+	 * observed ordering once a chip is added, moved or removed, and the phrase must not
+	 * keep saying it is. The mode the user is looking at becomes the provenance.
+	 */
+	function editCompose(tokens: Token[]) {
+		composeTokens = tokens;
+		composeProvenance = {
+			kind: composeMode === 'types' ? 'free' : composeMode,
+			text: composeProvenance.text
+		};
+	}
+
+	function appendToken(typeId: string, source: Token['source']) {
+		auditionSyllable(typeId);
+		editCompose([...composeTokens, { typeId, source }]);
+	}
+
+	function appendChunk(insert: string[]) {
+		editCompose([...composeTokens, ...insert.map((typeId) => ({ typeId, source: 'chunk' as const }))]);
+	}
+
+	function removeToken(index: number, shiftKey: boolean) {
+		if (shiftKey && index > 0) {
+			const moved = [...composeTokens];
+			[moved[index - 1], moved[index]] = [moved[index], moved[index - 1]];
+			editCompose(moved);
+			return;
+		}
+		editCompose(composeTokens.filter((_, i) => i !== index));
+	}
+
+	function clearCompose() {
+		composeTokens = [];
+		composeProvenance = { kind: composeMode === 'types' ? 'free' : composeMode };
+	}
+
+	function applyRhythm() {
+		if (!currentSpecies) return;
+		const tokens = applyTextRhythm(currentSpecies, text);
+		if (!tokens) return;
+		composeTokens = tokens;
+		composeProvenance = { kind: composeMode === 'types' ? 'guided' : composeMode, text: text.trim() };
+	}
+
+	/**
+	 * Playing a type re-expands the run-collapsed medoid — a trill is one act in the
+	 * stored sequence — and the expansion is sampled from the measured repeat rates, so
+	 * two plays of one type honestly differ in trill length. The strip shows what played.
+	 */
+	function playSongType(songType: SongType) {
+		if (!currentSpecies) return;
+		composeTokens = expandSongType(currentSpecies, songType);
+		composeProvenance = { kind: 'songType', songType };
+		singCompose();
+	}
+
+	function singCompose() {
+		if (!currentSpecies) return;
+		singPhrase(tokensToPhrase(currentSpecies, composeTokens, composeProvenance));
+	}
+
+	function syllableLabelOf(typeId: string): string {
+		return currentSpecies?.syllables.find((s) => s.id === typeId)?.label ?? typeId;
+	}
+
+	/** Fit quality behind the keyboard's quality dot; absent on hand-authored syllables. */
+	function resynthesisOf(typeId: string): number | undefined {
+		return currentSpecies?.syllables.find((s) => s.id === typeId)?.learned?.resynthesisCosine;
+	}
+
 	async function toggleMic() {
 		if (!engine) return;
 		audioError = null;
@@ -689,9 +796,56 @@
 				inputDevices = await BirdyEngine.inputDevices();
 			}
 		} catch (err) {
-			audioError = err instanceof Error ? err.message : String(err);
+			audioError = describeInputError(err, inputSource);
 			micOn = false;
 		}
+	}
+
+	/**
+	 * Capture failures arrive as bare DOMException names; translate the three that actually
+	 * happen. `NotAllowedError` means different things per source: for the microphone it is
+	 * a denied permission, for display capture it is usually the picker being cancelled.
+	 */
+	function describeInputError(err: unknown, source: 'microphone' | 'system'): string {
+		if (err instanceof DOMException) {
+			if (err.name === 'NotAllowedError')
+				return source === 'microphone'
+					? 'Microphone access was denied. Allow it in the browser\u2019s site settings, then try again.'
+					: 'The capture was cancelled. Tick "share audio" in the picker, or no sound arrives.';
+			if (err.name === 'NotFoundError' || err.name === 'OverconstrainedError')
+				return 'No microphone matches that selection — it may have been unplugged. Pick another device.';
+			if (err.name === 'NotReadableError')
+				return 'The microphone is already in use by another application.';
+		}
+		return err instanceof Error ? err.message : String(err);
+	}
+
+	/**
+	 * Switching the source or the device while the input is open means opening it again — a
+	 * MediaStream is bound to whatever it was captured from. A recording in progress is
+	 * filed first: it belongs to the input it was captured on.
+	 */
+	let switchingInput = false;
+	async function restartInput() {
+		if (!engine || !micOn || switchingInput) return;
+		switchingInput = true;
+		audioError = null;
+		try {
+			if (engine.recording) await toggleRecording();
+			await engine.startInput(inputSource, inputDeviceId || undefined);
+			inputDevices = await BirdyEngine.inputDevices();
+		} catch (err) {
+			audioError = describeInputError(err, inputSource);
+			micOn = false;
+		} finally {
+			switchingInput = false;
+		}
+	}
+
+	function setInputSource(source: 'microphone' | 'system') {
+		if (inputSource === source) return;
+		inputSource = source;
+		void restartInput();
 	}
 
 	/** Hands a browser recording to the pipeline, which segments it for learning. */
@@ -1013,6 +1167,46 @@
 	const preview = $derived(
 		assets && text.trim() ? compilePhrase(assets.inventory, text, { speciesId }) : null
 	);
+
+	// --- Compose tab derived state ---------------------------------------------------
+	// Suggestions and chunk offers re-derive from the strip itself, so the context row
+	// always answers "what comes next from *here*", which is the grammar's only claim.
+	const composeGrammar = $derived(currentSpecies?.grammar);
+	const composeNext = $derived(
+		currentSpecies && composeMode === 'guided' ? nextOptions(currentSpecies, composeTokens) : null
+	);
+	const composeChunks = $derived(
+		currentSpecies && composeMode === 'guided'
+			? chunkCompletions(currentSpecies, composeTokens).slice(0, 4)
+			: []
+	);
+	const composeTypes = $derived(
+		(composeGrammar?.songTypes ?? []).slice().sort((a, b) => b.count - a.count)
+	);
+	const composeTyping = $derived(composeGrammar?.songTyping);
+	const composePreview = $derived(
+		currentSpecies && composeTokens.length
+			? tokensToPhrase(currentSpecies, composeTokens, composeProvenance)
+			: null
+	);
+	const composeCoverage = $derived.by(() => {
+		if (!clusters || !currentSpecies || !composeTokens.length) return null;
+		return syllableCoverage(
+			clusters,
+			currentSpecies.id,
+			composeTokens.map((t) => t.typeId)
+		);
+	});
+	// The strip holds fitted type ids of one bird; switching species empties it rather
+	// than letting it quote a repertoire the chips no longer belong to.
+	let composeSpeciesHeld = speciesId;
+	$effect(() => {
+		if (speciesId !== composeSpeciesHeld) {
+			composeSpeciesHeld = speciesId;
+			composeTokens = [];
+			composeProvenance = { kind: composeMode === 'types' ? 'free' : composeMode };
+		}
+	});
 	const faithfulness = $derived(
 		(assets?.manifest as { faithfulness?: { pearson?: number } } | undefined)?.faithfulness?.pearson
 	);
@@ -1325,7 +1519,7 @@ uv run birdy-pipeline build</pre>
 			<aside class="panel controls">
 			<nav class="tabs">
 				<button class:active={tab === 'sing'} onclick={() => (tab = 'sing')}>Sing</button>
-				<button class:active={tab === 'words'} onclick={() => (tab = 'words')}>Words</button>
+				<button class:active={tab === 'words'} onclick={() => (tab = 'words')}>Compose</button>
 				<button class:active={tab === 'listen'} onclick={() => (tab = 'listen')}>Listen</button>
 				<button class:active={tab === 'learn'} onclick={() => (tab = 'learn')}>Learn</button>
 			</nav>
@@ -1488,71 +1682,265 @@ uv run birdy-pipeline build</pre>
 				{:else if tab === 'words'}
 					<section class="block">
 						<label class="field">
-							<span class="lbl">Words to sing</span>
-							<textarea bind:value={text} placeholder="danger — come here"></textarea>
-						</label>
-						<label class="field">
-							<span class="lbl">Voice</span>
+							<span class="lbl">Species</span>
 							<select bind:value={speciesId}>
 								{#each species as s (s.id)}
 									<option value={s.id}>{s.common}</option>
 								{/each}
 							</select>
 						</label>
-						{#if preview}
-							<div class="callout">
-								<span class="badge {preview.confidence}">{confidenceLabel(preview.confidence).text}</span>
-								<p class="note">{preview.note}</p>
-								{#if preview.source === 'documented'}
+						<!--
+							Three ways to fill one strip. The mode changes only what the context
+							row offers; every mode ends in the same singPhrase, so badge, note, galaxy
+							thread and coverage tally are the existing machinery throughout.
+						-->
+						<div class="segmented">
+							<button
+								class:on={composeMode === 'free'}
+								onclick={() => (composeMode = 'free')}
+								title="Build a sequence from this bird's fitted syllable types, in your order. Labelled invented: our sequence."
+							>Free</button>
+							<button
+								class:on={composeMode === 'guided'}
+								onclick={() => (composeMode = 'guided')}
+								title="The same chips, ranked by the transition probabilities counted from this bird's field recordings, with repeated motifs offered whole. Labelled: measured statistics, our bout."
+							>Guided</button>
+							<button
+								class:on={composeMode === 'types'}
+								onclick={() => (composeMode = 'types')}
+								title="Orderings this bird was recorded singing, re-expanded into playable bouts. Trill lengths are sampled from the measured repeat rates."
+							>Song types</button>
+						</div>
+
+						{#if composeTokens.length}
+							<div class="chips">
+								{#each composeTokens as token, i (token)}
+									<button
+										class="chip"
+										class:wordbreak={Boolean(token.gapBefore)}
+										onclick={(e) => removeToken(i, e.shiftKey)}
+										title="{token.typeId} — {syllableLabelOf(token.typeId)} · added from {token.source}{token.gapBefore ? ' · starts a new word (0.12 s gap)' : ''}. Click to remove, shift-click to move earlier."
+									>{token.typeId}</button>
+								{/each}
+							</div>
+							{#if composePreview}
+								<div class="callout">
+									<span class="badge {composePreview.confidence}">
+										{confidenceLabel(composePreview.confidence).text}
+									</span>
+									<p class="note">{composePreview.function}</p>
+									<p class="note faint">{composePreview.note}</p>
+								</div>
+							{/if}
+							<div class="row">
+								<button
+									class="primary"
+									disabled={!engine}
+									onclick={singCompose}
+									title="Play the strip through the same engine as every other bout. The galaxy draws the thread for the syllables it can place and skips the rest."
+								>Sing it</button>
+								<button onclick={clearCompose} title="Empty the strip.">Clear</button>
+								{#if composeCoverage && composeCoverage.placed < composeCoverage.total}
+									<span
+										class="tally mono"
+										class:none={composeCoverage.placed < 2}
+										title="{composeCoverage.placed} of this sequence's {composeCoverage.total} syllables have a place in the galaxy. A chip with no cluster still plays; the galaxy just can't draw it."
+									>{composeCoverage.placed}/{composeCoverage.total}</span>
+								{/if}
+							</div>
+						{:else}
+							<p class="note faint">
+								{#if composeMode === 'types'}
+									Pick a song type below — the strip shows what played.
+								{:else}
+									The strip is empty. Add chips below, or let a text set the rhythm.
+								{/if}
+							</p>
+						{/if}
+
+						{#if composeMode === 'types'}
+							{#if composeTyping}
+								<p class="note faint">
+									{composeTyping.inTypes} of {composeTyping.bouts} recorded bouts fall into
+									{composeTyping.types} types; {composeTyping.unplaced} were heard once.
+									Type ids renumber on every refit.
+								</p>
+							{/if}
+							{#if composeTypes.length}
+								<div class="typelist">
+									{#each composeTypes as st (st.id)}
+										<button
+											class="typerow"
+											disabled={!engine}
+											onclick={() => playSongType(st)}
+											title="Collapsed medoid: {st.sequence.join(' ')}. Playing re-expands runs from the measured repeat rates, so two plays differ honestly in trill length; the gaps are placeholders."
+										>
+											<span class="mono">{st.id}</span>
+											<span class="note">{st.sequence.join(' ')}</span>
+											<span class="note mono faint">×{st.count} · {(st.share * 100).toFixed(0)}%</span>
+										</button>
+									{/each}
+								</div>
+							{:else}
+								<p class="note faint">No song types were fitted for this bird.</p>
+							{/if}
+						{:else if currentSpecies}
+							{#if composeMode === 'guided' && composeNext}
+								{#if composeNext.options.length}
+									<div class="suggestions">
+										{#each composeNext.options.slice(0, 8) as option (option.typeId)}
+											<button
+												class="suggestion"
+												onclick={() => appendToken(option.typeId, 'suggested')}
+												title="{syllableLabelOf(option.typeId)}{option.chunk ? ` · continues a motif heard ${option.chunk.count} times` : ''}"
+											>
+												<span class="bar"
+													><span style:width={`${(option.p ?? 0) * 100}%`}></span></span
+												>
+												<span class="note">{option.typeId}</span>
+												{#if option.chunk}<span class="note faint">motif ×{option.chunk.count}</span>{/if}
+												<span class="note mono">{option.p === null ? 'start' : `${(option.p * 100).toFixed(0)}%`}</span>
+											</button>
+										{/each}
+										{#if composeNext.endP !== null}
+											<button
+												class="suggestion"
+												disabled={!engine || !composeTokens.length}
+												onclick={() => { singCompose(); clearCompose(); }}
+												title="The measured probability the bout ends here. Sing the strip and start a new one."
+											>
+												<span class="bar"
+													><span style:width={`${composeNext.endP * 100}%`}></span></span
+												>
+												<span class="note faint">ends here</span>
+												<span class="note mono">{(composeNext.endP * 100).toFixed(0)}%</span>
+											</button>
+										{/if}
+									</div>
+								{:else}
+									<p class="note faint">
+										{composeTokens.length
+											? 'No measured transition continues from here — the bout ends, or pick any chip below.'
+											: 'No grammar fitted for this bird — the chips below are unranked.'}
+									</p>
+								{/if}
+								{#if composeChunks.length}
+									<div class="suggestions">
+										{#each composeChunks as offer (offer.chunk.sequence.join(' '))}
+											<button
+												class="suggestion"
+												onclick={() => appendChunk(offer.insert)}
+												title="A repeated motif mined from the bouts: {offer.chunk.sequence.join(' ')} — heard {offer.chunk.count} times (pmi {offer.chunk.pmi.toFixed(2)}). One click inserts {offer.insert.join(' ')}."
+											>
+												<span class="note">+ {offer.insert.join(' ')}</span>
+												<span class="note mono faint">heard ×{offer.chunk.count}</span>
+											</button>
+										{/each}
+									</div>
+								{/if}
+								<button
+									class="wide"
+									disabled={!engine}
+									onclick={singImprovisation}
+									title="Let the measured grammar walk itself — the same sampler as the Sing tab's Improvise."
+								>Auto: let the grammar walk</button>
+							{/if}
+							<!--
+								The keyboard is every fitted type, suggestion or not: the grammar is
+								first-order and incomplete, so the ranked row is advice, not a gate. The
+								dot says how close a render of the fit comes to its recording.
+							-->
+							<div class="chips">
+								{#each currentSpecies.syllables as s (s.id)}
+									{@const cosine = resynthesisOf(s.id)}
+									<button
+										class="chip"
+										onclick={() => appendToken(s.id, 'free')}
+										title="{s.label}{cosine !== undefined ? ` · render matches its recording at cosine ${cosine.toFixed(2)}` : ''}"
+									>
+										{s.id}{#if cosine !== undefined}<span
+												class="quality"
+												class:low={cosine < 0.4}
+												class:mid={cosine >= 0.4 && cosine < 0.7}
+											></span>{/if}
+									</button>
+								{/each}
+							</div>
+							<!--
+								Text survives as rhythm only. splitSyllables yields the token count and
+								word boundaries; syllable choice comes from the suggestions, never from
+								the hash, and fitted contours are never transposed. The documented
+								keyword path below is unchanged and still renders the real call.
+							-->
+							<label class="field">
+								<span class="lbl">Phrase rhythm from words</span>
+								<textarea bind:value={text} placeholder="danger — come here"></textarea>
+							</label>
+							<button
+								class="wide"
+								disabled={!currentSpecies || !text.trim()}
+								onclick={applyRhythm}
+								title="Fill the strip to this text's rhythm: its syllable count and word breaks. The words choose nothing else — syllables come from the measured syntax."
+							>Set the rhythm from the words</button>
+							{#if preview?.source === 'documented'}
+								<div class="callout">
+									<span class="badge {preview.confidence}">{confidenceLabel(preview.confidence).text}</span>
 									<p class="note">
 										Matched <span class="mono">{preview.matched.join(', ')}</span> → {preview.label}
 									</p>
-								{:else}
-									<p class="note faint">{preview.syllables.length} syllables</p>
-								{/if}
-								{#if preview.documentedElsewhere?.length}
-									<p class="note faint">
-										A documented call for this exists, but not for this bird:
-										{#each preview.documentedElsewhere as other (other)}
-											<button class="link" onclick={() => (speciesId = other)}>
-												{speciesById(assets.inventory, other)?.common ?? other}
-											</button>
-										{/each}
-									</p>
-								{/if}
-							</div>
+									<p class="note faint">{preview.note}</p>
+									<button
+										class="primary wide"
+										disabled={!engine}
+										onclick={singWords}
+										title="Render the playback-verified call, unchanged by the composer."
+									>Sing the documented call</button>
+								</div>
+							{:else if preview?.documentedElsewhere?.length}
+								<p class="note faint">
+									A documented call for this exists, but not for this bird:
+									{#each preview.documentedElsewhere as other (other)}
+										<button class="link" onclick={() => (speciesId = other)}>
+											{speciesById(assets.inventory, other)?.common ?? other}
+										</button>
+									{/each}
+								</p>
+							{/if}
 						{/if}
-						<button
-							class="primary wide"
-							disabled={!engine || !preview}
-							onclick={singWords}
-							title="Only a handful of calls have experimentally established meanings. Anything else is rendered through the species' own song syntax and labelled as our invention."
-						>
-							Sing the words
-						</button>
 					</section>
 				{:else if tab === 'listen'}
 					<section class="block">
 						<h3 class="blocktitle">Input</h3>
 						<div class="segmented">
-							<button class:on={inputSource === 'microphone'} onclick={() => (inputSource = 'microphone')}>
+							<button class:on={inputSource === 'microphone'} onclick={() => setInputSource('microphone')}>
 								Microphone
 							</button>
-							<button class:on={inputSource === 'system'} onclick={() => (inputSource = 'system')}>
+							<button class:on={inputSource === 'system'} onclick={() => setInputSource('system')}>
 								Computer audio
 							</button>
 						</div>
 						{#if inputSource === 'microphone'}
 							<label class="field">
 								<span class="lbl">Device</span>
-								<select bind:value={inputDeviceId}>
+								<select
+									bind:value={inputDeviceId}
+									onchange={(e) => {
+										inputDeviceId = e.currentTarget.value;
+										void restartInput();
+									}}
+								>
 									<option value="">system default</option>
 									{#each inputDevices as d (d.deviceId)}
 										<option value={d.deviceId}>{d.label || `input ${d.deviceId.slice(0, 6)}`}</option>
 									{/each}
 								</select>
 							</label>
-							{#if inputDevices.length && !inputDevices[0].label}
+							{#if !inputDevices.length}
+								<p class="note faint">
+									No input devices reported yet. They appear once the browser has been granted
+									microphone access — start the input once, or check that one is plugged in.
+								</p>
+							{:else if !inputDevices[0].label}
 								<p class="note faint">
 									Device names appear once you have granted microphone permission once.
 								</p>
@@ -2748,6 +3136,60 @@ uv run birdy-pipeline serve</pre>
 		background: var(--paper);
 		border: 1px solid var(--rule);
 		color: var(--ink-dim);
+	}
+
+	/* --- Compose tab -------------------------------------------------------------- */
+	button.chip {
+		cursor: pointer;
+	}
+
+	/* A text word boundary on the strip: the one place a gap is not the flat placeholder. */
+	.chip.wordbreak {
+		border-left: 2px solid var(--ink-dim);
+	}
+
+	/* Fit-quality dot: how close a render of this type comes to its own recording. */
+	.quality {
+		display: inline-block;
+		width: 0.35rem;
+		height: 0.35rem;
+		margin-left: 0.25rem;
+		border-radius: 50%;
+		background: var(--signal);
+		vertical-align: middle;
+	}
+
+	.quality.mid { background: var(--ink-dim); }
+	.quality.low { background: var(--rule); }
+
+	.suggestions {
+		display: grid;
+		gap: 0.15rem;
+	}
+
+	.suggestion {
+		display: grid;
+		grid-template-columns: 3rem auto 1fr auto;
+		gap: 0.5rem;
+		align-items: center;
+		text-align: left;
+		cursor: pointer;
+	}
+
+	.typelist {
+		display: grid;
+		gap: 0.15rem;
+		max-height: 14rem;
+		overflow-y: auto;
+	}
+
+	.typerow {
+		display: grid;
+		grid-template-columns: 2.5rem 1fr auto;
+		gap: 0.5rem;
+		align-items: baseline;
+		text-align: left;
+		cursor: pointer;
 	}
 
 	.refs {

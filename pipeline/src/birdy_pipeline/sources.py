@@ -833,7 +833,10 @@ class InatSoundsSource(Source):
                         # The owner's explicit exception to the delete loop (AGENTS.md):
                         # cached audio stays local, feeds harvest_directory on re-runs,
                         # never ships, and is deleted when the training phase ends.
-                        staged.replace(keep_audio / f"INAT{audio_id}{staged.suffix}")
+                        # shutil.move, not Path.replace: staging is tmpfs, the cache is
+                        # not, and os.replace cannot cross filesystems.
+                        shutil.move(str(staged),
+                                    str(keep_audio / f"INAT{audio_id}{staged.suffix}"))
                     staged.unlink(missing_ok=True)
         log(f"  transferred ~{transferred / 1e6:.0f} MB of member data for "
             f"{taken} recording(s)")

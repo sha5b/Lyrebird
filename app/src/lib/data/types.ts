@@ -67,6 +67,19 @@ export interface Syllable {
 	 */
 	gammaScale?: number;
 	/**
+	 * Fit-quality record the learned inventory attaches to a fitted type. The one number
+	 * the composer surfaces is `resynthesisCosine`: how close a render of this fit comes
+	 * to the audio it was fitted from, so a low one means "this syllable is a rougher
+	 * likeness", not "this bird sings worse".
+	 */
+	learned?: {
+		members?: number;
+		resynthesisCosine?: number;
+		rivalCosine?: number;
+		nearestOwn?: boolean;
+		f0ErrorPercent?: number;
+	};
+	/**
 	 * Q of the f0-tracking tract band, overriding the timbre class's default when set.
 	 * The three classes offer 9, 5 and 3 — all broad next to the Q ≈ 30 measured for the
 	 * oropharyngeal-esophageal resonance, and a broad band leaks the second harmonic.
@@ -91,6 +104,44 @@ export interface Song {
 export interface Grammar {
 	start: string[];
 	transitions: Record<string, Record<string, number>>;
+	/**
+	 * Repeated subsequences mined from the observed bouts (docs/12). Present only in a
+	 * learned inventory; `count` is how often the whole motif was heard, `pmi` how much
+	 * more often than chance the sequence co-occurs.
+	 */
+	chunks?: Chunk[];
+	/**
+	 * Recurring song types, as run-collapsed medoid sequences: one entry per *act*, so a
+	 * trill is a single token and playing a type means re-expanding runs (compose.ts).
+	 */
+	songTypes?: SongType[];
+	/** The census behind `songTypes` — how many bouts were typed, and how many were not. */
+	songTyping?: SongTyping;
+}
+
+export interface Chunk {
+	sequence: string[];
+	count: number;
+	species: string[];
+	pmi: number;
+}
+
+export interface SongType {
+	/** Renumbered on every refit (docs/12 §12.5) — never persisted anywhere. */
+	id: string;
+	sequence: string[];
+	count: number;
+	share: number;
+}
+
+export interface SongTyping {
+	bouts: number;
+	short: number;
+	candidates: number;
+	types: number;
+	inTypes: number;
+	unplaced: number;
+	minClusterSize: number;
 }
 
 export interface Species {

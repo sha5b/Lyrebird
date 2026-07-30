@@ -1254,6 +1254,14 @@ def learn_grammar(
     Transitions across a gap longer than a second are treated as the end of a bout
     rather than as a transition, or every pause in a recording would become a
     (spurious) link between two unrelated phrases.
+
+    Also measures the one rhythm number the app can honestly play back: `gaps`, the
+    median `gap_before` of the second token of each transition, keyed `"L29>L14"`.
+    Until this existed, every sequence the app rendered used invented constants
+    (0.035–0.12 s) while the measured inter-syllable gaps sat unused in the store.
+    Medians, not means — gap distributions are right-skewed, and the same
+    `GRAMMAR_MIN_COUNT` filter as the transitions themselves keeps a two-observation
+    "median" from looking like a measurement.
     """
     by_recording: dict[str, list[tuple[int, SyllableObservation]]] = defaultdict(list)
     for i, o in enumerate(observations):
@@ -1261,6 +1269,7 @@ def learn_grammar(
 
     starts: Counter[str] = Counter()
     transitions: dict[str, Counter[str]] = defaultdict(Counter)
+    gaps: dict[str, list[float]] = defaultdict(list)
     for items in by_recording.values():
         items.sort(key=lambda pair: pair[1].order)
         previous: str | None = None
@@ -1274,6 +1283,7 @@ def learn_grammar(
                 starts[current] += 1
             else:
                 transitions[previous][current] += 1
+                gaps[f"{previous}>{current}"].append(o.gap_before)
             previous = current
         if previous is not None:
             transitions[previous][END] += 1
@@ -1283,9 +1293,18 @@ def learn_grammar(
         total = sum(kept.values()) or 1
         return {k: round(v / total, 4) for k, v in sorted(kept.items(), key=lambda kv: -kv[1])}
 
+    table = {k: normalise(v) for k, v in sorted(transitions.items())}
+    kept_keys = {
+        f"{a}>{b}" for a, row in table.items() for b in row if b != END
+    }
     return {
         "start": [k for k, _ in starts.most_common(4)],
-        "transitions": {k: normalise(v) for k, v in sorted(transitions.items())},
+        "transitions": table,
+        "gaps": {
+            k: round(float(np.median(v)), 3)
+            for k, v in sorted(gaps.items())
+            if k in kept_keys and len(v) >= GRAMMAR_MIN_COUNT
+        },
     }
 
 
@@ -2765,6 +2784,21 @@ def self_test(verbose: bool = True) -> None:
         for i in range(4)
     ]
     assert type_sequences(gap_obs, rows) == [("s", ["T0", "T1"]), ("s", ["T2", "T3"])]
+
+    # `learn_grammar`'s gap medians: measured per transition, filtered at the same
+    # count floor as the transitions, and keyed so the app can look up "A>B" directly.
+    rhythm_obs = [
+        observation(3000.0, 0.05, species_id="s", recording_id="r2", order=i)
+        for i in range(5)
+    ]
+    for o, g in zip(rhythm_obs, [0.0, 0.2, 0.4, 0.2, 0.6]):
+        o.gap_before = g
+    rhythm_types = {i: t for i, t in enumerate(["A", "B", "A", "B", "A"])}
+    rhythm = learn_grammar(rhythm_obs, rhythm_types)
+    assert rhythm["gaps"] == {"A>B": 0.2, "B>A": 0.5}, rhythm["gaps"]
+    assert set(rhythm["gaps"]) <= {
+        f"{a}>{b}" for a, row in rhythm["transitions"].items() for b in row if b != END
+    }
 
     rng = np.random.default_rng(0)
     planted = [("sp", ["A", "B", "C", "D"]) for _ in range(40)]
