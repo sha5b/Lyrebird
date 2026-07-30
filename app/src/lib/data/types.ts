@@ -199,6 +199,32 @@ export interface Inventory {
 }
 
 /**
+ * One row of `inventory/index.json`: everything a picker needs without opening the
+ * species' shard — the display name, the bank, and how much the bird has to sing.
+ */
+export interface SpeciesIndexEntry {
+	id: string;
+	common: string;
+	bank: string;
+	/** Syllable types (the shard's `syllables.length`). */
+	types: number;
+	songs: number;
+}
+
+/**
+ * `inventory/index.json`: the inventory's header plus one row per species. The whole
+ * file stays the checkpoint; this is the lazy view's front door. `refs` and `banks`
+ * ride along because a citation must never require opening a shard.
+ */
+export interface InventoryIndex {
+	version: number;
+	note: string;
+	refs: Record<string, string>;
+	banks: Record<string, string>;
+	species: SpeciesIndexEntry[];
+}
+
+/**
  * beta <-> f0 calibration measured offline from the syrinx ODE, at `gamma`. Because gamma
  * is a pure time-scale, a voice running at another gamma converts its target frequency
  * before indexing this table (docs/08-implementation.md §8.1).
@@ -414,7 +440,32 @@ export interface Manifest {
 /** Everything the client needs, fetched once at startup. */
 export interface BirdyAssets {
 	manifest: Manifest;
+	/**
+	 * The canonical inventory. When the build ships per-species shards this starts as the
+	 * header with an empty species list and gains a bird each time `loadSpecies` resolves
+	 * — the shard *is* the whole file's entry for that bird, so a reader cannot tell the
+	 * difference. When the build predates shards, this is the whole file, as it always was.
+	 */
 	inventory: Inventory;
+	/**
+	 * One row per species, complete from startup, in the inventory's own order: the
+	 * pickers' and name lookups' data, no shard required.
+	 */
+	inventoryIndex: SpeciesIndexEntry[];
+	/**
+	 * Brings one bird's full entry into `inventory.species`, fetching its shard the first
+	 * time and answering from the cache after. Resolves `undefined` for an id the
+	 * inventory does not hold.
+	 */
+	loadSpecies(id: string): Promise<Species | undefined>;
+	/**
+	 * `loadSpecies` for several birds at once. With no ids it loads *every* species —
+	 * which in shard mode fetches the whole file once, the cheapest way to have them all
+	 * (the global chorus is the one caller that genuinely needs every bird).
+	 */
+	ensureSpecies(ids?: string[]): Promise<void>;
+	/** A bird's display name from the index, or the id itself when nothing names it. */
+	speciesCommon(id: string): string;
 	calibration: SyrinxCalibration | null;
 	featureSpace: FeatureSpace;
 	positions: Float32Array;

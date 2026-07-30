@@ -40,9 +40,18 @@ export function readActivations(
 	centroids: Centroids,
 	activations: Float32Array,
 	similarity: Float32Array,
-	options: { active: boolean; strength?: number; onsetRate?: number; f0?: number } = {
-		active: false
-	}
+	options: {
+		active: boolean;
+		strength?: number;
+		onsetRate?: number;
+		f0?: number;
+		/**
+		 * Name lookup that needs no shard (assets.speciesCommon). On a sharded build the
+		 * inventory holds only the birds loaded so far, so without this a cluster of an
+		 * unloaded bird would be named by its raw id.
+		 */
+		speciesName?: (id: string) => string;
+	} = { active: false }
 ): Reading {
 	const strength = options.strength ?? (options.active ? 1 : 0);
 	const ranked: Candidate[] = centroids.items
@@ -50,7 +59,10 @@ export function readActivations(
 			centroid,
 			probability: activations[i] ?? 0,
 			similarity: similarity[i] ?? 0,
-			speciesCommon: speciesById(inventory, centroid.speciesId)?.common ?? centroid.speciesId
+			speciesCommon:
+				options.speciesName?.(centroid.speciesId) ??
+				speciesById(inventory, centroid.speciesId)?.common ??
+				centroid.speciesId
 		}))
 		.sort((a, b) => b.probability - a.probability)
 		.slice(0, 4);

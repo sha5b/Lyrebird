@@ -27,11 +27,11 @@
  */
 
 /**
- * The monochrome pair. Neutral rather than a desaturated hue, so nothing in the picture
- * suggests a category, and the two ends are far enough apart in lightness that response
- * is legible on value alone.
+ * The interface's neutral dark. Neutral rather than a desaturated hue, so nothing in
+ * the picture suggests a category where none is meant. (The pale half of the old
+ * monochrome pair went with the response ramp it served: the cloud's rest colour is
+ * now the provenance wash, and the ramp's dark end is the class colour.)
  */
-export const MONO_REST = '#cdd3da';
 export const MONO_HOT = '#1e2836';
 
 /**

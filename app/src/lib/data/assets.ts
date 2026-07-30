@@ -1,5 +1,5 @@
 import { base } from '$app/paths';
-import type { BirdyAssets, Centroid, Centroids, EmbeddingSpace, FeatureSpace, Inventory, Manifest, PointCloudMeta, Species, SyrinxCalibration } from './types';
+import type { BirdyAssets, Centroid, Centroids, EmbeddingSpace, FeatureSpace, Inventory, InventoryIndex, Manifest, PointCloudMeta, Species, SpeciesIndexEntry, SyrinxCalibration } from './types';
 
 const ROOT = 'birdy';
 
@@ -93,6 +93,12 @@ async function getJson<T>(path: string, fetcher: typeof fetch, bust = ''): Promi
 /**
  * Loads the generated galaxy + inventory. The pipeline is the only writer of these
  * files, so a missing one means the offline stage has not been run yet.
+ *
+ * The inventory loads lazily when the build ships per-species shards: the tiny
+ * `inventory/index.json` fills the pickers up front, and a bird's full entry is
+ * fetched from `inventory/<id>.json` only when one is actually selected, composed
+ * with or sung. Whether shards exist is detected exactly once, here; an older build
+ * without them answers 404 and the whole file loads instead, exactly as before.
  */
 export async function loadAssets(
 	fetcher: typeof fetch = fetch,
@@ -102,8 +108,24 @@ export async function loadAssets(
 	// Everything after the manifest is fetched under that build's own stamp, so a reload
 	// triggered by a rebuild cannot mix two builds together.
 	const stamp = bust || manifest.builtAt || '';
+	let index: InventoryIndex | null = null;
+	try {
+		index = await getJson<InventoryIndex>('inventory/index.json', fetcher, stamp);
+	} catch {
+		index = null;
+	}
 	const [inventory, rawFeatureSpace, points, centroids] = await Promise.all([
-		getJson<Inventory>('inventory.json', fetcher, stamp),
+		// In shard mode the inventory starts as the header alone; `loadSpecies` below is
+		// how a bird joins it. The whole file is *not* fetched here — that is the point.
+		index
+			? Promise.resolve<Inventory>({
+					version: index.version,
+					note: index.note,
+					refs: index.refs,
+					banks: index.banks,
+					species: []
+				})
+			: getJson<Inventory>('inventory.json', fetcher, stamp),
 		getJson<FeatureSpace & NestedFeatureSpace>('feature-space.json', fetcher, stamp),
 		getJson<PointCloudMeta>('points.json', fetcher, stamp),
 		getJson<Centroids>('centroids.json', fetcher, stamp)
@@ -162,9 +184,60 @@ export async function loadAssets(
 		stamp
 	);
 
+	// The lazy species view. In shard mode the index came from disk; without shards it
+	// is derived from the whole file, so `inventoryIndex` is complete either way.
+	const inventoryIndex: SpeciesIndexEntry[] =
+		index?.species ??
+		inventory.species.map((s) => ({
+			id: s.id,
+			common: s.common,
+			bank: s.bank,
+			types: s.syllables.length,
+			songs: s.songs.length
+		}));
+	const commonById = new Map(inventoryIndex.map((s) => [s.id, s.common]));
+	// Cache by promise, not by result: two selections of the same bird in the same tick
+	// share one fetch, and a cached 404 stays answered rather than retried per lookup.
+	const shardCache = new Map<string, Promise<Species | undefined>>();
+	const loadSpecies = (id: string): Promise<Species | undefined> => {
+		const held = inventory.species.find((s) => s.id === id);
+		if (held) return Promise.resolve(held);
+		if (!index) return Promise.resolve(undefined);
+		let pending = shardCache.get(id);
+		if (!pending) {
+			pending = getJson<Species>(`inventory/${id}.json`, fetcher, stamp)
+				.then((sp) => {
+					// The shard is the whole file's entry for this bird, so once it is here
+					// every sync reader (speciesById, the engine, the grammar) sees it.
+					if (!inventory.species.some((s) => s.id === sp.id)) inventory.species.push(sp);
+					return sp;
+				})
+				.catch(() => undefined);
+			shardCache.set(id, pending);
+		}
+		return pending;
+	};
+	const ensureSpecies = async (ids?: string[]): Promise<void> => {
+		if (!index) return; // whole-file mode: every species is already here
+		if (ids) {
+			await Promise.all(ids.map((id) => loadSpecies(id)));
+			return;
+		}
+		// Every bird at once is the one case where the whole file is the lazy unit:
+		// a single fetch beats one request per species.
+		const whole = await getJson<Inventory>('inventory.json', fetcher, stamp);
+		const held = new Set(inventory.species.map((s) => s.id));
+		inventory.species.push(...whole.species.filter((s) => !held.has(s.id)));
+	};
+	const speciesCommon = (id: string): string => commonById.get(id) ?? id;
+
 	return {
 		manifest,
 		inventory,
+		inventoryIndex,
+		loadSpecies,
+		ensureSpecies,
+		speciesCommon,
 		calibration,
 		featureSpace,
 		positions,
@@ -210,19 +283,25 @@ async function loadPointFeatures(
 
 /**
  * Stable species -> index map for the renderer, so a point can be dimmed when another
- * species is selected. The inventory sets the order; species that appear only in the
- * point cloud (harvested field recordings of something not in the inventory) are
- * appended, so no point is left without an index.
+ * species is selected. The inventory index sets the order (it is the inventory's own
+ * order, shards or not); species that appear only in the point cloud (harvested field
+ * recordings of something not in the inventory) are appended, so no point is left
+ * without an index.
  */
 export function buildSpeciesIndex(assets: BirdyAssets): Map<string, number> {
 	const index = new Map<string, number>();
-	assets.inventory.species.forEach((s) => index.set(s.id, index.size));
+	assets.inventoryIndex.forEach((s) => index.set(s.id, index.size));
 	for (const id of assets.points.speciesId) {
 		if (!index.has(id)) index.set(id, index.size);
 	}
 	return index;
 }
 
+/**
+ * The full entry for one bird — present once its shard has landed (or always, on a
+ * pre-shard build). Callers that cannot wait should go through `assets.loadSpecies`
+ * first; name-only lookups belong to `assets.speciesCommon`, which needs no shard.
+ */
 export function speciesById(inventory: Inventory, id: string): Species | undefined {
 	return inventory.species.find((s) => s.id === id);
 }

@@ -30,7 +30,7 @@
 	import { createSignal, type VisualSignal } from '$lib/galaxy/shaders';
 	import { MONO_HOT, speciesColour as speciesHue } from '$lib/galaxy/palette';
 	import { PipelineClient, type PipelineStatus } from '$lib/data/pipeline';
-	import type { BirdyAssets, SongType } from '$lib/data/types';
+	import type { BirdyAssets, SongType, Species } from '$lib/data/types';
 
 	// $state.raw, not $state: a deep reactive proxy of the corpus cannot be structured-cloned
 	// into the AudioWorklet, and there is nothing here that benefits from deep reactivity.
@@ -138,8 +138,31 @@
 
 	const clusters = $derived<ClusterLookup | null>(assets ? buildClusterLookup(assets.centroids) : null);
 	const speciesIndex = $derived(assets ? buildSpeciesIndex(assets) : null);
-	const species = $derived(assets?.inventory.species ?? []);
-	const currentSpecies = $derived(species.find((s) => s.id === speciesId) ?? null);
+	// The pickers' species list: id + common + counts from the inventory index, complete
+	// from startup. Full entries (syllables, songs, grammar) live behind loadSpecies.
+	const species = $derived(assets?.inventoryIndex ?? []);
+	/**
+	 * The selected bird's full entry, fetched as a shard on demand rather than parsed
+	 * out of a whole-corpus inventory up front. State rather than a derivation of
+	 * `speciesId`: the fetch is async, and a stale resolution (two quick switches) is
+	 * dropped rather than shown.
+	 */
+	let currentSpecies = $state<Species | null>(null);
+	$effect(() => {
+		const id = speciesId;
+		const loaded = assets;
+		if (!loaded || !id) {
+			currentSpecies = null;
+			return;
+		}
+		let stale = false;
+		loaded.loadSpecies(id).then((sp) => {
+			if (!stale) currentSpecies = sp ?? null;
+		});
+		return () => {
+			stale = true;
+		};
+	});
 	// Deterministic, so the bird you audition keeps its voice for the whole session.
 	const soloVoice = $derived(
 		currentSpecies ? createIndividual(currentSpecies.id, 0, currentSpecies.common) : null
@@ -421,7 +444,7 @@
 			// A new inventory can drop a species — `--learned-only` does exactly that — and a
 			// selection pointing at one that is gone leaves `currentSpecies` null, which reads
 			// as "all birds" while the dropdown still shows the missing name.
-			if (speciesId && !loaded.inventory.species.some((s) => s.id === speciesId)) {
+			if (speciesId && !loaded.inventoryIndex.some((s) => s.id === speciesId)) {
 				speciesId = '';
 			}
 			signal = createSignal(loaded.centroids.items.length, loaded.points.n);
@@ -518,7 +541,7 @@
 			{
 				id: ++sungCounter,
 				speciesId: id,
-				common: sp?.common ?? id,
+				common: sp?.common ?? assets.speciesCommon(id),
 				label: sp?.songs.find((s) => s.id === songId)?.label ?? songId,
 				voice,
 				nodes: scheduled
@@ -741,12 +764,12 @@
 	}
 
 	function singWords() {
-		if (!assets) return;
+		if (!assets || !currentSpecies) return;
 		singPhrase(compilePhrase(assets.inventory, text, { speciesId }));
 	}
 
 	function singImprovisation() {
-		if (!assets) return;
+		if (!assets || !currentSpecies) return;
 		singPhrase(improvise(assets.inventory, speciesId));
 	}
 
@@ -927,8 +950,8 @@
 	 * `global` drops all of it — no focus, no context, no preview thread — so the only
 	 * thing on screen is every trajectory being drawn as it is actually sung.
 	 */
-	function setChorus(mode: 'off' | 'solo' | 'global') {
-		if (!engine) return;
+	async function setChorus(mode: 'off' | 'solo' | 'global') {
+		if (!engine || !assets) return;
 		chorus = chorus === mode ? 'off' : mode;
 		engine.stopAmbient();
 		listener?.clearPaths();
@@ -938,7 +961,6 @@
 			return;
 		}
 		if (chorus === 'global') {
-			showContext('');
 			contextSpecies = null;
 			// The whole aviary is the subject, so nothing should still be claiming to be
 			// it: clearing the bird also releases the camera back to the entire galaxy,
@@ -946,12 +968,27 @@
 			speciesId = '';
 			pinnedCluster = -1;
 			selectedSung = null;
-			engine.startAmbient(species.map((s) => s.id), 22 * tempo, 2);
-		} else if (currentSpecies) {
-			contextSpecies = currentSpecies.id;
-			showContext(currentSpecies.id);
-			engine.startAmbient([currentSpecies.id], 12 * tempo, 3);
+			// Every bird's songs is the one thing a whole-corpus chorus cannot get
+			// lazily — and exactly what the whole file is for: one fetch, after which
+			// every shard lookup is a cache hit.
+			await assets.ensureSpecies();
+			if (chorus !== 'global') return; // toggled off while the corpus loaded
+			showContext('');
+			engine.startAmbient(
+				species.map((s) => s.id),
+				22 * tempo,
+				2
+			);
+			return;
 		}
+		// Solo: the bird's shard may still be in flight (this runs one tick after the
+		// picker changed), so wait for it rather than trusting currentSpecies to be
+		// the new bird already.
+		const bird = await assets.loadSpecies(speciesId);
+		if (chorus !== 'solo' || !bird) return;
+		contextSpecies = bird.id;
+		showContext(bird.id);
+		engine.startAmbient([bird.id], 12 * tempo, 3);
 	}
 
 	/**
@@ -970,18 +1007,21 @@
 	function refreshSelection() {
 		// A phrase picked out of the history owns the preview thread until it is cleared.
 		if (selectedSung !== null) return;
-		if (!assets || !currentSpecies || !currentSong || !listener || chorus === 'global') return;
-		const resolved = songSyllables(currentSpecies, currentSong.id);
+		// Pinned to a local: the shard effect reassigns currentSpecies, so the guard's
+		// narrowing does not reach inside the closures below.
+		const bird = currentSpecies;
+		if (!assets || !bird || !currentSong || !listener || chorus === 'global') return;
+		const resolved = songSyllables(bird, currentSong.id);
 		if (resolved) {
 			listener.setPreview(
-				resolved.syllables.map((s) => clusterIndexFor(clusters!, currentSpecies.id, s.id)),
-				currentSpecies.id,
+				resolved.syllables.map((s) => clusterIndexFor(clusters!, bird.id, s.id)),
+				bird.id,
 				currentSong.label
 			);
 		}
-		if (contextSpecies !== currentSpecies.id) {
-			contextSpecies = currentSpecies.id;
-			showContext(currentSpecies.id);
+		if (contextSpecies !== bird.id) {
+			contextSpecies = bird.id;
+			showContext(bird.id);
 		}
 	}
 
@@ -1227,8 +1267,16 @@
 		const rate = tempo;
 		if (engine) engine.tempo = rate;
 		if (chorus === 'solo' && engine && id) engine.startAmbient([id], 12 * rate, 3);
-		if (chorus === 'global' && engine) {
-			engine.startAmbient(species.map((s) => s.id), 22 * rate, 2);
+		if (chorus === 'global' && engine && assets) {
+			const loaded = assets;
+			void loaded.ensureSpecies().then(() => {
+				if (chorus === 'global')
+					engine?.startAmbient(
+						loaded.inventoryIndex.map((s) => s.id),
+						22 * rate,
+						2
+					);
+			});
 		}
 	});
 	$effect(() => {
@@ -1241,8 +1289,12 @@
 		refreshSelection();
 	});
 
+	// compilePhrase only ever reads the selected bird out of the inventory, so it waits
+	// for that bird's shard rather than for a whole-corpus parse.
 	const preview = $derived(
-		assets && text.trim() ? compilePhrase(assets.inventory, text, { speciesId }) : null
+		assets && currentSpecies && text.trim()
+			? compilePhrase(assets.inventory, text, { speciesId })
+			: null
 	);
 
 	// --- Compose tab derived state ---------------------------------------------------
@@ -2041,7 +2093,7 @@ uv run birdy-pipeline build</pre>
 									A documented call for this exists, but not for this bird:
 									{#each preview.documentedElsewhere as other (other)}
 										<button class="link" onclick={() => (speciesId = other)}>
-											{speciesById(assets.inventory, other)?.common ?? other}
+											{assets.speciesCommon(other)}
 										</button>
 									{/each}
 								</p>

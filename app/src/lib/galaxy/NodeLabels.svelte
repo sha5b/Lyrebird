@@ -13,7 +13,7 @@
 	 */
 	import { untrack } from 'svelte';
 	import { confidenceLabel } from '$lib/lang/translate';
-	import { knotHeat, speciesById } from '$lib/data/assets';
+	import { knotHeat } from '$lib/data/assets';
 	import { speciesColourScaled } from './palette';
 	import type { BirdyAssets, Centroid } from '$lib/data/types';
 
@@ -27,8 +27,10 @@
 	let { assets, elements, onpick }: Props = $props();
 
 	// The corpus does not change while this is mounted, so the tags are built once.
+	// Names come from the inventory index: a tag must name its bird without fetching
+	// that bird's shard first.
 	const centroids = untrack(() => assets.centroids.items);
-	const speciesName = (id: string) => speciesById(assets.inventory, id)?.common ?? id;
+	const speciesName = (id: string) => assets.speciesCommon(id);
 	// What a knot's extent is made of: real field syllables, or our own renders. The
 	// ρ and r figures next to it measure that extent, so the tag says which it is.
 	const evidenceLabel = (c: Centroid): string =>

@@ -26,7 +26,7 @@ from .corpus import (
     synthetic_corpus,
     write_wav,
 )
-from . import galaxy, harvest, learn, respiration, twovoice
+from . import galaxy, harvest, learn, respfit, respiration, twovoice
 from .galaxy import PointSet, build_galaxy
 from .syrinx import (
     Calibration,
@@ -1104,6 +1104,95 @@ def cmd_learn(args: argparse.Namespace) -> int:
     log("")
     log("next: uv run birdy-pipeline build --inventory " + str(out) +
         " --harvest-store " + str(store.root))
+    return 0
+
+
+def cmd_respfit(args: argparse.Namespace) -> int:
+    """Fit the docs/15 synth blocks per species and gate them per type (respfit.py).
+
+    Reads the learned inventory the parallel learn wrote and the store's typing.json,
+    searches the respiration set per species and the second voice per screened type,
+    and writes a new inventory in which a block ships on a type ONLY where it beat
+    that type's current cosine by the margin. The input inventory is never modified
+    in place unless `--out` points at it — and the caller backs it up first.
+    """
+    store = harvest.HarvestStore(Path(args.store))
+    if not store.syllables:
+        log(f"{store.root} holds no syllable observations — run `harvest` first")
+        return 2
+    try:
+        typing = respfit.load_typing(store.root)
+    except RuntimeError as exc:
+        log(str(exc))
+        return 2
+    inventory_path = Path(args.inventory)
+    inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+    calibration = ensure_calibration(Path(args.calibration_dir))
+    features.self_test(verbose=False)
+    learn.self_test(verbose=False)
+    respiration.self_test(verbose=False)
+    twovoice.self_test(verbose=False)
+    respfit.self_test(verbose=False)
+
+    t0 = time.time()
+    document, report = respfit.respfit_inventory(
+        store.syllables,
+        typing,
+        inventory,
+        calibration,
+        recording_descriptors={
+            rid: np.asarray(row, dtype=np.float64)
+            for rid, row in store.recording_descriptors.items()
+        },
+        margin=args.margin,
+        fit_respiration=not args.no_respiration,
+        fit_two_voice=not args.no_two_voice,
+        jobs=args.jobs,
+    )
+    out = (
+        Path(args.out)
+        if args.out
+        else inventory_path.with_name(inventory_path.stem + ".respfit.json")
+    )
+    learn.write_learned_inventory(out, document)
+    if args.report:
+        Path(args.report).write_text(
+            json.dumps(report, indent=1) + "\n", encoding="utf-8"
+        )
+
+    g = report["global"]
+    log("")
+    log(f"wrote {out} ({time.time() - t0:.0f}s)")
+    log(
+        f"respfit verdict over {g['typesScored']} scored types: median cosine "
+        f"{g['medianBefore']:.3f} -> {g['medianAfter']:.3f}, nearest own "
+        f"{g['nearestBefore']} -> {g['nearestAfter']}, respiration shipped on "
+        f"{g['respirationWon']} types, two-voice on {g['twoVoiceWon']} of "
+        f"{g['twoVoiceScreened']} screened"
+    )
+    # The per-species table: one line per species where anything shipped, worst
+    # median move first — the full per-type audit is in --report.
+    moved = [
+        (sid, s)
+        for sid, s in report["species"].items()
+        if s["respirationWon"] or s["twoVoiceWon"]
+    ]
+    moved.sort(key=lambda kv: -(kv[1]["respirationWon"] + kv[1]["twoVoiceWon"]))
+    for sid, s in moved[:40]:
+        resp = s["respiration"]
+        obj = (
+            f"obj {resp['seedScore']:.3f} -> {resp['bestScore']:.3f}"
+            if resp
+            else "respiration fit off"
+        )
+        log(
+            f"  {sid:28} resp {s['respirationWon']}/{s['scored']} "
+            f"({obj}), "
+            f"two-voice {s['twoVoiceWon']}/{s['twoVoiceScreened']}, nearest "
+            f"{s['nearestBefore']} -> {s['nearestAfter']}"
+        )
+    if len(moved) > 40:
+        log(f"  ... and {len(moved) - 40} more species in the report")
     return 0
 
 
@@ -2603,6 +2692,43 @@ def build_parser() -> argparse.ArgumentParser:
     lrn.add_argument("--cpu", action="store_true",
                      help="run the critic on the CPU even where a GPU is available")
     lrn.set_defaults(func=cmd_learn)
+
+    rf = sub.add_parser(
+        "respfit",
+        help="the pre-registered per-species fit of the docs/15 synth blocks: one "
+             "respiratory set per species (Table S2 ranges) and one second voice per "
+             "screened type, shipped on a type ONLY where it beats that type's "
+             "current resynthesis cosine by --margin (respfit.py's docstring is the "
+             "pre-registration)",
+    )
+    rf.add_argument("--store", default=str(DEFAULT_HARVEST_STORE),
+                    help="the store the parallel learn fitted (its typing.json is the "
+                         "membership the fit is judged against)")
+    rf.add_argument("--inventory", default=str(DEFAULT_LEARNED_INVENTORY),
+                    help="the learned inventory the parallel learn wrote — the input "
+                         "fit, never the authored inventory")
+    rf.add_argument("--out", default=None,
+                    help="where the gated inventory goes (default: <inventory "
+                         "stem>.respfit.json beside the input; the input is never "
+                         "modified unless this points at it)")
+    rf.add_argument("--report", default=None,
+                    help="write the full per-type audit (before/after cosines, what "
+                         "shipped, the pre-registered numbers) to this JSON file")
+    rf.add_argument("--jobs", type=int, default=1,
+                    help="worker processes for the per-species fits (default 1 = "
+                         "serial). >1 forks a pool: independent fits, identical "
+                         "results, all cores. Linux/fork only")
+    rf.add_argument("--margin", type=float, default=respfit.SHIP_MARGIN,
+                    help="the honest gate: a fitted block ships on a type only if it "
+                         "beats the type's current cosine by at least this much "
+                         "(default %(default)s, pre-registered in respfit.py)")
+    rf.add_argument("--no-respiration", action="store_true",
+                    help="skip the respiratory fit (two-voice only)")
+    rf.add_argument("--no-two-voice", action="store_true",
+                    help="skip the two-voice fit (respiration only)")
+    rf.add_argument("--calibration-dir", default=str(DEFAULT_OUT),
+                    help="where syrinx-calibration.json lives")
+    rf.set_defaults(func=cmd_respfit)
 
     cr = sub.add_parser(
         "critic",

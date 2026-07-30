@@ -79,7 +79,7 @@ export class Listener {
 			assets.centroids,
 			this.signal.activations,
 			this.tracker.similarity,
-			{ active: false }
+			{ active: false, speciesName: assets.speciesCommon }
 		);
 	}
 
@@ -391,7 +391,8 @@ export class Listener {
 					active,
 					strength: this.tracker.strength,
 					onsetRate: this.onsetTimes.length / 3,
-					f0: this.signal.f0
+					f0: this.signal.f0,
+					speciesName: this.assets.speciesCommon
 				}
 			);
 			this.onReading?.(this.reading);

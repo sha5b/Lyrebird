@@ -1532,6 +1532,7 @@ def build_galaxy(
         },
     )
     shutil.copyfile(inventory_path, out_dir / "inventory.json")
+    _write_inventory_shards(out_dir, inventory)
 
     spread = float(np.mean(np.linalg.norm(pos, axis=1)))
     durations = list(kept.duration)
@@ -1681,6 +1682,7 @@ def build_galaxy(
         "files": [
             "manifest.json",
             "inventory.json",
+            "inventory/index.json",
             "syrinx-calibration.json",
             "feature-space.json",
             "positions.f32",
@@ -1693,6 +1695,54 @@ def build_galaxy(
     }
     _write_json(out_dir / "manifest.json", manifest)
     return stats
+
+
+def _write_inventory_shards(out_dir: Path, inventory: dict[str, Any]) -> None:
+    """Write `inventory/<speciesId>.json` per species plus a tiny `inventory/index.json`.
+
+    The whole-file `inventory.json` stays exactly what it was: the canonical checkpoint
+    `learn` rewrites atomically and everything else reads. The shards are the app's lazy
+    view of the same document, not a second source of truth. At 2 423 species / 12 724
+    types the whole file is a multi-megabyte JSON the app parsed up front to fill a
+    dropdown, while a selection, a composed phrase or a sung call only ever needs one
+    bird — so the index carries the header (`refs`/`banks` included: a citation must
+    never require opening a shard) plus one row per species, and each shard is the
+    species' entry exactly as it appears in the whole file, syllables, songs, grammar
+    and all.
+
+    Idempotent: shards of species the inventory no longer holds are deleted, so a refit
+    that drops a bird cannot leave its ghost fetchable beside the new whole file.
+    """
+    shard_dir = out_dir / "inventory"
+    shard_dir.mkdir(exist_ok=True)
+    rows = []
+    live: set[str] = set()
+    for sp in inventory.get("species", []):
+        sid = sp["id"]
+        live.add(sid)
+        _write_json(shard_dir / f"{sid}.json", sp)
+        rows.append(
+            {
+                "id": sid,
+                "common": sp.get("common", sid),
+                "bank": sp.get("bank", ""),
+                "types": len(sp.get("syllables", [])),
+                "songs": len(sp.get("songs", [])),
+            }
+        )
+    for stale in shard_dir.glob("*.json"):
+        if stale.name != "index.json" and stale.stem not in live:
+            stale.unlink()
+    _write_json(
+        shard_dir / "index.json",
+        {
+            "version": inventory.get("version"),
+            "note": inventory.get("note", ""),
+            "refs": inventory.get("refs", {}),
+            "banks": inventory.get("banks", {}),
+            "species": rows,
+        },
+    )
 
 
 def _write_json(path: Path, data: Any) -> None:

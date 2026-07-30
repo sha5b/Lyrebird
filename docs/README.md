@@ -61,3 +61,8 @@ both follow it. Date: 2026-07-28.
     three-source (Garcia 2017 + released code), parrot lingual formants, two-voice
     tracheal coupling (Laje & Mindlin 2005), and a ranked "what else" (plantcutter,
     echolocation, non-syringeal sonations).
+16. [`16-inat-critic-naturalness.md`](16-inat-critic-naturalness.md) — the iNatSounds
+    ingest (3 811 species, audio cache), the 2 686-species critic (novelty ROC 0.846 /
+    TPR 32 %), the streaming+parallel learn (bit-identical, ~12× faster, common names),
+    B1 respiration + B2 two-voice (parity 16/16, default-off pending the per-species
+    fit), and Perch 2.0 label-novel as metadata.
