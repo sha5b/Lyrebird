@@ -70,8 +70,8 @@ the one-line apply are in `feature-space.json`), `verify` checks the sidecar, an
 (`features.ts` `ActivationTracker`) applies it — dropping to the honest 28-d path on any
 sidecar mismatch, the same "treat inconsistency as absent" rule as point-features.
 
-In-build gate numbers (identical inputs, linear vs RFF): **0.7997 → 0.9267** median
-cosine, **0.2263 → 0.5822** nearest-centroid agreement. The old critic's *accepted*
+In-build gate numbers (identical inputs, linear vs RFF): **0.7997 → 0.9268** median
+cosine, **0.2263 → 0.5688** nearest-centroid agreement. The old critic's *accepted*
 linear map was 0.8585 / 0.3739 — the new map beats it on both.
 
 ## 11.4 Type coverage: the 70 % ceiling was a seed in empty space
@@ -97,9 +97,10 @@ The gate sweep (0.9/0.8/0.7/0.6 → 93.5/92.7/90.9/88.1 %) says 483 of 496 types
 two source means more than cos 0.9 apart: the gap touches nearly every type. Shipped:
 `_type_seed_means` in galaxy.py — a type with both sources gets a seed per blob when
 their means sit below cos 0.9 — with `cluster_plan` counting the same seeds (k = 986).
-Production code path re-measured on the fixed corpus: **94.8 % coverage, 56.6 % purity**.
-Both blobs of a split type may win a cluster name — two knots, one type — which is the
-honest picture of a space where recorded and synthesised do not coincide.
+**Production build: 94.6 % coverage (27 orphans), 56.7 % purity**, map and relations as
+above, verify green. Both blobs of a split type may win a cluster name — two knots, one
+type — which is the honest picture of a space where recorded and synthesised do not
+coincide.
 
 ## 11.5 Multi-source harvesting: what is actually out there
 
@@ -121,6 +122,30 @@ Staged audio after every probe: none (`find /tmp` — clean). `pipeline/out/harv
 untouched. What this changes: `expand`'s rate-budget problem has a keyless route for
 UK-covered species (xccoverbl) and soundscape controls; BirdCLEF waits on the user's
 Kaggle key.
+
+**Why the variety matters, and what it may not be mistaken for.** The store's name
+(`harvest-gan`) is a fossil: the GAN/realism objective was refuted twice (docs/09 §9.7,
+docs/10 §10.5) and nothing generative is being trained — the synthesiser stays physical.
+What *does* learn from data is the critic, and its weaknesses measured in this project
+are all *coverage* weaknesses: species-level novelty detection sits at 14.8 % TPR
+because "a never-heard species" and "a new microphone in a new country" look alike to a
+space trained on 21 species from one archive (§10.3); the map gate is graded on
+recording conditions precisely because that is what shifts. Widening the sources is the
+direct attack on that:
+
+- **more species and taxa** (BirdCLEF's hundreds of per-species recordings, BirdSet's
+  ~520 k) → denser acoustic neighbourhood, fewer false "novel" flags on merely-unseen
+  birds, better type inheritance for rare species;
+- **more recording conditions** (different continents, devices, eras of the xccoverbl
+  2014 mirror) → the embedding stops pricing microphone and geography into "species";
+- **other sound forms** (XCDC dawn-chorus soundscapes, warblr/ff1010 hasbird controls)
+  → an honest answer to "what does *not our kind of sound* look like", which is what
+  the novelty threshold is calibrated against.
+
+The discipline does not change: no audio is retained (decode → describe → delete in
+every adapter), every claim gets a confidence label, and any large ingest is judged by
+the same pre-registered numbers on the fixed store — critic report, map gate, novelty
+ROC, type coverage — after a full re-derivation, with novelty recalibrated per §10.3.
 
 ## 11.6 What is still open
 

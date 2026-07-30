@@ -38,3 +38,7 @@ both follow it. Date: 2026-07-28.
     syllable-level real clouds, the embedding-space build and browser space map, live
     novelty with an honest ROC, label-free typing/chunks/relations, and the learned
     inverse's failed bake-off.
+11. [`11-critic-47k-map-coverage.md`](11-critic-47k-map-coverage.md) — the 47 k critic
+    retrain (all metrics up), the linear space map's refutation and the RFF ridge that
+    replaced it (0.9268/0.5688), the 70 % type-coverage ceiling explained and fixed by
+    source-split seeds (94.6 %), and the multi-source harvest layer.

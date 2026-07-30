@@ -187,14 +187,16 @@ galaxy itself.
 
 ## 10.6 What is still open
 
-- **Type coverage 70 %** (§10.2) — re-tune `cluster_plan` for the typed-points regime.
+- ~~**Type coverage 70 %** (§10.2)~~ — fixed in docs/11 §11.4: the ceiling was one seed
+  per type sitting between the field and synthetic blobs; source-split seeds measure
+  94.6 %.
 - **Novelty transfer across harvest epochs** — the threshold is per-embedding-space and
-  per-store; a big harvest should trigger recalibration (`fit_novelty` is cheap).
-  Detecting *species*-level novelty at 5 % FPR sits at 7 % TPR pooled; better is a
+  per-store; a big harvest should trigger recalibration (`fit_novelty` is cheap, and
+  `critic train` now does it on every run). Detecting *species*-level novelty at 5 % FPR
+  sits at 14.8 % TPR pooled after the 47 k retrain (docs/11 §11.2); better is a
   research problem, not a tuning one.
-- **Critic retrain on the 47 k store with a proper species holdout**, then the full
-  re-derivation (embed → learn --embed-typing → build). The current critic predates the
-  store's growth; doc 09's alternation was never run either. Both are deliberate
-  decisions, not oversights — the chain is reproducible end to end.
-- **`expand` has only been dry-run** — a real run spends xeno-canto rate-limit budget and
-  should be a deliberate choice.
+- ~~**Critic retrain on the 47 k store with a proper species holdout**~~ — done, docs/11
+  §11.2 (all four metrics up; full re-derivation shipped). Doc 09's alternation remains
+  moot while the realism term stays refuted (§10.5).
+- **`expand` has only been dry-run** — a real run spends xeno-canto rate-limit budget
+  (or a Kaggle key, docs/11 §11.5) and should be a deliberate choice.

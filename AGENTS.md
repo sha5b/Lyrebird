@@ -64,6 +64,12 @@ Notes:
   syllable points when typing.json exists.
 - Novelty recalibration after a big harvest: `critic.fit_novelty` on the current store
   (see docs/10 §10.3 — thresholds do not transfer across harvest epochs).
+- **`serve` holds the pipeline in memory: restart it after every pipeline code change**,
+  or its Learn-tab learn/build jobs run the code it started with (docs/11 §11.1 — this
+  cost a galaxy once). It also defaults to the *old* store: run it as
+  `uv run birdy-pipeline serve --store out/harvest-gan`.
+- Iterating on clustering? `build --dump-points /tmp/points.npz` writes the standardised
+  matrix + labels once; experiment against that file, never re-render per idea.
 - `sources` (sources.py) fetches from Zenodo, the Internet Archive, Kaggle (BirdCLEF)
   and Hugging Face (BirdSet) through the same decode → describe → delete loop as
   `harvest`. Keys live in `pipeline/.env` (template: `.env.example`: `XC_API_KEY`,
