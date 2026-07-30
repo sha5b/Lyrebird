@@ -670,6 +670,57 @@ class RealismTerm:
         return (1.0 - self.weight) * cosine + self.weight * realism
 
 
+# --- quality-weighted fitting --------------------------------------------------------
+
+
+def quality_weight(o: SyllableObservation) -> float:
+    """How much this observation's measurements count in a fit, in [0, 1].
+
+    `snr / SNR_FULL_WEIGHT_DB` clamped to [0, 1]: a syllable 20 dB above its
+    recording's noise floor counts in full, one at or below the floor not at all. A
+    clipped syllable weighs zero — its samples ran out of headroom, so its spectrum is
+    the recorder's, not the bird's. Zero weight excludes a member from the type's
+    *parameter median and exemplar reference*, never from the type itself: it still
+    counts in `members`, and nothing anywhere deletes it — quality is a weight, not a
+    filter (denoising was rejected for the same reason: it erases the fricative
+    signal with the noise).
+
+    Unmeasured is neutral, not bad: an observation with no `snr` — every row of every
+    store harvested before the field existed — weighs 1.0, so a legacy store fits
+    bit-identically to the fit that shipped before weighting.
+    """
+    if o.clipped:
+        return 0.0
+    if o.snr is None:
+        return 1.0
+    return float(np.clip(o.snr / SNR_FULL_WEIGHT_DB, 0.0, 1.0))
+
+
+def _member_weights(members: Sequence[SyllableObservation]) -> np.ndarray:
+    """One `quality_weight` per member, with the degenerate case neutralised.
+
+    A type whose members all weigh zero — every one clipped, or all of them at the
+    noise floor — falls back to uniform weights: no evidence about *which* member is
+    best is not a reason to fit nothing, and the alternative is a median over an
+    empty set. The `membersClean` count in the learned block still reports what
+    happened.
+    """
+    w = np.asarray([quality_weight(o) for o in members], dtype=np.float64)
+    return w if w.sum() > 0.0 else np.ones(len(members), dtype=np.float64)
+
+
+def _weighted_median(values: np.ndarray, weights: np.ndarray) -> float:
+    """The value at which the sorted cumulative weight reaches its half.
+
+    Deterministic by construction: the sort is stable and an exact half takes the
+    lower of the two middle values (`searchsorted` from the left), so a refit on the
+    same store lands on the same number.
+    """
+    order = np.argsort(values, kind="stable")
+    v, w = values[order], weights[order]
+    return float(v[np.searchsorted(np.cumsum(w), 0.5 * w.sum())])
+
+
 def _median_contour(members: Sequence[SyllableObservation]) -> list[list[float]]:
     """Elementwise median over the members, resampled onto a shared time grid."""
     grid = np.linspace(0.0, 1.0, CONTOUR_KNOTS)
