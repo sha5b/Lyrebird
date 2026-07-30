@@ -20,14 +20,20 @@
 	import { T, useTask, useThrelte } from '@threlte/core';
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
+	import { clusterProvenance } from '$lib/data/assets';
+	import type { BirdyAssets } from '$lib/data/types';
+	import { provenanceColour } from './palette';
 	import type { LayoutView } from './layouts';
 	import { waveClaim, type VisualSignal } from './shaders';
 
 	interface Props {
+		assets: BirdyAssets;
 		signal: VisualSignal;
 		/** Where the centroids are right now, so a cross lands on its knot. */
 		view: LayoutView;
 		colour?: string;
+		/** Strike each cross in its knot's provenance class colour instead of the rule grey. */
+		prov?: boolean;
 		/**
 		 * Half-length of each rule as a share of the visible height, rather than a fixed
 		 * distance in the cloud's units. A fixed length is only right at one zoom: framed
@@ -41,7 +47,16 @@
 	// 1.2 of the visible half-height: the rule runs past the edge of the frame, which is
 	// what makes it read as a ruled line across the background rather than as a small
 	// cross sitting on a knot. Quoted against the view so that holds at every zoom.
-	let { signal, view, colour = '#8e9bab', reachOfView = 1.2 }: Props = $props();
+	let {
+		assets,
+		signal,
+		view,
+		colour = '#8e9bab',
+		prov = false,
+		reachOfView = 1.2
+	}: Props = $props();
+
+	const knotClass = untrack(() => clusterProvenance(assets));
 
 	/** Crosses alive at once. More than this and the field stops reading as "here". */
 	const MAX_BURSTS = 6;
@@ -64,6 +79,14 @@
 	/** How far the rule has grown, and how bright it is. */
 	const growth = new Float32Array(VERTS);
 	const alphas = new Float32Array(VERTS);
+	/**
+	 * Per-vertex colour, because the crosses are one draw call and each one belongs to a
+	 * different knot. A uniform can only say one thing at a time, and with up to six
+	 * strikes alive at once that made every cross in a chorus the same colour — fine while
+	 * that colour was a fixed grey, wrong as soon as a cross is supposed to report the
+	 * class of the knot it was struck through.
+	 */
+	const tints = new Float32Array(VERTS * 3);
 
 	const geometry = untrack(() => {
 		const g = new THREE.BufferGeometry();
@@ -71,41 +94,54 @@
 		g.setAttribute('aSpan', new THREE.BufferAttribute(spans, 1).setUsage(THREE.DynamicDrawUsage));
 		g.setAttribute('aGrowth', new THREE.BufferAttribute(growth, 1).setUsage(THREE.DynamicDrawUsage));
 		g.setAttribute('aAlpha', new THREE.BufferAttribute(alphas, 1).setUsage(THREE.DynamicDrawUsage));
+		g.setAttribute('aColour', new THREE.BufferAttribute(tints, 3).setUsage(THREE.DynamicDrawUsage));
 		g.setDrawRange(0, 0);
 		return g;
 	});
 
 	const material = new THREE.ShaderMaterial({
-		// Read once; the effect below keeps it current.
-		uniforms: untrack(() => ({ uColour: { value: new THREE.Color(colour) } })),
 		vertexShader: /* glsl */ `
 			attribute float aSpan;
 			attribute float aGrowth;
 			attribute float aAlpha;
+			attribute vec3 aColour;
 			varying float vFade;
+			varying vec3 vColour;
 			void main() {
 				// The rule runs out from the centre: everything past the growth front is not
 				// drawn yet, and the tip is always softer than the root.
 				float reached = 1.0 - smoothstep(aGrowth - 0.18, aGrowth, aSpan);
 				vFade = aAlpha * reached * (1.0 - smoothstep(0.1, 1.0, aSpan));
+				vColour = aColour;
 				gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 			}
 		`,
 		fragmentShader: /* glsl */ `
-			uniform vec3 uColour;
 			varying float vFade;
+			varying vec3 vColour;
 			void main() {
 				if (vFade <= 0.002) discard;
-				gl_FragColor = vec4(uColour, vFade);
+				gl_FragColor = vec4(vColour, vFade);
 			}
 		`,
 		transparent: true,
 		depthWrite: false
 	});
 
-	$effect(() => {
-		(material.uniforms.uColour.value as THREE.Color).set(colour);
-	});
+	/**
+	 * A strike's colour, resolved when it is struck rather than when it is drawn: the
+	 * knot's class while the provenance mode is on, and the neutral rule grey otherwise.
+	 *
+	 * Held at strike time on purpose. A cross outlives the note that made it by nearly two
+	 * seconds, and re-resolving it per frame would let a cross change colour halfway
+	 * through fading out because the viewer flipped the switch — a mark reporting one thing
+	 * and then another about the same past event.
+	 */
+	const scratch = new THREE.Color();
+	function strikeColour(cluster: number): THREE.Color {
+		const cls = prov ? (knotClass[cluster] ?? -1) : -1;
+		return scratch.set(cls >= 0 ? provenanceColour(cls) : colour);
+	}
 
 	/**
 	 * A strike belongs to a *knot*, not to a place, so it remembers which cluster it came
@@ -124,12 +160,15 @@
 		centre: THREE.Vector3;
 		age: number;
 		strength: number;
+		/** Resolved at strike time; see strikeColour. */
+		tint: THREE.Color;
 	}
 	const bursts: Burst[] = Array.from({ length: MAX_BURSTS }, () => ({
 		cluster: -1,
 		centre: new THREE.Vector3(),
 		age: LIFETIME,
-		strength: 0
+		strength: 0,
+		tint: new THREE.Color(colour)
 	}));
 	let next = 0;
 	let lastCluster = -1;
@@ -150,6 +189,7 @@
 		follow(b);
 		b.age = 0;
 		b.strength = strength;
+		b.tint.copy(strikeColour(cluster));
 	}
 
 	const AXES: [number, number, number][] = [
@@ -205,6 +245,9 @@
 						spans[v] = end;
 						growth[v] = grow;
 						alphas[v] = alpha;
+						tints[v * 3] = b.tint.r;
+						tints[v * 3 + 1] = b.tint.g;
+						tints[v * 3 + 2] = b.tint.b;
 						v++;
 					}
 				}
@@ -214,6 +257,7 @@
 		geometry.attributes.aSpan.needsUpdate = true;
 		geometry.attributes.aGrowth.needsUpdate = true;
 		geometry.attributes.aAlpha.needsUpdate = true;
+		geometry.attributes.aColour.needsUpdate = true;
 		geometry.setDrawRange(0, v);
 	}
 

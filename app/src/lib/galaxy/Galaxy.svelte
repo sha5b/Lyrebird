@@ -141,7 +141,7 @@
 			has to apply to all of them or the lines and the tags drift off their points.
 		-->
 		<Spinner {spin} scale={spread} bind:group={cloud}>
-			<GridBurst {signal} {view} />
+			<GridBurst {assets} {signal} {view} prov={!plain} />
 			<ContextPaths {assets} {signal} {view} />
 			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} />
 			<Trajectory {assets} {signal} {view} {spread} {pointSize} prov={!plain} />

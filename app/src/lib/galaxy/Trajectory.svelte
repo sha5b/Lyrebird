@@ -112,6 +112,7 @@
 			// its own weight array: the bead is the live position, the thread is
 			// structure, and they do not fade on the same rule
 			uAlpha: { value: beadAlpha },
+			// Rewritten from `prov` below; the initial value is the species-hue mode's.
 			uColdColor: { value: new THREE.Color(ACCENT) },
 			uPixelRatio: { value: typeof window === 'undefined' ? 1 : Math.min(2, window.devicePixelRatio) },
 			uPointSize: { value: untrack(() => pointSize) },
@@ -142,6 +143,25 @@
 	$effect(() => {
 		void prov;
 		builtVersion = -1;
+	});
+
+	/**
+	 * The bead's resting colour, and the reason the spline looked untouched by the mode.
+	 *
+	 * A bead is drawn as `mix(uColdColor, knotHue, 0.35 + peak)`, so away from the
+	 * travelling peak it is roughly two thirds its cold colour — and the bead's cold
+	 * colour is the violet accent. Baking the class hues into the gradient therefore
+	 * changed almost nothing anyone could see: the phrase still read as a violet dotted
+	 * line, because violet is what two thirds of every resting bead was made of.
+	 *
+	 * In provenance mode the cold end becomes the same cool grey the thread already
+	 * rests at, which hands the bead's hue over to the knot it is passing — so the
+	 * animation running along a phrase is the class colour of whatever it is crossing.
+	 * The accent stays the cold end in the species-hue mode, where it is the only thing
+	 * marking the live position.
+	 */
+	$effect(() => {
+		(beadMaterial.uniforms.uColdColor.value as THREE.Color).set(prov ? '#9aa6b8' : ACCENT);
 	});
 
 	/** Lays every active path out as a run of short segments between cluster centroids. */

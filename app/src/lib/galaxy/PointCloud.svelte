@@ -2,7 +2,12 @@
 	import { T, useTask, useThrelte } from '@threlte/core';
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
-	import { buildSpeciesIndex, pointProvenance } from '$lib/data/assets';
+	import {
+		CLASS_COUNT,
+		buildSpeciesIndex,
+		clusterProvenance,
+		pointProvenance
+	} from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
 	import {
 		FRONT_LIFE,
@@ -23,6 +28,7 @@
 		PROV_DOCUMENTED,
 		PROV_FIELD,
 		PROV_LEARNED,
+		provenanceColour,
 		speciesColour
 	} from './palette';
 	import { buildLayout, type LayoutView } from './layouts';
@@ -75,22 +81,68 @@
 	});
 
 	/**
+	 * Per-knot provenance class, and the same summary per species, so the accent can name
+	 * its subject in whichever colour language the stage is speaking. Built once.
+	 */
+	const knotClass = untrack(() => clusterProvenance(assets));
+	const speciesClass = untrack(() => {
+		const index = buildSpeciesIndex(assets);
+		const classes = pointProvenance(assets);
+		const tally = new Map<number, Uint32Array>();
+		for (let i = 0; i < classes.length; i++) {
+			const s = index.get(assets.points.speciesId[i] ?? '');
+			if (s === undefined) continue;
+			let row = tally.get(s);
+			if (!row) tally.set(s, (row = new Uint32Array(CLASS_COUNT)));
+			row[classes[i]]++;
+		}
+		const out: number[] = [];
+		tally.forEach((row, s) => {
+			let best = 0;
+			for (let c = 1; c < CLASS_COUNT; c++) if (row[c] > row[best]) best = c;
+			out[s] = best;
+		});
+		return out;
+	});
+
+	/**
 	 * The accent's colour is a *subject* marker, and a subject that changes without a
 	 * snap. Its hue follows whoever the accent currently belongs to — the selected bird,
-	 * or the species of the cluster the sound just landed on — easing over about half a
-	 * second so a chorus reads as one colour walking between birds rather than a frame
-	 * of strobe. With no subject it settles back to the interface violet, which is the
-	 * "no claim about who" state. Hue here is presentation: the tag still names the
-	 * bird, position still says where it lives (see the note on `speciesColour`).
+	 * or the cluster the sound just landed on — easing over about half a second so a
+	 * chorus reads as one colour walking between subjects rather than a frame of strobe.
+	 * With no subject it settles back to the interface violet, which is the "no claim
+	 * about who" state.
+	 *
+	 * **Which hue it eases to depends on the language the stage is speaking**, and it has
+	 * to, because the accent is what a knot walks toward as it lights. Left on the species
+	 * hue while the provenance mode was on, the one thing the eye actually follows — the
+	 * node that just sounded, and the bead running along the phrase — was the only thing
+	 * still answering "which bird" after everything around it had switched to answering
+	 * "what kind of thing". So an amber knot flared violet-blue mid-note and the mode
+	 * looked broken exactly where it mattered most. In provenance mode the accent is the
+	 * subject's class colour instead, which keeps the "one language at a time" rule
+	 * through the activation as well as at rest.
+	 *
+	 * What the accent *means* is untouched either way: it is still "this is the one you
+	 * asked for", and it is still the only thing on the field wearing it.
 	 */
 	const accentNow = untrack(() => new THREE.Color(ACCENT));
 	const accentTarget = new THREE.Color(ACCENT);
 
 	function easeAccent(delta: number) {
-		let subject = '';
-		if (focus >= 0) subject = speciesIdByIndex[focus] ?? '';
-		else if (waveClaim(signal)) subject = assets.centroids.items[signal.best]?.speciesId ?? '';
-		accentTarget.set(subject ? speciesColour(subject) : ACCENT);
+		let hue = '';
+		if (plain) {
+			let subject = '';
+			if (focus >= 0) subject = speciesIdByIndex[focus] ?? '';
+			else if (waveClaim(signal)) subject = assets.centroids.items[signal.best]?.speciesId ?? '';
+			if (subject) hue = speciesColour(subject);
+		} else {
+			let cls = -1;
+			if (focus >= 0) cls = speciesClass[focus] ?? -1;
+			else if (waveClaim(signal)) cls = knotClass[signal.best] ?? -1;
+			if (cls >= 0) hue = provenanceColour(cls);
+		}
+		accentTarget.set(hue || ACCENT);
 		const eased = accentNow.lerp(accentTarget, Math.min(1, delta * 4));
 		material.uniforms.uAccent.value = eased;
 	}
