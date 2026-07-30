@@ -459,6 +459,7 @@ class Pipeline:
             previous=prior.get(learn.UNLABELLED_SPECIES),
         )
         learn.attach_chunks(document, store.syllables, typing)
+        song_rows = learn.attach_song_types(document, store.syllables, typing)
         if not document["species"]:
             raise RuntimeError("no species had enough observations to fit")
         learn.write_learned_inventory(
@@ -472,6 +473,11 @@ class Pipeline:
             json.dumps({"version": 1, "entries": typing}, indent=1) + "\n",
             encoding="utf-8",
         )
+        if song_rows:
+            (self.store_path / learn.SONG_TYPING_NAME).write_text(
+                json.dumps({"version": 1, "entries": song_rows}, indent=1) + "\n",
+                encoding="utf-8",
+            )
 
     def learn(self, body: dict[str, Any]) -> dict[str, Any]:
         types = int(body.get("types", learn.DEFAULT_TYPES))

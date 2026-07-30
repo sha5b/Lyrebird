@@ -969,6 +969,7 @@ def cmd_learn(args: argparse.Namespace) -> int:
         previous=prior.get(learn.UNLABELLED_SPECIES),
     )
     learn.attach_chunks(document, store.syllables, typing)
+    song_rows = learn.attach_song_types(document, store.syllables, typing)
     if not document["species"]:
         log("no species had enough observations to fit — harvest more recordings")
         return 2
@@ -983,12 +984,20 @@ def cmd_learn(args: argparse.Namespace) -> int:
 
     # The typing belongs to the store, not to the inventory the fit produced: the build
     # keys the store's own observations by it, so it lives beside `syllables.jsonl`.
+    # Same for the song typing one level up — same rows, keyed by bout.
     typing_path = store.root / learn.TYPING_NAME
     typing_path.write_text(
         json.dumps({"version": 1, "entries": typing}, indent=1) + "\n", encoding="utf-8"
     )
     log(f"wrote {typing_path}: {len(typing)} of {len(store.syllables)} stored "
         f"observations carry a learned type id")
+    if song_rows:
+        song_path = store.root / learn.SONG_TYPING_NAME
+        song_path.write_text(
+            json.dumps({"version": 1, "entries": song_rows}, indent=1) + "\n",
+            encoding="utf-8",
+        )
+        log(f"wrote {song_path}: {len(song_rows)} bouts carry a song type id")
 
     total = sum(len(sp["syllables"]) for sp in document["species"])
     cosines = [
@@ -1024,8 +1033,9 @@ def cmd_learn(args: argparse.Namespace) -> int:
         # is empty on purpose (unlabelled_entry), so guard rather than assume one.
         bout = sp["songs"][0]["sequence"] if sp.get("songs") else []
         chunks = f", {len(grammar['chunks'])} chunks" if grammar.get("chunks") else ""
+        songs = f", {len(grammar['songTypes'])} song types" if grammar.get("songTypes") else ""
         log(f"  {sp['id']:26} {len(sp['syllables'])} types, "
-            f"{len(grammar.get('transitions', {}))} states{chunks}, "
+            f"{len(grammar.get('transitions', {}))} states{chunks}{songs}, "
             f"example bout {' '.join(bout) or '(none)'}")
     log("")
     log("next: uv run birdy-pipeline build --inventory " + str(out) +

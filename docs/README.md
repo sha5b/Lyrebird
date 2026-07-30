@@ -42,3 +42,7 @@ both follow it. Date: 2026-07-28.
     retrain (all metrics up), the linear space map's refutation and the RFF ridge that
     replaced it (0.9268/0.5688), the 70 % type-coverage ceiling explained and fixed by
     source-split seeds (94.6 %), and the multi-source harvest layer.
+12. [`12-song-level-types.md`](12-song-level-types.md) — song-level type discovery:
+    clustering bouts of type ids into song types (50 types, 13 species, 92 % own-medoid
+    separation), the two measured failure modes and their gates, and the permutation
+    control that sets the recurrence floor (0.2 % at the shipped setting).

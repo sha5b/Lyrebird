@@ -58,7 +58,8 @@ Notes:
 - `learn`/`build` run module self-tests at start; a failure there stops everything.
 - A full `learn` on the 47 k store takes ~2–15 min (GPU); a full `build` ~7 min
   (~400 s of rendering). Run them as background tasks, never block on them.
-- `learn` writes `<store>/typing.json` + `data/learned-inventory.json`;
+- `learn` writes `<store>/typing.json` + `<store>/song-typing.json` (song-level types,
+  docs/12) + `data/learned-inventory.json`;
   `critic embed` writes `<store>/embeddings.f32`; `build` writes `app/static/birdy/`.
   `auto` modes: `--space auto` → embed when embeddings exist; `--field-source auto` →
   syllable points when typing.json exists.
