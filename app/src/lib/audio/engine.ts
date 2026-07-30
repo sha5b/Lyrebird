@@ -101,6 +101,16 @@ export class BirdyEngine {
 	 */
 	tempo = 1;
 
+	/**
+	 * Multiplier on how often the chorus starts a song, read live by the scheduler.
+	 *
+	 * The ambient loop draws each inter-song gap from this value at the moment it draws
+	 * it, so moving the slider changes the *next* pause rather than restarting the
+	 * chorus — unlike `tempo`, which stretches the songs themselves and so is applied
+	 * by rebuilding the schedule.
+	 */
+	songRate = 1;
+
 	state: EngineState = { voices: 0, f0: 0, level: 0 };
 	onState: ((state: EngineState) => void) | null = null;
 	/**
@@ -314,8 +324,9 @@ export class BirdyEngine {
 		this.ambientTimer = setInterval(() => {
 			const horizon = this.ctx.currentTime + 0.5;
 			while (this.ambientUntil < horizon) {
-				// exponential inter-arrival times = Poisson process
-				this.ambientUntil += -Math.log(1 - Math.random()) / rate;
+				// exponential inter-arrival times = Poisson process. `songRate` is read
+				// here, per gap, so the slider retunes the next pause live.
+				this.ambientUntil += -Math.log(1 - Math.random()) / (rate * Math.max(0.05, this.songRate));
 				const species = pool[Math.floor(Math.random() * pool.length)];
 				const birds = this.population.filter((b) => b.speciesId === species.id);
 				if (!birds.length) continue;

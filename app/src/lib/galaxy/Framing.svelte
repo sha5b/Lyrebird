@@ -53,6 +53,15 @@
 
 	let flying = $state(false);
 	let seenInterrupt = untrack(() => interrupt);
+	/**
+	 * First-load snap. The opening view of the app is the whole galaxy (`frame` falls
+	 * back to every cluster), and easing toward it from the default camera means the
+	 * first thing every visitor sees is a cloud that is not framed yet — they read it
+	 * as broken before the flight ever arrives. The first time this component sees a
+	 * non-empty frame it places the camera at the fitted radius directly; every later
+	 * flight still eases, because those are answers to clicks and a click can wait.
+	 */
+	let snapped = false;
 
 	$effect(() => {
 		flying = frame.length > 0;
@@ -149,6 +158,17 @@
 			const horizontal = Math.atan(Math.tan(vertical) * (perspective.aspect ?? 1.6));
 			const spanned = (reach + 0.12) * scale;
 			const want = Math.max(0.3, spanned / (Math.tan(Math.min(vertical, horizontal)) * FILL));
+			if (!snapped) {
+				// First load: land framed, no flight — see the `snapped` note above.
+				snapped = true;
+				flying = false;
+				controls.target.copy(wanted);
+				offset.copy(cam.position).sub(controls.target);
+				cam.position.copy(controls.target).add(offset.setLength(want));
+				controls.update();
+				invalidate();
+				return;
+			}
 			const next = radius + (want - radius) * Math.min(1, delta * 2.2);
 			cam.position.copy(controls.target).add(offset.setLength(next));
 			if (Math.abs(next - want) < 0.02 * want) flying = false;

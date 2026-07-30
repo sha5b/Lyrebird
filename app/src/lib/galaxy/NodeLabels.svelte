@@ -13,17 +13,23 @@
 	 */
 	import { untrack } from 'svelte';
 	import { confidenceLabel } from '$lib/lang/translate';
-	import { speciesById } from '$lib/data/assets';
+	import { centroidProvenance, speciesById } from '$lib/data/assets';
 	import type { BirdyAssets, Centroid } from '$lib/data/types';
 
 	interface Props {
 		assets: BirdyAssets;
 		/** Written into by this component, read by NodeProjector. Plain array, not state. */
 		elements: (HTMLElement | null)[];
+		/**
+		 * What the tag dot's colour encodes. The default keeps the dot on the cluster's
+		 * confidence, as it always has; `provenance` re-tints it to the same three
+		 * categories the cloud is showing, so tag and knot say the same thing.
+		 */
+		colorMode?: 'species' | 'provenance';
 		onpick?: (cluster: number) => void;
 	}
 
-	let { assets, elements, onpick }: Props = $props();
+	let { assets, elements, colorMode = 'species', onpick }: Props = $props();
 
 	// The corpus does not change while this is mounted, so the tags are built once.
 	const centroids = untrack(() => assets.centroids.items);
@@ -39,7 +45,15 @@
 		<!-- `--hot` (0 or 1) and `--act` (0..1) are written per frame by NodeProjector -->
 		<div class="tag" bind:this={elements[i]}>
 			<button
-				class="dot conf-{centroid.confidence || 'unlabelled'}"
+				class="dot"
+				class:conf-experimental={colorMode !== 'provenance' && centroid.confidence === 'experimental'}
+				class:conf-documented={colorMode !== 'provenance' && centroid.confidence === 'documented'}
+				class:conf-inferred={colorMode !== 'provenance' && centroid.confidence === 'inferred'}
+				class:conf-invented={colorMode !== 'provenance' && centroid.confidence === 'invented'}
+				class:conf-unlabelled={colorMode !== 'provenance' && (!centroid.confidence || centroid.confidence === 'unlabelled')}
+				class:prov-documented={colorMode === 'provenance' && centroidProvenance(centroid) === 0}
+				class:prov-learned={colorMode === 'provenance' && centroidProvenance(centroid) === 1}
+				class:prov-candidate={colorMode === 'provenance' && centroidProvenance(centroid) === 2}
 				type="button"
 				tabindex="-1"
 				aria-label={centroid.label}
@@ -129,6 +143,18 @@
 	}
 	.conf-unlabelled {
 		color: var(--unlabelled);
+	}
+
+	/* The provenance mode's three categories — the same hues the cloud tints by,
+	   which are the interface's existing confidence colours. */
+	.prov-documented {
+		color: var(--documented);
+	}
+	.prov-learned {
+		color: var(--unlabelled);
+	}
+	.prov-candidate {
+		color: var(--invented);
 	}
 
 	.card {

@@ -260,6 +260,13 @@ export interface PointCloudMeta {
 	generation?: number[];
 	durations: number[];
 	source: string[];
+	/**
+	 * One flag per point: the observation it came from was judged unlike every known
+	 * type centroid at ingest (docs/09 §9.2b). Computed by the pipeline but **not yet
+	 * written into points.json by any shipped build**, so this is absent in practice;
+	 * the renderer treats absence as "unknown", never as "known not novel".
+	 */
+	novel?: boolean[];
 }
 
 export interface Centroid {
@@ -298,6 +305,20 @@ export interface Centroid {
 	cohesion?: number;
 	speciesMix?: { speciesId: string; count: number }[];
 	sources?: Record<string, number>;
+	/**
+	 * What the density clustering could say the cluster is, and on what evidence
+	 * (pipeline `density.anchor`): `confirmed` when its labelled members agree and it
+	 * holds nothing unlabelled, `anchored` when unlabelled field audio inherits the
+	 * labelled majority's identity, `unknown` when a dense region of real audio holds
+	 * nothing documented, and `mixed` when the labelled members disagree — i.e. the
+	 * name it carries is contested rather than fitted.
+	 */
+	anchor?: {
+		kind?: 'anchored' | 'confirmed' | 'unknown' | 'mixed' | 'empty';
+		/** Share of the whole cluster backing the candidate identity. */
+		support?: number;
+		agreement?: number;
+	};
 }
 
 export interface Centroids {

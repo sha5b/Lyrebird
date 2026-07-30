@@ -5,6 +5,7 @@
 	import {
 		buildClusterLookup,
 		buildSpeciesIndex,
+		buildSyllablePointIndex,
 		clusterIndexFor,
 		loadAssets,
 		songSyllables,
@@ -108,6 +109,11 @@
 	let spin = $state(true);
 	let showLabels = $state(true);
 	let tempo = $state(1);
+	// How often the chorus starts a song, as a multiplier on its Poisson rate. Read by
+	// the scheduler per gap, so the slider retunes the next pause live (engine.songRate).
+	let songRate = $state(1);
+	// What the galaxy's colour encodes; 'species' is the long-standing default look.
+	let colorMode = $state<'species' | 'provenance'>('species');
 	let lastPhrase = $state<Phrase | null>(null);
 	let nowSinging = $state<ScheduledSyllable[]>([]);
 	let voices = $state(0);
@@ -535,15 +541,32 @@
 		chorusToResume = false;
 	}
 
+	/**
+	 * Every point each syllable type owns, for the orphan flash. A type that won no
+	 * cluster resolves to -1 everywhere the galaxy is asked to place it — but its
+	 * renders and field members still have positions, and this is the map to them.
+	 */
+	const syllablePoints = $derived(assets ? buildSyllablePointIndex(assets) : null);
+
 	/** Adds the trajectory a phrase takes through the galaxy, in time with the audio. */
 	function addLive(speciesId: string, scheduled: ScheduledSyllable[], label = '') {
-		if (!clusters || !listener || !scheduled.length) return;
-		listener.addLive(
+		const live = listener;
+		if (!clusters || !live || !scheduled.length) return;
+		live.addLive(
 			scheduled.map((s) => clusterIndexFor(clusters, speciesId, s.syllableId)),
 			scheduled.map((s) => ({ start: s.at, end: s.at + s.dur })),
 			speciesId,
 			label
 		);
+		// The syllables that resolved to no cluster draw nothing above — the thread
+		// drops them by design. Their own points still exist, so they flash while the
+		// note sounds: visible, and visibly not a knot.
+		if (!syllablePoints) return;
+		scheduled.forEach((s) => {
+			if (clusterIndexFor(clusters, speciesId, s.syllableId) >= 0) return;
+			const points = syllablePoints.get(`${speciesId}/${s.syllableId}`);
+			if (points?.length) live.addOrphanPulse(points, { start: s.at, end: s.at + s.dur });
+		});
 	}
 
 	/** Every song this species sings, as the faint backdrop behind the selected one. */
@@ -1143,6 +1166,20 @@
 		}
 	});
 	$effect(() => {
+		// The scheduler reads this per gap it draws, so no restart: the next pause
+		// between songs comes out at the new rate.
+		if (engine) engine.songRate = songRate;
+	});
+	/**
+	 * The mean pause between songs at the current settings, for the slider's label.
+	 * Poisson arrivals have no typical gap, only a mean one — the tooltip says so —
+	 * and the base rate differs between the two choruses (22/min whole aviary,
+	 * 12/min one bird), both already scaled by tempo where they are set.
+	 */
+	const songGapSeconds = $derived(
+		60 / ((chorus === 'solo' ? 12 : 22) * Math.max(0.05, tempo) * Math.max(0.05, songRate))
+	);
+	$effect(() => {
 		// Tempo is one control over the whole aviary: the drift, the pulse, how long each
 		// syllable lasts and how often a bird starts. Restarting the scheduler is what
 		// applies the new arrival rate.
@@ -1199,13 +1236,12 @@
 	});
 	// The strip holds fitted type ids of one bird; switching species empties it rather
 	// than letting it quote a repertoire the chips no longer belong to.
-	let composeSpeciesHeld = speciesId;
+	let composeSpeciesHeld = untrack(() => speciesId);
 	$effect(() => {
-		if (speciesId !== composeSpeciesHeld) {
-			composeSpeciesHeld = speciesId;
-			composeTokens = [];
-			composeProvenance = { kind: composeMode === 'types' ? 'free' : composeMode };
-		}
+		if (speciesId === untrack(() => composeSpeciesHeld)) return;
+		composeSpeciesHeld = speciesId;
+		composeTokens = [];
+		composeProvenance = { kind: composeMode === 'types' ? 'free' : composeMode };
 	});
 	const faithfulness = $derived(
 		(assets?.manifest as { faithfulness?: { pearson?: number } } | undefined)?.faithfulness?.pearson
@@ -1297,6 +1333,7 @@ uv run birdy-pipeline build</pre>
 				{spin}
 				{focus}
 				{spread}
+				{colorMode}
 				speed={tempo}
 				labels={showLabels}
 				pinned={pinnedCluster}
@@ -1342,6 +1379,35 @@ uv run birdy-pipeline build</pre>
 										<input type="checkbox" bind:checked={showLabels} /> Labels
 									</label>
 								</div>
+								<label class="field">
+									<span class="lbl">Colour <b class="mono">{colorMode}</b></span>
+									<div class="segmented">
+										<button
+											class:on={colorMode === 'species'}
+											onclick={() => (colorMode = 'species')}
+											title="The default look: a neutral response ramp, with the accent reserved for the note being sung or the bird you chose."
+										>Species</button>
+										<button
+											class:on={colorMode === 'provenance'}
+											onclick={() => (colorMode = 'provenance')}
+											title="Tint every point by where its sound comes from: blue for calls from the authored inventory, grey for types fitted to field recordings, amber for field audio nothing has identified."
+										>Provenance</button>
+									</div>
+								</label>
+								{#if colorMode === 'provenance'}
+									<p class="note faint">
+										Colour now says where each sound comes from:
+										<b style:color="var(--documented)">documented</b> (authored inventory),
+										<b style:color="var(--unlabelled)">learned</b> (fitted to field audio),
+										<b style:color="var(--invented)">unidentified</b> (field audio with no
+										fitted identity — the candidate pool; per-point novelty flags are not in
+										this build yet).
+									</p>
+								{/if}
+								<p class="note faint">
+									A point breathing grey without a knot is a syllable that was played but
+									has no cluster of its own — heard, not placed.
+								</p>
 							</section>
 						</div>
 					</div>
@@ -1467,6 +1533,37 @@ uv run birdy-pipeline build</pre>
 								<span class="note mono">{(candidate.probability * 100).toFixed(0)}%</span>
 							</div>
 						{/each}
+					</div>
+				{:else if reading?.active}
+					<!--
+						Live input, no confident match. This used to fall through to the idle
+						hint, so a bird the corpus could not place produced exactly the same
+						panel as silence — position-only, and reported as "colour and label
+						not firing". The honest reading is a state of its own: heard, real
+						acoustics, and no cluster close enough to name (§8.5). The nearest
+						cluster is shown with its similarity so "below the floor" is a
+						number, not a shrug.
+					-->
+					{@const nearest = reading.candidates[0]}
+					<div class="best">
+						<span class="badge unlabelled">field recording</span>
+						<h3 class="strong">Heard, but not in this corpus</h3>
+						<p class="accent">unlabelled: real acoustics, no documented function</p>
+						<p class="note">
+							{#if nearest}
+								Nearest knot: {nearest.centroid.label} at
+								{(nearest.similarity * 100).toFixed(0)} % similarity — below the
+								match floor, so this is not a claim it was that call.
+							{:else}
+								Nothing in the galaxy is close enough to name.
+							{/if}
+							{#if reading.strength > 0.01}
+								It may be a sound form the corpus has too little of — the
+								current build places {assets.manifest.typeCoverage
+									? `${assets.manifest.typeCoverage.withCluster} of ${assets.manifest.typeCoverage.types}`
+									: 'just over half of its'} learned types.
+							{/if}
+						</p>
 					</div>
 				{:else if lastPhrase}
 					<div class="best">
@@ -1675,6 +1772,17 @@ uv run birdy-pipeline build</pre>
 									step="0.05"
 									bind:value={tempo}
 									title="How fast the birds sing: how long each syllable lasts, how often one starts, and trill and vibrato rates with it. Pitch is unaffected — a slowed bird keeps its pitch and simply sings longer."
+								/>
+							</label>
+							<label class="field">
+								<span class="lbl">Song gap <b class="mono">~{songGapSeconds.toFixed(1)} s</b></span>
+								<input
+									type="range"
+									min="0.25"
+									max="3"
+									step="0.05"
+									bind:value={songRate}
+									title="How often a new song starts, as the mean pause between one song and the next. Arrivals are Poisson, so individual gaps scatter around the mean. Applies live — the next gap is drawn at the new rate; songs already playing are untouched."
 								/>
 							</label>
 						</div>

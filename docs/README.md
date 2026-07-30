@@ -55,3 +55,9 @@ both follow it. Date: 2026-07-28.
     xccoverbl takes the store 36 → 121 species; species placement 8.8× → 12.8× over
     chance, novelty ROC 0.786 on a harder test, coverage 54 % (harvest-depth problem,
     not clustering), and the source-invariance warning that sets up the next retrain.
+15. [`15-synth-extensions-math.md`](15-synth-extensions-math.md) — the implementable
+    mathematics for the naturalness program: respiratory oscillator (Fainstein 2025,
+    eqs + Table S2 parameters), dove membrane model (Elemans 2009), tracheophone
+    three-source (Garcia 2017 + released code), parrot lingual formants, two-voice
+    tracheal coupling (Laje & Mindlin 2005), and a ranked "what else" (plantcutter,
+    echolocation, non-syringeal sonations).

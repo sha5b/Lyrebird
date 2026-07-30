@@ -35,6 +35,16 @@ export class Listener {
 	private preview: LivePath | null = null;
 	private live: LivePath[] = [];
 
+	/**
+	 * Scheduled windows for syllables that own no cluster. An orphan type still owns
+	 * points — its renders and field members have real positions — so while it sounds,
+	 * those points are flashed through `signal.orphanPulse`, a channel kept separate
+	 * from the cluster activations because "played, but not placed" is not a knot
+	 * answering (§8.5).
+	 */
+	private orphanPulses: { points: number[]; start: number; end: number }[] = [];
+	private orphanWasActive = false;
+
 	reading: Reading;
 	onReading: ((reading: Reading) => void) | null = null;
 	/**
@@ -164,6 +174,46 @@ export class Listener {
 		this.publishPaths();
 	}
 
+	/**
+	 * Flash the points of a syllable that is being played but owns no cluster.
+	 *
+	 * Times are AudioContext times, exactly as for `addLive` — the chorus schedules
+	 * ahead, and a pulse must not show before its note sounds. Held at full strength
+	 * through the note and released over ~0.6 s afterwards, mirroring how a finished
+	 * trajectory fades rather than cutting.
+	 */
+	addOrphanPulse(points: number[], window: { start: number; end: number }): void {
+		if (!points.length) return;
+		this.orphanPulses.push({ points, start: window.start, end: window.end });
+		// A chorus queues songs many seconds out; cap the backlog the way paths are capped.
+		while (this.orphanPulses.length > 64) this.orphanPulses.shift();
+	}
+
+	/** Writes the current orphan envelopes into the signal buffer the renderer reads. */
+	private stepOrphans(): void {
+		const out = this.signal.orphanPulse;
+		if (!this.orphanPulses.length) {
+			if (this.orphanWasActive) {
+				out.fill(0);
+				this.orphanWasActive = false;
+			}
+			return;
+		}
+		const now = this.engine.ctx.currentTime;
+		out.fill(0);
+		const kept: typeof this.orphanPulses = [];
+		for (const p of this.orphanPulses) {
+			if (now < p.end + 0.6) kept.push(p);
+			const v = now < p.start ? 0 : now <= p.end ? 1 : Math.max(0, 1 - (now - p.end) / 0.6);
+			if (v <= 0) continue;
+			for (const i of p.points) {
+				if (i < out.length && v > out[i]) out[i] = v;
+			}
+		}
+		this.orphanPulses = kept;
+		this.orphanWasActive = true;
+	}
+
 	/** The faint backdrop of every song this bird sings; drops nodes the corpus lacks. */
 	setContext(paths: number[][]): void {
 		this.signal.context = paths.map((p) => p.filter((n) => n >= 0)).filter((p) => p.length > 1);
@@ -181,6 +231,7 @@ export class Listener {
 	 */
 	clearPaths(): void {
 		this.preview = null;
+		this.orphanPulses = [];
 		for (const path of this.live) {
 			path.progress = -1;
 			path.started = true;
@@ -234,8 +285,11 @@ export class Listener {
 		if (this.raf) cancelAnimationFrame(this.raf);
 		this.raf = 0;
 		this.extractor.reset();
+		this.orphanPulses = [];
+		this.orphanWasActive = false;
 		this.signal.activations.fill(0);
 		this.signal.pointActivation.fill(0);
+		this.signal.orphanPulse.fill(0);
 		this.signal.level = 0;
 		this.signal.best = -1;
 	}
@@ -300,14 +354,15 @@ export class Listener {
 			// it — but it does not get to draw over a note whose identity is not in doubt.
 			// Listening, where nothing is known, is the case the inference is for.
 			this.signal.activations.fill(0);
-			this.applyScheduledPulses();
+			this.applyScheduledPulses(this.engine.ctx.currentTime);
 		}
 
 		// A scheduled note is known, not matched, so it lights at full strength; anything
 		// arriving through the microphone has to earn it.
 		this.points.update(this.signal.activations, singing ? 1 : this.tracker.strength);
-		if (singing) this.pulseScheduledPoints();
+		if (singing) this.pulseScheduledPoints(this.engine.ctx.currentTime);
 		this.signal.pointActivation.set(this.points.activation);
+		this.stepOrphans();
 
 		if (now - this.lastMeters > 0.05) {
 			this.lastMeters = now;
@@ -363,12 +418,38 @@ export class Listener {
 		return anySinging;
 	}
 
-	private applyScheduledPulses(): void {
+	/**
+	 * How brightly a scheduled node lights at `now`, given the path's position.
+	 *
+	 * Two gaussian windows, not one: position along the path, and the note's own
+	 * scheduled time. Position alone was written for dense paths, where the node a
+	 * half-step away is the note a tenth of a second away, and lighting it a little
+	 * early reads as the syllable arriving. Learned paths are sparse — every syllable
+	 * without a cluster is dropped from `nodes` (most of them, on a field-audio build),
+	 * so "half a step away" can be seconds of real time and several sung syllables in
+	 * between. Lit on position alone, a knot flared — particles, label and all — while
+	 * notes that belong to no knot were sounding: a response knots away from the wave,
+	 * reported as firing at the wrong position. The time window restores what position
+	 * used to imply: a knot lights as its own note arrives, however much of the phrase
+	 * was dropped between the two.
+	 */
+	private static scheduledPulse(path: LivePath, i: number, now: number): number {
+		const offset = (path.progress - i) / 0.5;
+		let pulse = Math.exp(-(offset * offset));
+		const t = path.times?.[i];
+		if (t && pulse > 0.01) {
+			const mid = (t.start + t.end) / 2;
+			const dt = (now - mid) / 0.45;
+			pulse *= Math.exp(-(dt * dt));
+		}
+		return pulse;
+	}
+
+	private applyScheduledPulses(now: number): void {
 		for (const path of this.live) {
 			if (path.progress < 0) continue;
 			path.nodes.forEach((node, i) => {
-				const offset = (path.progress - i) / 0.5;
-				const pulse = Math.exp(-(offset * offset));
+				const pulse = Listener.scheduledPulse(path, i, now);
 				if (pulse > 0.01) {
 					this.signal.activations[node] = Math.max(this.signal.activations[node], pulse);
 					// This one we *know*, so it is marked as sung rather than matched — see
@@ -386,12 +467,11 @@ export class Listener {
 	 * which of that cluster's points it resembles — so its members light together, with a
 	 * fixed per-point offset that keeps the knot from reading as a single disc.
 	 */
-	private pulseScheduledPoints(): void {
+	private pulseScheduledPoints(now: number): void {
 		for (const path of this.live) {
 			if (path.progress < 0) continue;
 			path.nodes.forEach((node, i) => {
-				const offset = (path.progress - i) / 0.5;
-				const pulse = Math.exp(-(offset * offset));
+				const pulse = Listener.scheduledPulse(path, i, now);
 				if (pulse > 0.05) this.points.pulseCluster(node, pulse);
 			});
 		}

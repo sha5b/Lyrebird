@@ -39,6 +39,8 @@
 		speed?: number;
 		/** Clusters the learning pipeline is working on, pulsed live in the cloud. */
 		learning?: number[];
+		/** What the cloud's colour encodes; handed to the points and the node tags. */
+		colorMode?: 'species' | 'provenance';
 		onpick?: (cluster: number) => void;
 		/** Fired on a click that hit no node, so the page can clear its selection. */
 		onbackground?: () => void;
@@ -56,6 +58,7 @@
 		speed = 1,
 		frame = [],
 		learning = [],
+		colorMode = 'species',
 		onpick,
 		onbackground
 	}: Props = $props();
@@ -130,7 +133,7 @@
 		<Spinner {spin} scale={spread} bind:group={cloud}>
 			<GridBurst {signal} {view} />
 			<ContextPaths {assets} {signal} {view} />
-			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} />
+			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {colorMode} />
 			<Trajectory {assets} {signal} {view} {spread} {pointSize} />
 			{#if labels}
 				<NodeProjector {assets} {signal} elements={labelElements} {focus} {pinned} {view} />
@@ -141,7 +144,7 @@
 	</Canvas>
 
 	{#if labels}
-		<NodeLabels {assets} elements={labelElements} {onpick} />
+		<NodeLabels {assets} elements={labelElements} {colorMode} {onpick} />
 	{/if}
 </div>
 

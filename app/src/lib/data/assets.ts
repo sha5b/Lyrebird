@@ -1,5 +1,5 @@
 import { base } from '$app/paths';
-import type { BirdyAssets, Centroids, EmbeddingSpace, FeatureSpace, Inventory, Manifest, PointCloudMeta, Species, SyrinxCalibration } from './types';
+import type { BirdyAssets, Centroid, Centroids, EmbeddingSpace, FeatureSpace, Inventory, Manifest, PointCloudMeta, Species, SyrinxCalibration } from './types';
 
 const ROOT = 'birdy';
 
@@ -295,6 +295,89 @@ export function clusterIndexFor(
 export interface Coverage {
 	placed: number;
 	total: number;
+}
+
+/**
+ * Where a sound in the galaxy comes from, as the three provenance categories the
+ * provenance colour mode draws. Numeric because it crosses into a shader attribute.
+ *
+ * - `documented` (0) — a render of a call from the authored inventory: its identity
+ *   was written down by a person, with a confidence the inventory states.
+ * - `learned` (1) — a type the pipeline fitted to field recordings (ids start with L
+ *   or U), or field audio assigned to one. Real acoustics, no documented function.
+ * - `candidate` (2) — the honest remainder: harvested field audio with no identity at
+ *   all. A per-point novelty flag would live here too, but no shipped build writes
+ *   one yet, so unidentified field points are the whole of this category for now.
+ */
+export const PROVENANCE = { documented: 0, learned: 1, candidate: 2 } as const;
+
+/**
+ * One provenance category per point, built once per asset load.
+ *
+ * The rule is deliberately a reading of fields the assets already carry, not a new
+ * claim: `source` says whether a point is our render or real audio, `syllableId`
+ * says whether anything named it, and the L/U prefix says whether that name was
+ * fitted rather than authored.
+ */
+export function pointProvenance(assets: BirdyAssets): Float32Array {
+	const { n, source, syllableId, novel } = assets.points;
+	const out = new Float32Array(n);
+	for (let i = 0; i < n; i++) {
+		// A novelty flag, when a build ships one, outranks everything: that point was
+		// measured as unlike every known type.
+		if (novel?.[i]) {
+			out[i] = PROVENANCE.candidate;
+			continue;
+		}
+		const syl = syllableId[i];
+		if (!syl) {
+			// Unlabelled field audio is the candidate pool — its `songId` names the
+			// recording bout, not an authored song. A whole-song *render*
+			// (synthetic-song) is still an authored phrase.
+			out[i] = source[i] === 'field' ? PROVENANCE.candidate : PROVENANCE.documented;
+			continue;
+		}
+		out[i] = syl[0] === 'L' || syl[0] === 'U' ? PROVENANCE.learned : PROVENANCE.documented;
+	}
+	return out;
+}
+
+/**
+ * The same question for a cluster tag. A documented confidence wins outright; among
+ * fitted knots, an `anchored`/`unknown`/`mixed` verdict means the identity is
+ * inherited or contested rather than fitted, which is the candidate claim.
+ */
+export function centroidProvenance(centroid: Centroid): number {
+	if (
+		centroid.confidence === 'documented' ||
+		centroid.confidence === 'experimental' ||
+		centroid.confidence === 'inferred'
+	) {
+		return PROVENANCE.documented;
+	}
+	const kind = centroid.anchor?.kind;
+	if (kind === 'anchored' || kind === 'unknown' || kind === 'mixed') return PROVENANCE.candidate;
+	return PROVENANCE.learned;
+}
+
+/**
+ * Every point a syllable type owns, keyed `speciesId/syllableId` — synthetic renders
+ * and field members alike. This is what an *orphan* type (one that won no cluster,
+ * so `clusterIndexFor` says -1) can still honestly show when it is sung: its own
+ * points have positions, they just have no knot.
+ */
+export function buildSyllablePointIndex(assets: BirdyAssets): Map<string, number[]> {
+	const map = new Map<string, number[]>();
+	const { n, speciesId, syllableId } = assets.points;
+	for (let i = 0; i < n; i++) {
+		const syl = syllableId[i];
+		if (!syl) continue;
+		const key = `${speciesId[i]}/${syl}`;
+		const list = map.get(key);
+		if (list) list.push(i);
+		else map.set(key, [i]);
+	}
+	return map;
 }
 
 /**

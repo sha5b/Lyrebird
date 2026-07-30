@@ -107,11 +107,21 @@ export function vertexShader(clusterCount: number): string {
 		attribute float aSpecies;
 		/** Which build this point joined in; see the point metadata's generation array. */
 		attribute float aBorn;
+		/** Provenance category: 0 documented, 1 learned, 2 candidate (assets.pointProvenance). */
+		attribute float aProv;
+		/** 1 while a scheduled orphan note — a type with points but no cluster — sounds. */
+		attribute float aOrphan;
 		attribute vec3 aTarget;
 
 		uniform float uActivation[${Math.max(1, clusterCount)}];
 		/** 1 where this cluster is the note being sung, 0 where it merely resembles it. */
 		uniform float uSung[${Math.max(1, clusterCount)}];
+		/**
+		 * Where the pipeline is working right now. Its own channel, deliberately below a
+		 * response: folded into uActivation it drove the same 9 Hz jump and the same ink as
+		 * a match, and silent pipeline work read as knots dancing for no reason.
+		 */
+		uniform float uLearning[${Math.max(1, clusterCount)}];
 		uniform float uTime;
 		uniform float uLevel;
 		uniform float uPointSize;
@@ -150,8 +160,14 @@ export function vertexShader(clusterCount: number): string {
 		varying float vUnassigned;
 		/** 0..1 while a newly added point is arriving. */
 		varying float vArrive;
+		/** Provenance category of this point (see aProv). */
+		varying float vProv;
+		/** 1 while this point's orphan type is being played (see aOrphan). */
+		varying float vOrphan;
 
 		void main() {
+			vProv = aProv;
+			vOrphan = aOrphan;
 			// **A point can belong to no cluster, and that is a result, not a gap.**
 			//
 			// Density clustering leaves sounds in no dense region — too rare or too unlike
@@ -173,7 +189,12 @@ export function vertexShader(clusterCount: number): string {
 			// cluster array is the floor, so a scheduled node still lights every member
 			// even when nothing is being matched against it.
 			float act = clamp(max(aAct, clusterAct * 0.25), 0.0, 1.0);
-			vAct = act;
+			// Learning is a slow swell, not a response: the knot brightens a little and
+			// breathes at the rate the breath arrives with, but it never drives the 9 Hz
+			// jump below — that motion is reserved for sound, so work and audio can no
+			// longer be mistaken for each other.
+			float learn = assigned ? uLearning[index] : 0.0;
+			vAct = max(act, learn * 0.55);
 			vSeed = aSeed;
 			// Selection is a two-sided change, not just a dimming of everyone else. With
 			// only the dim, the chosen bird's points stayed exactly as they were and you
@@ -225,11 +246,22 @@ export function vertexShader(clusterCount: number): string {
 			// the same direction for all of its members, so the knot slid bodily sideways
 			// and upward instead of swelling: a three-dimensional response rendered as a
 			// one-dimensional twitch.
+			//
+			// The amplitude has to fit inside the knot. Calibrated at 0.07·(0.6+2·level) on
+			// the 44-cluster hand-authored galaxy, it reached 0.18 box units at full level —
+			// but the learned corpus packs its knots far tighter: measured on the shipped
+			// 149-cluster build, the mean member sits 0.079 from its own centroid, and a
+			// sixth of the assigned points already rest nearer a *neighbouring* centroid
+			// than that. A jump of 2.3 cluster radii landed lit points inside the knot next
+			// door while the wave, the grid cross and the label all stayed at the true one —
+			// reported as active particles firing at the wrong position. Capped at half a
+			// radius (0.045 at full level), the knot still visibly breathes and its members
+			// stay on it.
 			float pulse = act * (0.5 + 0.5 * sin(uTime * 9.0 + aSeed * 6.2831853));
 			float za = aSeed * 6.2831853 * 1.7;
 			float zb = aSeed * 6.2831853 * 2.9;
 			vec3 burst = normalize(vec3(cos(za) * sin(zb), cos(zb), sin(za) * sin(zb)) + vec3(1e-4));
-			vec3 p = base + burst * pulse * 0.07 * (0.6 + uLevel * 2.0);
+			vec3 p = base + burst * pulse * 0.03 * (0.6 + uLevel * 0.9);
 
 			// Waves, plural, each expanding from the knot that is actually sounding.
 			//
@@ -278,7 +310,8 @@ export function vertexShader(clusterCount: number): string {
 			// its own share of it. Inflating every member by the same fixed amount is what
 			// made a lit knot read as one swollen disc: it has to breathe with the sound,
 			// and unevenly, or the per-point response is invisible in the size channel too.
-			float grow = act * (0.35 + 0.9 * uLevel) * (0.5 + 1.0 * aSeed);
+			// The learning swell joins in here — size, not colour, is how slow work shows.
+			float grow = max(act, learn * 0.6) * (0.35 + 0.9 * uLevel) * (0.5 + 1.0 * aSeed);
 			// Unassigned marks are drawn smaller: they are real measurements and they are
 			// not structure, and at the same weight a third of the corpus in no cluster
 			// reads as a cloud that has one.
@@ -311,6 +344,14 @@ export const fragmentShader = /* glsl */ `
 	uniform float uOpacity;
 	/** Live pitch, 0..1 over the corpus's range. Shapes the gradient inside each mark. */
 	uniform float uPitch;
+	/** 1 in provenance colour mode, 0 in the default species/response mode. */
+	uniform float uProvMode;
+	/** Provenance category colours: authored inventory, fitted-to-field, unidentified. */
+	uniform vec3 uProvDoc;
+	uniform vec3 uProvLearned;
+	uniform vec3 uProvCand;
+	/** The same clock the vertex stage pulses by; the orphan pulse breathes on it. */
+	uniform float uTime;
 
 	/**
 	 * View-space depth at which aerial perspective starts (x) and is complete (y).
@@ -328,6 +369,8 @@ export const fragmentShader = /* glsl */ `
 	varying float vAccent;
 	varying float vUnassigned;
 	varying float vArrive;
+	varying float vProv;
+	varying float vOrphan;
 
 	void main() {
 		vec2 uv = gl_PointCoord - 0.5;
@@ -377,7 +420,14 @@ export const fragmentShader = /* glsl */ `
 		// Nothing is hidden by this: the resembling clusters light exactly as brightly as
 		// they would have, and the reading panel still names them. Only the colour is
 		// withheld, and only from the points that did not earn it.
-		vec3 end = mix(uInk, uAccent, clamp(vAccent, 0.0, 1.0));
+		// Provenance recolouring. In that mode the ramp's two ends move from
+		// rest->ink to a pale wash of the point's provenance colour -> the colour
+		// itself, so response still reads as light-to-strong inside each category.
+		// The accent is untouched: it keeps meaning exactly one thing.
+		vec3 prov = vProv < 0.5 ? uProvDoc : (vProv < 1.5 ? uProvLearned : uProvCand);
+		vec3 ink = mix(uInk, prov, uProvMode);
+		vec3 rest = mix(uRest, mix(uSurface, prov, 0.38), uProvMode);
+		vec3 end = mix(ink, uAccent, clamp(vAccent, 0.0, 1.0));
 
 		// A chosen bird's points sit most of the way along their own ramp even at rest, so
 		// the selection is a violet set of marks rather than the same marks in a thinner
@@ -386,7 +436,7 @@ export const fragmentShader = /* glsl */ `
 		// the dim you could see the threads joining its nodes without being able to point
 		// at a single mark and say that one belongs to it. Not all the way, because
 		// responding still has to be visible on top of being selected.
-		vec3 base = mix(uRest, end, 0.8 * vChosen);
+		vec3 base = mix(rest, end, 0.8 * vChosen);
 		vec3 colour = mix(base, end, clamp(vAct, 0.0, 1.0));
 
 		// A ring of the surface colour around anything that is responding. This is the
@@ -395,6 +445,14 @@ export const fragmentShader = /* glsl */ `
 		// neighbours, so a dense response still reads as a countable spray.
 		float ring = (1.0 - smoothstep(0.30, 0.42, d)) * smoothstep(0.30, 0.44, d);
 		colour = mix(colour, uSurface, ring * vAct * 0.9);
+
+		// The orphan pulse. A scheduled note whose type owns no cluster cannot light a
+		// knot, so its own render points breathe instead — in their provenance colour,
+		// with the alpha dipping rather than rising, and with none of the growth, halo
+		// or ring a responding cluster gets. "Played, but not placed in the galaxy" is
+		// a different claim from "this knot is answering" and must look like one (§8.5).
+		float oPulse = vOrphan * (0.35 + 0.65 * (0.5 + 0.5 * sin(uTime * 7.0 + vSeed * 6.2831853)));
+		colour = mix(colour, prov, oPulse * 0.85);
 
 		// Aerial perspective: far points wash toward the paper and thin out, near ones keep
 		// their weight. This is what makes a rotating scatter read as a volume rather than
@@ -416,6 +474,9 @@ export const fragmentShader = /* glsl */ `
 		float alpha =
 			uOpacity * mask * (0.55 + vAct * 0.45) * vFocus * (1.0 + 0.35 * vChosen) *
 			(1.0 - fog * 0.45) * (1.0 - 0.45 * vUnassigned) * vArrive;
+		// The dim half of the orphan pulse: it breathes the mark *down* against the
+		// paper, the opposite direction from a response.
+		alpha *= 1.0 - 0.55 * oPulse;
 		gl_FragColor = vec4(colour, clamp(alpha, 0.0, 1.0));
 	}
 `;
@@ -470,6 +531,16 @@ export interface VisualSignal {
 	 * a GPU attribute; never reallocated, so the renderer can hold the same buffer.
 	 */
 	pointActivation: Float32Array;
+	/**
+	 * Per point, 1 while a *scheduled* note whose type owns no cluster is sounding.
+	 *
+	 * An orphan type has render points with real positions but no knot, so it cannot
+	 * light through `activations`/`sung` — those are per cluster. This channel is how
+	 * it is shown anyway, and it is deliberately a separate buffer: a point flashing
+	 * here says "played, but not placed in the galaxy", which is a different claim
+	 * from a cluster answering and must not share its look (§8.5).
+	 */
+	orphanPulse: Float32Array;
 	level: number;
 	f0: number;
 	/** 0..1 — how well the live input matches anything in the corpus. */
@@ -496,6 +567,7 @@ export function createSignal(clusterCount: number, pointCount = 0): VisualSignal
 		activations: new Float32Array(Math.max(1, clusterCount)),
 		sung: new Float32Array(Math.max(1, clusterCount)),
 		pointActivation: new Float32Array(Math.max(1, pointCount)),
+		orphanPulse: new Float32Array(Math.max(1, pointCount)),
 		level: 0,
 		f0: 0,
 		strength: 0,

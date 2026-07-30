@@ -21,6 +21,8 @@ export interface Reading {
 	candidates: Candidate[];
 	/** Best candidate, or null when nothing resembles the corpus well enough to judge. */
 	best: Candidate | null;
+	/** True while the input is voiced enough to judge at all — the "heard but unnamed" state. */
+	active: boolean;
 	/** 0..1 — how well the input matches anything at all. */
 	strength: number;
 	/** Rough urgency 0..1 from call rate and pitch — a documented axis, not a meaning. */
@@ -66,6 +68,7 @@ export function readActivations(
 	return {
 		candidates: ranked,
 		best: confident && ranked.length ? ranked[0] : null,
+		active: options.active,
 		strength,
 		urgency,
 		caveat: CAVEAT

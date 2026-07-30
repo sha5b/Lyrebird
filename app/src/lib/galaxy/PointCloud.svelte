@@ -2,7 +2,7 @@
 	import { T, useTask, useThrelte } from '@threlte/core';
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
-	import { buildSpeciesIndex } from '$lib/data/assets';
+	import { buildSpeciesIndex, pointProvenance } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
 	import {
 		SIZE_REFERENCE,
@@ -11,7 +11,7 @@
 		vertexShader,
 		type VisualSignal
 	} from './shaders';
-	import { ACCENT, MONO_HOT, MONO_REST } from './palette';
+	import { ACCENT, MONO_HOT, MONO_REST, PROV_CANDIDATE, PROV_DOCUMENTED, PROV_LEARNED } from './palette';
 	import { buildLayout, type LayoutView } from './layouts';
 
 	interface Props {
@@ -31,6 +31,12 @@
 		 * shows where the work is happening rather than leaving it to a progress bar.
 		 */
 		learning?: number[];
+		/**
+		 * What the cloud's colour encodes: the default response/selection look, or a tint
+		 * by where each sound comes from (assets.pointProvenance). Species is the default
+		 * because position and focus already carry the bird; provenance is the opt-in.
+		 */
+		colorMode?: 'species' | 'provenance';
 	}
 
 	let {
@@ -41,7 +47,8 @@
 		speed = 1,
 		view,
 		spread = 1,
-		learning = []
+		learning = [],
+		colorMode = 'species'
 	}: Props = $props();
 
 	// The corpus never changes while the component is alive, so the buffers are built once
@@ -55,6 +62,12 @@
 	const activationAttribute = new THREE.BufferAttribute(activation, 1).setUsage(
 		THREE.DynamicDrawUsage
 	);
+
+	// The orphan channel: one float per point, rewritten from the schedule (not the
+	// matcher) while a syllable with no cluster of its own is sounding. Same dynamic-
+	// attribute shape as `activation`, for the same reason.
+	const orphan = untrack(() => new Float32Array(assets.points.n));
+	const orphanAttribute = new THREE.BufferAttribute(orphan, 1).setUsage(THREE.DynamicDrawUsage);
 
 	// `position` and `aTarget` hold the same arrangement: the shader still interpolates
 	// between them, but with the islands layout gone there is nothing to morph to, so
@@ -99,6 +112,8 @@
 		g.setAttribute('aSpecies', new THREE.BufferAttribute(species, 1));
 		g.setAttribute('aBorn', new THREE.BufferAttribute(born, 1));
 		g.setAttribute('aAct', activationAttribute);
+		g.setAttribute('aProv', new THREE.BufferAttribute(pointProvenance(assets), 1));
+		g.setAttribute('aOrphan', orphanAttribute);
 		g.computeBoundingSphere();
 		return g;
 	});
@@ -109,9 +124,14 @@
 		uniforms: {
 			uActivation: { value: new Float32Array(clusterCount) },
 			uSung: { value: new Float32Array(clusterCount) },
+			uLearning: { value: new Float32Array(clusterCount) },
 			uRest: { value: new THREE.Color(MONO_REST) },
 			uInk: { value: new THREE.Color(MONO_HOT) },
 			uAccent: { value: new THREE.Color(ACCENT) },
+			uProvMode: { value: untrack(() => (colorMode === 'provenance' ? 1 : 0)) },
+			uProvDoc: { value: new THREE.Color(PROV_DOCUMENTED) },
+			uProvLearned: { value: new THREE.Color(PROV_LEARNED) },
+			uProvCand: { value: new THREE.Color(PROV_CANDIDATE) },
 			uTime: { value: 0 },
 			uLevel: { value: 0 },
 			uPointSize: { value: untrack(() => pointSize) },
@@ -161,6 +181,10 @@
 
 	$effect(() => {
 		material.uniforms.uFocus.value = focus;
+	});
+
+	$effect(() => {
+		material.uniforms.uProvMode.value = colorMode === 'provenance' ? 1 : 0;
 	});
 
 	$effect(() => {
@@ -332,18 +356,23 @@
 		const sung = u.uSung.value as Float32Array;
 		sung.set(signal.sung.subarray(0, sung.length));
 
-		// The learning pipeline breathes through the same channel the audio does. Slower
-		// than a note and never marked as sung: this is work happening at a place in the
-		// corpus, not a sound, and it must not be mistaken for one.
+		// The learning pipeline breathes through its own channel, not the audio one.
+		// Slower than a note and never marked as sung: this is work happening at a place
+		// in the corpus, not a sound, and it must not be mistaken for one — the shader
+		// turns it into a slow swell and keeps the 9 Hz jump for actual responses.
+		const learn = u.uLearning.value as Float32Array;
+		learn.fill(0);
 		if (learning.length) {
 			const breath = 0.45 + 0.35 * Math.sin(u.uTime.value * 3.2);
 			for (const c of learning) {
-				if (c >= 0 && c < target.length) target[c] = Math.max(target[c], breath);
+				if (c >= 0 && c < learn.length) learn[c] = Math.max(learn[c], breath);
 			}
 		}
 
 		activation.set(signal.pointActivation.subarray(0, activation.length));
 		activationAttribute.needsUpdate = true;
+		orphan.set(signal.orphanPulse.subarray(0, orphan.length));
+		orphanAttribute.needsUpdate = true;
 	});
 
 	$effect(() => () => {
