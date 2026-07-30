@@ -62,6 +62,20 @@ The model reproduces not just syllabic rhythm but the **morphology of individual
 
 **Integration note:** new module `respiration.py` (2 ODE states, 5 params per species + forcing gesture) replacing `envelope()` in `render_plan`; `ps(t) = clamp(k * p(t))`. Pairs with injecting `ps`-scaled source at the tract input (one multiply, parity-tested). This is docs/13 B1, top priority; it also unblocks song-level rendering (cross-syllable timing lives here).
 
+### Implementation status (2026-07-30)
+
+Shipped as written above, with three refinements the extraction implies but does not spell out:
+
+- **AM stays at the labia.** The within-syllable `am` gate is *not* part of the forcing: pushing a 12-40 Hz gate through `tau_p` of pressure dynamics smears a trill into mush, which is the physics telling you fast AM is syringeal, not respiratory (Hartley & Suthers' two regimes are about *syllable* rate, not within-syllable modulation). The gate modulates `ps` after the ODE exactly as on the envelope path; the tract-input drive uses the un-gated air-sac pressure, because that is what the sacs hold.
+- **The steady state is p = 0.** Under any constant forcing, eq. (2) equilibrates at `alpha*p = 0` — sustained pressure requires the muscle command to keep growing against the piston's cubic restitution (the paper's "pressure grows 15x while displacement grows 2x"). A hand-set flat envelope cannot do that, so the default set sits at the weak-damping, slow-piston corner of Table S2 (`tau_x=0.25, tau_p=0.2, alpha_i=0.05, alpha_rel=0.125, forcing=35`), chosen among twelve candidates on the pre-registered bake-off below.
+- **Mini-breaths are bout-level.** Interior silences of ≥ 12 ms in the forcing get a negative half-sine (implemented, unit-tested, state-carry bit-exact for chaining); per-syllable envelopes have no interior silences, so the path is dormant until song-level rendering drives the oscillator across a bout.
+
+Schema: syllables carry an optional `respiration: {tauX, tauP, alphaI, alphaRel, forcing}` block (`forcing` is the paper's F0 — the name means pitch everywhere else here). No block → the envelope path, bit-identical to before; parity fixtures `respiration` and `respiration+am` pin the new path on both sides (14/14, worst diff 2.8e-08).
+
+**Bake-off, pre-registered** (`learn --no-invert` on the five-species harvest-mp copy, 81 types, the feature attaching the default set to every fitted type): median resynthesis cosine **0.343 → 0.336**, nearest-own **17/81 → 20/81**, worst −0.281 → −0.235. Per species: wren 0.589 → 0.600, great tit 0.408 → 0.419, blackbird 0.283 → 0.268, tawny owl 0.181 → 0.168, cuckoo 0.153 → 0.110. The losses concentrate in sub-50 ms notes, where the shaped attack (~20-40 ms, the physically correct onset) eats a third of the note and no hand-set constant forcing can rebuild it faster — raising `level` does not recover them, so it is onset *shape*, not loudness.
+
+**How the fit will work (pre-registered, not built).** One parameter set per species, coordinate search over the five Table S2 ranges with the same machinery as `learn.invert_gestures`, seeded from the default set, judged on docs/09's numbers — median resynthesis cosine and species placement on the fixed store, against the envelope baseline of the same run. The forcing for the fit is the type's measured gesture (attack/duration/AM from the observations), not the median envelope, which is what gives short-note species the impulsive commands their onsets need. A negative result is recorded in place per §9.7's pattern; the flag `learn --respiration` stays off by default until the fit wins.
+
 ---
 
 ## 2. Dove/pigeon membrane model — Elemans et al. 2009, *Biomechanics and control of vocalization in a non-songbird*

@@ -87,9 +87,14 @@ SILENCE_FRACTION = 0.05  # of the command's maximum: what "silence" means
 
 #: The hand-set default set, one per species until the fit exists. Weak damping and a
 #: slow piston — the corner of Table S2 where a 250 ms held note keeps most of its
-#: pressure (measured: worst-case body tracking of the designed envelope 0.52-0.60 over
-#: 50-250 ms notes, where strong-damping sets sag to 0.00; attack stretch ~20-40 ms,
-#: which is the shaped onset this feature exists for).
+#: pressure (the steady state of eq. (2) under constant forcing is p = 0, so sustained
+#: pressure needs slow time constants when the forcing cannot outrun the piston's
+#: creep; strong-damping sets sag to zero). Chosen among twelve Table-S2 candidates on
+#: the pre-registered bake-off — `learn --no-invert` on the five-species harvest-mp
+#: store, 81 fitted types: envelope baseline median cosine 0.343, nearest-own 17/81;
+#: this set 0.336 and 20/81, the best candidate on both numbers. The cost is a shaped
+#: ~20-40 ms attack that penalises sub-50 ms notes; the per-species fit is what the
+#: plan expects to close that gap.
 DEFAULT_PARAMS: "RespirationParams"
 
 
@@ -125,7 +130,7 @@ class RespirationParams:
 
 
 DEFAULT_PARAMS = RespirationParams(
-    tau_x=0.25, tau_p=0.08, alpha_i=0.05, alpha_rel=0.125, forcing=50.0
+    tau_x=0.25, tau_p=0.2, alpha_i=0.05, alpha_rel=0.125, forcing=35.0
 )
 
 

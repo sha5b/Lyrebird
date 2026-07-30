@@ -84,6 +84,8 @@ export function speciesColour(id: string): string {
 		h = Math.imul(h, 16777619);
 	}
 	const hue = ((h >>> 0) * 137.508) % 360;
-	return `hsl(${hue.toFixed(1)} 58% 38%)`;
+	// Comma form, not the modern space form: THREE's Color.setStyle only parses the
+	// comma grammar (the space form is silently ignored and reads as white).
+	return `hsl(${hue.toFixed(1)}, 58%, 38%)`;
 }
 

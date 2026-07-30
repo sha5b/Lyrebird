@@ -63,7 +63,8 @@
 			<div class="card">
 				<div class="head">
 					<span class="id mono">C{String(centroid.id).padStart(2, '0')}</span>
-					<span class="name">{centroid.label}</span>
+					<!-- full label on hover: learned names run long and the card caps their width -->
+					<span class="name" title={centroid.label}>{centroid.label}</span>
 				</div>
 				<div class="meta mono">
 					<span>{speciesName(centroid.speciesId)}</span>
@@ -183,10 +184,10 @@
 		display: flex;
 		align-items: baseline;
 		gap: 0.35rem;
-		white-space: nowrap;
 	}
 
 	.id {
+		flex: none;
 		font-size: 0.6rem;
 		color: var(--ink-faint);
 		letter-spacing: 0.04em;
@@ -197,14 +198,20 @@
 		letter-spacing: 0.01em;
 		color: color-mix(in srgb, var(--ink) calc(var(--hot, 0) * 100%), var(--ink-dim));
 		transition: color 140ms ease;
+		/* Learned labels carry the whole provenance sentence ("fulica_atra - learned
+		   L01 · 1468 Hz · 69 ms"): far past the 15rem card cap on one line. The old
+		   nowrap let them spill out of the card's left-ruled box; wrapping inside the
+		   cap keeps tag and text the same width, and `title` on the span still gives
+		   the full string in one gesture. */
+		overflow-wrap: anywhere;
 	}
 
 	.meta {
 		display: flex;
+		flex-wrap: wrap;
 		gap: 0.45rem;
 		font-size: 0.58rem;
 		color: var(--ink-faint);
-		white-space: nowrap;
 	}
 
 	/* Everything below only exists once the cluster responds — a resting galaxy stays a

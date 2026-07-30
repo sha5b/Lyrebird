@@ -250,6 +250,23 @@ Two further items from the literature review, both structural and both cheaper t
   onset realism and trill texture. Pairs with Hartley & Suthers 1989 (mini-breaths below ~30 Hz
   syllable rate, pulsatile expiration above it) — two regimes we currently model as one.
 
+> **Correction and implementation (2026-07-30).** The first bullet's "every reference
+> implementation does this" is wrong, verified against the two public reference
+> implementations: birdsongs injects the acceleration (`ẏ × envelope`), syrinxsynth
+> injects the velocity (`y × √envelope`), and the physics — Laje & Mindlin 2005's
+> inertive low-frequency limit, crossover ≈ 55 kHz — says tract-input pressure is
+> `√ps · y` (docs/15 §1 has the full extraction). What both references share, and what
+> was genuinely missing here, is pressure applied **multiplicatively at the tract
+> input**. Both items are now implemented per docs/15 §1: `respiration.py` (the
+> two-state air-sac oscillator, Heaviside conductance, Table S2 ranges) replaces the
+> envelope when a syllable carries a `respiration` block, and the source is scaled by
+> `√ps` at the tract input. Bake-off on the fixed store (`learn --no-invert`, 81
+> types): median cosine 0.343 → 0.336 with the hand-set default set, nearest-own
+> 17/81 → 20/81 — a wash on the median, a win on placement, with the losses
+> concentrated in sub-50 ms notes whose shaped attack the per-species fit (still to
+> come, pre-registered) is expected to own. The ẏ-vs-y distinction itself (+6 dB/oct
+> brightness) was not adopted: the physics says velocity.
+
 A generative GAN producing audio directly is **not** in this plan, deliberately. It has the
 weakest realism evidence of any option (no bird-playback or neural-response validation, and the
 field's own admission that there is no accepted quality metric), while the physical model this

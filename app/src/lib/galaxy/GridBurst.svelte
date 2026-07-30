@@ -219,7 +219,9 @@
 
 	useTask((delta) => {
 		const best = signal.best;
-		if (best >= 0 && best !== lastCluster && signal.level > 0.04) {
+		// The cross is the same claim the wave makes, so it answers the same gate:
+		// the cluster visibly responding, not the input merely being loud.
+		if (best >= 0 && best !== lastCluster && waveClaim(signal)) {
 			strike(best, Math.min(1, 0.35 + signal.level * 1.2));
 		}
 		lastCluster = best;

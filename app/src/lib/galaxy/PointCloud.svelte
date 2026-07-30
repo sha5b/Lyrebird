@@ -9,12 +9,9 @@
 		FRONT_ONSET,
 		SIZE_REFERENCE,
 		WAVE_SOURCES,
-		buildClusterGraph,
+		buildClusterMembers,
 		fragmentShader,
 		frontRing,
-		frontTrail,
-		linkFragmentShader,
-		linkVertexShader,
 		vertexShader,
 		waveClaim,
 		type VisualSignal

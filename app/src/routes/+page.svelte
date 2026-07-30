@@ -28,7 +28,7 @@
 	} from '$lib/lang/compose';
 	import { citationsFor, confidenceLabel, type Reading } from '$lib/lang/translate';
 	import { createSignal, type VisualSignal } from '$lib/galaxy/shaders';
-	import { ACCENT, MONO_HOT } from '$lib/galaxy/palette';
+	import { MONO_HOT, speciesColour as speciesHue } from '$lib/galaxy/palette';
 	import { PipelineClient, type PipelineStatus } from '$lib/data/pipeline';
 	import type { BirdyAssets, SongType } from '$lib/data/types';
 
@@ -1270,14 +1270,15 @@
 		pinnedCluster >= 0 ? (assets?.centroids.items[pinnedCluster] ?? null) : null
 	);
 	/**
-	 * The colour a bird's mark carries, matching exactly what the galaxy would draw for it.
+	 * The colour a bird's mark carries, matching exactly what the galaxy draws for it.
 	 *
-	 * There are two cases, because the cloud has two: the selected bird wears the accent
-	 * and everything else is ink. Deriving both from the same rule is the only way a chip
-	 * in the history strip and a knot in the cloud are recognisably the same thing.
+	 * The bird's own hue now, not the generic accent: the accent in the cloud eases to
+	 * the same `speciesColour` when this bird is the subject, so a chip in the history
+	 * strip, the swatch next to the picker, and a lit knot are recognisably one thing.
+	 * Hue is presentation here — the chip and the tag both still carry the bird's name.
 	 */
 	function speciesColourOf(id: string): string {
-		return id && id === currentSpecies?.id ? ACCENT : MONO_HOT;
+		return id ? speciesHue(id) : MONO_HOT;
 	}
 	// The hue of the *selected* bird, which is not the same as the focused one: during a
 	// global chorus nothing is focused, but the selection still has a colour in the cloud.

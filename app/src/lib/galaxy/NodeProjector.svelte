@@ -13,7 +13,7 @@
 	import * as THREE from 'three';
 	import { buildSpeciesIndex } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
-	import { ACCENT, MONO_HOT } from './palette';
+	import { MONO_HOT, speciesColour } from './palette';
 	import type { LayoutView } from './layouts';
 	import type { VisualSignal } from './shaders';
 
@@ -196,8 +196,14 @@
 			// A tag wears the accent on the same rule its knot does: the selected bird's
 			// tags, or — with nothing selected — whichever tag is currently responding. Any
 			// other tag is ink, so the sheet never claims more than one thing at a time.
+			// The accent's *hue* is the subject bird's own (see `speciesColour`): the tag
+			// and the knot its cloud is lighting say the same thing in the same colour,
+			// and the name is still there in words — hue is presentation, not the carrier.
 			const live = focus >= 0 ? speciesOf[i] === focus : hot;
-			node.style.setProperty('--accent', live ? ACCENT : MONO_HOT);
+			node.style.setProperty(
+				'--accent',
+				live ? speciesColour(centroids[i].speciesId) : MONO_HOT
+			);
 
 			// The one piece of text that changes while running. Written only when the
 			// rounded percentage actually moves, and only for a label that is open.

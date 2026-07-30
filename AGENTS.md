@@ -34,7 +34,7 @@ Operational conventions for agents working in this repo. Read this first.
   score, they never generate audio.
 - **Honesty rule (docs/08 §8.5):** every claim in the UI carries a confidence label;
   novel sounds are "unlabelled: real acoustics, no documented function".
-- **Parity:** `app/scripts/verify-parity.mjs` must stay 12/12 and `render-syllable.mjs`
+- **Parity:** `app/scripts/verify-parity.mjs` must stay 14/14 and `render-syllable.mjs`
   44/44 after any synth-adjacent change.
 - Evidence discipline: changes to fitting/objectives/spaces are judged by **pre-registered
   metrics** on a fixed store, and negative results are documented, not deleted (see
@@ -72,6 +72,10 @@ Notes:
   syllable points when typing.json exists.
 - Novelty recalibration after a big harvest: `critic.fit_novelty` on the current store
   (see docs/10 §10.3 — thresholds do not transfer across harvest epochs).
+- `learn --respiration` attaches the hand-set default respiratory set of docs/15 §1
+  (`respiration.py`: air-sac oscillator replacing the envelope, √ps tract drive) to
+  every fitted type. Off by default until the pre-registered per-species fit wins —
+  the bake-off numbers are in docs/15 §1's status note.
 - **`serve` holds the pipeline in memory: restart it after every pipeline code change**,
   or its Learn-tab learn/build jobs run the code it started with (docs/11 §11.1 — this
   cost a galaxy once). It also defaults to the *old* store: run it as

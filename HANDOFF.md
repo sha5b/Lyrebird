@@ -1,3 +1,26 @@
+# Birdy — Session Handoff
+
+## 2026-07-30 (later): respiratory oscillator shipped (docs/13 B1, docs/15 §1)
+
+Uncommitted. `pipeline/src/birdy_pipeline/respiration.py` is new: the two-state
+air-sac model of Fainstein, Goller & Mindlin (2025), Table S2 ranges, hand-set default
+per species. A syllable carrying a `respiration` block renders through it — `ps` is
+the pressure gesture (scaled to peak where the envelope peaked) and the source is
+multiplied by **√ps at the tract input** (Laje & Mindlin 2005 low-frequency physics —
+the docs/09 §9.6 "every reference injects ẏ" claim was wrong and is corrected in
+place); a syllable without the block renders bit-identically to before. Mirrored in
+`syrinx-processor.js`; parity now **14/14** (two new fixtures: `respiration`,
+`respiration+am`). `learn --respiration` attaches the default set to fitted types.
+Bake-off on the harvest-mp copy, `learn --no-invert`: median cosine 0.343 → 0.336,
+nearest-own 17/81 → 20/81 — a wash on the median, a win on placement; losses are
+sub-50 ms notes' shaped onsets, which the pre-registered per-species fit (not built;
+plan in docs/15 §1) is expected to own. AM stays at the labia by design — air-sac
+pressure cannot swing at syringeal AM rates. Next here: that fit, then bout-level
+rendering (the state carry is bit-exact and tested; mini-breaths are implemented and
+dormant per-syllable).
+
+---
+
 # Birdy — Session Handoff (2026-07-30, late)
 
 **What this session did:** (1) song-level type discovery — bouts clustered into song
