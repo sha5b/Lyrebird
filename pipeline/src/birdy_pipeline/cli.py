@@ -26,7 +26,7 @@ from .corpus import (
     synthetic_corpus,
     write_wav,
 )
-from . import galaxy, harvest, learn, respiration
+from . import galaxy, harvest, learn, respiration, twovoice
 from .galaxy import PointSet, build_galaxy
 from .syrinx import (
     Calibration,
@@ -902,6 +902,7 @@ def cmd_learn(args: argparse.Namespace) -> int:
     features.self_test(verbose=False)
     learn.self_test(verbose=False)
     respiration.self_test(verbose=False)
+    twovoice.self_test(verbose=False)
 
     t0 = time.time()
     with_own = sum(1 for o in store.syllables if o.descriptor)
@@ -966,6 +967,13 @@ def cmd_learn(args: argparse.Namespace) -> int:
     # `U*` candidates inherit from the same document below.
     prior = learn.previous_fit(out)
     document_version = int(inventory.get("version", 1))
+    # Common names from the store's own recording metadata, behind the authored
+    # inventory and the discovered registry (see learn.recording_names).
+    discovered = list(harvest.load_discovered(DEFAULT_DISCOVERED))
+    named = {sp["id"] for sp in inventory.get("species", [])} | {
+        e["id"] for e in discovered if e.get("id")
+    }
+    discovered += learn.recording_names(store.recordings, named)
     document = learn.build_learned_inventory(
         store.syllables,
         inventory,
@@ -981,10 +989,12 @@ def cmd_learn(args: argparse.Namespace) -> int:
         realism=realism,
         use_tube=args.use_tube,
         use_respiration=args.respiration,
+        use_two_voice=args.two_voice,
+        jobs=args.jobs,
         prior=prior,
         # Where a discovered bird's common name is. Without it every species that is not in
         # the authored inventory is called by its own id everywhere in the app.
-        discovered=harvest.load_discovered(DEFAULT_DISCOVERED),
+        discovered=discovered,
         typing=typing,
         on_species=_on_species,
     )
@@ -1382,6 +1392,67 @@ def cmd_critic_embed(args: argparse.Namespace) -> int:
         f"in {time.time() - t0:.1f}s")
     log("next: uv run birdy-pipeline build --harvest-store " + str(store.root) +
         " --space embed")
+    return 0
+
+
+def cmd_critic_label_novel(args: argparse.Namespace) -> int:
+    """Perch 2.0 second opinion for the syllables the novelty scorer flags.
+
+    The store keeps no audio, so the only labellable targets are syllables whose
+    recording is still in the owner-sanctioned iNat cache (AGENTS.md); everything
+    else is counted and reported as unlabelable, never silently dropped. The output
+    is metadata — `perch.py`'s module docstring carries the discipline, and the
+    JSONL's `_meta` record carries the honesty label verbatim.
+    """
+    try:
+        from . import perch as perch_mod
+    except ImportError as exc:
+        log(f"onnxruntime is not installed ({exc}). `uv sync --extra perch` and try again.")
+        return 2
+
+    store = harvest.HarvestStore(Path(args.store))
+    if not store.syllables:
+        log(f"{store.root} holds no syllable observations — run `harvest` first")
+        return 2
+
+    flagged = np.array([bool(o.novel) for o in store.syllables])
+    targets = flagged
+    novelty_path = Path(args.critic).with_name(Path(args.critic).stem + "-novelty.json")
+    embeddings_path = (
+        Path(args.embeddings) if args.embeddings else Path(args.store) / EMBEDDINGS_NAME
+    )
+    if novelty_path.exists() and embeddings_path.exists():
+        centroids, threshold = perch_mod.load_novelty_centroids(novelty_path)
+        recomputed = perch_mod.novelty_mask(store, embeddings_path, centroids, threshold)
+        # The stored flag is ingest-time evidence and wins where set; the recompute
+        # covers rows harvested before the scorer existed (see perch.novelty_mask).
+        targets = flagged | recomputed
+        log(f"novelty targets: {int(flagged.sum())} flagged at ingest + "
+            f"{int((recomputed & ~flagged).sum())} rederived from {novelty_path.name} "
+            f"(threshold {threshold:.4f}) = {int(targets.sum())}")
+    else:
+        log(f"no {novelty_path.name} / {embeddings_path.name} pair — labelling only "
+            f"the {int(flagged.sum())} syllables flagged at ingest")
+
+    if not targets.any():
+        log("nothing to label: no flagged syllables and no novelty scorer to derive them from")
+        return 2
+
+    model = perch_mod.ensure_model(Path(args.model_dir))
+    out = Path(args.out) if args.out else Path(args.store) / "perch-labels.jsonl"
+    t0 = time.time()
+    counts = perch_mod.label_novel(
+        store,
+        Path(args.audio_cache),
+        out,
+        model,
+        targets,
+        limit=args.limit,
+        batch=args.batch,
+        keep_embeddings=args.keep_embeddings,
+        log=log,
+    )
+    log(f"done in {time.time() - t0:.1f}s ({counts['labelled']} labels)")
     return 0
 
 
@@ -2476,6 +2547,12 @@ def build_parser() -> argparse.ArgumentParser:
                      help="where syrinx-calibration.json lives")
     lrn.add_argument("--no-invert", action="store_true",
                      help="skip the gesture search and ship the cluster medians as fitted")
+    lrn.add_argument("--jobs", type=int, default=1,
+                     help="worker processes for the per-species fits (default 1 = "
+                          "serial). >1 forks a pool: the critic embeds once in the "
+                          "parent, workers fit species independently — identical "
+                          "results, all cores. Linux/fork only; ignored with a "
+                          "realism term")
     lrn.add_argument("--learned-only", action="store_true",
                      help="write only the fitted repertoire, dropping every documented "
                           "function; the default merges it into the authored inventory")
@@ -2515,6 +2592,14 @@ def build_parser() -> argparse.ArgumentParser:
                           "type. Hand-set, one set per species, until the pre-registered "
                           "per-species fit exists; the reported cosine measures the "
                           "respiratory render, which is the bake-off comparison")
+    lrn.add_argument("--two-voice", action="store_true",
+                     help="attach the default second voice of docs/15 §5 (Laje & "
+                          "Mindlin 2005: the type's own contour shifted by the Fig. 6 "
+                          "ratio, Table I's trachea and reflection, coupled through "
+                          "the shared tracheal pressure) to every fitted type. "
+                          "Hand-set until the pre-registered per-species fit exists; "
+                          "the reported cosine measures the two-voice render, which "
+                          "is the bake-off comparison")
     lrn.add_argument("--cpu", action="store_true",
                      help="run the critic on the CPU even where a GPU is available")
     lrn.set_defaults(func=cmd_learn)
@@ -2579,6 +2664,41 @@ def build_parser() -> argparse.ArgumentParser:
     cre.add_argument("--cpu", action="store_true",
                      help="embed on the CPU even with a GPU present")
     cre.set_defaults(func=cmd_critic_embed)
+
+    crl = cr_sub.add_parser(
+        "label-novel",
+        help="Perch 2.0 second opinion for novelty-flagged syllables: labels land in "
+             "<store>/perch-labels.jsonl as metadata, never as typing ground truth "
+             "(docs/13 A1)",
+    )
+    crl.add_argument("--store", default=str(DEFAULT_HARVEST_STORE),
+                     help="harvest store whose novelty-flagged syllables to label")
+    crl.add_argument("--audio-cache",
+                     default=str(REPO_ROOT / "pipeline" / "out" / "audio-cache"),
+                     help="the owner-sanctioned iNat WAV cache (AGENTS.md); syllables "
+                          "from any other source have no audio and are reported "
+                          "unlabelable")
+    crl.add_argument("--critic", default=str(DEFAULT_CRITIC),
+                     help="used only to locate <stem>-novelty.json, whose centroids "
+                          "and threshold rederive the novelty verdict for syllables "
+                          "harvested before the scorer existed")
+    crl.add_argument("--embeddings", default=None,
+                     help="store embeddings for the novelty rederive (default: "
+                          "<store>/%s)" % EMBEDDINGS_NAME)
+    crl.add_argument("--out", default=None,
+                     help="where to write the JSONL (default: <store>/perch-labels.jsonl)")
+    crl.add_argument("--model-dir",
+                     default=str(REPO_ROOT / "pipeline" / "out" / "perch"),
+                     help="where the ONNX weights and class list are cached; the "
+                          "409 MB download lands here on first use")
+    crl.add_argument("--limit", type=int, default=None,
+                     help="label at most this many syllables (smoke runs)")
+    crl.add_argument("--batch", type=int, default=32)
+    crl.add_argument("--keep-embeddings", action="store_true",
+                     help="also write Perch's 1536-d embedding per syllable (off by "
+                          "default; docs/13 A1's external cross-check of the critic "
+                          "space, at ~10 KB of JSON per row)")
+    crl.set_defaults(func=cmd_critic_label_novel)
 
     sm = sub.add_parser(
         "spacemap",

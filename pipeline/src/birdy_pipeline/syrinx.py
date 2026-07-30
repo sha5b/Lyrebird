@@ -27,18 +27,34 @@ labial *velocity* times root pressure. Be precise about the lineage, because doc
 injects ẏ" is wrong, and this module follows the physics rather than the louder half
 of the references. A syllable without a `respiration` block renders exactly as before:
 the envelope path is untouched and bit-identical.
+
+**Two voices (docs/15 §5, docs/13 B2).** A syllable carrying a `voices` block renders
+two independently-gestured sources — the syllable's contour drives the first voice,
+the block's own contour and gamma the second — coupled through the shared tracheal
+pressure `pi(t)` of Laje & Mindlin 2005: each source injects `betaInj * sqrt(ps) *
+y/gamma` (the low-frequency limit of the paper's eqs. 62-67, velocity times root
+pressure), the sum plus one fractional-delay round-trip reflection acts back on both
+sources as `(ps - pi)`, which in this model's terms moves each source's `alpha`
+(restitution IS pressure). The weak-coupling approximation (Table I: beta of 1.5e3
+against 1/tau of 1e4) is what lets the integration stay plain explicit Euler, updated
+once per output sample like alpha and beta themselves. `two: true` remains the
+uncoupled 7-cent shimmer; a `voices` block supersedes it. A syllable without the block
+renders exactly as before — and a block with `betaInj = 0` and `level = 0` renders
+bit-identically to no block at all, which the self-test asserts.
 """
 
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Sequence
 
 import numpy as np
 
 from . import respiration as respiration_mod
+from . import twovoice as twovoice_mod
 from .respiration import RespirationParams
+from .twovoice import TwoVoiceParams
 
 # --- contract constants (8.1 / 8.4) -----------------------------------------------
 # The gamma the calibration table is measured at, and the reference for the lookup
@@ -288,6 +304,124 @@ def _ode_source(
             y = 0.0
         out[i] = y
     return out
+
+
+@njit(cache=True, fastmath=False)
+def _ode_source_coupled(
+    alpha_a: np.ndarray,
+    beta_a: np.ndarray,
+    drive_a: np.ndarray,
+    gamma_a: float,
+    oversample_a: int,
+    alpha_b: np.ndarray,
+    beta_b: np.ndarray,
+    drive_b: np.ndarray,
+    gamma_b: float,
+    oversample_b: int,
+    sample_rate: int,
+    alpha_slope: float,
+    beta_inj: float,
+    delay: float,
+    refl: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Two flapping oscillators coupled through the shared tracheal pressure (§5 of
+    docs/15; Laje & Mindlin 2005, eqs. 62-67 in the weak-coupling limit).
+
+        pi[i] = betaInj * (drive_a*y_a/gamma_a + drive_b*y_b/gamma_b) - refl*pi(i-T)
+        alpha_j(i) = alpha_j[i] - alpha_slope * pi[i]
+
+    `drive_j` is `sqrt(ps_j)` per output sample, so each source's injection is
+    `betaInj * sqrt(ps_j) * y_j/gamma_j` — the low-frequency inertive limit of the
+    paper's injection (`beta_j ∝ sqrt(2*ps*M/rho)` times velocity), and `y/gamma` is
+    the velocity in the same normalisation `ampPP` divides by. The pressure acts back
+    on the sources through `alpha`, because in this model the restitution constant IS
+    the air-sac pressure; a positive tracheal pressure therefore *subtracts* from the
+    drive, which is the mechanism that locks two near-coincident sources and that
+    period-doubles a single one under feedback.
+
+    Explicit Euler, one coupling update per output sample: pi is computed from the
+    oscillator states at the top of the sample and held across the sample's substeps,
+    exactly the way alpha and beta are per-sample constants in `_ode_source`. The
+    paper's implicit acceleration terms are what the weak-coupling condition
+    (beta_j << 1/tau_j) removes — that is the approximation that keeps this kernel a
+    plain time-stepper the browser worklet can mirror bit for bit.
+
+    `delay` is the tracheal round trip `T = 2L/c` in (fractional) output samples, read
+    from a ring with linear interpolation — the `_tube_comb` discipline, because at
+    48 kHz a 2 cm round trip is 5.6 samples and an integer delay would move the
+    tracheal resonances by hundreds of Hz. With `betaInj = 0` the recurrence gives
+    pi = 0 identically and voice A integrates exactly as `_ode_source` does — the
+    zero-coupling case is bit-identical, which `learn.self_test` asserts.
+    """
+    n = alpha_a.shape[0]
+    out_a = np.zeros(n)
+    out_b = np.zeros(n)
+    g_a2 = gamma_a * gamma_a
+    g_b2 = gamma_b * gamma_b
+    dt_a = 1.0 / (sample_rate * oversample_a)
+    dt_b = 1.0 / (sample_rate * oversample_b)
+    # The delay line holds pi, not audio; two slots past the delay are enough, and the
+    # trachea floor (0.8 cm -> 2.2 samples) guarantees the read never touches the slot
+    # being written.
+    ring_len = int(delay) + 2
+    ring = np.zeros(ring_len)
+    x_a = 1.0e-4
+    y_a = 0.0
+    x_b = 1.0e-4
+    y_b = 0.0
+    for i in range(n):
+        g = i - delay
+        delayed = 0.0
+        if g >= 0.0:
+            i0 = int(g)
+            frac = g - i0
+            delayed = (
+                ring[i0 % ring_len] * (1.0 - frac)
+                + ring[(i0 + 1) % ring_len] * frac
+            )
+        pi = (
+            beta_inj
+            * (drive_a[i] * (y_a / gamma_a) + drive_b[i] * (y_b / gamma_b))
+            - refl * delayed
+        )
+        ring[i % ring_len] = pi
+        a_a = alpha_a[i] - alpha_slope * pi
+        a_b = alpha_b[i] - alpha_slope * pi
+        b_a = beta_a[i]
+        b_b = beta_b[i]
+        for _ in range(oversample_a):
+            dx = y_a
+            dy = (
+                -a_a * g_a2
+                - b_a * g_a2 * x_a
+                - g_a2 * x_a * x_a * x_a
+                - gamma_a * x_a * x_a * y_a
+                + g_a2 * x_a * x_a
+                - gamma_a * x_a * y_a
+            )
+            x_a += dx * dt_a
+            y_a += dy * dt_a
+        for _ in range(oversample_b):
+            dx = y_b
+            dy = (
+                -a_b * g_b2
+                - b_b * g_b2 * x_b
+                - g_b2 * x_b * x_b * x_b
+                - gamma_b * x_b * x_b * y_b
+                + g_b2 * x_b * x_b
+                - gamma_b * x_b * y_b
+            )
+            x_b += dx * dt_b
+            y_b += dy * dt_b
+        if not (abs(x_a) < 1.0e6 and abs(y_a) < 1.0e12):
+            x_a = 1.0e-4
+            y_a = 0.0
+        if not (abs(x_b) < 1.0e6 and abs(y_b) < 1.0e12):
+            x_b = 1.0e-4
+            y_b = 0.0
+        out_a[i] = y_a
+        out_b[i] = y_b
+    return out_a, out_b
 
 
 @njit(cache=True, fastmath=False)
@@ -738,6 +872,11 @@ class Syllable:
     #: the tract is driven by sqrt of it at the injection point. When absent the
     #: syllable renders exactly as it always has.
     respiration: RespirationParams | None = None
+    #: The second syringeal voice and its tracheal coupling (twovoice.py, docs/15 §5).
+    #: When present, the syllable renders two independently-gestured sources coupled
+    #: through the shared tracheal pressure, and `two` (the uncoupled 7-cent shimmer)
+    #: is ignored. When absent the syllable renders exactly as it always has.
+    voices: TwoVoiceParams | None = None
     label: str = ""
     function: str = ""
     confidence: str = ""
@@ -775,6 +914,7 @@ class Syllable:
             ),
             tract_q=float(d.get("tractQ", 0.0) or 0.0),
             respiration=respiration_mod.parse(d.get("respiration")),
+            voices=twovoice_mod.parse(d.get("voices")),
             label=str(d.get("label", "")),
             function=str(d.get("function", "")),
             confidence=str(d.get("confidence", "")),
@@ -914,6 +1054,18 @@ def jitter_syllable(syl: Syllable, rng: np.random.Generator, j: Jitter) -> Sylla
         # inverted: those scale because they follow body size, this stays because a
         # slightly sharper bird breathes with the same lungs.
         respiration=syl.respiration,
+        # The second voice, by the same body-size argument as the formants, rides the
+        # pitch jitter: a bird a few per cent sharp today is sharp on both sides of
+        # its syrinx. gamma stays — it is a pure time-scale, and a ±3 % contour shift
+        # moves the beta lookup by far less than the table's own interpolation error.
+        voices=(
+            replace(
+                syl.voices,
+                contour=tuple((f, hz * pitch) for f, hz in syl.voices.contour),
+            )
+            if syl.voices is not None
+            else None
+        ),
         label=syl.label,
         function=syl.function,
         confidence=syl.confidence,
@@ -1077,21 +1229,14 @@ def _voice(
 ) -> np.ndarray:
     """One oscillator plus its own tract band(s).
 
-    beta from the table (converted to the table's gamma), integrate, scale by
-    `(y/gamma) * 0.35 / ampPP`, DC-block, then bandpass on this oscillator's own
-    instantaneous f0 - so a `two: true` syllable gets two tracts, each tracking its
-    own voice, which is what keeps the bilateral shimmer.
+    beta from the table (converted to the table's gamma), integrate, then
+    `_voice_tract` (source gain, turbulence, drive, tract) — split out so the
+    two-voice path of docs/15 §5 can run the same chain per coupled oscillator.
 
     `rough` perturbs alpha before integration, so it reaches the sound through the ODE
     rather than being added to it: the oscillator answers a wobbling pressure with the
     frequency jitter, subharmonics and — at the top of the range — the aperiodicity that
-    the model's chaotic regime already contains. `noise` and `formants` act after the
-    source, at the tract, where turbulence and resonance physically belong.
-
-    `drive` is the respiration path's √ps (docs/15 §1): it scales the source — oscillator
-    and turbulence together, one airflow — at the tract input, so the tract is genuinely
-    driven harder at higher air-sac pressure rather than having an envelope painted on
-    after the fact. None on the envelope path, which is then bit-identical to before.
+    the model's chaotic regime already contains.
     """
     beta = beta_for(f0, pressure, calibration, gamma)
     # ampPP is read at the *clean* beta on purpose. Its job is to divide the pitch out of
@@ -1124,6 +1269,43 @@ def _voice(
         )
 
     y = _ode_source(alpha, beta, gamma, oversample, sample_rate, 1.0e-4, 0.0)
+    return _voice_tract(
+        f0, y, gamma, amp, pressure, q, harmonic, sample_rate,
+        formants, tube, harmonics, noise, stream, drive,
+    )
+
+
+def _voice_tract(
+    f0: np.ndarray,
+    y: np.ndarray,
+    gamma: float,
+    amp: np.ndarray,
+    pressure: np.ndarray,
+    q: float,
+    harmonic: float,
+    sample_rate: int,
+    formants: Sequence[Sequence[float]] = (),
+    tube: Sequence[float] = (),
+    harmonics: Sequence[float] = (),
+    noise: float = 0.0,
+    stream: int = NOISE_SEED,
+    drive: np.ndarray | None = None,
+) -> np.ndarray:
+    """The post-integration half of `_voice`: source gain, turbulence, drive, tract.
+
+    Split out so the two-voice path (docs/15 §5) can run each coupled oscillator
+    through its own tract — each tracking its own instantaneous f0, exactly the way
+    `two: true` gives each side its own band — without duplicating the chain. `_voice`
+    calls it with the same arguments in the same order, so the single-voice render is
+    bit-identical to before the split.
+
+    `noise` and `formants` act after the source, at the tract, where turbulence and
+    resonance physically belong. `drive` is the respiration path's √ps (docs/15 §1):
+    it scales the source — oscillator and turbulence together, one airflow — at the
+    tract input, so the tract is genuinely driven harder at higher air-sac pressure
+    rather than having an envelope painted on after the fact. None on the envelope
+    path, which is then bit-identical to before.
+    """
     source = (y / gamma) * SOURCE_GAIN / amp
 
     if noise > 0.0:
@@ -1132,7 +1314,7 @@ def _voice(
         # under a low-Q formant, which is why a single `noise` scalar can serve both.
         flow = np.maximum(pressure - NOISE_PS_FLOOR, 0.0)
         source = source + (noise * NOISE_GAIN) * flow * _xorshift_noise(
-            alpha.shape[0], stream * 4 + 1
+            f0.shape[0], stream * 4 + 1
         )
 
     if drive is not None:
@@ -1172,6 +1354,106 @@ def _voice(
     return out
 
 
+def _voice_pair(
+    plan: RenderPlan,
+    syl: Syllable,
+    voices: TwoVoiceParams,
+    calibration: Calibration | None,
+    sample_rate: int,
+    stream: int,
+) -> np.ndarray:
+    """Two independently-gestured voices coupled through the shared trachea (§5 of
+    docs/15; docs/13 B2).
+
+    Voice A is the syllable's own gesture (its contour, its gamma, its `ps`); voice B
+    is the block's — its own contour and gamma, and `ps_b = level * ps` because one
+    pair of air sacs feeds both bronchi. The restitution constants are therefore
+    genuinely independent (`alpha_j = 0.05 + 0.40*ps_j` with different `ps_j`), which
+    is the "(alpha, beta) contours per voice" the design asks for; what is shared is
+    the respiratory *gesture*, which is the anatomy, not a shortcut. The coupling is
+    the kernel's: `pi` acts back on both sources, and a positive tracheal pressure
+    subtracts from each side's drive.
+
+    Both voices run the same beta/amp mapping and the same tract chain as a single
+    voice, each tracking its own f0 — the `two: true` discipline, now with real
+    gestures. `rough` perturbs each side's tension from its own stream, offset exactly
+    the way `two: true` offsets its second side. The mix is 0.5/0.5; a `level` of 0
+    means a closed right bronchus, which injects nothing (its `sqrt(ps_b)` is 0) and
+    is dropped from the mix — Laje & Mindlin's single-source-plus-feedback case, the
+    configuration their period-doubling result lives in.
+
+    **The measured strength of the coupling.** At the default `betaInj = 0.05`, a
+    120 ms two-voice syllable at ps ~ 1 carries `pi` at ~2-6 % of ps (peak |pi| /
+    peak ps measured over the parity fixtures' parameter ranges), rising to ~15 % at
+    `betaInj = 0.25` — inside the paper's weak-coupling regime (their beta/tau ratio
+    is 0.15) and already enough to put sum/difference sidebands at multiples of the
+    two fundamentals' separation and to period-double a lone source. That is the
+    paper's own verdict — weak but consequential — and it is why the default sits
+    where it does: below the strength where the sources quench each other, inside the
+    regime where the nonlinearities the feature exists for are measurable.
+    """
+    t_norm = plan.t / (plan.n / sample_rate)
+    f0_b = contour_f0(voices.contour, t_norm)
+    gamma_b = float(np.clip(voices.gamma, GAMMA_MIN, GAMMA_MAX))
+    oversample_b = oversample_for_gamma(gamma_b, sample_rate)
+    ps_b = np.clip(plan.ps * voices.level, PS_MIN, PS_MAX)
+    alpha_b = ALPHA_OFFSET + ALPHA_SLOPE * ps_b
+
+    beta_a = beta_for(plan.f0, plan.ps, calibration, plan.gamma)
+    beta_b = beta_for(f0_b, ps_b, calibration, gamma_b)
+    # ampPP is read at the *clean* beta, per voice, for the same reason `_voice` reads
+    # it there: its job is to divide the pitch out of the loudness, and reading it at
+    # the roughened beta would divide the roughness out too.
+    amp_a = amp_pp_for(beta_a, plan.ps, plan.alpha, calibration)
+    amp_b = amp_pp_for(beta_b, ps_b, alpha_b, calibration)
+
+    if syl.rough > 0.0:
+        # Tension perturbation per side, from each side's own stream — the same
+        # mechanism and the same stream discipline as `_voice`, with the second side
+        # offset exactly the way `two: true` offsets its second oscillator.
+        factor_a = 1.0 + ROUGH_DEPTH * syl.rough * _one_pole_lp(
+            _xorshift_noise(plan.n, stream * 4 + 2), ROUGH_LP_HZ, sample_rate
+        ) * rough_std_gain(sample_rate)
+        factor_b = 1.0 + ROUGH_DEPTH * syl.rough * _one_pole_lp(
+            _xorshift_noise(plan.n, (stream + 1024) * 4 + 2), ROUGH_LP_HZ, sample_rate
+        ) * rough_std_gain(sample_rate)
+        beta_a = np.clip(
+            beta_a * np.clip(factor_a, ROUGH_CLAMP[0], ROUGH_CLAMP[1]),
+            BETA_MIN, BETA_MAX,
+        )
+        beta_b = np.clip(
+            beta_b * np.clip(factor_b, ROUGH_CLAMP[0], ROUGH_CLAMP[1]),
+            BETA_MIN, BETA_MAX,
+        )
+
+    # One tracheal round trip, T = 2L/c, in (fractional) output samples — the delay
+    # the shared pressure's reflection travels before acting back on the sources.
+    delay = 2.0 * voices.trachea_cm * sample_rate / SOUND_SPEED_CM_S
+    y_a, y_b = _ode_source_coupled(
+        plan.alpha, beta_a, np.sqrt(plan.ps), plan.gamma, plan.oversample,
+        alpha_b, beta_b, np.sqrt(ps_b), gamma_b, oversample_b,
+        sample_rate, ALPHA_SLOPE, voices.beta_inj, delay, voices.refl,
+    )
+
+    out_a = _voice_tract(
+        plan.f0, y_a, plan.gamma, amp_a, plan.ps, plan.q, syl.harmonic, sample_rate,
+        syl.formants, syl.tube, syl.harmonics, syl.noise, stream, plan.drive,
+    )
+    if voices.level <= 0.0:
+        # A closed right bronchus injects nothing and is not heard; the shared
+        # trachea still feeds the active side its own pressure back.
+        return out_a
+    out_b = _voice_tract(
+        f0_b, y_b, gamma_b, amp_b, ps_b, plan.q, syl.harmonic, sample_rate,
+        # The second side gets its own noise stream, for the same reason `two: true`
+        # gives it one: correlated turbulence through two near-identical tracts sums
+        # to one louder voice instead of two. The drive is shared — one pair of air
+        # sacs feeds both sides of the syrinx.
+        syl.formants, syl.tube, syl.harmonics, syl.noise, stream + 1024, plan.drive,
+    )
+    return 0.5 * out_a + 0.5 * out_b
+
+
 def render_syllable(
     syllable: Syllable | dict[str, Any],
     sample_rate: int = SAMPLE_RATE,
@@ -1196,26 +1478,32 @@ def render_syllable(
         syl = jitter_syllable(syl, rng or np.random.default_rng(0), jitter)
     plan = render_plan(syl, sample_rate)
 
-    # one oscillator+tract, or two detuned by +7 cents mixed 0.5/0.5 (bilateral syrinx)
-    out = _voice(
-        plan.f0, plan.alpha, plan.ps, plan.q, syl.harmonic,
-        plan.gamma, plan.oversample, sample_rate, calibration,
-        syl.formants, syl.tube, syl.harmonics, syl.noise, syl.rough, stream,
-        plan.drive,
-    )
-    if syl.two:
-        f0b = plan.f0 * (2.0 ** (DETUNE_CENTS / 1200.0))
-        out = 0.5 * out + 0.5 * _voice(
-            f0b, plan.alpha, plan.ps, plan.q, syl.harmonic,
+    if syl.voices is not None:
+        # docs/15 §5: two independently-gestured sources coupled through the shared
+        # trachea. This replaces the whole oscillator section below — `two: true` is
+        # the uncoupled shimmer and is ignored when a `voices` block exists.
+        out = _voice_pair(plan, syl, syl.voices, calibration, sample_rate, stream)
+    else:
+        # one oscillator+tract, or two detuned by +7 cents mixed 0.5/0.5 (bilateral syrinx)
+        out = _voice(
+            plan.f0, plan.alpha, plan.ps, plan.q, syl.harmonic,
             plan.gamma, plan.oversample, sample_rate, calibration,
-            # The second side gets its own noise stream. Sharing one would make the two
-            # sides correlated, and correlated noise through two nearly identical tracts
-            # sums to one louder voice instead of two — the bilateral shimmer is exactly
-            # the part that has to stay independent. The drive is shared: one pair of
-            # air sacs feeds both sides of the syrinx.
-            syl.formants, syl.tube, syl.harmonics, syl.noise, syl.rough, stream + 1024,
+            syl.formants, syl.tube, syl.harmonics, syl.noise, syl.rough, stream,
             plan.drive,
         )
+        if syl.two:
+            f0b = plan.f0 * (2.0 ** (DETUNE_CENTS / 1200.0))
+            out = 0.5 * out + 0.5 * _voice(
+                f0b, plan.alpha, plan.ps, plan.q, syl.harmonic,
+                plan.gamma, plan.oversample, sample_rate, calibration,
+                # The second side gets its own noise stream. Sharing one would make the two
+                # sides correlated, and correlated noise through two nearly identical tracts
+                # sums to one louder voice instead of two — the bilateral shimmer is exactly
+                # the part that has to stay independent. The drive is shared: one pair of
+                # air sacs feeds both sides of the syrinx.
+                syl.formants, syl.tube, syl.harmonics, syl.noise, syl.rough, stream + 1024,
+                plan.drive,
+            )
 
     # 180 Hz one-pole highpass and 12 kHz one-pole lowpass on the sum
     out = _one_pole_lp(_one_pole_hp(out, TRACT_HP_HZ, sample_rate), TRACT_LP_HZ, sample_rate)

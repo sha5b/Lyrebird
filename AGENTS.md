@@ -57,6 +57,7 @@ uv run birdy-pipeline verify app/static/birdy
 uv run birdy-pipeline serve           # Learn-tab control surface, loopback :8781
 uv run birdy-pipeline sources list    # which audio sources are usable, and why not
 uv run birdy-pipeline sources fetch --source internet-archive --limit 5 --store /tmp/...
+uv run birdy-pipeline critic label-novel --store out/harvest-gan  # Perch 2.0 second opinions
 ```
 
 Notes:
@@ -72,6 +73,13 @@ Notes:
   syllable points when typing.json exists.
 - Novelty recalibration after a big harvest: `critic.fit_novelty` on the current store
   (see docs/10 §10.3 — thresholds do not transfer across harvest epochs).
+- `critic label-novel` (perch.py, optional `perch` extra = `onnxruntime` + the two hub
+  packages — deliberately **no TensorFlow**) writes `<store>/perch-labels.jsonl`: Perch 2.0
+  top-3 for every novelty-flagged syllable whose audio is still in `out/audio-cache/`
+  (INAT* ids only; xeno-canto audio is deleted by design and is reported unlabelable).
+  **These labels are metadata, never typing ground truth** (docs/13 §A1) — nothing in
+  learn.py may read that file. The 409 MB ONNX port + class list download anonymously
+  into `out/perch/` on first use (gitignored, local-only, same status as the audio cache).
 - `learn --respiration` attaches the hand-set default respiratory set of docs/15 §1
   (`respiration.py`: air-sac oscillator replacing the envelope, √ps tract drive) to
   every fitted type. Off by default until the pre-registered per-species fit wins —

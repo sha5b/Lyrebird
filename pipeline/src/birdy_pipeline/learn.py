@@ -31,7 +31,9 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import sys
+import time
 from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -40,7 +42,7 @@ from typing import Any, Callable, Iterable, Sequence
 import numpy as np
 from sklearn.cluster import KMeans
 
-from . import density, features, respiration, syrinx
+from . import density, features, respiration, syrinx, twovoice
 from .syrinx import Calibration, peak_normalise, render_syllable
 
 # --- segmentation ------------------------------------------------------------------
@@ -2164,6 +2166,7 @@ def learn_species(
     realism: "RealismTerm | None" = None,
     use_tube: bool = False,
     use_respiration: bool = False,
+    use_two_voice: bool = False,
 ) -> dict[str, Any] | None:
     """Fitted syllables + a measured grammar for one species, or None if too little data.
 
@@ -2177,6 +2180,13 @@ def learn_species(
     exists (respiration.py's module docstring says how it will be fitted). The reported
     resynthesis cosine then measures the respiratory render, which is the comparison the
     bake-off is run on.
+
+    `use_two_voice` attaches the default second voice of docs/15 §5 to every fitted
+    type: the type's own contour shifted by twovoice.DEFAULT_RATIO (the eps_l/eps_r
+    ratio of the paper's Fig. 6), Table I's trachea and reflection, the measured
+    injection strength — hand-set until the pre-registered per-species fit exists, the
+    same status as the respiratory set. The reported cosine then measures the
+    two-voice render, which is the comparison its bake-off is run on.
 
     `use_tube` re-enables the waveguide tract. It is written, tested, and gated off because the
     28-d objective rejected it (§9.1 result 5). docs/09 calls it "the cleanest available test of
@@ -2225,6 +2235,20 @@ def learn_species(
         # step so everything downstream is searched against the render that ships.
         for t in fitted:
             t.syllable["respiration"] = respiration.DEFAULT_PARAMS.as_dict()
+
+    if use_two_voice:
+        # docs/15 §5, same hand-set status as the respiratory set: every fitted type
+        # carries a second voice — its own contour shifted by the Fig. 6 ratio, Table
+        # I's trachea — so the reported cosine measures the coupled two-voice render
+        # that ships. gamma_b comes from the contour rule of 8.1 applied to the
+        # shifted contour; the coupling numbers are twovoice's defaults.
+        for t in fitted:
+            contour_b = [
+                [frac, hz * twovoice.DEFAULT_RATIO] for frac, hz in t.syllable["contour"]
+            ]
+            t.syllable["voices"] = twovoice.default_block(
+                contour_b, syrinx.gamma_for_contour(contour_b)
+            )
 
     index = {id(o): i for i, o in enumerate(observations)}
     type_of = {index[id(o)]: t.id for t in fitted for o in t.members}
@@ -2391,6 +2415,151 @@ def learn_species(
     }
 
 
+# --- parallel per-species fitting ----------------------------------------------------
+
+#: Embedding rows for every observation, keyed `(species_id, recording_id, order)`,
+#: filled by the parent *before* the process pool forks. With the fork start method
+#: the workers inherit it copy-on-write — no 25 MB pickle per task, and no torch in
+#: the child at all (the critic embeds once, in the parent, before forking).
+_PRE_EMBED: dict[tuple[str, str, int], np.ndarray] = {}
+
+
+def _precomputed_embedder(observations: Sequence[SyllableObservation]) -> np.ndarray:
+    """An `Embedder` that answers from `_PRE_EMBED` instead of running the critic.
+
+    Same contract as `critic_embedder`'s wrapper: one row per observation, in order.
+    A missing key means the pool was not forked after the parent's embedding pass —
+    on a non-fork start method this is a hard error, not a silent recompute, because
+    silently recomputing would load torch (and CUDA) into a forked child.
+    """
+    try:
+        return np.stack(
+            [_PRE_EMBED[(o.species_id, o.recording_id, o.order)] for o in observations]
+        )
+    except KeyError as exc:
+        raise RuntimeError(
+            "parallel fit: an observation is missing from the precomputed embedding — "
+            "the pool must fork after the parent's embedding pass (Linux/fork only)"
+        ) from exc
+
+
+def _pool_worker_init() -> None:
+    """One BLAS thread per worker: the pool already holds the machine, and N workers
+    times M OpenMP threads is a slowdown dressed as parallelism."""
+    os.environ["OMP_NUM_THREADS"] = "1"
+    os.environ["OPENBLAS_NUM_THREADS"] = "1"
+    os.environ["MKL_NUM_THREADS"] = "1"
+
+
+def _learn_species_worker(
+    task: tuple[str, list[SyllableObservation], dict[str, np.ndarray] | None,
+                 Calibration | None, int, int, bool,
+                 tuple[np.ndarray, np.ndarray] | None,
+                 dict[str, dict[str, Any]] | None, bool, bool, bool],
+) -> tuple[str, dict[str, Any] | None]:
+    """One species through `learn_species`, for the pool. Verbose off: the parent logs."""
+    (species_id, observations, descriptors, calibration, types, seed, invert, frame,
+     previous, use_tube, use_respiration, use_two_voice) = task
+    learned = learn_species(
+        species_id, observations, descriptors, calibration,
+        types=types, seed=seed, verbose=False, frame=frame, invert=invert,
+        previous=previous,
+        embedder=_precomputed_embedder if _PRE_EMBED else None,
+        use_tube=use_tube, use_respiration=use_respiration,
+        use_two_voice=use_two_voice,
+    )
+    return species_id, learned
+
+
+def _fit_species_parallel(
+    order: Sequence[str],
+    grouped: dict[str, list[SyllableObservation]],
+    observations: Sequence[SyllableObservation],
+    descriptors: dict[str, np.ndarray] | None,
+    calibration: Calibration | None,
+    types: int,
+    seed: int,
+    invert: bool,
+    frame: tuple[np.ndarray, np.ndarray] | None,
+    prior: dict[str, dict[str, dict[str, Any]]] | None,
+    embedder: Embedder | None,
+    use_tube: bool,
+    use_respiration: bool,
+    use_two_voice: bool,
+    jobs: int,
+    verbose: bool,
+) -> dict[str, dict[str, Any] | None]:
+    """Fit every species in a fork pool: same function, same seeds, same results as the
+    serial loop — just all cores instead of one.
+
+    Why this exists: a full learn on the 3 800-species store is thousands of small
+    *independent* fits (silhouette sweep, KMeans, gesture inversion per species), and
+    the serial loop used one core of twenty-eight. The embedding is the one shared,
+    GPU-shaped part, so the parent runs it once (the critic stays out of the children
+    entirely) and the workers read precomputed rows (`_PRE_EMBED`). Per-species seeds
+    and inputs are unchanged, so the fit is identical to the serial one — the
+    parallelism is invisible to every downstream number, which is what makes it safe
+    to switch on in a pipeline that judges itself on fixed-store metrics.
+
+    Fork-only (Linux): the workers inherit `_PRE_EMBED` at fork. `realism` is refused
+    by the caller — a RealismTerm holds the critic and cannot cross into a child.
+    """
+    from concurrent.futures import ProcessPoolExecutor, as_completed
+
+    if embedder is not None:
+        if verbose:
+            log(f"embedding {len(observations)} observations once, before the pool")
+        keys = [(o.species_id, o.recording_id, o.order) for o in observations]
+        z_all = np.asarray(embedder(observations), dtype=np.float64)
+        _PRE_EMBED.clear()
+        _PRE_EMBED.update({k: z_all[i] for i, k in enumerate(keys)})
+    tasks = [
+        (species_id, grouped[species_id], descriptors, calibration, types, seed,
+         invert, frame, (prior or {}).get(species_id), use_tube, use_respiration,
+         use_two_voice)
+        for species_id in order
+        if species_id != UNLABELLED_SPECIES
+    ]
+    results: dict[str, dict[str, Any] | None] = {}
+    t0 = time.time()
+    with ProcessPoolExecutor(max_workers=jobs, initializer=_pool_worker_init) as pool:
+        futures = [pool.submit(_learn_species_worker, task) for task in tasks]
+        for done, future in enumerate(as_completed(futures), 1):
+            species_id, learned = future.result()
+            results[species_id] = learned
+            if verbose and done % 100 == 0:
+                log(f"  fitted {done}/{len(tasks)} species "
+                    f"({time.time() - t0:.0f}s)")
+    return results
+
+
+def recording_names(
+    recordings: dict[str, dict[str, Any]],
+    already: set[str],
+) -> list[dict[str, str]]:
+    """Common names the harvest already knew, as discovered-registry entries.
+
+    Every fetch adapter records the recording's English name into the store
+    (`note_recording`: xccoverbl's `en`, iNatSounds' `common_name`), and until now
+    `build_learned_inventory` never saw it — a species absent from both the authored
+    inventory and the discovered registry was named by its own id everywhere
+    ("odontophorus_hyperythrus sings odontophorus_hyperythrus"). `already` keeps the
+    authored inventory and the registry authoritative; this only fills what neither
+    covers. The first recording wins on collisions: they are all the same name.
+    """
+    out: dict[str, dict[str, str]] = {}
+    for info in recordings.values():
+        sid = info.get("speciesId")
+        en = info.get("english")
+        if sid and en and sid not in already and sid not in out:
+            out[sid] = {
+                "id": sid,
+                "common": en,
+                "scientific": info.get("scientific", ""),
+            }
+    return list(out.values())
+
+
 def previous_fit(path: Path) -> dict[str, dict[str, dict[str, Any]]]:
     """The fitted syllables of an already-written inventory, per species and keyed by id.
 
@@ -2430,9 +2599,11 @@ def build_learned_inventory(
     realism: "RealismTerm | None" = None,
     use_tube: bool = False,
     use_respiration: bool = False,
+    use_two_voice: bool = False,
     discovered: Sequence[dict[str, Any]] | None = None,
     typing: list[dict[str, Any]] | None = None,
     on_species: "Callable[[dict[str, Any], list[dict[str, Any]]], None] | None" = None,
+    jobs: int = 1,
 ) -> dict[str, Any]:
     """A full inventory document in the schema of `data/inventory.json`.
 
@@ -2469,10 +2640,13 @@ def build_learned_inventory(
     grouped: dict[str, list[SyllableObservation]] = defaultdict(list)
     for o in observations:
         grouped[o.species_id].append(o)
+    # Flat, grouping-order copy for the embedding pass and the parallel pool — the
+    # caller's iterable may be a generator, and both consumers need to revisit it.
+    observations_list = [o for group in grouped.values() for o in group]
 
     # One frame for the whole harvest, not one per species: a resynthesis has to be
     # judged against the same axes every other syllable was measured on.
-    frame = population_frame([o for group in grouped.values() for o in group])
+    frame = population_frame(observations_list)
     if verbose and frame is None:
         log("no per-syllable descriptors in the store — the resynthesis cosine will be "
             "taken raw, where it barely separates one call from another")
@@ -2502,8 +2676,20 @@ def build_learned_inventory(
         e["id"]: e for e in (discovered or []) if e.get("id")
     }
     known.update({sp["id"]: sp for sp in inventory.get("species", [])})
+    order = sorted(grouped, key=lambda s: -len(grouped[s]))
+    parallel: dict[str, dict[str, Any] | None] | None = None
+    if jobs > 1 and len(order) > 1:
+        if realism is not None:
+            log(f"--jobs {jobs} ignored: a realism term holds the critic and cannot "
+                "cross into a worker process — fitting serially")
+        else:
+            parallel = _fit_species_parallel(
+                order, grouped, observations_list, descriptors, calibration, types,
+                seed, invert, frame, prior, embedder, use_tube, use_respiration,
+                use_two_voice, jobs, verbose,
+            )
     species_out: list[dict[str, Any]] = []
-    for species_id in sorted(grouped, key=lambda s: -len(grouped[s])):
+    for species_id in order:
         # One species is the unit of work here, as one recording is in `harvest`: the
         # species already fitted are kept and written out.
         if should_stop and should_stop():
@@ -2517,13 +2703,16 @@ def build_learned_inventory(
                 log(f"  {species_id:26} {len(grouped[species_id])} arrivals — typed by "
                     "the label-free path, not fitted as a species")
             continue
-        learned = learn_species(
-            species_id, grouped[species_id], descriptors, calibration,
-            types=types, seed=seed, verbose=verbose, frame=frame, invert=invert,
-            previous=(prior or {}).get(species_id),
-            embedder=embedder, realism=realism, use_tube=use_tube,
-            use_respiration=use_respiration,
-        )
+        if parallel is not None:
+            learned = parallel.get(species_id)
+        else:
+            learned = learn_species(
+                species_id, grouped[species_id], descriptors, calibration,
+                types=types, seed=seed, verbose=verbose, frame=frame, invert=invert,
+                previous=(prior or {}).get(species_id),
+                embedder=embedder, realism=realism, use_tube=use_tube,
+                use_respiration=use_respiration, use_two_voice=use_two_voice,
+            )
         if learned is None:
             continue
         rows = learned.pop("typing")
@@ -2806,6 +2995,48 @@ def self_test(verbose: bool = True) -> None:
         "on the respiratory path `env` is the diagnostic amplitude shape: the drive"
     )
     assert not syrinx.render_plan(syllable).respiratory
+
+    # 6c. Two voices (docs/15 §5): a syllable carrying a `voices` block renders
+    #     through the same pipeline and lands somewhere different — two sources and
+    #     a coupling are not one source. A block that fails to parse must fall back
+    #     to the single-voice path *bit-identically* (same argument as the
+    #     respiration fallback above), and — the sharper property — a block with
+    #     zero injection and a closed right side must BE the single voice, bit for
+    #     bit: the coupling recurrence then gives pi = 0 identically and voice A
+    #     integrates exactly as `_ode_source` does. If that ever drifts, the two
+    #     paths have silently become different models.
+    voices_block = twovoice.default_block([[0.0, 2400.0], [1.0, 2600.0]], 14000.0)
+    voice_syllable = {**syllable, "voices": voices_block}
+    parsed = syrinx.Syllable.from_dict(voice_syllable)
+    assert parsed.voices is not None
+    assert parsed.voices.as_dict() == voices_block
+    two_audio = render_syllable(voice_syllable)
+    assert two_audio.shape == env_audio.shape and np.all(np.isfinite(two_audio))
+    assert not np.allclose(env_audio, two_audio), (
+        "a second coupled voice must actually change the sound"
+    )
+    for junk in ({"voices": {"level": 0.5}}, {"voices": "yes"}):
+        assert np.array_equal(render_syllable({**syllable, **junk}), env_audio), (
+            f"an unparseable voices block must be the single-voice path: {junk}"
+        )
+    uncoupled = {
+        **voices_block,
+        "betaInj": 0.0,
+        "level": 0.0,
+    }
+    assert np.array_equal(
+        render_syllable({**syllable, "voices": uncoupled}), env_audio
+    ), "betaInj=0 with a closed right side must be the single voice, bit for bit"
+
+    # ...and the fit-time flag attaches a parseable block whose contour rides the
+    # type's own, shifted by the Fig. 6 ratio.
+    attached = twovoice.default_block(
+        [[f, hz * twovoice.DEFAULT_RATIO] for f, hz in syllable["contour"]],
+        syrinx.gamma_for_contour(
+            [[f, hz * twovoice.DEFAULT_RATIO] for f, hz in syllable["contour"]]
+        ),
+    )
+    assert syrinx.Syllable.from_dict({**syllable, "voices": attached}).voices is not None
 
 
     # 7. Patches must survive `to_dict` being JSON-serialisable — they go to a binary sidecar,

@@ -436,6 +436,11 @@ class Pipeline:
 
         typing: list[dict[str, Any]] = []
         prior = learn.previous_fit(self.learned_path)
+        discovered = list(harvest.load_discovered(self.discovered_path))
+        named = {sp["id"] for sp in inventory.get("species", [])} | {
+            e["id"] for e in discovered if e.get("id")
+        }
+        discovered += learn.recording_names(store.recordings, named)
         # The same streaming hook `cmd_learn` uses: one progress line per fitted
         # species into the store's learn-progress.json, surfaced by /api/status, so a
         # long fit from the Learn tab is watchable — and checkpointed, so a crash
@@ -481,7 +486,7 @@ class Pipeline:
             embedder=embedder,
             realism=realism,
             # Where a discovered bird's common name is; see `build_learned_inventory`.
-            discovered=harvest.load_discovered(self.discovered_path),
+            discovered=discovered,
             typing=typing,
             on_species=_on_species,
         )

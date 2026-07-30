@@ -31,6 +31,13 @@ critic = ["torch>=2.2"]
 # to install either.
 sources = ["kaggle>=1.6", "huggingface_hub>=0.24"]
 
+# Perch 2.0 pseudo-labelling of docs/13 §A1 (`critic label-novel`). Same pattern as
+# the critic: `perch.py` is the only module that imports onnxruntime, the hub packages
+# are lazy imports used once to fetch the weights, and every caller degrades to a
+# logged hint when they are absent. Inference is the ONNX port of the model — full
+# TensorFlow (~600 MB) is deliberately not a dependency of anything in this repo.
+perch = ["onnxruntime>=1.17", "kagglehub>=1.0", "huggingface_hub>=0.24"]
+
 [project.scripts]
 birdy-pipeline = "birdy_pipeline.cli:main"
 
