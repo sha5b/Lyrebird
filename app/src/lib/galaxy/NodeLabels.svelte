@@ -54,6 +54,7 @@
 				class:prov-documented={colorMode === 'provenance' && centroidProvenance(centroid) === 0}
 				class:prov-learned={colorMode === 'provenance' && centroidProvenance(centroid) === 1}
 				class:prov-candidate={colorMode === 'provenance' && centroidProvenance(centroid) === 2}
+				class:prov-arrivals={colorMode === 'provenance' && centroidProvenance(centroid) === 3}
 				type="button"
 				tabindex="-1"
 				aria-label={centroid.label}
@@ -145,7 +146,7 @@
 		color: var(--unlabelled);
 	}
 
-	/* The provenance mode's three categories — the same hues the cloud tints by,
+	/* The provenance mode's four categories — the same hues the cloud tints by,
 	   which are the interface's existing confidence colours. */
 	.prov-documented {
 		color: var(--documented);
@@ -155,6 +156,11 @@
 	}
 	.prov-candidate {
 		color: var(--invented);
+	}
+	/* The unlabelled pseudo-species gets --experimental's green: a real interface
+	   hue, and the one of the five not already speaking for another category. */
+	.prov-arrivals {
+		color: var(--experimental);
 	}
 
 	.card {

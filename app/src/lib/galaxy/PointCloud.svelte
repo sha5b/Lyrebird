@@ -11,7 +11,7 @@
 		vertexShader,
 		type VisualSignal
 	} from './shaders';
-	import { ACCENT, MONO_HOT, MONO_REST, PROV_CANDIDATE, PROV_DOCUMENTED, PROV_LEARNED } from './palette';
+	import { ACCENT, MONO_HOT, MONO_REST, PROV_ARRIVALS, PROV_CANDIDATE, PROV_DOCUMENTED, PROV_LEARNED } from './palette';
 	import { buildLayout, type LayoutView } from './layouts';
 
 	interface Props {
@@ -132,6 +132,7 @@
 			uProvDoc: { value: new THREE.Color(PROV_DOCUMENTED) },
 			uProvLearned: { value: new THREE.Color(PROV_LEARNED) },
 			uProvCand: { value: new THREE.Color(PROV_CANDIDATE) },
+			uProvArrivals: { value: new THREE.Color(PROV_ARRIVALS) },
 			uTime: { value: 0 },
 			uLevel: { value: 0 },
 			uPointSize: { value: untrack(() => pointSize) },

@@ -1179,6 +1179,17 @@
 	const songGapSeconds = $derived(
 		60 / ((chorus === 'solo' ? 12 : 22) * Math.max(0.05, tempo) * Math.max(0.05, songRate))
 	);
+	/**
+	 * Whether the loaded galaxy holds any of the unlabelled pseudo-species — arrivals
+	 * with no species tag, typed by the label-free path (speciesId `unlabelled`, U*
+	 * candidate types). The legend says when it does not, so an absent colour is read
+	 * as an empty pool rather than a broken one.
+	 */
+	const hasArrivals = $derived.by(() => {
+		if (!assets) return false;
+		if (assets.points.speciesId.some((id) => id === 'unlabelled')) return true;
+		return assets.points.syllableId.some((s) => s?.[0] === 'U');
+	});
 	$effect(() => {
 		// Tempo is one control over the whole aviary: the drift, the pulse, how long each
 		// syllable lasts and how often a bird starts. Restarting the scheduler is what
@@ -1390,7 +1401,7 @@ uv run birdy-pipeline build</pre>
 										<button
 											class:on={colorMode === 'provenance'}
 											onclick={() => (colorMode = 'provenance')}
-											title="Tint every point by where its sound comes from: blue for calls from the authored inventory, grey for types fitted to field recordings, amber for field audio nothing has identified."
+											title="Tint every point by where its sound comes from: blue for calls from the authored inventory, grey for types fitted to field recordings, amber for field audio nothing has identified, green for unlabelled arrivals with no species tag."
 										>Provenance</button>
 									</div>
 								</label>
@@ -1401,7 +1412,10 @@ uv run birdy-pipeline build</pre>
 										<b style:color="var(--unlabelled)">learned</b> (fitted to field audio),
 										<b style:color="var(--invented)">unidentified</b> (field audio with no
 										fitted identity — the candidate pool; per-point novelty flags are not in
-										this build yet).
+										this build yet),
+										<b style:color="var(--experimental)">unlabelled arrivals</b> (real audio,
+										no species tag, typed by similarity{#if !hasArrivals} — none in this
+										galaxy yet{/if}).
 									</p>
 								{/if}
 								<p class="note faint">

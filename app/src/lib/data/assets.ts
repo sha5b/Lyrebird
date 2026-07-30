@@ -298,18 +298,28 @@ export interface Coverage {
 }
 
 /**
- * Where a sound in the galaxy comes from, as the three provenance categories the
+ * Where a sound in the galaxy comes from, as the provenance categories the
  * provenance colour mode draws. Numeric because it crosses into a shader attribute.
  *
  * - `documented` (0) — a render of a call from the authored inventory: its identity
  *   was written down by a person, with a confidence the inventory states.
- * - `learned` (1) — a type the pipeline fitted to field recordings (ids start with L
- *   or U), or field audio assigned to one. Real acoustics, no documented function.
+ * - `learned` (1) — a type the pipeline fitted to field recordings of a known
+ *   species (ids start with L), or field audio assigned to one. Real acoustics, no
+ *   documented function.
  * - `candidate` (2) — the honest remainder: harvested field audio with no identity at
  *   all. A per-point novelty flag would live here too, but no shipped build writes
  *   one yet, so unidentified field points are the whole of this category for now.
+ * - `unlabelled` (3) — the pseudo-species: arrivals with no species label, typed by
+ *   the label-free path (`learn_unlabelled`). Keyed on the markers the pipeline
+ *   actually writes — speciesId `unlabelled` and the U-prefixed candidate type ids
+ *   (learn.py `UNLABELLED_SPECIES` / `unlabelled_entry`) — not on a guess.
  */
-export const PROVENANCE = { documented: 0, learned: 1, candidate: 2 } as const;
+export const PROVENANCE = { documented: 0, learned: 1, candidate: 2, unlabelled: 3 } as const;
+
+/** True for the unlabelled pool's own markers: the pseudo-species or a U* type id. */
+function isUnlabelledArrival(speciesId: string, syllableId: string): boolean {
+	return speciesId === 'unlabelled' || syllableId[0] === 'U';
+}
 
 /**
  * One provenance category per point, built once per asset load.
@@ -317,19 +327,25 @@ export const PROVENANCE = { documented: 0, learned: 1, candidate: 2 } as const;
  * The rule is deliberately a reading of fields the assets already carry, not a new
  * claim: `source` says whether a point is our render or real audio, `syllableId`
  * says whether anything named it, and the L/U prefix says whether that name was
- * fitted rather than authored.
+ * fitted rather than authored — and whether it was fitted to a labelled bird at all.
  */
 export function pointProvenance(assets: BirdyAssets): Float32Array {
-	const { n, source, syllableId, novel } = assets.points;
+	const { n, source, speciesId, syllableId, novel } = assets.points;
 	const out = new Float32Array(n);
 	for (let i = 0; i < n; i++) {
-		// A novelty flag, when a build ships one, outranks everything: that point was
+		const syl = syllableId[i] ?? '';
+		// The pseudo-species outranks everything, novelty flags included: an arrival
+		// with no species tag is that claim first, whatever else was measured about it.
+		if (isUnlabelledArrival(speciesId[i] ?? '', syl)) {
+			out[i] = PROVENANCE.unlabelled;
+			continue;
+		}
+		// A novelty flag, when a build ships one, outranks the rest: that point was
 		// measured as unlike every known type.
 		if (novel?.[i]) {
 			out[i] = PROVENANCE.candidate;
 			continue;
 		}
-		const syl = syllableId[i];
 		if (!syl) {
 			// Unlabelled field audio is the candidate pool — its `songId` names the
 			// recording bout, not an authored song. A whole-song *render*
@@ -337,17 +353,21 @@ export function pointProvenance(assets: BirdyAssets): Float32Array {
 			out[i] = source[i] === 'field' ? PROVENANCE.candidate : PROVENANCE.documented;
 			continue;
 		}
-		out[i] = syl[0] === 'L' || syl[0] === 'U' ? PROVENANCE.learned : PROVENANCE.documented;
+		out[i] = syl[0] === 'L' ? PROVENANCE.learned : PROVENANCE.documented;
 	}
 	return out;
 }
 
 /**
- * The same question for a cluster tag. A documented confidence wins outright; among
- * fitted knots, an `anchored`/`unknown`/`mixed` verdict means the identity is
- * inherited or contested rather than fitted, which is the candidate claim.
+ * The same question for a cluster tag. The pseudo-species and documented confidence
+ * win outright; among fitted knots, an `anchored`/`unknown`/`mixed` verdict means
+ * the identity is inherited or contested rather than fitted, which is the candidate
+ * claim.
  */
 export function centroidProvenance(centroid: Centroid): number {
+	if (isUnlabelledArrival(centroid.speciesId, centroid.syllableId ?? '')) {
+		return PROVENANCE.unlabelled;
+	}
 	if (
 		centroid.confidence === 'documented' ||
 		centroid.confidence === 'experimental' ||

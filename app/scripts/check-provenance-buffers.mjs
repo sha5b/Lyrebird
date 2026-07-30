@@ -5,11 +5,16 @@
  * here so the check is independent of the code it checks.
  *
  * Verifies, against `app/static/birdy/`:
- *  - one provenance category per point, in {0,1,2}, never NaN;
+ *  - one provenance category per point, in {0,1,2,3}, never NaN;
  *  - every syllable-point index is in range;
  *  - every inventory syllable that owns no cluster (an orphan) still owns at least
  *    one point it can flash — an orphan with no points would be invisible again;
  *  - cluster tags get a category too.
+ *
+ * Category 3 is the unlabelled pseudo-species, keyed on the markers the pipeline
+ * writes (speciesId `unlabelled`, U* candidate type ids — learn.py
+ * `UNLABELLED_SPECIES`/`unlabelled_entry`). A zero count is a valid result: the
+ * pool is empty on builds whose store had no unlabelled arrivals.
  *
  * Run: `node scripts/check-provenance-buffers.mjs` from `app/`. Exits 1 on failure.
  */
@@ -32,38 +37,44 @@ const fail = (msg) => {
 // --- per-point provenance -----------------------------------------------------
 
 const prov = new Float32Array(points.n);
-const counts = [0, 0, 0];
+const counts = [0, 0, 0, 0];
+const isArrival = (sp, syl) => sp === 'unlabelled' || (syl && syl[0] === 'U');
 for (let i = 0; i < points.n; i++) {
 	const syl = points.syllableId[i];
 	let p;
-	if (points.novel?.[i]) p = 2;
+	if (isArrival(points.speciesId[i], syl)) p = 3;
+	else if (points.novel?.[i]) p = 2;
 	else if (!syl) p = points.source[i] === 'field' ? 2 : 0;
-	else p = syl[0] === 'L' || syl[0] === 'U' ? 1 : 0;
-	if (Number.isNaN(p) || p < 0 || p > 2) fail(`point ${i}: category ${p}`);
+	else p = syl[0] === 'L' ? 1 : 0;
+	if (Number.isNaN(p) || p < 0 || p > 3) fail(`point ${i}: category ${p}`);
 	prov[i] = p;
 	counts[p]++;
 }
 if (prov.length !== points.n) fail(`provenance length ${prov.length} != n ${points.n}`);
 console.log(
-	`points ${points.n}: documented ${counts[0]}, learned ${counts[1]}, candidate ${counts[2]}` +
-		(points.novel ? '' : ' (no novelty flags in this build)')
+	`points ${points.n}: documented ${counts[0]}, learned ${counts[1]}, candidate ${counts[2]}, ` +
+		`unlabelled arrivals ${counts[3]}` +
+		(points.novel ? '' : ' (no novelty flags in this build)') +
+		(counts[3] ? '' : ' (the unlabelled pool is empty on this build)')
 );
 
 // --- cluster tag categories ----------------------------------------------------
 
-const tagCounts = [0, 0, 0];
+const tagCounts = [0, 0, 0, 0];
 for (const c of centroids.items) {
-	const cat =
-		c.confidence === 'documented' || c.confidence === 'experimental' || c.confidence === 'inferred'
+	const cat = isArrival(c.speciesId, c.syllableId)
+		? 3
+		: c.confidence === 'documented' || c.confidence === 'experimental' || c.confidence === 'inferred'
 			? 0
 			: c.anchor?.kind === 'anchored' || c.anchor?.kind === 'unknown' || c.anchor?.kind === 'mixed'
 				? 2
 				: 1;
-	if (Number.isNaN(cat) || cat < 0 || cat > 2) fail(`cluster ${c.id}: category ${cat}`);
+	if (Number.isNaN(cat) || cat < 0 || cat > 3) fail(`cluster ${c.id}: category ${cat}`);
 	tagCounts[cat]++;
 }
 console.log(
-	`clusters ${centroids.items.length}: documented ${tagCounts[0]}, learned ${tagCounts[1]}, candidate ${tagCounts[2]}`
+	`clusters ${centroids.items.length}: documented ${tagCounts[0]}, learned ${tagCounts[1]}, ` +
+		`candidate ${tagCounts[2]}, unlabelled arrivals ${tagCounts[3]}`
 );
 
 // --- orphan flash coverage ------------------------------------------------------

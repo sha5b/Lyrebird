@@ -43,12 +43,16 @@ export const MONO_HOT = '#1e2836';
 export const ACCENT = '#5b3fd6';
 
 /**
- * The provenance triplet, used by the "colour: provenance" mode and by the orphan
- * pulse. These are the interface's existing confidence hues (`--documented`,
- * `--unlabelled`, `--invented` in app.css) repeated as numbers for the shader, kept
- * in step by hand exactly like `ACCENT`: blue for the authored inventory, grey for
- * types fitted to field recordings, amber for field audio with no identity.
+ * The provenance quartet, used by the "colour: provenance" mode and by the orphan
+ * pulse. The first three are the interface's existing confidence hues
+ * (`--documented`, `--unlabelled`, `--invented` in app.css) repeated as numbers for
+ * the shader, kept in step by hand exactly like `ACCENT`: blue for the authored
+ * inventory, grey for types fitted to field recordings, amber for field audio with
+ * no identity. The fourth reuses `--experimental`'s green for the unlabelled
+ * pseudo-species — far enough from the blue, the amber and the violet accent to stay
+ * separable, and an interface hue rather than a new invention.
  */
 export const PROV_DOCUMENTED = '#1f5fbf';
 export const PROV_LEARNED = '#7b8794';
 export const PROV_CANDIDATE = '#b45309';
+export const PROV_ARRIVALS = '#0b7a55';

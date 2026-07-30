@@ -346,10 +346,12 @@ export const fragmentShader = /* glsl */ `
 	uniform float uPitch;
 	/** 1 in provenance colour mode, 0 in the default species/response mode. */
 	uniform float uProvMode;
-	/** Provenance category colours: authored inventory, fitted-to-field, unidentified. */
+	/** Provenance category colours: authored inventory, fitted-to-field, unidentified,
+	 * and the unlabelled pseudo-species. */
 	uniform vec3 uProvDoc;
 	uniform vec3 uProvLearned;
 	uniform vec3 uProvCand;
+	uniform vec3 uProvArrivals;
 	/** The same clock the vertex stage pulses by; the orphan pulse breathes on it. */
 	uniform float uTime;
 
@@ -424,7 +426,7 @@ export const fragmentShader = /* glsl */ `
 		// rest->ink to a pale wash of the point's provenance colour -> the colour
 		// itself, so response still reads as light-to-strong inside each category.
 		// The accent is untouched: it keeps meaning exactly one thing.
-		vec3 prov = vProv < 0.5 ? uProvDoc : (vProv < 1.5 ? uProvLearned : uProvCand);
+		vec3 prov = vProv < 0.5 ? uProvDoc : (vProv < 1.5 ? uProvLearned : (vProv < 2.5 ? uProvCand : uProvArrivals));
 		vec3 ink = mix(uInk, prov, uProvMode);
 		vec3 rest = mix(uRest, mix(uSurface, prov, 0.38), uProvMode);
 		vec3 end = mix(ink, uAccent, clamp(vAccent, 0.0, 1.0));
