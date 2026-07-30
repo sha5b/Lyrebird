@@ -298,12 +298,23 @@ class Pipeline:
             self._novel_summary() if (self.store_path / "state.json").exists()
             else {"novelCount": 0, "recentNovel": []}
         )
+        # The running fit's stream: one line per fitted species, written by the
+        # `on_species` hook (`cmd_learn` and `_fit` share it). Read per poll like
+        # everything else here — small by construction.
+        learn_progress: dict[str, Any] | None = None
+        progress_path = self.store_path / "learn-progress.json"
+        if progress_path.exists():
+            try:
+                learn_progress = json.loads(progress_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                pass
         return {
             "ok": True,
             "hasKey": bool(os.environ.get("XC_API_KEY")),
             "ffmpeg": harvest.have_ffmpeg(),
             "store": store,
             "learned": learned,
+            "learnProgress": learn_progress,
             "critic": critic,
             "built": built,
             "inventorySpecies": species,
@@ -425,6 +436,34 @@ class Pipeline:
 
         typing: list[dict[str, Any]] = []
         prior = learn.previous_fit(self.learned_path)
+        # The same streaming hook `cmd_learn` uses: one progress line per fitted
+        # species into the store's learn-progress.json, surfaced by /api/status, so a
+        # long fit from the Learn tab is watchable — and checkpointed, so a crash
+        # mid-fit does not cost the hour. The CLI keeps its partial-document
+        # checkpoint; here the typing checkpoint is enough (the job log is the rest).
+        progress_path = self.store_path / "learn-progress.json"
+        typing_path = self.store_path / learn.TYPING_NAME
+        streamed = {"done": 0}
+
+        def _on_species(entry: dict[str, Any], rows: list[dict[str, Any]]) -> None:
+            streamed["done"] += 1
+            payload = {
+                "done": streamed["done"],
+                "species": entry["id"],
+                "common": entry.get("common", ""),
+                "types": len(entry["syllables"]),
+                "typingRows": len(typing),
+                "updatedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            }
+            tmp = progress_path.with_name(progress_path.name + ".tmp")
+            tmp.write_text(json.dumps(payload) + "\n", encoding="utf-8")
+            tmp.replace(progress_path)
+            if streamed["done"] % 100 == 0:
+                typing_path.write_text(
+                    json.dumps({"version": 1, "entries": typing}, indent=1) + "\n",
+                    encoding="utf-8",
+                )
+
         document = learn.build_learned_inventory(
             store.syllables,
             inventory,
@@ -444,6 +483,7 @@ class Pipeline:
             # Where a discovered bird's common name is; see `build_learned_inventory`.
             discovered=harvest.load_discovered(self.discovered_path),
             typing=typing,
+            on_species=_on_species,
         )
         # The label-free tail, identical to `cmd_learn`'s — this is the fit the ingested
         # (unlabelled) audio actually arrives through, so it must not drift from the

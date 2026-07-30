@@ -97,7 +97,7 @@ export const WAVE_SOURCES = 3;
  */
 export const SIZE_REFERENCE = 4.0;
 
-export function vertexShader(clusterCount: number): string {
+export function vertexShader(clusterCount: number, speciesCount: number): string {
 	return /* glsl */ `
 		#define WAVE_SOURCES ${WAVE_SOURCES}
 
@@ -105,6 +105,13 @@ export function vertexShader(clusterCount: number): string {
 		attribute float aSeed;
 		attribute float aAct;
 		attribute float aSpecies;
+		/**
+		 * Where inside its own species this point sits: 0 at the species' core, 1 at its
+		 * edge — the point's true distance from the species' component-wise median
+		 * position, normalised by the species' own median distance. Drives the *slight*
+		 * lightness gradient inside a bird, never its hue.
+		 */
+		attribute float aHeat;
 		/** Which build this point joined in; see the point metadata's generation array. */
 		attribute float aBorn;
 		/** Provenance category: 0 documented, 1 learned, 2 candidate (assets.pointProvenance). */
@@ -130,6 +137,13 @@ export function vertexShader(clusterCount: number): string {
 		 * a match, and silent pipeline work read as knots dancing for no reason.
 		 */
 		uniform float uLearning[${Math.max(1, clusterCount)}];
+		/**
+		 * One hue per species, indexed by aSpecies: the species heat field. Hue belongs
+		 * to the bird — every point of a species ramps toward the same colour — and the
+		 * only variation inside a bird is aHeat's slight lightness gradient. The hues
+		 * are id-hashed (see speciesColour in palette.ts), so they survive refits.
+		 */
+		uniform vec3 uSpeciesColor[${Math.max(1, speciesCount)}];
 		uniform float uTime;
 		uniform float uLevel;
 		uniform float uPointSize;
@@ -152,6 +166,13 @@ export function vertexShader(clusterCount: number): string {
 		uniform vec3 uWaveOrigin[${WAVE_SOURCES}];
 		uniform float uWaveAge[${WAVE_SOURCES}];
 		uniform float uWaveAmp[${WAVE_SOURCES}];
+		/**
+		 * Spatial reach of a ripple, in box units: twice the median nearest-neighbour
+		 * centroid distance of the loaded corpus, computed at load. A ripple is a local
+		 * event at the sounding knot and its immediate neighbours, never a cloud-wide
+		 * wash — the measured numbers behind the scale are recorded where it is set.
+		 */
+		uniform float uWaveLocal;
 
 		varying float vAct;
 		varying float vSeed;
@@ -174,11 +195,26 @@ export function vertexShader(clusterCount: number): string {
 		varying float vOrphan;
 		/** The wavefront ring passing through this point (see aFront). */
 		varying float vWave;
+		/**
+		 * The signed ripple field at this point: the sum of every live source's crest
+		 * (positive) and trough (negative). Signed, so two crossing fronts amplify and
+		 * cancel like water rather than each playing at full strength independently.
+		 */
+		varying float vRipple;
+		/** This point's species hue (see uSpeciesColor). */
+		varying vec3 vSpeciesCol;
+		/** 0 at the species' core, 1 at its edge (see aHeat). */
+		varying float vHeat;
 
 		void main() {
 			vProv = aProv;
 			vOrphan = aOrphan;
 			vWave = aFront;
+			// A point with no species index (the corpus never ships one, but a partial
+			// asset could) falls back to a neutral grey rather than borrowing species 0's
+			// hue — the same discipline as the unassigned-cluster threshold below.
+			vSpeciesCol = aSpecies >= -0.5 ? uSpeciesColor[int(aSpecies + 0.5)] : vec3(0.62, 0.66, 0.71);
+			vHeat = aHeat;
 			// **A point can belong to no cluster, and that is a result, not a gap.**
 			//
 			// Density clustering leaves sounds in no dense region — too rare or too unlike
@@ -291,8 +327,21 @@ export function vertexShader(clusterCount: number): string {
 			// Each is a travelling shell rather than an endless ripple — a Gaussian
 			// envelope riding out from the source at a speed set by the pitch — so what you
 			// see is a front crossing the volume, not a standing corrugation.
+			//
+			// Two bounds make it water rather than weather. **Local**: a second gaussian,
+			// quoted against the corpus's own knot spacing (uWaveLocal), pulls the
+			// amplitude to nothing a few knots from the source, so a ripple is an event
+			// *at* the sounding knot and its immediate neighbours instead of a wash that
+			// crosses the whole box. **Signed**: each source's contribution keeps its
+			// sign (crest positive, trough negative) and the sum is never normalised or
+			// rectified, so where two fronts meet, crest on crest reads double and crest
+			// on trough reads as calm — before, every source pushed at full strength
+			// independently and crossing fronts only ever added ink. The signed sum rides
+			// out as vRipple so the fragment can show the interference, not just the
+			// displacement.
 			float ph = aSeed * 6.2831853;
 			float waveTotal = 0.0;
+			float ripple = 0.0;
 			for (int i = 0; i < WAVE_SOURCES; i++) {
 				float amp = uWaveAmp[i];
 				if (amp <= 0.0) continue;
@@ -302,10 +351,14 @@ export function vertexShader(clusterCount: number): string {
 				// of the picture whatever the viewing scale is set to.
 				float front = uWaveAge[i] * uWaveSpeed;
 				float env = exp(-pow((dist - front) / uWaveWidth, 2.0));
+				float local = exp(-pow(dist / uWaveLocal, 2.0));
 				float phase = (dist - front) * uWaveK + aSeed * 0.35;
-				p += (away / dist) * sin(phase) * env * amp;
-				waveTotal += env * amp;
+				float swell = sin(phase) * env * local * amp;
+				p += (away / dist) * swell;
+				ripple += swell;
+				waveTotal += env * local * amp;
 			}
+			vRipple = ripple;
 
 			// The old drift survives only as what the cloud does in silence, and fades out
 			// as the waves come up so the two never fight.
@@ -330,6 +383,10 @@ export function vertexShader(clusterCount: number): string {
 			// readable across the whole knot rather than only at its landing spot.
 			float grow = max(act, learn * 0.6) * (0.35 + 0.9 * uLevel) * (0.5 + 1.0 * aSeed)
 				+ aFront * 0.9;
+			// The signed field moves size too: a crest swells, a trough pinches, and where
+			// two fronts cancel the mark keeps its resting size — the interference is
+			// readable in the still frame, not only in the motion.
+			grow += clamp(ripple * 4.0, -0.3, 0.6);
 			// Unassigned marks are drawn smaller: they are real measurements and they are
 			// not structure, and at the same weight a third of the corpus in no cluster
 			// reads as a cloud that has one.
@@ -352,11 +409,7 @@ export function vertexShader(clusterCount: number): string {
 }
 
 export const fragmentShader = /* glsl */ `
-	/** The pale end of the response ramp, and the paper it is mixed toward. */
-	uniform vec3 uRest;
 	uniform vec3 uSurface;
-	/** The dark end: where any point lands when it responds and has earned no accent. */
-	uniform vec3 uInk;
 	/** The one colour in the picture — the sung note, or the selected bird. */
 	uniform vec3 uAccent;
 	uniform float uOpacity;
@@ -392,6 +445,9 @@ export const fragmentShader = /* glsl */ `
 	varying float vProv;
 	varying float vOrphan;
 	varying float vWave;
+	varying float vRipple;
+	varying vec3 vSpeciesCol;
+	varying float vHeat;
 
 	void main() {
 		vec2 uv = gl_PointCoord - 0.5;
@@ -444,20 +500,26 @@ export const fragmentShader = /* glsl */ `
 		// Nothing is hidden by this: the resembling clusters light exactly as brightly as
 		// they would have, and the reading panel still names them. Only the colour is
 		// withheld, and only from the points that did not earn it.
-		// Provenance recolouring. In that mode the ramp's two ends move from
-		// rest->ink to a pale wash of the point's provenance colour -> the colour
-		// itself, so response still reads as light-to-strong inside each category.
-		// The accent is untouched: it keeps meaning exactly one thing.
+		// **The species heat field: hue belongs to the bird, response moves lightness.**
 		//
-		// The wash sits at 0.26, not the 0.38 it started at: at 0.38 a resting knot
-		// already carried most of the class colour, so a response moved it almost
-		// nowhere and the mode read as static — "the colours do not change when a
-		// knot activates". Lower, the four classes stay distinguishable at rest and
-		// a response is a visible walk to full class colour; the alpha term below
-		// adds the dim half of the same contrast.
+		// Every point of a species ramps toward the same hue — rest is a wash of the
+		// bird's colour, hot is the colour itself — so a lit knot reads as *that bird*
+		// answering, and neighbouring knots are told apart by hue before any label is
+		// read. Inside a bird the ONLY variation is aHeat's slight lightness gradient
+		// (±10 %, an RGB scale: hue and saturation hold; the core runs a little hotter
+		// than the edge). Hue never varies within a species — that was the explicit
+		// brief — and the only cross-hue gradients are the wave and the trajectory
+		// crossing between knots, and the accent easing between subjects.
+		//
+		// Provenance mode keeps its own rule on top of the same ramp: every point
+		// carries its class colour at REST (the 0.34 wash — high enough that the four
+		// classes stay told apart on the paper, low enough that a response still walks
+		// somewhere), and activation shifts TONE — brighter crest, darker trough via
+		// vRipple below — never hue. The accent is untouched: one meaning, as always.
+		vec3 spCol = vSpeciesCol * (1.1 - vHeat * 0.2);
 		vec3 prov = vProv < 0.5 ? uProvDoc : (vProv < 1.5 ? uProvLearned : (vProv < 2.5 ? uProvCand : uProvArrivals));
-		vec3 ink = mix(uInk, prov, uProvMode);
-		vec3 rest = mix(uRest, mix(uSurface, prov, 0.26), uProvMode);
+		vec3 ink = mix(spCol, prov, uProvMode);
+		vec3 rest = mix(mix(uSurface, spCol, 0.32), mix(uSurface, prov, 0.34), uProvMode);
 		vec3 end = mix(ink, uAccent, clamp(vAccent, 0.0, 1.0));
 
 		// A chosen bird's points sit most of the way along their own ramp even at rest, so
@@ -484,6 +546,16 @@ export const fragmentShader = /* glsl */ `
 		// a different claim from "this knot is answering" and must look like one (§8.5).
 		float oPulse = vOrphan * (0.35 + 0.65 * (0.5 + 0.5 * sin(uTime * 7.0 + vSeed * 6.2831853)));
 		colour = mix(colour, prov, oPulse * 0.85);
+
+		// The signed ripple, as brightness: a crest darkens toward ink, a trough pales
+		// toward the paper, and a cancellation — crest meeting trough — lands back at
+		// the resting colour. It is the same sum the displacement used, never
+		// normalised, so two crossing fronts read as interference and not as two
+		// independent events stacked at full strength. Bounded well under the response
+		// ramp: the ripple is motion, not a claim about the point. It darkens toward
+		// ink, the mode's own hot end, so provenance colours stay in charge of hue.
+		colour = mix(colour, ink, clamp(vRipple * 3.0, 0.0, 0.22));
+		colour = mix(colour, uSurface, clamp(-vRipple * 3.0, 0.0, 0.22));
 
 		// Aerial perspective: far points wash toward the paper and thin out, near ones keep
 		// their weight. This is what makes a rotating scatter read as a volume rather than
@@ -691,57 +763,25 @@ export function waveClaim(signal: VisualSignal): boolean {
 	return (signal.activations[best] ?? 0) > 0.08 || signal.strength > 0.15;
 }
 
-/**
- * What a connecting vector shows once the ring has passed: it ignites when the front
- * reaches it and dims over about a third of a second, so the local graph reads as the
- * *wake* of the front rather than flashing with it. One-sided by construction — a line
- * the front has not reached yet is dark.
- */
-export function frontTrail(distNorm: number, age: number): number {
-	const t = age - distNorm / FRONT_SPEED;
-	if (t <= 0) return 0;
-	return Math.exp(-t * 3.5) * frontEnvelope(age);
-}
-
-/** Per-cluster neighbourhood graph for the wavefront and the connecting vectors. */
-export interface ClusterGraph {
+/** Per-cluster membership for the wavefront. */
+export interface ClusterMembers {
 	/** Point indices per cluster, in points.json order. */
 	members: Int32Array[];
 	/** Farthest member's true distance from the geometric centroid, per cluster. */
 	radii: Float32Array;
-	links: {
-		/** Segment endpoints (xyz pairs) in the drawn layout, static. */
-		positions: Float32Array;
-		/** The point behind each vertex, so the front can light its lines. */
-		point: Uint32Array;
-		/** Per cluster: the vertex indices of its segments. */
-		byCluster: Int32Array[];
-	};
 }
 
 /**
- * Each member's few nearest same-cluster neighbours, computed once at load.
- *
- * The neighbourhood is measured in the 8-d reduced feature space (`point-features.f32`)
- * when the build ships one — that is the space the per-point response itself is
- * measured in, so a line says "these two renders are acoustically alike", not merely
- * "these two dots project close together". Without that asset it falls back to the
- * drawn 3-d positions, which is the weaker statement and says so.
- *
- * Same-cluster only, on purpose: a cross-cluster edge would assert a closeness the
- * clustering explicitly declined to claim. Clusters larger than the candidate cap are
- * searched against a deterministic stride sample, which keeps the one-time cost flat
- * in the largest knot instead of quadratic in it — measured on the shipped corpus in
- * the harness, not guessed.
+ * Which points each cluster holds, and how far its knot really extends — built once at
+ * load from the shipped positions. The wavefront's timing normalization is quoted
+ * against `radii`, so the front crosses every knot in the same *share* of its own
+ * extent whatever the knot's true size.
  */
-export function buildClusterGraph(
+export function buildClusterMembers(
 	positions: Float32Array,
 	clusterId: ArrayLike<number>,
-	k: number,
-	features: Float32Array | null,
-	featureDims: number,
-	knn = 3
-): ClusterGraph {
+	k: number
+): ClusterMembers {
 	const n = clusterId.length;
 	const lists: number[][] = Array.from({ length: k }, () => []);
 	for (let i = 0; i < n; i++) {
@@ -750,31 +790,9 @@ export function buildClusterGraph(
 	}
 	const members = lists.map((l) => Int32Array.from(l));
 	const radii = new Float32Array(k);
-
-	const useFeatures = features !== null && featureDims > 0;
-	const dims = useFeatures ? featureDims : 3;
-	const vecOf = (i: number, out: Float32Array) => {
-		if (useFeatures) {
-			const off = i * dims;
-			for (let a = 0; a < dims; a++) out[a] = (features as Float32Array)[off + a];
-		} else {
-			out[0] = positions[i * 3];
-			out[1] = positions[i * 3 + 1];
-			out[2] = positions[i * 3 + 2];
-		}
-	};
-
-	const CANDIDATE_CAP = 400;
-	const linkPositions: number[] = [];
-	const linkPoint: number[] = [];
-	const byClusterLists: number[][] = Array.from({ length: k }, () => []);
-	const vi = new Float32Array(dims);
-	const vj = new Float32Array(dims);
-
 	for (let c = 0; c < k; c++) {
 		const mem = members[c];
 		if (!mem.length) continue;
-		// True geometric centroid and radius, for the front's normalization.
 		let cx = 0,
 			cy = 0,
 			cz = 0;
@@ -788,61 +806,16 @@ export function buildClusterGraph(
 		cz /= mem.length;
 		let radius = 0;
 		for (const i of mem) {
-			const d = Math.hypot(positions[i * 3] - cx, positions[i * 3 + 1] - cy, positions[i * 3 + 2] - cz);
+			const d = Math.hypot(
+				positions[i * 3] - cx,
+				positions[i * 3 + 1] - cy,
+				positions[i * 3 + 2] - cz
+			);
 			if (d > radius) radius = d;
 		}
 		radii[c] = Math.max(radius, 1e-4);
-
-		// k nearest same-cluster neighbours. Deterministic stride sample over the same
-		// member list when the knot is huge, so the cap never changes small knots.
-		const stride = Math.max(1, Math.ceil(mem.length / CANDIDATE_CAP));
-		const candidates = stride === 1 ? mem : mem.filter((_, j) => j % stride === 0);
-		const seen = new Set<number>();
-		const best: { j: number; d: number }[] = [];
-		for (const i of mem) {
-			vecOf(i, vi);
-			best.length = 0;
-			for (const j of candidates) {
-				if (j === i) continue;
-				vecOf(j, vj);
-				let d = 0;
-				for (let a = 0; a < dims; a++) d += (vi[a] - vj[a]) ** 2;
-				// insertion into a knn-long sorted list; knn is 3, so this stays tiny
-				let at = best.length;
-				while (at > 0 && best[at - 1].d > d) at--;
-				if (at < knn) {
-					best.splice(at, 0, { j, d });
-					if (best.length > knn) best.pop();
-				}
-			}
-			for (const { j } of best) {
-				const key = i < j ? i * n + j : j * n + i;
-				if (seen.has(key)) continue;
-				seen.add(key);
-				const v = linkPoint.length;
-				linkPoint.push(i, j);
-				linkPositions.push(
-					positions[i * 3],
-					positions[i * 3 + 1],
-					positions[i * 3 + 2],
-					positions[j * 3],
-					positions[j * 3 + 1],
-					positions[j * 3 + 2]
-				);
-				byClusterLists[c].push(v, v + 1);
-			}
-		}
 	}
-
-	return {
-		members,
-		radii,
-		links: {
-			positions: Float32Array.from(linkPositions),
-			point: Uint32Array.from(linkPoint),
-			byCluster: byClusterLists.map((l) => Int32Array.from(l))
-		}
-	};
+	return { members, radii };
 }
 
 
@@ -981,33 +954,5 @@ export const trajectoryPointsFragmentShader = /* glsl */ `
 		vec3 colour = mix(uColdColor, vColour, clamp(0.35 + vPeak, 0.0, 1.0));
 		float alpha = vAlpha * core * (0.35 + 0.25 * passed + vPeak * 0.8);
 		gl_FragColor = vec4(colour, clamp(alpha, 0.0, 1.0));
-	}
-`;
-
-/**
- * The connecting vectors inside a knot: each member's few nearest same-cluster
- * neighbours (see `buildClusterGraph` for the space they are measured in). They carry
- * no brightness of their own — a vertex is lit only by the wavefront's wake reaching
- * the point behind it, so the local graph appears in arrival order and fades behind
- * the front, and a knot at rest shows none of them.
- */
-export const linkVertexShader = /* glsl */ `
-	/** The wavefront wake at the point behind this vertex (see frontTrail). */
-	attribute float aLinkFront;
-	varying float vLink;
-	void main() {
-		vLink = aLinkFront;
-		gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-	}
-`;
-
-export const linkFragmentShader = /* glsl */ `
-	uniform vec3 uInk;
-	varying float vLink;
-	void main() {
-		// A GL line is one pixel at any zoom, so the link carries a little less ink than
-		// a point's halo or it would out-shout the marks it joins.
-		if (vLink <= 0.004) discard;
-		gl_FragColor = vec4(uInk, vLink * 0.5);
 	}
 `;

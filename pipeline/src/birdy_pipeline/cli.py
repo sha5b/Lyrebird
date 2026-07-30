@@ -921,11 +921,51 @@ def cmd_learn(args: argparse.Namespace) -> int:
     )
 
     typing: list[dict[str, Any]] = []
+    # Streaming progress + crash checkpoints. One line per fitted species lands in the
+    # store's learn-progress.json as it finishes (the serve's status endpoint surfaces
+    # it, so a long learn is watchable), and every 100 species the typing and the
+    # document-so-far are checkpointed to disk — the fit's only copy used to be the
+    # final write, so one crash in the last hour lost the hour.
+    out = Path(args.out)
+    typing_path = store.root / learn.TYPING_NAME
+    progress_path = store.root / "learn-progress.json"
+    partial_path = out.with_name(out.name + ".partial")
+    streamed = {"done": 0}
+    partial_species: list[dict[str, Any]] = []
+
+    def _on_species(entry: dict[str, Any], rows: list[dict[str, Any]]) -> None:
+        streamed["done"] += 1
+        partial_species.append(entry)
+        payload = {
+            "done": streamed["done"],
+            "species": entry["id"],
+            "common": entry.get("common", ""),
+            "types": len(entry["syllables"]),
+            "typingRows": len(typing),
+            "updatedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        }
+        tmp = progress_path.with_name(progress_path.name + ".tmp")
+        tmp.write_text(json.dumps(payload) + "\n", encoding="utf-8")
+        tmp.replace(progress_path)
+        if streamed["done"] % 100 == 0:
+            typing_path.write_text(
+                json.dumps({"version": 1, "entries": typing}, indent=1) + "\n",
+                encoding="utf-8",
+            )
+            partial_path.write_text(
+                json.dumps({"version": document_version, "note": "partial fit in "
+                            "progress — the final write replaces this",
+                            "refs": {}, "banks": {}, "species": partial_species},
+                           indent=1),
+                encoding="utf-8",
+            )
+
     # Inherit the ids the last fit used, so `L03` keeps naming the same sound. See
     # `learn.assign_ids`: renumbering was why a refitted bird sang something new and lit
     # a cluster that had been fitted to something else. Hoisted: the unlabelled pool's
     # `U*` candidates inherit from the same document below.
-    prior = learn.previous_fit(Path(args.out))
+    prior = learn.previous_fit(out)
+    document_version = int(inventory.get("version", 1))
     document = learn.build_learned_inventory(
         store.syllables,
         inventory,
@@ -946,6 +986,7 @@ def cmd_learn(args: argparse.Namespace) -> int:
         # the authored inventory is called by its own id everywhere in the app.
         discovered=harvest.load_discovered(DEFAULT_DISCOVERED),
         typing=typing,
+        on_species=_on_species,
     )
 
     # --- label-free typing and syntax mining (phase 4) ---
@@ -987,18 +1028,18 @@ def cmd_learn(args: argparse.Namespace) -> int:
         log("no species had enough observations to fit — harvest more recordings")
         return 2
 
-    out = Path(args.out)
     if args.learned_only:
         learn.write_learned_inventory(out, document)
     else:
         # The default keeps the documented calls and adds the fitted ones next to them,
         # so building from this file does not cost the app its citations.
         learn.write_learned_inventory(out, learn.merge_learned_inventory(inventory, document))
+    # The fit is done: the partial checkpoint has no readers left.
+    partial_path.unlink(missing_ok=True)
 
     # The typing belongs to the store, not to the inventory the fit produced: the build
     # keys the store's own observations by it, so it lives beside `syllables.jsonl`.
     # Same for the song typing one level up — same rows, keyed by bout.
-    typing_path = store.root / learn.TYPING_NAME
     typing_path.write_text(
         json.dumps({"version": 1, "entries": typing}, indent=1) + "\n", encoding="utf-8"
     )

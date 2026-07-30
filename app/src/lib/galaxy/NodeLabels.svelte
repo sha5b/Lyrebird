@@ -14,6 +14,7 @@
 	import { untrack } from 'svelte';
 	import { confidenceLabel } from '$lib/lang/translate';
 	import { centroidProvenance, speciesById } from '$lib/data/assets';
+	import { speciesColour } from './palette';
 	import type { BirdyAssets, Centroid } from '$lib/data/types';
 
 	interface Props {
@@ -55,6 +56,7 @@
 				class:prov-learned={colorMode === 'provenance' && centroidProvenance(centroid) === 1}
 				class:prov-candidate={colorMode === 'provenance' && centroidProvenance(centroid) === 2}
 				class:prov-arrivals={colorMode === 'provenance' && centroidProvenance(centroid) === 3}
+				style:color={colorMode === 'provenance' ? undefined : speciesColour(centroid.speciesId)}
 				type="button"
 				tabindex="-1"
 				aria-label={centroid.label}

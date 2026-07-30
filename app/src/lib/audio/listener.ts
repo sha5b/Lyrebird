@@ -303,6 +303,11 @@ export class Listener {
 		if (active && !this.wasActive) this.onsetTimes.push(now);
 		this.wasActive = active;
 		this.onsetTimes = this.onsetTimes.filter((t) => now - t < 3);
+		// The pace the activation EMA tracks by: dense playing gets less smoothing, so
+		// the galaxy keeps up with the audio at fast tempo (see `onsetRate` in
+		// features.ts for the measured numbers). Sparse input relaxes back to the
+		// flicker-killing rate.
+		this.tracker.onsetRate = this.onsetTimes.length / 3;
 
 		this.signal.level = Math.min(1, this.extractor.level * 6);
 

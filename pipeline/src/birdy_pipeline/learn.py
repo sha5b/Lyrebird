@@ -2432,6 +2432,7 @@ def build_learned_inventory(
     use_respiration: bool = False,
     discovered: Sequence[dict[str, Any]] | None = None,
     typing: list[dict[str, Any]] | None = None,
+    on_species: "Callable[[dict[str, Any], list[dict[str, Any]]], None] | None" = None,
 ) -> dict[str, Any]:
     """A full inventory document in the schema of `data/inventory.json`.
 
@@ -2447,6 +2448,13 @@ def build_learned_inventory(
     typeId}` row per observation the fit assigned to a type (see `typing_rows`). It is a
     statement about the store's observations rather than about this document, which is
     why it travels separately and lands in the store's `typing.json`.
+
+    `on_species`, when given, is called once per fitted species with that species'
+    finished inventory entry and its typing rows — the streaming hook. A full learn on
+    a large store runs for the better part of an hour, and for most of its history the
+    only way to see progress was to wait for the single write at the end (which was
+    also the only copy of the work: one crash lost the hour). Callers use it to journal
+    progress and to checkpoint the typing; the fit itself is unchanged either way.
 
     `discovered` is `data/discovered-species.json` — the registry `harvest --discover` writes.
     **It is where the common name of a discovered bird lives, and not passing it is why every
@@ -2560,6 +2568,8 @@ def build_learned_inventory(
         species_out[-1]["songs"][0]["gaps"] = [0.06] * max(
             0, len(species_out[-1]["songs"][0]["sequence"]) - 1
         )
+        if on_species is not None:
+            on_species(species_out[-1], rows)
 
     return {
         "version": int(inventory.get("version", 1)),

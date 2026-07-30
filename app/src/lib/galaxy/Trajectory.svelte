@@ -3,7 +3,7 @@
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
 	import type { BirdyAssets } from '$lib/data/types';
-	import { ACCENT, MONO_HOT } from './palette';
+	import { ACCENT, MONO_HOT, speciesColour } from './palette';
 	import type { LayoutView } from './layouts';
 	import {
 		MAX_PATHS,
@@ -187,10 +187,13 @@
 			progress[i] = path.progress;
 			wanted[i] = path.alpha * crowd;
 			beadWanted[i] = path.alpha * beadCrowd;
-			// Thread in ink, bead in the accent — the same accent the sounding knot in the
-			// cloud wears, because they are the same event seen twice.
-			pathColour[i].set(MONO_HOT);
-			beadColour[i].set(ACCENT);
+			// Thread and bead both wear the bird's own hue — the heat field's rule,
+			// applied to the one thing that *is* the bird's phrase crossing the galaxy.
+			// The bead stays the brighter of the two through the peak term in its shader;
+			// a path with no species falls back to ink rather than borrowing a hue.
+			const hue = path.speciesId ? speciesColour(path.speciesId) : MONO_HOT;
+			pathColour[i].set(hue);
+			beadColour[i].set(hue);
 		});
 
 		// Weight is eased rather than assigned, so a thread never steps in brightness —

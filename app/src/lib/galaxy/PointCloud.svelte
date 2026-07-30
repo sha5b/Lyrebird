@@ -16,7 +16,7 @@
 		waveClaim,
 		type VisualSignal
 	} from './shaders';
-	import { ACCENT, MONO_HOT, MONO_REST, PROV_ARRIVALS, PROV_CANDIDATE, PROV_DOCUMENTED, PROV_LEARNED, speciesColour } from './palette';
+	import { ACCENT, PROV_ARRIVALS, PROV_CANDIDATE, PROV_DOCUMENTED, PROV_LEARNED, speciesColour } from './palette';
 	import { buildLayout, type LayoutView } from './layouts';
 
 	interface Props {
@@ -107,8 +107,6 @@
 	// upload as `activation` and `orphan`.
 	const front = untrack(() => new Float32Array(assets.points.n));
 	const frontAttribute = new THREE.BufferAttribute(front, 1).setUsage(THREE.DynamicDrawUsage);
-	/** Wake values for the link lines, per link vertex (see `frontTrail`). */
-	const trail = untrack(() => new Float32Array(assets.points.n));
 
 	// `position` and `aTarget` hold the same arrangement: the shader still interpolates
 	// between them, but with the islands layout gone there is nothing to morph to, so
@@ -129,6 +127,18 @@
 		for (let i = 0; i < s.length; i++) s[i] = ((i * 2654435761) % 1000) / 1000;
 		return s;
 	});
+
+	// One hue per species, in the same index order the aSpecies attribute uses — the
+	// lookup the shader's uSpeciesColor array is built from.
+	const speciesColours = untrack(() => {
+		const out: THREE.Vector3[] = [];
+		buildSpeciesIndex(assets).forEach((i, id) => {
+			const c = new THREE.Color(speciesColour(id));
+			out[i] = new THREE.Vector3(c.r, c.g, c.b);
+		});
+		return out;
+	});
+	const speciesCount = untrack(() => Math.max(1, speciesColours.length));
 
 	const geometry = untrack(() => {
 		const g = new THREE.BufferGeometry();
@@ -160,14 +170,13 @@
 	});
 
 	const material = new THREE.ShaderMaterial({
-		vertexShader: vertexShader(clusterCount),
+		vertexShader: vertexShader(clusterCount, speciesCount),
 		fragmentShader,
 		uniforms: {
 			uActivation: { value: new Float32Array(clusterCount) },
 			uSung: { value: new Float32Array(clusterCount) },
 			uLearning: { value: new Float32Array(clusterCount) },
-			uRest: { value: new THREE.Color(MONO_REST) },
-			uInk: { value: new THREE.Color(MONO_HOT) },
+			uSpeciesColor: { value: speciesColours },
 			// The live accent: `accentNow` below is mutated in place each frame, and the
 			// renderer reads the colour object's channels when it uploads the uniform.
 			uAccent: { value: new THREE.Color(ACCENT) },
@@ -212,6 +221,9 @@
 			uWaveOrigin: { value: Array.from({ length: WAVE_SOURCES }, () => new THREE.Vector3()) },
 			uWaveAge: { value: new Float32Array(WAVE_SOURCES) },
 			uWaveAmp: { value: new Float32Array(WAVE_SOURCES) },
+			// Rewritten from the loaded corpus's own knot spacing (see below); the initial
+			// value is the shipped build's number, sane for the first frame.
+			uWaveLocal: { value: 0.27 },
 			uSurface: { value: new THREE.Color('#fafbfc') }
 		},
 		transparent: true,
@@ -254,34 +266,55 @@
 	});
 
 	/**
-	 * The wavefront's static half: per-cluster membership, true radii, each member's
-	 * unit radial direction, and the same-cluster neighbourhood links. Built once from
-	 * the shipped geometry — the front pass below only ever recomputes the *timing*,
-	 * never the structure. The links are measured in the 8-d response space when the
-	 * build ships one (see `buildClusterGraph`), and drawn in the one arrangement the
-	 * cloud has, so their positions never move: `uMorph` never leaves zero.
+	 * The wavefront's static half: per-cluster membership and true radii. Built once
+	 * from the shipped geometry — the front pass below only ever recomputes the
+	 * *timing*, never the structure.
 	 */
 	const graph = untrack(() =>
-		buildClusterGraph(
-			layout.positions,
-			assets.points.clusterId,
-			clusterCount,
-			assets.pointFeatures,
-			assets.pointFeatureDims
-		)
+		buildClusterMembers(layout.positions, assets.points.clusterId, clusterCount)
 	);
 
-	const linkFront = untrack(() => new Float32Array(graph.links.point.length));
-	const linkFrontAttribute = new THREE.BufferAttribute(linkFront, 1).setUsage(
-		THREE.DynamicDrawUsage
-	);
+	/**
+	 * How far a ripple reaches, quoted from the corpus's own spacing: twice the median
+	 * nearest-neighbour centroid distance of the loaded build, so it adapts when a
+	 * rebuild packs the knots tighter or looser instead of being tuned per build.
+	 *
+	 * The number on the shipped 149-cluster build: median nearest-neighbour centroid
+	 * distance 0.135 box units (median knot radius 0.142), so the falloff scale is
+	 * 0.27. A gaussian at that scale weighs 1.0 at the source knot's centre, ~0.78 at
+	 * the rim of the nearest neighbouring knot, ~0.37 two knot-spacings out, and under
+	 * 2 % past 0.54 — a quarter of the box. The ripple reads as an event *at* the
+	 * sounding knot and its immediate neighbours, never as a cloud-wide wash.
+	 */
+	untrack(() => {
+		const cents = layout.centroids;
+		const k = clusterCount;
+		if (k < 2) return;
+		const nn: number[] = [];
+		for (let i = 0; i < k; i++) {
+			let best = Infinity;
+			for (let j = 0; j < k; j++) {
+				if (j === i) continue;
+				const d = Math.hypot(
+					cents[i * 3] - cents[j * 3],
+					cents[i * 3 + 1] - cents[j * 3 + 1],
+					cents[i * 3 + 2] - cents[j * 3 + 2]
+				);
+				if (d < best) best = d;
+			}
+			nn.push(best);
+		}
+		nn.sort((a, b) => a - b);
+		material.uniforms.uWaveLocal.value = 2 * (nn[k >> 1] ?? 0.135);
+	});
 
 	// Registered after construction rather than in the geometry block above, because
 	// the radial directions need the layout, which needs the assets, which the block
 	// above only reads raw. Same one-time cost either way.
 	untrack(() => {
-		const radDir = new Float32Array(assets.points.n * 3);
-		for (let i = 0; i < assets.points.n; i++) {
+		const n = assets.points.n;
+		const radDir = new Float32Array(n * 3);
+		for (let i = 0; i < n; i++) {
 			const c = assets.points.clusterId[i];
 			if (c < 0 || c >= clusterCount) continue;
 			const dx = layout.positions[i * 3] - layout.centroids[c * 3];
@@ -295,21 +328,55 @@
 		}
 		geometry.setAttribute('aFront', frontAttribute);
 		geometry.setAttribute('aRadDir', new THREE.BufferAttribute(radDir, 3));
-	});
 
-	const linkGeometry = untrack(() => {
-		const g = new THREE.BufferGeometry();
-		g.setAttribute('position', new THREE.BufferAttribute(graph.links.positions, 3));
-		g.setAttribute('aLinkFront', linkFrontAttribute);
-		return g;
-	});
-
-	const linkMaterial = new THREE.ShaderMaterial({
-		vertexShader: linkVertexShader,
-		fragmentShader: linkFragmentShader,
-		uniforms: { uInk: { value: new THREE.Color(MONO_HOT) } },
-		transparent: true,
-		depthWrite: false
+		/**
+		 * The heat coordinate inside each species: the point's true distance from its
+		 * species' component-wise median position in the layout, normalised by the
+		 * species' own median distance and capped at twice it. 0 sits at the species'
+		 * core, 1 at its far edge; the shader maps it to a ±10 % lightness scale and
+		 * nothing else — the gradient inside a bird is its colour going slightly
+		 * hotter at the core, never a different hue. A species whose members all sit
+		 * on one spot (median distance ~0) gets the flat mid value rather than a
+		 * divide-by-zero gradient.
+		 */
+		const heat = new Float32Array(n).fill(0.5);
+		const speciesIndex = buildSpeciesIndex(assets);
+		const bySpecies = new Map<number, number[]>();
+		for (let i = 0; i < n; i++) {
+			const s = speciesIndex.get(assets.points.speciesId[i] ?? '') ?? -1;
+			if (s < 0) continue;
+			const list = bySpecies.get(s);
+			if (list) list.push(i);
+			else bySpecies.set(s, [i]);
+		}
+		const medianOf = (values: Float32Array): number => {
+			const sorted = Float32Array.from(values).sort();
+			return sorted[sorted.length >> 1] ?? 0;
+		};
+		for (const members of bySpecies.values()) {
+			const m = members.length;
+			const xs = new Float32Array(m);
+			const ys = new Float32Array(m);
+			const zs = new Float32Array(m);
+			for (let j = 0; j < m; j++) {
+				xs[j] = layout.positions[members[j] * 3];
+				ys[j] = layout.positions[members[j] * 3 + 1];
+				zs[j] = layout.positions[members[j] * 3 + 2];
+			}
+			const mx = medianOf(xs);
+			const my = medianOf(ys);
+			const mz = medianOf(zs);
+			const ds = new Float32Array(m);
+			for (let j = 0; j < m; j++) {
+				ds[j] = Math.hypot(xs[j] - mx, ys[j] - my, zs[j] - mz);
+			}
+			const md = medianOf(ds);
+			if (md < 1e-6) continue;
+			for (let j = 0; j < m; j++) {
+				heat[members[j]] = Math.min(1, ds[j] / (2 * md));
+			}
+		}
+		geometry.setAttribute('aHeat', new THREE.BufferAttribute(heat, 1));
 	});
 
 	/**
@@ -347,8 +414,6 @@
 			prevAct[c] = a;
 		}
 		front.fill(0);
-		trail.fill(0);
-		linkFront.fill(0);
 		for (let c = 0; c < clusterCount; c++) {
 			const age = frontAge[c];
 			if (!(age < FRONT_LIFE)) continue;
@@ -388,16 +453,9 @@
 					) / radius;
 				const amp = Math.min(1, Math.max(pointAct[i] ?? 0, floor) * 1.2);
 				front[i] = frontRing(d, age) * amp;
-				trail[i] = frontTrail(d, age) * amp;
-			}
-			const verts = graph.links.byCluster[c];
-			const linkPoint = graph.links.point;
-			for (let v = 0; v < verts.length; v++) {
-				linkFront[verts[v]] = trail[linkPoint[verts[v]]];
 			}
 		}
 		frontAttribute.needsUpdate = true;
-		linkFrontAttribute.needsUpdate = true;
 	}
 
 	const { camera } = useThrelte();
@@ -573,11 +631,8 @@
 
 	$effect(() => () => {
 		geometry.dispose();
-		linkGeometry.dispose();
-		linkMaterial.dispose();
 		material.dispose();
 	});
 </script>
 
 <T.Points bind:ref={points} {geometry} {material} frustumCulled={false} />
-<T.LineSegments geometry={linkGeometry} material={linkMaterial} renderOrder={-1} frustumCulled={false} />

@@ -306,7 +306,19 @@ export class ActivationTracker {
 	readonly similarity: Float32Array;
 	private readonly vectors: Float32Array[];
 	private readonly temperature: number;
-	private readonly smoothing: number;
+	/** The sparse-input smoothing rate: the flicker-killer the EMA exists for. */
+	private readonly smoothingBase: number;
+	/**
+	 * Onsets per second the listener is seeing right now, written every frame. The EMA
+	 * is pace-aware: at 0.82 per update the time constant is ~5.6 updates — about 93 ms
+	 * at the 60 fps the listener runs at — which is what kills flicker on slow input but
+	 * leaves note-dense passages visibly behind the audio ("at fastest tempo the
+	 * animations don't keep up"). Measured on the harness, four onsets a second is where
+	 * a fast chorus sits, so the rate eases from the base toward 0.5 (≈ 2 updates,
+	 * ~33 ms) as the onset count climbs to that, and relaxes back when it thins. The
+	 * floor is never removed: 0.5 still kills single-frame flicker.
+	 */
+	onsetRate = 0;
 	/**
 	 * The browser's bridge into the learned space (docs/09 phase 2): the offline-fitted
 	 * map that carries a live standardised 28-d descriptor to the standardised 32-d
@@ -326,7 +338,7 @@ export class ActivationTracker {
 	strength = 0;
 
 	constructor(centroids: Centroids, spec: FeatureSpace, smoothing = 0.82) {
-		this.smoothing = smoothing;
+		this.smoothingBase = smoothing;
 		this.temperature = spec.temperature || 0.12;
 		const embedding = spec.embedding;
 		const map = embedding?.map;
@@ -389,6 +401,15 @@ export class ActivationTracker {
 	}
 
 	/**
+	 * The smoothing rate for the input's current pace: the base rate when sparse,
+	 * easing toward 0.5 as the onset rate climbs to four a second (see `onsetRate`).
+	 */
+	private effectiveSmoothing(): number {
+		const pace = Math.min(1, this.onsetRate / 4);
+		return this.smoothingBase + (0.5 - this.smoothingBase) * pace;
+	}
+
+	/**
 	 * @param zLive standardised live descriptor
 	 * @param flatness the same descriptor's raw spectral flatness, before standardising —
 	 *   the noise test needs the physical quantity, not its z-score
@@ -435,7 +456,8 @@ export class ActivationTracker {
 		// the input is a tone at all. Either one alone lets noise through.
 		const tonal = 1 - smoothstep(TONAL_FLOOR, TONAL_CEILING, flatness);
 		const target = smoothstep(MATCH_FLOOR, MATCH_CEILING, max) * tonal;
-		this.strength = this.smoothing * this.strength + (1 - this.smoothing) * target;
+		const smoothing = this.effectiveSmoothing();
+		this.strength = smoothing * this.strength + (1 - smoothing) * target;
 
 		let sum = 0;
 		const exp = new Float32Array(k);
@@ -445,7 +467,7 @@ export class ActivationTracker {
 		}
 		for (let i = 0; i < k; i++) {
 			const scaled = (exp[i] / sum) * this.strength;
-			this.activations[i] = this.smoothing * this.activations[i] + (1 - this.smoothing) * scaled;
+			this.activations[i] = smoothing * this.activations[i] + (1 - smoothing) * scaled;
 		}
 		return this.activations;
 	}
@@ -456,12 +478,17 @@ export class ActivationTracker {
 	 * The floor matters: an exponential decay never reaches zero, and a residual
 	 * activation of 1e-7 is still enough to keep a node's label open and its points
 	 * faintly lit. Below a thousandth it is snapped to nothing.
+	 *
+	 * The rate follows the pace like the attack does: in a dense passage the gaps
+	 * between notes are short, and a slow release would smear one note's knot into the
+	 * next — the same lag the pace-aware EMA fixes on the way up.
 	 */
 	decay(): Float32Array {
-		this.strength *= this.smoothing;
+		const smoothing = this.effectiveSmoothing();
+		this.strength *= smoothing;
 		if (this.strength < 1e-3) this.strength = 0;
 		for (let i = 0; i < this.activations.length; i++) {
-			const v = this.activations[i] * this.smoothing;
+			const v = this.activations[i] * smoothing;
 			this.activations[i] = v < 1e-3 ? 0 : v;
 		}
 		// `similarity` is a measurement, not a level: it holds the last cosine actually
