@@ -729,6 +729,10 @@ def cmd_sources_fetch(args: argparse.Namespace) -> int:
         # taxonomically) accept a per-species cap; passing it elsewhere would be a
         # silent no-op, so it is wired exactly where it means something.
         fetch_kw["per_species"] = args.per_species
+    if getattr(args, "keep_audio", None):
+        # The owner's training-phase exception to the delete loop (AGENTS.md). Same
+        # wiring rule: only adapters that implement it receive it.
+        fetch_kw["keep_audio"] = Path(args.keep_audio)
     report = src.fetch(
         store,
         species=args.species,
@@ -2393,6 +2397,11 @@ def build_parser() -> argparse.ArgumentParser:
                     help="inat-sounds only: cap recordings per species, so a large "
                          "--limit is a balanced take instead of the archive's first "
                          "species in taxonomic order")
+    sf.add_argument("--keep-audio", default=None, metavar="DIR",
+                    help="inat-sounds only: cache the staged audio under DIR instead "
+                         "of deleting it — the owner's training-phase exception to "
+                         "the no-retained-audio rule (AGENTS.md). Local only, never "
+                         "shipped, deleted when the phase ends")
     sf.add_argument("--item", default=None,
                     help="source-specific dataset: a Zenodo record id (default XCDC "
                          "15420487), an archive.org item (xccoverbl_2014 | "

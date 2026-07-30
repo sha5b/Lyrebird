@@ -775,8 +775,11 @@ class InatSoundsSource(Source):
 
     def fetch(self, store, species=None, limit=5,
               max_seconds=harvest.DEFAULT_MAX_SECONDS, item=None,
-              per_species: int | None = None) -> HarvestReport:
+              per_species: int | None = None,
+              keep_audio: Path | None = None) -> HarvestReport:
         report = HarvestReport()
+        if keep_audio is not None:
+            keep_audio.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory() as tmp:
             staging = Path(tmp)
             wanted = self._wanted(staging, species)
@@ -797,7 +800,8 @@ class InatSoundsSource(Source):
             log(f"  iNatSounds train: {len(wanted)} acceptable Aves recordings"
                 + (f" for {species!r}" if species else "")
                 + (f", at most {per_species} per species" if per_species is not None else "")
-                + f"; streaming the 81 GB archive until {limit} ingested")
+                + f"; streaming the 81 GB archive until {limit} ingested"
+                + (f"; audio cached to {keep_audio}" if keep_audio else ""))
             req = urllib.request.Request(
                 f"{self.BASE}/train.tar.gz", headers={"User-Agent": USER_AGENT})
             taken = 0
@@ -819,11 +823,17 @@ class InatSoundsSource(Source):
                         shutil.copyfileobj(src, fh, length=1 << 16)
                     transferred += member.size
                     info = {k: v for k, v in info.items() if not k.startswith("_")}
-                    if _ingest_staged(store, staged, info["speciesId"],
-                                      f"INAT{audio_id}", info, max_seconds, report):
+                    ok = _ingest_staged(store, staged, info["speciesId"],
+                                        f"INAT{audio_id}", info, max_seconds, report)
+                    if ok:
                         taken += 1
                         if per_species is not None:
                             budget[info["speciesId"]] -= 1
+                    if keep_audio is not None and (ok or store.has(f"INAT{audio_id}")):
+                        # The owner's explicit exception to the delete loop (AGENTS.md):
+                        # cached audio stays local, feeds harvest_directory on re-runs,
+                        # never ships, and is deleted when the training phase ends.
+                        staged.replace(keep_audio / f"INAT{audio_id}{staged.suffix}")
                     staged.unlink(missing_ok=True)
         log(f"  transferred ~{transferred / 1e6:.0f} MB of member data for "
             f"{taken} recording(s)")
@@ -839,21 +849,25 @@ class GbifSource(Source):
     Verified against the live API on 2026-07-30: `occurrence/search` with
     `dataset_key` + `media_type=Sound` needs no account (unlike GBIF's DwC-A download,
     which does), paginates 300 records a page, and each record carries the media URL,
-    its per-file licence, the recordist and the country. The Tierstimmenarchiv
-    (Animal Sound Archive, Museum für Naturkunde Berlin, DOI 10.15468/0bpalr) answers
-    16 385 sound records — historic European and captive recordings, a provenance
-    regime xeno-canto and iNaturalist do not have. One adapter, any GBIF dataset key
-    (`--item`): Borror (f11db245-3f9f-4fc6-a0cc-12b4124d081b) is the same shape.
+    its per-file licence, the recordist and the country.
 
-    What the media URL actually is matters: the archive serves `_short.mp3` excerpts,
-    not full masters. That is still syllable-length material — the store's own
-    `DEFAULT_MAX_SECONDS` window is shorter than most excerpts — but the type field
-    says so, and a full-length harvest of the same bird elsewhere dedups nothing
-    because these ids are the archive's own.
+    **But measured the same day: both wired archives' media hosts are dead.** GBIF
+    indexes metadata, not audio — and the institutions' servers no longer answer:
+    tierstimmenarchiv.de's relaunch redirects every old mp3 URL (and even its own
+    details page's `download_short.mp3` link) to the museum homepage, and Borror's
+    `osuc.osu.edu` no longer resolves. The search API therefore returns 65k records
+    whose audio cannot be fetched from either archive today; the Tierstimmenarchiv
+    answer count is 16 385, Borror's 48 465. The GBIF download API (credentials in
+    `.env`) does not route around this — a DwC-A carries the same dead identifiers,
+    GBIF never proxies the bytes. The adapter stays because it is the right shape for
+    any GBIF dataset whose host is alive, and these two may recover; the consecutive-
+    failure bail-out below is what a dead host costs a fetch: twenty tries, a logged
+    reason, exit.
     """
 
     name = "gbif"
-    summary = "GBIF sound archives (Tierstimmenarchiv: 16k historic/captive recordings)"
+    summary = ("GBIF sound archives — measured 2026-07-30: search keyless, but "
+               "Tierstimmenarchiv + Borror media hosts are dead")
 
     #: Named dataset keys for `--item`; any other GBIF dataset key works as-is.
     DATASETS = {
@@ -874,6 +888,7 @@ class GbifSource(Source):
         with tempfile.TemporaryDirectory() as tmp:
             staging = Path(tmp)
             taken = 0
+            consecutive_failures = 0
             offset = 0
             while taken < limit:
                 page = _get_json(
@@ -905,11 +920,21 @@ class GbifSource(Source):
                         staged = _download(m["identifier"], staging / f"{rid}.mp3")
                     except Exception as exc:
                         report.failed += 1
+                        consecutive_failures += 1
                         log(f"  skip {rid}: {exc}")
                         continue
+                    consecutive_failures = 0
                     if _ingest_staged(store, staged, sid, rid, info, max_seconds, report):
                         taken += 1
                     staged.unlink(missing_ok=True)
+                # A dead media host fails every download in turn (measured: both wired
+                # archives, 2026-07-30). Without this bail the fetch grinds tens of
+                # thousands of 404s against a server that has nothing to give.
+                if consecutive_failures >= 20:
+                    log(f"  aborting: {consecutive_failures} consecutive downloads "
+                        "failed — the archive's media host is not answering (see the "
+                        "GbifSource docstring)")
+                    break
                 offset += len(results)
                 if page.get("endOfRecords"):
                     break

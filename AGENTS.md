@@ -17,8 +17,15 @@ Operational conventions for agents working in this repo. Read this first.
 
 ## Hard constraints (violating these breaks the project)
 
-- **No audio is ever retained.** Log-mel patches + 28-d descriptors only;
-  `harvest.py`'s decode → describe → delete loop is load-bearing for licensing.
+- **No audio is ever retained or shipped — with one owner-sanctioned exception.**
+  `harvest.py`'s decode → describe → delete loop remains the default and is
+  load-bearing for licensing. Exception (owner decision, 2026-07-30): `sources fetch
+  --keep-audio <dir>` may cache staged audio under `pipeline/out/audio-cache/` for
+  the current training phase, so re-training doesn't re-download archives. The cache
+  is local-only (`out/` is gitignored), feeds `harvest_directory` on re-runs, is
+  never read by the app or copied into assets, and is **deleted when the training
+  phase ends**. iNatSounds' own terms (no redistribution) are compatible with this;
+  xeno-canto harvests still delete immediately.
 - **Never delete `pipeline/out/harvest*` stores.** They are the only copies, gathered
   under xeno-canto rate limits.
 - **No torch weights ship to the browser.** Assets are plain JSON/f32; the app must work
