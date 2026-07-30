@@ -92,6 +92,12 @@ Notes:
   Laje & Mindlin coupling through the shared tracheal pressure) to every fitted
   type. Off by default until the pre-registered per-species fit wins — the bake-off
   numbers are in docs/15 §5's status note.
+- The inversion gives flatness-heavy types (median member flatness ≥ 0.14, the
+  harvest's p90) a **noise-first start** (docs/16 §16.7): `fricative: true` +
+  formants seeded from the type's mel-envelope peaks, shipped on a type only where
+  the resynthesis cosine beats the tonal fit. `fricative` routes turbulence around
+  the f0-tracking band into the syllable's own formant set; syllables without it
+  render bit-identically (parity fixtures `fricative`, `fricative+respiration`).
 - **`serve` holds the pipeline in memory: restart it after every pipeline code change**,
   or its Learn-tab learn/build jobs run the code it started with (docs/11 §11.1 — this
   cost a galaxy once). It also defaults to the *old* store: run it as

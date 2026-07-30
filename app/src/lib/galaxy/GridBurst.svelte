@@ -134,16 +134,16 @@
 	let next = 0;
 	let lastCluster = -1;
 
-	/** Where a burst's knot is now. Returns false if the cluster has gone out of range. */
+	/** Where a burst's knot is now. Returns false if the cluster is gone or has no members. */
 	function follow(b: Burst): boolean {
 		const c = b.cluster;
-		if (c < 0 || c * 3 + 2 >= view.centroids.length) return false;
+		if (c < 0 || c * 3 + 2 >= view.centroids.length || !view.counts[c]) return false;
 		b.centre.set(view.centroids[c * 3], view.centroids[c * 3 + 1], view.centroids[c * 3 + 2]);
 		return true;
 	}
 
 	function strike(cluster: number, strength: number) {
-		if (cluster < 0 || cluster * 3 + 2 >= view.centroids.length) return;
+		if (cluster < 0 || cluster * 3 + 2 >= view.centroids.length || !view.counts[cluster]) return;
 		const b = bursts[next];
 		next = (next + 1) % MAX_BURSTS;
 		b.cluster = cluster;

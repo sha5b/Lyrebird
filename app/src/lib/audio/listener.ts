@@ -189,6 +189,16 @@ export class Listener {
 		while (this.orphanPulses.length > 64) this.orphanPulses.shift();
 	}
 
+	/**
+	 * True while a scheduled orphan note is actually sounding (inside its window, not
+	 * the release tail). This is the gate for the no-positional-effects rule above:
+	 * the note is known to be playing and known to have no knot.
+	 */
+	private orphanSounding(): boolean {
+		const now = this.engine.ctx.currentTime;
+		return this.orphanPulses.some((p) => now >= p.start && now <= p.end);
+	}
+
 	/** Writes the current orphan envelopes into the signal buffer the renderer reads. */
 	private stepOrphans(): void {
 		const out = this.signal.orphanPulse;
@@ -366,6 +376,21 @@ export class Listener {
 			// Listening, where nothing is known, is the case the inference is for.
 			this.signal.activations.fill(0);
 			this.applyScheduledPulses(this.engine.ctx.currentTime);
+		} else if (this.orphanSounding()) {
+			// **A note we know but cannot place fires no positional effect at all.**
+			//
+			// The song is scheduled, so its identity is certain — and its syllable owns no
+			// cluster, so its position is certain to be *unknown*. What used to happen in
+			// this gap: the tracker heard the synth's own output, matched it to some other
+			// knot (often a small central one), and the wave, the knot and the label all
+			// fired *there* — a positional claim about a note whose placement we explicitly
+			// lack, which reads as the selected node spawning points somewhere else ("it
+			// activates points that are NOT there"). The note's honest display already
+			// exists: the orphan pulse, the syllable's own points at their true positions.
+			// Known-unplaced beats inferred, exactly as known beats inferred above.
+			this.signal.activations.fill(0);
+			this.signal.best = -1;
+			this.signal.unmatched = -1;
 		}
 
 		// A scheduled note is known, not matched, so it lights at full strength; anything

@@ -108,6 +108,10 @@
 	let pointSize = $state(3);
 	let spin = $state(true);
 	let showLabels = $state(true);
+	// Off means every point is neutral grey; on tints each point by where its sound
+	// comes from (the provenance classes the note below names). Default off: the
+	// corpus is one cloud first, and the class tint is a layer you ask for.
+	let provColours = $state(false);
 	let tempo = $state(1);
 	// How often the chorus starts a song, as a multiplier on its Poisson rate. Read by
 	// the scheduler per gap, so the slider retunes the next pause live (engine.songRate).
@@ -1503,6 +1507,7 @@ uv run birdy-pipeline build</pre>
 				{spread}
 				speed={tempo}
 				labels={showLabels}
+				plain={!provColours}
 				pinned={pinnedCluster}
 				frame={frameNodes}
 				learning={learningClusters}
@@ -1545,16 +1550,20 @@ uv run birdy-pipeline build</pre>
 									<label class="check" title="Name tags on the knots a syllable can be sung into.">
 										<input type="checkbox" bind:checked={showLabels} /> Labels
 									</label>
+									<label class="check" title="Tint each point by where its sound comes from — the classes the note below names. Off: every point is neutral grey.">
+										<input type="checkbox" bind:checked={provColours} /> Provenance colours
+									</label>
 								</div>
 								<!--
-									One colour language: the points always say where a sound comes
-									from, the labels always say which bird. The species/provenance
-									switch died when the species hue moved off the points; the
-									"points: coloured / plain" button on the stage only dims that
-									one language to neutral ink — it changes no meaning.
+									One colour language: when the tint is on, the points say where a
+									sound comes from, the labels always say which bird. The
+									species/provenance switch died when the species hue moved off the
+									points; "Provenance colours" only dims that one language to
+									neutral grey — it changes no meaning.
 								-->
 								<p class="note faint">
-									Point colour says where each sound comes from:
+									With Provenance colours on, point colour says where each sound comes
+									from:
 									<b style:color="var(--documented)">documented</b> (authored inventory),
 									<b style:color="var(--unlabelled)">learned</b> (fitted to field audio),
 									<b style:color="var(--invented)">unidentified</b> (field audio with no

@@ -1158,6 +1158,7 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 					const alphaB = 0.05 + 0.4 * pressureB;
 
 					const betaA = clampBeta(betaClean * voice.roughFactor(0));
+					/** @type {{noise?: number} | null} */
 					const splitA = fricative ? {} : null;
 					const sourceA = this.stepOsc(voice, 0, alpha - 0.4 * pi, betaA, ampA, pressure, drive, 0, 0, 0, splitA);
 					sample = this.filterSide(voice, 0, sourceA, harmonic, splitA ? splitA.noise ?? 0 : null);
@@ -1169,6 +1170,7 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 						const betaCleanB = this.betaForF0(f0b, pressureB, voice.gammaB);
 						const ampB = this.ampPP(alphaB, betaCleanB, pressureB);
 						const betaB = clampBeta(betaCleanB * voice.roughFactor(1));
+						/** @type {{noise?: number} | null} */
 						const splitB = fricative ? {} : null;
 						const sourceB = this.stepOsc(
 							voice, 1, alphaB - 0.4 * pi, betaB, ampB, pressureB, drive,
@@ -1179,6 +1181,7 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 					}
 				} else {
 					const betaA = clampBeta(betaClean * voice.roughFactor(0));
+					/** @type {{noise?: number} | null} */
 					const split = fricative ? {} : null;
 					const source = this.stepOsc(voice, 0, alpha, betaA, ampA, pressure, drive, 0, 0, 0, split);
 					sample = this.filterSide(voice, 0, source, harmonic, split ? split.noise ?? 0 : null);
@@ -1187,6 +1190,7 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 						const betaCleanB = this.betaForF0(f0 * DETUNE_TWO, pressure, voice.gamma);
 						const ampB = this.ampPP(alpha, betaCleanB, pressure);
 						const betaB = clampBeta(betaCleanB * voice.roughFactor(1));
+						/** @type {{noise?: number} | null} */
 						const splitB = fricative ? {} : null;
 						const sourceB = this.stepOsc(voice, 1, alpha, betaB, ampB, pressure, drive, 0, 0, 0, splitB);
 						const filteredB = this.filterSide(voice, 1, sourceB, harmonic, splitB ? splitB.noise ?? 0 : null);

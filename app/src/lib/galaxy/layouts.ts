@@ -17,6 +17,12 @@ import type { BirdyAssets } from '$lib/data/types';
  */
 export interface LayoutView {
 	centroids: Float32Array;
+	/**
+	 * Members per cluster. A knot with zero members has no real position — its
+	 * centroid collapses to (0,0,0), the centre of the box — so no positional effect
+	 * (wave, grid cross, unmatched breath) may fire for it; they all check this.
+	 */
+	counts: Uint32Array;
 	/** Bumped whenever `centroids` moves, so consumers know to rebuild geometry. */
 	version: number;
 }
@@ -24,6 +30,7 @@ export interface LayoutView {
 export function createLayoutView(assets: BirdyAssets): LayoutView {
 	return {
 		centroids: Float32Array.from(assets.centroids.items.flatMap((c) => c.position)),
+		counts: Uint32Array.from(assets.centroids.items.map((c) => c.count ?? 0)),
 		version: 0
 	};
 }
@@ -33,6 +40,8 @@ export interface Layout {
 	positions: Float32Array;
 	/** `3 * k`, xyz per cluster centroid, recomputed for this arrangement. */
 	centroids: Float32Array;
+	/** Members per cluster, from the same pass. */
+	counts: Uint32Array;
 }
 
 /**
@@ -41,7 +50,9 @@ export interface Layout {
  * A cluster is fitted in the 28-d acoustic space, so its knot is the plain mean of
  * every point it holds. Every trajectory thread and every grid strike reads the same
  * array, so the knot has to sit on the points it names or all of them terminate in the
- * void.
+ * void. A cluster with NO members gets (0,0,0) from this arithmetic — the centre of
+ * the box, a position that is a lie — which is why `counts` travels with the layout
+ * and every positional effect checks it before firing.
  */
 function centroidsOf(positions: Float32Array, clusterId: number[], k: number): Float32Array {
 	const sums = new Float64Array(k * 3);
@@ -117,8 +128,14 @@ export function buildLayout(assets: BirdyAssets): Layout {
 		assets.centroids.k,
 		CLUSTER_SPACING
 	);
+	const counts = new Uint32Array(assets.centroids.k);
+	for (let i = 0; i < assets.points.clusterId.length; i++) {
+		const c = assets.points.clusterId[i];
+		if (c >= 0 && c < counts.length) counts[c]++;
+	}
 	return {
 		positions,
-		centroids: centroidsOf(positions, assets.points.clusterId, assets.centroids.k)
+		centroids: centroidsOf(positions, assets.points.clusterId, assets.centroids.k),
+		counts
 	};
 }

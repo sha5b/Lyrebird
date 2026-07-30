@@ -252,6 +252,7 @@
 		positionAttribute.needsUpdate = true;
 		targetAttribute.needsUpdate = true;
 		view.centroids.set(layout.centroids);
+		view.counts.set(layout.counts);
 		view.version++;
 	});
 
@@ -479,7 +480,12 @@
 	 * wave from nowhere.
 	 */
 	function launch(cluster: number, strength: number) {
-		if (cluster < 0 || cluster * 3 + 2 >= view.centroids.length) return;
+		// A knot with no members has no real position (its centroid is the box centre by
+		// arithmetic accident) — a front from it is a ripple spawned from nowhere, which
+		// is exactly what this view may not show.
+		if (cluster < 0 || cluster * 3 + 2 >= view.centroids.length || !view.counts[cluster]) {
+			return;
+		}
 		const s = sources[nextSource];
 		nextSource = (nextSource + 1) % WAVE_SOURCES;
 		s.cluster = cluster;
@@ -509,13 +515,16 @@
 		const best = signal.best;
 		if (best >= 0 && best !== lastLaunch && waveClaim(signal)) {
 			// Deliberately small — but bigger than it used to be: 0.03 was lost inside the
-			// denser 1024-knot corpus, so the cap moved to 0.04, still coherent motion of
-			// a whole region rather than a per-point jump (the knot-local budget lives in
-			// the wavefront, not here). A front is meant to be read as movement, and
-			// displacement large enough to see in a still frame is large enough to smear
-			// a knot into a streak — which stops being animation and starts being a
-			// wrong position.
-			launch(best, Math.min(0.04, 0.015 + signal.level * 0.04));
+			// denser 1024-knot corpus, so the cap moved to 0.04, and then to 0.06 when the
+			// front still read as a tremor rather than a wave crossing the cloud. Still
+			// coherent motion of a whole region rather than a per-point jump (the
+			// knot-local budget lives in the wavefront, not here). Quoted in box units,
+			// so the displacement scales with the listening-distance `spread` for free:
+			// a front displaces the same *share* of the cloud however large the group is
+			// drawn. A front is meant to be read as movement, and displacement large
+			// enough to see in a still frame is large enough to smear a knot into a
+			// streak — which stops being animation and starts being a wrong position.
+			launch(best, Math.min(0.06, 0.02 + signal.level * 0.055));
 		}
 		if (best !== lastLaunch) lastLaunch = best;
 
@@ -591,10 +600,10 @@
 		// knot the listener reports, or back to silence. Eased rather than switched,
 		// for the same reason the accent is — a state that steps reads as a glitch.
 		const uStr = material.uniforms.uUnmatchedStrength;
-		const uGoal = signal.unmatched >= 0 ? 0.8 : 0;
+		const uGoal = signal.unmatched >= 0 && view.counts[signal.unmatched] ? 0.8 : 0;
 		uStr.value += (uGoal - uStr.value) * Math.min(1, delta * 4);
 		if (uStr.value < 0.01 && uGoal === 0) uStr.value = 0;
-		if (signal.unmatched >= 0 && signal.unmatched * 3 + 2 < view.centroids.length) {
+		if (signal.unmatched >= 0 && signal.unmatched * 3 + 2 < view.centroids.length && view.counts[signal.unmatched]) {
 			material.uniforms.uUnmatchedOrigin.value.set(
 				view.centroids[signal.unmatched * 3],
 				view.centroids[signal.unmatched * 3 + 1],

@@ -66,6 +66,50 @@ CONTOUR_KNOTS = 9
 COLLINEAR_TOL = 0.025
 MAX_PER_RECORDING = 400
 
+# --- ingest-time quality -------------------------------------------------------------
+
+#: Full-scale threshold for the clipping flag. Integer-sourced audio decoded to float
+#: pins clipped samples at +-1.0 (16-bit: 32767/32768 = 0.99997), and lossy decoders
+#: plus the resampler's overshoot can push a clipped region *past* 1.0, so 0.999
+#: catches both without flagging an honest peak. Measured on the raw decoded samples,
+#: before `peak_normalise` — afterwards every recording's loudest sample is 0.9 by
+#: construction and the evidence is gone.
+CLIP_FULL_SCALE = 0.999
+#: Share of a syllable's samples at full scale that flags it as clipped. One sample is
+#: nothing; a sustained run at the rail is a recorder that ran out of headroom.
+CLIP_SHARE_MIN = 0.001
+#: The SNR that counts as full weight in the fit (`quality_weight`). 20 dB is a factor
+#: of ten in amplitude: a syllable that far above the floor is dominated by the bird,
+#: not by the hedgerow.
+SNR_FULL_WEIGHT_DB = 20.0
+
+
+def _noise_floor(env: np.ndarray, segments: Sequence[tuple[int, int]]) -> float:
+    """The recording's noise floor: median frame RMS outside every segmented syllable.
+
+    The estimator is the median of the *outside* frames rather than a low percentile
+    of all frames, because a dense song leaves almost no low-percentile frames that
+    are not syllable — a nightingale mid-bout is mostly bird, and a percentile of
+    everything would report the quiet end of the song itself as "noise". The median
+    rather than the minimum because the minimum is one lucky frame, while the quiet
+    texture between phrases is the level the floor actually sits at. When the
+    segmenter left fewer than eight outside frames the fallback is the 10th
+    percentile of all frames: a recording that is nearly all bird still has some
+    quieter texture at its edges, and a biased-low floor only ever *raises* the
+    reported SNR of everything in that one recording uniformly.
+    """
+    if not env.size:
+        return 0.0
+    outside = np.ones(env.size, dtype=bool)
+    for s0, s1 in segments:
+        lo = max(0, s0 // ENV_HOP)
+        hi = min(env.size, (s1 + ENV_HOP - 1) // ENV_HOP)
+        outside[lo:hi] = False
+    rest = env[outside]
+    if rest.size >= 8:
+        return float(np.median(rest))
+    return float(np.percentile(env, 10))
+
 # --- fitting -----------------------------------------------------------------------
 
 MIN_OBSERVATIONS = 24  # per species, below which a repertoire is not worth fitting
@@ -135,6 +179,16 @@ class SyllableObservation:
     #: Keyword with a default because rows harvested before the flag existed carry no
     #: such key, and False is the truth for them — nobody ever measured them.
     novel: bool = False
+    #: Ingest-time quality evidence, measured by `extract_syllables` in the one window
+    #: where the audio exists. `snr` is the syllable's RMS against the recording's
+    #: noise floor in dB (see `_noise_floor`); `clipped` is True when more than
+    #: `CLIP_SHARE_MIN` of the syllable's raw samples sat at full scale. Both are
+    #: **scores, never filters** — denoising was considered and rejected because it
+    #: erases the fricative signal with the noise, so a bad recording is weighed, not
+    #: deleted. None on every row harvested before these fields existed: unmeasured,
+    #: which `quality_weight` treats as neutral, not as bad.
+    snr: float | None = None
+    clipped: bool | None = None
     #: `features.mel_patch` of this syllable: a (32, 23) band-limited log-mel grid, the
     #: critic's entire view of it (docs/09 §9.3). Deliberately **not** JSON: 736 floats per
     #: syllable would take `syllables.jsonl` from 26 MB to about 200 MB and make every load
@@ -385,15 +439,20 @@ def extract_syllables(
         mono = mono[: int(max_seconds * sample_rate)]
     if mono.size < F0_FRAME:
         return []
+    # Clipping is read off the raw decode: `peak_normalise` rescales the recording so
+    # its loudest sample is 0.9, which erases exactly the evidence the flag needs.
+    unscaled = mono
     mono = peak_normalise(mono)
     env = envelope(mono)
     if not env.size:
         return []
     env_peak = float(env.max()) or 1.0
 
+    segments = _segments(env, sample_rate)
+    noise_floor = _noise_floor(env, segments)
     out: list[SyllableObservation] = []
     previous_end = 0.0
-    for order, (s0, s1) in enumerate(_segments(env, sample_rate)):
+    for order, (s0, s1) in enumerate(segments):
         if order >= MAX_PER_RECORDING:
             break
         seg = mono[s0:s1]
@@ -406,6 +465,14 @@ def extract_syllables(
             continue
         peak = float(seg_env.max()) or 1.0
         dur = seg.size / sample_rate
+
+        # Quality, measured while the samples exist. The SNR is a ratio inside one
+        # recording, so the peak normalisation above cancels out of it; the clipping
+        # flag cannot use the normalised copy at all (see `unscaled`).
+        seg_rms = float(np.sqrt(np.mean(seg * seg))) if seg.size else 0.0
+        snr = 20.0 * math.log10(max(seg_rms, 1.0e-9) / max(noise_floor, 1.0e-9))
+        raw = unscaled[s0:s1]
+        clipped = bool(np.mean(np.abs(raw) >= CLIP_FULL_SCALE) > CLIP_SHARE_MIN)
 
         # attack: to 90 % of the peak. hold: still loud three quarters of the way in.
         reached = np.flatnonzero(seg_env >= 0.9 * peak)
@@ -455,6 +522,8 @@ def extract_syllables(
                 gap_before=round(max(0.0, start - previous_end), 4),
                 harmonics=harmonics,
                 noise_frac=noise_frac,
+                snr=round(snr, 2),
+                clipped=clipped,
                 mel_path=[round(float(v), 3) for v in path.ravel()],
                 mel_patch=patch.astype(np.float16),
                 descriptor=(
@@ -1242,6 +1311,103 @@ def invert_gestures(
         if not improved:
             break
     return before, best
+
+
+# --- the noise-first start (docs/16 §16.7 piece 3) -----------------------------------
+
+#: The flatness gate for the fricative class. The harvest's own distribution
+#: (syrinx.py's NOISE_GAIN calibration note) runs median 0.044 with p90 at 0.141, so
+#: a type whose median member flatness clears 0.14 is in the noisiest tenth of the
+#: corpus — a noise-burst call, not a tone. Below the gate the tonal start is left
+#: alone, and the gate itself is judged on the probe's bench (gated vs all).
+FRICATIVE_FLATNESS_GATE = 0.14
+FRICATIVE_NOISE_GRID = [0.25, 0.4, 0.6, 0.85]
+FRICATIVE_SEED_QS = [2.0, 4.0, 8.0]
+FRICATIVE_SEED_GAINS = [0.5, 1.0, 2.0]
+
+
+def _fricative_seed_formants(mfcc_mean: np.ndarray, n: int = 2) -> list[list[float]]:
+    """Top-n detrended mel-envelope peaks as `[hz, q, gain]` formant seeds.
+
+    The only spectral evidence left after harvest deletes the audio: the type's mean
+    MFCC inverted to a 26-band log envelope — the same move `measure_trachea_f1`
+    makes, detrended the same way so the peaks, not the tilt, are picked.
+    """
+    env = features.mel_envelope(np.asarray(mfcc_mean, dtype=float))
+    hz = features.mel_centres_hz()
+    k = 7
+    pad = np.pad(env, (k // 2, k // 2), mode="edge")
+    smooth = np.convolve(pad, np.ones(k) / k, mode="valid")[: env.size]
+    peaks = env - smooth
+    chosen: list[float] = []
+    for i in np.argsort(-peaks):
+        f = float(hz[i])
+        if f < 500.0 or f > 9000.0 or peaks[i] <= 0.0:
+            continue
+        if any(abs(np.log2(f / c)) < 0.5 for c in chosen):
+            continue
+        chosen.append(f)
+        if len(chosen) >= n:
+            break
+    return [[f, 4.0, 1.0] for f in sorted(chosen)]
+
+
+def fricative_seed(
+    t: LearnedType,
+    reference: np.ndarray,
+    calibration: Calibration | None,
+    frame: tuple[np.ndarray, np.ndarray] | None,
+    sample_rate: int = features.SAMPLE_RATE,
+) -> tuple[float, float] | None:
+    """The noise-first start for the fricative class: try "noise, shaped how" against
+    the tonal fit, keep it only where the fit's own number says it wins.
+
+    Returns (before, shipped score), or None when the type is not fricative-class —
+    so the caller can count. The candidates, all judged by `_score` against the same
+    reference the gesture search used: the fitted syllable flagged `fricative`, the
+    noise axis re-searched under the flag, then the formant set re-seeded from the
+    type's mean-MFCC envelope peaks (replacing the species trachea set, and
+    extending it) over a small q x gain grid. The flag ships only when the seeded
+    candidate beats the syllable as fitted — the pre-registered rule of docs/16
+    §16.7, and the reason the two best tonal fits on the probe bench (oropendola
+    L02, nuthatch L00) keep their old shape: rerouting good noise costs more than
+    shaping it buys when the mixed path was already reproducing the call.
+    """
+    members = [o for o in t.members if o.descriptor]
+    if len(members) < 2:
+        return None
+    if float(np.median([o.flatness for o in members])) < FRICATIVE_FLATNESS_GATE:
+        return None
+    before = _score(t.syllable, reference, calibration, frame, sample_rate)
+
+    best_syl = {**t.syllable, "fricative": True}
+    best = _score(best_syl, reference, calibration, frame, sample_rate)
+    for nz in FRICATIVE_NOISE_GRID:
+        cand = {**best_syl, "noise": nz}
+        s = _score(cand, reference, calibration, frame, sample_rate)
+        if s > best:
+            best, best_syl = s, cand
+
+    mfcc_mean = np.mean(
+        np.stack(
+            [np.asarray(o.descriptor, dtype=float)[: features.N_MFCC] for o in members]
+        ),
+        axis=0,
+    )
+    seeds = _fricative_seed_formants(mfcc_mean)
+    variants = [v for v in (seeds, list(t.syllable.get("formants") or []) + seeds) if v]
+    for fm in variants:
+        for q in FRICATIVE_SEED_QS:
+            for g in FRICATIVE_SEED_GAINS:
+                cand = {**best_syl, "formants": [[f, q, g] for f, _, _ in fm]}
+                s = _score(cand, reference, calibration, frame, sample_rate)
+                if s > best:
+                    best, best_syl = s, cand
+
+    if best > before + 1.0e-4:
+        t.syllable = best_syl
+        return before, best
+    return before, before
 
 
 # --- syntax ------------------------------------------------------------------------
@@ -2328,6 +2494,7 @@ def learn_species(
                 f"earned its place in the resynthesis")
 
     gains: list[float] = []
+    fricative_shipped = 0
     for i, t in enumerate(fitted):
         # Search first, then measure: the reported cosine has to describe the syllable
         # that ships, not the median it started from.
@@ -2336,6 +2503,12 @@ def learn_species(
                 t, real[i], calibration, frame, realism=realism
             )
             gains.append(after - before)
+            # docs/16 §16.7 piece 3: the fricative class gets its noise-first start
+            # after the tonal search has settled — and keeps it only where the fit's
+            # own number prefers it, so a good tonal fit is never rerouted.
+            seeded = fricative_seed(t, real[i], calibration, frame)
+            if seeded is not None and t.syllable.get("fricative"):
+                fricative_shipped += 1
         # **Measured with the pure cosine, always — never with the blend.** This is the other
         # half of the guardrail: the search may optimise a blended objective, but the number
         # that ships next to every learned syllable, and the number docs/09's results table
@@ -2382,6 +2555,11 @@ def learn_species(
             + f", nearest own {placed}/{len(fitted)}"
             + f", |F0 error| median {np.median(errors):.1f} %"
             + (f", inversion +{np.median(gains):.3f}" if gains else "")
+            + (
+                f", fricative start shipped on {fricative_shipped}"
+                if invert and fricative_shipped
+                else ""
+            )
         )
 
     return {
@@ -2654,7 +2832,7 @@ def build_learned_inventory(
     if verbose and (embedder is not None or realism is not None):
         with_patch = sum(1 for o in observations if o.mel_patch is not None)
         log(
-            f"learned components active: "
+            "learned components active: "
             + ", ".join(
                 filter(None, [
                     "embedding typing" if embedder is not None else "",
@@ -3067,6 +3245,39 @@ def self_test(verbose: bool = True) -> None:
     resp_fric = {**fric_syllable, "respiration": respiration.DEFAULT_PARAMS.as_dict()}
     assert np.array_equal(render_syllable(resp_fric), render_syllable(resp_fric))
 
+    # 6e. The noise-first start (docs/16 §16.7 piece 3): a flatness-heavy type whose
+    #     reference IS shaped noise must ship the flag — the seeded candidate is
+    #     then the very render the evidence came from, so the fit's own number has
+    #     to prefer it. A low-flatness type must be left alone: the gate is what
+    #     keeps the tonal start where it belongs.
+    ref_audio = peak_normalise(render_syllable(fric_syllable))
+    ref_desc = features.descriptor(ref_audio, features.SAMPLE_RATE)
+
+    def flat_observation(flatness: float) -> SyllableObservation:
+        o = observation(3000.0, 0.06)
+        o.flatness = flatness
+        o.descriptor = [float(v) for v in ref_desc]
+        return o
+
+    seeded_type = LearnedType(
+        id="TF",
+        members=[flat_observation(0.2) for _ in range(3)],
+        syllable={k: v for k, v in fric_syllable.items() if k != "fricative"},
+    )
+    result = fricative_seed(seeded_type, _unit(ref_desc), None, None, features.SAMPLE_RATE)
+    assert result is not None and seeded_type.syllable.get("fricative") is True, (
+        "a fricative-class type with shaped-noise evidence must ship the flag"
+    )
+    plain_type = LearnedType(
+        id="TP",
+        members=[flat_observation(0.05) for _ in range(3)],
+        syllable=dict(syllable),
+    )
+    assert fricative_seed(plain_type, _unit(ref_desc), None, None, features.SAMPLE_RATE) is None
+    assert "fricative" not in plain_type.syllable, (
+        "below the flatness gate the fit must not reroute"
+    )
+
 
     # 7. Patches must survive `to_dict` being JSON-serialisable — they go to a binary sidecar,
     #    and an ndarray left in the dict would make `harvest.HarvestStore.save` raise.
@@ -3085,6 +3296,47 @@ def self_test(verbose: bool = True) -> None:
     legacy = flagged.to_dict()
     del legacy["novel"]
     assert SyllableObservation.from_dict(legacy).novel is False
+
+    # 8b. The ingest-time quality fields round-trip the same way: a scored observation
+    #     keeps its numbers through save/load, and a legacy row — every store on disk —
+    #     loads them as None, which the fit reads as "unmeasured", not as bad.
+    scored = observation(2500.0, 0.07)
+    scored.snr, scored.clipped = 14.3, True
+    back = SyllableObservation.from_dict(scored.to_dict())
+    assert (back.snr, back.clipped) == (14.3, True), "quality fields did not round-trip"
+    legacy = scored.to_dict()
+    del legacy["snr"], legacy["clipped"]
+    back = SyllableObservation.from_dict(legacy)
+    assert back.snr is None and back.clipped is None, (
+        f"legacy rows must load quality as unmeasured: {back.snr}, {back.clipped}"
+    )
+
+    # 8c. The estimator itself: a tone over a quiet floor must come out of
+    #     `extract_syllables` carrying a high SNR and no clipping flag, and the same
+    #     tone at the rail must be flagged. Both measured on the audio, at ingest —
+    #     nothing here is a filter: the clipped syllable is still an observation.
+    rng_q = np.random.default_rng(11)
+    n_floor = int(0.40 * features.SAMPLE_RATE)
+    n_tone = int(0.10 * features.SAMPLE_RATE)
+
+    def _quality_case(tone_amp: float) -> SyllableObservation:
+        floor = 0.002 * rng_q.normal(size=n_floor)
+        tone = tone_amp * np.sin(
+            2 * np.pi * 3000.0 * np.arange(n_tone) / features.SAMPLE_RATE
+        )
+        signal = np.concatenate([floor, tone, floor])
+        found = extract_syllables(signal, features.SAMPLE_RATE, "sp", "q0")
+        assert len(found) == 1, f"expected one syllable, got {len(found)}"
+        return found[0]
+
+    quiet = _quality_case(0.5)
+    assert quiet.snr is not None and quiet.snr > SNR_FULL_WEIGHT_DB, (
+        f"a tone 40+ dB over the floor must score high: {quiet.snr}"
+    )
+    assert quiet.clipped is False
+    loud = _quality_case(1.0)
+    assert loud.clipped is True, "a syllable at the rail must be flagged clipped"
+    assert loud.snr is not None and loud.snr > quiet.snr - 1.0
 
     # 9. `type_sequences` breaks bouts at the same one-second gap the grammar does, and
     #    `mine_chunks` finds a planted syntax while its shuffled control does not — the

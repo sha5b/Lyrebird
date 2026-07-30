@@ -130,8 +130,33 @@ coverage, docs/14 source-invariance, §16.7 shaped noise) — all three say the 
 grew past the representation. The first two have their fixes in flight; this one is
 the acoustic half.
 
-## 16.6 The build (filled when it lands)
+## 16.6 The build (debug-100 cycle) and the discovery roadmap
 
-_Production build of the 2 423-species galaxy — points, clusters, coverage, purity,
-space map, source-vs-species lift (the §16.2 question), verify, placement
-before/after. Pending at this writing._
+The deliberate full-store build was paused for a debug cycle (the user's call): subset
+(100 biggest species, 20 193 syllables, recordings whole) → parallel learn (~2 min) →
+embed → build → verify — **all green**: 45 592 points, 1 024 clusters, **0 %
+unassigned points**, 713/1 003 types placed, space map 0.9624/0.6634, shards live
+(55 MB → 312 KB index). This is the build discipline going forward: debug-100 first,
+full run when it passes.
+
+The judgment pass on it found and fixed: trajectory tangle (a static context
+backdrop with no lifecycle), rest-wash too faint (0.34 → 0.5, class separation
+0.146 → 0.215), activation firing at *inferred* knots for orphan notes ("known-
+unplaced beats inferred"), chorus solo leak, all-birds auto-chorus, and shipped the
+full color language (points = provenance, labels = species hue, trajectory
+gradients, dense-knot bloom, the grey-breath unmatched state, points plain/coloured
+toggle). And it found the fricative gap — fixed in §16.7 with measured wins.
+
+**The discovery roadmap** (from the embedding-space discussion): an embedding is its
+objective made visible, and the project now owns four lenses — the 28-d descriptor,
+the critic's 32-d, Perch 2.0's 1536-d (offline, Apache-2.0), and the song-type
+sequence space. Next: (1) **Perch-vs-critic RSA/CKA comparison** — does Perch's
+space agree on novelty, and is the recorder-clumping our critic's artifact or
+acoustics; (2) **dialect/individual structure** — the corpus is finally big enough
+(separating 10–16 individuals per species is literature-proven); (3) **song-level
+embedding for structure** — dialect variants, shared motifs — while function
+identification stays at syllable level with a dozen anchors, propagated only as
+candidates with shares. The translator for unknown birds is a pipeline, not a
+promise: arrive → type by similarity → cluster into candidates (U*) → Perch label
+as metadata → measure its syntax over time → function claims only where playback
+anchors exist. Anything less honest is numerology.
