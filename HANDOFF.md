@@ -2,6 +2,28 @@
 
 **Landed today (uncommitted at this writing — user commits):**
 
+- **UI text pass (ste-writing, same day).** The ASD-STE100 writing skill the
+  owner pointed at is saved user-scope
+  (`~/.agents/skills/ste-writing/SKILL.md`) and was applied to the visible UI
+  strings: chorus class toggles moved below the Chorus button and only show
+  while the chorus runs; long tooltips and panel notes rewritten short-active
+  (tempo/song-gap/chorus/mic/critic titles, gate branch, "cannot respond"
+  block, reading caveat); semicolons split; the mandated §8.5 honesty phrases
+  ("unlabelled: real acoustics, no documented function") kept verbatim on
+  purpose. British spelling kept for repo consistency.
+- **Syrinx fidelity research (docs/21).** Verdict: **the model is correct;
+  the fit is what fails.** The ODE is the published UBA normal form
+  term-for-term (Laje & Mindlin), validated by RK4, the §8.6 table and 18/18
+  parity; every recorded deviation sits in parameterisation, periphery or the
+  objective, not the oscillator. Noise/machine-sounding renders are a
+  taxonomy of measured causes (fit parked at the noise ceiling, sinusoidal
+  source where real labia are skewed pulses, no jitter/tremor, static tract,
+  envelope-instead-of-respiration). Top-2 ranked extensions with
+  pre-registered sketches in §21.3: (1) the per-species respiratory pressure
+  fit (machinery shipped, respfit won 445/12 680 types; gate read on the
+  docs/19 bench), (2) measured physiological jitter/tremor per type (two
+  scalars; Tumer & Brainard 2007 ~1 % FF CV; KS-distribution match + MCD
+  non-inferiority on the P0 corpus). ~25 external citations, web-verified.
 - **Point-colour modes + unified categories + sweep fixes (app-side, same day).**
   Points now have three colour languages in Display (**Ink / Bird / Provenance**):
   bird mode colours each point by the same species-hue hash as the labels

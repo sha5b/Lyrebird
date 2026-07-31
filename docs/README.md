@@ -99,3 +99,14 @@ both follow it. Date: 2026-07-28.
     sessions: fit-side pruning fails its gate (weird sessions are manifold
     coverage), the live-path off-manifold signal and the margin-aware mapQuality
     fields are the surviving direction.
+21. [`21-syrinx-fidelity.md`](21-syrinx-fidelity.md) — the syrinx audit against
+    the canonical literature: the ODE is the published normal form, term for term
+    (model equations correct), and every measured failure is fit or
+    parameterisation — the tonal-regime pin, the beta clamp biting 6 617 of
+    12 724 types, hand-set B1/B2 physics losing bake-offs, the cosine not ranking
+    audible fit. The "noise/machine" taxonomy table pins six symptoms to their
+    measured causes, and the extension roadmap (respiration fit, measured
+    jitter/tremor, waveform-regime fit, dynamic tract, two-voice fit, fricative
+    remainder, comb modulation) ranks by realism per interpretability, with
+    pre-registered gates for the top two and a paragraph on why neural audio
+    generation stays out.

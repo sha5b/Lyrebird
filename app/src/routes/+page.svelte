@@ -1724,7 +1724,7 @@ uv run birdy-pipeline build</pre>
 									<label class="check" title="Each point in its bird's hue — the same colour its tags and threads already use.">
 										<input type="radio" bind:group={pointColour} value="bird" /> Bird
 									</label>
-									<label class="check" title="Colour the points, the tags and the threads by where each sound comes from, instead of by which bird it is.">
+									<label class="check" title="Colour everything by where each sound comes from, not by which bird it is.">
 										<input type="radio" bind:group={pointColour} value="prov" /> Provenance
 									</label>
 								</div>
@@ -1948,10 +1948,10 @@ uv run birdy-pipeline build</pre>
 						<h3 class="strong">This session is off everything the galaxy knows</h3>
 						<p class="accent">positions are guesses — nothing here is a documented call</p>
 						<p class="note">
-							The session's sound sits farther from the corpus than the calibrated
-							line ({sessionGate.score.toFixed(2)} &gt; {sessionGate.threshold.toFixed(2)}),
-							so where it lights means little: an unusual recorder, heavy
-							background, or a sound kind the corpus does not cover.
+							This sound sits past the calibrated line
+							({sessionGate.score.toFixed(2)} &gt; {sessionGate.threshold.toFixed(2)}).
+							Usual causes: an unusual recorder, heavy background, or a sound kind
+							the corpus does not cover. Where it lights means little.
 						</p>
 						{#if assets.featureSpace.embedding?.sessionGate?.calibration}
 							<p class="note faint">
@@ -2077,10 +2077,9 @@ uv run birdy-pipeline build</pre>
 					-->
 					<p class="note">
 						<strong>This galaxy cannot respond.</strong> It was built from field audio only,
-						so not one of its {assets.centroids.k} clusters carries a syllable name — there is
-						nothing for a sung phrase to light, label or draw a path through. Rebuild with the
-						rendered inventory included (<span class="mono">Learn → build</span>, or
-						<span class="mono">--source synthetic --harvest-store …</span>).
+						so no cluster carries a syllable name. A sung phrase has nothing to light,
+						label or draw a path through. Rebuild with the rendered inventory included
+						(<span class="mono">Learn → build</span>).
 					</p>
 				{:else}
 					<p class="note faint">
@@ -2133,7 +2132,7 @@ uv run birdy-pipeline build</pre>
 				{/if}
 				<p class="caveat note">
 					{reading?.caveat ??
-						'Birdy reports documented call functions with a confidence label. Machine learning can characterise repertoires and link calls to behaviour; it cannot translate them into sentences.'}
+						'Birdy reports documented call functions with a confidence label. Machine learning can characterise repertoires and link calls to behaviour. It cannot translate them into sentences.'}
 				</p>
 				</div>
 			{/if}
@@ -2235,7 +2234,7 @@ uv run birdy-pipeline build</pre>
 									class:on={chorus === 'solo'}
 									disabled={!engine}
 									onclick={() => setChorus('solo')}
-									title="Three individuals of this bird answering each other on a Poisson schedule. Each voice holds its pitch, timing and position for as long as it runs."
+									title="Three individuals of this bird answer each other at random intervals. Each voice keeps its own pitch, timing and position."
 									>Chorus</button
 								>
 								<button disabled={!engine} onclick={silence}>Stop</button>
@@ -2252,12 +2251,38 @@ uv run birdy-pipeline build</pre>
 									class:on={chorus === 'global'}
 									disabled={!engine}
 									onclick={() => setChorus('global')}
-									title="The whole aviary at once, every species drawing its own trajectory as it sings. Choosing a bird narrows the labels to its repertoire instead."
+									title="The whole aviary at once. Every species draws its own trajectory as it sings. Choose a bird to narrow the labels to its repertoire."
 								>
 									Chorus
 								</button>
 								<button disabled={!engine} onclick={silence}>Stop</button>
 							</div>
+						{/if}
+						{#if chorus !== 'off'}
+							<div class="checks">
+								{#each ['documented', 'synthesized', 'recorded'] as cls, i (cls)}
+									{@const hint =
+										cls === 'documented'
+											? 'A person named this song — described in the literature or established by playback experiments.'
+											: cls === 'synthesized'
+												? 'Our own mapping: fitted from recordings or composed from them. Not a claim about real birds.'
+												: 'Real audio of this species with no documented function attached.'}
+									<label class="check" title={hint}>
+										<input type="checkbox" bind:checked={chorusClasses[cls]} />
+										<i
+											class="swatch"
+											style:background={provenanceColour(
+												[PROVENANCE.documented, PROVENANCE.learned, PROVENANCE.field][i]
+											)}
+										></i>
+										{cls}
+									</label>
+								{/each}
+							</div>
+							<p class="note faint">
+								Which songs the chorus may draw from. Off re-pools the next song;
+								nothing already playing is cut.
+							</p>
 						{/if}
 					</section>
 
@@ -2302,7 +2327,7 @@ uv run birdy-pipeline build</pre>
 									max="2"
 									step="0.05"
 									bind:value={tempo}
-									title="How fast the birds sing: how long each syllable lasts, how often one starts, and trill and vibrato rates with it. Pitch is unaffected — a slowed bird keeps its pitch and simply sings longer."
+									title="How fast the birds sing: syllable length, start rate, trill and vibrato rate. Pitch does not change — a slowed bird sings longer, not lower."
 								/>
 							</label>
 							<label class="field">
@@ -2313,34 +2338,10 @@ uv run birdy-pipeline build</pre>
 									max="3"
 									step="0.05"
 									bind:value={songRate}
-									title="How often a new song starts, as the mean pause between one song and the next. Arrivals are Poisson, so individual gaps scatter around the mean. Applies live — the next gap is drawn at the new rate; songs already playing are untouched."
+									title="Mean pause between songs. Gaps scatter around the mean — arrivals are Poisson. Applies to the next gap; songs already playing are untouched."
 								/>
 							</label>
 						</div>
-						<div class="checks">
-							{#each ['documented', 'synthesized', 'recorded'] as cls, i (cls)}
-								{@const hint =
-									cls === 'documented'
-										? 'A person named this song — described in the literature or established by playback experiments.'
-										: cls === 'synthesized'
-											? 'Our own mapping: fitted from recordings or composed from them. Not a claim about real birds.'
-											: 'Real audio of this species with no documented function attached.'}
-								<label class="check" title={hint}>
-									<input type="checkbox" bind:checked={chorusClasses[cls]} />
-									<i
-										class="swatch"
-										style:background={provenanceColour(
-											[PROVENANCE.documented, PROVENANCE.learned, PROVENANCE.field][i]
-										)}
-									></i>
-									{cls}
-								</label>
-							{/each}
-						</div>
-						<p class="note faint">
-							Which songs the chorus may draw from, in the same three words the points
-							use. Off re-pools the next song started; nothing already playing is cut.
-						</p>
 					</section>
 				{:else if tab === 'words'}
 					<section class="block">
@@ -2621,7 +2622,7 @@ uv run birdy-pipeline build</pre>
 								class:on={micOn}
 								disabled={!engine}
 								onclick={toggleMic}
-								title="Same analysis path as the synthetic bird — a 28-d MFCC descriptor every frame, matched to the nearest cluster. Nothing leaves your device. Below about 25 % on the match meter nothing is reported, which is what silence and room tone measure."
+								title="The same analysis the synthetic bird gets: one 28-d descriptor per frame, matched to the nearest cluster. Audio stays on your device. Below about 25 % match, nothing is reported."
 							>
 								{micOn ? 'Stop input' : 'Start input'}
 							</button>
@@ -2737,7 +2738,7 @@ uv run birdy-pipeline serve</pre>
 							{#if pipelineStatus.critic?.exists}
 								<p
 									class="note faint"
-									title="A small CNN trained on log-mel patches of the harvested syllables. It scores and embeds; it never generates, and none of it reaches this browser — every note you hear is still integrated from the syrinx model."
+									title="A small CNN trained on mel patches of the harvested syllables. It scores and embeds. It never generates audio, and nothing of it reaches this browser. Every note you hear still comes from the syrinx model."
 								>
 									typing <b class="mono"
 										>{pipelineStatus.critic.embedTyping ? 'learned embedding' : 'hand-written'}</b
@@ -2958,7 +2959,7 @@ uv run birdy-pipeline serve</pre>
 								<button
 									class="primary"
 									disabled={jobRunning || pipelineBusy}
-									title="Fetched, analysed and deleted one at a time; only the measurements are kept."
+									title="Fetched, analysed and deleted one at a time. Only the measurements are kept."
 									onclick={() =>
 										runPipeline(() =>
 											pipeline.harvest({
