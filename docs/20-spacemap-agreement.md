@@ -55,3 +55,45 @@ Cross-cutting:
 Caveat recorded: these are debug-build numbers; production reported 0.66 with the
 same structure expected. Re-run on the production store before any production
 decision.
+
+## 20.3 Per-session quality gating (pre-registered 2026-07-31, before any run)
+
+Item 4's lever, made concrete. Two action sites, measured in order on a /tmp copy
+of `out/harvest-d100` (100 species, 453 recordings — 269 XC / 184 iNat — carrying
+`snr`/`clipped` per observation), embedded with the current production critic.
+The map protocol is this module's exact one (RFF knobs, seed 0, split by
+recording); the 28-d frame is the store's own descriptor mean/std, not the
+window-corpus frame, so absolute cosines shift slightly from §20.1 — the session
+*structure* is what's under test. "Bad session" keeps §20.1's definition:
+median mapped-vs-true cosine < 0.90 across the session's held-out syllables.
+
+**Candidate live signals** (per session, computable from the 28-d side alone —
+that is all the browser will ever have):
+
+1. off-manifold distance: mean 5-NN distance of the session's standardised
+   descriptors to the fit-side descriptors;
+2. Mahalanobis (diagonal) distance of the session's median descriptor to the
+   fit cloud;
+3. session dispersion (mean distance to the session's own median);
+4. mapped-norm deviation: |‖mapped z‖ − median ‖true z‖ over the fit side|;
+5. harvest quality: mean `snr`, share `clipped`.
+
+**Gates.**
+
+- **G1 (detection).** A signal — or a thresholded combination of at most two —
+  separates bad from clean held-out sessions at AUC ≥ 0.9. Below that there is
+  nothing to ship: a gate that flags clean sessions is its own honesty problem.
+- **G2 (lever).** Gating the sessions the signal flags (flag rate ≤ 20 % of
+  held-out sessions) raises the *remaining* rows' centroid agreement by ≥ 5
+  points on the end-to-end debug build, with tie-adjusted agreement not
+  falling. Measured on the real build (phase 2), not the cosine proxy.
+- **G3 (fit-side, the "possibly").** Down-weighting fit-side sessions the same
+  signal flags must not drop the eval median cosine by more than 0.005 — the
+  recorded risk is that pruning weird sessions shrinks the manifold and hurts
+  the next unseen weird session. If it helps eval agreement without breaking
+  that, it ships; either way the number is recorded here.
+
+A signal that passes G1 but fails G2 still ships as an *honesty* gate (the app
+says "this session is off everything the galaxy knows" instead of lighting
+knots) — that fallback is pre-registered too, so it cannot be invented
+post-hoc to save a failed lever.

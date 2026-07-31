@@ -126,3 +126,86 @@ loss engineering. critic.py gained the machinery default-off (`merge_patchsets`,
 `PatchSet.domains`, `CriticConfig.cross_domain_positives`, pairing covered by
 self-test); the driver is `/tmp/birdy-debug/avex_driver.py`, report
 `/tmp/birdy-debug/avex/avex-report.json`.
+
+## 17.5 Follow-up sweep (pre-registered 2026-07-31, before any run)
+
+§17.3's recorded lead (a): the recordist confound may be partially
+species-correlated, so the cleaner adversarial target is **recording within
+species** — channel identity with the bird factored out by construction. The
+construction (`CriticConfig.record_within_species`, default off): adversarial
+classes are *recordings* with ≥ `recordist_min_patches` training patches,
+restricted to species holding ≥ 2 such recordings, and each patch's
+cross-entropy softmax is **masked to its own species's recordings** — the bird
+is given, so species information cannot pay down the loss; only the channel
+can. Lead (b) is folded in: weights step the same trade line finer
+(0.01–0.1 vs §17.3's 0.05–0.3).
+
+**Baseline caveat:** the learned inventory moved since §17.3 (the Stage-0
+learn/respfit/docrefit chain wrote `data/` artefacts), and the synthetic side
+is rendered from the inventory as it stands — so §17.3's baseline is *not*
+reusable and this sweep re-runs knobs-at-zero as its own baseline. All arms
+share one store (a /tmp copy of `out/harvest`, 37 species), one seed (0), one
+fake side. Treated arms carry the §17.3 augmentation (EQ 3 dB + MixStyle 0.2),
+which §17.3 proved species-safe.
+
+| arm | knobs |
+|---|---|
+| baseline | all zero |
+| ws-0.01 | aug + record-within-species w 0.01 |
+| ws-0.03 | aug + record-within-species w 0.03 |
+| ws-0.05 | aug + record-within-species w 0.05 |
+| ws-0.1 | aug + record-within-species w 0.1 |
+
+**Gates** (same shape as §17.2, judged against this sweep's baseline re-run;
+lift numbers from `critic groupings` on the store's embeddings, AUC/accuracy
+from the training report):
+
+1. recordist kNN lift drops ≥ 30 % relative,
+2. species kNN lift holds within 10 % relative,
+3. held-out realism AUC does not drop,
+4. species accuracy does not drop more than 2 points.
+
+Adopt the best passing weight iff all four hold; a wash or regression is
+documented here and the knob stays at zero.
+
+### 17.5.1 The numbers: NO ADOPTION — the factorization works, the target doesn't reach
+
+Sweep ran 2026-07-31 (driver `/tmp/birdy-inv/sweep.sh`, store a /tmp copy of
+`out/harvest`, seed 0, 236 recording classes over 22 species for the head).
+Baseline re-run sanity: probe 0.425 / lift +0.277 / species +0.412 / AUC 0.986 /
+acc 0.891 vs §17.3's 0.442 / +0.285 / +0.429 / 0.989 / 0.908 — close, not
+identical, exactly the fake-side drift the caveat predicted.
+
+| arm | recordist lift | Δrel | species lift | Δrel | AUC held | acc | recordist probe |
+|---|---|---|---|---|---|---|---|
+| baseline | +0.277 | — | +0.412 | — | 0.986 | 0.891 | 0.425 |
+| ws-0.01 | +0.280 | +1 % | +0.438 | +6 % | 0.984 | 0.891 | 0.439 |
+| ws-0.03 | +0.273 | −1 % | +0.458 | +11 % | 0.980 | 0.903 | 0.416 |
+| ws-0.05 | +0.268 | −3 % | +0.453 | +10 % | 0.982 | 0.886 | 0.393 |
+| ws-0.1 | +0.260 | **−6 %** | +0.455 | +10 % | 0.968 | 0.874 | 0.376 |
+
+Gate 1 needs −30 % relative on recordist lift; the whole line buys −6 % (and
+w 0.1 already fails gate 3 on its own, AUC 0.968 < 0.986). **No adoption; the
+knob stays at zero.** The gates are not the interesting part, though:
+
+- **The factorization works.** Where §17.3's recordist head traded species for
+  recordist ~1:1, this head *never touches species* — species lift is flat to
+  **up 10 %** at every weight, and contrastive top-1 rises with it (0.766 →
+  0.812). Masking the softmax to same-species recordings really does fence
+  species information out of the adversarial gradient. As machinery it is
+  proven and stays in critic.py, default off.
+- **The target doesn't reach the confound.** Removing *within-species* session
+  identity barely dents the *recordist* grouping (kNN lift −6 % where the
+  in-report probe moves −11 %, both far from −30 %). Reading §17.3 lead (a)
+  in reverse: the recordist signal in this embedding is mostly
+  *between-species* — each species's recordings come from different people, so
+  recordist identity is carried by cross-species structure that a
+  within-species target is forbidden to touch. The confound is
+  species-correlated exactly as suspected, and that is precisely why a
+  species-factored head cannot fix it.
+- **The combined verdict of §17.3 + §17.4 + this section is now three-sided:**
+  you can buy recordist invariance with species information at 1:1 (recordist
+  head), you can buy a sliver of it for free (within-species head, −6 %), or
+  you can buy real invariance with *data* (naive domain merge, +14.4 pts
+  cross-domain retrieval, gates passed). The loss-engineering road is
+  exhausted at both ends; AVEX's answer stands.

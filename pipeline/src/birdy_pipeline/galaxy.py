@@ -1022,6 +1022,7 @@ def build_galaxy(
     space: str = "descriptor",
     embedding: dict[str, Any] | None = None,
     dump_points: Path | None = None,
+    dump_spacemap_eval: Path | None = None,
 ) -> GalaxyStats:
     # The projection (and `min_dist` within UMAP) is purely about the picture: KMeans
     # and the activation vectors live in the standardised feature space, never in
@@ -1512,6 +1513,21 @@ def build_galaxy(
                 "share of held-out syllables whose nearest cluster centroid of this "
                 "galaxy is the same through the 28-d -> 32-d map as through the critic"
             )
+            if dump_spacemap_eval is not None:
+                # docs/20's per-session debug payload: the held-out rows with their
+                # recording ids, the fit-side cloud, and this galaxy's centroids —
+                # everything the session-quality analysis needs, off one build.
+                np.savez(
+                    dump_spacemap_eval,
+                    eval_mapped=np.asarray(eval_mapped, dtype=np.float32),
+                    eval_true=np.asarray(eval_true, dtype=np.float32),
+                    eval_recs=np.asarray(embedding.get("_evalRecs", [])),
+                    fit_x=np.asarray(
+                        embedding.get("_fitX", np.zeros((0, 0))), dtype=np.float32
+                    ),
+                    fit_recs=np.asarray(embedding.get("_fitRecs", [])),
+                    centroids=np.asarray(centre_vectors, dtype=np.float32),
+                )
         space_map = embedding["map"]
         map_json = space_map.to_json() if hasattr(space_map, "to_json") else space_map
         map_file = None

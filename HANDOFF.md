@@ -33,6 +33,20 @@
 - **Serial execution rule (owner): one heavy agent/job at a time** — the OOMs
   killed VS Code twice with two agents running. Queue: mel-patch fit target
   (running), then Stage-1 follow-up sweep, then serve store fix.
+- **Stage-1 follow-up sweep: NO ADOPTION, road exhausted (docs/17 §17.5).** The
+  recording-within-species adversarial target shipped default-off
+  (`CriticConfig.record_within_species`, `critic train --record-within-species`):
+  classes are recordings of species holding ≥ 2 of them, softmax masked to the
+  patch's own species. Pre-registered 5-arm sweep on the §17.3 store with a
+  fresh baseline (fake side drifted with the Stage-0 inventory): **the
+  factorization works** (species lift never drops — flat to +10 %, unlike the
+  recordist head's 1:1 trade) **but the target doesn't reach the confound**
+  (recordist lift −6 % at w 0.1 vs the −30 % gate, and that arm already fails
+  the AUC gate). Reading: the recordist signal is *between*-species, so a
+  species-factored head is forbidden from touching it. With §17.3 (buy it 1:1
+  with species) and §17.4 (buy real invariance with data, +14.4 pts) the
+  loss-engineering road is closed at both ends — invariance is a data action.
+  That clears all three queue items (mel-patch, this sweep, serve fix).
 - **Spacemap 0.66 decomposed: metric problem, not a map problem** (docs/20).
   76 % of the loss is boundary near-ties (tie-adjusted agreement 0.91; 41 % of
   flips land on the runner-up knot); genuine big-margin map failure is ~2 % of
@@ -73,6 +87,17 @@
   set. **This is the debug cycle's default now** — the known and unknown views of a
   corpus are always comparable side by side. Verified on the debug store (56 284
   points: known 1 024 clusters/purity 35.9 %, unknown 136/purity 8.6 %).
+- **UI gains piped in** (app-side, npm check 4/4 baseline, parity 18/18):
+  known/unknown map switcher (auto-detected when `<assets>/{known,unknown}` both
+  exist — segmented "Name everything"/"Find the unknown" toggle in the galaxy
+  corner stack, active state derived from the loaded manifest's `clustering` field,
+  full reload via the exercised reloadGalaxy path, reload-loop edge handled, absent
+  subdirs = byte-identical old behavior); Reading-panel honesty line per map
+  ("this view cannot report an unidentified sound" vs "N of M sounds sit in no
+  region — unidentified: real acoustics, no documented function"); fit-quality
+  copy now says the cosine is a clustering match with audible fidelity measured
+  separately on the bench (docs/19). Dev symlinks at app/static/birdy/{known,
+  unknown} → /tmp/birdy-debug/assets-100 (gitignored). Not browser-click-tested.
 - **Stage 1 verdict: NO ADOPTION (documented, docs/17).** The machinery is in
   critic.py (channel-EQ, MixStyle, recordist-adversarial head — all default-off),
   plus `critic groupings` (the battery without a build) and a recordist probe in the

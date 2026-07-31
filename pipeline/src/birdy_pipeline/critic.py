@@ -597,6 +597,14 @@ class CriticConfig:
     #: A recordist needs at least this many training patches to be an adversarial class;
     #: below it the class is mostly noise and the head would learn to ignore it anyway.
     recordist_min_patches: int = 20
+    #: docs/17 §17.5: swap the adversarial target from recordist to **recording within
+    #: species** — classes are recordings (restricted to species holding at least two
+    #: of them), and each patch's softmax is masked to its own species's recordings.
+    #: The bird is given by construction, so species information cannot pay down the
+    #: loss and only the channel can — the fix for the recordist head's species-eating
+    #: failure mode that §17.3's sweep measured. Same weight (`w_record`), same
+    #: scaffolding status: nothing ships, it earns its weight in the sweep.
+    record_within_species: bool = False
     #: The AVEX arm-C recipe (docs/17 §17.4): when the real side carries `domains` (a
     #: `merge_patchsets` of several stores), the NT-Xent positive is drawn as
     #: same-species-across-domains wherever the species exists in both — the
@@ -729,25 +737,58 @@ def train(
     # nothing is saved, nothing ships, and old checkpoints are untouched. Classes are
     # recordists with at least `recordist_min_patches` training patches; unnamed
     # recordists ("" — the local-file rows) are never classes.
+    #
+    # `record_within_species` (docs/17 §17.5) swaps the target: classes are
+    # *recordings* of species holding at least two of them, and the loss masks each
+    # patch's softmax to its own species's classes (`_within_species_ce`), so the
+    # head names the session *given the bird* and species information cannot pay the
+    # loss down. `adv_class_species` carries each class's dense species id for the
+    # mask; None selects the plain recordist softmax.
     rec_head: nn.Linear | None = None
     y_recordist: np.ndarray | None = None
+    adv_class_species: np.ndarray | None = None
     if cfg.w_record > 0.0 and r_fit.recordings is not None:
-        per_patch = np.asarray([r_fit.recordist_names[r] for r in r_fit.recordings])
-        uniques, counts = np.unique(per_patch, return_counts=True)
-        classes = sorted(
-            str(n)
-            for n, c in zip(uniques, counts)
-            if c >= cfg.recordist_min_patches and n
-        )
-        if len(classes) >= 2:
-            cidx = {n: i for i, n in enumerate(classes)}
-            y_recordist = np.asarray(
-                [cidx.get(n, -1) for n in per_patch], dtype=np.int64
+        if cfg.record_within_species:
+            y_recordist, adv_class_species = _within_species_labels(
+                r_fit.recordings, y_species, cfg.recordist_min_patches
             )
-            rec_head = nn.Linear(cfg.embed_dim, len(classes)).to(device)
+            n_cls = int(adv_class_species.size)
+            if n_cls >= 2:
+                rec_head = nn.Linear(cfg.embed_dim, n_cls).to(device)
+                log(f"within-species adversarial head: {n_cls} recording classes "
+                    f"over {len(np.unique(adv_class_species))} species")
+            else:
+                y_recordist = adv_class_species = None
+        else:
+            per_patch = np.asarray([r_fit.recordist_names[r] for r in r_fit.recordings])
+            uniques, counts = np.unique(per_patch, return_counts=True)
+            classes = sorted(
+                str(n)
+                for n, c in zip(uniques, counts)
+                if c >= cfg.recordist_min_patches and n
+            )
+            if len(classes) >= 2:
+                cidx = {n: i for i, n in enumerate(classes)}
+                y_recordist = np.asarray(
+                    [cidx.get(n, -1) for n in per_patch], dtype=np.int64
+                )
+                rec_head = nn.Linear(cfg.embed_dim, len(classes)).to(device)
         if rec_head is None:
-            log("recordist-adversarial head off: fewer than two recordists have "
+            log("recordist-adversarial head off: fewer than two "
+                f"{'species hold two ' if cfg.record_within_species else ''}"
+                f"{'recordings' if cfg.record_within_species else 'recordists'} with "
                 f"{cfg.recordist_min_patches}+ training patches")
+    # The masked-softmax table for the within-species head (docs/17 §17.5): one row
+    # per training species, True over that species's recording classes.
+    adv_mask_t: torch.Tensor | None = None
+    if rec_head is not None and adv_class_species is not None:
+        adv_mask_t = torch.zeros(
+            (len(train_names), rec_head.out_features), dtype=torch.bool, device=device
+        )
+        adv_mask_t[
+            torch.from_numpy(adv_class_species).to(device),
+            torch.arange(rec_head.out_features, device=device),
+        ] = True
     params = list(model.parameters()) + (
         list(rec_head.parameters()) if rec_head is not None else []
     )
@@ -845,10 +886,17 @@ def train(
                 mask_np = y_recordist[ri] >= 0
                 if mask_np.any():
                     eligible = torch.from_numpy(mask_np).to(device)
-                    loss_record = F.cross_entropy(
-                        rec_head(_grad_reverse(z[: cfg.batch][eligible])),
-                        torch.from_numpy(y_recordist[ri][mask_np]).to(device),
-                    )
+                    adv_logits = rec_head(_grad_reverse(z[: cfg.batch][eligible]))
+                    adv_targets = torch.from_numpy(y_recordist[ri][mask_np]).to(device)
+                    if adv_class_species is None:
+                        loss_record = F.cross_entropy(adv_logits, adv_targets)
+                    else:
+                        loss_record = _within_species_ce(
+                            adv_logits,
+                            adv_targets,
+                            torch.from_numpy(y_species[ri][mask_np]).to(device),
+                            adv_mask_t,
+                        )
                     loss = loss + cfg.w_record * loss_record
             opt.zero_grad(set_to_none=True)
             loss.backward()
@@ -921,6 +969,52 @@ class _GradReverse(torch.autograd.Function):
 
 def _grad_reverse(x: torch.Tensor) -> torch.Tensor:
     return _GradReverse.apply(x)
+
+
+def _within_species_labels(
+    recordings: np.ndarray, y_species: np.ndarray, min_patches: int
+) -> tuple[np.ndarray, np.ndarray]:
+    """Adversarial labels for the recording-within-species head (docs/17 §17.5).
+
+    Classes are recordings with at least `min_patches` patches, kept only where their
+    species holds at least two of them — with one recording there is no channel to
+    name once the bird is given. Returns the per-patch class index (-1 where the
+    patch's recording or species is ineligible) and each class's dense species id,
+    which is what the masked softmax in `_within_species_ce` needs.
+    """
+    counts = np.bincount(recordings, minlength=int(recordings.max()) + 1)
+    rec_species = np.full(len(counts), -1, dtype=np.int64)
+    rec_species[recordings] = y_species  # one species per recording by construction
+    by_species: dict[int, list[int]] = {}
+    for r in np.nonzero(counts >= min_patches)[0]:
+        by_species.setdefault(int(rec_species[r]), []).append(int(r))
+    classes = sorted(r for rs in by_species.values() if len(rs) >= 2 for r in rs)
+    cidx = {r: i for i, r in enumerate(classes)}
+    y = np.asarray([cidx.get(int(r), -1) for r in recordings], dtype=np.int64)
+    class_species = np.asarray([rec_species[r] for r in classes], dtype=np.int64)
+    return y, class_species
+
+
+def _within_species_ce(
+    logits: torch.Tensor,
+    targets: torch.Tensor,
+    species_of: torch.Tensor,
+    class_mask: torch.Tensor,
+) -> torch.Tensor:
+    """Mean per-species cross-entropy, each group's softmax masked to that species's
+    recording classes.
+
+    The mask is the whole point: evidence placed on *another* species's recordings is
+    invisible to the loss, so naming the bird cannot pay it down — only telling
+    same-bird sessions apart can. The mean is over species groups, not patches, so a
+    well-recorded species cannot shout down a thin one.
+    """
+    terms = []
+    for sp in torch.unique(species_of):
+        sel = species_of == sp
+        masked = logits[sel].masked_fill(~class_mask[sp], -1.0e9)
+        terms.append(F.cross_entropy(masked, targets[sel]))
+    return torch.stack(terms).mean()
 
 
 def _evaluate(
@@ -1531,6 +1625,64 @@ def self_test(verbose: bool = True) -> None:
     assert trained_rec.report.recordist_probe > 0.5, (
         "sanity inverted: a flat channel offset is not decodable at all — "
         f"probe {trained_rec.report.recordist_probe}"
+    )
+
+    # The within-species adversarial target (docs/17 §17.5). Label construction:
+    # recordings of species holding at least two of them become classes; a
+    # single-recording species and a thin recording fall out.
+    ws_rec = np.asarray([i // 64 for i in range(256)], dtype=np.int64)  # 4 recordings
+    ws_sp = np.asarray([i // 128 for i in range(256)], dtype=np.int64)  # 2 per species
+    y_ws, cls_sp = _within_species_labels(ws_rec, ws_sp, min_patches=20)
+    assert sorted(set(y_ws)) == [0, 1, 2, 3] and list(cls_sp) == [0, 0, 1, 1]
+    y_thin, cls_thin = _within_species_labels(ws_rec // 2, ws_sp, min_patches=20)
+    assert (y_thin < 0).all() and cls_thin.size == 0, (
+        "one recording per species must yield no classes"
+    )
+    # The masked softmax: evidence placed on another species's recordings is
+    # invisible — a head that always names the wrong same-bird session scores
+    # exactly uniform (ln 2 over the two valid classes), however confident it is
+    # about the other species.
+    mask_t = torch.zeros((2, 4), dtype=torch.bool)
+    mask_t[0, :2] = mask_t[1, 2:] = True
+    logits = torch.zeros((4, 4))
+    logits[0, 3] = logits[1, 3] = 9.0   # species 0 rows, confident on a species-1 class
+    logits[2, 0] = logits[3, 0] = 9.0   # and vice versa
+    loss_ws = _within_species_ce(
+        logits,
+        torch.tensor([1, 1, 2, 2]),
+        torch.tensor([0, 0, 1, 1]),
+        mask_t,
+    )
+    assert abs(loss_ws.item() - math.log(2)) < 1.0e-4, (
+        f"cross-species evidence leaked into the loss: {loss_ws.item():.4f}"
+    )
+    # End to end: two species of two recordings each, every recording tilted the
+    # opposite way from its same-bird sibling, so the session is only decodable
+    # given the bird. (Patch *content* is one ridge family — the species head
+    # cannot learn from it, but this test only wires the adversarial path.)
+    marked_ws = real.patches[:256].copy()
+    tilt = np.linspace(-0.8, 0.8, mel, dtype=np.float32)[None, None, :]
+    marked_ws[:64] += tilt
+    marked_ws[64:128] -= tilt
+    marked_ws[128:192] += tilt
+    marked_ws[192:256] -= tilt
+    marked_ws = marked_ws - marked_ws.mean(axis=(1, 2), keepdims=True)
+    real_ws = PatchSet(
+        marked_ws,
+        ws_sp,
+        ["species_a", "species_b"],
+        True,
+        recordings=ws_rec,
+        recording_names=[f"rec_{i}" for i in range(4)],
+        recordist_names=["alice", "alice", "bob", "bob"],
+    )
+    cfg_ws = CriticConfig(
+        epochs=2, batch=64, holdout_species=0.0, holdout_syllables=0.2, seed=1,
+        w_record=0.1, recordist_min_patches=20, record_within_species=True,
+    )
+    trained_ws = train(real_ws, fake, cfg_ws, log=quiet)
+    assert np.isfinite(trained_ws.report.final_loss), (
+        "within-species adversarial train diverged"
     )
 
     # --- the AVEX merge and cross-domain pairing (docs/17 §17.4) ----------------------

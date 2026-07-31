@@ -555,6 +555,19 @@ def cmd_build(
                 "_evalMapped": space_map.eval_mapped,
                 "_evalTrue": space_map.eval_true,
             }
+            if args.dump_spacemap_eval:
+                # The per-session spacemap debug payload (docs/20 §20.3): which
+                # recording each held-out row came from, and the fit-side cloud the
+                # off-manifold signal is measured against. The split is recomputed —
+                # same call, same seed, so it is the fit's own split, not a copy.
+                fit_m, eval_m = spacemap._recording_split(recordings_of, 0.8, args.seed)
+                embedding_block["_evalRecs"] = [
+                    r for r, m in zip(recordings_of, eval_m) if m
+                ]
+                embedding_block["_fitX"] = x28[fit_m]
+                embedding_block["_fitRecs"] = [
+                    r for r, m in zip(recordings_of, fit_m) if m
+                ]
 
     # `--clustering both`: the two maps the comparison workflow always wants side by
     # side — the kmeans map, where every type owns a named knot ("known"), and the
@@ -607,6 +620,11 @@ def cmd_build(
             embedding=embedding_block,
             dump_points=(
                 Path(args.dump_points) if args.dump_points and len(modes) == 1 else None
+            ),
+            dump_spacemap_eval=(
+                Path(args.dump_spacemap_eval)
+                if args.dump_spacemap_eval and len(modes) == 1
+                else None
             ),
         )
 
@@ -1696,6 +1714,7 @@ def cmd_critic(args: argparse.Namespace) -> int:
         mixstyle_alpha=args.mixstyle_alpha,
         w_record=args.w_record,
         recordist_min_patches=args.recordist_min_patches,
+        record_within_species=args.record_within_species,
     )
     trained = critic_mod.train(real, fake, config, log=log)
     novelty = critic_mod.fit_novelty(
@@ -3017,6 +3036,11 @@ def build_parser() -> argparse.ArgumentParser:
                    help="also write the standardised clustering matrix + labels to this "
                         ".npz, so cluster_plan iterations run on a fixed corpus instead "
                         "of re-rendering per idea")
+    b.add_argument("--dump-spacemap-eval", default=None, metavar="NPZ",
+                   help="also write the space map's held-out rows with their recording "
+                        "ids, the fit-side descriptor cloud, and this galaxy's "
+                        "centroids — the per-session quality analysis of docs/20 "
+                        "(single-clustering builds only, like --dump-points)")
     b.add_argument("--beta-min", type=float, default=syrinx.BETA_MIN,
                    help="beta clamp floor (contract default 0.15; -0.45 unlocks sub-kHz f0)")
     b.set_defaults(func=cmd_build)
@@ -3343,6 +3367,12 @@ def build_parser() -> argparse.ArgumentParser:
                      default=critic_default("recordist_min_patches"),
                      help="fewest training patches for a recordist to be an "
                           "adversarial class (default %(default)s)")
+    crt.add_argument("--record-within-species", action="store_true",
+                     default=critic_default("record_within_species"),
+                     help="source-invariance follow-up (docs/17 §17.5): the "
+                          "adversarial classes become recordings, and each patch's "
+                          "softmax is masked to its own species's recordings — the "
+                          "bird is given, so only the channel can pay the loss")
     crt.add_argument("--holdout-species", type=float,
                      default=critic_default("holdout_species"), metavar="FRACTION",
                      help="species held out of training entirely. Species and not "
