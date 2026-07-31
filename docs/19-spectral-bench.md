@@ -112,3 +112,32 @@ agree only moderately on which types are good (Pearson 0.456) — complementary,
 not redundant: the cosine guards the cluster assignment, the mel path ranks the
 audible fit. Adoption into the default learn flags waits on the owner's call and a
 larger probe; the machinery ships default-off like every learned component.
+
+## 19.5 The adoption-gate probe (n = 80): NOT adoptable as an objective
+
+The 10-type probe did not survive n. The gate run (seed 19 sample of 80 of the 200
+benched types, pairwise w=0.5 vs w=0 control from identical median+tract starts,
+pre-registered: ≥ 60 % MCD wins, median ΔMCD > +1 dB, median cosine drop ≤ 0.02,
+max ≤ 0.05):
+
+| metric | result | gate | verdict |
+|---|---|---|---|
+| MCD win share | **31 %** (25/80) | ≥ 60 % | FAIL |
+| median ΔMCD | **0.0 dB** | > +1 dB | FAIL |
+| median cosine drop | 0.0 | ≤ 0.02 | pass |
+| max cosine drop | **0.120** | ≤ 0.05 | FAIL |
+
+The honest reading is more useful than a bare fail: **the objective change mostly
+does nothing** (median effect exactly zero — the inversion already lands where the
+blend would send it), **sometimes helps enormously** (mean +2.07 dB, pulled by a
+handful of types at +13.8), and **occasionally wanders** (one type lost 0.12
+cosine). An objective that is a wash on the median with an unguarded tail is not a
+default; the 7/10 of the small probe was small-sample luck.
+
+**What survives, and it matters:** the mel target is the better *measurement*
+(§19.4's correlations stand — it ranks audible distortion where the cosine cannot)
+but the worse *optimiser*. The distinction is now load-bearing for the whole
+programme: fit gates should be *read* on the bench (MCD/STFT), while the inversion
+keeps climbing the cosine — a proxy that is wrong as a fidelity ranking but whose
+failure is at least bounded and cluster-safe. "Measure spectrally, optimise
+descriptor-ly" is the honest state; an objective that is both remains unfound.

@@ -86,3 +86,8 @@ both follow it. Date: 2026-07-28.
     multi-res STFT, n=200, two agreeing metrics). The cosine keeps its proven role
     as the clustering guardrail; the mel-patch fit target becomes the priority, and
     every future fit gate reads the bench.
+20. [`20-spacemap-agreement.md`](20-spacemap-agreement.md) — the 0.66 centroid
+    agreement decomposed: 76 % is boundary near-ties (tie-adjusted agreement is
+    0.91), genuine map failure is ~2 % of rows, and 8 bad xeno-canto sessions carry
+    24 % of the loss. Metric problem, not a map problem; no ONNX, no new bridge —
+    species-level live matching is the honest claim.

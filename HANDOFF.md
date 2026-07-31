@@ -33,6 +33,13 @@
 - **Serial execution rule (owner): one heavy agent/job at a time** — the OOMs
   killed VS Code twice with two agents running. Queue: mel-patch fit target
   (running), then Stage-1 follow-up sweep, then serve store fix.
+- **Spacemap 0.66 decomposed: metric problem, not a map problem** (docs/20).
+  76 % of the loss is boundary near-ties (tie-adjusted agreement 0.91; 41 % of
+  flips land on the runner-up knot); genuine big-margin map failure is ~2 % of
+  rows; 8 bad xeno-canto sessions carry 24 % of the loss. Direction: margin-aware
+  + species-level agreement in mapQuality, live claims at species level (0.78),
+  knot-level claims labelled "nearest of several close knots"; NO ONNX/bridge
+  work; the double-digit lever is per-session quality gating on bad XC sessions.
 - **Fidelity verdict: the premise holds, with a blend (docs/19 §19.4).**
   `learn --mel-weight W` (wired end-to-end, default 0 = bit-identical, serial ==
   parallel verified): the mel-path objective tracks audible distortion at Spearman
@@ -41,6 +48,11 @@
   measured candidate** (MCD win survives, guardrail holds; exploratory, n=10).
   Default learn behaviour unchanged; adoption is the owner's call after a bigger
   probe.
+- **Adoption-gate probe (n=80): NOT adoptable (docs/19 §19.5).** The 10-type probe
+  was small-sample luck: w=0.5 wins only 31 % of types on MCD (gate 60 %), median
+  ΔMCD exactly 0.0 (mostly converged already), one type loses 0.12 cosine. The
+  honest state: **measure spectrally (bench/MCD for gates), optimise on the cosine
+  (bounded failure, cluster-safe)** — an objective that is both remains unfound.
 - **Serve store-trap fixed + server bug sweep** (server.py +119, cli.py serve
   parser): no-flag `serve` now announces its store (path, syllables, species) and
   warns per newer sibling store ("harvest-d100 was modified more recently — did you

@@ -78,9 +78,11 @@ export interface Syllable {
 	gammaScale?: number;
 	/**
 	 * Fit-quality record the learned inventory attaches to a fitted type. The one number
-	 * the composer surfaces is `resynthesisCosine`: how close a render of this fit comes
-	 * to the audio it was fitted from, so a low one means "this syllable is a rougher
-	 * likeness", not "this bird sings worse".
+	 * the composer surfaces is `resynthesisCosine`: how close a render of this fit sits
+	 * to the type's cluster in the descriptor space — a clustering match, not an
+	 * audible-fidelity guarantee (docs/19 measured its correlation with audible
+	 * distortion at ≈ 0.1; audible fidelity is measured separately, MCD on the bench) —
+	 * so a low one means "this render sits off its type", not "this bird sings worse".
 	 */
 	learned?: {
 		members?: number;

@@ -3,6 +3,31 @@ import type { BirdyAssets, Centroid, Centroids, EmbeddingSpace, FeatureSpace, In
 
 const ROOT = 'birdy';
 
+/**
+ * The two maps a `build --clustering both` writes side by side: `known` is the kmeans
+ * galaxy (every type owns a named knot — "Name everything"), `unknown` the hdbscan one
+ * (dense regions only, the rest honestly unassigned — "Find the unknown"). Each ships a
+ * complete asset set under its own subdirectory of the root.
+ */
+export type GalaxyMap = 'known' | 'unknown';
+
+/**
+ * Whether this asset root carries both clustering maps. Decided once at startup by the
+ * two manifest probes; when either is absent the interface stays exactly the single-map
+ * one — no toggle, and no further fetch mentions the subdirectories.
+ */
+export async function detectGalaxyMaps(fetcher: typeof fetch = fetch): Promise<boolean> {
+	try {
+		const [known, unknown] = await Promise.all([
+			fetcher(assetUrl('known/manifest.json', '')),
+			fetcher(assetUrl('unknown/manifest.json', ''))
+		]);
+		return known.ok && unknown.ok;
+	} catch {
+		return false;
+	}
+}
+
 export class AssetsMissingError extends Error {
 	constructor(readonly file: string) {
 		super(
@@ -99,18 +124,26 @@ async function getJson<T>(path: string, fetcher: typeof fetch, bust = ''): Promi
  * fetched from `inventory/<id>.json` only when one is actually selected, composed
  * with or sung. Whether shards exist is detected exactly once, here; an older build
  * without them answers 404 and the whole file loads instead, exactly as before.
+ *
+ * `map` selects one of the two clustering maps of a `--clustering both` build: every
+ * path below resolves under `<root>/<map>/` instead of the root itself. The sub-build
+ * is a complete asset set with its own manifest stamp, so everything downstream —
+ * the stamp pinning, the shard view, the sidecar fetches — works unchanged. The
+ * default `''` is byte-for-byte the historical single-map load.
  */
 export async function loadAssets(
 	fetcher: typeof fetch = fetch,
-	bust = ''
+	bust = '',
+	map: '' | GalaxyMap = ''
 ): Promise<BirdyAssets> {
-	const manifest = await getJson<Manifest>('manifest.json', fetcher, bust);
+	const dir = map ? `${map}/` : '';
+	const manifest = await getJson<Manifest>(`${dir}manifest.json`, fetcher, bust);
 	// Everything after the manifest is fetched under that build's own stamp, so a reload
 	// triggered by a rebuild cannot mix two builds together.
 	const stamp = bust || manifest.builtAt || '';
 	let index: InventoryIndex | null = null;
 	try {
-		index = await getJson<InventoryIndex>('inventory/index.json', fetcher, stamp);
+		index = await getJson<InventoryIndex>(`${dir}inventory/index.json`, fetcher, stamp);
 	} catch {
 		index = null;
 	}
@@ -125,10 +158,10 @@ export async function loadAssets(
 					banks: index.banks,
 					species: []
 				})
-			: getJson<Inventory>('inventory.json', fetcher, stamp),
-		getJson<FeatureSpace & NestedFeatureSpace>('feature-space.json', fetcher, stamp),
-		getJson<PointCloudMeta>('points.json', fetcher, stamp),
-		getJson<Centroids>('centroids.json', fetcher, stamp)
+			: getJson<Inventory>(`${dir}inventory.json`, fetcher, stamp),
+		getJson<FeatureSpace & NestedFeatureSpace>(`${dir}feature-space.json`, fetcher, stamp),
+		getJson<PointCloudMeta>(`${dir}points.json`, fetcher, stamp),
+		getJson<Centroids>(`${dir}centroids.json`, fetcher, stamp)
 	]);
 	const featureSpace = normaliseFeatureSpace(rawFeatureSpace);
 
@@ -139,7 +172,7 @@ export async function loadAssets(
 	const embMap = featureSpace.embedding?.map;
 	if (embMap && 'kind' in embMap && embMap.kind === 'rff-ridge' && !embMap.rff) {
 		try {
-			const res = await fetcher(assetUrl(embMap.file, stamp));
+			const res = await fetcher(assetUrl(`${dir}${embMap.file}`, stamp));
 			if (!res.ok) throw new Error(embMap.file);
 			const raw = new Float32Array(await res.arrayBuffer());
 			const D = embMap.D;
@@ -162,13 +195,13 @@ export async function loadAssets(
 	// The calibration table only refines the synth; the analytic fallback covers its absence.
 	let calibration: SyrinxCalibration | null = null;
 	try {
-		calibration = await getJson<SyrinxCalibration>('syrinx-calibration.json', fetcher, stamp);
+		calibration = await getJson<SyrinxCalibration>(`${dir}syrinx-calibration.json`, fetcher, stamp);
 	} catch {
 		calibration = null;
 	}
 
-	const posRes = await fetcher(assetUrl('positions.f32', stamp));
-	if (!posRes.ok) throw new AssetsMissingError('positions.f32');
+	const posRes = await fetcher(assetUrl(`${dir}positions.f32`, stamp));
+	if (!posRes.ok) throw new AssetsMissingError(`${dir}positions.f32`);
 	const positions = new Float32Array(await posRes.arrayBuffer());
 
 	if (positions.length !== points.n * 3) {
@@ -181,7 +214,8 @@ export async function loadAssets(
 		points.n,
 		centroids,
 		fetcher,
-		stamp
+		stamp,
+		dir
 	);
 
 	// The lazy species view. In shard mode the index came from disk; without shards it
@@ -205,7 +239,7 @@ export async function loadAssets(
 		if (!index) return Promise.resolve(undefined);
 		let pending = shardCache.get(id);
 		if (!pending) {
-			pending = getJson<Species>(`inventory/${id}.json`, fetcher, stamp)
+			pending = getJson<Species>(`${dir}inventory/${id}.json`, fetcher, stamp)
 				.then((sp) => {
 					// The shard is the whole file's entry for this bird, so once it is here
 					// every sync reader (speciesById, the engine, the grammar) sees it.
@@ -225,7 +259,7 @@ export async function loadAssets(
 		}
 		// Every bird at once is the one case where the whole file is the lazy unit:
 		// a single fetch beats one request per species.
-		const whole = await getJson<Inventory>('inventory.json', fetcher, stamp);
+		const whole = await getJson<Inventory>(`${dir}inventory.json`, fetcher, stamp);
 		const held = new Set(inventory.species.map((s) => s.id));
 		inventory.species.push(...whole.species.filter((s) => !held.has(s.id)));
 	};
@@ -260,12 +294,13 @@ async function loadPointFeatures(
 	n: number,
 	centroids: Centroids,
 	fetcher: typeof fetch,
-	bust = ''
+	bust = '',
+	dir = ''
 ): Promise<{ pointFeatures: Float32Array | null; pointFeatureDims: number }> {
 	const dims = centroids.items[0]?.featuresLo?.length ?? 0;
 	if (!dims) return { pointFeatures: null, pointFeatureDims: 0 };
 	try {
-		const res = await fetcher(assetUrl('point-features.f32', bust));
+		const res = await fetcher(assetUrl(`${dir}point-features.f32`, bust));
 		if (!res.ok) return { pointFeatures: null, pointFeatureDims: 0 };
 		const data = new Float32Array(await res.arrayBuffer());
 		if (data.length !== n * dims) {

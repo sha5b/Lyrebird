@@ -9,12 +9,14 @@
 		CLASS_COUNT,
 		PROVENANCE,
 		clusterIndexFor,
+		detectGalaxyMaps,
 		loadAssets,
 		pointProvenance,
 		songSyllables,
 		speciesById,
 		syllableCoverage,
-		type ClusterLookup
+		type ClusterLookup,
+		type GalaxyMap
 	} from '$lib/data/assets';
 	import { BirdyEngine, type ScheduledSyllable } from '$lib/audio/engine';
 	import { Listener } from '$lib/audio/listener';
@@ -112,6 +114,15 @@
 	let recordings = $state<{ url: string; name: string }[]>([]);
 	let viewOpen = $state(false);
 	let helpOpen = $state(false);
+	/**
+	 * The known/unknown map switcher. `mapsAvailable` is probed once at startup: a
+	 * `--clustering both` build ships `known/` and `unknown/` next to the root asset set,
+	 * and only then does the corner stack gain the toggle. `mapDir` records which map the
+	 * running galaxy was loaded from ('' = the root build); `mapKind` below is what the
+	 * loaded manifest itself says it is, so the toggle can never disagree with the picture.
+	 */
+	let mapsAvailable = $state(false);
+	let mapDir = $state<'' | GalaxyMap>('');
 	// Particles are marks, not blobs. At 6 the cloud reads as poster paint once the
 	// camera holds the whole corpus; 3 keeps thirty thousand of them countable.
 	let pointSize = $state(3);
@@ -435,6 +446,9 @@
 			.catch((err: unknown) => {
 				loadError = err instanceof Error ? err.message : String(err);
 			});
+		// One probe pair, answered once: whether this asset root carries both clustering
+		// maps. A single-map build answers 404 and the toggle simply never appears.
+		detectGalaxyMaps(fetch).then((ok) => (mapsAvailable = ok));
 		// The device list is readable before any permission — only the labels are
 		// withheld — so the picker can show what is plugged in straight away, and track
 		// it when hardware comes and goes.
@@ -484,7 +498,7 @@
 		const wasSinging = chorus;
 		const hadMic = micOn;
 		try {
-			const loaded = await loadAssets(fetch, stamp);
+			const loaded = await loadAssets(fetch, stamp, mapDir);
 			listener?.stop();
 			engine?.dispose();
 			listener = null;
@@ -524,6 +538,25 @@
 		}
 	}
 
+	/** Which map the loaded galaxy is, read from its own manifest rather than remembered. */
+	const mapKind = $derived<GalaxyMap>(
+		assets?.manifest.clustering === 'hdbscan' ? 'unknown' : 'known'
+	);
+
+	/**
+	 * The map switcher is a full reload, not an in-place mutation: the two maps are two
+	 * complete asset sets — different knots, different positions, different inventories —
+	 * so switching takes exactly the path a rebuild-triggered reload takes, down to the
+	 * engine being rebuilt against the new inventory.
+	 */
+	async function switchMap(kind: GalaxyMap) {
+		if (reloading || !mapsAvailable || kind === mapKind) return;
+		mapDir = kind;
+		// No stamp: the sub-build's own manifest supplies it, the same way the initial
+		// load's does.
+		await reloadGalaxy('');
+	}
+
 	$effect(() => {
 		// The pipeline reports the build it has on disk; the assets carry the one in the
 		// browser. When they differ, this session is looking at a galaxy that no longer
@@ -538,7 +571,10 @@
 		// set, and it is not needed for that: `manifest.json` is written *last* by both
 		// `build` and `grow`, so a changed stamp is itself the proof that everything else
 		// already landed, and every fetch is pinned to that stamp.
-		if (built && loaded && built !== loaded) untrack(() => reloadGalaxy(built));
+		if (built && loaded && built !== loaded && !mapDir) untrack(() => reloadGalaxy(built));
+		// `!mapDir` because the pipeline reports the *root* build's stamp: while a clustering
+		// map is showing, the loaded manifest carries the sub-build's own stamp, which never
+		// equals it — comparing them would reload forever. Switching back reloads fresh.
 	});
 
 	/** Audio can only start from a user gesture, so the whole audio side begins here. */
@@ -1550,6 +1586,28 @@ uv run birdy-pipeline build</pre>
 
 			<!-- Display settings belong on the thing they change, not in the tab strip. -->
 			<div class="viewctl">
+				{#if mapsAvailable}
+					<!--
+						Two maps of the same corpus, one render: the same choice the Learn
+						tab's build buttons offer, applied to the galaxy already loaded.
+						Absent on a single-map build — probed once at startup, so there is
+						no toggle and no subdir fetch on today's production assets.
+					-->
+					<div class="segmented mapctl" role="group" aria-label="Galaxy map">
+						<button
+							class:on={mapKind === 'known'}
+							disabled={reloading}
+							title="One cluster per syllable type, seeded at that type's own centre, every point assigned. This is what lets the app name, label and draw a path for anything it sings — it cannot report an unidentified sound."
+							onclick={() => switchMap('known')}>Name everything</button
+						>
+						<button
+							class:on={mapKind === 'unknown'}
+							disabled={reloading}
+							title="Find however many dense regions there are and leave the rest unassigned. Regions of real audio with nothing documented in them are flagged `unknown` — candidate new syllables. Coverage is not guaranteed, so this is for discovery rather than for the galaxy you listen in."
+							onclick={() => switchMap('unknown')}>Find the unknown</button
+						>
+					</div>
+				{/if}
 				<button
 					class="viewbtn"
 					class:open={viewOpen}
@@ -1868,6 +1926,25 @@ uv run birdy-pipeline build</pre>
 					<p class="note faint">
 						Sing something, or turn on the microphone. Clusters flare where the sound lands in
 						the corpus — and stay dark when it lands nowhere.
+					</p>
+				{/if}
+				{#if mapsAvailable}
+					<!--
+						Which of the two maps is showing, stated where the reading lives. In the
+						density map the unassigned share is the headline honesty number: those are
+						real sounds the build refused to place, and the panel says so in the
+						interface's own unidentified language (§8.5) rather than letting the gaps
+						read as empty space.
+					-->
+					<p class="caveat note">
+						{#if mapKind === 'known'}
+							Map: one knot per type, every sound assigned — this view cannot report an
+							unidentified sound.
+						{:else}
+							Map: dense regions only. {assets.manifest.unassigned?.toLocaleString() ?? 'Some'}
+							of {assets.points.n.toLocaleString()} sounds sit in no region — unidentified:
+							real acoustics, no documented function.
+						{/if}
 					</p>
 				{/if}
 				<p class="caveat note">
@@ -2226,7 +2303,9 @@ uv run birdy-pipeline build</pre>
 							<!--
 								The keyboard is every fitted type, suggestion or not: the grammar is
 								first-order and incomplete, so the ranked row is advice, not a gate. The
-								dot says how close a render of the fit comes to its recording.
+								dot says how close a render of the fit sits to its type's cluster in
+								the descriptor space — a clustering match, not an audible-fidelity
+								guarantee (docs/19).
 							-->
 							<div class="chips">
 								{#each currentSpecies.syllables as s (s.id)}
@@ -2234,7 +2313,7 @@ uv run birdy-pipeline build</pre>
 									<button
 										class="chip"
 										onclick={() => appendToken(s.id, 'free')}
-										title="{s.label}{cosine !== undefined ? ` · render matches its recording at cosine ${cosine.toFixed(2)}` : ''}"
+										title="{s.label}{cosine !== undefined ? ` · render sits at cosine ${cosine.toFixed(2)} from its type's cluster in the descriptor space — a clustering match; audible fidelity is measured separately (MCD, on the bench)` : ''}"
 									>
 										{s.id}{#if cosine !== undefined}<span
 												class="quality"
@@ -2672,7 +2751,7 @@ uv run birdy-pipeline serve</pre>
 							{#if pipelineStatus.learned.exists}
 								<dl
 									class="facts mono"
-									title="Cosine between each fitted syllable's resynthesis and the audio it came from; 1.0 would mean the syrinx model reproduces the recording exactly."
+									title="Cosine between each fitted syllable's resynthesis and its type's cluster in the 28-d descriptor space — a clustering match, not an audible-fidelity guarantee: docs/19 measured its correlation with audible distortion at ≈ 0.1. Audible fidelity is measured separately (MCD, on the bench), and is not shown here."
 								>
 									<div><dt>median cosine</dt><dd>{pipelineStatus.learned.medianCosine ?? '—'}</dd></div>
 									<div><dt>worst</dt><dd>{pipelineStatus.learned.worstCosine ?? '—'}</dd></div>
@@ -2966,6 +3045,14 @@ uv run birdy-pipeline serve</pre>
 	.viewbtn.open {
 		border-color: var(--signal);
 		color: var(--signal);
+	}
+
+	/* The map switcher is the Learn tab's segmented control moved onto the view: same
+	   labels, same `.on` active language, compact enough to sit above the icon buttons. */
+	.mapctl button {
+		flex: initial;
+		padding: 0.28rem 0.55rem;
+		font-size: 0.68rem;
 	}
 
 	/* Sits in the flow of the button it hangs from, so `.panel`'s absolute positioning and
@@ -3635,7 +3722,8 @@ uv run birdy-pipeline serve</pre>
 		border-left: 2px solid var(--ink-dim);
 	}
 
-	/* Fit-quality dot: how close a render of this type comes to its own recording. */
+	/* Fit-quality dot: how close a render of this type sits to the type's cluster in the
+	   descriptor space — a clustering match, not audible fidelity (docs/19). */
 	.quality {
 		display: inline-block;
 		width: 0.35rem;
