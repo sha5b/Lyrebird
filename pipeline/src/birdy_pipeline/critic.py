@@ -51,7 +51,7 @@ import json
 import math
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any, Sequence
 
 import numpy as np
 import torch
@@ -328,6 +328,13 @@ class PatchSet:
     recordings: np.ndarray | None = None
     recording_names: list[str] = field(default_factory=list)
     recordist_names: list[str] = field(default_factory=list)
+    #: Which corpus each patch came from (dense int into `domain_names`) — only set by
+    #: `merge_patchsets`, the AVEX diversity experiment's input (docs/17 §17.4). The
+    #: cross-domain-positive recipe pairs "same species, other domain", which is only
+    #: expressible once two stores' real sides live in one PatchSet with this label
+    #: kept straight. None on single-store sides, where the question does not arise.
+    domains: np.ndarray | None = None
+    domain_names: list[str] = field(default_factory=list)
 
     def __len__(self) -> int:
         return int(self.patches.shape[0])
@@ -341,6 +348,8 @@ class PatchSet:
             None if self.recordings is None else self.recordings[mask],
             self.recording_names,
             self.recordist_names,
+            None if self.domains is None else self.domains[mask],
+            self.domain_names,
         )
 
 
@@ -447,6 +456,91 @@ def fake_patches(
     return PatchSet(np.stack(patches), np.asarray(labels, dtype=np.int64), list(names), False)
 
 
+def merge_patchsets(sets: Sequence[PatchSet], domain_names: Sequence[str]) -> PatchSet:
+    """One real side out of several stores', with the domain of every patch kept.
+
+    The AVEX diversity arm (docs/17 §17.4): Stage 1 showed no loss term buys recorder
+    invariance cheaper than 1:1 against species, and the recorded lead is corpus
+    diversity at training time — which needs the shared species from *both* stores in
+    a single training set. The merge is where the labels could silently lie, so the
+    rules are explicit: species reindex onto the sorted union (each store's own index
+    is meaningless across stores); recording ids are namespaced `domain:id` because
+    two harvesters can mint the same id; `domains` records which corpus each patch
+    came from so `_cross_domain_partners` can pair "same bird, other recorder".
+    Recordist names are *not* namespaced — they are people, and a genuine
+    cross-store collision merely merges two people into one probe class, which reads
+    conservatively.
+    """
+    if not sets or len(sets) != len(domain_names):
+        raise ValueError("merge_patchsets needs one domain name per PatchSet")
+    for s in sets:
+        if not s.real:
+            raise ValueError(
+                "merge_patchsets is for real sides; the synthetic side is rendered "
+                "once from the inventory and shared across arms"
+            )
+        if s.recordings is None:
+            raise ValueError(
+                "merge_patchsets needs recording labels — pass the store's recordings "
+                "table to real_patches, or the merged side cannot pair across domains"
+            )
+    names = sorted({n for s in sets for n in s.names})
+    index = {n: i for i, n in enumerate(names)}
+    patches, species, recordings, domains = [], [], [], []
+    recording_names: list[str] = []
+    recordist_names: list[str] = []
+    for d, s in enumerate(sets):
+        offset = len(recording_names)
+        recording_names.extend(f"{domain_names[d]}:{r}" for r in s.recording_names)
+        recordist_names.extend(s.recordist_names)
+        reindex = np.asarray([index[n] for n in s.names], dtype=np.int64)
+        patches.append(s.patches)
+        species.append(reindex[s.species])
+        recordings.append(s.recordings + offset)
+        domains.append(np.full(len(s), d, dtype=np.int64))
+    return PatchSet(
+        patches=np.concatenate(patches),
+        species=np.concatenate(species),
+        names=names,
+        real=True,
+        recordings=np.concatenate(recordings),
+        recording_names=recording_names,
+        recordist_names=recordist_names,
+        domains=np.concatenate(domains),
+        domain_names=list(domain_names),
+    )
+
+
+def _cross_domain_partners(
+    species: np.ndarray, domains: np.ndarray, rng: np.random.Generator
+) -> np.ndarray:
+    """For each patch, the index of a same-species patch from a *different* domain, or -1.
+
+    The pairing rule of the domain-invariant contrastive recipe: an NT-Xent positive
+    is "another syllable of the same species, recorded in the other domain", so the
+    only way to pull a pair together is to drop whatever the domains differ in. -1
+    where the species lives in one domain only — the caller falls back to the
+    instance positive there, so single-domain species in a merged corpus cost
+    nothing. Partners are drawn from the whole training side, not the batch: with
+    13 species x 2 domains a 256-batch nearly always holds both, and restricting the
+    pool to the batch would only add sampling noise.
+    """
+    by_cell: dict[tuple[int, int], list[int]] = {}
+    for i, (sp, dm) in enumerate(zip(species.tolist(), domains.tolist())):
+        by_cell.setdefault((sp, dm), []).append(i)
+    by_species: dict[int, list[int]] = {}
+    for (sp, _dm), idx in by_cell.items():
+        by_species.setdefault(sp, []).extend(idx)
+    partners = np.full(len(species), -1, dtype=np.int64)
+    for (sp, dm), idx in by_cell.items():
+        pool = [j for j in by_species[sp] if domains[j] != dm]
+        if not pool:
+            continue  # single-domain species: instance positive, by design
+        partners[idx] = rng.integers(0, len(pool), size=len(idx))
+        partners[idx] = np.asarray(pool, dtype=np.int64)[partners[idx]]
+    return partners
+
+
 # --- training ----------------------------------------------------------------------
 
 
@@ -503,6 +597,13 @@ class CriticConfig:
     #: A recordist needs at least this many training patches to be an adversarial class;
     #: below it the class is mostly noise and the head would learn to ignore it anyway.
     recordist_min_patches: int = 20
+    #: The AVEX arm-C recipe (docs/17 §17.4): when the real side carries `domains` (a
+    #: `merge_patchsets` of several stores), the NT-Xent positive is drawn as
+    #: same-species-across-domains wherever the species exists in both — the
+    #: domain-invariant contrastive recipe, testing whether the *mechanism* adds
+    #: anything over the merged data alone (arm B). Default off = the instance-positive
+    #: path every previous run used; without domain labels it is silently off too.
+    cross_domain_positives: bool = False
 
 
 @dataclass
@@ -654,6 +755,20 @@ def train(
     steps = max(1, len(r_fit) // cfg.batch) * cfg.epochs
     sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=cfg.lr, total_steps=steps)
 
+    # Arm C's pairing table, drawn once over the whole training side: partner[i] is a
+    # same-species patch from another domain, or -1 where the species is single-domain
+    # (those keep the instance positive, so merged corpora with single-domain species
+    # degrade gracefully to arm B).
+    partner_map: np.ndarray | None = None
+    if cfg.cross_domain_positives:
+        if r_fit.domains is None:
+            log("cross-domain positives off: the real side carries no domain labels "
+                "(merge_patchsets provides them)")
+        else:
+            partner_map = _cross_domain_partners(r_fit.species, r_fit.domains, rng)
+            log(f"cross-domain positives: {int((partner_map >= 0).sum())}/{len(r_fit)} "
+                "training patches have a same-species partner in another domain")
+
     def to_input(patches: np.ndarray) -> torch.Tensor:
         z = (patches - mean) / std
         return torch.from_numpy(np.ascontiguousarray(z, dtype=np.float32)).unsqueeze(1).to(device)
@@ -702,9 +817,21 @@ def train(
                 rng,
                 cfg.mixstyle_alpha,
             )
+            # The second view's source: the same syllable (the instance positive), or
+            # — arm C, where a partner exists — a same-species patch from the other
+            # domain, so the contrastive term pays for domain gaps, not instance gaps.
+            if partner_map is not None:
+                pi = partner_map[ri]
+                src_b = np.where(
+                    (pi >= 0)[:, None, None],
+                    r_fit.patches[np.clip(pi, 0, None)],
+                    real_batch,
+                )
+            else:
+                src_b = views_src
             views = np.concatenate([
                 augment(views_src, rng, cfg.aug_channel_db),
-                augment(views_src, rng, cfg.aug_channel_db),
+                augment(src_b, rng, cfg.aug_channel_db),
             ])
             _, _, _, proj = model(to_input(views))
             loss_contrast = _nt_xent(proj, cfg.temperature)
@@ -1405,6 +1532,92 @@ def self_test(verbose: bool = True) -> None:
         "sanity inverted: a flat channel offset is not decodable at all — "
         f"probe {trained_rec.report.recordist_probe}"
     )
+
+    # --- the AVEX merge and cross-domain pairing (docs/17 §17.4) ----------------------
+    # merge_patchsets keeps the labels straight: species reindex onto the sorted
+    # union (patch *content* below encodes the original label, so a wrong reindex is
+    # a wrong value, not a wrong count), recording ids are namespaced so two stores
+    # minting the same id cannot collide, and the domain of every patch survives a
+    # subset().
+    def _mini(names: list[str]) -> PatchSet:
+        n = 8
+        sp = np.asarray([i % len(names) for i in range(n)], dtype=np.int64)
+        patches = np.broadcast_to(
+            sp[:, None, None].astype(np.float32), (n, knots, mel)
+        ).copy()
+        return PatchSet(
+            patches,
+            sp,
+            names,
+            True,
+            recordings=np.arange(n, dtype=np.int64),
+            recording_names=[f"rec{i}" for i in range(n)],
+            recordist_names=[f"person{i}" for i in range(n)],
+        )
+
+    m1, m2 = _mini(["sp_b", "sp_a"]), _mini(["sp_a", "sp_c"])
+    merged = merge_patchsets([m1, m2], ["d1", "d2"])
+    assert merged.names == ["sp_a", "sp_b", "sp_c"]
+    assert merged.domains is not None and len(merged) == 16
+    new_index = {n: i for i, n in enumerate(merged.names)}
+    for ps, dom in ((m1, 0), (m2, 1)):
+        rows = np.nonzero(merged.domains == dom)[0]
+        assert len(rows) == len(ps)
+        for row, (orig_sp, content) in enumerate(
+            zip(ps.species.tolist(), ps.patches[:, 0, 0].tolist())
+        ):
+            assert merged.species[rows[row]] == new_index[ps.names[orig_sp]]
+            assert float(merged.patches[rows[row], 0, 0]) == content, (
+                "merge reordered or mislabelled a patch"
+            )
+    assert len(set(merged.recording_names)) == 16, (
+        "two stores minting the same recording ids must not collide in the merge"
+    )
+    assert len(merged.recordist_names) == len(merged.recording_names)
+    sub = merged.subset(merged.domains == 1)
+    assert sub.domains is not None and set(sub.domains.tolist()) == {1}
+    assert sub.names == merged.names and len(sub.recordings) == 8
+
+    # _cross_domain_partners: every drawn partner is same-species *and* other-domain,
+    # and a single-domain species gets -1 (the instance-positive fallback), never a
+    # cross-species partner.
+    sp_arr = np.asarray([0, 0, 0, 1, 1, 2, 2, 2, 2, 3, 3], dtype=np.int64)
+    dm_arr = np.asarray([0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0], dtype=np.int64)
+    partners = _cross_domain_partners(sp_arr, dm_arr, rng)
+    for i, j in enumerate(partners.tolist()):
+        if j < 0:
+            assert set(dm_arr[sp_arr == sp_arr[i]].tolist()) == {dm_arr[i]}, (
+                f"patch {i} has a cross-domain partner but none was drawn"
+            )
+        else:
+            assert sp_arr[j] == sp_arr[i] and dm_arr[j] != dm_arr[i], (
+                f"partner {j} of {i} is not same-species-other-domain"
+            )
+    assert (partners[sp_arr == 3] < 0).all(), "single-domain species got a partner"
+
+    # The arm-C wiring end to end: both species in both domains, two epochs, finite
+    # loss — and with the knob off the very same merged side must train identically
+    # to the pre-recipe path (no partner lookup, instance positives only).
+    idx = np.concatenate([np.arange(0, 64), np.arange(700, 764)])
+    dom_a = PatchSet(
+        real.patches[idx], real.species[idx], list(real.names), True,
+        recordings=np.arange(128, dtype=np.int64),
+        recording_names=[f"r{i}" for i in range(128)],
+        recordist_names=[f"p{i}" for i in range(128)],
+    )
+    dom_b = PatchSet(
+        real.patches[idx + 64], real.species[idx + 64], list(real.names), True,
+        recordings=np.arange(128, dtype=np.int64),
+        recording_names=[f"r{i}" for i in range(128)],
+        recordist_names=[f"p{i}" for i in range(128)],
+    )
+    two_domains = merge_patchsets([dom_a, dom_b], ["d1", "d2"])
+    cfg_xd = CriticConfig(
+        epochs=2, batch=64, holdout_species=0.0, holdout_syllables=0.2, seed=1,
+        cross_domain_positives=True,
+    )
+    trained_xd = train(two_domains, fake, cfg_xd, log=quiet)
+    assert np.isfinite(trained_xd.report.final_loss), "cross-domain train diverged"
 
     # a round trip through disk must give the same numbers
     import tempfile

@@ -28,7 +28,6 @@ import threading
 import time
 import urllib.parse
 from collections import deque
-from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Callable
@@ -201,50 +200,65 @@ class Pipeline:
 
         learned: dict[str, Any] = {"exists": False}
         if self.learned_path.exists():
-            doc = json.loads(self.learned_path.read_text(encoding="utf-8"))
-            cosines = [
-                s["learned"]["resynthesisCosine"]
-                for sp in doc.get("species", [])
-                for s in sp.get("syllables", [])
-                if s.get("learned", {}).get("resynthesisCosine")
-            ]
-            # The file may be merged (documented calls kept, fitted types appended) or
-            # learned-only, so a species is only reported once it has fitted types, and
-            # the bout is looked up by id rather than by position.
-            learned = {
-                "exists": True,
-                "path": str(self.learned_path),
-                "species": [
-                    {
-                        "id": sp["id"],
-                        "common": sp.get("common", sp["id"]),
-                        "types": sum(1 for s in sp.get("syllables", []) if s.get("learned")),
-                        "states": len(sp.get("grammar", {}).get("transitions", {})),
-                        "bout": next(
-                            (s.get("sequence", []) for s in sp.get("songs", [])
-                             if s.get("id") == "learned_bout"),
-                            [],
-                        ),
-                    }
+            try:
+                doc = json.loads(self.learned_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                # `write_learned_inventory` is not atomic, and this endpoint is polled
+                # every 1.5 s — including while a fit is writing that file. A partial
+                # read used to escape as a handler exception, which `ThreadingHTTPServer`
+                # prints to stderr — teed into the job log — while every status poll
+                # dropped its connection. Exists-but-unreadable is the honest answer.
+                learned = {"exists": True, "path": str(self.learned_path)}
+            else:
+                cosines = [
+                    s["learned"]["resynthesisCosine"]
                     for sp in doc.get("species", [])
-                    if any(s.get("learned") for s in sp.get("syllables", []))
-                ],
-                "medianCosine": round(sorted(cosines)[len(cosines) // 2], 4) if cosines else None,
-                "worstCosine": round(min(cosines), 4) if cosines else None,
-            }
+                    for s in sp.get("syllables", [])
+                    if s.get("learned", {}).get("resynthesisCosine")
+                ]
+                # The file may be merged (documented calls kept, fitted types appended) or
+                # learned-only, so a species is only reported once it has fitted types, and
+                # the bout is looked up by id rather than by position.
+                learned = {
+                    "exists": True,
+                    "path": str(self.learned_path),
+                    "species": [
+                        {
+                            "id": sp["id"],
+                            "common": sp.get("common", sp["id"]),
+                            "types": sum(1 for s in sp.get("syllables", []) if s.get("learned")),
+                            "states": len(sp.get("grammar", {}).get("transitions", {})),
+                            "bout": next(
+                                (s.get("sequence", []) for s in sp.get("songs", [])
+                                 if s.get("id") == "learned_bout"),
+                                [],
+                            ),
+                        }
+                        for sp in doc.get("species", [])
+                        if any(s.get("learned") for s in sp.get("syllables", []))
+                    ],
+                    "medianCosine": round(sorted(cosines)[len(cosines) // 2], 4) if cosines else None,
+                    "worstCosine": round(min(cosines), 4) if cosines else None,
+                }
 
         built: dict[str, Any] = {"exists": False}
         manifest = self.out_path / "manifest.json"
         if manifest.exists():
-            m = json.loads(manifest.read_text(encoding="utf-8"))
-            built = {
-                "exists": True,
-                "builtAt": m.get("builtAt"),
-                "points": m.get("points"),
-                "clusters": m.get("clusters"),
-                "source": m.get("source"),
-                "sourceMix": m.get("sourceMix", {}),
-            }
+            try:
+                m = json.loads(manifest.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                # Same half-written-file window as the learned inventory above: a
+                # build rewrites the manifest while the Learn tab is polling.
+                built = {"exists": True}
+            else:
+                built = {
+                    "exists": True,
+                    "builtAt": m.get("builtAt"),
+                    "points": m.get("points"),
+                    "clusters": m.get("clusters"),
+                    "source": m.get("source"),
+                    "sourceMix": m.get("sourceMix", {}),
+                }
 
         species = [
             {"id": sp["id"], "common": sp.get("common", sp["id"])}
@@ -1133,6 +1147,72 @@ class Pipeline:
         return self.start("build", " ".join(parts), run)
 
 
+# --- startup ------------------------------------------------------------------------
+
+
+def newer_stores(store_path: Path) -> list[Path]:
+    """Sibling stores under `store_path`'s parent whose `state.json` is newer.
+
+    Pure mtime comparison, no `HarvestStore`: the question "has some other store moved
+    since the one I am holding" has to be answerable about stores too big or too broken
+    to load, and it is what `self_test` exercises with empty files.
+    """
+    try:
+        mine = (store_path / "state.json").stat().st_mtime
+    except OSError:
+        return []
+    newer: list[Path] = []
+    try:
+        siblings = sorted(store_path.parent.iterdir())
+    except OSError:
+        return []
+    for other in siblings:
+        if other == store_path or not other.is_dir():
+            continue
+        try:
+            if (other / "state.json").stat().st_mtime > mine:
+                newer.append(other)
+        except OSError:
+            continue
+    return newer
+
+
+def default_store_report(store_path: Path) -> list[str]:
+    """The startup lines for a `serve` that was not told which store to hold.
+
+    **The default store and the working store are different directories, and for a long
+    time nothing said which one you were on.** `--store` defaults to `out/harvest` for
+    historical reasons while the project's corpus is `out/harvest-gan`, and the
+    confusion was measured, not hypothetical: fits ran against the wrong store
+    (docs/11 §11.1 cost a galaxy), and a stale embeddings sidecar from one store met
+    the other store's syllable count in a Learn-tab build (`read_store_embeddings`
+    exists because of that crash). An explicit `--store` is a decision and is left
+    alone; the *defaulted* store is a guess, so the first thing the process says is
+    what it is holding — path, syllables, species — and whether a sibling store has
+    moved more recently, which is the signature of "you meant the other one".
+
+    Lines, not logging, so `cmd_serve` owns when they are printed and this stays
+    testable without a server.
+    """
+    state = store_path / "state.json"
+    if not state.exists():
+        return [f"store: {store_path} does not exist yet — a harvest will create it"]
+    try:
+        store = harvest.HarvestStore(store_path, load_syllables=False)
+        summary = f"{store.syllable_count} syllables, {len(store.strata)} species"
+    except Exception:  # the report must never keep the server from starting
+        summary = "state.json unreadable"
+    lines = [
+        f"store: {store_path} — {summary} (the default; --store holds another)"
+    ]
+    for other in newer_stores(store_path):
+        lines.append(
+            f"WARNING: {other} was modified more recently than the store you "
+            f"started me on — did you mean --store {other}?"
+        )
+    return lines
+
+
 # --- HTTP ---------------------------------------------------------------------------
 
 
@@ -1368,3 +1448,41 @@ def diagnose_port(port: int) -> str:
         f"probably in TIME_WAIT from a server that just exited.{where}\n"
         f"  Wait a few seconds and try again, or use `--port`."
     )
+
+
+def self_test(verbose: bool = True) -> None:
+    """The store-freshness warning, exercised the way it fails: silently.
+
+    A `serve` defaulted onto the old store while the new one moved looks exactly like a
+    healthy startup — the only evidence is two `state.json` mtimes, so the assertions
+    here are about which comparison is made, not about the wording.
+    """
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmp:
+        parent = Path(tmp)
+        old = parent / "harvest"
+        new = parent / "harvest-gan"
+        untouched = parent / "harvest-mp"
+        for d in (old, new, untouched):
+            d.mkdir()
+            (d / "state.json").write_text("{}", encoding="utf-8")
+        # mtimes, explicit: the trap is defined by them, so the test sets them rather
+        # than trusting the order the writes above happened to land in.
+        os.utime(old / "state.json", (1000.0, 1000.0))
+        os.utime(new / "state.json", (2000.0, 2000.0))
+        os.utime(untouched / "state.json", (500.0, 500.0))
+
+        found = newer_stores(old)
+        assert found == [new], f"the newer sibling was not flagged: {found}"
+        assert newer_stores(new) == [], "the newest store must not warn about itself"
+        # A store that does not exist yet has nothing to compare against — and a first
+        # `serve` before any harvest must not warn about it either.
+        assert newer_stores(parent / "absent") == [], "a missing store cannot be stale"
+        # Siblings with no state.json are not stores; files are not directories.
+        (parent / "notes.txt").write_text("x", encoding="utf-8")
+        (parent / "empty-dir").mkdir()
+        assert newer_stores(old) == [new], "non-store siblings must not warn"
+
+    if verbose:
+        harvest.log("server self-test ok")

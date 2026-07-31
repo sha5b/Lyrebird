@@ -1228,6 +1228,7 @@ def cmd_learn(args: argparse.Namespace) -> int:
         use_tube=args.use_tube,
         use_respiration=args.respiration,
         use_two_voice=args.two_voice,
+        mel_weight=args.mel_weight,
         jobs=args.jobs,
         prior=prior,
         # Where a discovered bird's common name is. Without it every species that is not in
@@ -2532,11 +2533,21 @@ def cmd_expand(
 
 def cmd_serve(args: argparse.Namespace) -> int:
     """Local control surface for the Learn tab. Loopback only — see server.py."""
-    from .server import Pipeline, serve
+    from . import server as server_mod
 
-    serve(
-        Pipeline(
-            store_path=Path(args.store),
+    server_mod.self_test(verbose=False)
+    # None means the flag was not given, and a defaulted store is a guess — the default
+    # is out/harvest while the working store is out/harvest-gan, a confusion that has
+    # already cost a galaxy (docs/11 §11.1). So the default announces itself and warns
+    # about newer siblings; an explicit --store is a decision and behaves as before.
+    defaulted = args.store is None
+    store_path = DEFAULT_HARVEST_STORE if defaulted else Path(args.store)
+    if defaulted:
+        for line in server_mod.default_store_report(store_path):
+            log(line)
+    server_mod.serve(
+        server_mod.Pipeline(
+            store_path=store_path,
             inventory_path=Path(args.inventory),
             learned_path=Path(args.learned),
             out_path=Path(args.out),
@@ -3189,6 +3200,13 @@ def build_parser() -> argparse.ArgumentParser:
                      help="re-enable the waveguide tract, gated off because the 28-d "
                           "objective rejected it. Turning this on together with --critic is "
                           "the plan's own test of whether the learned objective is better")
+    lrn.add_argument("--mel-weight", type=float, default=0.0, metavar="W",
+                     help="give each type's mean member mel-path a share W of the "
+                          "inversion's objective (docs/19 §19.4: the spectral target "
+                          "that actually tracks audible distortion, Spearman -0.42 vs "
+                          "the cosine's +0.10 against MCD). 0 = the pre-docs/19 "
+                          "objective, bit-identical. 1.0 must not ship (the cosine "
+                          "guardrail collapses); 0.5 is the measured candidate")
     lrn.add_argument("--respiration", action="store_true",
                      help="attach the default respiratory set of docs/15 §1 (Fainstein, "
                           "Goller & Mindlin 2025: air-sac pressure gesture replacing the "
@@ -3601,7 +3619,11 @@ def build_parser() -> argparse.ArgumentParser:
         "serve", help="local control surface for the app's Learn tab (loopback only)"
     )
     s.add_argument("--port", type=int, default=8781)
-    s.add_argument("--store", default=str(DEFAULT_HARVEST_STORE))
+    s.add_argument("--store", default=None,
+                   help=f"harvest store the Learn tab works on "
+                        f"(default {DEFAULT_HARVEST_STORE}; starting on the default "
+                        f"prints which store it is and warns when a sibling store in "
+                        f"out/ has moved more recently)")
     s.add_argument("--inventory", default=str(DEFAULT_INVENTORY))
     s.add_argument("--learned", default=str(DEFAULT_LEARNED_INVENTORY))
     s.add_argument("--out", default=str(DEFAULT_OUT))

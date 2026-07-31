@@ -15,7 +15,13 @@ audio it was fitted from, alongside the cosine, so the two can be correlated:
 
 The correlation across types **is** the deliverable: if the cosine does not track MCD,
 then every gate in the pipeline is hill-climbing a proxy that does not measure the
-sound, and docs/17's verdicts inherit that caveat.
+sound, and docs/17's verdicts inherit that caveat. (Verdict, docs/19 §19.2: it does
+not — Pearson 0.106, Spearman 0.100 over 200 types.) Each row therefore also carries
+`melTarget`, the promoted successor of docs/19 §19.3: `learn.MelTargetTerm`'s
+`exp(-LSD)` similarity of the render against the type's mean member mel-path,
+computed on the same render the cosine is recomputed from. The bench is the verdict
+instrument for that promotion — the mel target must correlate with MCD materially
+better than the cosine's ~0.1 or the premise fails.
 
 **Why channel normalisation comes first.** The recordings are field audio through an
 unknown mic chain — iNatSounds is phones and handheld recorders, each with its own
@@ -381,6 +387,7 @@ def run_bench(
         "decode": 0,
         "tooShort": 0,
         "noCosine": 0,
+        "noMelPath": 0,
     }
     for sp in inventory.get("species", []):
         if limit is not None and len(rows) >= limit:
@@ -435,6 +442,14 @@ def run_bench(
             if cosine is None:
                 skipped["noCosine"] += 1
                 continue
+            # The docs/19-promoted fit target, scored on the same render the cosine
+            # was recomputed from, against the same members' mean mel-path the fit
+            # would aim at — the correlation of this column with MCD is the verdict
+            # on whether the promotion was right.
+            mel_term = learn.mel_target_term(members, 1.0)
+            if mel_term is None:
+                skipped["noMelPath"] += 1
+                continue
             rows.append(
                 {
                     "species": sp["id"],
@@ -444,6 +459,7 @@ def run_bench(
                     "bandHz": round(band_hz, 1),
                     "storedCosine": learned_block.get("resynthesisCosine"),
                     "cosine": round(cosine, 4),
+                    "melTarget": round(mel_term.similarity(render), 4),
                     **{k: round(v, 3) for k, v in pair.items()},
                 }
             )
@@ -461,32 +477,40 @@ def run_bench(
 
 
 def correlations(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
-    """Pearson and Spearman of the cosine against MCD and STFT error across types.
+    """Pearson and Spearman of each fit-objective candidate against MCD and STFT error.
 
     Pearson asks "is the relationship linear", Spearman asks "does it even rank" —
     the second is the one that matters for the gates, which only ever compare two
-    fits. Expect negative signs: a better fit means a *higher* cosine and a *lower*
+    fits. Expect negative signs: a better fit means a *higher* score and a *lower*
     distortion, so a working proxy shows up as a negative correlation. n < 3 reports
-    nothing rather than a noise correlation on two points.
+    nothing rather than a noise correlation on two points. The candidates are the
+    incumbent 28-d cosine and, when the rows carry it, the docs/19 mel target.
     """
     from scipy import stats
 
     out: dict[str, Any] = {"n": len(rows)}
     if len(rows) < 3:
         return out
-    cos = np.asarray([r["cosine"] for r in rows], dtype=float)
-    for key, label in (("mcdDb", "cosineVsMcd"), ("stftDb", "cosineVsStft")):
-        v = np.asarray([r[key] for r in rows], dtype=float)
-        ok = np.isfinite(v) & np.isfinite(cos)
+    for score_key, dist_key, label in (
+        ("cosine", "mcdDb", "cosineVsMcd"),
+        ("cosine", "stftDb", "cosineVsStft"),
+        ("melTarget", "mcdDb", "melTargetVsMcd"),
+        ("melTarget", "stftDb", "melTargetVsStft"),
+    ):
+        if score_key not in rows[0]:
+            continue
+        s = np.asarray([r[score_key] for r in rows], dtype=float)
+        v = np.asarray([r[dist_key] for r in rows], dtype=float)
+        ok = np.isfinite(v) & np.isfinite(s)
         if int(ok.sum()) < 3:
             continue
-        p = stats.pearsonr(cos[ok], v[ok])
-        s = stats.spearmanr(cos[ok], v[ok])
+        p = stats.pearsonr(s[ok], v[ok])
+        sp = stats.spearmanr(s[ok], v[ok])
         out[label] = {
             "pearson": round(float(p.statistic), 4),
             "pearsonP": float(p.pvalue),
-            "spearman": round(float(s.statistic), 4),
-            "spearmanP": float(s.pvalue),
+            "spearman": round(float(sp.statistic), 4),
+            "spearmanP": float(sp.pvalue),
             "n": int(ok.sum()),
         }
     return out
@@ -506,7 +530,7 @@ def format_report(report: dict[str, Any]) -> str:
         f"{'correlation':<16} {'pearson':>8} {'p':>10} {'spearman':>9} "
         f"{'p':>10} {'n':>4}"
     )
-    for label in ("cosineVsMcd", "cosineVsStft"):
+    for label in ("cosineVsMcd", "cosineVsStft", "melTargetVsMcd", "melTargetVsStft"):
         c = corr.get(label)
         if c:
             lines.append(
@@ -521,7 +545,7 @@ def format_report(report: dict[str, Any]) -> str:
             ("best", by_cos[-1]),
         ]
         lines.append(
-            f"\n{'':<7} {'type':<38} {'cos':>6} {'stored':>6} {'mcdDb':>6} "
+            f"\n{'':<7} {'type':<38} {'cos':>6} {'stored':>6} {'mel':>6} {'mcdDb':>6} "
             f"{'raw':>6} {'stft':>6} {'raw':>6}"
         )
         for tag, r in picked:
@@ -530,6 +554,7 @@ def format_report(report: dict[str, Any]) -> str:
                 f"{tag:<7} {r['species'] + '/' + r['typeId']:<38} "
                 f"{r['cosine']:>6.3f} "
                 f"{stored if stored is not None else float('nan'):>6.3f} "
+                f"{r.get('melTarget', float('nan')):>6.3f} "
                 f"{r['mcdDb']:>6.2f} {r['mcdDbRaw']:>6.2f} "
                 f"{r['stftDb']:>6.2f} {r['stftDbRaw']:>6.2f}"
             )
@@ -608,6 +633,18 @@ def self_test(verbose: bool = True) -> None:
         "demonstrated by this fixture"
     )
 
+    # 2b. The docs/19-promoted successor must NOT share that blindness: the mel target
+    # of the damaged render against the undamaged render's own path must fall far
+    # (measured: 1.0 -> 0.46, LSD 0.78 log units, a 0.54 drop against the cosine's
+    # 0.015), and identity must score 1.
+    mel_term = learn.MelTargetTerm(features.mel_path(ref)[:, : features.PATCH_MEL], 1.0)
+    assert mel_term.similarity(ref) == 1.0
+    mel_drop = 1.0 - mel_term.similarity(half)
+    assert mel_drop > 5.0 * cos_drop, (
+        f"the mel target must out-see the cosine on audible damage: "
+        f"{mel_drop:.3f} vs {cos_drop:.3f}"
+    )
+
     # 3: a stationary channel must be caught raw and corrected away.
     tilted = np.convolve(ref, [1.0, -0.6])[: ref.size]
     tilt = bench_pair(ref, tilted)
@@ -625,7 +662,8 @@ def self_test(verbose: bool = True) -> None:
         print(
             f"specbench self-test ok: identity {identical['mcdDb']:.3f} dB; "
             f"damaged half +{mcd_rise:.2f} dB MCD / +{stft_rise:.2f} dB STFT while "
-            f"cosine drops {cos_drop:.3f}; channel {tilt['mcdDbRaw']:.2f} -> "
+            f"cosine drops {cos_drop:.3f} and the mel target drops {mel_drop:.3f}; "
+            f"channel {tilt['mcdDbRaw']:.2f} -> "
             f"{tilt['mcdDb']:.2f} dB after correction"
         )
 

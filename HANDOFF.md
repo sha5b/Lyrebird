@@ -33,6 +33,29 @@
 - **Serial execution rule (owner): one heavy agent/job at a time** — the OOMs
   killed VS Code twice with two agents running. Queue: mel-patch fit target
   (running), then Stage-1 follow-up sweep, then serve store fix.
+- **Fidelity verdict: the premise holds, with a blend (docs/19 §19.4).**
+  `learn --mel-weight W` (wired end-to-end, default 0 = bit-identical, serial ==
+  parallel verified): the mel-path objective tracks audible distortion at Spearman
+  −0.42 vs the cosine's +0.10 (n=200). Pre-registered w=1 wins 7/10 on MCD (+5.6
+  dB) but the cosine guardrail collapses — **w=1 must not ship; w=0.5 is the
+  measured candidate** (MCD win survives, guardrail holds; exploratory, n=10).
+  Default learn behaviour unchanged; adoption is the owner's call after a bigger
+  probe.
+- **Serve store-trap fixed + server bug sweep** (server.py +119, cli.py serve
+  parser): no-flag `serve` now announces its store (path, syllables, species) and
+  warns per newer sibling store ("harvest-d100 was modified more recently — did you
+  mean --store ...?"); explicit `--store` unchanged. Fixed two real crashes:
+  `status()` dying on a half-written learned inventory/manifest.json during the
+  1.5 s poll. Sweep found nothing else worth surgery; 7 cosmetic/perf items
+  REPORTED-ONLY in the session log. AGENTS.md serve note updated.
+- **AVEX verdict: data wins, mechanism doesn't** (docs/17 §17.4):
+  naive merge of both domains (**12** shared species — horornis_diphone has zero
+  xeno observations, not 13) buys +14.4 pts cross-domain species retrieval with
+  AUC/accuracy held (gate PASSED); the cross-domain contrastive pairing reaches
+  +27.8 but drops realism AUC 0.012 (gate FAILED, re-testable bigger). Domain
+  grouping lift ≈ 0 in all arms — the confound lives in the retrieval gap, not
+  local geometry. **Invariance is a data action**: more domains per species, not
+  more losses. Machinery in critic.py, default-off.
 - **`build --clustering both`**: one render writes `<out>/known` (kmeans, every type
   named) + `<out>/unknown` (hdbscan, discovery view), each a complete verified asset
   set. **This is the debug cycle's default now** — the known and unknown views of a

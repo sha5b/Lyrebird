@@ -698,20 +698,37 @@ class MelTargetTerm:
     and the reported `resynthesis_cosine` is still measured with the pure cosine, so a
     mel-driven fit that collapses the descriptor match stays visible.
 
-    The similarity is a **cosine over the flattened (knots x 26) paths**, not a
-    log-spectral distance. Three reasons:
+    **The similarity is `exp(-LSD)`, not a cosine over the flattened paths** — and that
+    choice was measured, not aesthetic. The cosine was tried first: on a render whose
+    back half is low-passed at 2.5 kHz (plainly audible; specbench's self-test
+    fixture, +77.9 dB MCD) the 104-d path cosine drops 0.017 — no more than the 28-d
+    cosine's 0.015 on the same damage, because a cosine in 104 dimensions where most
+    of the structure is shared compresses every difference into the same sliver below
+    1. Standardising the cells in the store's population frame barely moved it
+    (0.975 vs 0.983). The term would have inherited the exact blindness it was built
+    to fix. LSD — mean over knots of the per-knot RMS log-mel difference, the
+    multi-resolution-STFT convention applied at mel resolution — is MCD one step
+    earlier in the transform (before the DCT), so the objective and the audible
+    metric become the same quantity, which is the whole point of docs/19 §19.3's
+    promotion. On the same fixtures it reads 0.78 log units for the damaged half and
+    0.47 for an 800 Hz formant shift where the 28-d cosine moves 0.003. `exp(-LSD)`
+    maps that into (0, 1] with 1 = identical: the cosine's own working range, so `w`
+    keeps one meaning along the blend — the commensurability argument `RealismTerm`
+    makes for `realism_unit`, ruling out the raw, unbounded -LSD.
 
-    1. It lands in [-1, 1], the cosine's own range, so `w` means the same thing at
-       every point of the surface — the commensurability argument `RealismTerm` makes
-       for `realism_unit`. A raw LSD lives in (-inf, 0] and would let the weight mean
-       something different at every point, exactly the bug that ruled out the unsquashed
-       realism logit.
-    2. `features.mel_path` mean-centres each path already, so both vectors are
-       loudness-free spectral *shape over time*; the cosine asks only whether the shape
-       moved the same way.
-    3. No DTW is needed: both sides are resampled onto the same knot fractions of their
-       own duration, so time is aligned by construction (`features.mel_path`'s own
-       docstring, and the same assumption specbench's `align_pair` makes).
+    Two alignment decisions, both following existing precedent:
+
+    * **Bands**: only the 23 bands at or below `features.PATCH_LP_HZ` (15 kHz) enter
+      the distance — the exact cut the critic's patch makes, for the exact measured
+      reason (docs/09 §9.5): xeno-canto's mp3s cut near 16 kHz, so the top three
+      bands of a stored path measure the codec, not the bird, and an objective that
+      matched them would teach the fit to reproduce an mp3. (The iNat half was
+      checked too: field noise keeps its top bands off the floor, so no further cut
+      is needed.) Both sides are centred over all 26 bands by `features.mel_path`
+      first and cut afterwards, so the centring convention is identical on both.
+    * **Time**: no DTW. Both sides are resampled onto the same knot fractions of
+      their own duration, so time is aligned by construction — the assumption
+      `features.mel_path` and specbench's `align_pair` already make.
 
     The target is the *mean of the type's members'* mel-paths — the same cluster-level
     reference the 28-d objective uses (`learn_species`' `real[i]`), so both terms of
@@ -731,26 +748,25 @@ class MelTargetTerm:
     ):
         self.weight = float(np.clip(weight, 0.0, 1.0))
         self.sample_rate = sample_rate
-        self.target = (
-            None if target is None else _unit(np.asarray(target, dtype=np.float64).ravel())
-        )
+        self.target = None if target is None else np.asarray(target, dtype=np.float64)
         self.calls = 0
 
     def similarity(self, audio: np.ndarray) -> float:
-        """The unblended mel-path cosine of one render against the target.
+        """The unblended mel-target score of one render: `exp(-LSD)` in (0, 1].
 
-        -1 when the render has no voiced frame — `features.mel_path` returns zeros,
-        there is no shape to match, and `_score` already answers -1 for a render with
-        no descriptor, so the two failure modes agree. NaN when the term has no
-        target: callers should have used `mel_target_term`, which returns None in
-        that case so the question never arises.
+        0 (not -1) when the render has no voiced frame — `features.mel_path` returns
+        zeros, LSD against any real target is then the distance to silence, and the
+        exponential already floors the answer at 0; no special case is needed beyond
+        computing it. NaN when the term has no target: callers should have used
+        `mel_target_term`, which returns None in that case so the question never
+        arises.
         """
         if self.target is None:
             return math.nan
-        path = features.mel_path(audio, sample_rate=self.sample_rate).ravel()
-        if not np.any(path):
-            return -1.0
-        return float(_unit(path) @ self.target)
+        path = features.mel_path(audio, sample_rate=self.sample_rate)
+        d = path[:, : features.PATCH_MEL] - self.target
+        lsd = float(np.mean(np.sqrt(np.mean(d * d, axis=1))))
+        return float(np.exp(-lsd))
 
     def blend(self, cosine: float, audio: np.ndarray) -> float:
         if self.weight <= 0.0 or self.target is None:
@@ -768,17 +784,23 @@ def mel_target_term(
 
     None — not a zero-weight term — so `_score` stays on exactly its old code path
     when the term is off (w = 0, the default) or when no member carries a mel-path.
-    The target is the mean of the members' stored paths; those were rounded to 3
-    decimals at harvest, which costs at most ~1e-3 of log-energy per cell — nothing
-    next to the log-units of spectral disagreement the term exists to see.
+    The target is the mean of the members' stored paths, cut to the bands at or below
+    `features.PATCH_LP_HZ` (the codec-artifact cut the term's docstring argues for);
+    the paths were rounded to 3 decimals at harvest, which costs at most ~1e-3 of
+    log-energy per cell — nothing next to the tenths of log-units of spectral
+    disagreement the term exists to see.
     """
     if weight <= 0.0:
         return None
     rows = [o.mel_path for o in members if o.mel_path]
     if not rows:
         return None
-    target = np.mean(np.asarray(rows, dtype=np.float64), axis=0)
-    return MelTargetTerm(target, weight, sample_rate=sample_rate)
+    target = np.mean(
+        np.asarray(rows, dtype=np.float64).reshape(len(rows), -1, features.N_MEL), axis=0
+    )
+    return MelTargetTerm(
+        target[:, : features.PATCH_MEL], weight, sample_rate=sample_rate
+    )
 
 
 # --- quality-weighted fitting --------------------------------------------------------
@@ -1551,13 +1573,13 @@ def fricative_seed(
         return None
     if float(np.median([o.flatness for o in members])) < FRICATIVE_FLATNESS_GATE:
         return None
-    before = _score(t.syllable, reference, calibration, frame, sample_rate)
+    before = _score(t.syllable, reference, calibration, frame, sample_rate, mel=mel)
 
     best_syl = {**t.syllable, "fricative": True}
-    best = _score(best_syl, reference, calibration, frame, sample_rate)
+    best = _score(best_syl, reference, calibration, frame, sample_rate, mel=mel)
     for nz in FRICATIVE_NOISE_GRID:
         cand = {**best_syl, "noise": nz}
-        s = _score(cand, reference, calibration, frame, sample_rate)
+        s = _score(cand, reference, calibration, frame, sample_rate, mel=mel)
         if s > best:
             best, best_syl = s, cand
 
@@ -1573,7 +1595,7 @@ def fricative_seed(
         for q in FRICATIVE_SEED_QS:
             for g in FRICATIVE_SEED_GAINS:
                 cand = {**best_syl, "formants": [[f, q, g] for f, _, _ in fm]}
-                s = _score(cand, reference, calibration, frame, sample_rate)
+                s = _score(cand, reference, calibration, frame, sample_rate, mel=mel)
                 if s > best:
                     best, best_syl = s, cand
 
@@ -2515,6 +2537,7 @@ def learn_species(
     use_tube: bool = False,
     use_respiration: bool = False,
     use_two_voice: bool = False,
+    mel_weight: float = 0.0,
 ) -> dict[str, Any] | None:
     """Fitted syllables + a measured grammar for one species, or None if too little data.
 
@@ -2541,6 +2564,13 @@ def learn_species(
     whether the new objective is actually better", so it is a flag here rather than a constant:
     the waveguide is known to be structurally right, and an objective that still rejects it is
     not fixed.
+
+    `mel_weight` gives each type's mean member mel-path a share `w` of the inversion's
+    objective (docs/19 §19.3: the 28-d cosine does not rank audible distortion,
+    r ≈ 0.1 vs MCD; the mel-path is the same family of quantity MCD measures). At the
+    default 0 the objective is bit-identical to the one that shipped before the term
+    existed. The cosine stays in the blend as the clustering guardrail, and the
+    reported `resynthesis_cosine` below is measured with the pure cosine regardless.
     """
     if len(observations) < MIN_OBSERVATIONS:
         if verbose:
@@ -2707,18 +2737,22 @@ def learn_species(
 
     gains: list[float] = []
     fricative_shipped = 0
+    # One mel target per type (docs/19 §19.3), built from the same members the 28-d
+    # reference is built from; all None at the default weight, so `_score` keeps its
+    # old code path exactly.
+    mels = [mel_target_term(t.members, mel_weight) for t in fitted]
     for i, t in enumerate(fitted):
         # Search first, then measure: the reported cosine has to describe the syllable
         # that ships, not the median it started from.
         if invert and real[i] is not None:
             before, after = invert_gestures(
-                t, real[i], calibration, frame, realism=realism
+                t, real[i], calibration, frame, realism=realism, mel=mels[i]
             )
             gains.append(after - before)
             # docs/16 §16.7 piece 3: the fricative class gets its noise-first start
             # after the tonal search has settled — and keeps it only where the fit's
             # own number prefers it, so a good tonal fit is never rerouted.
-            seeded = fricative_seed(t, real[i], calibration, frame)
+            seeded = fricative_seed(t, real[i], calibration, frame, mel=mels[i])
             if seeded is not None and t.syllable.get("fricative"):
                 fricative_shipped += 1
         # **Measured with the pure cosine, always — never with the blend.** This is the other
@@ -2845,18 +2879,18 @@ def _learn_species_worker(
     task: tuple[str, list[SyllableObservation], dict[str, np.ndarray] | None,
                  Calibration | None, int, int, bool,
                  tuple[np.ndarray, np.ndarray] | None,
-                 dict[str, dict[str, Any]] | None, bool, bool, bool],
+                 dict[str, dict[str, Any]] | None, bool, bool, bool, float],
 ) -> tuple[str, dict[str, Any] | None]:
     """One species through `learn_species`, for the pool. Verbose off: the parent logs."""
     (species_id, observations, descriptors, calibration, types, seed, invert, frame,
-     previous, use_tube, use_respiration, use_two_voice) = task
+     previous, use_tube, use_respiration, use_two_voice, mel_weight) = task
     learned = learn_species(
         species_id, observations, descriptors, calibration,
         types=types, seed=seed, verbose=False, frame=frame, invert=invert,
         previous=previous,
         embedder=_precomputed_embedder if _PRE_EMBED else None,
         use_tube=use_tube, use_respiration=use_respiration,
-        use_two_voice=use_two_voice,
+        use_two_voice=use_two_voice, mel_weight=mel_weight,
     )
     return species_id, learned
 
@@ -2878,6 +2912,7 @@ def _fit_species_parallel(
     use_two_voice: bool,
     jobs: int,
     verbose: bool,
+    mel_weight: float = 0.0,
 ) -> dict[str, dict[str, Any] | None]:
     """Fit every species in a fork pool: same function, same seeds, same results as the
     serial loop — just all cores instead of one.
@@ -2906,7 +2941,7 @@ def _fit_species_parallel(
     tasks = [
         (species_id, grouped[species_id], descriptors, calibration, types, seed,
          invert, frame, (prior or {}).get(species_id), use_tube, use_respiration,
-         use_two_voice)
+         use_two_voice, mel_weight)
         for species_id in order
         if species_id != UNLABELLED_SPECIES
     ]
@@ -2990,6 +3025,7 @@ def build_learned_inventory(
     use_tube: bool = False,
     use_respiration: bool = False,
     use_two_voice: bool = False,
+    mel_weight: float = 0.0,
     discovered: Sequence[dict[str, Any]] | None = None,
     typing: list[dict[str, Any]] | None = None,
     on_species: "Callable[[dict[str, Any], list[dict[str, Any]]], None] | None" = None,
@@ -3076,7 +3112,7 @@ def build_learned_inventory(
             parallel = _fit_species_parallel(
                 order, grouped, observations_list, descriptors, calibration, types,
                 seed, invert, frame, prior, embedder, use_tube, use_respiration,
-                use_two_voice, jobs, verbose,
+                use_two_voice, jobs, verbose, mel_weight=mel_weight,
             )
     species_out: list[dict[str, Any]] = []
     for species_id in order:
@@ -3102,6 +3138,7 @@ def build_learned_inventory(
                 previous=(prior or {}).get(species_id),
                 embedder=embedder, realism=realism, use_tube=use_tube,
                 use_respiration=use_respiration, use_two_voice=use_two_voice,
+                mel_weight=mel_weight,
             )
         if learned is None:
             continue
@@ -3488,6 +3525,87 @@ def self_test(verbose: bool = True) -> None:
     assert fricative_seed(plain_type, _unit(ref_desc), None, None, features.SAMPLE_RATE) is None
     assert "fricative" not in plain_type.syllable, (
         "below the flatness gate the fit must not reroute"
+    )
+
+    # 6f. The mel target (docs/19 §19.3). Three properties, in ascending order of how
+    #     much they matter:
+    #     (a) `w = 0` and a missing target are no-ops — bit-identical to the objective
+    #         that shipped before the term existed, which is what keeps every gate
+    #         that reads `_score` unchanged by default;
+    #     (b) identity scores 1.0 and the blend is linear in `w`;
+    #     (c) the term must hear a plainly audible, *time-varying* distortion that the
+    #         28-d cosine is nearly blind to — the exact premise of docs/19. The
+    #         fixture is specbench's: low-passing the back half of the syllable at
+    #         2.5 kHz costs +77.9 dB MCD while the 28-d cosine drops 0.015. Measured
+    #         here: the mel target falls 1.0 -> 0.46 (LSD 0.78 log units) on that
+    #         damage, and 0.63 on an 800 Hz formant shift where the cosine drops
+    #         0.003. A path cosine was tried for this and rejected — it dropped 0.017
+    #         on the same fixture, no better than the 28-d (the class docstring keeps
+    #         the numbers).
+    mel_syllable = {
+        "id": "melTest", "dur": 0.25, "level": 0.85, "timbre": "reed",
+        "contour": [[0.0, 3200.0], [0.4, 4400.0], [0.7, 2800.0], [1.0, 3600.0]],
+        "noise": 0.12,
+        "formants": [[2400.0, 6.0, 0.5], [5400.0, 6.0, 0.25]],
+    }
+    mel_audio = peak_normalise(render_syllable(mel_syllable))
+    mel_target = features.mel_path(mel_audio)[:, : features.PATCH_MEL]
+    term = MelTargetTerm(mel_target, 1.0)
+    assert term.similarity(mel_audio) == 1.0, "a render against its own path must score 1"
+    assert MelTargetTerm(mel_target, 0.0).blend(0.42, mel_audio) == 0.42
+    assert MelTargetTerm(None, 1.0).blend(0.42, mel_audio) == 0.42, "no target must be a no-op"
+    assert np.isnan(MelTargetTerm(None, 1.0).similarity(mel_audio))
+    half_blend = MelTargetTerm(mel_target, 0.5).blend(0.8, mel_audio)
+    assert np.isclose(half_blend, 0.5 * 0.8 + 0.5 * 1.0), "the blend must be linear in w"
+    assert MelTargetTerm(mel_target, 5.0).weight == 1.0
+    assert MelTargetTerm(mel_target, -1.0).weight == 0.0
+    # `_score` with the term at w=0 must be bit-identical to `_score` without it.
+    mel_ref = _unit(np.ones(features.DIM))
+    plain_score = _score(mel_syllable, mel_ref, None, None, features.SAMPLE_RATE)
+    assert plain_score == _score(
+        mel_syllable, mel_ref, None, None, features.SAMPLE_RATE,
+        mel=MelTargetTerm(mel_target, 0.0),
+    ), "w=0 must be bit-identical to the old objective"
+    blended_score = _score(
+        mel_syllable, mel_ref, None, None, features.SAMPLE_RATE,
+        mel=MelTargetTerm(mel_target, 1.0),
+    )
+    assert blended_score != plain_score, "a w=1 mel term must change the score"
+    # The sensitivity premise: time-varying spectral damage must move the mel target
+    # far where the 28-d cosine barely moves.
+    damaged = mel_audio.copy()
+    damaged[len(damaged) // 2:] = syrinx._one_pole_lp(
+        mel_audio[len(mel_audio) // 2:].copy(), 2500.0, features.SAMPLE_RATE
+    )
+    damaged = peak_normalise(damaged)
+    mel_drop = 1.0 - term.similarity(damaged)
+    d_damaged = features.descriptor(damaged, features.SAMPLE_RATE)
+    d_clean = features.descriptor(mel_audio, features.SAMPLE_RATE)
+    cos_drop = 1.0 - float(_unit(d_clean) @ _unit(d_damaged))
+    assert mel_drop > 0.25, (
+        f"the mel target must hear the damaged half: drop {mel_drop:.3f} — the "
+        "exp(-LSD) form is not doing what docs/19 needs"
+    )
+    assert mel_drop > 5.0 * cos_drop, (
+        f"the mel target must out-see the 28-d cosine on audible damage: "
+        f"{mel_drop:.3f} vs {cos_drop:.3f}"
+    )
+    shifted = {**mel_syllable, "formants": [[3000.0, 6.0, 0.5], [6800.0, 6.0, 0.25]]}
+    shifted_audio = peak_normalise(render_syllable(shifted))
+    assert term.similarity(shifted_audio) < 0.8, (
+        "an 800 Hz formant shift must cost the mel target clearly"
+    )
+    # The helper: w=0 or no member paths -> None (the no-op path); otherwise the term
+    # holds the members' mean path, band-cut.
+    mel_obs = observation(3000.0, 0.06)
+    mel_obs.mel_path = [0.1] * (features.MEL_KNOTS * features.N_MEL)
+    assert mel_target_term([mel_obs], 0.0) is None
+    assert mel_target_term([observation(3000.0, 0.06)], 1.0) is None, (
+        "members without mel_path must mean no term"
+    )
+    built = mel_target_term([mel_obs, mel_obs], 1.0)
+    assert built is not None and built.target.shape == (
+        features.MEL_KNOTS, features.PATCH_MEL
     )
 
 

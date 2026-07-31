@@ -78,3 +78,37 @@ magnitudes are floor-inflated), STFT 7.93 dB (p10 5.16, p90 15.7).
   pre-registered gates should read MCD/STFT against cached audio, not only the
   cosine. 44 of 272 candidate types skipped for lack of cached audio — the depth
   harvest's audio-retention half is what widens this bench.
+
+## 19.4 The mel-target objective: the premise holds, with a blend (same day)
+
+`learn.MelTargetTerm` (`learn --mel-weight w`, default 0 = bit-identical old
+objective): each type's mean member `mel_path` is the target, similarity
+`exp(−LSD)` (mean-over-knots RMS log-mel difference — the multi-res STFT
+convention at mel resolution), blended `score = (1−w)·cosine + w·mel`. A
+path-cosine form was implemented first and **rejected on measurement** — it shares
+the cosine's blindness on the damaged-half fixture (drop 0.017 vs 0.015), where
+exp(−LSD) drops 0.540. The verdict, pre-registered against this doc's bench:
+
+| correlation (n = 200, same rows as §19.2) | Pearson | Spearman |
+|---|---|---|
+| cosine vs MCD | +0.106 | +0.100 |
+| **melTarget vs MCD** | **−0.305** (p 1e-5) | **−0.420** (p 6e-10) |
+
+Signs correct (higher similarity ↔ lower distortion); the r > 0.4 bar is met on
+Spearman, missed on Pearson (exp(−LSD) piles near zero for poor fits — ranking is
+the strong signal, and ranking is what the gates use). The end-to-end probe (10
+types, refit from the same medians, only the objective differs):
+
+| w | MCD win/loss | median ΔMCD | median cosine drop | guardrail |
+|---|---|---|---|---|
+| 1.0 (pre-registered) | 7/3 | +5.62 dB better | 0.377 | **FAIL (> 0.05)** |
+| 0.5 (exploratory) | 7/3 | +3.56 dB better | −0.015 (cosine *up*) | pass |
+| 0.25 (exploratory) | 5/5 | −0.75 dB | −0.008 | pass |
+
+**The mel objective alone wanders off the descriptor manifold — the RealismTerm
+lesson, repeated with a better term.** w = 0.5 is the candidate shipping weight
+(exploratory, n = 10, indicative only); w = 1 must not ship. The two objectives
+agree only moderately on which types are good (Pearson 0.456) — complementary,
+not redundant: the cosine guards the cluster assignment, the mel path ranks the
+audible fit. Adoption into the default learn flags waits on the owner's call and a
+larger probe; the machinery ships default-off like every learned component.

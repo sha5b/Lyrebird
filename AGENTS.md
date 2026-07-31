@@ -101,8 +101,10 @@ Notes:
   render bit-identically (parity fixtures `fricative`, `fricative+respiration`).
 - **`serve` holds the pipeline in memory: restart it after every pipeline code change**,
   or its Learn-tab learn/build jobs run the code it started with (docs/11 §11.1 — this
-  cost a galaxy once). It also defaults to the *old* store: run it as
-  `uv run birdy-pipeline serve --store out/harvest-gan`.
+  cost a galaxy once). It still defaults to the *old* `out/harvest` store, but a
+  defaulted store is no longer silent: startup prints the store it is holding (path,
+  syllables, species) and warns when a sibling store in `out/` has a newer
+  `state.json` — read that line, or pass `--store out/harvest-gan` explicitly.
 - Iterating on clustering? `build --dump-points /tmp/points.npz` writes the standardised
   matrix + labels once; experiment against that file, never re-render per idea.
 - `build --clustering both` renders the corpus once and writes the kmeans map to

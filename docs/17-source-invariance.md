@@ -95,3 +95,34 @@ factored out by construction) is the cleaner label and was not tried; (b) w in
 move to, not just where to step on it; (c) augmentation failing *completely* says
 the discriminating channel cue is not band-response-shaped — the per-recording
 signatures (noise floor shape, codec, mic proximity) live elsewhere in the patch.
+
+## 17.4 The AVEX experiment (same day): data, not mechanism — confirmed
+
+The literature's answer held. Three arms on the **12** species present in BOTH
+debug stores (iNat soundscape vs xeno-canto focal — the overlap is 12, not 13:
+`horornis_diphone` has zero observations in the xeno store), same seed, same fake
+side, cross-domain species retrieval as the measure (chance 0.083):
+
+| arm | cross-domain retrieval | held-out realism AUC | species acc |
+|---|---|---|---|
+| A — single domain (iNat only) | 0.360 | 0.952 | 0.894 |
+| **B — naive merge** | **0.504 (+14.4 pts)** | 0.964 | 0.923 |
+| C — merge + cross-domain contrastive positives | 0.638 (+27.8) | 0.940 | 0.939 |
+
+Pre-registered gate (≥ +10 pts cross-domain, AUC no drop, acc within 2): **B
+passes — the naive merge alone buys real invariance.** C buys another +13.4 on top
+and is the best embedding on every geometry measure, but drops AUC 0.012 — the
+gate as registered fails it (whether 0.012 is noise on a 3-species holdout is a
+genuine question; the honest move is a bigger C re-test, not a post-hoc pass).
+Supporting detail worth keeping: the `domain` grouping's kNN lift is ≈ 0 in all
+arms — at neighbour level the domains interleave in every critic, so the confound
+lives in the *retrieval gap*, not in local geometry; and recordist lift *rises*
+slightly with diversity (more recordist classes), so retrieval, not lift, is the
+right verdict metric.
+
+**Consequence: invariance is a data action, not a loss action.** The road is more
+genuinely-different domains per species (BirdCLEF/BirdSet/iNat merges), not more
+loss engineering. critic.py gained the machinery default-off (`merge_patchsets`,
+`PatchSet.domains`, `CriticConfig.cross_domain_positives`, pairing covered by
+self-test); the driver is `/tmp/birdy-debug/avex_driver.py`, report
+`/tmp/birdy-debug/avex/avex-report.json`.

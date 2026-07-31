@@ -70,7 +70,10 @@ both follow it. Date: 2026-07-28.
     critic retrain: channel-EQ simulation + Freq-MixStyle on log-mel patches, a
     recordist-adversarial head, and the pre-registered verdict table (docs/14 §14.4's
     source-confound attacked at training time, the only place the literature says it
-    can be).
+    can be). **Two verdicts inside:** the loss-engineering sweep fails (adversarial
+    trades 1:1 with species), and the AVEX experiment succeeds — naive domain merge
+    buys +14.4 pts cross-domain retrieval with everything held. Invariance is a
+    data action.
 18. [`18-syntax-roadmap.md`](18-syntax-roadmap.md) — the pattern/syntax roadmap:
     depth harvest first, then a pre-registered grammar bake-off (first-order vs
     Jin–Kozhevnikov vs POMM), a song-level embedding, CETI-style factorization,
