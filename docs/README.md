@@ -66,3 +66,12 @@ both follow it. Date: 2026-07-28.
     TPR 32 %), the streaming+parallel learn (bit-identical, ~12× faster, common names),
     B1 respiration + B2 two-voice (parity 16/16, default-off pending the per-species
     fit), and Perch 2.0 label-novel as metadata.
+17. [`17-source-invariance.md`](17-source-invariance.md) — the recorder-invariant
+    critic retrain: channel-EQ simulation + Freq-MixStyle on log-mel patches, a
+    recordist-adversarial head, and the pre-registered verdict table (docs/14 §14.4's
+    source-confound attacked at training time, the only place the literature says it
+    can be).
+18. [`18-syntax-roadmap.md`](18-syntax-roadmap.md) — the pattern/syntax roadmap:
+    depth harvest first, then a pre-registered grammar bake-off (first-order vs
+    Jin–Kozhevnikov vs POMM), a song-level embedding, CETI-style factorization,
+    dialect maps. Structure first; meaning only from playback.

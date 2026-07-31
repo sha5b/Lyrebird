@@ -2,6 +2,26 @@
 
 **Landed today (uncommitted at this writing — user commits):**
 
+- **`build --clustering both`**: one render writes `<out>/known` (kmeans, every type
+  named) + `<out>/unknown` (hdbscan, discovery view), each a complete verified asset
+  set. **This is the debug cycle's default now** — the known and unknown views of a
+  corpus are always comparable side by side. Verified on the debug store (56 284
+  points: known 1 024 clusters/purity 35.9 %, unknown 136/purity 8.6 %).
+- **Stage 1 in flight — recorder-invariant critic retrain** (pre-registered; docs/14
+  §14.4's +0.488-source problem; research says training-time only). critic.py gained:
+  recording/recordist labels on PatchSet, `_channel_eq` (simulated recorder response
+  on log-mel: smooth, mean-zero, ±dB), `mixstyle` (same-species different-recording
+  band-stat swaps), a recordist-adversarial head (gradient reversal, `w_record`,
+  default 0 — all knobs default to the pre-recipe path), a recordist probe in the
+  training report, and `critic groupings` (the geometry battery on stored embeddings,
+  no build needed). **Debug-store baseline (unchanged recipe, seed 0):** realism AUC
+  0.989, species acc 0.908, recordist probe 0.442 (chance 0.007); kNN lift species
+  +0.429 / recordist +0.285 / country +0.286. Sweep running: augment-only, then
+  +w_record 0.05/0.1/0.3. Verdict rule: recordist lift −30 % relative with species
+  lift within 10 %, realism AUC no drop, species acc within 2 pts.
+
+**Earlier same day (committed e242f88):**
+
 - **Stale-embeddings crash fixed.** The Learn-tab `ValueError: cannot reshape …
   (39999,newaxis)` was a stale `embeddings.f32` against a changed store, hit at five
   `reshape(len(store.syllables), -1)` sites in cli.py. New `read_store_embeddings`

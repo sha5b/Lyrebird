@@ -554,36 +554,59 @@ def cmd_build(
                 "_evalTrue": space_map.eval_true,
             }
 
-    stats = build_galaxy(
-        points,
-        inventory,
-        out_dir=out,
-        inventory_path=inventory_path,
-        seed=args.seed,
-        k=args.k,
-        clustering=args.clustering,
-        min_cluster_size=args.min_cluster_size,
-        min_dist=args.min_dist,
-        projection=args.projection,
-        compare_projections=not args.no_compare_projections,
-        separation=args.separation,
-        build_info={
-            "source": args.source,
-            "audioDir": str(args.audio_dir) if args.audio_dir else None,
-            "variantsPerSyllable": args.variants if args.source == "synthetic" else None,
-            "variantsPerSong": args.song_variants if args.source == "synthetic" else None,
-            "harvest": harvest_info,
-            "betaClamp": [syrinx.BETA_MIN, syrinx.BETA_MAX],
-            "clusterSeparation": args.separation,
-            "envelopeAsOutputGain": True,
-        },
-        recordings=harvest_recordings,
-        test_relations=not args.no_relations,
-        frame=frame,
-        space=space,
-        embedding=embedding_block,
-        dump_points=Path(args.dump_points) if args.dump_points else None,
+    # `--clustering both`: the two maps the comparison workflow always wants side by
+    # side — the kmeans map, where every type owns a named knot ("known"), and the
+    # hdbscan map, where a point may honestly be in none of them ("unknown"). The
+    # corpus above is the expensive half (rendering the inventory) and is built once;
+    # clustering, projection and asset-writing run per map into `known/`/`unknown/`
+    # subdirectories, each a complete, verifiable asset set.
+    modes: list[tuple[str, Path]] = (
+        [("kmeans", out / "known"), ("hdbscan", out / "unknown")]
+        if args.clustering == "both"
+        else [(args.clustering, out)]
     )
+    map_stats: dict[str, Any] = {}
+    for mode, mode_out in modes:
+        if mode_out != out:
+            mode_out.mkdir(parents=True, exist_ok=True)
+            (mode_out / CALIBRATION_NAME).write_bytes(
+                (out / CALIBRATION_NAME).read_bytes()
+            )
+        if len(modes) > 1:
+            log(f"--- the {'known' if mode == 'kmeans' else 'unknown'} map "
+                f"({mode_out}) ---")
+        map_stats[mode] = build_galaxy(
+            points,
+            inventory,
+            out_dir=mode_out,
+            inventory_path=inventory_path,
+            seed=args.seed,
+            k=args.k,
+            clustering=mode,
+            min_cluster_size=args.min_cluster_size,
+            min_dist=args.min_dist,
+            projection=args.projection,
+            compare_projections=not args.no_compare_projections,
+            separation=args.separation,
+            build_info={
+                "source": args.source,
+                "audioDir": str(args.audio_dir) if args.audio_dir else None,
+                "variantsPerSyllable": args.variants if args.source == "synthetic" else None,
+                "variantsPerSong": args.song_variants if args.source == "synthetic" else None,
+                "harvest": harvest_info,
+                "betaClamp": [syrinx.BETA_MIN, syrinx.BETA_MAX],
+                "clusterSeparation": args.separation,
+                "envelopeAsOutputGain": True,
+            },
+            recordings=harvest_recordings,
+            test_relations=not args.no_relations,
+            frame=frame,
+            space=space,
+            embedding=embedding_block,
+            dump_points=(
+                Path(args.dump_points) if args.dump_points and len(modes) == 1 else None
+            ),
+        )
 
     # Cross-species relations (phase 4): shared/convergent types and species similarity
     # in the critic's embedding, shipped beside the assets as `relations.json` — data
@@ -611,13 +634,15 @@ def cmd_build(
             relations_doc = relations_mod.compute_relations(
                 store, store_embeddings, typing, inventory
             )
-            relations_mod.write_relations(
-                out / relations_mod.RELATIONS_NAME, relations_doc
-            )
+            for _, mode_out in modes:
+                relations_mod.write_relations(
+                    mode_out / relations_mod.RELATIONS_NAME, relations_doc
+                )
             n_shared = sum(
                 len(p["sharedTypes"]) for p in relations_doc["speciesPairs"]
             )
-            log(f"wrote {out / relations_mod.RELATIONS_NAME}: "
+            log(f"wrote {relations_mod.RELATIONS_NAME} "
+                f"({'both maps' if len(modes) > 1 else str(modes[0][1])}): "
                 f"{len(relations_doc['speciesPairs'])} species pairs, "
                 f"{n_shared} shared-type candidate(s) under threshold "
                 f"{relations_doc['sharedTypeThreshold']}")
@@ -627,18 +652,25 @@ def cmd_build(
         log("relations skipped: needs the harvest store, its typing.json and "
             "embeddings.f32 (`critic embed`)")
 
-    log("")
-    log(f"built {stats.n_points} points in {stats.k} clusters "
-        f"({stats.n_dropped} clips dropped, {time.time() - t0:.1f}s)")
-    log(f"durations {stats.duration_range[0]:.3f}..{stats.duration_range[1]:.3f} s, "
-        f"cluster sizes {min(stats.cluster_counts)}..{max(stats.cluster_counts)}")
-    log(f"cluster purity {stats.purity * 100:.1f} %, mean radius {stats.spread:.3f} "
-        f"of max|coord| = 1")
-    log(f"projection {stats.projection}: distance faithfulness pearson "
-        f"{stats.faithfulness['pearson']:.3f}, spearman "
-        f"{stats.faithfulness['spearman']:.3f}; 3D kNN agreement "
-        f"{stats.knn_agreement * 100:.1f} %")
-    return verify(out)
+    for mode, mode_out in modes:
+        stats = map_stats[mode]
+        log("")
+        if len(modes) > 1:
+            log(f"--- {'known' if mode == 'kmeans' else 'unknown'} map ---")
+        log(f"built {stats.n_points} points in {stats.k} clusters "
+            f"({stats.n_dropped} clips dropped, {time.time() - t0:.1f}s)")
+        log(f"durations {stats.duration_range[0]:.3f}..{stats.duration_range[1]:.3f} s, "
+            f"cluster sizes {min(stats.cluster_counts)}..{max(stats.cluster_counts)}")
+        log(f"cluster purity {stats.purity * 100:.1f} %, mean radius {stats.spread:.3f} "
+            f"of max|coord| = 1")
+        log(f"projection {stats.projection}: distance faithfulness pearson "
+            f"{stats.faithfulness['pearson']:.3f}, spearman "
+            f"{stats.faithfulness['spearman']:.3f}; 3D kNN agreement "
+            f"{stats.knn_agreement * 100:.1f} %")
+        rc = verify(mode_out)
+        if rc != 0:
+            return rc
+    return 0
 
 
 def cmd_harvest(args: argparse.Namespace) -> int:
@@ -1487,6 +1519,10 @@ _CRITIC_FALLBACK_DEFAULTS: dict[str, Any] = {
     "w_contrast": 0.5,
     "holdout_species": 0.25,
     "renders_per_type": 32,
+    "aug_channel_db": 0.0,
+    "mixstyle_alpha": 0.0,
+    "w_record": 0.0,
+    "recordist_min_patches": 20,
 }
 
 
@@ -1620,8 +1656,9 @@ def cmd_critic(args: argparse.Namespace) -> int:
     calibration = ensure_calibration(Path(args.calibration_dir))
 
     t0 = time.time()
-    real = critic_mod.real_patches(store.syllables)
-    log(f"real side: {len(real)} patches over {len(real.names)} species")
+    real = critic_mod.real_patches(store.syllables, recording_meta=store.recordings)
+    log(f"real side: {len(real)} patches over {len(real.names)} species, "
+        f"{len(real.recording_names)} recordings")
 
     # The synthetic side is rendered *now*, from the inventory as it currently stands. That is
     # what makes the alternation of §9.3 step 6 meaningful: refit with the critic, retrain the
@@ -1652,6 +1689,10 @@ def cmd_critic(args: argparse.Namespace) -> int:
         seed=args.seed,
         renders_per_type=args.renders_per_type,
         prefer_gpu=not args.cpu,
+        aug_channel_db=args.aug_channel_db,
+        mixstyle_alpha=args.mixstyle_alpha,
+        w_record=args.w_record,
+        recordist_min_patches=args.recordist_min_patches,
     )
     trained = critic_mod.train(real, fake, config, log=log)
     novelty = critic_mod.fit_novelty(
@@ -1758,6 +1799,78 @@ def cmd_critic_embed(args: argparse.Namespace) -> int:
         f"in {time.time() - t0:.1f}s")
     log("next: uv run birdy-pipeline build --harvest-store " + str(store.root) +
         " --space embed")
+    return 0
+
+
+def cmd_critic_groupings(args: argparse.Namespace) -> int:
+    """The geometry battery on a critic's stored embeddings, without a build.
+
+    The source-invariance verdict instrument (docs/14 §14.4's table, recomputed per
+    retrain): does the embedding organise by species or by recording condition? A
+    full build answers that as a side effect, but a recipe sweep needs the answer per
+    candidate critic, and a build is a quarter of an hour of rendering that does not
+    depend on the critic at all. This runs `geometry.analyse` directly on the store's
+    `embeddings.f32`, so a sweep step costs the embedding pass and nothing else.
+    """
+    try:
+        from . import geometry as geo
+    except ImportError:
+        from . import geometry as geo  # geometry has no optional deps; keep symmetry
+    store = harvest.HarvestStore(Path(args.store))
+    if not store.syllables:
+        log(f"{store.root} holds no syllable observations — run `harvest` first")
+        return 2
+    emb_path = (
+        Path(args.embeddings) if args.embeddings else Path(args.store) / EMBEDDINGS_NAME
+    )
+    if not emb_path.exists():
+        log(f"no embeddings at {emb_path} — run `birdy-pipeline critic embed "
+            f"--store {args.store}` first")
+        return 2
+    emb = read_store_embeddings(emb_path, len(store.syllables), log=log)
+    if emb is None:
+        return 2
+
+    kept = [i for i, o in enumerate(store.syllables) if o.descriptor]
+    z = emb[kept]
+    finite = np.all(np.isfinite(z), axis=1)
+    if int((~finite).sum()):
+        log(f"{int((~finite).sum())} of {len(kept)} observations have no embedding and "
+            "are left out")
+    kept = [i for i, ok in zip(kept, finite) if ok]
+    z = z[finite]
+    obs = [store.syllables[i] for i in kept]
+    z = (z - z.mean(axis=0)) / np.maximum(z.std(axis=0), 1.0e-6)
+
+    typing_path = Path(args.store) / learn.TYPING_NAME
+    type_of: dict[tuple[str, str, int], str] = {}
+    if typing_path.exists():
+        typing = json.loads(typing_path.read_text(encoding="utf-8"))
+        type_of = {
+            (e["speciesId"], e["recordingId"], int(e["order"])): str(e["typeId"])
+            for e in typing.get("entries", [])
+        }
+    species_id = [o.species_id for o in obs]
+    recording_id = [o.recording_id for o in obs]
+    syllable_id = [type_of.get((o.species_id, o.recording_id, o.order), "") for o in obs]
+    groupings = geo.label_sets(
+        species_id=species_id,
+        syllable_id=syllable_id,
+        recording_id=recording_id,
+        source=[harvest.SOURCE] * len(obs),
+        recordings=store.recordings,
+    )
+    blocks = geo.blocks_for(
+        species_id, syllable_id, recording_id, [harvest.SOURCE] * len(obs)
+    )
+    relations = geo.analyse(
+        {f"{z.shape[1]}-d critic embedding": (z, "cosine")},
+        groupings,
+        seed=args.seed,
+        blocks=blocks,
+    )
+    log(geo.format_table(relations))
+    log(f"  => {geo.summarise(relations)['headline']}")
     return 0
 
 
@@ -2717,11 +2830,14 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--k", type=int, default=None, help="clusters (default: syllable types)")
     b.add_argument(
         "--clustering",
-        choices=("kmeans", "hdbscan"),
+        choices=("kmeans", "hdbscan", "both"),
         default="kmeans",
         help="kmeans fits exactly --k groups and puts every point in one of them; "
              "hdbscan discovers how many dense regions there are and leaves the rest "
-             "unassigned, which is the only way a sound can come out as 'none of these'",
+             "unassigned, which is the only way a sound can come out as 'none of "
+             "these'. 'both' renders the corpus once and writes the kmeans map to "
+             "<out>/known and the hdbscan map to <out>/unknown — the pair the "
+             "known-vs-unknown comparison always wants, for one render",
     )
     b.add_argument(
         "--min-cluster-size",
@@ -3068,6 +3184,25 @@ def build_parser() -> argparse.ArgumentParser:
     crt.add_argument("--w-contrast", type=float, default=critic_default("w_contrast"),
                      help="weight on the contrastive head, which is what makes the "
                           "embedding useful for typing")
+    crt.add_argument("--aug-channel-db", type=float,
+                     default=critic_default("aug_channel_db"), metavar="DB",
+                     help="source-invariance recipe: swing of the simulated recorder "
+                          "frequency response added to each augmented view "
+                          "(default %(default)s = off, the pre-recipe path)")
+    crt.add_argument("--mixstyle-alpha", type=float,
+                     default=critic_default("mixstyle_alpha"), metavar="A",
+                     help="source-invariance recipe: Beta concentration for swapping "
+                          "per-band statistics between same-species recordings "
+                          "(default %(default)s = off)")
+    crt.add_argument("--w-record", type=float, default=critic_default("w_record"),
+                     help="source-invariance recipe: weight of the recordist-"
+                          "adversarial head (default %(default)s = off; the term that "
+                          "can eat species information, so it earns its weight in the "
+                          "sweep)")
+    crt.add_argument("--recordist-min-patches", type=int,
+                     default=critic_default("recordist_min_patches"),
+                     help="fewest training patches for a recordist to be an "
+                          "adversarial class (default %(default)s)")
     crt.add_argument("--holdout-species", type=float,
                      default=critic_default("holdout_species"), metavar="FRACTION",
                      help="species held out of training entirely. Species and not "
@@ -3099,6 +3234,19 @@ def build_parser() -> argparse.ArgumentParser:
     cre.add_argument("--cpu", action="store_true",
                      help="embed on the CPU even with a GPU present")
     cre.set_defaults(func=cmd_critic_embed)
+
+    crg = cr_sub.add_parser(
+        "groupings",
+        help="the geometry battery (species vs recordist vs source kNN lift) directly "
+             "on the store's embeddings, without a build — the source-invariance "
+             "verdict instrument for a retrain sweep",
+    )
+    crg.add_argument("--store", default=str(DEFAULT_HARVEST_STORE),
+                     help="harvest store whose embeddings to test")
+    crg.add_argument("--embeddings", default=None,
+                     help="embeddings file (default: <store>/%s)" % EMBEDDINGS_NAME)
+    crg.add_argument("--seed", type=int, default=0)
+    crg.set_defaults(func=cmd_critic_groupings)
 
     crl = cr_sub.add_parser(
         "label-novel",

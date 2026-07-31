@@ -105,6 +105,10 @@ Notes:
   `uv run birdy-pipeline serve --store out/harvest-gan`.
 - Iterating on clustering? `build --dump-points /tmp/points.npz` writes the standardised
   matrix + labels once; experiment against that file, never re-render per idea.
+- `build --clustering both` renders the corpus once and writes the kmeans map to
+  `<out>/known` + the hdbscan map to `<out>/unknown` (each a complete, verifiable
+  asset set) — the debug cycle's default, so the named and the discovery views of the
+  same corpus are always comparable side by side.
 - `sources` (sources.py) fetches from Zenodo, the Internet Archive, Kaggle (BirdCLEF)
   and Hugging Face (BirdSet) through the same decode → describe → delete loop as
   `harvest`. Keys live in `pipeline/.env` (template: `.env.example`: `XC_API_KEY`,

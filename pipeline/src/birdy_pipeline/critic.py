@@ -179,7 +179,30 @@ AUG_JITTER = 0.25  # iid measurement noise, in log-mel units
 AUG_TIME_MASK = 0.12  # fraction of the time axis that may be masked out
 
 
-def augment(patches: np.ndarray, rng: np.random.Generator) -> np.ndarray:
+def _channel_eq(
+    n: int, bands: int, db: float, rng: np.random.Generator
+) -> np.ndarray:
+    """Per-view simulated recorder frequency responses: (n, 1, bands) log-mel gains.
+
+    A microphone/recorder chain's response is *additive on a log-mel, smooth in
+    frequency, and constant within a recording* — so the simulation is a cumulative
+    random walk across the band axis (smooth by construction), scaled to a ±`db`
+    swing and mean-removed, because a response that shifts the patch mean would be a
+    level change, and level is already nobody's signal here (`features.mel_patch` is
+    mean-centred). This is the only domain we can simulate the channel in: the DIR
+    impulse-response recipe (Morocutti et al., arXiv 2305.07499) convolves waveforms,
+    and the waveforms are deleted by design.
+    """
+    walk = np.cumsum(rng.normal(0.0, 1.0, size=(n, bands)), axis=1)
+    walk -= walk.mean(axis=1, keepdims=True)
+    peak = np.maximum(np.abs(walk).max(axis=1, keepdims=True), 1.0e-6)
+    # dB to natural-log-mel units: the patches are ln energies.
+    return (walk / peak * (db * math.log(10) / 10.0)).astype(np.float32)[:, None, :]
+
+
+def augment(
+    patches: np.ndarray, rng: np.random.Generator, channel_db: float = 0.0
+) -> np.ndarray:
     """Two views of one syllable should embed together. This makes the second view.
 
     Every operation here is something that could plausibly differ between two recordings of
@@ -192,6 +215,10 @@ def augment(patches: np.ndarray, rng: np.random.Generator) -> np.ndarray:
         because that is what adding noise to the audio actually does to the energy.
       * **iid jitter** — measurement noise.
       * **time mask** — a passing overlap or a dropout. SpecAugment's time masking only.
+      * **channel EQ** (only when `channel_db` > 0) — the recorder's frequency response,
+        per `_channel_eq`. The one nuisance that is *measured* to dominate the embedding
+        (docs/14 §14.4: source kNN lift +0.488 against species' +0.196), and the one the
+        source-invariance recipe exists to wash out.
 
     Gain is not here and cannot be: `features.mel_patch` is mean-centred, so a level change
     on the audio is already removed before this sees it.
@@ -231,7 +258,55 @@ def augment(patches: np.ndarray, rng: np.random.Generator) -> np.ndarray:
     masked = (step >= at[:, None]) & (step < (at + width)[:, None])
     q = np.where(masked[:, :, None], q.mean(axis=(1, 2), keepdims=True), q)
 
+    if channel_db > 0.0:
+        q = q + _channel_eq(n, bands, channel_db, rng)
+
     return q - q.mean(axis=(1, 2), keepdims=True)
+
+
+def mixstyle(
+    patches: np.ndarray,
+    species: np.ndarray,
+    recordings: np.ndarray | None,
+    rng: np.random.Generator,
+    alpha: float,
+) -> np.ndarray:
+    """Freq-MixStyle on log-mel patches: swap per-band statistics across recordings.
+
+    The channel-simulation half of the recipe's other arm (arXiv 2305.07499 measured
+    IR augmentation and MixStyle as complementary, best combined): where
+    `_channel_eq` invents a plausible recorder, this hands a patch the *actual* band
+    statistics of another recording of the same species — "the same bird, through
+    that recorder". Per band, the patch's mean and standard deviation over the time
+    axis are moved toward λ·own + (1−λ)·partner's with λ ~ Beta(α, α), then the patch
+    is re-rendered with the mixed statistics. Same-species partners only: the point
+    is to vary the channel while holding the bird, and a cross-species partner would
+    teach the network that one bird's spectrum can wear another's, which is not a
+    nuisance, it is a lie. Different recordings only, or the "invariance" would be to
+    nothing at all.
+
+    Patches with no eligible partner pass through unchanged; `recordings=None` (the
+    synthetic side, a meta-less store) turns the whole op off.
+    """
+    if alpha <= 0.0 or recordings is None:
+        return patches
+    p = np.asarray(patches, dtype=np.float32)
+    n = len(p)
+    out = p.copy()
+    mu = p.mean(axis=1)  # (n, bands)
+    sd = np.maximum(p.std(axis=1), 1.0e-3)
+    for i in range(n):
+        partners = np.nonzero(
+            (species == species[i]) & (recordings != recordings[i])
+        )[0]
+        if not len(partners):
+            continue
+        j = partners[rng.integers(0, len(partners))]
+        lam = float(rng.beta(alpha, alpha))
+        mu_m = lam * mu[i] + (1.0 - lam) * mu[j]
+        sd_m = lam * sd[i] + (1.0 - lam) * sd[j]
+        out[i] = (p[i] - mu[i][None, :]) / sd[i][None, :] * sd_m[None, :] + mu_m[None, :]
+    return out
 
 
 # --- assembling the two sides ------------------------------------------------------
@@ -239,22 +314,48 @@ def augment(patches: np.ndarray, rng: np.random.Generator) -> np.ndarray:
 
 @dataclass
 class PatchSet:
-    """Patches with the two labels the critic is trained on. `species` indexes `names`."""
+    """Patches with the labels the critic is trained on. `species` indexes `names`."""
 
     patches: np.ndarray  # (n, knots, mel) float32
     species: np.ndarray  # (n,) int
     names: list[str]
     real: bool
+    #: Which recording each patch came from (dense int into `recording_names`), with
+    #: `recordist_names` parallel to `recording_names`. The source-invariance recipe
+    #: needs both: MixStyle pairs same-species patches from *different* recordings, and
+    #: the adversarial head's classes are recordists. None on the synthetic side — our
+    #: renders have no recorder — and on stores loaded without their recording table.
+    recordings: np.ndarray | None = None
+    recording_names: list[str] = field(default_factory=list)
+    recordist_names: list[str] = field(default_factory=list)
 
     def __len__(self) -> int:
         return int(self.patches.shape[0])
 
     def subset(self, mask: np.ndarray) -> "PatchSet":
-        return PatchSet(self.patches[mask], self.species[mask], self.names, self.real)
+        return PatchSet(
+            self.patches[mask],
+            self.species[mask],
+            self.names,
+            self.real,
+            None if self.recordings is None else self.recordings[mask],
+            self.recording_names,
+            self.recordist_names,
+        )
 
 
-def real_patches(observations: Sequence[Any]) -> PatchSet:
-    """The real side, straight out of the harvest store. Skips observations with no patch."""
+def real_patches(
+    observations: Sequence[Any],
+    recording_meta: dict[str, Any] | None = None,
+) -> PatchSet:
+    """The real side, straight out of the harvest store. Skips observations with no patch.
+
+    `recording_meta` is the store's `recordings` table; with it, each patch also
+    carries which recording — and which recordist — it came from, the two labels the
+    source-invariance recipe trains against. Without it the PatchSet simply has no
+    recording labels and the recipe's recording-aware pieces stay off, exactly as a
+    missing critic falls back everywhere else.
+    """
     kept = [o for o in observations if o.mel_patch is not None]
     if not kept:
         raise ValueError(
@@ -263,11 +364,25 @@ def real_patches(observations: Sequence[Any]) -> PatchSet:
         )
     names = sorted({o.species_id for o in kept})
     index = {name: i for i, name in enumerate(names)}
+    recordings = None
+    recording_names: list[str] = []
+    recordist_names: list[str] = []
+    if recording_meta is not None:
+        rids = sorted({o.recording_id for o in kept})
+        rindex = {rid: i for i, rid in enumerate(rids)}
+        recording_names = rids
+        recordist_names = [
+            str((recording_meta.get(rid) or {}).get("recordist") or "") for rid in rids
+        ]
+        recordings = np.asarray([rindex[o.recording_id] for o in kept], dtype=np.int64)
     return PatchSet(
         patches=np.stack([np.asarray(o.mel_patch, dtype=np.float32) for o in kept]),
         species=np.asarray([index[o.species_id] for o in kept], dtype=np.int64),
         names=names,
         real=True,
+        recordings=recordings,
+        recording_names=recording_names,
+        recordist_names=recordist_names,
     )
 
 
@@ -369,6 +484,25 @@ class CriticConfig:
     seed: int = 0
     renders_per_type: int = 32
     prefer_gpu: bool = True
+    #: The source-invariance recipe (docs/14 §14.4's pre-registered retrain). All three
+    #: default to 0/off, which is exactly the pre-recipe training path — the baseline a
+    #: recipe run is judged against is the same code with the knobs at zero.
+    #:
+    #: `aug_channel_db` is the swing of the simulated recorder frequency response added
+    #: to each augmented view (±dB; `_channel_eq`). `mixstyle_alpha` is the Beta
+    #: concentration for swapping per-band statistics between same-species recordings
+    #: (`mixstyle`); 0 turns it off.
+    aug_channel_db: float = 0.0
+    mixstyle_alpha: float = 0.0
+    #: `w_record` is the weight of the recordist-adversarial head: a linear classifier
+    #: on the embedding, gradient-reversed, trained to name the recordist so the
+    #: embedding is trained to stop letting it. Off by default — it is the one term
+    #: that can eat species information (recordist and species are correlated in any
+    #: field corpus), so it earns its weight in the sweep or stays at zero.
+    w_record: float = 0.0
+    #: A recordist needs at least this many training patches to be an adversarial class;
+    #: below it the class is mostly noise and the head would learn to ignore it anyway.
+    recordist_min_patches: int = 20
 
 
 @dataclass
@@ -390,6 +524,14 @@ class TrainingReport:
     species_chance: float = 0.0
     #: Do two views of one syllable land nearer each other than two different syllables?
     contrastive_top1: float = 0.0
+    #: The invariance probe: can a nearest-centroid readout name the *recordist* from
+    #: the embedding, on syllables the network never saw? Down is the point of the
+    #: recipe — with species accuracy held, this falling is what "organised by bird,
+    #: not by recorder" looks like from inside the report (docs/14 §14.4 measures the
+    #: same thing with the geometry battery's kNN lift). NaN when the store carried
+    #: no recording table.
+    recordist_probe: float = float("nan")
+    recordist_chance: float = float("nan")
     device: str = ""
 
     def as_dict(self) -> dict[str, Any]:
@@ -479,7 +621,36 @@ def train(
 
     mean, std = _standardise_stats(r_fit.patches)
     model = SyllableCritic(len(train_names), cfg.embed_dim, cfg.width).to(device)
-    opt = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
+
+    # The recordist-adversarial head: a linear classifier on the embedding, trained to
+    # name the recordist through a gradient-reversal layer, so the embedding is trained
+    # to stop letting it. It is training scaffolding, not part of `SyllableCritic` —
+    # nothing is saved, nothing ships, and old checkpoints are untouched. Classes are
+    # recordists with at least `recordist_min_patches` training patches; unnamed
+    # recordists ("" — the local-file rows) are never classes.
+    rec_head: nn.Linear | None = None
+    y_recordist: np.ndarray | None = None
+    if cfg.w_record > 0.0 and r_fit.recordings is not None:
+        per_patch = np.asarray([r_fit.recordist_names[r] for r in r_fit.recordings])
+        uniques, counts = np.unique(per_patch, return_counts=True)
+        classes = sorted(
+            str(n)
+            for n, c in zip(uniques, counts)
+            if c >= cfg.recordist_min_patches and n
+        )
+        if len(classes) >= 2:
+            cidx = {n: i for i, n in enumerate(classes)}
+            y_recordist = np.asarray(
+                [cidx.get(n, -1) for n in per_patch], dtype=np.int64
+            )
+            rec_head = nn.Linear(cfg.embed_dim, len(classes)).to(device)
+        if rec_head is None:
+            log("recordist-adversarial head off: fewer than two recordists have "
+                f"{cfg.recordist_min_patches}+ training patches")
+    params = list(model.parameters()) + (
+        list(rec_head.parameters()) if rec_head is not None else []
+    )
+    opt = torch.optim.AdamW(params, lr=cfg.lr, weight_decay=cfg.weight_decay)
     steps = max(1, len(r_fit) // cfg.batch) * cfg.epochs
     sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=cfg.lr, total_steps=steps)
 
@@ -520,9 +691,20 @@ def train(
             )
 
             # NT-Xent over two augmented views. Positives are the two views of one syllable;
-            # every other view in the batch is a negative.
+            # every other view in the batch is a negative. The batch first goes through
+            # MixStyle (same-species, different-recording band statistics — a no-op at
+            # alpha 0), then each view draws its own augmentations, channel EQ included
+            # when the recipe sets `aug_channel_db`.
+            views_src = mixstyle(
+                real_batch,
+                r_fit.species[ri],
+                None if r_fit.recordings is None else r_fit.recordings[ri],
+                rng,
+                cfg.mixstyle_alpha,
+            )
             views = np.concatenate([
-                augment(real_batch, rng), augment(real_batch, rng)
+                augment(views_src, rng, cfg.aug_channel_db),
+                augment(views_src, rng, cfg.aug_channel_db),
             ])
             _, _, _, proj = model(to_input(views))
             loss_contrast = _nt_xent(proj, cfg.temperature)
@@ -532,6 +714,15 @@ def train(
                 + cfg.w_species * loss_species
                 + cfg.w_contrast * loss_contrast
             )
+            if rec_head is not None and y_recordist is not None:
+                mask_np = y_recordist[ri] >= 0
+                if mask_np.any():
+                    eligible = torch.from_numpy(mask_np).to(device)
+                    loss_record = F.cross_entropy(
+                        rec_head(_grad_reverse(z[: cfg.batch][eligible])),
+                        torch.from_numpy(y_recordist[ri][mask_np]).to(device),
+                    )
+                    loss = loss + cfg.w_record * loss_record
             opt.zero_grad(set_to_none=True)
             loss.backward()
             opt.step()
@@ -581,6 +772,28 @@ def _nt_xent(proj: torch.Tensor, temperature: float) -> torch.Tensor:
         torch.arange(n, 2 * n, device=z.device), torch.arange(0, n, device=z.device)
     ])
     return F.cross_entropy(sim, target)
+
+
+class _GradReverse(torch.autograd.Function):
+    """Identity forward, negated gradient backward — the domain-adversarial trick.
+
+    The recordist head sits *behind* this: its own weights learn to name the
+    recordist (a good probe is what makes the pressure honest), while the trunk gets
+    the negated gradient and learns to make that naming fail. λ lives in the loss
+    weight (`w_record`), not here.
+    """
+
+    @staticmethod
+    def forward(ctx: Any, x: torch.Tensor) -> torch.Tensor:
+        return x
+
+    @staticmethod
+    def backward(ctx: Any, grad: torch.Tensor) -> torch.Tensor:
+        return -grad
+
+
+def _grad_reverse(x: torch.Tensor) -> torch.Tensor:
+    return _GradReverse.apply(x)
 
 
 def _evaluate(
@@ -641,6 +854,38 @@ def _evaluate(
         report.contrastive_top1 = round(
             float((sim.argmax(axis=1) == np.arange(take)).mean()), 4
         )
+
+    # The recordist probe: nearest-centroid readout trained on seen syllables, scored
+    # on unseen ones. Deliberately weak — a strong probe would flatter the number; the
+    # point is that even a weak readout should find less recorder as the recipe works.
+    if real.recordings is not None and int(unseen_mask.sum()):
+        rec_of = np.asarray([real.recordist_names[r] for r in real.recordings])
+        seen_mask = np.isin(real.species, train_ids) & ~unseen_mask
+        named = np.asarray([bool(r) for r in rec_of])
+        seen_idx = np.nonzero(seen_mask & named)[0]
+        unseen_idx = np.nonzero(unseen_mask & named)[0]
+        if len(seen_idx) and len(unseen_idx):
+            keep = [
+                r
+                for r in set(rec_of[seen_idx])
+                if (rec_of[seen_idx] == r).sum() >= 5
+                and (rec_of[unseen_idx] == r).sum() >= 1
+            ]
+            if len(keep) >= 2:
+                z_seen = critic.embed(real.patches[seen_idx])
+                z_unseen = critic.embed(real.patches[unseen_idx])
+                centroids = np.stack(
+                    [
+                        _unit_rows(z_seen[rec_of[seen_idx] == r]).mean(axis=0)
+                        for r in keep
+                    ]
+                )
+                in_probe = np.isin(rec_of[unseen_idx], keep)
+                sims = _unit_rows(z_unseen[in_probe]) @ _unit_rows(centroids).T
+                predicted = np.asarray(keep, dtype=object)[sims.argmax(axis=1)]
+                truth = rec_of[unseen_idx][in_probe]
+                report.recordist_probe = round(float((predicted == truth).mean()), 4)
+                report.recordist_chance = round(1.0 / len(keep), 4)
     return report
 
 
@@ -1093,6 +1338,73 @@ def self_test(verbose: bool = True) -> None:
     assert aug.shape == real.patches[:32].shape
     assert np.all(np.isfinite(aug))
     assert float(np.abs(aug - real.patches[:32]).mean()) > 0.05, "augmentation did nothing"
+
+    # --- the source-invariance recipe's mechanics -------------------------------------
+    # The channel EQ curve: mean-zero (never a level change), smooth in frequency, and
+    # inside its dB budget once converted to log-mel units.
+    eq = _channel_eq(16, mel, 3.0, rng)
+    assert eq.shape == (16, 1, mel)
+    assert np.all(np.abs(eq.mean(axis=(1, 2))) < 1.0e-6), (
+        "channel EQ shifts the patch mean"
+    )
+    # Smooth in the 1/f sense: the *average* band-to-band step is a small fraction of
+    # the swing (a single step may be large — the walk is peak-normalised, and one
+    # dominant increment is still a smooth curve, not a jagged one).
+    mean_step = np.abs(np.diff(eq[:, 0, :], axis=1)).mean()
+    assert mean_step < 0.5 * 3.0 * math.log(10) / 10.0, (
+        f"EQ is jagged rather than smooth: mean step {mean_step:.3f}"
+    )
+    assert np.abs(eq).max() <= 3.0 * math.log(10) / 10.0 + 1.0e-6
+    aug_eq = augment(real.patches[:8], rng, channel_db=3.0)
+    assert float(np.abs(aug_eq - real.patches[:8]).mean()) > 0.05, "channel EQ did nothing"
+
+    # MixStyle: off means untouched, no labels means untouched, and a mixed patch's
+    # per-band mean moves toward its partner's — never away from its own.
+    src = real.patches[:16]
+    assert np.array_equal(mixstyle(src, real.species[:16], None, rng, 0.2), src)
+    recs = np.arange(16, dtype=np.int64)  # every patch its own recording
+    mixed = mixstyle(src, real.species[:16], recs, rng, 0.2)
+    assert mixed.shape == src.shape and np.all(np.isfinite(mixed))
+    moved = float(np.abs(mixed - src).mean())
+    assert moved > 1.0e-3, "MixStyle with full partners did nothing"
+    # One recording per species -> no eligible partner anywhere -> untouched.
+    lonely = mixstyle(src, real.species[:16], real.species[:16].copy(), rng, 0.2)
+    assert np.array_equal(lonely, src), "MixStyle mixed within one recording"
+
+    # The gradient-reversal layer: identity forward, exactly negated gradient backward.
+    x = torch.tensor([1.0, -2.0], requires_grad=True)
+    _grad_reverse(x).sum().backward()
+    assert torch.equal(x.grad, torch.tensor([-1.0, -1.0]))
+
+    # The adversarial wiring end to end: two recordists marked by a *tilted* channel
+    # (a flat offset is gain — mean-centring removes it by design; a frequency-
+    # dependent response is what a recorder actually adds) must become classes, a
+    # short train must run, and the report must carry the probe.
+    marked = real.patches[:256].copy()
+    marked[:128] += np.linspace(-0.8, 0.8, mel, dtype=np.float32)[None, None, :]
+    marked = marked - marked.mean(axis=(1, 2), keepdims=True)
+    real_marked = PatchSet(
+        marked,
+        real.species[:256],
+        ["species_a", "species_b"],
+        True,
+        recordings=np.asarray([i // 128 for i in range(256)], dtype=np.int64),
+        recording_names=["rec_0", "rec_1"],
+        recordist_names=["alice", "bob"],
+    )
+    cfg_rec = CriticConfig(
+        epochs=2, batch=64, holdout_species=0.0, holdout_syllables=0.2, seed=1,
+        w_record=0.1, recordist_min_patches=20,
+    )
+    trained_rec = train(real_marked, fake, cfg_rec, log=quiet)
+    assert np.isfinite(trained_rec.report.final_loss), "adversarial train diverged"
+    assert trained_rec.report.recordist_probe == trained_rec.report.recordist_probe, (
+        "the recordist probe did not run on a labelled PatchSet"
+    )
+    assert trained_rec.report.recordist_probe > 0.5, (
+        "sanity inverted: a flat channel offset is not decodable at all — "
+        f"probe {trained_rec.report.recordist_probe}"
+    )
 
     # a round trip through disk must give the same numbers
     import tempfile
