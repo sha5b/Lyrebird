@@ -74,4 +74,6 @@ both follow it. Date: 2026-07-28.
 18. [`18-syntax-roadmap.md`](18-syntax-roadmap.md) — the pattern/syntax roadmap:
     depth harvest first, then a pre-registered grammar bake-off (first-order vs
     Jin–Kozhevnikov vs POMM), a song-level embedding, CETI-style factorization,
-    dialect maps. Structure first; meaning only from playback.
+    dialect maps. Structure first; meaning only from playback. **P1 result inside:**
+    the bake-off is run — first-order stays (the HMM's win is a smoothing artifact;
+    the real find is the unseen-transition backoff weakness).

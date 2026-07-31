@@ -80,3 +80,33 @@ the syllable stays `unlabelled: real acoustics, no documented function`.
 harvest). **After P0:** P2 → P3 → P4. **Continuous:** P5, P6 as each layer lands.
 Each stage is judged on the debug store with both maps built, and a negative result
 is written down, not deleted.
+
+## P1 result (2026-07-31): the grammar bake-off — first-order stays
+
+`syntax.py` + `birdy-pipeline syntax`, run on the debug store (30 qualifying
+species, 3 750 bouts ≥ 3 tokens, seeded 80/20 bout splits, add-α 0.1 backoff,
+deterministic — two runs bit-identical). The pre-registered table:
+
+| model | mean ΔLL/token vs first-order | species won |
+|---|---|---|
+| M2 repeat-count (Jin–Kozhevnikov) | **−0.348** | 0 / 30 |
+| M3 hidden-state HMM (K ∈ {4,8,16}) | **+0.422** | 29 / 30 |
+
+By the letter of the rule M3 wins. **The decomposition is the honest reading, and
+it reverses the adoption**: split held-out tokens into transitions seen vs unseen
+in train — on the 90 % seen, first-order is the best model (−1.525 vs M3's −1.624
+nats/token, better in 15/30 species; M2 worse in 25/30); M3's whole advantage comes
+from the 10 % unseen tail, where M1 pays −9.25 and M3 only −4.16 nats/token. That
+is a property of smoothing *shape* (a mixture predictive is heavy-tailed), not of
+recovered hidden structure. So:
+
+- **First-order stays the shipped model.** M2's mechanism fragments counts on this
+  corpus and adds nothing; M3's win is real as scored and meaningless as structure.
+  Adopting a heavier model for a smoothing artifact is the wrong lesson.
+- **The one real weakness the bake-off exposed is M1's unseen-transition backoff**
+  (−9.25 nats/token on a tenth of held-out transitions). A repair — softer unigram
+  backoff or Kneser–Ney-style continuation counts — is a *smoothing* fix, to be
+  judged on its own pre-registered terms, not smuggled in as a model upgrade.
+- **Re-run after the depth harvest (P0).** At current depth ~10 % of held-out
+  transitions are unseen; depth shrinks that tail and may change the picture — thin
+  data is exactly where higher-order models starve (M2's 0/30 says so).

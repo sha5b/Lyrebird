@@ -7,18 +7,26 @@
   set. **This is the debug cycle's default now** — the known and unknown views of a
   corpus are always comparable side by side. Verified on the debug store (56 284
   points: known 1 024 clusters/purity 35.9 %, unknown 136/purity 8.6 %).
-- **Stage 1 in flight — recorder-invariant critic retrain** (pre-registered; docs/14
-  §14.4's +0.488-source problem; research says training-time only). critic.py gained:
-  recording/recordist labels on PatchSet, `_channel_eq` (simulated recorder response
-  on log-mel: smooth, mean-zero, ±dB), `mixstyle` (same-species different-recording
-  band-stat swaps), a recordist-adversarial head (gradient reversal, `w_record`,
-  default 0 — all knobs default to the pre-recipe path), a recordist probe in the
-  training report, and `critic groupings` (the geometry battery on stored embeddings,
-  no build needed). **Debug-store baseline (unchanged recipe, seed 0):** realism AUC
-  0.989, species acc 0.908, recordist probe 0.442 (chance 0.007); kNN lift species
-  +0.429 / recordist +0.285 / country +0.286. Sweep running: augment-only, then
-  +w_record 0.05/0.1/0.3. Verdict rule: recordist lift −30 % relative with species
-  lift within 10 %, realism AUC no drop, species acc within 2 pts.
+- **Stage 1 verdict: NO ADOPTION (documented, docs/17).** The machinery is in
+  critic.py (channel-EQ, MixStyle, recordist-adversarial head — all default-off),
+  plus `critic groupings` (the battery without a build) and a recordist probe in the
+  report. The sweep: augmentation alone is species-safe but moves recordist lift
+  −0.7 % (nothing); the adversarial head trades ~1:1 (−33 % recordist at w 0.05 with
+  species accuracy −14.7 pts; w 0.3 destroys the embedding). Next attempt's leads:
+  recording-within-species as the adversarial target, and the channel cue is not
+  band-response-shaped.
+- **`docs/18-syntax-roadmap.md`**: the pattern/syntax line made explicit — P0 depth
+  harvest → P1 grammar bake-off (first-order vs Jin–Kozhevnikov vs POMM; can start
+  now, no new data) → P2 song-level embedding (gated on P0 + source invariance) →
+  P3 CETI-style factorization → P4 dialect maps. Structure first; meaning only from
+  playback.
+- **P1 done, first-order stays** (`syntax.py` + `birdy-pipeline syntax`, docs/18 P1
+  result): M2 repeat-count loses decisively (−0.348 nats/token, 0/30 species); M3
+  HMM wins the pre-registered rule (+0.422, 29/30) **but the decomposition reverses
+  adoption** — on the 90 % seen transitions first-order is best, and M3's whole edge
+  is the 10 % unseen tail (M1 −9.25 vs M3 −4.16): smoothing shape, not hidden
+  structure. Recorded follow-up: repair M1's unseen backoff as a *smoothing* fix,
+  re-run the bake-off after the depth harvest.
 
 **Earlier same day (committed e242f88):**
 

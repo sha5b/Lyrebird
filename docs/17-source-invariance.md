@@ -71,9 +71,27 @@ verdict is about the recipe's *direction*, not the gan numbers.)
 | run | recordist lift | species lift | realism AUC | species acc | recordist probe |
 |---|---|---|---|---|---|
 | baseline | +0.285 | +0.429 | 0.989 | 0.908 | 0.442 |
-| aug (EQ 3 dB + MixStyle 0.2) | _running_ | | | | |
-| aug + w_record 0.05 | _running_ | | | | |
-| aug + w_record 0.1 | _running_ | | | | |
-| aug + w_record 0.3 | _running_ | | | | |
+| aug (EQ 3 dB + MixStyle 0.2) | +0.283 | +0.442 | 0.988 | 0.906 | 0.456 |
+| aug + w_record 0.05 | +0.191 | +0.305 | 0.984 | 0.761 | 0.293 |
+| aug + w_record 0.1 | +0.243 | +0.399 | 0.989 | 0.843 | 0.288 |
+| aug + w_record 0.3 | +0.110 | +0.172 | 0.862 | 0.199 | 0.119 |
 
-**Verdict:** _pending the sweep._
+**Verdict: no adoption.** The four gates, in order: augmentation alone is perfectly
+species-safe and moves the recordist needle *not at all* (−0.7 % relative — the
+simulated ±3 dB channel simply does not span how much real channels differ). The
+adversarial head does move it, and the trade is almost perfectly linear in log
+weight: −33 % recordist at w 0.05 (but species lift −29 %, accuracy −14.7 points),
+−61 % at w 0.3 (with the embedding destroyed: species accuracy 0.199, realism AUC
+0.862). No swept weight buys the required −30 % recordist while holding species
+within the gates. **You can purchase recorder invariance with species information at
+roughly 1:1 — and nothing in this recipe makes it cheaper than that.** The knobs
+stay at zero; the machinery stays in critic.py for the next attempt.
+
+What the sweep teaches for that attempt (recorded, not pursued post-hoc): (a) the
+recordist confound on this corpus may be partially *species-correlated* — an
+adversarial target of *recording within species* (channel identity with the bird
+factored out by construction) is the cleaner label and was not tried; (b) w in
+0.01–0.03 would land on the same trade line, and the gates say where that line must
+move to, not just where to step on it; (c) augmentation failing *completely* says
+the discriminating channel cue is not band-response-shaped — the per-recording
+signatures (noise floor shape, codec, mic proximity) live elsewhere in the patch.

@@ -27,6 +27,7 @@ from .corpus import (
     write_wav,
 )
 from . import docrefit, galaxy, harvest, learn, respfit, respiration, twovoice
+from . import syntax as syntax_mod
 from .galaxy import PointSet, build_galaxy
 from .syrinx import (
     Calibration,
@@ -2104,6 +2105,42 @@ def cmd_placement(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_syntax(args: argparse.Namespace) -> int:
+    """Run the P1 grammar bake-off of docs/18 on a store's typed bouts.
+
+    Reads the store exactly as `learn` does — same observations, same typing.json,
+    same bout rule — and changes nothing it reads: the verdict decides whether the
+    shipped first-order grammar of `learn.learn_grammar` has a measurably better
+    successor, it does not install one.
+    """
+    syntax_mod.self_test(verbose=False)
+    store = harvest.HarvestStore(Path(args.store))
+    if not store.syllables:
+        log(f"{store.root} holds no syllable observations — run `harvest` first")
+        return 2
+    typing = syntax_mod.load_typing(store.root)
+    if not typing:
+        log(f"{store.root} has no {learn.TYPING_NAME} — run `learn` first")
+        return 2
+    t0 = time.time()
+    bouts = syntax_mod.species_bouts(store.syllables, typing)
+    log(f"{sum(len(b) for b in bouts.values())} bouts of "
+        f">= {syntax_mod.MIN_BOUT_TOKENS} tokens over {len(bouts)} species")
+    ks = tuple(int(x) for x in args.ks.split(","))
+    report = syntax_mod.bake_off(
+        bouts, alpha=args.alpha, ks=ks, min_bouts=args.min_bouts,
+        max_iter=args.max_iter,
+    )
+    print(syntax_mod.format_report(report))
+    if args.json:
+        Path(args.json).write_text(
+            json.dumps(report, indent=1) + "\n", encoding="utf-8"
+        )
+        log(f"wrote {args.json}")
+    log(f"bake-off took {time.time() - t0:.1f}s")
+    return 0
+
+
 def cmd_spacemap(args: argparse.Namespace) -> int:
     """Fit the browser's 28-d -> 32-d space map on a store and grade it honestly.
 
@@ -3360,6 +3397,28 @@ def build_parser() -> argparse.ArgumentParser:
     pl.add_argument("--per-species", action="store_true",
                     help="also break the placement down species by species")
     pl.set_defaults(func=cmd_placement)
+
+    sy = sub.add_parser(
+        "syntax",
+        help="the P1 grammar bake-off of docs/18: first-order (the shipped model) vs "
+             "Jin-Kozhevnikov repeat-count vs a categorical HMM, scored by held-out "
+             "bout log-likelihood on the store's typed bouts, with the win rule "
+             "pre-registered in syntax.py",
+    )
+    sy.add_argument("--store", default=str(DEFAULT_HARVEST_STORE))
+    sy.add_argument("--alpha", type=float, default=syntax_mod.ALPHA,
+                    help="add-alpha smoothing strength, backed off to the next lower "
+                         "order (default %(default)s)")
+    sy.add_argument("--ks", default=",".join(str(k) for k in syntax_mod.HMM_KS),
+                    help="comma-separated HMM state counts to sweep, chosen on an inner "
+                         "validation split (default %(default)s)")
+    sy.add_argument("--min-bouts", type=int, default=syntax_mod.MIN_BOUTS_PER_SPECIES,
+                    help="fewest bouts for a species to qualify (default %(default)s)")
+    sy.add_argument("--max-iter", type=int, default=syntax_mod.HMM_MAX_ITER,
+                    help="Baum-Welch iteration cap (default %(default)s)")
+    sy.add_argument("--json", default=None,
+                    help="also write the full machine-readable report here")
+    sy.set_defaults(func=cmd_syntax)
 
     sb = sub.add_parser(
         "subset",
