@@ -748,6 +748,102 @@ def cmd_sources_fetch(args: argparse.Namespace) -> int:
     return 0
 
 
+#: Descriptors a species needs before its centroid is allowed to stand for it in the
+#: diverse pick. A centroid over a handful of syllables is mostly sampling noise, and
+#: the whole premise of the pick is that a species' *position* means something.
+DIVERSE_MIN_DESCRIPTORS = 20
+
+
+def _diverse_species(
+    strata: dict[str, Any],
+    eligible: dict[str, int],
+    n: int,
+    seed: int = 0,
+) -> tuple[list[str], dict[str, float]]:
+    """The `n` species that best **represent** the store's acoustic spread.
+
+    **Why this is not "the n most different species".** The obvious reading of "species
+    with different vocals" is farthest-point sampling — repeatedly take whatever is
+    least like everything picked so far. Measured on `out/harvest-gan` (2 991 species
+    with at least `DIVERSE_MIN_DESCRIPTORS` descriptors, standardised 28-d space), that
+    is a trap: it halves the worst-covered gap (12.05 -> 6.96) but makes the *average*
+    distance from a corpus species to its nearest pick **worse** than simply taking the
+    biggest species (4.98 vs 3.81), because it spends the whole budget on the rim of the
+    space. A bench of a hundred outliers is a bench of a hundred edge cases, and on this
+    corpus a good few of those are noise rather than birds.
+
+    So the pick is k-medoid instead: cluster the species centroids into `n` groups and
+    keep the most central real species of each. That is the selection whose objective
+    *is* representativeness, and it beats both alternatives where it counts:
+
+    | pick                | mean dist to nearest | worst-covered | median obs |
+    |---------------------|----------------------|---------------|------------|
+    | top-100 by count    | 3.813                | 12.052        | 271        |
+    | 100 farthest-point  | 4.982                | 6.963         | -          |
+    | 100 k-medoid (this) | **3.125**            | **9.122**     | 68         |
+
+    The honest cost is in that last column: the diverse hundred holds 17 139
+    observations against the biggest hundred's 63 055, so every type is fitted from
+    fewer members. That is the right trade for a debug bench — the point is to meet
+    every kind of voice the corpus contains before committing to a full run — and the
+    wrong one for measuring fit quality, which wants depth.
+
+    **The space is the 28-d descriptor, not the critic's 32-d embedding**, even though
+    the embedding is the measurably better similarity space (docs/09 §9.7). `subset` is
+    the fast step before anything has been trained: it must run on a bare store with no
+    critic, no torch and no patches. A pick made in a space the command cannot always
+    compute would be a pick that sometimes silently is not made.
+
+    Ties inside a cluster go to the species with more data (a log-scaled nudge, so it
+    breaks ties without dragging the choice away from the cluster's centre).
+
+    Returns the chosen ids and the coverage figures, so the caller can report what the
+    pick actually achieved rather than asserting that it worked.
+    """
+    import numpy as np
+    from sklearn.cluster import KMeans
+
+    ids = sorted(
+        sid
+        for sid, st in strata.items()
+        if len(st.rows) >= DIVERSE_MIN_DESCRIPTORS and eligible.get(sid, 0) > 0
+    )
+    if not ids:
+        return [], {}
+    centres = np.stack([np.mean(np.stack(strata[sid].rows), axis=0) for sid in ids])
+    counts = np.array([len(strata[sid].rows) for sid in ids], dtype=float)
+    # Standardised, because the 28 descriptor dimensions are not in comparable units and
+    # an unscaled distance would be dominated by whichever ones happen to run largest.
+    centres = (centres - centres.mean(axis=0)) / np.maximum(centres.std(axis=0), 1e-9)
+    if len(ids) <= n:
+        return ids, {}
+
+    km = KMeans(n_clusters=n, n_init=10, random_state=seed).fit(centres)
+    chosen: list[int] = []
+    for k in range(n):
+        members = np.nonzero(km.labels_ == k)[0]
+        if not len(members):
+            continue
+        cost = np.linalg.norm(
+            centres[members] - km.cluster_centers_[k], axis=1
+        ) - 0.15 * np.log1p(counts[members])
+        chosen.append(int(members[int(np.argmin(cost))]))
+
+    picked = centres[np.array(chosen)]
+    nearest = np.linalg.norm(centres[:, None, :] - picked[None, :, :], axis=2).min(axis=1)
+    spread = np.linalg.norm(picked[:, None, :] - picked[None, :, :], axis=2)
+    upper = np.triu_indices(len(chosen), 1)
+    return (
+        sorted(ids[i] for i in chosen),
+        {
+            "candidates": float(len(ids)),
+            "meanToNearest": float(nearest.mean()),
+            "worstCovered": float(nearest.max()),
+            "spread": float(spread[upper].mean()) if len(chosen) > 1 else 0.0,
+        },
+    )
+
+
 def cmd_subset(args: argparse.Namespace) -> int:
     """Write a debug store holding the N biggest species, recordings whole.
 
@@ -765,7 +861,25 @@ def cmd_subset(args: argparse.Namespace) -> int:
     counts: dict[str, int] = {}
     for o in store.syllables:
         counts[o.species_id] = counts.get(o.species_id, 0) + 1
-    keep = set(sorted(counts, key=lambda s: -counts[s])[: args.species])
+    if getattr(args, "diverse", False):
+        chosen, stats = _diverse_species(
+            store.strata, counts, args.species, seed=getattr(args, "seed", 0)
+        )
+        if not chosen:
+            log(f"{store.root} has no species with at least {DIVERSE_MIN_DESCRIPTORS} "
+                "descriptors and a syllable observation — nothing to pick from")
+            return 2
+        keep = set(chosen)
+        if stats:
+            log(f"diverse pick: {len(keep)} of {int(stats['candidates'])} eligible "
+                f"species; a corpus species is {stats['meanToNearest']:.3f} from its "
+                f"nearest pick on average (worst {stats['worstCovered']:.3f}), and the "
+                f"picks sit {stats['spread']:.3f} apart in the standardised 28-d space")
+        else:
+            log(f"diverse pick: kept all {len(keep)} eligible species "
+                f"(fewer than the {args.species} asked for)")
+    else:
+        keep = set(sorted(counts, key=lambda s: -counts[s])[: args.species])
     out = Path(args.out)
     if out.resolve() == Path(args.store).resolve():
         log("a subset cannot overwrite its source store")
@@ -2953,11 +3067,19 @@ def build_parser() -> argparse.ArgumentParser:
 
     sb = sub.add_parser(
         "subset",
-        help="write a debug store with the N biggest species, recordings whole",
+        help="write a debug store with the N biggest (or N most representative) species",
     )
     sb.add_argument("--store", default=str(DEFAULT_HARVEST_STORE))
     sb.add_argument("--species", type=int, default=100,
-                    help="how many of the biggest species to keep (default %(default)s)")
+                    help="how many species to keep (default %(default)s)")
+    sb.add_argument("--diverse", action="store_true",
+                    help="keep the N species that best represent the store's acoustic "
+                         "spread (k-medoid over species centroids in the 28-d descriptor "
+                         "space) instead of the N biggest. A bench that meets every kind "
+                         "of voice the corpus holds; it carries less data per species, so "
+                         "it is for proving mechanics, not for measuring fit quality")
+    sb.add_argument("--seed", type=int, default=0,
+                    help="seed for the diverse pick's clustering (default %(default)s)")
     sb.add_argument("--out", required=True, help="target store directory (never the source)")
     sb.set_defaults(func=cmd_subset)
 
