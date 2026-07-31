@@ -682,6 +682,105 @@ class RealismTerm:
         return (1.0 - self.weight) * cosine + self.weight * realism
 
 
+class MelTargetTerm:
+    """The type's mean member mel-path as a fit target, blended into `_score` exactly
+    the way `RealismTerm` blends the critic.
+
+    `score = (1 - w) * cosine + w * mel-path similarity`. docs/19 measured that the
+    28-d cosine does not rank audible distortion (Pearson 0.106 / Spearman 0.100
+    against channel-normalised MCD over 200 types of the debug-100 store — neither
+    distinguishable from zero): it is a clustering statistic being used as a fidelity
+    metric. The mel-path is the time-resolved spectral summary the harvest kept
+    (`SyllableObservation.mel_path`: knots x 26 log-mel energies, `features.mel_path`),
+    the same family of quantity MCD measures, so an objective built on it optimises
+    what the bench actually listens to. The cosine never leaves the blend: it is the
+    ungameable *clustering* guardrail, the role docs/19 §19.3 says it is proven for —
+    and the reported `resynthesis_cosine` is still measured with the pure cosine, so a
+    mel-driven fit that collapses the descriptor match stays visible.
+
+    The similarity is a **cosine over the flattened (knots x 26) paths**, not a
+    log-spectral distance. Three reasons:
+
+    1. It lands in [-1, 1], the cosine's own range, so `w` means the same thing at
+       every point of the surface — the commensurability argument `RealismTerm` makes
+       for `realism_unit`. A raw LSD lives in (-inf, 0] and would let the weight mean
+       something different at every point, exactly the bug that ruled out the unsquashed
+       realism logit.
+    2. `features.mel_path` mean-centres each path already, so both vectors are
+       loudness-free spectral *shape over time*; the cosine asks only whether the shape
+       moved the same way.
+    3. No DTW is needed: both sides are resampled onto the same knot fractions of their
+       own duration, so time is aligned by construction (`features.mel_path`'s own
+       docstring, and the same assumption specbench's `align_pair` makes).
+
+    The target is the *mean of the type's members'* mel-paths — the same cluster-level
+    reference the 28-d objective uses (`learn_species`' `real[i]`), so both terms of
+    the blend aim at the same notion of "the type". A type whose members predate
+    `mel_path` (stores harvested before the field existed) gets no term and the
+    objective falls back to the pure cosine — the same no-op rule as `RealismTerm`
+    with no critic. At `w = 0` the blend is bit-identical to the objective that
+    shipped before this class existed, which is what keeps every gate that reads
+    `_score` unchanged by default.
+    """
+
+    def __init__(
+        self,
+        target: np.ndarray | None,
+        weight: float,
+        sample_rate: int = features.SAMPLE_RATE,
+    ):
+        self.weight = float(np.clip(weight, 0.0, 1.0))
+        self.sample_rate = sample_rate
+        self.target = (
+            None if target is None else _unit(np.asarray(target, dtype=np.float64).ravel())
+        )
+        self.calls = 0
+
+    def similarity(self, audio: np.ndarray) -> float:
+        """The unblended mel-path cosine of one render against the target.
+
+        -1 when the render has no voiced frame — `features.mel_path` returns zeros,
+        there is no shape to match, and `_score` already answers -1 for a render with
+        no descriptor, so the two failure modes agree. NaN when the term has no
+        target: callers should have used `mel_target_term`, which returns None in
+        that case so the question never arises.
+        """
+        if self.target is None:
+            return math.nan
+        path = features.mel_path(audio, sample_rate=self.sample_rate).ravel()
+        if not np.any(path):
+            return -1.0
+        return float(_unit(path) @ self.target)
+
+    def blend(self, cosine: float, audio: np.ndarray) -> float:
+        if self.weight <= 0.0 or self.target is None:
+            return cosine
+        self.calls += 1
+        return (1.0 - self.weight) * cosine + self.weight * self.similarity(audio)
+
+
+def mel_target_term(
+    members: Sequence[SyllableObservation],
+    weight: float,
+    sample_rate: int = features.SAMPLE_RATE,
+) -> "MelTargetTerm | None":
+    """The per-type mel target for the fit loop, or None when there is nothing to aim at.
+
+    None — not a zero-weight term — so `_score` stays on exactly its old code path
+    when the term is off (w = 0, the default) or when no member carries a mel-path.
+    The target is the mean of the members' stored paths; those were rounded to 3
+    decimals at harvest, which costs at most ~1e-3 of log-energy per cell — nothing
+    next to the log-units of spectral disagreement the term exists to see.
+    """
+    if weight <= 0.0:
+        return None
+    rows = [o.mel_path for o in members if o.mel_path]
+    if not rows:
+        return None
+    target = np.mean(np.asarray(rows, dtype=np.float64), axis=0)
+    return MelTargetTerm(target, weight, sample_rate=sample_rate)
+
+
 # --- quality-weighted fitting --------------------------------------------------------
 
 
@@ -1024,13 +1123,17 @@ def _score(
     frame: tuple[np.ndarray, np.ndarray] | None,
     sample_rate: int,
     realism: "RealismTerm | None" = None,
+    mel: "MelTargetTerm | None" = None,
 ) -> float:
     """How good this syllable's resynthesis is: the 28-d cosine, optionally blended.
 
-    Without `realism` this is exactly what it always was — the cosine between the resynthesis
-    and the real audio the type stands for. With it, the learned critic gets a share `w` of
-    the objective (docs/09 §9.3 step 5). The cosine never goes away entirely, so there is
-    always one term the critic cannot game.
+    Without `realism` or `mel` this is exactly what it always was — the cosine between
+    the resynthesis and the real audio the type stands for. With them, the learned
+    critic gets a share `w` of the objective (docs/09 §9.3 step 5) and the type's mean
+    member mel-path gets its own share (docs/19 §19.3). Terms compose in the order
+    cosine -> realism -> mel, each blending over whatever the previous one returned;
+    at their default weights (0) both are no-ops. The cosine never goes away
+    entirely, so there is always one term neither the critic nor the target can game.
     """
     audio = peak_normalise(
         render_syllable(syllable, sample_rate=sample_rate, calibration=calibration)
@@ -1041,7 +1144,11 @@ def _score(
     if frame is not None:
         d = features.standardise(d, frame[0], frame[1])
     cosine = float(_unit(d) @ reference)
-    return cosine if realism is None else realism.blend(cosine, audio)
+    if realism is not None:
+        cosine = realism.blend(cosine, audio)
+    if mel is not None:
+        cosine = mel.blend(cosine, audio)
+    return cosine
 
 
 #: What the search may move, and to where. The pitch *contour* is deliberately absent:
@@ -1338,6 +1445,7 @@ def invert_gestures(
     sample_rate: int = features.SAMPLE_RATE,
     passes: int = INVERT_PASSES,
     realism: "RealismTerm | None" = None,
+    mel: "MelTargetTerm | None" = None,
 ) -> tuple[float, float]:
     """Search the fitted syllable towards the audio it was fitted to. Returns (before, after).
 
@@ -1355,7 +1463,7 @@ def invert_gestures(
     the measured values and only ever moves on an improvement, so the worst case is that
     it stays exactly where the median put it.
     """
-    before = _score(t.syllable, reference, calibration, frame, sample_rate, realism)
+    before = _score(t.syllable, reference, calibration, frame, sample_rate, realism, mel)
     best = before
     for _ in range(max(1, passes)):
         improved = False
@@ -1365,7 +1473,8 @@ def invert_gestures(
                 if value == current:
                     continue
                 trial = _with(t.syllable, key, value)
-                score = _score(trial, reference, calibration, frame, sample_rate, realism)
+                score = _score(trial, reference, calibration, frame, sample_rate,
+                               realism, mel)
                 if score > best + 1.0e-4:
                     best = score
                     t.syllable = trial
@@ -1421,6 +1530,7 @@ def fricative_seed(
     calibration: Calibration | None,
     frame: tuple[np.ndarray, np.ndarray] | None,
     sample_rate: int = features.SAMPLE_RATE,
+    mel: "MelTargetTerm | None" = None,
 ) -> tuple[float, float] | None:
     """The noise-first start for the fricative class: try "noise, shaped how" against
     the tonal fit, keep it only where the fit's own number says it wins.

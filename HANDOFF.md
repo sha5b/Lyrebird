@@ -2,6 +2,15 @@
 
 **Landed today (uncommitted at this writing — user commits):**
 
+- **OWNER RULE (restated twice today, now in AGENTS.md): debug-100 only, always.**
+  No production builds, no full harvests, no bulk network sweeps. All work is proven
+  on the 100-species debug subset (`subset --species 100 --out /tmp/...`). A
+  production build on the full corpus OOM'd the machine this afternoon (500k+ points
+  after rendering the 2 423-species inventory — the debug builds at 45-56k were
+  fine); the Stage-0 chain was killed before the build step. Steps 1-3 of that chain
+  (learn/respfit/docrefit) had already written their data/ artifacts and are left
+  in place, unbuilt.
+
 - **Spectral bench — the uncomfortable finding (docs/19, `specbench.py` +
   `birdy-pipeline specbench`):** the 28-d resynthesis cosine, the pipeline's
   universal fit objective, does NOT correlate with audible spectral distortion
@@ -12,6 +21,18 @@
   fit target is promoted to the priority** (objective = audible metric at last), and
   future fit gates read the bench. Stage-1's invariance verdict is unaffected
   (judged on kNN lift, not cosine).
+- **P2 song-level kernel baseline: DOES NOT HOLD (docs/18 P2 result).** The
+  token×gap edit-distance kernel loses to bag-of-types on species lift (+0.877 vs
+  +0.924 on harvest-test; +0.050 vs +0.081 on debug-100) and fails the recordist
+  gate (+0.264/+0.087 vs < 0.05). The useful findings: within-species song
+  structure EXISTS (18/18 deep species separate recordings) but lives entirely in
+  token marginals — order and rhythm add nothing at current depth; the rhythm term
+  *costs* lift; the bar for any learned song encoder is bag-of-types, after P0.
+  OOM receipt: `geometry._silhouette` builds an (n,n,d) diff (212 GB at 4 000 ×
+  1 658) — that is what took the host down; rank ≤ 128 is safe.
+- **Serial execution rule (owner): one heavy agent/job at a time** — the OOMs
+  killed VS Code twice with two agents running. Queue: mel-patch fit target
+  (running), then Stage-1 follow-up sweep, then serve store fix.
 - **`build --clustering both`**: one render writes `<out>/known` (kmeans, every type
   named) + `<out>/unknown` (hdbscan, discovery view), each a complete verified asset
   set. **This is the debug cycle's default now** — the known and unknown views of a

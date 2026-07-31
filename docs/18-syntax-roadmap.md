@@ -123,3 +123,36 @@ the repair's scope, so the full-tail gain is +0.37/+0.65, not the headline +1.9;
 the repair narrows the HMM's unseen-tail advantage, confirming that M3's "win" was
 smoothing shape. The shipped grammar artifact is untouched either way — the repair
 improves the *measurement baseline* future bake-offs are judged against.
+
+## P2 result (2026-07-31): the song-level kernel baseline does not hold
+
+`songspace.py` + `birdy-pipeline songspace`: bouts as (type, gap) sequences, a
+weighted edit-distance kernel (substitution/indel 1, match cost |Δlog gap| priced
+inside the DP, so the edit path *is* the rhythm alignment), judged by the
+pre-registered rule: species kNN lift must beat bag-of-types over the same bouts
+AND recordist lift must stay < 0.05. **It fails both gates on both debug stores:**
+
+| store | species lift, kernel | species lift, bag-of-types | recordist lift |
+|---|---|---|---|
+| harvest-test (37 spp, 3 750 bouts) | +0.877 | **+0.924** | **+0.264** |
+| harvest-100 (100 spp, 889 bouts) | +0.050 | +0.081 | **+0.087** |
+
+Post-hoc exact-kNN (no MDS) reproduces the lifts — not an embedding-truncation
+artifact. The measured details, each worth keeping:
+
+- **Within-species song structure exists**: 18/18 deep species separate recordings
+  clearly (parus_major +0.68, cuculus_solitarius +0.43, strix_aluco +0.27) — but
+  bag-of-types matches it almost everywhere. The structure is already entirely in
+  the token marginals; **order and rhythm add nothing measurable at current
+  depth** — the P0-depth caveat, confirmed from a second direction.
+- **The rhythm term costs** species lift (ablation w=1: +0.877 vs w=0: +0.896) —
+  priced variation the corpus does not organise by.
+- The recordist gate failure is corpus composition (recordist ↔ species/geography
+  correlate; bag shows the same lift), reported as a failure per the
+  pre-registration; the mechanism is visible in the baseline's identical number.
+- **The bar for any learned song encoder is bag-of-types (+0.924), not the edit
+  kernel** — and depth is the real unblocker. A learned encoder is unpromising
+  until then; this slot in the roadmap is now "beat bag-of-types, after P0".
+- OOM receipt: `geometry._silhouette` builds an (n,n,d) diff — 212 GB at
+  4 000 × 1 658 dims. That is what took the host down twice today; the statistic
+  survives at rank ≤ 128. Flagged for the next high-rank use of `geometry.measure`.

@@ -122,6 +122,13 @@ App checks run from `app/`: `npm run check` (4 pre-existing errors in
 
 ## Verification discipline
 
+- **Debug only, always (owner rule, 2026-07-31).** No production builds, no full
+  harvests, no bulk network sweeps — everything is proven on **the 100-species debug
+  subset** (`subset --species 100 --out /tmp/...` from the current big store, e.g.
+  `/tmp/birdy-debug/harvest-100`), and production runs happen only when the owner
+  explicitly calls for one, singularly, with the log read. This was restated after
+  a production build OOM'd the machine; it overrides any earlier "production cycle"
+  phrasing in HANDOFF.md.
 - Verification runs go to `/tmp` (stores, assets, inventories). Never point a test
   `learn`/`build` at the real stores or `app/static/birdy/` — production runs are
   deliberate, singular, and their logs are read.
