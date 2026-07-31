@@ -61,6 +61,11 @@
 		 * panel's filter — isolating the unidentified is the arrivals live view.
 		 */
 		provShown?: boolean[];
+		/**
+		 * Colour the points by species hue instead of neutral ink or provenance class —
+		 * the same hash the labels use, so a point and its tag always agree on "who".
+		 */
+		bird?: boolean;
 	}
 
 	let {
@@ -73,7 +78,8 @@
 		spread = 1,
 		learning = [],
 		plain = false,
-		provShown = [true, true, true, true, true]
+		provShown = [true, true, true, true, true],
+		bird = false
 	}: Props = $props();
 
 	// The corpus never changes while the component is alive, so the buffers are built once
@@ -207,6 +213,18 @@
 		const born = new Float32Array(assets.points.n);
 		const generation = assets.points.generation;
 		const speciesIndex = buildSpeciesIndex(assets);
+		// The species hue as per-point RGB — the same hash the labels use, so a point
+		// and its tag can never disagree about which bird a colour means.
+		const bird = new Float32Array(assets.points.n * 3);
+		{
+			const c = new THREE.Color();
+			for (let i = 0; i < assets.points.n; i++) {
+				c.setStyle(speciesColour(assets.points.speciesId[i] ?? ''));
+				bird[i * 3] = c.r;
+				bird[i * 3 + 1] = c.g;
+				bird[i * 3 + 2] = c.b;
+			}
+		}
 		for (let i = 0; i < assets.points.n; i++) {
 			cluster[i] = assets.points.clusterId[i] ?? -1;
 			species[i] = speciesIndex.get(assets.points.speciesId[i] ?? '') ?? -1;
@@ -216,6 +234,7 @@
 		g.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
 		g.setAttribute('aSpecies', new THREE.BufferAttribute(species, 1));
 		g.setAttribute('aBorn', new THREE.BufferAttribute(born, 1));
+		g.setAttribute('aBird', new THREE.BufferAttribute(bird, 3));
 		g.setAttribute('aAct', activationAttribute);
 		g.setAttribute('aProv', new THREE.BufferAttribute(pointProvenance(assets), 1));
 		g.setAttribute('aOrphan', orphanAttribute);
@@ -238,7 +257,8 @@
 			uProvField: { value: new THREE.Color(PROV_FIELD) },
 			uProvArrivals: { value: new THREE.Color(PROV_ARRIVALS) },
 			uProvCand: { value: new THREE.Color(PROV_CANDIDATE) },
-			uPlain: { value: untrack(() => (plain ? 1 : 0)) },
+			uPlain: { value: untrack(() => (plain && !bird ? 1 : 0)) },
+			uBird: { value: untrack(() => (bird ? 1 : 0)) },
 			// "Heard, but nothing claimed": where the nearest region breathes, and how
 			// strongly. Eased in the frame task; 0 means silent.
 			uUnmatchedOrigin: { value: new THREE.Vector3() },
@@ -322,7 +342,13 @@
 	});
 
 	$effect(() => {
-		material.uniforms.uPlain.value = plain ? 1 : 0;
+		// Neutral ink only when the mode asks for it: bird mode is a *colour* mode, so
+		// plain has to step aside for it (uBird swaps the class tint for the hue).
+		material.uniforms.uPlain.value = plain && !bird ? 1 : 0;
+	});
+
+	$effect(() => {
+		material.uniforms.uBird.value = bird ? 1 : 0;
 	});
 
 	$effect(() => {

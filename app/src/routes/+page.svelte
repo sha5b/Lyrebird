@@ -135,7 +135,16 @@
 	// Off means every point is neutral grey; on tints each point by where its sound
 	// comes from (the provenance classes the note below names). Default off: the
 	// corpus is one cloud first, and the class tint is a layer you ask for.
-	let provColours = $state(false);
+	/**
+	 * The points' colour language: neutral ink, the species hue the labels already
+	 * speak ("who"), or the provenance classes ("what kind of thing"). The tags and
+	 * threads only move between bird-hue and provenance (a third language would sit
+	 * on screen at the same time as the points' own, and two hue readings of one
+	 * stage invite confusion) — so 'bird' is a points-only switch into the labels'
+	 * existing language.
+	 */
+	let pointColour = $state<'ink' | 'bird' | 'prov'>('ink');
+	const provColours = $derived(pointColour === 'prov');
 	/**
 	 * Per-class point visibility in PROVENANCE order (documented, learned, field,
 	 * unlabelled, candidate). The arrivals live view is the two-class isolate —
@@ -144,17 +153,29 @@
 	 */
 	let provShown = $state<boolean[]>([true, true, true, true, true]);
 	/**
-	 * Which songs the chorus may draw from, by what backs each song (its confidence).
-	 * All on is the behaviour before the filter existed; turning a class off re-pools
-	 * the chorus on the next effect run, and songs already playing finish.
+	 * Which songs the chorus may draw from, in the same provenance vocabulary the
+	 * points speak: documented (a person named it — literature or playback-verified),
+	 * synthesized (our own mapping, inferred or composed), recorded (real audio with
+	 * nothing documented attached). All on is the behaviour before the filter
+	 * existed; turning a class off re-pools the chorus on the next effect run, and
+	 * songs already playing finish.
 	 */
 	let chorusClasses = $state<Record<string, boolean>>({
 		documented: true,
-		experimental: true,
-		inferred: true,
-		invented: true,
-		unlabelled: true
+		synthesized: true,
+		recorded: true
 	});
+	/**
+	 * The song-confidence values each provenance word covers. Songs carry
+	 * confidence, points carry provenance — two axes that answer "why should I
+	 * believe this sound" with one vocabulary, mapped here once rather than at
+	 * every use.
+	 */
+	const CHORUS_CLASS_CONFIDENCE: Record<string, string[]> = {
+		documented: ['documented', 'experimental'],
+		synthesized: ['inferred', 'invented'],
+		recorded: ['unlabelled']
+	};
 	let tempo = $state(1);
 	// How often the chorus starts a song, as a multiplier on its Poisson rate. Read by
 	// the scheduler per gap, so the slider retunes the next pause live (engine.songRate).
@@ -1454,7 +1475,7 @@
 		// Read per restart, so a checkbox change re-pools the chorus like a tempo one.
 		const allowed = Object.entries(chorusClasses)
 			.filter(([, v]) => v)
-			.map(([k]) => k);
+			.flatMap(([k]) => CHORUS_CLASS_CONFIDENCE[k] ?? []);
 		if (engine) engine.tempo = rate;
 		if (chorus === 'solo' && engine && id) engine.startAmbient([id], 12 * rate, 3, allowed);
 		if (chorus === 'global' && engine && assets) {
@@ -1620,6 +1641,7 @@ uv run birdy-pipeline build</pre>
 				speed={tempo}
 				labels={showLabels}
 				plain={!provColours}
+			bird={pointColour === 'bird'}
 				{provShown}
 				pinned={pinnedCluster}
 				frame={frameNodes}
@@ -1686,17 +1708,26 @@ uv run birdy-pipeline build</pre>
 									<label class="check" title="Name tags on the knots a syllable can be sung into.">
 										<input type="checkbox" bind:checked={showLabels} /> Labels
 									</label>
-									<label class="check" title="Colour the points, the tags and the threads by where each sound comes from, instead of by which bird it is. Off: neutral ink points, and hue on the tags says the bird.">
-										<input type="checkbox" bind:checked={provColours} /> Provenance
-									</label>
 								</div>
 								<!--
-									One colour language at a time. Off, hue answers "which bird" on the
-									tags and threads and the points are neutral ink; on, hue answers "what
-									kind of thing" on all three at once. Two languages on screen together
-									invite the reading that their hues are related, which is why the
-									switch moves the whole stage rather than only the cloud.
+									One colour language at a time on the points, chosen as a mode:
+									neutral ink (hue lives on the tags, saying which bird), the
+									species hue itself ("who", points-only — the tags already speak
+									it), or the provenance classes ("what kind of thing", which moves
+									the tags and threads too, so the stage never speaks two hue
+									languages at once).
 								-->
+								<div class="checks" role="radiogroup" aria-label="Point colour">
+									<label class="check" title="Neutral ink points; hue on the tags and threads says which bird.">
+										<input type="radio" bind:group={pointColour} value="ink" /> Ink
+									</label>
+									<label class="check" title="Each point in its bird's hue — the same colour its tags and threads already use.">
+										<input type="radio" bind:group={pointColour} value="bird" /> Bird
+									</label>
+									<label class="check" title="Colour the points, the tags and the threads by where each sound comes from, instead of by which bird it is.">
+										<input type="radio" bind:group={pointColour} value="prov" /> Provenance
+									</label>
+								</div>
 								{#if provColours}
 									<ul class="legend">
 										{#each provLegend as row (row.cls)}
@@ -1712,6 +1743,11 @@ uv run birdy-pipeline build</pre>
 									<p class="note faint">
 										Hue says what kind of thing a sound is; the tag beside it names the
 										bird. The big split is whether a bird made the sound or we did.
+									</p>
+								{:else if pointColour === 'bird'}
+									<p class="note faint">
+										Points and tags share one hue: the bird. The big split is who, not
+										what kind of thing — the Provenance mode has that key instead.
 									</p>
 								{:else}
 									<p class="note faint">
@@ -1793,7 +1829,7 @@ uv run birdy-pipeline build</pre>
 									</li>
 									<li>
 										<i class="hue"></i>
-										<span>Hue on the tags and threads says which bird. In provenance mode it says what kind of thing instead — the Display panel has that key.</span>
+										<span>Hue says which bird — on the tags and threads always, on the points too in Bird mode. In provenance mode it says what kind of thing instead — the Display panel has both keys.</span>
 									</li>
 									<li>
 										<i class="ring"></i>
@@ -2282,17 +2318,28 @@ uv run birdy-pipeline build</pre>
 							</label>
 						</div>
 						<div class="checks">
-							{#each ['documented', 'experimental', 'inferred', 'invented', 'unlabelled'] as cls (cls)}
-								{@const label = confidenceLabel(cls)}
-								<label class="check" title={label.hint}>
+							{#each ['documented', 'synthesized', 'recorded'] as cls, i (cls)}
+								{@const hint =
+									cls === 'documented'
+										? 'A person named this song — described in the literature or established by playback experiments.'
+										: cls === 'synthesized'
+											? 'Our own mapping: fitted from recordings or composed from them. Not a claim about real birds.'
+											: 'Real audio of this species with no documented function attached.'}
+								<label class="check" title={hint}>
 									<input type="checkbox" bind:checked={chorusClasses[cls]} />
-									{label.text}
+									<i
+										class="swatch"
+										style:background={provenanceColour(
+											[PROVENANCE.documented, PROVENANCE.learned, PROVENANCE.field][i]
+										)}
+									></i>
+									{cls}
 								</label>
 							{/each}
 						</div>
 						<p class="note faint">
-							Which songs the chorus may draw from, by what backs each one. Off re-pools
-							the next song started; nothing already playing is cut.
+							Which songs the chorus may draw from, in the same three words the points
+							use. Off re-pools the next song started; nothing already playing is cut.
 						</p>
 					</section>
 				{:else if tab === 'words'}

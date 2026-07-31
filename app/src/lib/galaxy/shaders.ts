@@ -113,6 +113,9 @@ export function vertexShader(clusterCount: number): string {
 		 * 4 candidate.
 		 */
 		attribute float aProv;
+		/** The point's species hue as RGB (palette.speciesColour), for the bird-colour
+		 * point mode: same hash the labels use, so a point and its tags always agree. */
+		attribute vec3 aBird;
 		/** 1 while a scheduled orphan note — a type with points but no cluster — sounds. */
 		attribute float aOrphan;
 		/**
@@ -198,6 +201,8 @@ export function vertexShader(clusterCount: number): string {
 		varying float vArrive;
 		/** Provenance category of this point (see aProv). */
 		varying float vProv;
+		/** The point's species hue (see aBird). */
+		varying vec3 vBird;
 		/** 1 while this point's orphan type is being played (see aOrphan). */
 		varying float vOrphan;
 		/** The wavefront ring passing through this point (see aFront). */
@@ -213,6 +218,7 @@ export function vertexShader(clusterCount: number): string {
 
 		void main() {
 			vProv = aProv;
+			vBird = aBird;
 			vOrphan = aOrphan;
 			vWave = aFront;
 			// **A point can belong to no cluster, and that is a result, not a gap.**
@@ -350,8 +356,12 @@ export function vertexShader(clusterCount: number): string {
 				// Distances are in the cloud's own box, so a front travels the same share
 				// of the picture whatever the viewing scale is set to.
 				float front = uWaveAge[i] * uWaveSpeed;
-				float env = exp(-pow((dist - front) / uWaveWidth, 2.0));
-				float local = exp(-pow(dist / uWaveLocal, 2.0));
+				// Squared by hand: pow(x, 2.0) with a negative base is undefined in GLSL ES
+				// (exp2/log2 drivers turn it into NaN, and NaN positions vanish the points).
+				float r0 = (dist - front) / uWaveWidth;
+				float env = exp(-(r0 * r0));
+				float r1 = dist / uWaveLocal;
+				float local = exp(-(r1 * r1));
 				float phase = (dist - front) * uWaveK + aSeed * 0.35;
 				float swell = sin(phase) * env * local * amp;
 				p += (away / dist) * swell;
@@ -405,7 +415,10 @@ export function vertexShader(clusterCount: number): string {
 			// reads as a cloud that has one.
 			float size = uPointSize * (1.0 + grow) * (1.0 + 0.7 * vChosen)
 				* (1.0 - 0.35 * vUnassigned) * mix(0.35, 1.0, vArrive);
-			if (abs(uHighlight - aCluster) < 0.5) size *= 1.15;
+			// uHighlight idles at -1 in silence, which is also the unassigned marker: without
+			// the guard every unassigned point drew 15 % larger whenever nothing sounded
+			// (the hdbscan map's haze "breathed" at note onsets, inverting the intent).
+			if (uHighlight >= 0.0 && abs(uHighlight - aCluster) < 0.5) size *= 1.15;
 			// Perspective, but softened. True 1/z is right for a solid and wrong for a
 			// scatter: zoomed out every mark falls under a pixel and the cloud turns to fog,
 			// zoomed in the near ones become saucers that hide everything behind them. The
@@ -442,6 +455,9 @@ export const fragmentShader = /* glsl */ `
 	uniform vec3 uProvCand;
 	/** 1 for neutral ink/plain points, 0 for the provenance class tint. */
 	uniform float uPlain;
+	/** 1 for the bird-colour point mode: the class tint is replaced by the species
+	 * hue (same hash as the labels), keeping every other rule — wash, ramp, tone. */
+	uniform float uBird;
 	/** The same clock the vertex stage pulses by; the orphan pulse breathes on it. */
 	uniform float uTime;
 	/** Live input level, 0..1 — while anything sounds, resting ink gives up weight
@@ -470,6 +486,7 @@ export const fragmentShader = /* glsl */ `
 	varying float vUnassigned;
 	varying float vArrive;
 	varying float vProv;
+	varying vec3 vBird;
 	varying float vOrphan;
 	varying float vWave;
 	varying float vRipple;
@@ -568,6 +585,11 @@ export const fragmentShader = /* glsl */ `
 			: (vProv < 1.5 ? uProvLearned
 			: (vProv < 2.5 ? uProvField
 			: (vProv < 3.5 ? uProvArrivals : uProvCand)));
+		// The bird-colour mode swaps the class colour for the species hue and keeps
+		// every rule that sits on top of it — the wash, the ramp, the tone shifts, the
+		// accent — so "who" and "what kind" are two readings of the same marks, never
+		// two different responses.
+		vec3 classCol = uBird > 0.5 ? vBird : prov;
 		// The plain look swaps the class colours for a neutral pair and keeps every
 		// other rule — same wash, same ramp, same tone shifts — so "coloured / plain"
 		// changes what the points *say about provenance*, never how they respond.
@@ -579,8 +601,8 @@ export const fragmentShader = /* glsl */ `
 		// colours off also quietly faded the cloud by ten lightness units and the plain
 		// mode read as a haze. Matching the mean puts the two modes at the same weight,
 		// which is what "only the colour language changes" was always supposed to mean.
-		vec3 ink = mix(prov, vec3(0.13, 0.16, 0.21), uPlain);
-		vec3 rest = mix(uSurface, mix(prov, vec3(0.45, 0.47, 0.50), uPlain), 0.5);
+		vec3 ink = mix(classCol, vec3(0.13, 0.16, 0.21), uPlain);
+		vec3 rest = mix(uSurface, mix(classCol, vec3(0.45, 0.47, 0.50), uPlain), 0.5);
 		vec3 end = mix(ink, uAccent, clamp(vAccent, 0.0, 1.0));
 
 		// A chosen bird's points sit most of the way along their own ramp even at rest, so
@@ -969,7 +991,9 @@ export const trajectoryFragmentShader = /* glsl */ `
 		// while idle the whole path reads as one faint thread; while singing the part
 		// already sung stays lit so the order of the phrase remains visible
 		float passed = singing ? step(vIndex, vProgress) : 1.0;
-		float peak = singing ? exp(-pow((vIndex - vProgress) / 0.45, 2.0)) : 0.0;
+		// Squared by hand — pow with a negative base is undefined in GLSL ES.
+		float r = (vIndex - vProgress) / 0.45;
+		float peak = singing ? exp(-(r * r)) : 0.0;
 
 		// A GL line is one pixel whatever the zoom, so as the dots shrink toward their
 		// floor the thread is the only thing still joining them, and it has to hold a
@@ -1019,7 +1043,9 @@ export const trajectoryPointsVertexShader = /* glsl */ `
 		// travelling highlight is the same hue as the knot it is leaving and becoming.
 		vColour = aColour;
 		bool singing = vProgress >= 0.0;
-		vPeak = singing ? exp(-pow((aIndex - vProgress) / 0.45, 2.0)) : 0.0;
+		// Squared by hand — pow with a negative base is undefined in GLSL ES.
+		float r = (aIndex - vProgress) / 0.45;
+		vPeak = singing ? exp(-(r * r)) : 0.0;
 
 		vec4 mv = modelViewMatrix * vec4(position, 1.0);
 		gl_Position = projectionMatrix * mv;

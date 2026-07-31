@@ -403,8 +403,12 @@ export class Listener {
 			// The rule now has no middle: known beats inferred outright. The matcher keeps
 			// running — `strength`, the reading panel and the microphone path all still use
 			// it — but it does not get to draw over a note whose identity is not in doubt.
-			// Listening, where nothing is known, is the case the inference is for.
+			// Listening, where nothing is known, is the case the inference is for. The grey
+			// breath follows the same rule: a weak self-match during a scheduled note is
+			// still a known note, so "heard but nothing claimed" cannot stand while it
+			// sounds (the orphan branch below already clears it; this one forgot to).
 			this.signal.activations.fill(0);
+			this.signal.unmatched = -1;
 			this.applyScheduledPulses(this.engine.ctx.currentTime);
 		} else if (this.orphanSounding()) {
 			// **A note we know but cannot place fires no positional effect at all.**

@@ -2,6 +2,40 @@
 
 **Landed today (uncommitted at this writing — user commits):**
 
+- **Point-colour modes + unified categories + sweep fixes (app-side, same day).**
+  Points now have three colour languages in Display (**Ink / Bird / Provenance**):
+  bird mode colours each point by the same species-hue hash as the labels
+  (`aBird` attribute, `uBird` swaps the class tint — every other rule
+  unchanged); tags stay in the labels' own language so the stage never speaks
+  two hue languages at once. The chorus filter was re-keyed to the same
+  vocabulary as the points (**documented / synthesized / recorded**, mapped to
+  song-confidence values in one place, `CHORUS_CLASS_CONFIDENCE`) — the
+  parallel confidence taxonomy is gone from the UI. Independent renderer sweep
+  (read-only agent): today's changes verified clean; three PRE-EXISTING bugs
+  found and fixed — `uHighlight = -1` collided with unassigned `aCluster = -1`
+  (the hdbscan haze "breathed" 15 % in silence), the grey breath was never
+  cleared in the singing branch (a weak self-match during a scheduled note
+  could claim "nothing claimed" over a known note), and three `pow(x, 2.0)`
+  calls with negative bases (spec-undefined, NaN-vanish hazard on exp2/log2
+  drivers) now square explicitly. npm check 4/4 baseline, parity 18/18,
+  verify:features pass.
+- **P0 depth harvest COMPLETE (owner call, batched — docs/18 P0).** 100 species
+  (the debug-100 working corpus, deepest-first) × up to 30 recordings each,
+  four 25-species batches run singularly with per-species logs in
+  /tmp/birdy-p0/, every species exit 0. **+139 440 syllables** (200 k → 340 k
+  observations), 7 992 → 10 184 recordings. Depth on the target 100: **median
+  29 recordings/species, 71/100 at 20+** (the syntax threshold; p10 = 5 —
+  xeno-canto simply has no more for those). Caps raised for the phase
+  (--syllable-cap 400000 --cap 600000, recorded as a decision). Two catches en
+  route: harvest `--species` needs `--inventory data/learned-inventory.json`
+  for learned species (first attempt failed fast); the store was already at
+  its 200 k syllable cap. XC audio still deleted immediately; the store grew
+  28.65 MB per species of measurements only. **Next is the owner's call:
+  production `learn` on the deepened store, then the pre-registered P1
+  bake-off re-run (docs/18).** NOTE for the app session: the running `serve`
+  (vite autostart) still holds the OLD `out/harvest` store — its Learn-tab
+  jobs fit against that, not harvest-gan; the store path is now visible in
+  the tab.
 - **Point-cloud optics fixed (app-side, audits + fixes same day).** Diagnosis by
   two audits: (1) with `depthWrite:false` + normal blending, paint order is the
   only occlusion, so resting points later in the buffer overpainted lit ones —
