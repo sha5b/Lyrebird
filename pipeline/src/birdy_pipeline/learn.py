@@ -610,7 +610,19 @@ def critic_embedder(critic: Any, fallback_ok: bool = True) -> Embedder:
     def embed(observations: Sequence[SyllableObservation]) -> np.ndarray:
         have = [i for i, o in enumerate(observations) if o.mel_patch is not None]
         if not have:
-            raise ValueError("no observation carries a mel_patch — cannot embed")
+            # Name the batch. This is reached with one species' observations far more often
+            # than with a whole store's, and the bare message read as "the store is broken"
+            # when the truth was "these 1 758 Common Cuckoo syllables predate patches".
+            # Callers that can fall back are expected to check before calling (see
+            # `learn_species`); this stays an error because silently embedding nothing at
+            # the origin would invent a type out of no evidence.
+            species = sorted({o.species_id for o in observations})
+            where = species[0] if len(species) == 1 else f"{len(species)} species"
+            raise ValueError(
+                f"none of the {len(observations)} observations for {where} carries a "
+                "mel_patch — cannot embed. Patches are written at harvest time and cannot "
+                "be recovered afterwards; re-harvest into a new store to gain them."
+            )
         if len(have) < len(observations) and not fallback_ok:
             raise ValueError(
                 f"only {len(have)} of {len(observations)} observations carry a mel_patch"
@@ -2100,6 +2112,15 @@ def learn_unlabelled(
     pool = [o for o in observations if o.species_id == UNLABELLED_SPECIES]
     if len(pool) < UNLABELLED_MIN_OBSERVATIONS or embedder is None:
         return []
+    # Same trap as the per-species fit (see `learn_species`), with no fallback available:
+    # this path types an arrival by comparing its embedding against the known types'
+    # embeddings, so without a patch there is nothing to compare. There is no hand-written
+    # substitute here — the known-type centroids are embedding vectors — so an unpatched
+    # pool means these arrivals cannot be typed, which is a result rather than an error.
+    if not any(o.mel_patch is not None for o in pool):
+        log(f"  {UNLABELLED_SPECIES:26} {len(pool)} arrivals, none carrying a log-mel "
+            "patch — cannot be typed against the known types, left untyped")
+        return []
     z = np.asarray(embedder(pool), dtype=np.float64)
 
     assigned = np.zeros(len(pool), dtype=bool)
@@ -2416,6 +2437,36 @@ def learn_species(
             log(f"  {species_id:26} {len(observations)} observations — below the "
                 f"{MIN_OBSERVATIONS} needed, skipped")
         return None
+
+    # **A species can be entirely patchless even when the store is not, and that used to
+    # kill the whole run.**
+    #
+    # `_learn_objective` decides whether to type in the embedding by counting patches
+    # across the *store*, but the embedder is applied one species at a time. `out/harvest`
+    # holds 27 271 patches over 39 969 observations, so the store-wide check passes — yet
+    # two of its 37 species (`cuculus_canorus`, `zosterops_japonicus`, ~1 750 observations
+    # each) were harvested entirely before `features.mel_patch` existed and carry none at
+    # all. Reaching either one, `critic_embedder` raised "no observation carries a
+    # mel_patch" and took the entire fit down with it, after the 35 learnable species had
+    # already been paid for. The error also named no species, so it read as a broken store
+    # rather than as two legacy birds.
+    #
+    # The fallback is the one `_learn_objective` already documents for the store-wide case:
+    # the learned path is a preference, and anything missing lands on the hand-written
+    # objective with a logged reason rather than a traceback. Dropping to
+    # `_observation_vector` for this species alone is honest — its types are still real
+    # groupings of its own syllables — and it costs nothing that was recoverable, because
+    # patches are written at harvest time and the audio is gone by design. Nothing
+    # downstream is misled either: an embed-space galaxy already places only observations
+    # that carry a patch, so these were never going to be plotted in it.
+    #
+    # Checked here rather than inside `typing_space` so that `choose_k` and `fit_types`
+    # cannot disagree about the space, and so the reason is logged once per species.
+    if embedder is not None and not any(o.mel_patch is not None for o in observations):
+        if verbose:
+            log(f"  {species_id:26} {len(observations)} observations, none carrying a "
+                "log-mel patch — typing with the hand-written vector for this species")
+        embedder = None
 
     # **How many types to fit is a question for the data, and it needs a criterion.**
     #
