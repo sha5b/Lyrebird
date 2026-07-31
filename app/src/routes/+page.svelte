@@ -40,7 +40,7 @@
 		speciesColour as speciesHue
 	} from '$lib/galaxy/palette';
 	import { PipelineClient, type PipelineStatus } from '$lib/data/pipeline';
-	import type { BirdyAssets, SongType, Species } from '$lib/data/types';
+	import type { BirdyAssets, SongType, Species, SpeciesRelation } from '$lib/data/types';
 
 	// $state.raw, not $state: a deep reactive proxy of the corpus cannot be structured-cloned
 	// into the AudioWorklet, and there is nothing here that benefits from deep reactivity.
@@ -136,6 +136,25 @@
 	// comes from (the provenance classes the note below names). Default off: the
 	// corpus is one cloud first, and the class tint is a layer you ask for.
 	let provColours = $state(false);
+	/**
+	 * Per-class point visibility in PROVENANCE order (documented, learned, field,
+	 * unlabelled, candidate). The arrivals live view is the two-class isolate —
+	 * "only the unidentified": everything a bird never made, gone from the picture.
+	 * Hiding removes points from the picture, never from the corpus.
+	 */
+	let provShown = $state<boolean[]>([true, true, true, true, true]);
+	/**
+	 * Which songs the chorus may draw from, by what backs each song (its confidence).
+	 * All on is the behaviour before the filter existed; turning a class off re-pools
+	 * the chorus on the next effect run, and songs already playing finish.
+	 */
+	let chorusClasses = $state<Record<string, boolean>>({
+		documented: true,
+		experimental: true,
+		inferred: true,
+		invented: true,
+		unlabelled: true
+	});
 	let tempo = $state(1);
 	// How often the chorus starts a song, as a multiplier on its Poisson rate. Read by
 	// the scheduler per gap, so the slider retunes the next pause live (engine.songRate).
@@ -830,6 +849,23 @@
 	 * chorus shows only the live trajectories, which have a lifecycle (capped, and
 	 * faded out ~1.4 s after their phrase ends — see `advancePaths` in listener.ts).
 	 */
+	/**
+	 * The species the embedding says share call shapes with `id`, strongest first
+	 * (relations.json — measured candidates, never documented relationships, §8.5).
+	 */
+	function relationsOf(id: string, limit = 3): SpeciesRelation[] {
+		if (!assets?.relations) return [];
+		return assets.relations.speciesPairs
+			.filter((p) => p.a === id || p.b === id)
+			.sort((x, y) => x.distance - y.distance)
+			.slice(0, limit);
+	}
+
+	/** The partner's display name in a relation pair involving `id`. */
+	function relationPartner(p: SpeciesRelation, id: string): string {
+		return p.a === id ? p.bCommon : p.aCommon;
+	}
+
 	function showContext(id: string) {
 		if (!listener) return;
 		// A pinned node narrows the backdrop to itself, and it has to be decided *here*
@@ -1415,8 +1451,12 @@
 		// applies the new arrival rate.
 		const id = currentSpecies?.id;
 		const rate = tempo;
+		// Read per restart, so a checkbox change re-pools the chorus like a tempo one.
+		const allowed = Object.entries(chorusClasses)
+			.filter(([, v]) => v)
+			.map(([k]) => k);
 		if (engine) engine.tempo = rate;
-		if (chorus === 'solo' && engine && id) engine.startAmbient([id], 12 * rate, 3);
+		if (chorus === 'solo' && engine && id) engine.startAmbient([id], 12 * rate, 3, allowed);
 		if (chorus === 'global' && engine && assets) {
 			const loaded = assets;
 			void loaded.ensureSpecies().then(() => {
@@ -1424,7 +1464,8 @@
 					engine?.startAmbient(
 						loaded.inventoryIndex.map((s) => s.id),
 						22 * rate,
-						2
+						2,
+						allowed
 					);
 			});
 		}
@@ -1579,6 +1620,7 @@ uv run birdy-pipeline build</pre>
 				speed={tempo}
 				labels={showLabels}
 				plain={!provColours}
+				{provShown}
 				pinned={pinnedCluster}
 				frame={frameNodes}
 				learning={learningClusters}
@@ -1677,6 +1719,38 @@ uv run birdy-pipeline build</pre>
 									</p>
 								{/if}
 							</section>
+							<section class="block">
+								<!--
+									Per-class visibility. The two-class isolate is the arrivals live
+									view: only the sounds nobody has named — unlabelled field audio
+									and the candidates the novelty pass grouped — stay on screen, so
+									"what don't we know" is a picture, not a count. Hiding a class
+									removes its points from the picture, never from the corpus.
+								-->
+								<div class="checks">
+									{#each [PROVENANCE.documented, PROVENANCE.learned, PROVENANCE.field, PROVENANCE.unlabelled, PROVENANCE.candidate] as cls (cls)}
+										<label class="check">
+											<input type="checkbox" bind:checked={provShown[cls]} />
+											<i class="swatch" style:background={provenanceColour(cls)}></i>
+											{PROV_NAMES[cls]}
+										</label>
+									{/each}
+								</div>
+								<button
+									class="link"
+									onclick={() => {
+										provShown = [false, false, false, true, true];
+									}}>only the unidentified</button
+								>
+								{#if provShown.some((v) => !v)}
+									<button
+										class="link"
+										onclick={() => {
+											provShown = [true, true, true, true, true];
+										}}>show everything</button
+									>
+								{/if}
+							</section>
 						</div>
 					</div>
 				{/if}
@@ -1728,6 +1802,10 @@ uv run birdy-pipeline build</pre>
 									<li>
 										<i class="line"></i>
 										<span>A thread links the knots of one bout in the order its syllables were sung.</span>
+									</li>
+									<li>
+										<i class="breath"></i>
+										<span>Heard, but nothing claimed: the nearest region breathes grey — below the match floor, and the panel says so instead of naming a call.</span>
 									</li>
 									<li>
 										<i style:background="var(--signal)"></i>
@@ -1886,6 +1964,23 @@ uv run birdy-pipeline build</pre>
 							</div>
 						{/each}
 					</div>
+					{#if assets.relations}
+						{@const rels = relationsOf(best.centroid.speciesId)}
+						{#if rels.length}
+							<!--
+								relations.json's cross-species pairs, shown where the matched bird
+								is reported. The copy carries the honesty line with it — a shared
+								call shape in the embedding is a candidate (ancestry, convergence,
+								or artifact), never a documented relationship (§8.5).
+							-->
+							<p class="note faint">
+								Shares call shapes with {rels
+									.map((p) => relationPartner(p, best.centroid.speciesId))
+									.join(', ')} — measured in the embedding; candidates, not documented
+								relationships.
+							</p>
+						{/if}
+					{/if}
 				{:else if reading?.active}
 					<!--
 						Live input, no confident match. This used to fall through to the idle
@@ -2186,6 +2281,19 @@ uv run birdy-pipeline build</pre>
 								/>
 							</label>
 						</div>
+						<div class="checks">
+							{#each ['documented', 'experimental', 'inferred', 'invented', 'unlabelled'] as cls (cls)}
+								{@const label = confidenceLabel(cls)}
+								<label class="check" title={label.hint}>
+									<input type="checkbox" bind:checked={chorusClasses[cls]} />
+									{label.text}
+								</label>
+							{/each}
+						</div>
+						<p class="note faint">
+							Which songs the chorus may draw from, by what backs each one. Off re-pools
+							the next song started; nothing already playing is cut.
+						</p>
 					</section>
 				{:else if tab === 'words'}
 					<section class="block">
@@ -3424,6 +3532,12 @@ uv run birdy-pipeline serve</pre>
 		width: auto;
 	}
 
+	.check .swatch {
+		width: 0.6rem;
+		height: 0.6rem;
+		border-radius: 50%;
+	}
+
 	/* The provenance key. A swatch, the class, and its share of the corpus — the share
 	   is the point: it is what turns a flat list of five names into "these two are the
 	   galaxy and these three are edge cases", which three paragraphs of prose were
@@ -3497,6 +3611,20 @@ uv run birdy-pipeline serve</pre>
 		box-sizing: border-box;
 		background: none;
 		border: 1.5px solid var(--ink-dim);
+	}
+
+	.legend.key i.breath {
+		box-sizing: border-box;
+		background: none;
+		border: 1.5px solid var(--ink-dim);
+		opacity: 0.45;
+		animation: breath 2.8s ease-in-out infinite;
+	}
+
+	@keyframes breath {
+		50% {
+			opacity: 0.9;
+		}
 	}
 
 	.legend.key i.pair {

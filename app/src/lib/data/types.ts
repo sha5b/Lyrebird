@@ -511,4 +511,35 @@ export interface BirdyAssets {
 	 */
 	pointFeatures: Float32Array | null;
 	pointFeatureDims: number;
+	/**
+	 * Cross-species relations measured in the critic's embedding (relations.json), or
+	 * null when the build predates them. **Candidates, never documented
+	 * relationships** — a shared call shape can be ancestry, convergence, or a
+	 * recording artifact, and §8.5 says which of those the app may claim (none).
+	 */
+	relations: RelationsDoc | null;
+}
+
+/** One species pair in relations.json, strongest (smallest embedding distance) first. */
+export interface SpeciesRelation {
+	a: string;
+	b: string;
+	aCommon: string;
+	bCommon: string;
+	distance: number;
+	sharedTypes: {
+		a: { species: string; typeId: string };
+		b: { species: string; typeId: string };
+		distance: number;
+	}[];
+}
+
+/** relations.json as the pipeline writes it beside the galaxy assets. */
+export interface RelationsDoc {
+	version: number;
+	space?: string;
+	sharedTypeThreshold?: number;
+	sharedTypeDefinition?: string;
+	speciesPairs: SpeciesRelation[];
+	generatedAt?: string;
 }

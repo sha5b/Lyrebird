@@ -304,12 +304,26 @@ export class BirdyEngine {
 	 * roster of individual birds, with a 25 % chance that a *different* bird of the same
 	 * species answers — which is what makes it a duet rather than an echo.
 	 */
-	startAmbient(speciesIds: string[], songsPerMinute = 12, birdsPerSpecies = 2): void {
+	startAmbient(
+		speciesIds: string[],
+		songsPerMinute = 12,
+		birdsPerSpecies = 2,
+		songConfidence?: string[]
+	): void {
 		this.stopAmbient();
 		if (!speciesIds.length) return;
+		// The chorus's class filter (the panel's checkboxes): only songs whose
+		// confidence is listed may be drawn, and a species with none left drops out of
+		// the pool rather than taking turns it cannot spend. Undefined means every
+		// song, the behaviour before the filter existed.
+		const allowed = songConfidence ? new Set(songConfidence) : null;
 		const pool = speciesIds
 			.map((id) => speciesById(this.assets.inventory, id))
-			.filter((s): s is Species => Boolean(s) && s!.songs.length > 0);
+			.filter((s): s is Species => Boolean(s) && s!.songs.length > 0)
+			.map((s) =>
+				allowed ? { ...s!, songs: s!.songs.filter((g) => allowed.has(g.confidence)) } : s!
+			)
+			.filter((s) => s.songs.length > 0);
 		if (!pool.length) return;
 
 		// The roster is created once and held: each bird keeps its pitch, timing, timbre and

@@ -55,6 +55,12 @@
 		 * colour language changes; activation, wave and labels keep their meanings.
 		 */
 		plain?: boolean;
+		/**
+		 * Per-class visibility in PROVENANCE order (documented, learned, field,
+		 * unlabelled, candidate); false hides the class outright. The Display
+		 * panel's filter — isolating the unidentified is the arrivals live view.
+		 */
+		provShown?: boolean[];
 	}
 
 	let {
@@ -66,7 +72,8 @@
 		view,
 		spread = 1,
 		learning = [],
-		plain = false
+		plain = false,
+		provShown = [true, true, true, true, true]
 	}: Props = $props();
 
 	// The corpus never changes while the component is alive, so the buffers are built once
@@ -262,6 +269,8 @@
 			// there to be anything to stand out *of*.
 			uFocusDim: { value: 0.22 },
 			uOpacity: { value: 1 },
+			uProvHide: { value: new THREE.Vector4() },
+			uProvHideCand: { value: 0 },
 			// Filled in every frame from the camera's distance to the cloud; the initial
 			// value only has to be sane for the first frame.
 			uFogRange: { value: new THREE.Vector2(2, 5) },
@@ -295,6 +304,17 @@
 
 	$effect(() => {
 		material.uniforms.uPointSize.value = pointSize;
+	});
+
+	$effect(() => {
+		const v = material.uniforms.uProvHide.value as THREE.Vector4;
+		v.set(
+			provShown[0] ? 0 : 1,
+			provShown[1] ? 0 : 1,
+			provShown[2] ? 0 : 1,
+			provShown[3] ? 0 : 1
+		);
+		material.uniforms.uProvHideCand.value = provShown[4] ? 0 : 1;
 	});
 
 	$effect(() => {

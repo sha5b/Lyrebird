@@ -1,5 +1,5 @@
 import { base } from '$app/paths';
-import type { BirdyAssets, Centroid, Centroids, EmbeddingSpace, FeatureSpace, Inventory, InventoryIndex, Manifest, PointCloudMeta, Species, SpeciesIndexEntry, SyrinxCalibration } from './types';
+import type { BirdyAssets, Centroid, Centroids, EmbeddingSpace, FeatureSpace, Inventory, InventoryIndex, Manifest, PointCloudMeta, RelationsDoc, Species, SpeciesIndexEntry, SyrinxCalibration } from './types';
 
 const ROOT = 'birdy';
 
@@ -200,6 +200,15 @@ export async function loadAssets(
 		calibration = null;
 	}
 
+	// Cross-species relations (relations.py): optional like every learned asset, and
+	// candidates rather than facts even when present — the UI labels them that way.
+	let relations: RelationsDoc | null = null;
+	try {
+		relations = await getJson<RelationsDoc>(`${dir}relations.json`, fetcher, stamp);
+	} catch {
+		relations = null;
+	}
+
 	const posRes = await fetcher(assetUrl(`${dir}positions.f32`, stamp));
 	if (!posRes.ok) throw new AssetsMissingError(`${dir}positions.f32`);
 	const positions = new Float32Array(await posRes.arrayBuffer());
@@ -278,7 +287,8 @@ export async function loadAssets(
 		points,
 		centroids,
 		pointFeatures,
-		pointFeatureDims
+		pointFeatureDims,
+		relations
 	};
 }
 

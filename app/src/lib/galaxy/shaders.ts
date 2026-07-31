@@ -447,6 +447,11 @@ export const fragmentShader = /* glsl */ `
 	/** Live input level, 0..1 — while anything sounds, resting ink gives up weight
 	 * so the responding points carry the picture. */
 	uniform float uLevel;
+	/** Per-class visibility (documented, learned, field, unlabelled in x..w, candidate
+	 * in uProvHideCand): 1 hides the class outright — the Display panel's filter for
+	 * isolating, say, only the sounds nobody has named. */
+	uniform vec4 uProvHide;
+	uniform float uProvHideCand;
 
 	/**
 	 * View-space depth at which aerial perspective starts (x) and is complete (y).
@@ -484,6 +489,15 @@ export const fragmentShader = /* glsl */ `
 	#else
 		if (vAct >= 0.25 || vWave >= 0.05) discard;
 	#endif
+		// The Display panel's class filter: hidden provenance classes are gone from
+		// the picture entirely (both passes), not dimmed — a dimmed "hidden" class is
+		// still a claim about the space it occupies.
+		float provHidden = vProv < 0.5 ? uProvHide.x
+			: vProv < 1.5 ? uProvHide.y
+			: vProv < 2.5 ? uProvHide.z
+			: vProv < 3.5 ? uProvHide.w
+			: uProvHideCand;
+		if (provHidden > 0.5) discard;
 		vec2 uv = gl_PointCoord - 0.5;
 		float d = length(uv);
 		if (d > 0.5) discard;

@@ -51,6 +51,8 @@
 		 * accent keeps meaning exactly one thing in both.
 		 */
 		plain?: boolean;
+		/** Per-class point visibility in PROVENANCE order; false hides the class. */
+		provShown?: boolean[];
 		onpick?: (cluster: number) => void;
 		/** Fired on a click that hit no node, so the page can clear its selection. */
 		onbackground?: () => void;
@@ -69,6 +71,7 @@
 		frame = [],
 		learning = [],
 		plain = true,
+		provShown = [true, true, true, true, true],
 		onpick,
 		onbackground
 	}: Props = $props();
@@ -155,7 +158,7 @@
 		<Spinner {spin} scale={spread} bind:group={cloud}>
 			<GridBurst {assets} {signal} {view} prov={!plain} />
 			<ContextPaths {assets} {signal} {view} />
-			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} />
+			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} {provShown} />
 			<Trajectory {assets} {signal} {view} {spread} {pointSize} prov={!plain} />
 			{#if labels}
 				<NodeProjector {assets} {signal} elements={labelElements} {focus} {pinned} {view} />

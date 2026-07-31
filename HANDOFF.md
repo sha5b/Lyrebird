@@ -2,6 +2,45 @@
 
 **Landed today (uncommitted at this writing — user commits):**
 
+- **Point-cloud optics fixed (app-side, audits + fixes same day).** Diagnosis by
+  two audits: (1) with `depthWrite:false` + normal blending, paint order is the
+  only occlusion, so resting points later in the buffer overpainted lit ones —
+  fixed as a **two-pass draw** (resting pass + ACTIVE_PASS at renderOrder 1,
+  shared uniforms, lit-on-lit compositing unchanged), plus an activation-scaled
+  size floor (3px + vAct·2 — the size channel was clamped away at galaxy zoom)
+  and resting-ink dimming while sounding (`uLevel`); (2) the label "drag" was
+  **task order**: `Framing` re-aimed the camera every frame *after*
+  `NodeProjector` projected — Framing now mounts first, and its double
+  `controls.update()` per frame (half the configured damping time) only fires
+  when the aim actually moved; the labels' fixed-per-frame EMA is delta-scaled
+  (was 2× fast at 120 Hz). **Member floor raised** (PointTracker 0.2 → 0.45):
+  an activated knot's members all light now — "the inactive ones get active" —
+  affinity still ranks members inside the knot. uPixelRatio updates per frame
+  (was captured at construction). No renderer tests exist; verified by npm
+  check and the diagnosis chain, not by eye — worth a browser look.
+- **Wiring audit (app-side):** Learn tab shows the **store path** (the
+  serve-store trap is now visible); unassigned-count caveat gated on the map
+  kind, not on both maps existing (was unreachable on single-map builds);
+  map-honesty line carries the new `centroidAgreement{TieAdjusted}` /
+  `speciesAgreement` when a build ships them; dead `buildSource` removed;
+  harvest cap/maxSeconds got the inputs their comment claimed existed.
+- **Relations wired (old HANDOFF item):** relations.json loads optionally
+  (`assets.relations`, absent = null); the Reading panel shows "shares call
+  shapes with … — candidates, not documented relationships" for the matched
+  species. The 3D overlay is deliberately NOT drawn as song-path threads (a
+  relation link is a different claim than a bout thread; needs its own visual
+  language, left open).
+- **Unlabelled-arrivals live view:** per-class visibility filter in Display
+  (documented/learned/field/unlabelled/candidate, shader discard via
+  uProvHide/uProvHideCand) with an "only the unidentified" isolate — "what
+  don't we know" as a picture.
+- **Chorus category checkboxes:** songs filtered by confidence
+  (documented/playback-verified/inferred/invented/field recording) —
+  `startAmbient` takes an optional confidence whitelist, species with no
+  eligible songs drop out of the pool; all-on = old behaviour.
+- **Legend check:** all 7 rows verified against the color language; added the
+  missing grey-breath row ("heard, but nothing claimed"). npm check 4/4
+  baseline, parity 18/18, verify:features pass.
 - **AVEX arm-C bigger re-test: NO ADOPTION (docs/17 §17.6).** Pre-registered,
   63 both-domain species from the gan store (subset in /tmp, production store
   read-only), 16-species holdout vs §17.4's 3. **C's contrastive boost does not
