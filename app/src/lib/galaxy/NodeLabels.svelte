@@ -17,6 +17,9 @@
 	import { provenanceColourScaled, speciesColourScaled } from './palette';
 	import type { BirdyAssets, Centroid } from '$lib/data/types';
 
+	/** The tag dot's resting colour in ink mode: the same slate the context threads use. */
+	const INK_NEUTRAL = '#8595ae';
+
 	interface Props {
 		assets: BirdyAssets;
 		/** Written into by this component, read by NodeProjector. Plain array, not state. */
@@ -27,10 +30,12 @@
 		 * switch the viewer flips, so the tags have to follow it live.
 		 */
 		prov?: boolean;
+		/** Bird language: the species hue everywhere (ink mode keeps tags neutral). */
+		bird?: boolean;
 		onpick?: (cluster: number) => void;
 	}
 
-	let { assets, elements, prov = false, onpick }: Props = $props();
+	let { assets, elements, prov = false, bird = false, onpick }: Props = $props();
 
 	// The corpus does not change while this is mounted, so the tags are built once.
 	// Names come from the inventory index: a tag must name its bird without fetching
@@ -63,7 +68,9 @@
 		const light = 0.9 + (heat[i] ?? 0.5) * 0.2;
 		return prov
 			? provenanceColourScaled(knotClass[i] ?? 4, light)
-			: speciesColourScaled(c.speciesId, light);
+			: bird
+				? speciesColourScaled(c.speciesId, light)
+				: INK_NEUTRAL;
 	};
 </script>
 
@@ -133,8 +140,9 @@
 
 	/* Everything that reacts is driven by `--hot` through calc/color-mix rather than by a
 	   class, so the transitions are the browser's and no state has to cross into Svelte.
-	   The dot's own colour is set inline per tag: the bird's hue, with the per-knot
-	   lightness shift (see knotColour above). */
+	   The dot's colour comes from --accent (written per frame by the projector): the
+	   identity hue in bird and provenance modes, neutral at rest and the one accent
+	   when hot in ink mode; the inline style is only the first frame's fallback. */
 	.dot {
 		flex: none;
 		width: 7px;
@@ -142,8 +150,12 @@
 		margin-top: 3px;
 		padding: 0;
 		border-radius: 50%;
-		border: 1px solid currentColor;
-		background: color-mix(in srgb, currentColor calc(var(--hot, 0) * 100%), var(--paper));
+		border: 1px solid var(--accent, currentColor);
+		background: color-mix(
+			in srgb,
+			var(--accent, currentColor) calc(var(--hot, 0) * 100%),
+			var(--paper)
+		);
 		pointer-events: auto;
 		cursor: pointer;
 		transform: translate(-50%, -50%) scale(calc(1 + var(--hot, 0) * 0.7));

@@ -17,10 +17,10 @@ Corpus (xeno-canto API) → embeddings (Perch server-side, or BirdNET, or even M
 for v1) → UMAP (`umap-learn`, Python) → ship `positions.bin` + metadata + cluster
 centroids as static assets.
 
-**Precompute server-side; never run UMAP in the browser.** The galaxy is static
-content; recompute only when the corpus changes. Projecting a *new live sound* into
-the map is done by nearest-centroid / kNN lookup in feature space — trivially cheap —
-not by re-running UMAP.
+**Precompute server-side. Never run UMAP in the browser.** The galaxy is static
+content. Recompute only when the corpus changes. To project a *new live sound* into
+the map, use a nearest-centroid / kNN lookup in feature space. This is trivially
+cheap. Do not re-run UMAP.
 
 ## 5.3 Making it live (client-side)
 
@@ -34,27 +34,27 @@ Audio taps: `getUserMedia` (48 kHz, echoCancellation off) →
 Mapping to the galaxy (all cheap):
 
 - cosine/Euclidean distance of the live vector to precomputed cluster centroids →
-  softmax → per-cluster activation weights;
-- pass activations as **shader uniforms**; vertex shader scales point size/brightness
-  (`pulse = activation · sin(t·f)`); **selective UnrealBloom** makes only active
-  clusters flare → the viral look;
-- pitch → vertical jump/hue; spectral flux (onsets) → impulse triggers; melody
+  softmax → per-cluster activation weights.
+- Pass the activations as **shader uniforms**. The vertex shader scales point
+  size/brightness (`pulse = activation · sin(t·f)`). **Selective UnrealBloom** makes
+  only active clusters flare → the viral look.
+- pitch → vertical jump/hue. Spectral flux (onsets) → impulse triggers. Melody
   contour → moving highlight along nearest-point trajectories (the "trajectory
-  lines" of the Sainburg figures);
-- smooth with EMA to avoid flicker.
+  lines" of the Sainburg figures).
+- Smooth with EMA to avoid flicker.
 
 ## 5.4 Rendering with SvelteKit
 
 - **Threlte** (Svelte-native Three.js) with `THREE.Points` + custom
-  `ShaderMaterial`; per-point attributes (`aActivation`, `aSize`) with
+  `ShaderMaterial`. Per-point attributes (`aActivation`, `aSize`) with
   `DynamicDrawUsage` — or better, zero per-frame CPU uploads (uniform-driven
   animation).
 - Scale guidance: 10–100k points — trivial. >500k — shader-driven animation +
   lower-res bloom, or Embedding Atlas's WebGPU approach.
 - Skip deck.gl (React-first) for a SvelteKit team.
-- GPU picking via raycast threshold up to ~100k points; beyond that, a color-id
-  picking pass.
+- GPU picking via raycast threshold works up to ~100k points. Beyond that, use a
+  color-id picking pass.
 
 Client-side species labels: Cornell's own BirdNET browser demo runs BirdNET in TF.js
-fully client-side — proven; but BirdNET is non-commercial. Perch conversion to
-TF.js/ONNX is extra work — keep Perch server-side.
+fully client-side. This is proven, but BirdNET is non-commercial. Converting Perch to
+TF.js/ONNX is extra work, so keep Perch server-side.

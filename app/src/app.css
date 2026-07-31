@@ -29,14 +29,15 @@
 	--signal: #5b3fd6;
 	--signal-soft: rgba(91, 63, 214, 0.1);
 
-	/* confidence, in the order of the table in the README */
-	--experimental: #0b7a55;
-	--documented: #1f5fbf;
+	/* confidence, in the order of the table in the README — saturated 2026-08-01
+	   (owner: "too pastel"), kept in step with palette.ts PROV_* by hand */
+	--experimental: #059669;
+	--documented: #1d4fd8;
 	--inferred: #6b46c1;
-	--invented: #b45309;
+	--invented: #d97706;
 	--unlabelled: #7b8794;
 	/* real audio that was typed but never given a species — the arrivals pool */
-	--arrival: #da9a76;
+	--arrival: #db2777;
 
 	/* Two typefaces, two jobs. Plex Sans for prose and controls; Plex Mono for every
 	   figure, id and log line — the lab-instrument half of the pairing. Both fall back

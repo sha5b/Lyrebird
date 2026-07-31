@@ -7,7 +7,9 @@ Every number in the document is sourced from the repo's research notes
 (docs/NN, HANDOFF.md, AGENTS.md) — the citation for each figure is in its
 caption, and in-text superscripts resolve to the numbered References section.
 Debug-scale measurements are labelled as such in the captions, per the
-project's evidence discipline (docs/19 §19.5, docs/17 §17.6).
+project's evidence discipline (docs/19 §19.5, docs/17 §17.6). No claim in
+this document goes beyond what the cited sources state; comparison cells
+with no documented answer say "not documented".
 
 Deterministic: no randomness anywhere (charts are plotted from literals).
 """
@@ -80,12 +82,6 @@ EQUATIONS = {
         r"\tau_{x}\, \dot{x} = -(1 + x^{2})\,x - p + F_{0}\, f(t), \qquad "
         r"\tau_{p}\, \dot{p} = -(1 + x^{2})\,x - \left(1 + \alpha(p)\right) p + F_{0}\, f(t)"
     ),
-    # The fit objective — docs/08 §8.2, docs/09 §9.2.
-    "cosine": (
-        r"\mathrm{score} = \cos\left( z_{\mathrm{syn}},\, z_{\mathrm{ref}} \right)"
-        r" = \frac{z_{\mathrm{syn}} \cdot z_{\mathrm{ref}}"
-        r"}{\left\| z_{\mathrm{syn}} \right\| \, \left\| z_{\mathrm{ref}} \right\|}"
-    ),
     # NT-Xent — docs/09 §9.2b; temperature 0.2 in critic.py.
     "ntxent": (
         r"\ell_{i} = -\log \frac{\exp\left(\mathrm{sim}(z_i, z_i^{+}) / \tau\right)}"
@@ -97,6 +93,12 @@ EQUATIONS = {
         r"\varphi(x) = \sqrt{\frac{2}{D}}\, \cos\left( x R + b \right),"
         r" \quad R \sim \mathcal{N}(0, \sigma^{-2} I),"
         r" \qquad \hat{z} = \varphi(x)\, W + c"
+    ),
+    # The fit objective — docs/08 §8.2, docs/09 §9.2.
+    "cosine": (
+        r"\mathrm{score} = \cos\left( z_{\mathrm{syn}},\, z_{\mathrm{ref}} \right)"
+        r" = \frac{z_{\mathrm{syn}} \cdot z_{\mathrm{ref}}"
+        r"}{\left\| z_{\mathrm{syn}} \right\| \, \left\| z_{\mathrm{ref}} \right\|}"
     ),
     # kNN lift against a permutation null — geometry.py.
     "knnlift": (
@@ -129,6 +131,30 @@ def _save(fig, name) -> str:
     fig.savefig(path, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     return path
+
+
+def _box(ax, x, y, w, h, text, fc="white", ec=ACCENT, fs=7.6, dashed=False):
+    ax.add_patch(
+        FancyBboxPatch(
+            (x, y), w, h,
+            boxstyle="round,pad=0.06,rounding_size=0.09",
+            linewidth=1.0, edgecolor=ec, facecolor=fc,
+            linestyle=(0, (4, 3)) if dashed else "-",
+        )
+    )
+    ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=fs, color="#241f33")
+
+
+def _arrow(ax, x1, y1, x2, y2, dashed=False, both=False):
+    ax.add_patch(
+        FancyArrowPatch(
+            (x1, y1), (x2, y2),
+            arrowstyle="<|-|>" if both else "-|>",
+            mutation_scale=11, linewidth=1.0,
+            color="#999999" if dashed else "#666666",
+            linestyle=(0, (4, 3)) if dashed else "-",
+        )
+    )
 
 
 def chart_bench() -> str:
@@ -267,63 +293,179 @@ def chart_depth() -> str:
     return _save(fig, "corpus-depth.png")
 
 
-def diagram_architecture() -> str:
-    """Boxes-and-arrows: offline pipeline -> static assets -> browser app."""
-    fig, ax = plt.subplots(figsize=(6.8, 4.0))
-    ax.set_xlim(0, 10)
-    ax.set_ylim(0, 6)
+def chart_wins() -> str:
+    """Headline measured gains; each row maps before -> 0 and after -> 1 visually.
+    Numbers: docs/09 §9.8, docs/16 §16.2/§16.3/§16.7, docs/18."""
+    rows = [
+        ("species placement, 40 k store\n(chance 7.7 %)", "38.4 %", "51.7 %", "+13.3 pts"),
+        ("novelty ROC,\nthree corpus epochs", "0.596", "0.846", "+0.250"),
+        ("fricative bench,\nmedian cosine", "0.584", "0.656", "+0.072"),
+        ("grammar backoff, unseen\ntransitions (2 stores)", "0", "+1.90 / +2.32", "nats/token"),
+        ("learn wall time,\n3 800 species", "≈ 3 h", "≈ 15 min", "12× faster"),
+    ]
+    fig, ax = plt.subplots(figsize=(6.8, 2.9))
+    labels = []
+    for i, (label, before, after, delta) in enumerate(rows):
+        y = len(rows) - 1 - i
+        labels.append(label)
+        ax.annotate(
+            "", xy=(0.62, y), xytext=(0.30, y),
+            arrowprops=dict(arrowstyle="-|>", color=ACCENT, lw=1.4),
+        )
+        ax.plot(0.30, y, "o", color=GREY, ms=6)
+        ax.plot(0.62, y, "o", color=ACCENT, ms=7)
+        ax.text(0.30, y + 0.30, before, ha="center", fontsize=7.6, color="#555555")
+        ax.text(0.62, y + 0.30, after, ha="center", fontsize=7.8,
+                color=ACCENT, fontweight="bold")
+        ax.text(0.70, y, delta, va="center", fontsize=7.6, color="#241f33")
+    ax.set_yticks(list(range(len(rows))))
+    ax.set_yticklabels(labels[::-1], fontsize=8)
+    ax.set_xlim(0.2, 1.0)
+    ax.set_ylim(-0.6, len(rows) - 0.1)
+    ax.set_xticks([])
+    for s in ("top", "right", "bottom"):
+        ax.spines[s].set_visible(False)
+    ax.grid(False)
+    fig.tight_layout()
+    return _save(fig, "measured-wins.png")
+
+
+def chart_corpus_growth() -> str:
+    """The measurement stores behind this note (docs/08, 09, 14, 16)."""
+    stores = [
+        ("original 22-species", 39976, 22),
+        ("harvest-gan, first", 9041, 25),
+        ("harvest-gan at 40 k", 39993, 13),
+        ("+ xccoverbl ingest", 39874, 121),
+        ("+ iNatSounds 2024", 226264, 3811),
+    ]
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(6.9, 2.4))
+    names = [s[0] for s in stores]
+    y = list(range(len(stores)))[::-1]
+    a1.barh(y, [s[1] for s in stores], color=ACCENT, height=0.6)
+    a1.set_xscale("log")
+    a1.set_xlim(5e3, 9e5)
+    for yi, s in zip(y, stores):
+        a1.text(s[1] * 1.3, yi, f"{s[1]:,}".replace(",", " "), va="center", fontsize=7.5)
+    a1.set_yticks(y)
+    a1.set_yticklabels(names, fontsize=8)
+    a1.set_xlabel("syllables (log scale)", fontsize=8.5)
+    a2.barh(y, [s[2] for s in stores], color=GREY, height=0.6)
+    a2.set_xscale("log")
+    a2.set_xlim(8, 3e4)
+    for yi, s in zip(y, stores):
+        a2.text(s[2] * 1.25, yi, f"{s[2]:,}".replace(",", " "), va="center", fontsize=7.5)
+    a2.set_yticks(y)
+    a2.set_yticklabels([])
+    a2.set_xlabel("species (log scale)", fontsize=8.5)
+    fig.tight_layout()
+    return _save(fig, "corpus-growth.png")
+
+
+def diagram_signal_chain() -> str:
+    """The synthesis signal chain with the two parked extensions (docs/08 §8.1, docs/15)."""
+    fig, ax = plt.subplots(figsize=(7.2, 3.3))
+    ax.set_xlim(0, 12)
+    ax.set_ylim(0, 5.4)
     ax.axis("off")
     ax.grid(False)
 
-    def box(x, y, w, h, text, fc="white", ec=ACCENT, fs=7.6, tc="#241f33"):
-        ax.add_patch(
-            FancyBboxPatch(
-                (x, y), w, h,
-                boxstyle="round,pad=0.06,rounding_size=0.09",
-                linewidth=1.0, edgecolor=ec, facecolor=fc,
-            )
-        )
-        ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=fs, color=tc)
+    y, h = 2.7, 1.25
+    # gesture contours
+    _box(ax, 0.3, y + 0.95, 1.9, 0.85, "α(t)  air-sac pressure\n≈ loudness", ec=GREY, fs=7.2)
+    _box(ax, 0.3, y - 0.55, 1.9, 0.85, "β(t)  syringeal tension\n≈ pitch", ec=GREY, fs=7.2)
+    # main chain
+    _box(ax, 2.8, y, 1.75, h, "syrinx oscillator (1)\nHopf / SNIC timbre\nγ per syllable (2)", fs=7.2)
+    _box(ax, 5.0, y, 1.55, h, "turbulence at\nthe labia\n∝ air flow", fs=7.2)
+    _box(ax, 7.0, y, 1.6, h, "f0-tracking\nresonance\n(tract retuning)", fs=7.2)
+    _box(ax, 9.05, y, 1.65, h, "tracheal comb (3)\nstopped tube,\nf1 per species", fs=7.2)
+    _arrow(ax, 2.2, y + 1.35, 2.85, y + 0.95)
+    _arrow(ax, 2.2, y - 0.1, 2.85, y + 0.3)
+    _arrow(ax, 4.55, y + h / 2, 5.0, y + h / 2)
+    _arrow(ax, 6.55, y + h / 2, 7.0, y + h / 2)
+    _arrow(ax, 8.6, y + h / 2, 9.05, y + h / 2)
+    _arrow(ax, 10.7, y + h / 2, 11.5, y + h / 2)
+    ax.text(11.5, y + h / 2 + 0.35, "sound", fontsize=7.6, ha="center", color="#241f33")
+    ax.text(1.25, y - 0.95, "+ 140 Hz noise on β (roughness)", fontsize=7.0,
+            color="#555555", ha="center")
+    # parked extensions
+    _box(ax, 0.3, 0.35, 3.1, 0.9, "respiration (4) — parked:\nreplaces the envelope",
+         dashed=True, ec=GREY, fs=7.0)
+    _box(ax, 3.9, 0.35, 3.1, 0.9, "second voice — parked:\ncoupled via tracheal pressure",
+         dashed=True, ec=GREY, fs=7.0)
+    _arrow(ax, 1.85, 1.25, 1.6, 2.15, dashed=True)
+    _arrow(ax, 5.45, 1.25, 4.3, 2.7, dashed=True)
+    ax.text(9.2, 0.8, "dashed = implemented and parity-tested,\noff by default (ship gates: docs/15 §1, §5)",
+            fontsize=7.0, color="#777777", ha="center")
+    fig.tight_layout()
+    return _save(fig, "signal-chain.png")
 
-    def arrow(x1, y1, x2, y2, color="#666666"):
-        ax.add_patch(
-            FancyArrowPatch((x1, y1), (x2, y2), arrowstyle="-|>", mutation_scale=11,
-                            linewidth=1.0, color=color)
-        )
+
+def diagram_spaces() -> str:
+    """The two feature spaces and the RFF bridge (docs/11 §11.3, docs/20 §20.1)."""
+    fig, ax = plt.subplots(figsize=(6.9, 2.8))
+    ax.set_xlim(0, 10)
+    ax.set_ylim(0, 4.7)
+    ax.axis("off")
+    ax.grid(False)
+
+    _box(ax, 0.3, 1.7, 3.6, 2.3,
+         "28-d descriptor\n13 MFCC means · 13 MFCC stds\nlog₂ spectral centroid · flatness\n\n"
+         "computed identically in\nPython and the browser", ec=GREY, fs=7.4)
+    _box(ax, 6.1, 1.7, 3.6, 2.3,
+         "32-d embedding\ncritic trunk, NT-Xent-trained\n\n"
+         "the galaxy's coordinate system\nno torch ships to the browser", fs=7.4)
+    _arrow(ax, 3.9, 2.85, 6.1, 2.85)
+    ax.text(5.0, 3.25, "RFF (D = 2048, σ = 4)\n+ ridge (λ = 1)", ha="center", fontsize=7.4)
+    ax.text(5.0, 1.15, "ship gate: median held-out cosine ≥ 0.8 — the debug build passes at 0.962",
+            ha="center", fontsize=7.2, color="#555555")
+    ax.text(5.0, 0.6, "knot agreement: 0.61 raw · 0.91 tie-adjusted · 0.78 species-level (docs/20)",
+            ha="center", fontsize=7.2, color="#555555")
+    fig.tight_layout()
+    return _save(fig, "spaces-bridge.png")
+
+
+def diagram_architecture() -> str:
+    """Five stations, one direction: harvest -> store -> learn -> build -> browser."""
+    fig, ax = plt.subplots(figsize=(7.3, 3.6))
+    ax.set_xlim(0, 12)
+    ax.set_ylim(0, 6.1)
+    ax.axis("off")
+    ax.grid(False)
 
     # containers
-    ax.add_patch(FancyBboxPatch((0.15, 0.55), 4.9, 4.9, boxstyle="round,pad=0.08",
+    ax.add_patch(FancyBboxPatch((0.15, 1.6), 9.0, 4.3, boxstyle="round,pad=0.08",
                                 linewidth=1.1, edgecolor="#c9c9c9", facecolor="#fafafa"))
-    ax.text(2.6, 5.25, "offline pipeline (Python) — no audio retained", ha="center",
-            fontsize=8.6, color="#555555")
-    ax.add_patch(FancyBboxPatch((5.35, 0.55), 4.5, 4.9, boxstyle="round,pad=0.08",
+    ax.text(4.65, 5.68, "offline pipeline (Python) — no audio retained",
+            ha="center", fontsize=8.4, color="#555555")
+    ax.add_patch(FancyBboxPatch((9.35, 1.6), 2.5, 4.3, boxstyle="round,pad=0.08",
                                 linewidth=1.1, edgecolor="#c9c9c9", facecolor="#fafafa"))
-    ax.text(7.6, 5.25, "browser app (SvelteKit) — no torch, no Python", ha="center",
-            fontsize=8.6, color="#555555")
+    ax.text(10.6, 5.68, "browser (no torch)", ha="center", fontsize=8.4, color="#555555")
 
-    box(0.45, 4.25, 1.9, 0.72, "field recordings\nxeno-canto · iNatSounds", ec=GREY)
-    box(2.85, 4.25, 1.9, 0.72, "harvest\ndecode → describe\n→ delete", ec=GREY)
-    box(1.65, 3.05, 1.9, 0.72, "store\n28-d descriptors\n+ log-mel patches", ec=GREY)
-    box(0.45, 1.75, 1.9, 0.72, "critic (3-head CNN)\nrealism · species ·\ncontrastive")
-    box(2.85, 1.75, 1.9, 0.72, "learn\ntype clustering +\ngesture inversion")
-    box(1.65, 0.75, 1.9, 0.62, "build → galaxy assets\n(JSON / f32, no weights)", fc="#f2ecf7")
+    y, h, w = 3.35, 1.55, 1.95
+    xs = [0.45, 2.75, 5.05, 7.35, 9.65]
+    _box(ax, xs[0], y, w, h, "harvest\nxeno-canto · iNatSounds\ndecode → describe\n→ delete", ec=GREY, fs=7.2)
+    _box(ax, xs[1], y, w, h, "store\n28-d descriptors\n+ 32×23 mel patches\n(audio deleted)", ec=GREY, fs=7.2)
+    _box(ax, xs[2], y, w, h, "learn\nKMeans types +\ngesture inversion\n(bit-identical ∥)", fs=7.2)
+    _box(ax, xs[3], y, w, h, "build\ngalaxy assets\nJSON / f32\nno torch weights", fc="#f2ecf7", fs=7.2)
+    _box(ax, xs[4], y, w, h, "app\n3-D galaxy · synth\nmic analysis", fc="#f2ecf7", fs=7.2)
+    for i, x in enumerate(xs):
+        ax.add_patch(plt.Circle((x + w / 2, y + h + 0.42), 0.21, facecolor=ACCENT, edgecolor="none"))
+        ax.text(x + w / 2, y + h + 0.42, str(i + 1), ha="center", va="center",
+                fontsize=8, color="white", fontweight="bold")
+    for i in range(4):
+        _arrow(ax, xs[i] + w + 0.04, y + h / 2, xs[i + 1] - 0.04, y + h / 2)
+    # the critic feeds the learn and the build
+    _box(ax, 5.05, 1.9, 1.95, 1.0, "critic (3-head CNN)\nrealism · species · NT-Xent (5)", fs=6.8)
+    _arrow(ax, 6.02, 2.9, 6.02, 3.35, both=True)
 
-    box(5.75, 4.0, 3.65, 0.85, "Threlte 3D galaxy\none point per measured syllable,\nknots labelled with confidence")
-    box(5.75, 2.75, 1.7, 0.8, "mic → 28-d\nfeatures →\nRFF map (32-d)")
-    box(7.7, 2.75, 1.7, 0.8, "AudioWorklet\nsyrinx synth\n(bit-identical)")
-    box(5.75, 0.75, 3.65, 0.8, "honesty layer, over everything above:\ndocumented · inferred · invented ·\n“unlabelled: real acoustics, no documented function”",
-        fs=7.0)
-
-    arrow(2.35, 4.6, 2.85, 4.6)
-    arrow(3.8, 4.25, 2.9, 3.77)
-    arrow(1.9, 3.05, 1.55, 2.47)
-    arrow(3.35, 3.05, 3.65, 2.47)
-    arrow(2.35, 2.1, 2.85, 2.1)   # critic <-> learn (fit renders scored)
-    arrow(1.4, 1.75, 2.2, 1.37)   # critic embed -> build
-    arrow(3.8, 1.75, 3.0, 1.37)   # learn -> build
-    arrow(3.55, 1.2, 5.9, 4.0)    # assets -> galaxy
-    arrow(3.55, 0.95, 8.2, 2.75)  # assets -> synth
-    arrow(6.6, 3.55, 6.9, 4.0)    # mic features -> galaxy activation
+    # honesty band
+    ax.add_patch(FancyBboxPatch((0.45, 0.2), 11.15, 0.85, boxstyle="round,pad=0.06",
+                                linewidth=1.0, edgecolor=GREY, facecolor="#f5f5f5"))
+    ax.text(6.0, 0.62,
+            "honesty layer over everything the app shows:  experimental · documented · inferred · "
+            "invented · “unlabelled: real acoustics, no documented function”",
+            ha="center", va="center", fontsize=7.2, color="#241f33")
     fig.tight_layout()
     return _save(fig, "architecture.png")
 
@@ -376,6 +518,7 @@ REFERENCES = [
     ("d10", "Birdy research notes, docs/10-real-data-galaxy.md."),
     ("d11", "Birdy research notes, docs/11-critic-47k-map-coverage.md."),
     ("d12", "Birdy research notes, docs/12-song-level-types.md."),
+    ("d13", "Birdy research notes, docs/13-sources-and-complexification.md."),
     ("d14", "Birdy research notes, docs/14-xccoverbl-ingest.md."),
     ("d15", "Birdy research notes, docs/15-synth-extensions-math.md."),
     ("d16", "Birdy research notes, docs/16-inat-critic-naturalness.md."),
@@ -466,11 +609,7 @@ def add_equation(doc, eq_paths, name, number):
     return p
 
 
-def add_figure(doc, path, caption_segs, width_cm=15.6):
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.add_run().add_picture(path, width=Cm(width_cm))
-    p.paragraph_format.space_after = Pt(2)
+def add_caption(doc, caption_segs):
     cap = doc.add_paragraph()
     cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
     for text, s in caption_segs:
@@ -485,6 +624,14 @@ def add_figure(doc, path, caption_segs, width_cm=15.6):
             run.font.superscript = True
     cap.paragraph_format.space_after = Pt(10)
     return cap
+
+
+def add_figure(doc, path, caption_segs, width_cm=15.6):
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.add_run().add_picture(path, width=Cm(width_cm))
+    p.paragraph_format.space_after = Pt(2)
+    return add_caption(doc, caption_segs)
 
 
 def add_page_number_footer(doc):
@@ -509,16 +656,26 @@ def add_page_number_footer(doc):
     run2._r.append(fld_end)
 
 
+def add_header(doc):
+    header = doc.sections[0].header
+    p = header.paragraphs[0]
+    p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    run = p.add_run("Birdy — A Physical Voice for Understanding Birdsong")
+    run.font.size = Pt(8)
+    run.font.color.rgb = RGBColor(0x88, 0x88, 0x88)
+
+
 def style_document(doc):
     normal = doc.styles["Normal"]
-    normal.font.name = "Calibri"
+    normal.font.name = "Cambria"
     normal.font.size = Pt(10.5)
-    normal.element.rPr.rFonts.set(qn("w:eastAsia"), "Calibri")
+    normal.element.rPr.rFonts.set(qn("w:eastAsia"), "Cambria")
     normal.paragraph_format.space_after = Pt(6)
-    normal.paragraph_format.line_spacing = 1.12
-    for level, size in (("Heading 1", 16), ("Heading 2", 12.5)):
+    normal.paragraph_format.line_spacing = 1.15
+    normal.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    for level, size in (("Heading 1", 15), ("Heading 2", 12)):
         st = doc.styles[level]
-        st.font.name = "Calibri"
+        st.font.name = "Cambria"
         st.font.size = Pt(size)
         st.font.bold = True
         st.font.color.rgb = INK
@@ -532,7 +689,7 @@ def style_document(doc):
         section.right_margin = Cm(2.2)
 
 
-def add_table(doc, header, rows, widths=None):
+def add_table(doc, header, rows, widths=None, font_size=9):
     table = doc.add_table(rows=1 + len(rows), cols=len(header))
     table.style = "Light Grid Accent 1"
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
@@ -541,13 +698,13 @@ def add_table(doc, header, rows, widths=None):
         cell.text = ""
         run = cell.paragraphs[0].add_run(h)
         run.bold = True
-        run.font.size = Pt(9)
+        run.font.size = Pt(font_size)
     for i, row in enumerate(rows):
         for j, val in enumerate(row):
             cell = table.rows[i + 1].cells[j]
             cell.text = ""
             run = cell.paragraphs[0].add_run(str(val))
-            run.font.size = Pt(9)
+            run.font.size = Pt(font_size)
     if widths:
         for j, w in enumerate(widths):
             for row in table.rows:
@@ -565,6 +722,7 @@ def build_docx(eq_paths, figs):
     doc = Document()
     style_document(doc)
     add_page_number_footer(doc)
+    add_header(doc)
 
     # ---- Cover ----
     for _ in range(4):
@@ -579,7 +737,7 @@ def build_docx(eq_paths, figs):
     title.runs[0].font.color.rgb = INK
     sub = P(
         doc,
-        [T("Working draft — internal research note · 2026-07-31")],
+        [T("Working draft — internal research note · 2026-08-01")],
         align=WD_ALIGN_PARAGRAPH.CENTER,
     )
     sub.runs[0].font.size = Pt(11)
@@ -590,35 +748,50 @@ def build_docx(eq_paths, figs):
         [
             B("Abstract. "),
             T(
-                "Birdy is a research programme and interactive installation that treats birdsong as "
-                "learnable structure rather than noise — and says so with measured confidence rather "
-                "than marketing. Its voice is a physical model of the avian syrinx, fitted to field "
-                "recordings by gesture inversion; its memory is a measurement-only corpus in which no "
-                "audio is ever retained; its map is a navigable 3-D galaxy of every syllable the "
-                "corpus holds; its claim to translation is deliberately narrow: functional decoding — "
-                "call type to documented behavioural function, with confidence labels — because "
-                "playback experiments are the only proof of meaning the field accepts. This note "
-                "describes the instrument, the pipeline, and the evidence. It reports what works "
-                "(a learned syllable embedding that lifts species placement by up to +13.3 points, a "
-                "bit-identical parallel learn, a measured fricative synthesis path, a session-quality "
-                "honesty gate at AUC 0.953) and — at equal length — what does not (the fit objective "
-                "does not track audible distortion, recorder invariance cannot be bought with loss "
-                "engineering, song structure is starved by corpus depth). Negative results are "
-                "recorded here, not deleted; that is the project's method, not its apology."
+                "Birdy is a research programme and an interactive installation. It treats birdsong "
+                "as learnable structure. Its voice is a physical model of the avian syrinx, fitted "
+                "to field recordings by gesture inversion. Its memory is a measurement-only "
+                "corpus: the harvest decodes each recording, describes it as numbers, and deletes "
+                "the audio. Its map is a 3-D galaxy with one point per measured syllable. Its "
+                "claim to translation is narrow on purpose. The system does functional decoding: "
+                "call type to documented behavioural function, with confidence labels. Playback "
+                "experiments are the only proof of meaning the field accepts, so the app labels "
+                "everything else as what it is. This note describes the instrument, the design "
+                "choices and their reasons, the pipeline, and the evidence. It reports what works: "
+                "a learned syllable embedding that lifts species placement by up to +13.3 points, "
+                "a bit-identical parallel learn, a measured fricative synthesis path, and a "
+                "session-quality gate at AUC 0.953. It reports at equal length what does not "
+                "work: the fit objective does not track audible distortion, recorder invariance "
+                "does not come from loss engineering, and the corpus is too shallow for song "
+                "grammar. Negative results stay in the record. That is the method, not an "
+                "apology."
             ),
         ],
     )
     doc.add_paragraph()
-    P(doc, [B("Contents"), T("  (section numbers; a manual list)")], space_after=2)
+    kw = P(
+        doc,
+        [
+            B("Keywords. "),
+            T("birdsong, syrinx model, gesture inversion, contrastive embedding, bioacoustics, "
+              "confidence labels"),
+        ],
+    )
+    for run in kw.runs:
+        run.font.size = Pt(9.5)
+        run.font.color.rgb = RGBColor(0x55, 0x55, 0x55)
+    doc.add_paragraph()
+    P(doc, [B("Contents")], space_after=2)
     for line in [
         "1  The premise: what translating birdsong can honestly mean",
-        "2  The instrument: a physical syrinx",
-        "3  The pipeline: from field recordings to a galaxy",
-        "4  What works (measured)",
-        "5  What does not work (measured)",
-        "6  The unknown-bird pipeline",
-        "7  Roadmap",
-        "8  References",
+        "2  Design choices and why",
+        "3  Comparison with other approaches",
+        "4  The pipeline, end to end",
+        "5  Results: what works (measured)",
+        "6  Limitations: what does not work (measured)",
+        "7  The unknown-bird pipeline",
+        "8  Roadmap",
+        "9  References",
     ]:
         P(doc, [T(line)], space_after=2, indent=0.6)
     doc.add_paragraph().add_run().add_break(WD_BREAK.PAGE)
@@ -627,90 +800,96 @@ def build_docx(eq_paths, figs):
     H1(doc, "1. The premise: what translating birdsong can honestly mean")
     plain_terms(
         doc,
-        "A great tit does not improvise. It has a small set of calls, and one of them is a sentence: "
-        "three notes meaning “scan for danger” followed by one meaning “come here” — played in that "
-        "order, other tits do both; played backwards, they do nothing. Birdsong, in other words, is "
-        "structure a machine can learn. What a machine cannot yet do is tell you what an unheard call "
-        "means, because the only accepted proof of meaning is playing the sound back to a bird and "
-        "watching what the bird does. Birdy is built around both halves of that sentence: it learns "
-        "the structure aggressively, and it labels the meaning honestly."
+        "A great tit does not improvise. It owns a small set of calls. One of them is a sentence: "
+        "three notes that mean “scan for danger”, then one note that means “come here”. Played in "
+        "that order, other tits do both. Played backwards, they do nothing. Birdsong is structure "
+        "that a machine can learn. But a machine cannot yet say what an unheard call means. The "
+        "only accepted proof of meaning is a playback experiment: play the sound to a bird and "
+        "watch what the bird does. Birdy builds on both halves of that fact. It learns the "
+        "structure aggressively, and it labels the meaning honestly."
     )
     P(doc, [
-        T("The field's own position is three-part"),
+        T("The field's own position has three parts"),
         C("rutz"),
-        T(": machine learning today can "),
+        T(". Machine learning today can "),
         B("characterize"),
-        T(" repertoires (find the units and their structure), it can "),
+        T(" repertoires: find the units and their structure. It can "),
         B("functionally decode"),
-        T(" (link signals to context and behaviour), and it "),
+        T(": link signals to context and behaviour. It "),
         B("cannot"),
-        T(" translate into propositional human language — that requires playback experiments, which "
-          "exist for only a handful of systems. A central ethological asymmetry sharpens the point: "
-          "bird "),
+        T(" translate into propositional human language. That requires playback experiments, and "
+          "those exist for only a handful of systems. An ethological asymmetry sharpens the "
+          "point. Bird "),
         I("song"),
-        T(" has rich syntax but weak or no referential meaning, while bird "),
+        T(" has rich syntax but weak or no referential meaning. Bird "),
         I("calls"),
         T(" carry meaning but little syntax (docs/03 §3.1)"),
         C("d03"),
-        T(". The scientifically defensible product is therefore "),
+        T(". The defensible product is therefore "),
         B("functional translation"),
-        T(" — call type → documented behavioural function, species, individual identity, urgency — "
-          "with confidence labels attached. Word-for-word translation is marketing, and the app says "
+        T(": call type to documented behavioural function, species, individual identity, urgency, "
+          "each with a confidence label. Word-for-word translation is marketing, and the app says "
           "so in its own interface."),
     ])
     P(doc, [
-        T("The studied vocabularies that anchor the language set are real: the Japanese great tit's "
-          "ABC–D compositionality (ABC = “scan for danger”, D = “approach”; the reversed order elicits "
-          "nothing)"),
+        T("The studied vocabularies behind the language set are real. The Japanese great tit "
+          "composes ABC–D: ABC means “scan for danger”, D means “approach”, and the reversed "
+          "order elicits nothing"),
         C("suzuki"),
-        T(", the Siberian jay's alarm calls encoding predator "),
+        T(". The Siberian jay's alarm calls encode predator "),
         I("behaviour"),
         T(" rather than predator species"),
         C("griesser"),
-        T(", the chickadee's four-note chick-a-dee with D-count scaling with threat"),
+        T(". The chickadee's chick-a-dee call has four note types, a strict A→B→C→D order, and a "
+          "D-count that scales with threat"),
         C("freeberg"),
-        T(", the nightingale's 180–200 song types delivered in rule-governed order"),
+        T(". The nightingale delivers 180–200 song types in rule-governed order"),
         C("hultsch"),
-        T(", and the Bengalese finch's finite-state song syntax"),
+        T(". The Bengalese finch sings a finite-state syntax"),
         C("okanoya"),
-        T(". This curated, literature-anchored set is what Birdy calls a documented function; "
-          "everything else is labelled as what it is."),
+        T(". This literature-anchored set is what Birdy calls a documented function. Everything "
+          "else is labelled as what it is."),
     ])
     P(doc, [
         B("Why a physical synthesiser. "),
-        T("Two reasons, one scientific and one legal. Scientifically, a procedural model of the "
-          "syrinx is a falsifiable theory of the bird: its parameters (air-sac pressure, syringeal "
-          "tension, tract geometry) are physiological claims, and the model class has passed the "
-          "strongest realism tests available — synthetic song from it drives song premotor neurons "
-          "indistinguishably from real song"),
+        T("Two reasons anchor the design, one scientific and one legal. Scientifically, a "
+          "procedural model of the syrinx is a falsifiable theory of the bird. Its parameters — "
+          "air-sac pressure, syringeal tension, tract geometry — are physiological claims. The "
+          "model class has passed the strongest realism tests available. Synthetic song from it "
+          "drives song premotor neurons indistinguishably from real song"),
         C("amador2013"),
         T(", and wild territorial sparrows respond to it as they do to a real rival"),
         C("bistel2024"),
-        T(". Legally, it is the app's only clean voice: xeno-canto recordings carry per-file Creative "
-          "Commons licences, largely non-commercial, so Birdy retains and ships "),
+        T(". Legally, it is the app's only clean voice. xeno-canto recordings carry per-file "
+          "Creative Commons licences, largely non-commercial, so Birdy retains and ships "),
         B("no audio at all"),
-        T(" — the harvest decodes each recording, describes it as numbers, and deletes it "
+        T(". The harvest decodes each recording, describes it as numbers, and deletes it "
           "(docs/09 §9.4, AGENTS.md)"),
         C("d09", "agents"),
-        T(". Every sound the app makes is synthesized from fitted parameters; every point in its "
+        T(". Every sound the app makes is synthesized from fitted parameters. Every point in its "
           "galaxy is a measurement, not a file."),
     ])
 
-    # ================= 2. The instrument =================
-    H1(doc, "2. The instrument: a physical syrinx")
+    # ================= 2. Design choices and why =================
+    H1(doc, "2. Design choices and why")
     plain_terms(
         doc,
-        "Birds do not sing with a larynx. At the bottom of the windpipe sits the syrinx — soft "
-        "membranes that vibrate in the airstream like a reed, with effectively two control knobs: "
-        "how hard the bird blows (air-sac pressure, roughly loudness) and how tight the membranes "
-        "are (tension, roughly pitch). A two-equation model of that reed, driven by those two "
-        "knobs, is realistic enough to fool the auditory neurons of a listening bird. Birdy's voice "
-        "is that model, plus the physics of the tube above it."
+        "Five choices carry the system: a physical voice, a corpus without audio, a network that "
+        "scores but never sings, two feature spaces with a bridge between them, and a label on "
+        "every claim. Each choice has a stated reason. Each has a measured consequence later in "
+        "this note. Table 1 maps every technique to the place where it runs."
     )
+    H2(doc, "2.1 A physical syrinx as the voice")
     P(doc, [
-        T("The source is the low-dimensional Mindlin–Laje “flapping” oscillator"),
+        T("Birds do not sing with a larynx. At the bottom of the windpipe sits the syrinx: soft "
+          "membranes that vibrate in the airstream like a reed. The bird has two control knobs. "
+          "Air-sac pressure sets how hard it blows, roughly loudness. Syringeal tension sets how "
+          "tight the membranes are, roughly pitch. A two-equation model of that reed, driven by "
+          "those two knobs, is realistic enough to fool the auditory neurons of a listening bird. "
+          "Birdy's voice is that model, plus the physics of the tube above it. The source is the "
+          "low-dimensional Mindlin–Laje flapping oscillator"),
         C("mindlinbook", "amador2021"),
-        T(", integrated as a pair of first-order equations (docs/08 §8.1)"),
+        T(", integrated as two first-order equations (docs/08 §8.1)"),
         C("d08"),
         T(":"),
     ])
@@ -718,70 +897,81 @@ def build_docx(eq_paths, figs):
     P(doc, [
         T("Here "),
         I("α"),
-        T(" is the air-sac pressure, "),
+        T(" is the air-sac pressure and "),
         I("β"),
-        T(" the syringeal tension that sets the fundamental frequency, and "),
+        T(" the syringeal tension that sets the fundamental frequency. "),
         I("g"),
-        T(" a pure time-scale — rescaling time by "),
+        T(" is a pure time-scale: rescaling time by "),
         I("g"),
-        T(" leaves the equations unchanged, so each syllable gets its own, chosen to place its median "
-          "pitch in the well-behaved region of the model:"),
+        T(" leaves the equations unchanged. Each syllable gets its own "),
+        I("g"),
+        T(", chosen to place its median pitch in the well-behaved region of the model:"),
     ])
     add_equation(doc, eq_paths, "gamma", 2)
     P(doc, [
-        T("with Φ measured once on a calibration sweep (the value above is measured, not fitted)"),
+        T("Φ was measured once on a calibration sweep; the value above is measured, not fitted"),
         C("perl2011"),
-        T(". Which bifurcation births the oscillation decides the timbre: at high tension a Hopf "
-          "produces tonal, whistle-like notes; at low tension a saddle-node-on-a-limit-cycle produces "
-          "pulse-like, harmonically dense sounds"),
+        T(". The bifurcation that births the oscillation decides the timbre. At high tension a "
+          "Hopf bifurcation produces tonal, whistle-like notes. At low tension a saddle-node on a "
+          "limit cycle produces pulse-like, harmonically dense sounds"),
         C("sitt2008"),
-        T(". The spectral content index is a function of tension alone, which is why the model's "
-          "γ-scale — not its filters — is the tonal-to-rich axis (docs/08 §8.1a). The integrator is "
-          "deliberately plain: forward Euler at 16× oversampling at 48 kHz; RK4 agrees to within 2 % "
-          "of F0, so Euler is what ships (docs/08 §8.1)."),
+        T(". The spectral content index is a function of tension alone, so the model's γ-scale — "
+          "not its filters — is the tonal-to-rich axis (docs/08 §8.1a). The integrator is "
+          "deliberately plain: forward Euler at 16× oversampling at 48 kHz. RK4 agrees to within "
+          "2 % of F0, so Euler is what ships (docs/08 §8.1)."),
     ])
     P(doc, [
-        T("The vocal tract is not cosmetic. Pure-tone birdsong is a filter effect — the tract "
+        T("The vocal tract is not cosmetic. Pure-tone birdsong is a filter effect: the tract "
           "suppresses harmonics, proven by heliox experiments"),
         C("nowicki1987", "beckers2003"),
-        T(" — and songbirds actively retune their oropharyngeal cavity to track the fundamental from "
-          "1.5 to 5 kHz within a single syllable"),
+        T(". Songbirds also retune the oropharyngeal cavity actively, tracking the fundamental "
+          "from 1.5 to 5 kHz within a single syllable"),
         C("riede2006"),
-        T(". So one resonance follows the instantaneous f0. But a tracking resonance alone makes "
-          "every spectrum pitch-invariant — two species at the same pitch become the same instrument. "
-          "The part that does not move is the trachea, a tube closed at the syrinx, resonating as a "
-          "stopped quarter-wave pipe at the odd harmonics of one body-fixed frequency:"),
+        T(". So one resonance follows the instantaneous f0. A tracking resonance alone would make "
+          "every spectrum pitch-invariant: two species at the same pitch would become the same "
+          "instrument. The part that does not move is the trachea. It is a tube closed at the "
+          "syrinx, and it resonates as a stopped quarter-wave pipe at the odd harmonics of one "
+          "body-fixed frequency:"),
     ])
     add_equation(doc, eq_paths, "comb", 3)
     P(doc, [
-        T("Measured agreement: eastern towhee resonances at ~2.0 and ~5.5 kHz against 1.88 and "
-          "5.67 kHz predicted for its 45 mm trachea"),
+        T("The measured agreement is close: eastern towhee resonances at ~2.0 and ~5.5 kHz "
+          "against 1.88 and 5.67 kHz predicted for its 45 mm trachea"),
         C("nelson2005"),
-        T(". Birdy measures f₁ per species from the harvest itself (pitch-dependent structure "
-          "averages away; only body-fixed resonances survive), and ships the comb only where the "
-          "resynthesis scores better with it — 10 of 22 species earned one on the original corpus "
+        T(". Birdy measures f₁ per species from the harvest itself. Pitch-dependent structure "
+          "averages away, so only body-fixed resonances survive. The comb ships only where the "
+          "resynthesis scores better with it: 10 of 22 species earned one on the original corpus "
           "(docs/08 §8.1a)."),
+    ])
+    add_figure(doc, figs["chain"], [
+        B("Figure 1 — The synthesis signal chain. "),
+        T("Gesture contours drive the oscillator (eq. 1); texture and the two tract stages shape "
+          "the result. The dashed blocks are implemented and parity-tested but off by default, "
+          "because their hand-set defaults lost the pre-registered bake-offs. Sources: docs/08 "
+          "§8.1, docs/15 §1, §5"),
+        C("d08", "d15"),
     ])
     P(doc, [
         B("Texture is physics too. "),
-        T("Turbulence is added at the labia, scaled by air flow so a silent bird does not hiss; "
-          "roughness perturbs "),
+        T("Turbulence is added at the labia and scaled by air flow, so a silent bird does not "
+          "hiss. Roughness perturbs "),
         I("β"),
-        T(" (tension), not the output — the literature is specific that matching the fundamental and "
-          "the filters was not enough to drive selective forebrain neurons, that noise on tension was "
-          "required, and that an intermediate amount scored best"),
+        T(", the tension, not the output. The literature is specific here: matching the "
+          "fundamental and the filters was not enough to drive selective forebrain neurons, noise "
+          "on tension was required, and an intermediate amount scored best"),
         C("amador2021"),
-        T(". The modulation sits at 140 Hz, inside the 80–250 Hz band syringeal muscle can follow"),
+        T(". The modulation sits at 140 Hz, inside the 80–250 Hz band that syringeal muscle can "
+          "follow"),
         C("riedegoller"),
-        T(", and because the perturbation acts through the oscillator, f0 and amplitude wobble arrive "
-          "correlated — as they do in real song (rendition-to-rendition R² ≈ 0.03)"),
+        T(". The perturbation acts through the oscillator, so f0 and amplitude wobble arrive "
+          "correlated, as they do in real song (rendition-to-rendition R² ≈ 0.03)"),
         C("chen2013"),
-        T(". All noise is a seeded xorshift32 stream so that “the same turbulence” is a testable "
+        T(". All noise is a seeded xorshift32 stream, so “the same turbulence” is a testable "
           "claim on both sides of the contract (docs/08 §8.1a)."),
     ])
     P(doc, [
         B("Extensions, measured and mostly parked. "),
-        T("Two structural extensions are implemented and parity-tested but off by default. The "
+        T("Two structural extensions are implemented and parity-tested, but off by default. The "
           "respiratory oscillator"),
         C("fainstein2025"),
         T(" replaces the hand-designed envelope with two-state air-sac dynamics (docs/15 §1)"),
@@ -790,162 +980,123 @@ def build_docx(eq_paths, figs):
     ])
     add_equation(doc, eq_paths, "respiration", 4)
     P(doc, [
-        T("with a Heaviside conductance asymmetry between inflow and outflow — attack shape and "
-          "cross-syllable memory emerge instead of being designed. Its hand-set default is a wash on "
-          "the pre-registered bake-off (median cosine 0.343 → 0.336, placement 17/81 → 20/81), so it "
-          "stays off until the per-species fit wins; the two-voice coupling of the syrinx's two sides "
-          "through the shared tracheal pressure"),
+        T("A Heaviside conductance asymmetry between inflow and outflow lets attack shape and "
+          "cross-syllable memory emerge instead of being designed. The hand-set default is a "
+          "wash on the pre-registered bake-off: median cosine 0.343 → 0.336, placement 17/81 → "
+          "20/81. It stays off until the per-species fit wins. The two-voice extension couples "
+          "the syrinx's two sides through the shared tracheal pressure"),
         C("laje2005"),
-        T(" is parked for the same reason (0.343 → 0.294 with the hand-set default). Both are "
-          "recorded in place, per the project's rule that a negative result is a deliverable."),
+        T(", and it is parked for the same reason: 0.343 → 0.294 with the hand-set default. Both "
+          "refutations stay in the record, per the project's rule that a negative result is a "
+          "deliverable."),
     ])
     P(doc, [
-        B("Why this architecture at all. "),
-        T("The validation lineage is unusually strong: the model class fools HVC auditory neurons"),
+        B("Why this voice at all. "),
+        T("The validation lineage is strong. The model class fools HVC auditory neurons"),
         C("amador2013"),
-        T(", runs as a real-time neural prosthesis"),
+        T(" and runs as a real-time neural prosthesis"),
         C("arneodo2012"),
-        T(", and — the decisive test — in 256 playback tests across 26 wild rufous-collared sparrows "
-          "at 15 sites, territorial responses to synthetic song did not differ significantly from "
-          "responses to real song, while heterospecific song evoked none"),
+        T(". The decisive test is playback: in 256 tests across 26 wild rufous-collared sparrows "
+          "at 15 sites, territorial responses to synthetic song did not differ significantly "
+          "from responses to real song, and heterospecific song evoked none"),
         C("bistel2024"),
         T(". Automatic gesture inversion from real audio is likewise published"),
         C("boari2015"),
-        T(". A generative audio model would trade all of this — interpretability, the honesty "
-          "labels, the galaxy's geometry, and the only bird-validated realism evidence — for raw "
-          "sample quality the field itself admits it cannot measure (docs/09 §9.6). The synthesiser "
-          "stays physical; learned components analyse and score, they never generate."),
+        T(". A generative audio model would trade all of this for raw sample quality the field "
+          "itself admits it cannot measure (docs/09 §9.6). The synthesiser stays physical; "
+          "learned components analyse and score, they never generate."),
     ])
-
-    # ================= 3. The pipeline =================
-    H1(doc, "3. The pipeline: from field recordings to a galaxy")
-    plain_terms(
-        doc,
-        "The pipeline is a conveyor belt with five stations. Recordings come in, are measured, and "
-        "are destroyed — only numbers survive. A clustering step decides which sounds are “the same "
-        "sound” (a syllable type). A fitting step searches the synthesiser's knobs until its render "
-        "of each type is as close as it can get to the measurements. A small neural network — the "
-        "critic — learns what a syllable is, and its internal representation becomes the coordinate "
-        "system of a 3-D map: the galaxy. The browser replays all of it with no server and no "
-        "neural network, and labels every claim it makes."
-    )
-    add_figure(doc, figs["arch"], [
-        B("Figure 1. "),
-        T("Architecture. Offline (left): harvest keeps only descriptors and log-mel patches; the "
-          "critic and the learn pass turn them into types, fitted gestures, and galaxy assets. "
-          "Online (right): static assets only — the browser synthesises, analyses the mic, and "
-          "labels every claim. Sources: docs/06 §6.1, docs/08 §8.3"),
-        C("d06", "d08"),
-    ])
-    H2(doc, "3.1 Harvest: decode → describe → delete")
+    H2(doc, "2.2 A measurement-only corpus")
     P(doc, [
-        T("No audio is ever retained or shipped; the decode → describe → delete loop is load-bearing "
-          "for licensing, and the one owner-sanctioned exception (a local training cache under "),
+        T("No audio is ever retained or shipped. The decode → describe → delete loop is "
+          "load-bearing for licensing. One owner-sanctioned exception exists: a local training "
+          "cache under "),
         I("pipeline/out/audio-cache/"),
-        T(", gitignored, deleted at phase end) never feeds the app (AGENTS.md)"),
+        T(", gitignored and deleted at phase end, which never feeds the app (AGENTS.md)"),
         C("agents"),
-        T(". What a syllable leaves behind is two measurements. First, a 28-dimensional descriptor: "
-          "13 MFCC means, 13 MFCC standard deviations, mean log₂ spectral centroid, mean spectral "
-          "flatness, computed under an exact frame-level contract (48 kHz mono, 1024/512 Hann "
-          "frames) that the browser re-implements sample-for-sample (docs/08 §8.2)"),
+        T(". What a syllable leaves behind is two measurements. The first is a 28-dimensional "
+          "descriptor: 13 MFCC means, 13 MFCC standard deviations, mean log₂ spectral centroid, "
+          "and mean spectral flatness. It is computed under an exact frame-level contract — "
+          "48 kHz mono, 1024/512 Hann frames — that the browser re-implements sample for sample "
+          "(docs/08 §8.2)"),
         C("d08"),
-        T(". Second, a fixed 32×23 log-mel patch — 736 numbers, log-magnitude only, no phase — "
-          "resampled onto the syllable's own duration. A patch cannot be turned back into "
-          "recognisable audio, so the licensing property holds while a spectral fingerprint survives "
-          "(docs/09 §9.3, docs/17 §17)"),
+        T(". The second is a fixed 32×23 log-mel patch: 736 numbers, log-magnitude only, no "
+          "phase, resampled onto the syllable's own duration. A patch cannot be turned back into "
+          "recognisable audio, so the licensing property holds while a spectral fingerprint "
+          "survives (docs/09 §9.3, docs/17 §17)"),
         C("d09", "d17"),
-        T(". The largest ingest to date: iNatSounds 2024, one pass — 6 453 recordings, 2 513 minutes, "
-          "226 264 syllables, 3 811 species, zero failures (docs/16 §16.1)"),
-        C("d16"),
         T("."),
     ])
-    H2(doc, "3.2 Learn: types and gestures")
+    H2(doc, "2.3 A critic that scores, never sings")
     P(doc, [
-        T("Syllable identity used to be decided by seven hand-weighted numbers with guessed weights; "
-          "it is now KMeans clustering in the critic's 32-dimensional learned embedding, with the "
-          "cluster count chosen by silhouette (docs/09 §9.2b, §9.7). Each type is then fitted by "
-          "gesture inversion: coordinate descent over ~16 axes of the synthesiser's parameter "
-          "vector, three passes, scored against the reference observation by the descriptor cosine — "
-          "the number every fit gate in the project reads:"),
-    ])
-    add_equation(doc, eq_paths, "cosine", 5)
-    P(doc, [
-        T("where z is the standardised 28-d descriptor in the harvest population frame. §5 of this "
-          "note is largely about what is wrong with this objective; it remains the optimiser "
-          "because its failure is bounded and cluster-safe (docs/19 §19.5). The learn is parallel "
-          "and streaming — per-species fits in a fork pool after one GPU embedding pass, "
-          "checkpointed every 100 species — and verified bit-identical to the serial fit (docs/16 "
-          "§16.3)"),
-        C("d16"),
-        T(". Rhythm is measured, not invented: 26 897 per-transition gaps were extracted with the "
-          "grammar (docs/18)"),
-        C("d18"),
-        T("."),
-    ])
-    H2(doc, "3.3 The critic: a network that scores, never sings")
-    P(doc, [
-        T("The critic is a small convolutional network (4 conv layers, spectral normalisation, "
-          "~1–3 M parameters) over the log-mel patch, trained with three heads on a shared trunk "
-          "(docs/09 §9.2b): a "),
+        T("The critic is a small convolutional network over the log-mel patch: 4 conv layers, "
+          "spectral normalisation, about 1–3 M parameters. It trains with three heads on a "
+          "shared trunk (docs/09 §9.2b). A "),
         B("realism"),
-        T(" logit (real patch vs a render of the current fit), a "),
+        T(" logit separates real patches from renders of the current fit. A "),
         B("species"),
-        T(" classifier (the harvest labels every syllable), and a "),
+        T(" classifier reads the harvest labels. A "),
         B("contrastive"),
-        T(" head with an NT-Xent loss — two augmented views of the same syllable embed close, "
-          "different syllables apart:"),
+        T(" head trains with an NT-Xent loss: two augmented views of the same syllable embed "
+          "close, different syllables embed apart:"),
     ])
-    add_equation(doc, eq_paths, "ntxent", 6)
+    add_equation(doc, eq_paths, "ntxent", 5)
     P(doc, [
-        T("Augmentations are time stretches, gain changes, added noise — never pitch shifts, which "
-          "are genuinely type-diagnostic. Whole species are held out of training, so realism and "
-          "novelty are measured on birds the network never saw. The current critic trained on 2 686 "
-          "species (895 held out entirely): realism AUC 1.000 on held-out species, species accuracy "
-          "0.730 over 2 686 classes (chance 0.0004), novelty ROC 0.846 with 32.2 % of unheard "
-          "species' syllables flagged at a chosen 5 % false-positive rate (docs/16 §16.2)"),
+        T("Augmentations are time stretches, gain changes, and added noise — never pitch shifts, "
+          "which are genuinely type-diagnostic. Whole species are held out of training, so "
+          "realism and novelty are measured on birds the network never saw. The current critic "
+          "trained on 2 686 species, with 895 held out entirely. It scores realism AUC 1.000 on "
+          "held-out species and species accuracy 0.730 over 2 686 classes (chance 0.0004). Its "
+          "novelty ROC is 0.846, flagging 32.2 % of unheard species' syllables at a chosen 5 % "
+          "false-positive rate (docs/16 §16.2)"),
         C("d16"),
-        T(". The 32-d embedding is the deliverable; the realism logit, as §5 records, is a "
-          "refuted objective."),
+        T(". The 32-d embedding is the deliverable. The realism logit, as section 6 records, is "
+          "a refuted objective. The rule behind this choice: learned components analyse and "
+          "score, they never generate. A generator would need its own honesty story; a scorer "
+          "inherits the physical synth's story for free."),
     ])
-    H2(doc, "3.4 The galaxy: two spaces and a bridge")
+    H2(doc, "2.4 Two feature spaces and a bridge")
     P(doc, [
-        T("The galaxy is a static, precomputed 3-D point cloud — one point per measured syllable, "
-          "plus renders of measured realisations; hand-set jitter survives only where no "
-          "measurements exist, and is labelled “invented” (docs/10 §10.1)"),
-        C("d10"),
-        T(". Prior art is open source"),
-        C("birdsounds", "sainburg2020", "goffinet2021"),
-        T(". Two feature spaces coexist: the hand-written 28-d descriptor (what the browser can "
-          "compute live) and the critic's 32-d embedding (what the galaxy is clustered in). Since "
-          "no torch ships to the browser, a bridge maps the former into the latter: random Fourier "
-          "features approximating an RBF kernel, then a closed-form ridge regression, fitted on "
-          "(descriptor, embedding) pairs of the store with knobs chosen on held-out recordings "
-          "(docs/11 §11.3)"),
+        T("Two feature spaces coexist. The hand-written 28-d descriptor is what the browser can "
+          "compute live. The critic's 32-d embedding is what the galaxy is clustered in. No "
+          "torch ships to the browser, so a bridge maps the first space into the second: random "
+          "Fourier features approximating an RBF kernel, then a closed-form ridge regression, "
+          "fitted on (descriptor, embedding) pairs of the store with knobs chosen on held-out "
+          "recordings (docs/11 §11.3)"),
         C("d11"),
         T(":"),
     ])
-    add_equation(doc, eq_paths, "rff", 7)
+    add_equation(doc, eq_paths, "rff", 6)
     P(doc, [
-        T("shipped as plain numbers (D = 2048 features, σ = 4, λ = 1 on the reference fit). The map "
-          "is gated: median mapped-vs-true cosine on held-out recordings below 0.8 ships "),
+        T("The bridge ships as plain numbers: D = 2048 features, σ = 4, λ = 1 on the reference "
+          "fit. The map is gated: a median mapped-vs-true cosine below 0.8 on held-out "
+          "recordings ships "),
         I("accepted: false"),
-        T(" and the browser stays on the 28-d path. On the debug build the gate passes at 0.962; "
-          "the honest knot-level agreement is 0.61 raw, 0.91 tie-adjusted, 0.78 at species level — "
-          "§5 decomposes why the raw number undersells the map (docs/20)"),
+        T(", and the browser stays on the 28-d path. On the debug build the gate passes at "
+          "0.962. The honest knot-level agreement is 0.61 raw, 0.91 tie-adjusted, and 0.78 at "
+          "species level — section 6 decomposes why the raw number undersells the map (docs/20)"),
         C("d20"),
-        T(". A linear ridge was the original “honest choice”; it broke (0.7997, below gate) when the "
-          "embedding grew finer, and the refutation is recorded in place (docs/11 §11.3)."),
+        T(". A linear ridge was the original honest choice. It broke at 0.7997, below the gate, "
+          "when the embedding grew finer. The refutation is recorded in place (docs/11 §11.3)."),
     ])
-    H2(doc, "3.5 The app: realtime synthesis and the honesty rule")
+    add_figure(doc, figs["spaces"], [
+        B("Figure 2 — Two feature spaces and the bridge. "),
+        T("The browser computes only the 28-d descriptor; the galaxy lives in the critic's 32-d "
+          "embedding; the RFF ridge bridge (eq. 6) maps one into the other behind a ship gate. "
+          "Sources: docs/11 §11.3, docs/20 §20.1"),
+        C("d11", "d20"),
+    ])
+    H2(doc, "2.5 The honesty layer")
     P(doc, [
-        T("The browser runs the same syrinx model in an AudioWorklet and the same feature extractor "
-          "on the mic; the two renderers are verified sample-for-sample against each other "
-          "(18/18 parity fixtures, worst divergence at float32 rounding) (docs/08 §8.1a, HANDOFF)"),
+        T("The browser runs the same syrinx model in an AudioWorklet and the same feature "
+          "extractor on the mic. The two renderers are verified sample for sample against each "
+          "other: 18/18 parity fixtures, worst divergence at float32 rounding (docs/08 §8.1a, "
+          "HANDOFF)"),
         C("d08", "handoff"),
-        T(". Live audio is standardised, bridged into the galaxy's space, and turned into cluster "
-          "activations by a softmax over centroid cosines with ~120 ms smoothing (docs/08 §8.2). "
-          "The honesty rule (docs/08 §8.5) is a product requirement, not a nicety: every rendered "
-          "phrase carries its confidence — "),
+        T(". Live audio is standardised, bridged into the galaxy's space, and turned into "
+          "cluster activations by a softmax over centroid cosines with ~120 ms smoothing "
+          "(docs/08 §8.2). The honesty rule (docs/08 §8.5) is a product requirement, not a "
+          "nicety. Every rendered phrase carries its confidence: "),
         I("experimental"),
         T(" (playback-verified), "),
         I("documented"),
@@ -953,10 +1104,161 @@ def build_docx(eq_paths, figs):
         I("inferred"),
         T(" (plausible, not established), "),
         I("invented"),
-        T(" (a designed mapping, always labelled as such) — and anything the system flags as new is "),
+        T(" (a designed mapping, always labelled as such). Anything the system flags as new is "),
         B("“unlabelled: real acoustics, no documented function”"),
         T(", because detecting that a sound is new is not knowing what it means"),
         C("d08"),
+        T("."),
+    ])
+    add_table(
+        doc,
+        ["component", "technique", "where it runs", "source", "why it is there"],
+        [
+            ["voice source", "Mindlin–Laje flapping oscillator (eq. 1)", "AudioWorklet synth + Python fit", "docs/08 §8.1", "physiological, bird-validated, real-time"],
+            ["time scale", "per-syllable γ, f0 = g·Φ (eq. 2)", "fit + synth", "docs/08 §8.1", "measured Φ(0.1, 1) = 0.17061, not fitted"],
+            ["tract", "f0-tracking resonance + stopped-tube comb (eq. 3)", "synth", "docs/08 §8.1a", "pure tone is a filter effect; comb ships only where it wins (10/22)"],
+            ["roughness", "140 Hz noise on β", "synth", "docs/08 §8.1a", "tension noise drives forebrain neurons; intermediate amount best"],
+            ["fricatives", "turbulence routed to fitted formants", "synth, per type", "docs/16 §16.7", "chip notes are shaped noise; ships where it beats the tonal fit"],
+            ["respiration", "air-sac oscillator (eq. 4)", "parked (off by default)", "docs/15 §1", "hand-set default is a wash; waits for the per-species fit"],
+            ["two voices", "pair coupled via tracheal pressure", "parked (off by default)", "docs/15 §5", "hand-set default regresses (0.343 → 0.294)"],
+            ["descriptor", "28-d: 13 MFCC means + 13 stds + centroid + flatness", "harvest, fit, browser", "docs/08 §8.2", "computable identically in Python and the browser"],
+            ["spectral fingerprint", "32×23 log-mel patch", "store, critic", "docs/09 §9.3", "not invertible to audio; the licensing property holds"],
+            ["critic", "3-head CNN: realism, species, contrastive", "pipeline", "docs/09 §9.2b", "scores and types; never generates"],
+            ["contrastive loss", "NT-Xent, τ = 0.2 (eq. 5)", "critic training", "docs/09 §9.2b", "same syllable close, different syllables apart"],
+            ["galaxy space", "critic 32-d embedding", "build, galaxy", "docs/09 §9.7", "+13.3 pts placement over the hand-weighted vector"],
+            ["browser bridge", "RFF + ridge (eq. 6)", "build fits it, browser applies it", "docs/11 §11.3", "no torch in the browser; gated at 0.8"],
+            ["fit objective", "descriptor cosine (eq. 7)", "inversion, ship gates", "docs/08 §8.2, docs/19", "cluster-safe; audibly blind (section 6)"],
+            ["session gate", "off-manifold 5-NN distance", "browser live path", "docs/20 §20.3.2", "AUC 0.953; computable from the 28-d side alone"],
+            ["grammar", "first-order + Kneser–Ney backoff", "build, app sequences", "docs/18", "unseen tail +1.90 / +2.32 nats; seen side bit-identical"],
+            ["song baseline", "bag-of-types", "build", "docs/18 P2", "the bar any learned song encoder must beat"],
+            ["novel-species hint", "Perch 2.0 top-3 (ONNX, offline)", "pipeline only", "docs/13", "metadata, never typing ground truth"],
+        ],
+        widths=[2.3, 4.1, 3.1, 2.4, 4.7],
+        font_size=7.5,
+    )
+    add_caption(doc, [
+        B("Table 1 — Where the system uses what. "),
+        T("Every technique, the place it runs, the note that defines it, and the reason it is "
+          "there. Parked rows are implemented and parity-tested but ship off by default."),
+    ])
+
+    # ================= 3. Comparison with other approaches =================
+    H1(doc, "3. Comparison with other approaches")
+    plain_terms(
+        doc,
+        "Birdy sits in a landscape of bioacoustic tools. Some classify, some embed, some map, "
+        "some generate. None of them is a voice. Table 2 puts the approaches side by side on "
+        "the properties this project cares about. A cell says “not documented” where the "
+        "project's own references do not answer the question. The comparison claims nothing "
+        "beyond the cited sources."
+    )
+    add_table(
+        doc,
+        ["approach", "what it is", "generates sound", "interpretable", "offline in browser", "licence-clean", "confidence labels", "bird-validated"],
+        [
+            ["BirdNET [26]", "species classifier on spectrograms", "no", "no", "not documented", "no — CC BY-NC-SA, non-commercial", "not documented", "not documented"],
+            ["Perch 2.0 [25]", "14 597-species embedding model", "no", "no", "no — 409 MB ONNX; runs offline in the pipeline only", "yes — Apache 2.0", "no", "not documented"],
+            ["Google Bird Sounds [24]", "t-SNE map of thousands of recordings", "no", "no", "yes — web experiment", "yes — Apache 2.0", "no", "no"],
+            ["Sainburg et al. [22]", "VAE latent space across species", "no", "latent, not physiological", "not documented", "not documented", "no", "not documented"],
+            ["Goffinet et al. [23]", "learned low-d features for individual and group differences", "no", "no", "not documented", "not documented", "no", "not documented"],
+            ["generative audio models [38]", "waveform generators", "yes", "no", "no", "training-data licences unclear", "no", "no"],
+            ["Birdy (this work)", "physical syrinx + measurement-only corpus", "yes", "yes — physiological parameters", "yes", "yes — no audio retained", "yes — four levels", "yes — playback-tested [10, 15]"],
+        ],
+        widths=[2.5, 3.3, 1.6, 2.0, 2.4, 2.2, 1.6, 1.9],
+        font_size=7.5,
+    )
+    add_caption(doc, [
+        B("Table 2 — Approaches side by side. "),
+        T("Bracketed numbers resolve to the References section. “Not documented” means the "
+          "project's references do not answer the cell; the table claims nothing beyond its "
+          "sources."),
+    ])
+    P(doc, [
+        B("What Birdy takes, and what it declines. "),
+        T("The galaxy's prior art is open source: the t-SNE bird map, the VAE latent space, and "
+          "the learned feature spaces showed that vocal repertoires have navigable geometry"),
+        C("birdsounds", "sainburg2020", "goffinet2021"),
+        T(". Perch 2.0 gives novel syllables a second opinion — as metadata, never as identity"),
+        C("perch"),
+        T(". BirdNET's non-commercial licence excludes it from the app"),
+        C("birdnet"),
+        T(". A generative audio model would trade interpretability, the honesty labels, and the "
+          "bird-validated realism evidence for sample quality the field cannot yet measure "
+          "(docs/09 §9.6)"),
+        C("d09"),
+        T(". On the documented cells of Table 2, no listed approach combines Birdy's specific "
+          "triple: a bird-validated physical voice, a corpus that keeps no audio, and a "
+          "confidence label on every claim."),
+    ])
+
+    # ================= 4. The pipeline, end to end =================
+    H1(doc, "4. The pipeline, end to end")
+    plain_terms(
+        doc,
+        "The pipeline is a conveyor belt with five stations. Recordings come in, are measured, "
+        "and are destroyed. Only numbers survive. A clustering step decides which sounds are "
+        "the same sound: a syllable type. A fitting step searches the synthesiser's knobs until "
+        "the render of each type matches the measurements as closely as possible. The critic's "
+        "internal representation becomes the coordinate system of a 3-D map: the galaxy. The "
+        "browser replays all of it with no server and no neural network, and it labels every "
+        "claim it makes."
+    )
+    add_figure(doc, figs["arch"], [
+        B("Figure 3 — Architecture. "),
+        T("Stations 1–4 run offline in Python; the harvest keeps only descriptors and log-mel "
+          "patches. Station 5 is the browser: static assets only, no torch, no Python. The "
+          "honesty band labels every claim the app shows. Sources: docs/06 §6.1, docs/08 §8.3"),
+        C("d06", "d08"),
+    ])
+    H2(doc, "4.1 Harvest: decode → describe → delete")
+    P(doc, [
+        T("The harvest downloads a recording, decodes it, measures every syllable, and deletes "
+          "the file. What stays is the descriptor and the patch of section 2.2. The largest "
+          "ingest to date is iNatSounds 2024, in one pass: 6 453 recordings, 2 513 minutes, "
+          "226 264 syllables, 3 811 species, zero failures (docs/16 §16.1)"),
+        C("d16"),
+        T("."),
+    ])
+    H2(doc, "4.2 Learn: types and gestures")
+    P(doc, [
+        T("Syllable identity was once decided by seven hand-weighted numbers with guessed "
+          "weights. It is now KMeans clustering in the critic's 32-d embedding, with the "
+          "cluster count chosen by silhouette (docs/09 §9.2b, §9.7). Each type is then fitted "
+          "by gesture inversion: a coordinate descent over ~16 axes of the synthesiser's "
+          "parameter vector, in three passes. The score against the reference observation is "
+          "the descriptor cosine, the number every fit gate in the project reads:"),
+    ])
+    add_equation(doc, eq_paths, "cosine", 7)
+    P(doc, [
+        T("z is the standardised 28-d descriptor in the harvest population frame. Section 6 is "
+          "largely about what is wrong with this objective. It remains the optimiser because "
+          "its failure is bounded and cluster-safe (docs/19 §19.5). The learn is parallel and "
+          "streaming: per-species fits in a fork pool after one GPU embedding pass, "
+          "checkpointed every 100 species. It is verified bit-identical to the serial fit "
+          "(docs/16 §16.3)"),
+        C("d16"),
+        T(". Rhythm is measured, not invented: 26 897 per-transition gaps extracted with the "
+          "grammar (docs/18)"),
+        C("d18"),
+        T("."),
+    ])
+    H2(doc, "4.3 Build: the galaxy as static assets")
+    P(doc, [
+        T("The build renders every fitted type, places every measured syllable, and writes "
+          "static assets: JSON and f32, no torch weights. The galaxy is a precomputed 3-D "
+          "point cloud with one point per measured syllable, plus renders of measured "
+          "realisations. Hand-set jitter survives only where no measurements exist, and it is "
+          "labelled “invented” (docs/10 §10.1)"),
+        C("d10"),
+        T("."),
+    ])
+    H2(doc, "4.4 The app: replay with no server")
+    P(doc, [
+        T("The app is a static site. It loads the assets, synthesises in an AudioWorklet, and "
+          "analyses the mic. It never calls a Python process. The session gate of section 5 "
+          "watches the live path: an off-manifold 5-NN distance, computable from the 28-d side "
+          "alone, flags sessions that sit off everything the galaxy knows (docs/20 §20.3.2)"),
+        C("d20"),
         T("."),
     ])
     P(doc, [
@@ -976,458 +1278,129 @@ def build_docx(eq_paths, figs):
         ],
         widths=[5.2, 3.0, 4.6, 3.8],
     )
+    add_caption(doc, [
+        B("Table 3 — The measurement stores. "),
+        T("Each row is a fixed corpus; every number in this note names the store it was "
+          "measured on."),
+    ])
+    add_figure(doc, figs["growth"], [
+        B("Figure 4 — Corpus growth. "),
+        T("Syllables and species per store, log scales. The iNatSounds 2024 ingest multiplied "
+          "the species count by 31; depth per species did not grow with it — section 6.3. "
+          "Sources: docs/08 §8.1a, docs/09 §9.7–9.8, docs/14 §14.1, docs/16 §16.1"),
+        C("d08", "d09", "d14", "d16"),
+    ])
 
-    # ================= 4. What works =================
-    H1(doc, "4. What works (measured)")
+    # ================= 5. Results: what works =================
+    H1(doc, "5. Results: what works (measured)")
     plain_terms(
         doc,
-        "The good news, with receipts. Every claim below is a number the project measured on a fixed "
-        "corpus, most of them pre-registered — the target was written down before the run. Where a "
-        "number comes from the smaller debug corpus rather than the full one, the caption or the "
-        "text says so."
+        "The good news, with receipts. Every claim below is a number the project measured on a "
+        "fixed corpus. Most were pre-registered: the target was written down before the run. "
+        "Where a number comes from the smaller debug corpus, the caption or the text says so."
     )
+    add_figure(doc, figs["wins"], [
+        B("Figure 5 — Headline measured gains. "),
+        T("Each row shows before and after, with units per row. Sources: docs/09 §9.8, docs/10 "
+          "§10.3, docs/16 §16.2–16.3, §16.7, docs/18"),
+        C("d09", "d10", "d16", "d18"),
+    ])
     P(doc, [
         B("The learned embedding is a clean win, twice. "),
-        T("Typing syllables in the critic's 32-d embedding instead of the hand-weighted vector moved "
-          "species placement 26.6 % → 32.9 % on the 9 k store (chance 4.0 %) and 38.4 % → 51.7 % — "
-          "a +13.3-point gain — on the 40 k store (13 species after the trim bug, chance 7.7 %), "
-          "with the guardrail cosine essentially held (0.807 → 0.796) and F0 error improving "
-          "3.3 % → 2.2 %. Nothing regressed, on two independent stores (docs/09 §9.7, §9.8)"),
+        T("Typing syllables in the critic's 32-d embedding instead of the hand-weighted vector "
+          "moved species placement from 26.6 % to 32.9 % on the 9 k store (chance 4.0 %). On "
+          "the 40 k store it moved placement from 38.4 % to 51.7 % — a +13.3-point gain — "
+          "against 7.7 % chance (13 species after the trim bug). The guardrail cosine held: "
+          "0.807 → 0.796. F0 error improved from 3.3 % to 2.2 %. Nothing regressed, on two "
+          "independent stores (docs/09 §9.7, §9.8)"),
         C("d09"),
-        T(". The same retrain epochs lifted novelty detection from ROC 0.596 to 0.846 and "
-          "true-positive rate at 5 % FPR from 7.4 % to 32.2 % across three corpus epochs "
+        T(". The same retrain epochs lifted novelty detection from ROC 0.596 to 0.846, and "
+          "true-positive rate at 5 % FPR from 7.4 % to 32.2 %, across three corpus epochs "
           "(docs/10 §10.3, docs/11 §11.2, docs/16 §16.2)"),
         C("d10", "d11", "d16"),
         T("."),
     ])
     P(doc, [
         B("The learn is fast and exactly reproducible. "),
-        T("Parallel per-species fitting is verified bit-identical to the serial fit; the "
-          "3 800-species learn went from a ~3 h serial pace to ~15 min on 16 workers, checkpointed "
-          "every 100 species after two crash losses taught the lesson. The 200 k learn fitted 2 423 "
-          "species into 12 724 types over 187 078 typed observations; all 2 423 fitted species carry "
-          "recovered common names (docs/16 §16.3)"),
+        T("Parallel per-species fitting is verified bit-identical to the serial fit. The "
+          "3 800-species learn went from a ~3 h serial pace to ~15 min on 16 workers. "
+          "Checkpointing every 100 species came after two crash losses taught the lesson. The "
+          "200 k learn fitted 2 423 species into 12 724 types over 187 078 typed observations. "
+          "All 2 423 fitted species carry recovered common names (docs/16 §16.3)"),
         C("d16"),
         T("."),
     ])
     P(doc, [
         B("The fricative path closed the biggest acoustic gap. "),
-        T("Real chip notes are broadband bursts shaped by the tract — whispered vowels, not tones "
-          "with hiss. The evidence was two species parked at the noise ceiling and still failing "
-          "(Algerian nuthatch types at cos 0.16–0.60 with noise 0.60–0.85). The fix routes "
-          "turbulence around the f0-tracking band into the syllable's own fitted formant set, driven "
-          "by the same pressure gesture as the tonal source: bench median 0.584 → 0.656, end-to-end "
-          "13 wins / 0 losses, shipping per type only where the resynthesis beats the tonal fit, "
-          "with syllables without the flag rendering bit-identically (docs/16 §16.7; HANDOFF "
-          "2026-07-30)"),
+        T("Real chip notes are broadband bursts shaped by the tract: whispered vowels, not "
+          "tones with hiss. The evidence was two species parked at the noise ceiling and still "
+          "failing: Algerian nuthatch types scored cosine 0.16–0.60 with noise at 0.60–0.85. "
+          "The fix routes turbulence around the f0-tracking band into the syllable's own fitted "
+          "formant set, driven by the same pressure gesture as the tonal source. The bench "
+          "median moved 0.584 → 0.656. End to end: 13 wins, 0 losses. The path ships per type "
+          "only where the resynthesis beats the tonal fit. Syllables without the flag render "
+          "bit-identically (docs/16 §16.7; HANDOFF 2026-07-30)"),
         C("d16", "handoff"),
         T("."),
     ])
     P(doc, [
         B("The naturalness fit pass won where hand-set physics washed. "),
-        T("The per-species coordinate search over the respiratory and two-voice parameter sets "
-          "scored 12 680 types: respiration won 445, two-voice won 2 027 of 5 922 screened, median "
-          "cosine 0.650 → 0.6623, ship gate held everywhere (docs/16 §16.4). The documented one-tone "
-          "re-fit shipped measured noise/rough texture on 14 of 15 authored calls (median gain "
-          "+0.148, debug store, 37 species; the one holdout stayed pure — the gate doing its job). "
-          "Caveat carried from §5: these gates read the cosine, which the bench has since shown not "
-          "to rank audible fit (docs/19 §19.3)"),
+        T("A per-species coordinate search over the respiratory and two-voice parameter sets "
+          "scored 12 680 types. Respiration won 445. Two-voice won 2 027 of 5 922 screened. "
+          "The median cosine moved 0.650 → 0.6623, and the ship gate held everywhere (docs/16 "
+          "§16.4). The documented one-tone re-fit shipped measured noise and rough texture on "
+          "14 of 15 authored calls, median gain +0.148 on the debug store of 37 species. The "
+          "one holdout stayed pure: the gate doing its job. One caveat carries over from "
+          "section 6: these gates read the cosine, and the bench has since shown that the "
+          "cosine does not rank audible fit (docs/19 §19.3)"),
         C("d16", "d19"),
         T("."),
     ])
     P(doc, [
         B("Grammar repair, on pre-registered terms. "),
-        T("The first-order model's one measured weakness — unseen-context transitions at −9.25 "
-          "nats/token — gained a Kneser–Ney continuation backoff: +1.90 and +2.32 nats/token on "
-          "unseen-context transitions on the two debug stores, with the seen side bit-identical "
-          "(loss exactly 0.0000). Honest scope: 80 % of the unseen tail is seen-context, so the "
-          "full-tail gain is +0.37 / +0.65 (docs/18)"),
+        T("The first-order model's one measured weakness was unseen-context transitions at "
+          "−9.25 nats/token. A Kneser–Ney continuation backoff gained +1.90 and +2.32 "
+          "nats/token on unseen-context transitions on the two debug stores. The seen side "
+          "stayed bit-identical, with loss exactly 0.0000. The honest scope: 80 % of the "
+          "unseen tail is seen-context, so the full-tail gain is +0.37 and +0.65 (docs/18)"),
         C("d18"),
         T("."),
     ])
     P(doc, [
         B("The session gate separates pathological recordings at AUC 0.953. "),
-        T("Eight of 45 held-out recording sessions on the debug build carry 22.9 % of the galaxy "
-          "map's flip loss, all xeno-canto. An off-manifold 5-NN distance — computable from the "
-          "28-d side alone, all the browser will ever have — separates them at AUC 0.953 "
-          "(norm-deviation 0.922; the pre-registered two-signal combination adds nothing at 0.954; "
-          "gate 0.9). A shipped cloud of 256 random anchors (28 kB) holds AUC ≥ 0.92. The lever "
-          "gate failed its raw bar (+3.5 points vs +5), so the pre-registered fallback fired: it "
-          "ships as an "),
+        T("Eight of 45 held-out recording sessions on the debug build carry 22.9 % of the "
+          "galaxy map's flip loss, all xeno-canto. An off-manifold 5-NN distance — computable "
+          "from the 28-d side alone, all the browser will ever have — separates them at AUC "
+          "0.953 (norm-deviation 0.922; the pre-registered two-signal combination adds nothing "
+          "at 0.954; gate 0.9). A shipped cloud of 256 random anchors (28 kB) holds AUC ≥ "
+          "0.92. The lever gate failed its raw bar (+3.5 points vs +5), so the pre-registered "
+          "fallback fired: it ships as an "),
         B("honesty gate"),
-        T(" — “this session is off everything the galaxy knows” — catching 5 of the 8 bad sessions "
-          "including the three worst loss-carriers, with 3 clean false-flags all within 0.02 of the "
-          "bad line (docs/20 §20.3.2)"),
+        T(" — “this session is off everything the galaxy knows” — catching 5 of the 8 bad "
+          "sessions including the three worst loss-carriers, with 3 clean false-flags all "
+          "within 0.02 of the bad line (docs/20 §20.3.2)"),
         C("d20"),
         T("."),
     ])
     add_figure(doc, figs["gate"], [
-        B("Figure 2. "),
-        T("Session-gate signal AUCs against the bad-session label (8 of 45 held-out sessions), "
-          "end-to-end debug build (harvest-b100, 3 731 eval rows); the dashed line is the "
-          "pre-registered adoption gate. Debug-scale measurement. Source: docs/20 §20.3.2"),
+        B("Figure 6 — Session-gate signal AUCs. "),
+        T("AUC against the bad-session label (8 of 45 held-out sessions), end-to-end debug "
+          "build (harvest-b100, 3 731 eval rows); the dashed line is the pre-registered "
+          "adoption gate. Debug-scale measurement. Source: docs/20 §20.3.2"),
         C("d20"),
     ])
     P(doc, [
         B("Song types fall out, with an honest control. "),
-        T("Clustering run-collapsed type-id sequences by normalised edit distance found 50 song "
-          "types over 13 of 35 species, placing 693 of 2 419 candidate bouts, against a "
-          "global-permutation control that yields 0.2 % (one spurious type) at the shipped "
-          "constants. The nightingale — the famous improviser — yields zero types over 275 "
-          "candidate bouts: the noise category agreeing with a century of field notes (docs/12)"),
+        T("Clustering run-collapsed type-id sequences by normalised edit distance found 50 "
+          "song types over 13 of 35 species, placing 693 of 2 419 candidate bouts. A "
+          "global-permutation control yields 0.2 % — one spurious type — at the shipped "
+          "constants. The nightingale, the famous improviser, yields zero types over 275 "
+          "candidate bouts: the noise category agrees with a century of field notes (docs/12)"),
         C("d12"),
-        T(". Rhythm is measured everywhere the app plays sequences: 26 897 per-transition gaps "
-          "(docs/18). And the two-renderer contract holds at 18/18 parity fixtures — the same "
-          "syllable is the same samples in Python and in the browser (HANDOFF 2026-07-30)"),
+        T(". Rhythm is measured everywhere the app plays sequences: 26 897 per-transition "
+          "gaps (docs/18). And the two-renderer contract holds at 18/18 parity fixtures — the "
+          "same syllable is the same samples in Python and in the browser (HANDOFF "
+          "2026-07-30)"),
         C("d18", "handoff"),
         T("."),
     ])
-
-    # ================= 5. What does not work =================
-    H1(doc, "5. What does not work (measured)")
-    plain_terms(
-        doc,
-        "This chapter is the spine of the paper, and it is as long as the good news on purpose. "
-        "Birdy's rule is that a measurement which contradicts the plan is the deliverable: every "
-        "failure below has a number, a fixed corpus, and a written-down verdict, and stays in the "
-        "record so nobody tries it again. Three big things do not work yet: the number we optimise "
-        "is not the number we hear; the embedding organises by microphone before it organises by "
-        "bird; and the corpus is too shallow for song grammar to show up in it."
-    )
-    H2(doc, "5.1 The objective does not measure the audible")
-    P(doc, [
-        T("Every fit decision in the pipeline — the inversion's gesture search, the respiration and "
-          "two-voice ship gates, the fricative routing — is judged by the 28-d descriptor cosine. "
-          "The spectral bench asked the obvious question nobody had: is a cosine gain an audible "
-          "gain? Rendering 200 fitted types against their medoid members' cached audio and scoring "
-          "two independent spectral distances (mel-cepstral distortion, multi-resolution STFT "
-          "error), the answer is no: the correlations sit at ≈ 0.1 with p-values that cannot reject "
-          "zero, and the point estimates lean the wrong way (docs/19 §19.2)"),
-        C("d19"),
-        T(". It is not a bench artifact: the recomputed cosine matches the stored one (0.921), and "
-          "the two distances agree with each other (0.925) — they measure something coherent; the "
-          "cosine just does not measure it."),
-    ])
-    add_figure(doc, figs["bench"], [
-        B("Figure 3. "),
-        T("The incumbent objective carries no information about spectral distance to the original "
-          "audio; the mel-path target does (signs correct: higher similarity ↔ lower distortion). "
-          "n = 200 types, debug-100 store against the iNat cache. Source: docs/19 §19.2, §19.4"),
-        C("d19"),
-    ])
-    P(doc, [
-        T("The mel-path target — time-resolved, exp(−LSD) similarity to the type's measured mel "
-          "trajectory — is the better "),
-        I("measurement"),
-        T(" (Spearman −0.420 vs MCD where the cosine reads +0.100). It is the worse "),
-        I("optimiser"),
-        T(": at blend weight 1.0 the cosine guardrail collapses by 0.377, and the n = 10 probe's "
-          "7/3 MCD win did not survive n = 80 — 31 % win share against a 60 % gate, median ΔMCD "
-          "exactly 0.0 dB, one type losing 0.12 cosine (docs/19 §19.4, §19.5). The honest state, "
-          "verbatim: "),
-        I("“measure spectrally, optimise descriptor-ly”"),
-        T(" — gates are read on the bench, the inversion keeps climbing the cosine, and an "
-          "objective that is both remains unfound."),
-    ])
-    P(doc, [
-        T("The learned alternative failed the same way, earlier and harder. A realism-trained critic "
-          "— itself excellent, AUC 0.990–1.000 on entirely held-out species — used as the fit "
-          "objective is monotonically harmful in its weight: at w = 1 the cosine collapses "
-          "0.762 → 0.335 and placement drops to 17.3 %, and the refutation replicated at 40 k "
-          "(38.4 % → 31.9 % at w = 0.5). Separating two distributions perfectly is not the same as "
-          "having a gradient that points at the nearer one; the retained cosine guardrail is what "
-          "made the gaming visible (docs/09 §9.7, §9.8)"),
-        C("d09"),
-        T(". A structurally better tract — a fixed waveguide with 32× the spectral freedom of the "
-          "tracking band — improved all three metrics at once on five species and was a regression "
-          "over 22 (23.1 % → 22.2 % placement), later shown to have been rejected by badly defined "
-          "types rather than by the objective; it now wins on the gan store under learned typing "
-          "(37.0 %) and pays for it in cosine, so it stays promising and unconfirmed (docs/08 "
-          "§8.1c, docs/09 §9.7)"),
-        C("d08", "d09"),
-        T("."),
-    ])
-    P(doc, [
-        B("The original wound, still open: species identity. "),
-        T("On the original 22-species store, a resynthesis lands nearest its own species only "
-          "23.1 % of the time against 4.5 % chance. Four hypotheses were tested and refuted in "
-          "place (docs/08 §8.1a): the envelopes are not collapsed (we express 103 % of the real "
-          "between-species spread and 106 % of the spectral detail — varied along different axes); "
-          "there is a spectral tilt error but correcting it exactly drops placement to 20.2 %; the "
-          "harmonic structure is not missing (real syllables resolve to a mean of 2.2 partials); "
-          "and a time-resolved objective improves its own metric 36 % while placement falls "
-          "61.7 % → 43.2 % — the two objectives conflict. The ceiling is the descriptor and the "
-          "filter chain's capacity, not the search."),
-    ])
-    H2(doc, "5.2 The embedding organises by recorder before bird")
-    P(doc, [
-        T("The geometry battery scores how much a grouping organises the embedding, as the same-label "
-          "rate among a point's nearest neighbours minus a permutation null:"),
-    ])
-    add_equation(doc, eq_paths, "knnlift", 8)
-    P(doc, [
-        T("On the production embedding the strongest relation is "),
-        I("source"),
-        T(" — which recorder, not which bird: recordist kNN lift +0.488 against species' +0.196 "
-          "(docs/14 §14.4)"),
-        C("d14"),
-        T(". Every consumer of the embedding inherits that confound. The literature is unambiguous "
-          "that invariance is a training-time problem"),
-        C("moummad", "morocutti", "avex"),
-        T(", and Birdy swept it three times on pre-registered gates (docs/17)"),
-        C("d17"),
-        T(":"),
-    ])
-    P(doc, [
-        B("Loss engineering trades 1:1 with species. "),
-        T("Channel-EQ simulation and Freq-MixStyle augmentation are perfectly species-safe and move "
-          "recordist lift not at all (−0.7 % relative). The recordist-adversarial head does move "
-          "it — and the trade is almost perfectly linear in log weight: −33 % recordist at w 0.05 "
-          "costs species accuracy −14.7 points; w 0.3 destroys the embedding (species accuracy "
-          "0.199, realism AUC 0.862). No swept weight buys the required −30 % recordist while "
-          "holding species within the gates: "),
-        I("you can purchase recorder invariance with species information at roughly 1:1"),
-        T(" (docs/17 §17.3)."),
-    ])
-    add_figure(doc, figs["adv"], [
-        B("Figure 4. "),
-        T("Adversarial sweeps on the 37-species debug store (debug-scale). Left: the recordist head "
-          "trades recordist lift for species lift ~1:1. Right: the recording-within-species head "
-          "never touches species — and barely reaches the recordist (−6 % at w 0.1 against the "
-          "−30 % gate, dotted). Sources: docs/17 §17.3, §17.5"),
-        C("d17"),
-    ])
-    P(doc, [
-        B("The species-safe factorization cannot reach the confound. "),
-        T("Masking the adversarial softmax to recordings of the patch's own species fences species "
-          "information out by construction — and it works: species lift is flat to +10 % at every "
-          "weight. But the target buys only −6 % against the −30 % gate, because the recordist "
-          "signal is carried "),
-        I("between"),
-        T(" species (each species' recordings come from different people), where a species-factored "
-          "head is forbidden to look (docs/17 §17.5)."),
-    ])
-    P(doc, [
-        B("Data helps — and the honest re-test shrank it. "),
-        T("The AVEX direction"),
-        C("avex"),
-        T(" held: merging two recording domains per species beat every loss. But the first test was "
-          "12 species with a 3-species holdout, and the pre-registered bigger re-test (63 "
-          "both-domain species, 16 held out) shrank every delta: the naive merge's +14.4 points "
-          "became +3.6, and the cross-domain contrastive mechanism's +13.4-point boost became +1.7 "
-          "against a +10 gate — small-sample structure, the same lesson as the mel-weight probe. "
-          "What survives at both scales is the ordering: more domains per species helps, the "
-          "mechanism adds ≈ nothing on top, and no loss term buys invariance cheaper than data "
-          "(docs/17 §17.4, §17.6)."),
-    ])
-    add_figure(doc, figs["avex"], [
-        B("Figure 5. "),
-        T("Cross-domain species retrieval, three arms, two tests (both debug-scale; absolute levels "
-          "are only comparable arm-vs-arm within each panel). The naive merge (B) beats "
-          "single-domain (A) in both; the contrastive mechanism (C) looked decisive at 12 species "
-          "and added +1.7 points at 63. Sources: docs/17 §17.4, §17.6"),
-        C("d17"),
-    ])
-    H2(doc, "5.3 Song structure starves at current depth")
-    P(doc, [
-        T("Birdsong is not first-order — repeat-count adaptation and partially observable structure "
-          "are established"),
-        C("jin2011", "lu2025"),
-        T(" — and Birdy ran the pre-registered bake-off anyway: current first-order transitions vs "
-          "Jin–Kozhevnikov repeat-count vs hidden-state HMM, on held-out bout likelihood. M2 loses "
-          "decisively (−0.348 nats/token, 0/30 species). M3 wins the rule (+0.422, 29/30) — and "
-          "the decomposition reverses the adoption: on the 90 % of held-out transitions seen in "
-          "training, first-order is the best model (−1.525 vs M3's −1.624), and M3's entire "
-          "advantage sits in the 10 % unseen tail (−9.25 vs −4.16) — a property of smoothing "
-          "*shape*, not recovered hidden structure. Adopting a heavier model for a smoothing "
-          "artifact is the wrong lesson; first-order stays (docs/18 P1)"),
-        C("d18"),
-        T("."),
-    ])
-    P(doc, [
-        T("The song-level kernel failed both its gates: a weighted edit-distance over (type, gap) "
-          "sequences loses species lift to plain bag-of-types (+0.877 vs +0.924 on the 37-species "
-          "store; +0.050 vs +0.081 on debug-100) and fails the recordist gate (+0.264). "
-          "Within-species song structure exists — all 18 deep species separate their recordings — "
-          "but it lives entirely in the token marginals: "),
-        B("order and rhythm add nothing measurable at current depth"),
-        T(". The reason is one number: only 12 of the debug-100 species have ≥ 20 bouts. The bar "
-          "for any learned song encoder is now bag-of-types, after the depth harvest (docs/18 "
-          "P2)"),
-        C("d18"),
-        T("."),
-    ])
-    add_figure(doc, figs["depth"], [
-        B("Figure 6. "),
-        T("Why syntax starves: species of the debug-100 store with enough bouts for song-level "
-          "structure (≥ 20 bouts after run-collapse). Debug-scale. Source: docs/18 (debug-100 "
-          "cycle note)"),
-        C("d18"),
-    ])
-    H2(doc, "5.4 Smaller refutations, kept on the record")
-    P(doc, [
-        B("The galaxy map's 0.61 is a metric problem, not a map problem. "),
-        T("Decomposing the centroid-agreement loss over 3 731 held-out syllables: 76.4 % of it is "
-          "boundary near-ties (74 % of all rows sit within margin 0.05; tie-adjusted agreement is "
-          "0.91, and 41 % of flips land on the runner-up knot), and genuine big-margin map failure "
-          "is ~2 % of rows. No better map class can fix near-ties; the honest single-label claim is "
-          "species-level agreement, 0.78 (docs/20 §20.1)"),
-        C("d20"),
-        T("."),
-    ])
-    add_figure(doc, figs["spacemap"], [
-        B("Figure 7. "),
-        T("Decomposition of the 38.6 % knot-agreement loss (1 439 flips over 3 731 held-out "
-          "syllables, debug build). Most of the “error” is the question being ill-posed at knot "
-          "boundaries; genuine map failure is the two small violet bars. Source: docs/20 §20.1"),
-        C("d20"),
-    ])
-    P(doc, [
-        B("Pruning bad sessions from the fit fails. "),
-        T("Dropping the worst-quintile off-manifold sessions costs −0.006 / −0.015 eval cosine on "
-          "the two debug stores against a ≤ 0.005 allowance: the weird sessions "),
-        I("are"),
-        T(" manifold coverage, and pruning them hurts the next unseen weird session. Gating is a "
-          "live-path action only (docs/20 §20.3.1). "),
-        B("The learned inverse failed its ship rule. "),
-        T("An encoder predicting synthesis parameters from mel patches — trained on 150 k free "
-          "rendered pairs — matched the coordinate descent on cosine (0.737 vs 0.734) but the "
-          "pre-registered 2× speedup never existed on the hardware (0.2 s either way); it stays "
-          "experimental, documented in place (docs/10 §10.5). "),
-        B("Novelty thresholds do not transfer across harvest epochs. "),
-        T("A threshold calibrated for 5 % false positives on the 9 k store flagged 29.8 % of the "
-          "47 k store; recalibration is cheap and now automatic, and the honest ROCs are reported "
-          "per epoch (0.596 → 0.786 → 0.846) rather than the best one (docs/10 §10.3, docs/14 "
-          "§14.3, docs/16 §16.2)"),
-        C("d10", "d14", "d16"),
-        T("."),
-    ])
-
-    # ================= 6. The unknown-bird pipeline =================
-    H1(doc, "6. The unknown-bird pipeline")
-    plain_terms(
-        doc,
-        "What happens when a bird the system has never heard starts to sing? Not a guess, and not "
-        "silence. The arrival is measured, compared against everything known, and — if it fits "
-        "nothing — it is allowed to be new: it gathers with similar arrivals until enough of them "
-        "agree to found a new knot in the galaxy, labelled exactly as honestly as the situation "
-        "deserves: real acoustics, no documented function. An external model may suggest which "
-        "species it resembles, but that suggestion is metadata, never identity."
-    )
-    P(doc, [
-        T("The arrival pipeline is live end to end (docs/10 §10.3, §10.4; docs/16 §16.5)"),
-        C("d10", "d16"),
-        T(". At ingest, each new observation is embedded and scored against the calibrated novelty "
-          "threshold — a chosen false-positive rate, not a discovered one. Known-looking syllables "
-          "inherit the nearest type (in a relabel-recovery test, 97.4 % of relabelled syllables "
-          "inherited a known type, 65.2 % the correct species' type; misassignments go to "
-          "similar-sounding types of other species — the detector prices acoustic neighbourhood, "
-          "not taxonomy, and the wren counterexample proves it). Novel syllables are not "
-          "force-assigned: below quorum they stay unassigned; at quorum (≥ 8 coherent pending "
-          "points, 0.70 cosine radius, 0.75 cohesion floor) they found a new knot labelled "),
-        I("“unheard syllable”"),
-        T(", confidence "),
-        B("unlabelled: real acoustics, no documented function"),
-        T("."),
-    ])
-    P(doc, [
-        T("A Perch 2.0 pass"),
-        C("perch"),
-        T(" (ONNX, offline, ~48 ms/window) labels the novel-flagged syllables from the training "
-          "cache as "),
-        I("“closest documented species (Perch 2.0 inference, unverified)”"),
-        T(" — metadata only, never typing ground truth; nothing in the learn path may read it. "
-          "23 697 novel syllables were identified in the store; 841 are honestly unlabelable "
-          "because their xeno-canto audio was deleted by design, and the pipeline says so rather "
-          "than guessing. Structure above the syllable — sequence statistics, candidate song types "
-          "for undocumented birds — inherits the same label all the way up (docs/18 P6)"),
-        C("d18"),
-        T(". Anything more confident than this pipeline is numerology, and the interface keeps "
-          "saying so."),
-    ])
-
-    # ================= 7. Roadmap =================
-    H1(doc, "7. Roadmap")
-    plain_terms(
-        doc,
-        "The next steps, in order, each with the number that would prove it. First: listen longer "
-        "to fewer birds, because nearly every open problem — grammar, dialects, the bench — is "
-        "starved by shallow coverage rather than missing machinery. Then re-run the bake-offs that "
-        "depth was blocking. The metrology problem underneath everything stays open and named."
-    )
-    P(doc, [
-        B("P0 — Depth harvest (in progress at this writing). "),
-        T("100 species × up to 30 recordings each, chosen for documented syntax cases, repertoire "
-          "depth, and existing playback anchors, harvested in 25-species batches with the log read "
-          "between batches (docs/18 P0; HANDOFF 2026-07-31)"),
-        C("d18", "handoff"),
-        T(". This one action unblocks the grammar re-test, the song-level space, and the widening "
-          "of the spectral bench — nothing else on the roadmap does that."),
-    ])
-    P(doc, [
-        B("P1 — Re-bake-off after depth. "),
-        T("The first-order/Jin–Kozhevnikov/POMM comparison re-run once the unseen-transition tail "
-        "shrinks; thin data is exactly where higher-order models starve, and M2's 0/30 says so. "),
-        B("P2 — Song-level embedding. "),
-        T("Bouts as points; the parameter-free kernel baseline already failed, so the bar any "
-          "learned encoder must beat is bag-of-types (+0.924), with the recordist lift gate "
-          "upstream (docs/18). "),
-        B("P3 — CETI-style factorization"),
-        C("sharma2024"),
-        T(": decompose each deep species' songs into independent axes — rhythm, tempo, "
-          "ornamentation — toward per-species combinatorial alphabets, the strongest honest claim "
-          "available without playback. "),
-        B("P4 — Dialect and individual maps. "),
-        T("With depth: same-species variants placed geographically, individuals separated where "
-          "10–16 bouts each exist — literature-proven sufficient (docs/18 P3–P4)"),
-        C("d18"),
-        T("."),
-    ])
-    P(doc, [
-        B("The open problem, named. "),
-        T("Underneath the roadmap sits metrology: the project optimises one number (the descriptor "
-          "cosine, cluster-safe and audibly blind), measures with another (MCD/STFT, audibly "
-          "faithful, optimiser-hostile), and has refuted the learned third (the realism logit). "),
-        I("“An objective that is both remains unfound.”"),
-        T(" Every future fit gate reads the bench; every future objective candidate is "
-          "pre-registered against it (docs/19 §19.5)"),
-        C("d19"),
-        T(". Structure first, meaning only from playback — that ordering is the roadmap's spine, "
-          "and it does not move."),
-    ])
-
-    # ================= 8. References =================
-    H1(doc, "8. References")
-    P(doc, [
-        T("External literature and internal research notes, numbered in list order; in-text "
-          "superscripts resolve here. Internal notes live in the repository's docs/ directory."),
-    ])
-    for i, (_, text) in enumerate(REFERENCES):
-        p = P(doc, [B(f"[{i + 1}] "), T(text)], space_after=3)
-        for run in p.runs:
-            run.font.size = Pt(9)
-
-    doc.save(DOCX_PATH)
-    return DOCX_PATH
-
-
-def main():
-    os.makedirs(FIG, exist_ok=True)
-    eq_paths = render_equations()
-    figs = {
-        "arch": diagram_architecture(),
-        "bench": chart_bench(),
-        "adv": chart_adversarial(),
-        "avex": chart_avex(),
-        "spacemap": chart_spacemap(),
-        "gate": chart_session_gate(),
-        "depth": chart_depth(),
-    }
-    out = build_docx(eq_paths, figs)
-    print(f"equations: {len(eq_paths)} in {os.path.join(FIG, 'eq')}")
-    print(f"charts:    {len(figs)} in {FIG}")
-    print(f"docx:      {out}")
-
-
-if __name__ == "__main__":
-    main()

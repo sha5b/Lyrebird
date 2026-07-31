@@ -58,26 +58,24 @@ export const ACCENT = '#5b3fd6';
  *
  * **Amber and green are deliberately the widest-separated pair in the set**, because
  * they carry the two classes that between them are 97 % of the shipped corpus (53 %
- * synthesized, 44 % recorded). Measured on the light surface at the resting 0.5 wash,
- * their worst case across normal, deutan, protan and tritan vision is ΔE 29.4 — the
- * strongest pair here by a wide margin, so the division a viewer sees first is the one
- * that actually partitions the galaxy. Every class also sits at least ΔE 20 from the
- * plain mode's neutral, which is the property the previous palette lacked: its
- * majority class was ΔE 5.3 from plain, so turning provenance colours on changed
- * nothing anyone could see.
+ * synthesized, 44 % recorded). Hues are unchanged from the measured set; saturation
+ * and lightness went UP at the owner's request ("too pastel", 2026-08-01), which moves
+ * every pairwise ΔE in the safe direction (the quoted 29.4/7.3/8.6 figures were
+ * measured on the older, quieter values). The rose class was the pastel one — it is
+ * now a full magenta. Grey stays grey on purpose: it is the class that claims
+ * nothing, and a loud neutral would be a lie.
  *
  * The set does not pretend all five separate equally. Five categorical hues cannot
  * survive colour-vision deficiency — the note at the top of this file is the same
- * argument — and two pairs here are weak (documented/field ΔE 7.3 tritan, and
- * learned/unlabelled ΔE 8.6 deutan). Both weak pairs involve classes that are a small
- * minority or absent from the shipped build, the documented/green weakness is one the
- * previous palette already had, and the classes are named in the reading panel and the
- * legend, so hue is never the sole carrier.
+ * argument — and two pairs here are weak (documented/field tritan, and
+ * learned/unlabelled deutan). Both weak pairs involve classes that are a small
+ * minority or absent from the shipped build, and the classes are named in the
+ * reading panel and the legend, so hue is never the sole carrier.
  */
-export const PROV_DOCUMENTED = '#1f5fbf';
-export const PROV_LEARNED = '#b45309';
-export const PROV_FIELD = '#0b7a55';
-export const PROV_ARRIVALS = '#da9a76';
+export const PROV_DOCUMENTED = '#1d4fd8';
+export const PROV_LEARNED = '#d97706';
+export const PROV_FIELD = '#059669';
+export const PROV_ARRIVALS = '#db2777';
 export const PROV_CANDIDATE = '#7b8794';
 
 /** The five class colours in PROVENANCE order, for the label and thread lookups. */
@@ -141,9 +139,9 @@ export function provenanceColourScaled(cls: number, lightScale: number): string 
  * The hue is a hash of the species id, not an index into the inventory: learned ids
  * renumber across refits, and a colour that silently moved between two birds after a
  * rebuild would be a claim nobody made. Hashing keeps a bird's hue stable across
- * rebuilds and across machines. Lightness is held at 38 % so every hue keeps enough
- * contrast against the paper to read as a mark, and stays clear of the ink (16 %) the
- * rest of the interface is drawn in.
+ * rebuilds and across machines. Saturation 82 % at lightness 45 % — vivid, on the
+ * owner's call ("heatmap, not pastel", 2026-08-01) — while staying light enough to
+ * read as a mark on the paper and clear of the ink (16 %) the interface is drawn in.
  */
 export function speciesHue(id: string): number {
 	// FNV-1a, then a golden-angle turn from the hash so near hashes still land apart.
@@ -158,7 +156,7 @@ export function speciesHue(id: string): number {
 export function speciesColour(id: string): string {
 	// Comma form, not the modern space form: THREE's Color.setStyle only parses the
 	// comma grammar (the space form is silently ignored and reads as white).
-	return `hsl(${speciesHue(id).toFixed(1)}, 58%, 38%)`;
+	return `hsl(${speciesHue(id).toFixed(1)}, 82%, 45%)`;
 }
 
 /**
@@ -171,7 +169,7 @@ export function speciesColour(id: string): string {
  */
 export function speciesColourScaled(id: string, lightScale: number): string {
 	const scale = Math.min(1.2, Math.max(0.8, lightScale));
-	return `hsl(${speciesHue(id).toFixed(1)}, 58%, ${(38 * scale).toFixed(1)}%)`;
+	return `hsl(${speciesHue(id).toFixed(1)}, 82%, ${(45 * scale).toFixed(1)}%)`;
 }
 
 

@@ -1829,7 +1829,7 @@ uv run birdy-pipeline build</pre>
 									</li>
 									<li>
 										<i class="hue"></i>
-										<span>Hue says which bird — on the tags and threads always, on the points too in Bird mode. In provenance mode it says what kind of thing instead — the Display panel has both keys.</span>
+										<span>Three colour languages (Display): Ink — everything neutral, violet marks what sounds. Bird — every dot, thread and tag takes its bird's hue. Provenance — everything takes the class colour.</span>
 									</li>
 									<li>
 										<i class="ring"></i>

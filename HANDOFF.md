@@ -2,6 +2,38 @@
 
 **Landed today (uncommitted at this writing — user commits):**
 
+- **Production learn on the deepened store: DONE.** `critic embed` refreshed
+  (340 079 rows), then learn: **2 421 species, 13 859 learned types** (was
+  12 724), median resynthesis cosine 0.648 (was 0.662 — expected dip with the
+  harder XC-depth species in), worst −0.445, 23 min. typing.json +
+  data/learned-inventory.json rewritten. Unlabelled pool: 28 arrivals → 12
+  inherited, 2 candidates. **Next: P1 bake-off re-run (pre-registered,
+  docs/18), then the production build decision.**
+- **Ink-mode accent bug found + fixed (owner report).** `easeAccent` in
+  PointCloud retinted the accent to the subject's species hue whenever
+  `plain` was true — and with the three-way mode split, `plain` covers BOTH
+  ink and bird modes, so ink mode's activations and selections flared the
+  bird's own (newly saturated) hue instead of violet. Now: provenance mode →
+  class colour, bird mode → species hue, **ink mode → violet, never retinted**.
+  Companion coherence: labels/dot accents follow the same three-way rule
+  (NodeProjector hot→violet in ink, neutral at rest; NodeLabels dot reads
+  --accent; Trajectory gained an ink-neutral palette so idle threads go quiet
+  with the points). Mode matrix verified per element; legend hue row
+  rewritten to state the three languages. npm check 4/4 baseline.
+- **Wavefront reach doubled (owner, same day).** `uWaveLocal` 2 → 4 knot
+  spacings (the front read as a knot-local flash; a wave should be seen to
+  travel) and launch amp ×1.5 capped at 1. Shader/launch comments updated;
+  visual-only, npm check 4/4 baseline.
+- **Palette + colour-language coherence (owner, same day).** Bird hues boosted
+  58 %/38 % → 82 %/45 % ("heatmap, not pastel"); provenance classes saturated
+  (rose #da9a76 → magenta #db2777, others boosted; grey stays grey — the class
+  that claims nothing); app.css confidence vars kept in step. The colour
+  language now moves as one across dots, threads and tags: ContextPaths got
+  vertex colours per mode (neutral slate in ink, species hue in bird, class
+  colour in provenance — it was flat slate in all modes), and NodeProjector's
+  label accent follows `prov` (it stayed species hue in provenance mode —
+  two languages on one tag). npm check 4/4 baseline; palette changes are
+  visual-only, no parity impact.
 - **UI text pass (ste-writing, same day).** The ASD-STE100 writing skill the
   owner pointed at is saved user-scope
   (`~/.agents/skills/ste-writing/SKILL.md`) and was applied to the visible UI

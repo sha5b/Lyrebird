@@ -28,9 +28,11 @@
 		pointSize?: number;
 		/** Colour the threads by the knot's provenance class instead of by its bird. */
 		prov?: boolean;
+		/** Bird language: threads in the species hue (ink mode keeps them neutral). */
+		bird?: boolean;
 	}
 
-	let { assets, signal, view, spread = 1, pointSize = 3, prov = false }: Props = $props();
+	let { assets, signal, view, spread = 1, pointSize = 3, prov = false, bird = false }: Props = $props();
 
 	/** Samples per segment: enough that the travelling highlight moves smoothly. */
 	const SUBDIVISIONS = 14;
@@ -55,10 +57,15 @@
 			species: centroids.map((c, i) => new THREE.Color(speciesColourScaled(c.speciesId, light(i)))),
 			provenance: centroids.map(
 				(_, i) => new THREE.Color(provenanceColourScaled(classes[i] ?? 4, light(i)))
-			)
+			),
+			// Ink mode: the threads go quiet with the points, and the sung note is the
+			// accent bead (uColdColor below) — one loud thing at a time.
+			ink: centroids.map(() => new THREE.Color('#8595ae'))
 		};
 	});
-	const knotColours = $derived(prov ? knotPalettes.provenance : knotPalettes.species);
+	const knotColours = $derived(
+		prov ? knotPalettes.provenance : bird ? knotPalettes.species : knotPalettes.ink
+	);
 	// Preallocated to every path we will ever draw at once, then a draw range is set per
 	// rebuild — reallocating buffers on every note would churn GPU memory during a chorus.
 	// Line *segments* rather than a strip, so separate paths are never joined together.

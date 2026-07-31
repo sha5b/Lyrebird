@@ -335,16 +335,16 @@ export function vertexShader(clusterCount: number): string {
 			// see is a front crossing the volume, not a standing corrugation.
 			//
 			// Two bounds make it water rather than weather. **Local**: a second gaussian,
-			// quoted against the corpus's own knot spacing (uWaveLocal), pulls the
-			// amplitude to nothing a few knots from the source, so a ripple is an event
-			// *at* the sounding knot and its immediate neighbours instead of a wash that
-			// crosses the whole box. **Signed**: each source's contribution keeps its
-			// sign (crest positive, trough negative) and the sum is never normalised or
-			// rectified, so where two fronts meet, crest on crest reads double and crest
-			// on trough reads as calm — before, every source pushed at full strength
-			// independently and crossing fronts only ever added ink. The signed sum rides
-			// out as vRipple so the fragment can show the interference, not just the
-			// displacement.
+			// quoted against the corpus's own knot spacing (uWaveLocal), bounds the reach —
+			// two knot-spacings for years, four since 2026-08-01 (owner: the knot-local
+			// flash read as a flash, not as a wave), so a front visibly travels a real
+			// share of the cloud and still dies before it becomes weather. **Signed**: each
+			// source's contribution keeps its sign (crest positive, trough negative) and
+			// the sum is never normalised or rectified, so where two fronts meet, crest on
+			// crest reads double and crest on trough reads as calm — before, every source
+			// pushed at full strength independently and crossing fronts only ever added
+			// ink. The signed sum rides out as vRipple so the fragment can show the
+			// interference, not just the displacement.
 			float ph = aSeed * 6.2831853;
 			float waveTotal = 0.0;
 			float ripple = 0.0;

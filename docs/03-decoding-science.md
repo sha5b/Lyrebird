@@ -11,10 +11,10 @@ ML today can
    experiments, which exist for only a handful of systems.
 
 A central ethological asymmetry (Patel-Grosz et al., "Super Linguistics"): bird *song*
-has rich syntax but weak/no referential meaning; bird *calls* carry meaning but little
+has rich syntax but weak/no referential meaning. Bird *calls* carry meaning but little
 syntax. So the scientifically defensible product is **functional translation**: call
 type → documented behavioral function, species, individual identity, urgency — with
-confidence labels. "Word-for-word translation" is marketing, not science; the app
+confidence labels. "Word-for-word translation" is marketing, not science. The app
 should say so.
 
 ## 3.2 Studied vocabularies — the basis of Birdy's language set
@@ -47,31 +47,31 @@ species, each annotated with its documented function — not invented meanings.
 - **Text-promptable zero-shot**: NatureLM-audio (audio-language model, ICLR 2025,
   arXiv:2411.07186) and BioLingual (CLAP-style text↔bioacoustic embedding).
 - **"Teach a new call from 5 examples"**: DCASE Task 5 few-shot bioacoustic detection
-  is exactly this paradigm; linear probes on Perch/BirdNET embeddings work with ~5
+  is exactly this paradigm. Linear probes on Perch/BirdNET embeddings work with ~5
   labels.
-- **Individual recognition**: BirdAVES fine-tuned ID'd 173 wild zebra finches from
-  1–3 s clips (macro-F1 0.73) — per-user few-shot "enroll my bird" is feasible.
+- **Individual recognition**: a fine-tuned BirdAVES identified 173 wild zebra finches
+  from 1–3 s clips (macro-F1 0.73). Per-user few-shot "enroll my bird" is feasible.
 
 ## 3.4 Multiple birds
 
-- **Cocktail-party separation** is immature in bioacoustics: the reference system is
-  BioCPPNet (ESP, U-Net separation of overlapping conspecific calls;
-  github.com/earthspecies/cocktail-party-problem). No production species-general bird
-  "speaker separation" exists.
+- **Cocktail-party separation** is immature in bioacoustics. The reference system is
+  BioCPPNet from ESP, a U-Net that separates overlapping conspecific calls
+  (github.com/earthspecies/cocktail-party-problem). No production species-general
+  bird "speaker separation" exists.
 - **Practical pipeline**: detection windows → embeddings → **clustering**
   (Perch/BirdNET embeddings cluster by individual in many species) → user-confirmed
   enrollment.
 - **Mic arrays** (TDOA/beamforming localization) are the mature route to attributing
   calls to individuals spatially (Rhinehart et al. 2020) — power-user feature.
-- If "multiple birds" means *multiple users streaming mics*: extract features
-  client-side and broadcast tiny feature vectors over WebSocket instead of audio —
-  near-zero bandwidth, no SFU (see `06-architecture.md`).
+- If "multiple birds" means *multiple users streaming mics*, extract features
+  client-side. Then broadcast tiny feature vectors over WebSocket instead of audio.
+  This gives near-zero bandwidth with no SFU (see `06-architecture.md`).
 
 ## 3.5 Datasets
 
-- **xeno-canto** (~1M recordings, >10k species, REST API; per-recording CC licenses —
-  check NC/ND flags before shipping audio).
-- **Macaulay Library** (Cornell; more restrictive licensing).
+- **xeno-canto** has ~1M recordings and >10k species behind a REST API. Licenses are
+  per-recording CC: check NC/ND flags before shipping audio.
+- **Macaulay Library** (Cornell, more restrictive licensing).
 - **BirdSet** (curated XC, Hugging Face, the current standard benchmark).
 - **BirdCLEF** (Kaggle, CC BY-NC-SA), **BEANS** benchmark, **DCASE Task 5** few-shot
   sets.

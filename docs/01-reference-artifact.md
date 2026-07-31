@@ -1,8 +1,9 @@
 # 1. The Reference Artifact — what the viral image actually depicts
 
-The image shows a dark 3D scatter plot — colored clusters (magenta, blue, red, green)
-connected by thin trajectory lines — floating above a photo of a nightingale, under the
-headline **"AI is decoding what birds have been saying all along"**.
+The image shows a dark 3D scatter plot floating above a photo of a nightingale.
+Colored clusters (magenta, blue, red, green) connect through thin trajectory
+lines. The headline reads **"AI is decoding what birds have been saying all
+along"**.
 
 ## 1.1 Origin tracing
 
@@ -14,9 +15,9 @@ composites three real things:
    "decoding animal communication with AI", 2022–2025). Manifesto paper: Rutz et al.,
    *Using machine learning to decode animal communication*, Science 2023
    (DOI 10.1126/science.adg7314).
-2. **The bird** — a nightingale, invoking the classic Hultsch & Todt (FU Berlin)
-   research showing a male nightingale has ~180–200 discrete song types delivered in
-   rule-governed order — the canonical "birds have a vocabulary" result.
+2. **The bird** — a nightingale. The classic Hultsch & Todt (FU Berlin) research
+   shows that a male nightingale has ~180–200 discrete song types delivered in
+   rule-governed order. This is the canonical "birds have a vocabulary" result.
 3. **The visualization** — a UMAP/t-SNE embedding plot of bird vocalizations. The
    canonical sources of exactly this figure style:
    - Sainburg, Thielk & Gentner, *Finding, visualizing, and quantifying latent
@@ -37,12 +38,12 @@ composites three real things:
 - **Colors** = discovered cluster / syllable type.
 - **Thin lines** = temporal trajectories connecting consecutive syllables of one song —
   a "path" through the vocal repertoire.
-- When a bird sings, the active region lights up — that is the "it jumps when the tone
+- When a bird sings, the active region lights up. That is the "it jumps when the tone
   and melody works" effect Birdy recreates (see `05-embedding-galaxy.md`).
 
 ## 1.3 Implication for Birdy
 
-The reel is a composite, but everything it implies is buildable: the embedding galaxy
-(prior art is open source), the vocabulary framing (nightingale/great-tit ethology),
-and the live reactivity (standard Web Audio + shaders). The app can deliver the *honest
-version* of the promise the reel makes.
+The reel is a composite, but everything it implies is buildable. The embedding
+galaxy has open-source prior art. The vocabulary framing comes from
+nightingale/great-tit ethology. The live reactivity uses standard Web Audio +
+shaders. The app can deliver the *honest version* of the promise the reel makes.

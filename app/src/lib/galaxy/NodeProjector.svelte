@@ -11,11 +11,14 @@
 	import { T, useTask, useThrelte } from '@threlte/core';
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
-	import { buildSpeciesIndex, knotHeat } from '$lib/data/assets';
+	import { buildSpeciesIndex, clusterProvenance, knotHeat } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
-	import { speciesColourScaled } from './palette';
+	import { ACCENT, provenanceColourScaled, speciesColourScaled } from './palette';
 	import type { LayoutView } from './layouts';
 	import type { VisualSignal } from './shaders';
+
+	/** The tag's resting accent in ink mode: the same slate the context threads use. */
+	const INK_NEUTRAL = '#8595ae';
 
 	interface Props {
 		assets: BirdyAssets;
@@ -28,9 +31,22 @@
 		pinned?: number;
 		/** Where the centroids are right now; moves while the cloud rearranges. */
 		view: LayoutView;
+		/** Provenance language for the tag accent, matching the points and threads. */
+		prov?: boolean;
+		/** Bird language for the tag accent: the species hue everywhere. */
+		bird?: boolean;
 	}
 
-	let { assets, signal, elements, focus = -1, pinned = -1, view }: Props = $props();
+	let {
+		assets,
+		signal,
+		elements,
+		focus = -1,
+		pinned = -1,
+		view,
+		prov = false,
+		bird = false
+	}: Props = $props();
 
 	const { camera, size } = useThrelte();
 
@@ -45,11 +61,18 @@
 	 * The tag's hue, precomputed per knot: the bird's id-hashed colour with the heat
 	 * rule's slight lightness shift (see knotColour in NodeLabels — same mapping, kept
 	 * here because the projector writes --accent every frame and a string rebuild per
-	 * frame per tag would churn).
+	 * frame per tag would churn). In provenance mode the class colour takes over, the
+	 * same swap NodeLabels makes — a tag may not speak two languages at once.
 	 */
-	const knotColour = untrack(() => {
+	const knotColour = $derived.by(() => {
 		const heat = knotHeat(assets);
-		return centroids.map((c, i) => speciesColourScaled(c.speciesId, 0.9 + (heat[i] ?? 0.5) * 0.2));
+		const klass = prov ? clusterProvenance(assets) : null;
+		return centroids.map((c, i) => {
+			const light = 0.9 + (heat[i] ?? 0.5) * 0.2;
+			return klass
+				? provenanceColourScaled(klass[i] ?? 4, light)
+				: speciesColourScaled(c.speciesId, light);
+		});
 	});
 
 	let anchor = $state<THREE.Object3D | undefined>();
@@ -207,12 +230,14 @@
 			node.style.zIndex = String(Math.round((1 - (p.z + 1) / 2) * 1000) + (hot ? 2000 : 0));
 			node.style.setProperty('--hot', open ? '1' : '0');
 			node.style.setProperty('--act', shown[i].toFixed(3));
-			// Every tag wears its bird's hue, all the time — hue answers "which bird" on
-			// the labels, and the per-knot lightness marks the knot's place inside its
-			// own species (core a touch darker, edge a touch lighter). Hot still decides
-			// whether the tag is open; the colour no longer changes when it opens, so an
-			// answering tag does not snap — it deepens through the CSS mix on --hot.
-			node.style.setProperty('--accent', knotColour[i]);
+			// The tag's accent follows the stage's language. Bird and provenance modes:
+			// the identity colour (species hue / class colour), all the time. Ink mode:
+			// neutral at rest and the one accent when the knot answers — "violet marks
+			// activity" is the whole point of ink mode, and a tag that kept its bird's
+			// hue there spoke a language nothing else on the stage was speaking.
+			const tagAccent =
+				prov || bird ? knotColour[i] : hot ? ACCENT : INK_NEUTRAL;
+			node.style.setProperty('--accent', tagAccent);
 
 			// The one piece of text that changes while running. Written only when the
 			// rounded percentage actually moves, and only for a label that is open.

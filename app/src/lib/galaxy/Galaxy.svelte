@@ -160,17 +160,17 @@
 		-->
 		<Spinner {spin} scale={spread} bind:group={cloud}>
 			<GridBurst {assets} {signal} {view} prov={!plain} />
-			<ContextPaths {assets} {signal} {view} />
+			<ContextPaths {assets} {signal} {view} prov={!plain} {bird} />
 			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} {provShown} {bird} />
-			<Trajectory {assets} {signal} {view} {spread} {pointSize} prov={!plain} />
+			<Trajectory {assets} {signal} {view} {spread} {pointSize} prov={!plain} {bird} />
 			{#if labels}
-				<NodeProjector {assets} {signal} elements={labelElements} {focus} {pinned} {view} />
+				<NodeProjector {assets} {signal} elements={labelElements} {focus} {pinned} {view} prov={!plain} {bird} />
 			{/if}
 		</Spinner>
 	</Canvas>
 
 	{#if labels}
-		<NodeLabels {assets} elements={labelElements} prov={!plain} {onpick} />
+		<NodeLabels {assets} elements={labelElements} prov={!plain} {bird} {onpick} />
 	{/if}
 </div>
 

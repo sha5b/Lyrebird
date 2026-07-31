@@ -127,14 +127,13 @@
 	 * about who" state.
 	 *
 	 * **Which hue it eases to depends on the language the stage is speaking**, and it has
-	 * to, because the accent is what a knot walks toward as it lights. Left on the species
-	 * hue while the provenance mode was on, the one thing the eye actually follows — the
-	 * node that just sounded, and the bead running along the phrase — was the only thing
-	 * still answering "which bird" after everything around it had switched to answering
-	 * "what kind of thing". So an amber knot flared violet-blue mid-note and the mode
-	 * looked broken exactly where it mattered most. In provenance mode the accent is the
-	 * subject's class colour instead, which keeps the "one language at a time" rule
-	 * through the activation as well as at rest.
+	 * to, because the accent is what a knot walks toward as it lights. The three modes
+	 * differ on purpose: in provenance mode the accent is the subject's class colour
+	 * (the activation speaks the same "what kind of thing" as the resting cloud); in
+	 * bird mode it is the subject's species hue (everything is "who", the accent too);
+	 * in ink mode it never retints — violet is the one loud thing, and a match that
+	 * flared the bird's own hue read as bird mode, which is exactly the complaint this
+	 * three-way split answers.
 	 *
 	 * What the accent *means* is untouched either way: it is still "this is the one you
 	 * asked for", and it is still the only thing on the field wearing it.
@@ -144,17 +143,20 @@
 
 	function easeAccent(delta: number) {
 		let hue = '';
-		if (plain) {
-			let subject = '';
-			if (focus >= 0) subject = speciesIdByIndex[focus] ?? '';
-			else if (waveClaim(signal)) subject = assets.centroids.items[signal.best]?.speciesId ?? '';
-			if (subject) hue = speciesColour(subject);
-		} else {
+		if (!plain) {
+			// Provenance mode: the class colour.
 			let cls = -1;
 			if (focus >= 0) cls = speciesClass[focus] ?? -1;
 			else if (waveClaim(signal)) cls = knotClass[signal.best] ?? -1;
 			if (cls >= 0) hue = provenanceColour(cls);
+		} else if (bird) {
+			// Bird mode: the subject's own hue.
+			let subject = '';
+			if (focus >= 0) subject = speciesIdByIndex[focus] ?? '';
+			else if (waveClaim(signal)) subject = assets.centroids.items[signal.best]?.speciesId ?? '';
+			if (subject) hue = speciesColour(subject);
 		}
+		// Ink mode: hue stays empty — the accent is the interface violet, always.
 		accentTarget.set(hue || ACCENT);
 		const eased = accentNow.lerp(accentTarget, Math.min(1, delta * 4));
 		material.uniforms.uAccent.value = eased;
@@ -415,7 +417,11 @@
 			nn.push(best);
 		}
 		nn.sort((a, b) => a - b);
-		material.uniforms.uWaveLocal.value = 2 * (nn[k >> 1] ?? 0.135);
+		// Four knot-spacings of reach, doubled from two at the owner's call (2026-08-01):
+		// the front read as a knot-local flash, and the point of a wave is that it is
+		// seen to *travel* — four spacings crosses a real share of the cloud before the
+		// Gaussian takes it under.
+		material.uniforms.uWaveLocal.value = 4 * (nn[k >> 1] ?? 0.135);
 	});
 
 	// Registered after construction rather than in the geometry block above, because
@@ -608,7 +614,10 @@
 		nextSource = (nextSource + 1) % WAVE_SOURCES;
 		s.cluster = cluster;
 		s.age = 0;
-		s.amp = strength;
+		// Half again on the match strength, capped: the front was tuned for a local
+		// flash, and at whole-cloud reach (uWaveLocal ×2, 2026-08-01) the same amp read
+		// thin. 1.5× keeps a full match inside 1 while lifting every partial one.
+		s.amp = Math.min(1, strength * 1.5);
 	}
 
 	function fitWave(delta: number) {
