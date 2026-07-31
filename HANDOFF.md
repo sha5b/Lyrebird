@@ -2,6 +2,57 @@
 
 **Landed today (uncommitted at this writing — user commits):**
 
+- **AVEX arm-C bigger re-test: NO ADOPTION (docs/17 §17.6).** Pre-registered,
+  63 both-domain species from the gan store (subset in /tmp, production store
+  read-only), 16-species holdout vs §17.4's 3. **C's contrastive boost does not
+  replicate** (+1.7 pts over B vs the +10 gate — small-sample structure, same
+  lesson as the mel-weight probe); its §17.4 AUC drop reverses (+0.007). The
+  honest corollary recorded in place: **B's merge win also shrank** (+3.6, not
+  +14.4) and B's AUC reads *below* A's here — every §17.4 number was 12-species
+  small-sample, in both directions. What survives is the ordering: data >
+  mechanism at every scale tested. Machinery stays default-off.
+- **Session quality gate ships as an honesty gate (docs/20 §20.3, second
+  session).** Pre-registered three gates; measured on a real embed-space debug
+  build of `out/harvest-b100` (= docs/20's store: 45 held-out recordings, 3 731
+  eval rows) with the production inventory (331 k points, verified green).
+  §20.1's structure reproduced exactly (8 bad sessions, all XC, 22.9 % of the
+  flip loss). **G1 passes** (off-manifold 5-NN AUC 0.953; 256 anchors ≥ 0.92);
+  **G2 fails raw** (+3.5 pts vs +5 bar; tie-adjusted +8.7–13.7) so the
+  pre-registered fallback fires: `sessionGate` (anchors + k + threshold +
+  calibration text) ships in feature-space.json's embedding block — **app-side
+  hookup is open** (compute the statistic over the live session, show "off
+  everything the galaxy knows" instead of lighting knots). **G3 fails** (fit-side
+  pruning costs −0.006/−0.015 cosine: weird sessions are manifold coverage).
+  `mapQuality` gains `centroidAgreementTieAdjusted` + `speciesAgreement`
+  (§20.2's margin-aware fields). New instrument: `build --dump-spacemap-eval`.
+  Calibration trap recorded: fit-side thresholds don't transfer to unseen
+  sessions (29 % flag rate) — the shipped line is calibrated cross-half.
+  **Verified end-to-end**: rebuilt assets green (`verify` all checks), shipped
+  operating point on held-out recordings: 8/45 flag, 5/8 bad caught incl. the
+  three worst loss-carriers, 3 clean false-flags all within 0.02 of the bad
+  line. Two build-time bugs of this change were caught and fixed en route
+  (np.unique return-order swap; a `counts` local clobbering build_galaxy's
+  cluster sizes — both mine, both fixed before the green build).
+- **Build cost structure mapped (low-end-machine question, explore report in
+  session log).** The 33-min build was UMAP single-threaded (`random_state`
+  kills numba parallelism) + ~22 brute-force kNN passes in the relations
+  battery — at 331 k points, not 56 k (the production inventory was used).
+  Lean debug path now in AGENTS.md: `--no-relations --no-compare-projections`.
+  Ranked proposals (mechanism mostly exists): sequence battery after build via
+  `critic groupings`; hoist the geometry kNN graph per space; parallelise
+  render/descriptor loops with learn's proven fork-pool (renders independently
+  seeded, order-preserving → bit-identical); add a learn resume reader
+  (checkpoints written, never read); free clip audio during descriptor
+  extraction (several GB RSS); `--epochs 30` critic for CPU boxes. **Shipped
+  from that list:** the silhouette (n,n,d) diff is now the Gram form
+  (geometry.py `_silhouette` euclidean branch — the 212 GB OOM shape is gone,
+  value-equivalent at 5e-7, groupings battery bit-identical). Deliberately not
+  done: gating relations.json on `--no-relations` — the flag skips analysis,
+  relations.json is a cheap shipped asset the app consumes.
+- **Dangling dev symlinks removed** (app/static/birdy/{known,unknown} → the
+  wiped /tmp/birdy-debug) — they were the app's ENOENT on startup; absent
+  subdirs restore the old single-map behavior. Re-link to fresh debug assets
+  when wanted.
 - **OWNER RULE (restated twice today, now in AGENTS.md): debug-100 only, always.**
   No production builds, no full harvests, no bulk network sweeps. All work is proven
   on the 100-species debug subset (`subset --species 100 --out /tmp/...`). A

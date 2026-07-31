@@ -174,8 +174,12 @@ def _silhouette(x: np.ndarray, codes: np.ndarray, metric: str, rng: np.random.Ge
         u = _unit_rows(sub)
         d = np.maximum(1.0 - u @ u.T, 0.0)
     else:
-        diff = sub[:, None, :] - sub[None, :, :]
-        d = np.sqrt(np.einsum("ijk,ijk->ij", diff, diff))
+        # Squared euclidean via the Gram matrix: ||a-b||² = |a|²+|b|²-2a·b. The
+        # (n,n,d) outer-subtraction form allocated n²·d floats — 212 GB at the
+        # 4 000 x 1 658 songspace scale (the HANDOFF OOM); this form is n² and
+        # value-identical up to float summation order.
+        sq = (sub**2).sum(axis=1)
+        d = np.sqrt(np.maximum(sq[:, None] + sq[None, :] - 2.0 * sub @ sub.T, 0.0))
     np.fill_diagonal(d, 0.0)
 
     scores: list[float] = []

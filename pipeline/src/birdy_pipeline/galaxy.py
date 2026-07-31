@@ -1513,6 +1513,44 @@ def build_galaxy(
                 "share of held-out syllables whose nearest cluster centroid of this "
                 "galaxy is the same through the 28-d -> 32-d map as through the critic"
             )
+            # docs/20's margin-aware and species-level companions: the raw figure
+            # undersells the map by construction — 74 % of rows are boundary
+            # near-ties, and the browser's honest single-label claim is the species,
+            # not the knot.
+            um = spacemap._unit_rows(np.asarray(eval_mapped, dtype=np.float64))
+            ut = spacemap._unit_rows(np.asarray(eval_true, dtype=np.float64))
+            cu = spacemap._unit_rows(np.asarray(centre_vectors, dtype=np.float64))
+            sim_m, sim_t = um @ cu.T, ut @ cu.T
+            near_m, near_t = sim_m.argmax(axis=1), sim_t.argmax(axis=1)
+            srt = np.sort(sim_t, axis=1)
+            margin = srt[:, -1] - srt[:, -2]
+            decided = margin >= 0.05
+            map_quality["centroidAgreementTieAdjusted"] = round(
+                float((near_m[decided] == near_t[decided]).mean()), 4
+            )
+            map_quality["centroidAgreementTieAdjustedDefinition"] = (
+                "the same agreement with boundary near-ties excluded (true-space "
+                "top-2 margin under 0.05; the share of flips that are a near-miss "
+                "between adjacent knots rather than a wrong bird, per docs/20)"
+            )
+            sp_uniques, sp_codes = np.unique(kept.species_id, return_inverse=True)
+            assigned = cluster_id >= 0
+            knot_sp = np.zeros((len(centre_vectors), len(sp_uniques)), dtype=np.int64)
+            np.add.at(knot_sp, (cluster_id[assigned], sp_codes[assigned]), 1)
+            knot_species = np.asarray([
+                sp_uniques[c.argmax()] if c.sum() else "" for c in knot_sp
+            ])
+            same_species = (
+                (knot_species[near_m] == knot_species[near_t])
+                & (knot_species[near_t] != "")
+            )
+            map_quality["speciesAgreement"] = round(float(same_species.mean()), 4)
+            map_quality["speciesAgreementDefinition"] = (
+                "share of held-out syllables whose nearest knot carries the same "
+                "majority species through the map as through the critic — the "
+                "honest single-label claim; knot-level answers are 'nearest of "
+                "several close knots' (docs/20 §20.2)"
+            )
             if dump_spacemap_eval is not None:
                 # docs/20's per-session debug payload: the held-out rows with their
                 # recording ids, the fit-side cloud, and this galaxy's centroids —
@@ -1545,6 +1583,11 @@ def build_galaxy(
             **({"critic": embedding["critic"]} if embedding.get("critic") else {}),
             "map": map_json,
             "mapQuality": map_quality,
+            **(
+                {"sessionGate": space_map.session_gate}
+                if getattr(space_map, "session_gate", None)
+                else {}
+            ),
         }
         if verbose:
             print(

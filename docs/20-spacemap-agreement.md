@@ -123,3 +123,53 @@ render corpus — the build's frame mixes renders in, so absolute cosines run
   render corpus in the frame (phase 3 settles it on the real build). The
   Wryneck session (XC122542, cos 0.116, 99 % flip, 9 % of the loss)
   reproduces exactly.
+
+### 20.3.2 Phase 3 (the real build): G1 passes, G2 fails raw — the honesty gate ships
+
+The store-only regime caveat was right: on the end-to-end debug build
+(`harvest-b100` + the production learned inventory, embed space, 331 439
+points, 1 024 knots, verified green) §20.1's structure reproduces *exactly* —
+median cosine 0.9708, knot agreement 0.6025, **8 bad sessions, all xeno-canto,
+zero iNat**, top-5 sessions 35 % of the flip loss, the bad eight holding
+**22.9 %** of it (§20.1 said 24 %). The "iNat maps badly too" of the proxies
+was a frame artifact, recorded as such.
+
+**G1 — PASSES.** The off-manifold 5-NN signal separates the 8 bad sessions at
+**AUC 0.953** (normdev 0.922; the pre-registered two-signal combination adds
+nothing, 0.954). A shipped cloud of **256 random anchors holds AUC ≥ 0.92**
+over draws and costs 28 KB — the gate needs no full descriptor dump in the
+browser.
+
+**G2 — fails as written, and the pre-registered fallback fires.** Gating the
+signal's top sessions raises *raw* agreement +3.5 pts (bar: +5); the
+tie-adjusted figure moves +8.7 (flag 4/45) to +13.7 (flag 9/45, one clean
+session caught, 23 % of the flip loss removed). The raw bar was written
+expecting the bad sessions' flips to be denser than they are (their flip
+rates run 0.30–0.99, not ~1). So the gate ships as the **honesty gate** the
+pre-registration allowed: `sessionGate` in feature-space.json's embedding
+block — 256 anchors, k = 5, a threshold, and its own calibration text. The
+app's side (compute the statistic over the live session, show "this session is
+off everything the galaxy knows" instead of lighting knots) is app-side work,
+handed off.
+
+One calibration trap worth recording because it will bite any repeat: a
+threshold calibrated on fit sessions — even excluding the session's own rows —
+does **not** transfer to unseen sessions (sibling sessions of the same
+recordists deflate every fit session's distance; q95 fit-side flags **29 %**
+of held-out sessions). The shipped threshold is calibrated *cross-wise*: each
+fit session judged against the other seeded half of fit sessions. The shipped
+gate's measured operating point on the end-to-end build's held-out recordings:
+**8/45 sessions flag (18 %)** — still above nominal 5 %, and partly *because*
+unseen-recordist sessions are exactly what the gate exists to catch — catching
+**5 of the 8 bad sessions including the three worst loss-carriers** (XC101377,
+the Wryneck, XC814278), with 3 clean false-flags that all sit within 0.02 of
+the bad line (cos 0.916–0.921). The uncaught three are the mildest bad
+sessions (cos 0.876–0.897). The shipped calibration string says what a flag
+means; the app chooses whether to show it as a hard flag or a continuous score.
+
+`mapQuality` gains the two §20.2 fields in the same build:
+`centroidAgreementTieAdjusted` (near-ties at margin < 0.05 excluded) and
+`speciesAgreement` (knots labelled by majority species — the honest
+single-label claim). `build --dump-spacemap-eval <npz>` is the instrument all
+of the above was measured with: held-out rows + recording ids + the fit cloud
++ the galaxy's centroids, off one build.

@@ -209,3 +209,72 @@ knob stays at zero.** The gates are not the interesting part, though:
   you can buy real invariance with *data* (naive domain merge, +14.4 pts
   cross-domain retrieval, gates passed). The loss-engineering road is
   exhausted at both ends; AVEX's answer stands.
+
+## 17.6 The bigger arm-C re-test (pre-registered 2026-07-31, before any run)
+
+§17.4's open question: arm C (merge + cross-domain contrastive positives) was
+the best embedding on every geometry measure (+27.8 cross-domain retrieval vs
+B's +14.4) but failed its gate on a 0.012 realism-AUC drop measured over a
+**3-species holdout** — noise range, not evidence. The recorded honest move
+was a bigger re-test, and the corpus now allows it: the gan store holds **79
+species in both domains** (iNat soundscape + xeno-canto focal), 63 of them
+with ≥ 100 syllables, vs the 12 (4 holdout-eligible… 3 held out) of §17.4.
+
+**Protocol** (mirrors §17.4 exactly, only bigger): a /tmp subset of
+`out/harvest-gan` restricted to the 63 both-domain species with ≥ 100
+syllables, domain labels from the recording-id prefix. Same seed (0), same
+fake side for all arms, `holdout_species 0.25` → ~16 held-out species (vs 3 —
+this is the whole point). Arms: **A** iNat only, **B** naive merge, **C**
+merge + `cross_domain_positives`. Measures as §17.4: cross-domain species
+retrieval (nearest per-species centroid of the other domain; chance 1/63 ≈
+0.016), held-out realism AUC and species accuracy from the training reports.
+
+**Gates** (same shape as §17.4, judged C against B):
+
+1. cross-domain retrieval ≥ B + 10 points,
+2. held-out realism AUC does not drop (B's AUC is the line; any drop fails,
+   no tolerance — the 0.012 question is whether a drop *replicates*, and a
+   pre-registered tolerance is how the last one got argued with),
+3. species accuracy within 2 points of B.
+
+C passes all three → the cross-domain contrastive recipe is adopted as a
+candidate for the next production critic retrain (owner's call, like every
+learned component). Any failure → documented here; B's "data, not mechanism"
+verdict stands, and the machinery stays default-off.
+
+### 17.6.1 The re-test numbers: NO ADOPTION — the mechanism's boost was small-sample
+
+Ran 2026-07-31 (driver `/tmp/birdy-avex/driver.py`, report
+`/tmp/birdy-avex/avex2-report.json`): 63 both-domain species, 47 trained / 16
+held out, 6 561 real patches (~104/species — the both-domain species are thin,
+mostly iNat-side), 14 208 synthetic, seed 0, one shared fake side.
+
+| arm | cross-domain retrieval (chance 0.016) | realism AUC held | species acc |
+|---|---|---|---|
+| A — iNat only | 0.058 | **0.995** | 0.627 |
+| B — naive merge | 0.093 | 0.976 | 0.793 |
+| C — merge + cross-domain positives | 0.110 | 0.983 | 0.794 |
+
+Gate 1 (C ≥ B + 10 pts): measured **+1.7 — FAIL**. Gates 2 and 3 pass (AUC
++0.007, acc +0.2): **the 0.012 AUC drop that failed C in §17.4 does not
+replicate — it reverses.** But the gate that matters kills it: the +13.4-pt
+contrastive boost over B was small-sample structure, like the mel-weight
+10-type probe (docs/19 §19.5). **No adoption; the machinery stays default-off.**
+
+The uncomfortable part, recorded plainly: **B's own win also shrank at scale**
+(+3.6 pts over A here vs +14.4 in §17.4), and B's AUC is *below* A's here
+(0.976 vs 0.995 — mixing domains cost realism where §17.4 gained 0.012). Both
+§17.4 deltas were measured on 12 species with a 3-species holdout; treat every
+number there as small-sample, in both directions. What survives the bigger
+test, and it is the load-bearing claim: **the ordering is stable** — more
+domains per species helps (B > A on retrieval and hugely on accuracy), the
+mechanism adds ≈ nothing on top of the data (C ≈ B), and no loss term at any
+tested scale buys invariance cheaper than data. "Invariance is a data action"
+stands, now with the effect sizes honestly shrunk.
+
+Protocol notes: retrieval is over 63 species (harder task than §17.4's 12 —
+absolute numbers are only comparable arm-vs-arm within each test); the fake
+side renders the current learned inventory, which moved since §17.4 (all arms
+share it); chance is 1/63 ≈ 0.016, and B/A/C read 5.9×/3.6×/6.9× chance if a
+relative-to-§17.4 read is wanted (6.1×/4.3×/7.7× there — the ratios hold up
+better than the points).

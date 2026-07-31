@@ -71,6 +71,18 @@ RFF_FILE = "space-map.f32"
 #: does.
 ACCEPT_MEDIAN_COSINE = 0.8
 
+#: The live session gate (docs/20 §20.3): 8 % of held-out sessions map badly (median
+#: cosine < 0.90) and carry ~23 % of the flip loss, and a 5-NN distance to the fit
+#: descriptors separates them at AUC 0.95 — so the browser can *know* a session is
+#: off everything the map was fitted on. `GATE_ANCHORS` fit-side rows ship as the
+#: reference cloud (256 anchors hold the separation at AUC ≥ 0.92 while costing
+#: 28 KB); `GATE_THRESHOLD_Q` sets the flag line as a quantile of per-session mean
+#: anchor distance over the fit sessions, so the flag rate on ordinary sessions is
+#: the quantile's complement by construction.
+GATE_ANCHORS = 256
+GATE_K = 5
+GATE_THRESHOLD_Q = 0.95
+
 
 def _unit_rows(z: np.ndarray) -> np.ndarray:
     return z / np.maximum(np.linalg.norm(z, axis=1, keepdims=True), 1.0e-12)
@@ -127,6 +139,68 @@ def centroid_agreement(
     return float((near_mapped == near_true).mean())
 
 
+def _session_gate(
+    x: np.ndarray, recordings: Sequence[str], fit_mask: np.ndarray, seed: int
+) -> dict[str, Any]:
+    """Anchor cloud + flag threshold for the live off-manifold session gate (docs/20 §20.3).
+
+    The signal is the one thing the browser can compute without the critic: a
+    session's mean 5-NN distance from its standardised descriptors to the shipped
+    anchors. The threshold is calibrated cross-wise over the fit sessions (each
+    judged against the other seeded half's cloud), because a session measured
+    against a cloud containing its siblings is not an unseen session and the flag
+    rate does not transfer to one.
+    """
+    xf = x[fit_mask]
+    # Session -> positions *inside xf* (not inside x), so the exclusion mask lines up.
+    idx_of: dict[str, list[int]] = {}
+    for pos, m in enumerate(np.cumsum(fit_mask) - 1):
+        if fit_mask[pos]:
+            idx_of.setdefault(recordings[pos], []).append(int(m))
+    rng = np.random.default_rng(seed + 3)
+    anchors = xf[rng.choice(len(xf), min(GATE_ANCHORS, len(xf)), replace=False)]
+    # The threshold must mean "unseen session", and a fit session judged against a
+    # cloud holding every other fit session is not one — sibling sessions of the
+    # same recordists and sites deflate its distance, and the flag rate on genuinely
+    # new sessions then lands far above the nominal quantile (measured on the b100
+    # debug store: a q95 line calibrated fit-side flags 29 % of held-out sessions).
+    # So the fit sessions are split in two seeded halves and each session is judged
+    # against the *other* half's cloud: unseen by construction, and the eval rows
+    # stay unspent. The half cloud is sparser than the shipped anchor cloud, so the
+    # line errs high — fewer false flags, the safe side for an honesty gate.
+    half_of = {r: i % 2 for i, r in enumerate(sorted(idx_of))}
+    per_session: list[float] = []
+    for r, idx in idx_of.items():
+        idx = np.asarray(idx)
+        cloud = xf[[p for s, ps in idx_of.items() if half_of[s] != half_of[r] for p in ps]]
+        rows = xf[idx]
+        d2 = np.maximum(
+            (rows**2).sum(axis=1)[:, None] - 2.0 * rows @ cloud.T + (cloud**2).sum(axis=1),
+            0.0,
+        )
+        per_session.append(
+            float(np.sqrt(np.partition(d2, GATE_K, axis=1)[:, :GATE_K]).mean())
+        )
+    threshold = float(np.quantile(per_session, GATE_THRESHOLD_Q))
+    return {
+        "anchors": [[round(float(v), 6) for v in row] for row in anchors],
+        "k": GATE_K,
+        "threshold": round(threshold, 6),
+        "aggregate": "mean over the session's rows of the mean distance to the "
+        f"{GATE_K} nearest anchors",
+        "calibration": (
+            f"threshold is the {GATE_THRESHOLD_Q:.0%} quantile of the same statistic "
+            "over the fit sessions, each judged against a cloud of the *other* half "
+            "of fit sessions (unseen-session conditions, so the rate transfers); "
+            "the sparser calibration cloud biases the line high, so ordinary unseen "
+            f"sessions flag at or under {1 - GATE_THRESHOLD_Q:.0%}. A flag means "
+            "'this session is off everything the map was fitted on; positions are "
+            "guesses' — a statement about coverage, never about the audio being bad "
+            "(docs/20 §20.3)"
+        ),
+    }
+
+
 @dataclass
 class SpaceMap:
     """A fitted 28-d -> 32-d affine map, its chosen penalty, and its honest scorecard.
@@ -145,6 +219,9 @@ class SpaceMap:
     #: centroids once those exist (the galaxy's clusters are fitted after the map is).
     eval_mapped: np.ndarray = field(default_factory=lambda: np.zeros((0, 0)))
     eval_true: np.ndarray = field(default_factory=lambda: np.zeros((0, 0)))
+    #: The live off-manifold session gate (docs/20 §20.3): anchors + threshold, shipped
+    #: in feature-space.json's embedding block as `sessionGate`.
+    session_gate: dict[str, Any] | None = None
 
     def apply(self, x28: np.ndarray) -> np.ndarray:
         return np.asarray(x28, dtype=np.float64) @ self.w + self.b
@@ -190,6 +267,7 @@ class RffMap:
     quality: dict[str, Any] = field(default_factory=dict)
     eval_mapped: np.ndarray = field(default_factory=lambda: np.zeros((0, 0)))
     eval_true: np.ndarray = field(default_factory=lambda: np.zeros((0, 0)))
+    session_gate: dict[str, Any] | None = None
 
     def apply(self, x28: np.ndarray) -> np.ndarray:
         return _rff(np.asarray(x28, dtype=np.float64), self.R, self.phase) @ self.w + self.b
@@ -321,6 +399,7 @@ def fit_map(
     }
 
     # The shipped weights see everything; the numbers above do not. Both facts matter.
+    gate = _session_gate(x, recordings, fit_mask, seed)
     if extra["kind"] == "rff-ridge":
         F_all = _rff(x, R, phase).astype(np.float64)
         w_all, b_all = _ridge_fit(F_all, y, rff_lam)
@@ -328,9 +407,10 @@ def fit_map(
         return RffMap(
             R=R, phase=phase, w=w_all, b=b_all, sigma=rff_sigma, lam=rff_lam,
             quality=quality, eval_mapped=eval_mapped, eval_true=eval_true,
+            session_gate=gate,
         )
     w_all, b_all = _ridge_fit(x, y, lam)
     return SpaceMap(
         w=w_all, b=b_all, lam=lam, quality=quality,
-        eval_mapped=eval_mapped, eval_true=eval_true,
+        eval_mapped=eval_mapped, eval_true=eval_true, session_gate=gate,
     )

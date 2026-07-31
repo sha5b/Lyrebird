@@ -70,12 +70,15 @@ both follow it. Date: 2026-07-28.
     critic retrain: channel-EQ simulation + Freq-MixStyle on log-mel patches, a
     recordist-adversarial head, and the pre-registered verdict table (docs/14 §14.4's
     source-confound attacked at training time, the only place the literature says it
-    can be). **Three verdicts inside:** the loss-engineering sweep fails (adversarial
+    can be). **Four verdicts inside:** the loss-engineering sweep fails (adversarial
     trades 1:1 with species), the AVEX experiment succeeds — naive domain merge
-    buys +14.4 pts cross-domain retrieval with everything held — and the §17.5
-    follow-up closes the road: a recording-within-species adversarial head is
+    buys +14.4 pts cross-domain retrieval with everything held — the §17.5
+    follow-up closes the loss road (a recording-within-species adversarial head is
     species-safe by construction but reaches only −6 % of the recordist lift,
-    because the confound lives *between* species. Invariance is a data action.
+    because the confound lives *between* species), and the §17.6 bigger re-test
+    shrinks the small-sample numbers: arm C's contrastive boost does not replicate
+    (+1.7 pts vs the +10 gate; its §17.4 AUC drop reverses), and the merge's own
+    win reads +3.6, not +14.4. The ordering survives: invariance is a data action.
 18. [`18-syntax-roadmap.md`](18-syntax-roadmap.md) — the pattern/syntax roadmap:
     depth harvest first, then a pre-registered grammar bake-off (first-order vs
     Jin–Kozhevnikov vs POMM), a song-level embedding, CETI-style factorization,
