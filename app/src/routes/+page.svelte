@@ -1219,8 +1219,6 @@
 	let loopDiscover = $state(0);
 	let buildUseLearned = $state(true);
 	let buildIncludeHarvest = $state(true);
-	/** Which audio the build renders from; the server has taken this since it existed. */
-	let buildSource = $state<'synthetic' | 'local' | 'harvest'>('synthetic');
 	/**
 	 * How the knots are found. `kmeans` asks "which of these k groups is this sound in"
 	 * and answers for every sound; `hdbscan` asks where the dense regions are and leaves
@@ -1959,13 +1957,15 @@ uv run birdy-pipeline build</pre>
 						the corpus — and stay dark when it lands nowhere.
 					</p>
 				{/if}
-				{#if mapsAvailable}
+				{#if mapKind}
 					<!--
-						Which of the two maps is showing, stated where the reading lives. In the
+						Which map is showing, stated where the reading lives. In the
 						density map the unassigned share is the headline honesty number: those are
 						real sounds the build refused to place, and the panel says so in the
 						interface's own unidentified language (§8.5) rather than letting the gaps
-						read as empty space.
+						read as empty space. Gated on the loaded map's own kind, not on both maps
+						existing — a single-map build needs the line just as much (a hdbscan-only
+						build is exactly the build whose honesty number this is).
 					-->
 					<p class="caveat note">
 						{#if mapKind === 'known'}
@@ -1977,6 +1977,28 @@ uv run birdy-pipeline build</pre>
 							real acoustics, no documented function.
 						{/if}
 					</p>
+					{#if assets.featureSpace.embedding?.mapQuality?.centroidAgreement !== undefined}
+						<!--
+							The map's own measured honesty, where the build recorded it (docs/20):
+							how often a live sound would light the same knot through the browser's
+							28-d -> 32-d bridge as through the critic — raw, tie-adjusted (near-ties
+							excluded), and at species level, which is the claim the panel makes.
+						-->
+						{@const mq = assets.featureSpace.embedding.mapQuality}
+						<p class="caveat note faint">
+							Live matching: knot
+							<b class="mono">{((mq.centroidAgreement as number) * 100).toFixed(0)}%</b>
+							{#if mq.centroidAgreementTieAdjusted !== undefined}
+								· near-ties free
+								<b class="mono">{((mq.centroidAgreementTieAdjusted as number) * 100).toFixed(0)}%</b>
+							{/if}
+							{#if mq.speciesAgreement !== undefined}
+								· species
+								<b class="mono">{((mq.speciesAgreement as number) * 100).toFixed(0)}%</b>
+							{/if}
+							— knot-level answers are "nearest of several close knots".
+						</p>
+					{/if}
 				{/if}
 				<p class="caveat note">
 					{reading?.caveat ??
@@ -2521,6 +2543,18 @@ uv run birdy-pipeline serve</pre>
 							<p class="note faint">Binds to 127.0.0.1 only.</p>
 							<button onclick={refreshPipeline}>Check again</button>
 						{:else}
+							<!--
+								The path, first: a server started without --store holds the *old*
+								default store, and every learn/build job then runs against it — the
+								trap AGENTS.md warns about was invisible here because only counts
+								were shown. If this is not the store you meant, restart serve with
+								--store.
+							-->
+							{#if pipelineStatus.store.path}
+								<p class="note faint mono" title="The harvest store this server is holding">
+									{pipelineStatus.store.path}
+								</p>
+							{/if}
 							<dl class="facts mono">
 								<div><dt>store</dt><dd>{pipelineStatus.store.descriptors ?? 0} kept</dd></div>
 								<div><dt>seen</dt><dd>{pipelineStatus.store.descriptorsSeen ?? 0}</dd></div>
@@ -2718,6 +2752,32 @@ uv run birdy-pipeline serve</pre>
 										<option value="&gt;B">B and better</option>
 										<option value="&gt;C">C and better</option>
 									</select>
+								</label>
+							</div>
+							<div class="sliders two">
+								<label class="field">
+									<span class="lbl"
+										>Analysed per recording <b class="mono">{harvestMaxSeconds}s</b></span
+									>
+									<input
+										type="range"
+										min="15"
+										max="300"
+										step="15"
+										bind:value={harvestMaxSeconds}
+									/>
+								</label>
+								<label class="field">
+									<span class="lbl"
+										>Store cap <b class="mono">{harvestCap.toLocaleString()}</b> kept</span
+									>
+									<input
+										type="range"
+										min="5000"
+										max="100000"
+										step="5000"
+										bind:value={harvestCap}
+									/>
 								</label>
 							</div>
 							<label class="field">

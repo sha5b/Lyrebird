@@ -111,12 +111,16 @@
 		anchor.updateWorldMatrix(true, false);
 		const matrix = anchor.matrixWorld;
 
+		// The one fixed-per-frame ease in the file: 0.8/0.2 per *frame* reacts twice as
+		// fast at 120 Hz as at 60 Hz. Scaled by delta it is the same half-life on every
+		// display (0.2 at 60 fps, identical behaviour to what it replaces there).
+		const ease = 1 - Math.pow(0.8, delta * 60);
 		for (let i = 0; i < centroids.length; i++) {
 			// read from the shared view, so a tag stays on its knot through a rearrangement
 			world[i].set(view.centroids[i * 3], view.centroids[i * 3 + 1], view.centroids[i * 3 + 2]);
 			projected[i].copy(world[i]).applyMatrix4(matrix).project(cam);
 			const act = signal.activations[i] ?? 0;
-			shown[i] = shown[i] * 0.8 + act * 0.2;
+			shown[i] = shown[i] * (1 - ease) + act * ease;
 			linger[i] = Math.max(shown[i], linger[i] - delta / LINGER_SECONDS);
 		}
 

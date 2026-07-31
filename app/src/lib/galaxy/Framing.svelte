@@ -145,6 +145,7 @@
 		group.updateWorldMatrix(true, false);
 		group.localToWorld(wanted);
 
+		const moved = controls.target.distanceToSquared(wanted);
 		controls.target.lerp(wanted, Math.min(1, delta * (flying ? 4 : 9)));
 
 		if (flying) {
@@ -172,9 +173,18 @@
 			const next = radius + (want - radius) * Math.min(1, delta * 2.2);
 			cam.position.copy(controls.target).add(offset.setLength(next));
 			if (Math.abs(next - want) < 0.02 * want) flying = false;
+			controls.update();
+			invalidate();
+			return;
 		}
 
-		controls.update();
-		invalidate();
+		// OrbitControls' own task already calls update() every frame for damping, so a
+		// second one here applied damping twice per frame (the effective damping time
+		// was half the configured 0.08). Spend it only when the aim actually moved —
+		// a spin-driven target counts as moved, idle does not.
+		if (moved > 1e-8) {
+			controls.update();
+			invalidate();
+		}
 	});
 </script>

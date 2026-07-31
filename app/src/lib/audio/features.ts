@@ -699,9 +699,15 @@ export class PointTracker {
 			// faint sympathetic shimmer and on a 176-cluster one reads as half the sky
 			// lighting up when one bird sings: the reduced space keeps 77 % of the variance,
 			// so "close in 8-d" is a much weaker statement than "this is the same call".
+			// The cluster floor went the other way: at 0.2 only the few members whose own
+			// 8-d feature matched lit at all, and a responding knot showed as three bright
+			// points inside a knot-sized patch of dark ones — "the inactive ones don't get
+			// active". At 0.45 the knot answers as one region (its other knots sit at
+			// clusterAct ≈ 0, so nothing else lights), and the affinity still ranks the
+			// members inside it.
 			const target = Math.min(
 				1,
-				Math.max(clusterAct * 0.2, affinity * affinity) * (0.08 + clusterAct * 3) * strength
+				Math.max(clusterAct * 0.45, affinity * affinity) * (0.08 + clusterAct * 3) * strength
 			);
 			this.activation[i] = this.smoothing * this.activation[i] + (1 - this.smoothing) * target;
 		}

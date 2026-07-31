@@ -137,6 +137,18 @@
 
 		<T.AmbientLight intensity={0.4} />
 		<!--
+			Framing mounts before the cloud on purpose: Threlte runs dependency-free
+			tasks in registration order, and Framing's task lerps the camera target and
+			calls controls.update() every frame. Mounted after the cloud it ran *after*
+			NodeProjector had already projected the labels — the canvas then rendered
+			the post-Framing camera while the tags kept the pre-Framing one, which is
+			the one-frame drag the labels had whenever the view moved. First in the
+			subtree, its camera writes settle before Spinner rotates and before the
+			labels project.
+		-->
+		<Framing {view} {frame} group={cloud} {controls} interrupt={grabbed} />
+
+		<!--
 			The cloud, the trajectories and the label anchors share one group: the rotation
 			has to apply to all of them or the lines and the tags drift off their points.
 		-->
@@ -149,8 +161,6 @@
 				<NodeProjector {assets} {signal} elements={labelElements} {focus} {pinned} {view} />
 			{/if}
 		</Spinner>
-
-		<Framing {view} {frame} group={cloud} {controls} interrupt={grabbed} />
 	</Canvas>
 
 	{#if labels}

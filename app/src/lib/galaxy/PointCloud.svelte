@@ -282,6 +282,17 @@
 		blending: THREE.NormalBlending
 	});
 
+	// The responding pass: same geometry, same uniforms (shared by reference, so the
+	// per-frame writes in useTask update both), one define different. It draws after
+	// the resting pass (renderOrder 1), so nothing resting can overpaint something
+	// lit — the shine-through fix for "activated points buried under old points".
+	// The clone deep-copies the uniforms, so they are re-shared by hand; blending
+	// and depth state copy over unchanged, which keeps resting-on-resting and
+	// lit-on-lit compositing bit-identical to the single-pass picture.
+	const materialActive = material.clone();
+	materialActive.defines = { ACTIVE_PASS: 1 };
+	materialActive.uniforms = material.uniforms;
+
 	$effect(() => {
 		material.uniforms.uPointSize.value = pointSize;
 	});
@@ -627,6 +638,10 @@
 		if (u.uArrival.value < 1) {
 			u.uArrival.value = Math.min(1, u.uArrival.value + delta / ARRIVAL_SECONDS);
 		}
+		// Capturing the ratio at construction leaves the sizes wrong after a drag to a
+		// different-DPR monitor; it is one compare per frame to keep it honest.
+		const pr = Math.min(2, window.devicePixelRatio || 1);
+		if (u.uPixelRatio.value !== pr) u.uPixelRatio.value = pr;
 		fitFog(points);
 		fitWave(delta * speed);
 		easeAccent(delta);
@@ -676,7 +691,9 @@
 	$effect(() => () => {
 		geometry.dispose();
 		material.dispose();
+		materialActive.dispose();
 	});
 </script>
 
 <T.Points bind:ref={points} {geometry} {material} frustumCulled={false} />
+<T.Points {geometry} material={materialActive} renderOrder={1} frustumCulled={false} />

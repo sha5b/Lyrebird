@@ -415,8 +415,12 @@ export function vertexShader(clusterCount: number): string {
 			float persp = pow(uSizeScale / max(0.001, -mv.z), 0.7);
 			// The floor is three device pixels rather than two: below that a disc has no
 			// interior left once the edge is feathered, and the mark degenerates into the
-			// feather itself — which is exactly what a haze is.
-			gl_PointSize = clamp(size * uPixelRatio * persp, 3.0, 42.0);
+			// feather itself — which is exactly what a haze is. The floor rises with the
+			// point's own response: at whole-galaxy zoom persp pins every mark to the
+			// floor, which used to erase the size channel exactly when the whole cloud
+			// was visible — a responding point is now strictly larger than a resting one
+			// at every distance.
+			gl_PointSize = clamp(size * uPixelRatio * persp, 3.0 + vAct * 2.0, 42.0);
 		}
 	`;
 }
@@ -440,6 +444,9 @@ export const fragmentShader = /* glsl */ `
 	uniform float uPlain;
 	/** The same clock the vertex stage pulses by; the orphan pulse breathes on it. */
 	uniform float uTime;
+	/** Live input level, 0..1 — while anything sounds, resting ink gives up weight
+	 * so the responding points carry the picture. */
+	uniform float uLevel;
 
 	/**
 	 * View-space depth at which aerial perspective starts (x) and is complete (y).
@@ -464,6 +471,19 @@ export const fragmentShader = /* glsl */ `
 	varying float vUnmatchedRing;
 
 	void main() {
+		// The two-pass split (PointCloud draws the same geometry twice): the resting
+		// pass discards whatever is responding, the ACTIVE_PASS discards whatever is
+		// not, and the responding pass draws last. With depthWrite off and normal
+		// blending, paint order is the only occlusion rule there is — so without the
+		// split, a resting point later in the buffer overpaints a lit one regardless
+		// of response, and in a dense knot the activation visually vanishes under
+		// "old points not moving". The 0.25 matches the "glow is earned" line below;
+		// the wavefront rides the active pass because a passing ring *is* the response.
+	#ifdef ACTIVE_PASS
+		if (vAct < 0.25 && vWave < 0.05) discard;
+	#else
+		if (vAct >= 0.25 || vWave >= 0.05) discard;
+	#endif
 		vec2 uv = gl_PointCoord - 0.5;
 		float d = length(uv);
 		if (d > 0.5) discard;
@@ -621,6 +641,11 @@ export const fragmentShader = /* glsl */ `
 		// (raised from 0.41 when the rest wash went up: the mist needed presence,
 		// and the 2× jump on response is what keeps activation legible above it).
 		alpha *= 0.8 + 0.2 * vAct;
+		// While anything sounds, resting ink gives up another share of its weight. Paint
+		// order still lets a resting sprite overpaint a lit one behind it (the ACTIVE_PASS
+		// split covers the clear responders; this softens the borderline rest), so the
+		// response stays legible in the thick of the cloud.
+		alpha *= 1.0 - 0.4 * uLevel * (1.0 - vAct);
 		// The dim half of the orphan pulse: it breathes the mark *down* against the
 		// paper, the opposite direction from a response.
 		alpha *= 1.0 - 0.55 * oPulse;
