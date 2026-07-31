@@ -293,6 +293,83 @@ function smoothstep(edge0: number, edge1: number, x: number): number {
 }
 
 /**
+ * The live off-manifold session gate (docs/20 §20.3): is this *session* anything like
+ * the recordings the 28-d -> 32-d map was fitted on?
+ *
+ * The statistic is exactly the one the pipeline calibrated: per standardised
+ * descriptor, the mean euclidean distance to its `k` nearest fit-side anchors;
+ * the session score is the running mean of that. Nothing is unit-normed — the
+ * threshold (cross-half calibrated over the fit sessions, so it transfers to
+ * genuinely unseen ones) is only valid against this exact statistic, which is why
+ * it ships in the assets and is never recomputed here. On the debug build it
+ * separated the pathological sessions at AUC 0.953; a session above the line is
+ * not bad audio, it is audio the galaxy has no warrant to place — an unusual
+ * recorder, heavy background, or a sound kind the corpus does not cover.
+ *
+ * The gate consumes the same `z` the tracker gets; it never filters it. The visual
+ * decision stays in one place (the reading panel), matching how REPORT_STRENGTH
+ * gates the claim without gating the math.
+ */
+export class SessionGate {
+	readonly k: number;
+	readonly threshold: number;
+	private readonly anchors: Float32Array;
+	private readonly dims: number;
+	private sum = 0;
+	/** Descriptors seen since the last reset — the session's size. */
+	rows = 0;
+
+	constructor(
+		gate: { anchors: number[][]; k: number; threshold: number },
+		dims: number
+	) {
+		this.k = gate.k || 5;
+		this.threshold = gate.threshold;
+		this.dims = dims;
+		this.anchors = Float32Array.from(gate.anchors.flat());
+	}
+
+	push(z: Float32Array): void {
+		// The k smallest squared distances, kept sorted by insertion. 256 anchors x
+		// 28 dims is ~7 k multiply-adds per descriptor — brute force is the simple
+		// answer at this size.
+		const best = new Float64Array(this.k).fill(Infinity);
+		for (let a = 0; a < this.anchors.length; a += this.dims) {
+			let d2 = 0;
+			for (let i = 0; i < this.dims; i++) {
+				const d = z[i] - this.anchors[a + i];
+				d2 += d * d;
+			}
+			for (let j = 0; j < this.k; j++) {
+				if (d2 < best[j]) {
+					best.copyWithin(j + 1, j);
+					best[j] = d2;
+					break;
+				}
+			}
+		}
+		let acc = 0;
+		for (let j = 0; j < this.k; j++) acc += Math.sqrt(best[j]);
+		this.sum += acc / this.k;
+		this.rows += 1;
+	}
+
+	/** Mean per-row k-NN distance over the session; 0 before the first row. */
+	get score(): number {
+		return this.rows ? this.sum / this.rows : 0;
+	}
+
+	get flagged(): boolean {
+		return this.rows > 0 && this.score > this.threshold;
+	}
+
+	reset(): void {
+		this.sum = 0;
+		this.rows = 0;
+	}
+}
+
+/**
  * Turns a live descriptor into per-cluster activation weights (§8.2): cosine similarity
  * to each cluster centroid, softmax, then EMA smoothing so the galaxy does not flicker.
  *

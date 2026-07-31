@@ -20,8 +20,16 @@
   **G2 fails raw** (+3.5 pts vs +5 bar; tie-adjusted +8.7–13.7) so the
   pre-registered fallback fires: `sessionGate` (anchors + k + threshold +
   calibration text) ships in feature-space.json's embedding block — **app-side
-  hookup is open** (compute the statistic over the live session, show "off
-  everything the galaxy knows" instead of lighting knots). **G3 fails** (fit-side
+  hookup DONE same day**: `SessionGate` in features.ts (brute-force 5-NN,
+  exact vs reference at 1e-9), fed from the mic path only (the chorus crosses
+  the same bus; corpus audio would never flag), published through `onMeters`,
+  and first branch in the Reading panel — "off the map: this session is off
+  everything the galaxy knows; positions are guesses" with the score-vs-line
+  numbers and the shipped calibration text, outranking inferred call names but
+  never scheduled (known) songs. Absent-gate assets are a byte-identical no-op;
+  verify-features.mjs asserts renders-don't-flag/noise-flags once a gated build
+  is linked. npm check 4/4 baseline, verify:features pass, parity 18/18. Not
+  browser-click-tested. **G3 fails** (fit-side
   pruning costs −0.006/−0.015 cosine: weird sessions are manifold coverage).
   `mapQuality` gains `centroidAgreementTieAdjusted` + `speciesAgreement`
   (§20.2's margin-aware fields). New instrument: `build --dump-spacemap-eval`.

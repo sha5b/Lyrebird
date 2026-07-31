@@ -10,7 +10,7 @@
  *
  *   npm run verify:features
  */
-import { ActivationTracker, FeatureExtractor, standardise } from '../src/lib/audio/features.ts';
+import { ActivationTracker, FeatureExtractor, SessionGate, standardise } from '../src/lib/audio/features.ts';
 import { loadGenerated, loadInventory, render } from './lib/worklet-host.mjs';
 
 const inventory = loadInventory();
@@ -61,6 +61,7 @@ let hits = 0;
 let speciesHits = 0;
 let total = 0;
 const confusions = [];
+const zRows = []; // standardised descriptors, for the session-gate assertions below
 
 console.log('species                     syllable        -> matched cluster                          sim');
 for (const species of inventory.species) {
@@ -73,7 +74,9 @@ for (const species of inventory.species) {
 			total++;
 			continue;
 		}
-		tracker.update(standardise(descriptor, spec));
+		const z = standardise(descriptor, spec);
+		tracker.update(z);
+		zRows.push(z);
 		const { index, similarity } = tracker.best();
 		const match = centroids.items[index];
 		const hit = match.speciesId === species.id && match.syllableId === syllable.id;
@@ -118,6 +121,7 @@ const probes = {
 	'1 kHz hum': Float32Array.from({ length: n }, (_, i) => Math.sin((2 * Math.PI * 1000 * i) / rate))
 };
 let leaked = 0;
+let whiteNoiseZ = null;
 for (const [name, signal] of Object.entries(probes)) {
 	const descriptor = describe(signal);
 	if (!descriptor) {
@@ -126,7 +130,9 @@ for (const [name, signal] of Object.entries(probes)) {
 	}
 	const flatness = descriptor[descriptor.length - 1];
 	const noise = new ActivationTracker(centroids, spec, 0);
-	noise.update(standardise(descriptor, spec), flatness);
+	const nz = standardise(descriptor, spec);
+	if (name === 'white noise') whiteNoiseZ = nz;
+	noise.update(nz, flatness);
 	const { index, similarity } = noise.best();
 	const match = centroids.items[index];
 	console.log(
@@ -136,6 +142,37 @@ for (const [name, signal] of Object.entries(probes)) {
 	// The hum is exempt and always will be: a 1 kHz sine really is close to a 907 Hz owl
 	// hoot in this feature space, and reporting that as a match is the honest answer.
 	if (name !== '1 kHz hum' && noise.strength > 0.05) leaked++;
+}
+
+/**
+ * The docs/20 session gate, when these assets ship one (builds before 2026-07-31 do
+ * not — absence must be a no-op, which is what the rest of this script then proves).
+ * The corpus's own renders are in-manifold by construction, so they must not flag;
+ * broadband noise is the negative control, and it must.
+ */
+console.log('\nsession gate (docs/20 §20.3):');
+const gateSpec = rawSpace.embedding?.sessionGate;
+if (!gateSpec?.anchors?.length) {
+	console.log('  no sessionGate in these assets — nothing to assert (build predates it)');
+} else {
+	const corpus = new SessionGate(gateSpec, spec.dims);
+	for (const z of zRows) corpus.push(z);
+	console.log(
+		`  in-corpus renders: score ${corpus.score.toFixed(2)} vs threshold ${gateSpec.threshold.toFixed(2)}`
+	);
+	if (corpus.flagged) {
+		console.error("\nFAIL: the corpus's own renders flag as off-manifold");
+		failed = true;
+	}
+	if (whiteNoiseZ) {
+		const noiseGate = new SessionGate(gateSpec, spec.dims);
+		noiseGate.push(whiteNoiseZ);
+		console.log(`  white noise:       score ${noiseGate.score.toFixed(2)} (must flag)`);
+		if (!noiseGate.flagged) {
+			console.error('\nFAIL: white noise does not flag — the gate is not holding');
+			failed = true;
+		}
+	}
 }
 
 // A live sound only has to land in the right neighbourhood for the galaxy to be honest,

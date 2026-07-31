@@ -84,6 +84,10 @@
 	let level = $state(0);
 	let pitch = $state(0);
 	let strength = $state(0);
+	/** The docs/20 session gate's live state, null when the assets ship no gate. */
+	let sessionGate = $state<{ flagged: boolean; score: number; threshold: number } | null>(
+		null
+	);
 	let rateNote = $state<string | null>(null);
 	let contextSpecies = $state<string | null>(null);
 	let singer = $state<string | null>(null);
@@ -608,6 +612,7 @@
 				level = m.level;
 				pitch = m.f0;
 				strength = m.strength;
+				sessionGate = m.session ?? null;
 			};
 			live.start();
 			signal = live.signal;
@@ -1816,7 +1821,33 @@ uv run birdy-pipeline build</pre>
 					{/if}
 				</h2>
 				<div class="cardbody">
-				{#if panelReading?.best}
+				{#if sessionGate?.flagged && reading?.active}
+					<!--
+						The docs/20 session gate, first in the chain: when the live session
+						sits off everything the map was fitted on, the panel says so instead
+						of naming a call — a confident-looking match through an out-of-
+						manifold map is exactly the wrong-knots-with-total-confidence case
+						the gate exists to catch. Scheduled songs are unaffected: they are
+						known, not matched, and their audio is in-corpus, which pulls the
+						score back under the line on its own.
+					-->
+					<div class="best">
+						<span class="badge unlabelled">off the map</span>
+						<h3 class="strong">This session is off everything the galaxy knows</h3>
+						<p class="accent">positions are guesses — nothing here is a documented call</p>
+						<p class="note">
+							The session's sound sits farther from the corpus than the calibrated
+							line ({sessionGate.score.toFixed(2)} &gt; {sessionGate.threshold.toFixed(2)}),
+							so where it lights means little: an unusual recorder, heavy
+							background, or a sound kind the corpus does not cover.
+						</p>
+						{#if assets.featureSpace.embedding?.sessionGate?.calibration}
+							<p class="note faint">
+								{assets.featureSpace.embedding.sessionGate.calibration}
+							</p>
+						{/if}
+					</div>
+				{:else if panelReading?.best}
 					{@const best = panelReading.best}
 					<div class="best" class:past={!readingIsLive}>
 						<span class="badge {best.centroid.confidence}">

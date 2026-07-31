@@ -290,6 +290,27 @@ export interface EmbeddingSpace {
 		centroidAgreement?: number;
 		[key: string]: unknown;
 	};
+	/**
+	 * The live session gate (docs/20 §20.3): 256 fit-side descriptor anchors and a
+	 * calibrated threshold. A live session whose mean 5-NN euclidean distance to the
+	 * anchors exceeds `threshold` sits off everything the map was fitted on, and the
+	 * honest display is "positions are guesses", not a named call. The threshold is
+	 * ship-time calibrated (cross-half over the fit sessions) and is never
+	 * recalibrated in the browser. Absent on builds before 2026-07-31 — and when the
+	 * embedding block itself is gone (a broken map sidecar deletes it), the gate goes
+	 * with it: it was fitted alongside the map.
+	 */
+	sessionGate?: {
+		/** 256 x 28 standardised fit-side descriptors — the reference cloud. */
+		anchors: number[][];
+		/** Neighbours per row of the statistic (5). */
+		k: number;
+		threshold: number;
+		/** Human-readable statement of the statistic the pipeline calibrated. */
+		aggregate?: string;
+		/** The pipeline's own account of what a flag means, quoted verbatim in the UI. */
+		calibration?: string;
+	};
 }
 
 export interface LinearSpaceMap {

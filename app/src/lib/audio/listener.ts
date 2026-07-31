@@ -1,5 +1,11 @@
 import { PitchDetector } from 'pitchy';
-import { ActivationTracker, FeatureExtractor, PointTracker, standardise } from './features.ts';
+import {
+	ActivationTracker,
+	FeatureExtractor,
+	PointTracker,
+	SessionGate,
+	standardise
+} from './features.ts';
 import { readActivations, type Reading } from '$lib/lang/translate';
 import { createSignal, MAX_PATHS, unmatchedCluster, type LivePath, type VisualSignal } from '$lib/galaxy/shaders';
 import type { BirdyAssets } from '$lib/data/types';
@@ -53,9 +59,23 @@ export class Listener {
 	 * or Svelte never sees the change.
 	 */
 	onMeters:
-		| ((meters: { level: number; f0: number; strength: number; active: boolean }) => void)
+		| ((meters: {
+				level: number;
+				f0: number;
+				strength: number;
+				active: boolean;
+				session?: { flagged: boolean; score: number; threshold: number };
+		  }) => void)
 		| null = null;
 	private lastMeters = 0;
+	/**
+	 * The docs/20 session gate, or null when the assets predate it (or ship it
+	 * malformed — present-but-inconsistent is treated as absent, never trusted).
+	 * Fed only while the microphone is open: Birdy's own chorus crosses the same
+	 * analysis bus, and a session made of corpus audio is not the thing the gate
+	 * is about.
+	 */
+	private readonly gate: SessionGate | null;
 
 	constructor(
 		private readonly engine: BirdyEngine,
@@ -72,6 +92,11 @@ export class Listener {
 		});
 		this.tracker = new ActivationTracker(assets.centroids, assets.featureSpace);
 		this.points = new PointTracker(assets);
+		const gateSpec = assets.featureSpace.embedding?.sessionGate;
+		this.gate =
+			gateSpec?.anchors?.length && gateSpec.anchors[0]?.length === assets.featureSpace.dims
+				? new SessionGate(gateSpec, assets.featureSpace.dims)
+				: null;
 		this.signal = createSignal(assets.centroids.items.length, assets.points.n);
 		this.pitch = PitchDetector.forFloat32Array(assets.featureSpace.frameSize);
 		this.reading = readActivations(
@@ -297,6 +322,7 @@ export class Listener {
 		this.extractor.reset();
 		this.orphanPulses = [];
 		this.orphanWasActive = false;
+		this.gate?.reset();
 		this.signal.activations.fill(0);
 		this.signal.pointActivation.fill(0);
 		this.signal.orphanPulse.fill(0);
@@ -325,6 +351,10 @@ export class Listener {
 			const descriptor = this.extractor.descriptor();
 			if (descriptor) {
 				const z = standardise(descriptor, this.assets.featureSpace);
+				// The session gate sees the same z the tracker does, but only from the
+				// microphone: the analysis bus also carries Birdy's own output, and a
+				// "session" of corpus audio would never — and should never — flag.
+				if (this.engine.micActive) this.gate?.push(z);
 				// Flatness is the last element of the 28-d descriptor, and it has to be
 				// handed over raw: standardising turns "this is broadband noise" into a
 				// z-score whose meaning depends on how much noise the corpus contains.
@@ -406,7 +436,14 @@ export class Listener {
 				level: this.signal.level,
 				f0: this.signal.f0,
 				strength: this.tracker.strength,
-				active
+				active,
+				session: this.gate
+					? {
+							flagged: this.gate.flagged,
+							score: this.gate.score,
+							threshold: this.gate.threshold
+						}
+					: undefined
 			});
 		}
 
