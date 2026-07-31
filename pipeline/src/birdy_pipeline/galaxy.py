@@ -673,7 +673,7 @@ def _print_projection_table(results: dict[str, dict[str, Any]], chosen: str) -> 
 
 def _type_seed_means(
     z: np.ndarray, points: PointSet, gate: float = SOURCE_SEED_GATE
-) -> tuple[list[np.ndarray], int]:
+) -> tuple[list[np.ndarray], int, list[tuple[tuple[str, str], int]]]:
     """One seed per type per *source blob*: the field mean and the synthetic mean.
 
     The strongest relation in the critic's space is not species, it is `source` —
@@ -686,14 +686,20 @@ def _type_seed_means(
     56.6 % purity. 483 of 496 types split at that gate — the gap touches nearly every
     type — and the gate still keeps the two seeds honest: blobs that genuinely coincide
     (cosine >= gate) share one, because there is nothing to separate.
+
+    The third return value names every seed: `((species, syllable), rank)` with rank 0
+    the type's primary (or only) blob and 1 the second blob of a source split — the
+    information `type_seeds` needs to decide which seeds a capped build can afford to
+    lose.
     """
     labelled: dict[tuple[str, str], list[int]] = {}
     for i, (sp, syl) in enumerate(zip(points.species_id, points.syllable_id)):
         if syl:
             labelled.setdefault((sp, syl), []).append(i)
     seeds: list[np.ndarray] = []
+    owners: list[tuple[tuple[str, str], int]] = []
     n_split = 0
-    for _, idx in sorted(labelled.items()):
+    for key, idx in sorted(labelled.items()):
         ix = np.asarray(idx)
         is_field = np.asarray([points.source[i] == FIELD_SOURCE for i in ix])
         f, s = ix[is_field], ix[~is_field]
@@ -705,10 +711,12 @@ def _type_seed_means(
             )
             if cos < gate:
                 seeds.extend((fm, sm))
+                owners.extend(((key, 0), (key, 1)))
                 n_split += 1
                 continue
         seeds.append(z[ix].mean(axis=0))
-    return seeds, n_split
+        owners.append((key, 0))
+    return seeds, n_split, owners
 
 
 def default_k(points: PointSet) -> int:
@@ -781,7 +789,7 @@ def cluster_plan(points: PointSet, z: np.ndarray | None = None) -> dict[str, Any
 
 def type_seeds(
     z: np.ndarray, points: PointSet, k: int, seed: int = 0
-) -> tuple[np.ndarray, int] | None:
+) -> tuple[np.ndarray, int, dict[str, int]] | None:
     """Initial centroids: one at the centre of every type's every source blob, the rest
     found freely.
 
@@ -803,26 +811,68 @@ def type_seeds(
     type may win their cluster's name — two knots, one type — which is the honest
     picture of a space where recorded and synthesised do not coincide.
 
-    Returns the seed matrix and how many of its rows are type means, or None when the
-    corpus has no types or has more of them than `k` can hold.
+    **More seeds than `k` is a triage, not a surrender.** The old answer was to return
+    None and let the build fall back to unseeded k-means — the worst possible response,
+    since it threw away *every* type's seed the moment the cap bound (a 1 420-type debug
+    build at k=1024 lost all 2 840 seeds, and 1 816 types shared clusters). Now the
+    seeds are shed in the order that costs the least:
+
+    1. second knots of source-split types first (the type keeps its primary knot),
+    2. then whole types, thinnest learned types first — a type fitted from six
+       syllables gives up its cluster before one fitted from six hundred,
+    3. a documented call's knot last of all: it is where the function and the
+       citation live, and losing it is the failure the cap warning exists for.
+
+    Returns the seed matrix, how many rows are type means, and what the triage cost
+    (`typesLost` = types with no seed left at all, `splitKnotsLost` = second blobs
+    shed), or None when the corpus has no types.
     """
     unlabelled: list[int] = []
     for i, syl in enumerate(points.syllable_id):
         if not syl:
             unlabelled.append(i)
-    means_list, _ = _type_seed_means(z, points)
-    if not means_list or len(means_list) > k:
+    means_list, _, owners = _type_seed_means(z, points)
+    if not means_list:
         return None
+    shed = {"typesLost": 0, "splitKnotsLost": 0}
+    if len(means_list) > k:
+        members = Counter(
+            (sp, syl) for sp, syl in zip(points.species_id, points.syllable_id) if syl
+        )
+
+        def priority(i: int) -> tuple[int, int, int, str, str]:
+            (sp, syl), rank = owners[i]
+            learned = syl.startswith(("L", "U"))
+            return (rank, 1 if learned else 0, -members[(sp, syl)], sp, syl)
+
+        keep = sorted(range(len(means_list)), key=priority)[:k]
+        keep_set = set(keep)
+        lost = {owners[i][0] for i in range(len(owners))} - {
+            owners[i][0] for i in keep_set
+        }
+        shed = {
+            "typesLost": len(lost),
+            "splitKnotsLost": sum(
+                1
+                for i in range(len(owners))
+                if i not in keep_set
+                and owners[i][1] == 1
+                and owners[i][0] not in lost
+            ),
+        }
+        keep.sort()
+        means_list = [means_list[i] for i in keep]
+        owners = [owners[i] for i in keep]
     means = np.stack(means_list)
     extra = k - len(means)
     if extra <= 0:
-        return means[:k], len(means[:k])
+        return means[:k], len(means[:k]), shed
     # The remaining seeds belong to the points that have no type — overwhelmingly field
     # audio — and KMeans++ over just those is the right way to place them, because there
     # the "recorded or synthesised" axis it keys on is no longer a distraction.
     pool = z[unlabelled] if len(unlabelled) >= extra else z
     rest = KMeans(n_clusters=extra, n_init=3, random_state=seed).fit(pool).cluster_centers_
-    return np.concatenate([means, rest]), len(means)
+    return np.concatenate([means, rest]), len(means), shed
 
 
 def point_features(
@@ -1137,22 +1187,38 @@ def build_galaxy(
             if plan["capped"]:
                 # The failure mode this replaces was silent, and silence is what made it
                 # expensive: a bird lost every cluster carrying its name and the only
-                # symptom was that it sang and nothing lit up.
+                # symptom was that it sang and nothing lit up. The triage in `type_seeds`
+                # now decides *which* seeds the cap costs — the line after it says how
+                # many types lost their only knot.
                 print(
-                    f"  WARNING: clamped to the cap of {plan['cap']}; "
-                    f"{plan['wanted'] - plan['cap']} types will share clusters and lose "
-                    "the name, function and citation that go with having one",
+                    f"  WARNING: {plan['wanted']} wanted seeds exceed the cap of "
+                    f"{plan['cap']} — shedding second (field/synth) knots first, then "
+                    "the thinnest learned types; a documented call's knot is shed last",
                     file=sys.stderr,
                 )
         seeded = type_seeds(z, kept, k_final, seed=seed)
         if seeded is not None:
-            init, n_type_seeds = seeded
+            init, n_type_seeds, shed = seeded
             if verbose:
                 print(
                     f"  seeded {n_type_seeds} centroids at their own type's centre, "
                     f"{k_final - n_type_seeds} by kmeans++ over the untyped points",
                     file=sys.stderr,
                 )
+                if shed["typesLost"] or shed["splitKnotsLost"]:
+                    parts = []
+                    if shed["splitKnotsLost"]:
+                        parts.append(
+                            f"{shed['splitKnotsLost']} types their second knot "
+                            "(they keep their name on the first)"
+                        )
+                    if shed["typesLost"]:
+                        parts.append(
+                            f"{shed['typesLost']} types their only one — those share a "
+                            "neighbour's cluster and lose the name, function and "
+                            "citation that go with having one"
+                        )
+                    print(f"  the cap cost {'; and '.join(parts)}", file=sys.stderr)
             # n_init must be 1 with an explicit init: the seeds are the whole point, and a
             # restart would throw them away for a random draw.
             km = KMeans(n_clusters=k_final, init=init, n_init=1, random_state=seed).fit(z)
@@ -1160,7 +1226,11 @@ def build_galaxy(
             km = KMeans(n_clusters=k_final, n_init=10, random_state=seed).fit(z)
         cluster_id = km.labels_.astype(int)
         centre_vectors = km.cluster_centers_
-        plan_report = {**plan, "seededTypes": seeded[1] if seeded else 0}
+        plan_report = {
+            **plan,
+            "seededTypes": seeded[1] if seeded else 0,
+            **(seeded[2] if seeded else {}),
+        }
 
     assigned = cluster_id >= 0
     n_noise = int((~assigned).sum())

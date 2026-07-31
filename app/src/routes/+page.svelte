@@ -111,6 +111,7 @@
 	let recording = $state(false);
 	let recordings = $state<{ url: string; name: string }[]>([]);
 	let viewOpen = $state(false);
+	let helpOpen = $state(false);
 	// Particles are marks, not blobs. At 6 the cloud reads as poster paint once the
 	// camera holds the whole corpus; 3 keeps thirty thousand of them countable.
 	let pointSize = $state(3);
@@ -1548,9 +1549,10 @@ uv run birdy-pipeline build</pre>
 			{/key}
 
 			<!-- Display settings belong on the thing they change, not in the tab strip. -->
-			<div class="viewctl" class:open={viewOpen}>
+			<div class="viewctl">
 				<button
 					class="viewbtn"
+					class:open={viewOpen}
 					aria-label="Display settings"
 					aria-expanded={viewOpen}
 					onclick={() => (viewOpen = !viewOpen)}
@@ -1613,6 +1615,64 @@ uv run birdy-pipeline build</pre>
 										Points are neutral ink. Hue on the tags and threads says which bird.
 									</p>
 								{/if}
+							</section>
+						</div>
+					</div>
+				{/if}
+				<button
+					class="viewbtn"
+					class:open={helpOpen}
+					aria-label="Reading the galaxy"
+					aria-expanded={helpOpen}
+					title="What am I looking at?"
+					onclick={() => (helpOpen = !helpOpen)}
+				>
+					<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+						<path
+							d="M6.2 5.6c.2-1.1 1-1.9 2.1-1.9 1.2 0 2.1.9 2.1 2 0 1.6-1.6 1.9-1.9 3v.5"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.3"
+							stroke-linecap="round"
+						/>
+						<circle cx="8.4" cy="12.2" r="0.9" fill="currentColor" />
+					</svg>
+				</button>
+				{#if helpOpen}
+					<div class="panel viewpanel">
+						<h2>Reading the galaxy</h2>
+						<div class="cardbody">
+							<section class="block">
+								<ul class="legend key">
+									<li>
+										<i style:background="var(--ink-dim)"></i>
+										<span>A point is one sound: a recorded syllable, or one synthesized from a fitted type.</span>
+									</li>
+									<li>
+										<i class="hollow"></i>
+										<span>A knot is a cluster of similar sounds. A named knot is a call type; a documented one carries its function and source.</span>
+									</li>
+									<li>
+										<i class="pair"></i>
+										<span>Distance is acoustic similarity: closer is more alike.</span>
+									</li>
+									<li>
+										<i class="hue"></i>
+										<span>Hue on the tags and threads says which bird. In provenance mode it says what kind of thing instead — the Display panel has that key.</span>
+									</li>
+									<li>
+										<i class="ring"></i>
+										<span>When a sound plays or is heard, the best-matching knot answers first and the response ripples outward.</span>
+									</li>
+									<li>
+										<i class="line"></i>
+										<span>A thread links the knots of one bout in the order its syllables were sung.</span>
+									</li>
+									<li>
+										<i style:background="var(--signal)"></i>
+										<span>Violet marks what you asked for: the note singing now, or the selected bird's points.</span>
+									</li>
+								</ul>
 							</section>
 						</div>
 					</div>
@@ -2903,7 +2963,7 @@ uv run birdy-pipeline serve</pre>
 		color: var(--ink-dim);
 	}
 
-	.viewctl.open .viewbtn {
+	.viewbtn.open {
 		border-color: var(--signal);
 		color: var(--signal);
 	}
@@ -3230,6 +3290,63 @@ uv run birdy-pipeline serve</pre>
 	   fact from the colour simply being missing, and only one of them is a bug. */
 	.legend li.absent {
 		opacity: 0.5;
+	}
+
+	/* The "Reading the galaxy" key reuses the legend's swatch-plus-text row, but the
+	   text is a sentence rather than a class name and share, and the swatches are
+	   shaped for the thing they name — a hollow dot for a knot, a line for a thread —
+	   instead of all being colour chips. */
+	.legend.key {
+		gap: 0.45rem;
+	}
+
+	.legend.key li {
+		grid-template-columns: 0.6rem minmax(0, 1fr);
+		align-items: start;
+	}
+
+	.legend.key i {
+		margin-top: 0.22rem;
+	}
+
+	.legend.key span {
+		font-size: 0.74rem;
+		line-height: 1.45;
+		color: var(--ink-dim);
+	}
+
+	.legend.key i.hollow {
+		box-sizing: border-box;
+		background: none;
+		border: 1.5px solid var(--ink-dim);
+	}
+
+	.legend.key i.pair {
+		background:
+			radial-gradient(circle at 25% 50%, var(--ink-dim) 1.4px, transparent 1.5px),
+			radial-gradient(circle at 75% 50%, var(--ink-dim) 1.4px, transparent 1.5px);
+	}
+
+	.legend.key i.hue {
+		background: conic-gradient(#c44536, #b8a12e, #3e8e5a, #1f5fbf, #7a4fa3, #c44536);
+	}
+
+	.legend.key i.ring {
+		background: radial-gradient(
+			circle,
+			transparent 2.2px,
+			var(--ink-dim) 2.3px,
+			var(--ink-dim) 3.2px,
+			transparent 3.3px
+		);
+	}
+
+	.legend.key i.line {
+		width: 0.6rem;
+		height: 2px;
+		margin-top: 0.42rem;
+		border-radius: 1px;
+		background: var(--ink-dim);
 	}
 
 	.note {

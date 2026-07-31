@@ -54,6 +54,7 @@ uv run birdy-pipeline build --harvest-store out/harvest-gan \
      --inventory /home/sha5b/Documents/GitHub/Birdy/data/learned-inventory.json --space embed
 uv run birdy-pipeline grow            # incremental: place newest audio, found novel knots
 uv run birdy-pipeline placement       # score a fit on docs/09's four numbers
+uv run birdy-pipeline docrefit ...    # one-tone documented re-fit (docs/16 §16.4)
 uv run birdy-pipeline relations ...   # cross-species relations.json
 uv run birdy-pipeline expand --dry-run  # novelty-guided harvest targets (no network)
 uv run birdy-pipeline verify app/static/birdy

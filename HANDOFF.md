@@ -1,3 +1,38 @@
+# Birdy — Session Handoff (2026-07-31)
+
+**Landed today (uncommitted at this writing — user commits):**
+
+- **Stale-embeddings crash fixed.** The Learn-tab `ValueError: cannot reshape …
+  (39999,newaxis)` was a stale `embeddings.f32` against a changed store, hit at five
+  `reshape(len(store.syllables), -1)` sites in cli.py. New `read_store_embeddings`
+  checks row counts and says to re-run `critic embed`; build falls back to embedding
+  on the spot, placement/spacemap/relations exit 2 with a clear message.
+- **1024-cluster cap no longer unseeds the build.** The `WARNING: clamped to the cap`
+  build was worse than the warning said: over the cap, `type_seeds` returned None and
+  the build fell back to *unseeded* k-means — every type's seed lost at once. Now
+  `type_seeds` triages: source-split second knots shed first, then thinnest learned
+  types, a documented call's knot last. Debug build (1 287 wanted / 1 024 cap): all
+  648 types kept their knot, 254 lost only their second. Full 12 724-type corpus
+  still exceeds any sane cap — that's the spacemap question, not a cap tweak.
+- **`docrefit` — the one-tone documented re-fit shipped** (docs/16 §16.4 status note
+  has the numbers). Debug store: 14/15 one-tone calls gained measured noise/rough
+  (owl `hooLong` → noise 0.05, rough 0.65, +0.052; gate held at +0.013 on the one
+  holdout). Production run waits on the production learn.
+- **Galaxy legend**: a "?" button under the Display toggle opens "Reading the galaxy"
+  (points / knots / distance / hue / wave / thread / violet), app-side, `npm run
+  check` clean.
+- **Learn-tab review**: nothing obsolete; the "Fit syllables and syntax" button earns
+  its place (refit without re-harvesting, e.g. after a critic retrain) and already
+  sits inside the collapsed "run one step by hand" section.
+- Other agent (same day): `subset --diverse` (k-medoid pick; beats top-N and
+  farthest-point on mean-distance-to-nearest, 3.125 vs 3.813).
+
+**Research sweep landed** (birdsong syntax/meaning, recorder-invariant embeddings,
+known→unknown transfer): the actionable stack is training-time invariance (DIR
+impulse-response augmentation + domain-invariant contrastive losses, AVEX: corpus
+diversity > architecture) and CETI-style structure-first semantics. Report is in the
+session log; candidates for docs/17.
+
 # Birdy — Session Handoff (2026-07-30, end of day)
 
 **The day in one paragraph:** the corpus grew 36 → 3 811 species (iNatSounds, 6 453

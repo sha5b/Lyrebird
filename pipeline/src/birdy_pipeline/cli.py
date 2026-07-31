@@ -26,7 +26,7 @@ from .corpus import (
     synthetic_corpus,
     write_wav,
 )
-from . import galaxy, harvest, learn, respfit, respiration, twovoice
+from . import docrefit, galaxy, harvest, learn, respfit, respiration, twovoice
 from .galaxy import PointSet, build_galaxy
 from .syrinx import (
     Calibration,
@@ -52,6 +52,40 @@ CALIBRATION_NAME = "syrinx-calibration.json"
 #: `syllables.jsonl`/`patches.f16` row order. Its presence is what makes `build --space
 #: auto` choose the embedding space.
 EMBEDDINGS_NAME = "embeddings.f32"
+
+
+def read_store_embeddings(
+    path: Path, n_syllables: int, log: Any = None
+) -> Any | None:
+    """The store's embeddings sidecar as an (n_syllables, dim) matrix, or None.
+
+    **The file is keyed by the store's row order, and the store moves.** A harvest
+    appends rows, a subset rewrites them, and nothing version-stamps the sidecar — so
+    a store and its embeddings can disagree, and the disagreement used to surface as a
+    bare numpy error (`cannot reshape array of size 1509920 into shape
+    (39999,newaxis)`, from a Learn-tab build against a store that had changed since
+    `critic embed` ran). Worse than the crash is what the crash prevented anyone from
+    seeing: a stale sidecar that happens to divide evenly would embed every syllable
+    with its *neighbour's* vector, silently.
+
+    None means "unusable, re-run `critic embed`"; the caller decides whether that is a
+    recompute (build can embed on the spot), a skipped analysis (relations), or an
+    error exit (placement, spacemap) — the helper only promises never to return a
+    matrix whose rows do not align with `store.syllables`.
+    """
+    import numpy as np
+
+    raw = np.frombuffer(Path(path).read_bytes(), dtype="<f4")
+    if n_syllables <= 0 or raw.size % n_syllables:
+        rows = raw.size // 32 if raw.size % 32 == 0 else raw.size
+        if log is not None:
+            log(
+                f"{path} holds {rows} embedding rows but the store has {n_syllables} "
+                "syllables — the store changed since `critic embed` wrote it. Re-run "
+                "`birdy-pipeline critic embed` against this store."
+            )
+        return None
+    return raw.reshape(n_syllables, -1).astype(np.float64)
 
 DEMO_SYLLABLES = [
     ("parus_minor", "A"),
@@ -429,10 +463,13 @@ def cmd_build(
             # filtered to observations with a descriptor, so the two align positionally.
             if store_embeddings is None:
                 if embeddings_path is not None and embeddings_path.exists():
-                    raw = np.frombuffer(embeddings_path.read_bytes(), dtype="<f4")
-                    store_embeddings = raw.reshape(len(store.syllables), -1).astype(np.float64)
-                else:
-                    log("no embeddings.f32 in the store; embedding it now "
+                    store_embeddings = read_store_embeddings(
+                        embeddings_path, len(store.syllables), log=log
+                    )
+                if store_embeddings is None:
+                    # Missing, or stale past recognition — a stale sidecar is no better
+                    # than none, and embedding on the spot is what a missing file gets.
+                    log("no usable embeddings.f32 in the store; embedding it now "
                         "(`critic embed` writes it once and for all)")
                     from . import critic as critic_mod
 
@@ -563,8 +600,14 @@ def cmd_build(
 
         try:
             if store_embeddings is None:
-                raw = np.frombuffer(embeddings_path.read_bytes(), dtype="<f4")
-                store_embeddings = raw.reshape(len(store.syllables), -1).astype(np.float64)
+                store_embeddings = read_store_embeddings(
+                    embeddings_path, len(store.syllables)
+                )
+                if store_embeddings is None:
+                    raise RuntimeError(
+                        f"{embeddings_path} is stale against this store — re-run "
+                        "`birdy-pipeline critic embed`"
+                    )
             relations_doc = relations_mod.compute_relations(
                 store, store_embeddings, typing, inventory
             )
@@ -1357,6 +1400,79 @@ def cmd_respfit(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_docrefit(args: argparse.Namespace) -> int:
+    """Re-fit the texture of the authored one-tone calls (docrefit.py; docs/16 §16.4).
+
+    Reads the merged learned inventory and the store's typing.json, finds each
+    documented pure-tone call's nearest learned type by pitch, and searches the
+    noise x rough grids against that type's reference. A texture ships on a call ONLY
+    where it beats the call's authored render by the margin; the call's contour,
+    duration, function and citation never move. The input inventory is never modified
+    in place unless `--out` points at it.
+    """
+    store = harvest.HarvestStore(Path(args.store))
+    if not store.syllables:
+        log(f"{store.root} holds no syllable observations — run `harvest` first")
+        return 2
+    try:
+        typing = respfit.load_typing(store.root)
+    except RuntimeError as exc:
+        log(str(exc))
+        return 2
+    inventory_path = Path(args.inventory)
+    inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+    calibration = ensure_calibration(Path(args.calibration_dir))
+    features.self_test(verbose=False)
+    learn.self_test(verbose=False)
+    docrefit.self_test(verbose=False)
+
+    t0 = time.time()
+    document, report = docrefit.docrefit_inventory(
+        store.syllables,
+        typing,
+        inventory,
+        calibration,
+        recording_descriptors={
+            rid: np.asarray(row, dtype=np.float64)
+            for rid, row in store.recording_descriptors.items()
+        },
+        margin=args.margin,
+        f0_cap=args.f0_cap,
+    )
+    out = (
+        Path(args.out)
+        if args.out
+        else inventory_path.with_name(inventory_path.stem + ".docrefit.json")
+    )
+    learn.write_learned_inventory(out, document)
+    if args.report:
+        Path(args.report).write_text(
+            json.dumps(report, indent=1) + "\n", encoding="utf-8"
+        )
+
+    g = report["global"]
+    log("")
+    log(f"wrote {out} ({time.time() - t0:.0f}s)")
+    log(
+        f"docrefit verdict: {g['shipped']} of {g['callsScored']} scored one-tone "
+        f"calls shipped a measured texture"
+        + (
+            f" (median gain {g['medianGainShipped']:.3f}, "
+            f"median cosine after {g['medianAfterShipped']:.3f})"
+            if g["shipped"]
+            else ""
+        )
+    )
+    shipped_species = [
+        (sid, s) for sid, s in report["species"].items() if s["shipped"]
+    ]
+    for sid, s in sorted(shipped_species, key=lambda kv: -kv[1]["shipped"])[:40]:
+        log(f"  {sid:28} {s['shipped']}/{s['scored']} calls re-fitted")
+    if len(shipped_species) > 40:
+        log(f"  ... and {len(shipped_species) - 40} more species in the report")
+    return 0
+
+
 #: Fallback copies of `critic.CriticConfig`'s defaults, for building the parser on a machine
 #: with no torch. The parser is constructed on *every* invocation, including `build` and
 #: `verify`, so it cannot import `critic`. `critic_default` prefers the real dataclass when it
@@ -1843,9 +1959,9 @@ def cmd_placement(args: argparse.Namespace) -> int:
         else Path(args.store) / EMBEDDINGS_NAME
     )
     if emb_path.exists():
-        emb = np.frombuffer(emb_path.read_bytes(), dtype="<f4").reshape(
-            len(store.syllables), -1
-        ).astype(np.float64)
+        emb = read_store_embeddings(emb_path, len(store.syllables), log=log)
+        if emb is None:
+            return 2
         obs_idx = [
             i for i, o in enumerate(store.syllables)
             if o.descriptor and o.species_id in references
@@ -1898,9 +2014,9 @@ def cmd_spacemap(args: argparse.Namespace) -> int:
             f"--store {args.store}` first")
         return 2
 
-    emb = np.frombuffer(emb_path.read_bytes(), dtype="<f4").reshape(
-        len(store.syllables), -1
-    ).astype(np.float64)
+    emb = read_store_embeddings(emb_path, len(store.syllables), log=log)
+    if emb is None:
+        return 2
     kept = [i for i, o in enumerate(store.syllables) if o.descriptor]
     z = emb[kept]
     finite = np.all(np.isfinite(z), axis=1)
@@ -2016,9 +2132,9 @@ def cmd_relations(args: argparse.Namespace) -> int:
 
     t0 = time.time()
     typing = json.loads(typing_path.read_text(encoding="utf-8"))
-    emb = np.frombuffer(emb_path.read_bytes(), dtype="<f4").reshape(
-        len(store.syllables), -1
-    ).astype(np.float64)
+    emb = read_store_embeddings(emb_path, len(store.syllables), log=log)
+    if emb is None:
+        return 2
     inventory = load_inventory(Path(args.inventory)) if args.inventory else None
     document = relations_mod.compute_relations(store, emb, typing, inventory)
 
@@ -2890,6 +3006,38 @@ def build_parser() -> argparse.ArgumentParser:
     rf.add_argument("--calibration-dir", default=str(DEFAULT_OUT),
                     help="where syrinx-calibration.json lives")
     rf.set_defaults(func=cmd_respfit)
+
+    dr = sub.add_parser(
+        "docrefit",
+        help="the pure-tone documented re-fit (docs/16 §16.4): give each authored "
+             "one-tone call the noise/rough texture of its nearest learned type, "
+             "shipped ONLY where the re-fit beats the authored render by --margin "
+             "against that type's measured reference (docrefit.py's docstring is the "
+             "pre-registration)",
+    )
+    dr.add_argument("--store", default=str(DEFAULT_HARVEST_STORE),
+                    help="the store the learned types were fitted from (its "
+                         "typing.json is the membership the references are built from)")
+    dr.add_argument("--inventory", default=str(DEFAULT_LEARNED_INVENTORY),
+                    help="the merged learned inventory (authored calls plus fitted "
+                         "types); the input is never modified unless --out points at it")
+    dr.add_argument("--out", default=None,
+                    help="where the re-fitted inventory goes (default: <inventory "
+                         "stem>.docrefit.json beside the input)")
+    dr.add_argument("--report", default=None,
+                    help="write the full per-call audit (matched type, match distance, "
+                         "before/after cosines, what shipped) to this JSON file")
+    dr.add_argument("--margin", type=float, default=respfit.SHIP_MARGIN,
+                    help="the honest gate: a texture ships only if it beats the "
+                         "authored render by at least this much (default %(default)s, "
+                         "the same gate respfit uses)")
+    dr.add_argument("--f0-cap", type=float, default=docrefit.F0_CAP_OCTAVES,
+                    help="furthest pitch gap, in octaves, between a documented call "
+                         "and the learned type it is re-fitted against "
+                         "(default %(default)s)")
+    dr.add_argument("--calibration-dir", default=str(DEFAULT_OUT),
+                    help="where syrinx-calibration.json lives")
+    dr.set_defaults(func=cmd_docrefit)
 
     cr = sub.add_parser(
         "critic",

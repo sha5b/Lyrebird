@@ -85,6 +85,22 @@ current cosine; then the pure-tone documented re-fit (the tawny owl's `hooLong` 
 sounds "digital"; the learned types of the same bird carry noise 0.05–0.25 and rough
 up to 0.65).
 
+**Status, both halves landed.** The per-species fit pass completed on the full store
+(`out/respfit-gan-report.json`: 12 680 types scored, respiration won 445, two-voice
+won 2 027 of 5 922 screened, median cosine 0.650 → 0.6623, gate held everywhere).
+The pure-tone documented re-fit is `docrefit.py` (`birdy-pipeline docrefit`): each
+authored one-tone call is matched to the same bird's nearest learned type by pitch
+(cap 0.5 octaves), its `noise`×`rough` grid is searched against that type's measured
+reference, and a texture ships only where it beats the authored render by the same
+0.02 margin respfit uses. On the debug store (37 species, /tmp copy of `out/harvest`):
+**14 of 15** scored one-tone calls shipped (median gain +0.148). The owl: `hooLong`
+gained noise 0.05 / rough 0.65 (+0.052), `hooFirst` noise 0.05 (+0.192); the one
+holdout (`warbleUp`, +0.013) stayed pure — the gate doing its job. The honest
+caveat: median cosine *after* is 0.270, so the texture is a real but modest move;
+the remaining distance is the documented contour and duration being the literature's
+rather than this bird's, which the re-fit deliberately does not touch. Full-store run
+is pending the production learn.
+
 ## 16.5 Perch 2.0 label-novel
 
 `birdy-pipeline critic label-novel` (perch.py; ONNX port of Perch 2.0, no TF dep,
