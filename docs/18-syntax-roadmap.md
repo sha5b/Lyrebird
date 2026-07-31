@@ -110,3 +110,16 @@ recovered hidden structure. So:
 - **Re-run after the depth harvest (P0).** At current depth ~10 % of held-out
   transitions are unseen; depth shrinks that tail and may change the picture — thin
   data is exactly where higher-order models starve (M2's 0/30 says so).
+
+### The backoff repair (same day, pre-registered separately) — shipped
+
+`FirstOrder` in syntax.py gains `backoff="continuation"` (Kneser–Ney lower order:
+P(next) ∝ distinct contexts `next` followed, add-α to uniform; seen contexts
+bit-identical to the old row). Gate: ≥ +1 nat/token on unseen-*context* transitions
+with seen-side loss ≤ 0.01. **Passes on both debug corpora**: +1.90 (37-species
+store) and +2.32 (debug-100) nats/token, seen loss exactly 0.0000. Two honest
+caveats: 80 % of the unseen tail is *seen context, unseen continuation* — outside
+the repair's scope, so the full-tail gain is +0.37/+0.65, not the headline +1.9; and
+the repair narrows the HMM's unseen-tail advantage, confirming that M3's "win" was
+smoothing shape. The shipped grammar artifact is untouched either way — the repair
+improves the *measurement baseline* future bake-offs are judged against.

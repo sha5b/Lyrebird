@@ -207,6 +207,8 @@ def measure(
     metric: str,
     seed: int = 0,
     blocks: Sequence[str] | None = None,
+    min_group: int = MIN_GROUP,
+    min_labelled: int = MIN_LABELLED,
 ) -> Relation | None:
     """One grouping in one space, with the permutation null attached.
 
@@ -215,28 +217,34 @@ def measure(
     would let the *pattern of missingness* score as a relation. The share that survives is
     reported as `coverage`, because a relation over 3 % of the corpus is a different claim
     from one over all of it.
+
+    `min_group`/`min_labelled` exist for callers that test a small population on
+    purpose — songspace.py's within-species individual test runs one species at a
+    time, where the corpus-level gates of 8/200 would leave almost nothing
+    testable and the permutation null, not the gate, is what keeps a small test
+    honest. The statistic itself does not move.
     """
     labels = list(labels)
     keep = np.array([bool(v) for v in labels])
-    if keep.sum() < MIN_GROUP * 2:
+    if keep.sum() < min_group * 2:
         return None
     codes, counts = np.unique(np.array(labels)[keep], return_inverse=False, return_counts=True)
     # Drop groups too small to have a neighbourhood, then re-index.
-    big = {c for c, n in zip(codes, counts) if n >= MIN_GROUP}
+    big = {c for c, n in zip(codes, counts) if n >= min_group}
     keep = np.array([bool(v) and v in big for v in labels])
-    if keep.sum() < MIN_GROUP * 2:
+    if keep.sum() < min_group * 2:
         return None
     kept_labels = np.array(labels)[keep]
     uniq, coded = np.unique(kept_labels, return_inverse=True)
     if len(uniq) < 2:
         return None
 
-    if int(keep.sum()) < MIN_LABELLED:
+    if int(keep.sum()) < min_labelled:
         return Relation(
             grouping=grouping, space=space, groups=len(uniq), labelled=int(keep.sum()),
             coverage=float(keep.sum()) / len(labels), knn=float("nan"), knn_null=float("nan"),
             knn_p=float("nan"), silhouette=float("nan"),
-            verdict=f"untestable ({int(keep.sum())} labelled, need {MIN_LABELLED})",
+            verdict=f"untestable ({int(keep.sum())} labelled, need {min_labelled})",
         )
 
     sub = x[keep]

@@ -28,6 +28,7 @@ from .corpus import (
 )
 from . import docrefit, galaxy, harvest, learn, respfit, respiration, twovoice
 from . import syntax as syntax_mod
+from . import songspace as songspace_mod
 from .galaxy import PointSet, build_galaxy
 from .syrinx import (
     Calibration,
@@ -2105,6 +2106,58 @@ def cmd_placement(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_specbench(args: argparse.Namespace) -> int:
+    """The spectral bench: correlate the resynthesis cosine with audible distortion.
+
+    Renders fitted types and measures MCD and multi-resolution STFT error against the
+    original audio they were fitted from — the only run in the pipeline that reads the
+    owner-sanctioned iNat audio cache for anything but training (AGENTS.md). It writes
+    nothing but the `--out` report; the cache is only read.
+    """
+    from . import specbench
+
+    specbench.self_test(verbose=False)
+    store = harvest.HarvestStore(Path(args.store))
+    if not (store.root / learn.TYPING_NAME).exists():
+        log(f"specbench needs the store's typing.json — run `learn` on {store.root} "
+            "first")
+        return 2
+    inventory = load_inventory(Path(args.inventory))
+
+    # The calibration table the renders were fitted with. Looked up, never built: a
+    # bench run must not write beside a store it was pointed at. Without one the
+    # renderer falls back to the analytic beta/amp mapping and the recomputed cosines
+    # drift from the stored ones — said loudly rather than silently.
+    calibration: Calibration | None = None
+    cdir = Path(args.calibration_dir) if args.calibration_dir else store.root.parent
+    cpath = cdir / CALIBRATION_NAME
+    if cpath.exists():
+        calibration = Calibration.from_dict(
+            json.loads(cpath.read_text(encoding="utf-8"))
+        )
+        log(f"using {cpath}")
+    else:
+        log(f"NOTE: no {CALIBRATION_NAME} in {cdir}; rendering with the analytic "
+            "fallbacks, so recomputed cosines will drift from the stored ones. Pass "
+            "--calibration-dir to the table the fits were made with.")
+
+    report = specbench.run_bench(
+        store,
+        inventory,
+        Path(args.audio_cache),
+        calibration,
+        limit=args.limit,
+        log=log,
+    )
+    log(specbench.format_report(report))
+    if args.out:
+        out = Path(args.out)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(report, indent=1) + "\n", encoding="utf-8")
+        log(f"wrote {out}")
+    return 0
+
+
 def cmd_syntax(args: argparse.Namespace) -> int:
     """Run the P1 grammar bake-off of docs/18 on a store's typed bouts.
 
@@ -2126,18 +2179,50 @@ def cmd_syntax(args: argparse.Namespace) -> int:
     bouts = syntax_mod.species_bouts(store.syllables, typing)
     log(f"{sum(len(b) for b in bouts.values())} bouts of "
         f">= {syntax_mod.MIN_BOUT_TOKENS} tokens over {len(bouts)} species")
-    ks = tuple(int(x) for x in args.ks.split(","))
-    report = syntax_mod.bake_off(
-        bouts, alpha=args.alpha, ks=ks, min_bouts=args.min_bouts,
-        max_iter=args.max_iter,
-    )
-    print(syntax_mod.format_report(report))
+    if args.compare_backoff:
+        report = syntax_mod.smoothing_comparison(
+            bouts, alpha=args.alpha, min_bouts=args.min_bouts
+        )
+        print(syntax_mod.format_smoothing_report(report))
+    else:
+        ks = tuple(int(x) for x in args.ks.split(","))
+        report = syntax_mod.bake_off(
+            bouts, alpha=args.alpha, ks=ks, min_bouts=args.min_bouts,
+            max_iter=args.max_iter,
+        )
+        print(syntax_mod.format_report(report))
     if args.json:
         Path(args.json).write_text(
             json.dumps(report, indent=1) + "\n", encoding="utf-8"
         )
         log(f"wrote {args.json}")
-    log(f"bake-off took {time.time() - t0:.1f}s")
+    log(f"took {time.time() - t0:.1f}s")
+    return 0
+
+
+def cmd_songspace(args: argparse.Namespace) -> int:
+    """Run the P2 song-space baseline of docs/18 on a store's typed bouts.
+
+    Reads the store exactly as `learn` does — same observations, same typing.json,
+    same bout rule — plus song-typing.json when learn wrote one, and changes
+    nothing it reads: the verdict grades the hand-written kernel baseline the
+    learned song encoder of a later stage must beat, it does not install one.
+    """
+    songspace_mod.self_test(verbose=False)
+    store = harvest.HarvestStore(Path(args.store))
+    if not store.syllables:
+        log(f"{store.root} holds no syllable observations — run `harvest` first")
+        return 2
+    if not (store.root / learn.TYPING_NAME).exists():
+        log(f"{store.root} has no {learn.TYPING_NAME} — run `learn` first")
+        return 2
+    report = songspace_mod.evaluate(store, rhythm_weight=args.rhythm_weight)
+    print(songspace_mod.format_report(report))
+    if args.json:
+        Path(args.json).write_text(
+            json.dumps(report, indent=1) + "\n", encoding="utf-8"
+        )
+        log(f"wrote {args.json}")
     return 0
 
 
@@ -3398,6 +3483,29 @@ def build_parser() -> argparse.ArgumentParser:
                     help="also break the placement down species by species")
     pl.set_defaults(func=cmd_placement)
 
+    spb = sub.add_parser(
+        "specbench",
+        help="the spectral bench: render fitted types against their original cached "
+             "audio and correlate the resynthesis cosine with channel-normalised MCD "
+             "and multi-resolution STFT error — i.e. measure whether a cosine gain "
+             "is an audible gain (specbench.py)",
+    )
+    spb.add_argument("--store", default=str(DEFAULT_HARVEST_STORE),
+                     help="store with typing.json the inventory was learned from")
+    spb.add_argument("--inventory", default=str(DEFAULT_LEARNED_INVENTORY),
+                     help="learned inventory holding the fitted types")
+    spb.add_argument("--audio-cache", default=str(REPO_ROOT / "pipeline" / "out" / "audio-cache"),
+                     help="the owner-sanctioned iNat WAV cache (read only)")
+    spb.add_argument("--limit", type=int, default=200,
+                     help="how many fitted types to bench (default %(default)s)")
+    spb.add_argument("--calibration-dir", default=None,
+                     help="where syrinx-calibration.json lives (default: the store's "
+                          "parent directory)")
+    spb.add_argument("--out", default=None,
+                     help="also write the full report (per-type rows + correlations) "
+                          "as JSON here")
+    spb.set_defaults(func=cmd_specbench)
+
     sy = sub.add_parser(
         "syntax",
         help="the P1 grammar bake-off of docs/18: first-order (the shipped model) vs "
@@ -3416,9 +3524,31 @@ def build_parser() -> argparse.ArgumentParser:
                     help="fewest bouts for a species to qualify (default %(default)s)")
     sy.add_argument("--max-iter", type=int, default=syntax_mod.HMM_MAX_ITER,
                     help="Baum-Welch iteration cap (default %(default)s)")
+    sy.add_argument("--compare-backoff", action="store_true",
+                    help="skip the three-model bake-off and instead run the smoothing "
+                         "repair comparison: raw-unigram vs Kneser-Ney continuation-count "
+                         "backoff for the first-order model's unseen contexts, with the "
+                         "adoption gate pre-registered in syntax.py")
     sy.add_argument("--json", default=None,
                     help="also write the full machine-readable report here")
     sy.set_defaults(func=cmd_syntax)
+
+    so = sub.add_parser(
+        "songspace",
+        help="the P2 song-level space of docs/18: whole bouts as points under a "
+             "hand-written edit-plus-rhythm kernel, graded against bag-of-types "
+             "and docs/12's song typing with geometry.py's kNN-lift + "
+             "permutation-null battery, with the verdict pre-registered in "
+             "songspace.py",
+    )
+    so.add_argument("--store", default=str(DEFAULT_HARVEST_STORE))
+    so.add_argument("--rhythm-weight", type=float,
+                    default=songspace_mod.RHYTHM_WEIGHT,
+                    help="price of one nat of log-gap difference at a matched "
+                         "position; 0 is the rhythm-off ablation (default %(default)s)")
+    so.add_argument("--json", default=None,
+                    help="also write the full machine-readable report here")
+    so.set_defaults(func=cmd_songspace)
 
     sb = sub.add_parser(
         "subset",

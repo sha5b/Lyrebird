@@ -87,6 +87,16 @@ HMM_TOL = 1e-5
 HMM_SEED = 0
 #: The pre-registered win bar: mean ΔLL/token over the baseline, in nats.
 WIN_DELTA_NATS = 0.1
+#: The pre-registered adoption gate for the continuation-count repair of
+#: `FirstOrder` (see `smoothing_comparison`): it ships only if held-out LL on
+#: unseen-*context* transitions — the only rows the repair touches — improves by
+#: at least this much ...
+REPAIR_MIN_UNSEEN_GAIN = 1.0
+#: ... and held-out LL on seen transitions degrades by no more than this. (By
+#: construction the seen rows are bit-identical, so the second half is a
+#: controlled zero; it is stated and measured anyway, because a gate you do not
+#: measure is a wish.)
+REPAIR_MAX_SEEN_LOSS = 0.01
 
 MODELS = ("m1", "m2", "m3")
 
@@ -152,14 +162,37 @@ class FirstOrder:
     under the bake-off's smoothing so the comparison is about structure, not about
     `GRAMMAR_MIN_COUNT` vs add-α. The bout-first token is scored under the unigram,
     so every model scores every token and per-token means are comparable.
+
+    `backoff` selects the lower order an *unseen context* falls back to:
+
+    - `"unigram"` (the default, and the baseline the bake-off was run with): the
+      add-α-smoothed raw token frequencies.
+    - `"continuation"`: the Kneser–Ney lower order (Kneser & Ney 1995) — P(next)
+      proportional to the number of *distinct contexts* next was seen following,
+      not its raw frequency. This is the smoothing repair the bake-off's own
+      decomposition called for: on the debug store, held-out transitions whose
+      context was unseen cost the unigram row −8.07 nats/token and the
+      continuation row −6.17 (`smoothing_comparison`), because a token that
+      follows *new* contexts is by construction one that already follows *many*
+      contexts, and raw frequency cannot say that — the second element of a
+      stereotyped pair has high unigram mass and almost no continuation count.
+
+    Seen-context rows are built from the unigram lower order under *both*
+    settings, bit-identically: the repair is scoped to the unseen-context
+    predictive row and nothing else, so the seen-transition half of the
+    comparison is a controlled zero, not a re-measurement.
     """
 
     name = "m1"
 
-    def __init__(self, vocab: int, alpha: float = ALPHA):
+    def __init__(self, vocab: int, alpha: float = ALPHA, backoff: str = "unigram"):
+        if backoff not in ("unigram", "continuation"):
+            raise ValueError(f"unknown backoff {backoff!r}")
         self.vocab = vocab
         self.alpha = alpha
+        self.backoff = backoff
         self.unigram = np.full(vocab, 1.0 / vocab)
+        self.continuation = np.full(vocab, 1.0 / vocab)
         self.rows: dict[int, np.ndarray] = {}
         self.pair_counts: Counter[tuple[int, int]] = Counter()
 
@@ -179,12 +212,26 @@ class FirstOrder:
             a: _backoff_row(counts, self.unigram, self.alpha)
             for a, counts in contexts.items()
         }
+        # The continuation counts: one per (context, token) pair ever observed,
+        # credited to the token — N₁₊(·,b) in Kneser–Ney notation, smoothed to
+        # the uniform with the same α so a token never seen *as a continuation*
+        # (bout-initial only, or absent from train) keeps a finite floor.
+        continuation: Counter[int] = Counter()
+        for (_a, b), n in self.pair_counts.items():
+            if n > 0:
+                continuation[b] += 1
+        lower = np.full(self.vocab, self.alpha / self.vocab)
+        for token, n in continuation.items():
+            lower[token] += n
+        self.continuation = lower / lower.sum()
         return self
 
     def row(self, current: int) -> np.ndarray:
-        """P(· | current); an unseen current backs off to the unigram."""
+        """P(· | current); an unseen current backs off to the chosen lower order."""
         row = self.rows.get(current)
-        return row if row is not None else self.unigram
+        if row is not None:
+            return row
+        return self.unigram if self.backoff == "unigram" else self.continuation
 
     def score(self, seq: Sequence[int]) -> tuple[float, int, int]:
         """(log-likelihood, tokens scored, unseen transitions) for one bout."""
@@ -634,6 +681,178 @@ def format_report(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+# --- the smoothing repair: unigram vs continuation-count backoff ----------------------
+
+
+def smoothing_comparison(
+    bouts_by_species: dict[str, list[list[int]]],
+    alpha: float = ALPHA,
+    min_bouts: int = MIN_BOUTS_PER_SPECIES,
+) -> dict[str, Any]:
+    """Old vs repaired first-order backoff on the bake-off's own protocol.
+
+    Same store bouts, same seeded 80/20 splits (`_split`, same per-species seeds
+    as `bake_off`), same α — the only difference is the row an unseen *context*
+    falls back to: raw unigram (`old`) vs Kneser–Ney continuation counts (`new`).
+    Held-out transitions are bucketed three ways: `seen` (the pair occurred in
+    train), `unseen_continuation` (context seen, continuation not — 80 % of the
+    unseen tail on the debug store, and *untouched* by this repair by design),
+    and `unseen_context` (the repair's entire scope). First tokens are scored
+    under the unigram by both models, so they contribute equally to `overall`.
+
+    The pre-registered adoption gate (REPAIR_MIN_UNSEEN_GAIN / REPAIR_MAX_SEEN_LOSS)
+    is evaluated on the `unseen_context` bucket — judging a repair scoped to
+    unseen-context rows on the whole unseen tail would pre-ordain failure: the
+    untouched 80 % dilutes the gain arithmetically, and that dilution is reported
+    alongside (`unseen_tail`) rather than hidden.
+    """
+    rows: list[dict[str, Any]] = []
+    buckets = ("seen", "unseen_continuation", "unseen_context")
+    totals: dict[str, list[float]] = {b: [0.0, 0.0, 0] for b in ("first", *buckets)}
+    for index, species in enumerate(sorted(bouts_by_species)):
+        bouts = bouts_by_species[species]
+        if len(bouts) < min_bouts:
+            continue
+        vocab = 1 + max(t for seq in bouts for t in seq)
+        train, test = _split(bouts, seed=index)
+        old = FirstOrder(vocab, alpha, backoff="unigram").fit(train)
+        new = FirstOrder(vocab, alpha, backoff="continuation").fit(train)
+        acc: dict[str, list[float]] = {b: [0.0, 0.0, 0] for b in ("first", *buckets)}
+        for seq in test:
+            p_old = math.log(old.unigram[seq[0]])
+            acc["first"][0] += p_old
+            acc["first"][1] += p_old
+            acc["first"][2] += 1
+            for a, b in zip(seq, seq[1:]):
+                if old.pair_counts[(a, b)] > 0:
+                    bucket = "seen"
+                elif a in old.rows:
+                    bucket = "unseen_continuation"
+                else:
+                    bucket = "unseen_context"
+                acc[bucket][0] += math.log(old.row(a)[b])
+                acc[bucket][1] += math.log(new.row(a)[b])
+                acc[bucket][2] += 1
+        for b in acc:
+            for i in range(3):
+                totals[b][i] += acc[b][i]
+        row: dict[str, Any] = {"species": species}
+        for b in acc:
+            ll_o, ll_n, n = acc[b]
+            row[b] = {
+                "n": int(n),
+                "old": ll_o / n if n else None,
+                "new": ll_n / n if n else None,
+            }
+        rows.append(row)
+
+    def pooled(*names: str) -> dict[str, Any]:
+        ll_o = sum(totals[b][0] for b in names)
+        ll_n = sum(totals[b][1] for b in names)
+        n = sum(totals[b][2] for b in names)
+        return {
+            "n": int(n),
+            "old": ll_o / n if n else None,
+            "new": ll_n / n if n else None,
+            "gain": (ll_n - ll_o) / n if n else None,
+        }
+
+    summary = {
+        "overall": pooled("first", *buckets),
+        "seen": pooled("seen"),
+        "unseen_tail": pooled("unseen_continuation", "unseen_context"),
+        "unseen_continuation": pooled("unseen_continuation"),
+        "unseen_context": pooled("unseen_context"),
+    }
+    unseen_gain = summary["unseen_context"]["gain"]
+    seen_loss = -(summary["seen"]["gain"] or 0.0)
+    gate = {
+        "unseen_context_gain": unseen_gain,
+        "unseen_tail_gain": summary["unseen_tail"]["gain"],
+        "seen_loss": seen_loss,
+        "passed": (
+            unseen_gain is not None
+            and unseen_gain >= REPAIR_MIN_UNSEEN_GAIN
+            and seen_loss <= REPAIR_MAX_SEEN_LOSS
+        ),
+        "rule": (
+            f"the repair ships only if held-out LL on unseen-*context* transitions "
+            f"(the only rows it touches) improves by >= +{REPAIR_MIN_UNSEEN_GAIN} "
+            f"nat/token AND seen-transition LL degrades by <= {REPAIR_MAX_SEEN_LOSS} "
+            f"nats/token; the full pair-level unseen tail is reported alongside so "
+            f"the dilution by the untouched 80% (seen contexts, unseen "
+            f"continuations) is visible, not hidden"
+        ),
+    }
+    return {
+        "params": {
+            "alpha": alpha,
+            "min_bouts": min_bouts,
+            "split_seed": SPLIT_SEED,
+            "train_fraction": TRAIN_FRACTION,
+            "repair_min_unseen_gain": REPAIR_MIN_UNSEEN_GAIN,
+            "repair_max_seen_loss": REPAIR_MAX_SEEN_LOSS,
+        },
+        "species": rows,
+        "summary": summary,
+        "gate": gate,
+    }
+
+
+def format_smoothing_report(report: dict[str, Any]) -> str:
+    """The per-species repair table plus the adoption gate, as plain text."""
+    lines = [
+        "M1 backoff repair (Kneser-Ney continuation counts) — held-out LL/token, nats",
+        f"params: {json.dumps(report['params'], sort_keys=True)}",
+        "",
+        f"{'species':34s} {'overall old/new':>18s} {'seen old/new':>18s} "
+        f"{'unseen-ctx old/new':>20s} {'n(uctx)':>7s}",
+    ]
+    for r in report["species"]:
+
+        def fmt(bucket: str) -> str:
+            b = r[bucket]
+            if b["old"] is None:
+                return "-"
+            return f"{b['old']:7.3f}/{b['new']:7.3f}"
+
+        overall = {
+            k: v for k, v in r.items() if k != "species"
+        }
+        ll_o = sum(b["old"] * b["n"] for b in overall.values() if b["old"] is not None)
+        ll_n = sum(b["new"] * b["n"] for b in overall.values() if b["old"] is not None)
+        n = sum(b["n"] for b in overall.values())
+        lines.append(
+            f"{r['species']:34s} {ll_o / n:8.3f}/{ll_n / n:<8.3f} "
+            f"{fmt('seen'):>18s} {fmt('unseen_context'):>20s} "
+            f"{r['unseen_context']['n']:>7d}"
+        )
+    s = report["summary"]
+    lines += [
+        "",
+        "pooled over qualifying species (LL/token in nats):",
+        f"  overall:              {s['overall']['old']:+.4f} -> {s['overall']['new']:+.4f} "
+        f"(Δ {s['overall']['gain']:+.4f}, n={s['overall']['n']})",
+        f"  seen transitions:     {s['seen']['old']:+.4f} -> {s['seen']['new']:+.4f} "
+        f"(Δ {s['seen']['gain']:+.4f}, n={s['seen']['n']})",
+        f"  unseen tail (pairs):  {s['unseen_tail']['old']:+.4f} -> "
+        f"{s['unseen_tail']['new']:+.4f} "
+        f"(Δ {s['unseen_tail']['gain']:+.4f}, n={s['unseen_tail']['n']})",
+        f"    of which seen ctx:  {s['unseen_continuation']['old']:+.4f} -> "
+        f"{s['unseen_continuation']['new']:+.4f} "
+        f"(untouched by the repair, n={s['unseen_continuation']['n']})",
+        f"    of which new ctx:   {s['unseen_context']['old']:+.4f} -> "
+        f"{s['unseen_context']['new']:+.4f} "
+        f"(Δ {s['unseen_context']['gain']:+.4f}, n={s['unseen_context']['n']})",
+        "",
+        f"adoption gate: {report['gate']['rule']}",
+        f"  unseen-context gain {report['gate']['unseen_context_gain']:+.4f} nats/token, "
+        f"seen loss {report['gate']['seen_loss']:.4f} -> "
+        f"{'PASSES: the repair ships' if report['gate']['passed'] else 'FAILS: unigram backoff stays'}",
+    ]
+    return "\n".join(lines)
+
+
 # --- self-test ------------------------------------------------------------------------
 
 
@@ -704,10 +923,63 @@ def self_test(verbose: bool = True) -> None:
     ll, n, unseen = m1.score([0, 1, 2, 1])
     assert np.isfinite(ll) and unseen == 2, (ll, unseen)  # 1->2 and 2->1 unseen
 
+    # 5. The continuation-count repair, on the process it exists for: a rigid
+    #    trigram (2 -> 1 -> 0, so tokens 0 and 1 carry high unigram mass but a
+    #    continuation count of one each) inside a Zipfian flexible vocabulary —
+    #    eight common types plus a long flat tail of rare ones whose *frequencies*
+    #    are so low they never appear as a train context, which is what makes
+    #    held-out unseen contexts exist at all. After a novel context the truth
+    #    is a flexible draw, never 0 or 1 — the continuation row knows this and
+    #    the unigram row cannot. Seen-context rows must be bit-identical between
+    #    the two backoffs: the repair's scope is the unseen-context row, nothing
+    #    else. The fixture has its own seed so edits to the other checks cannot
+    #    shift it.
+    kn_rng = np.random.default_rng(5)
+    n_common, n_rare = 8, 200
+    vocab = 2 + n_common + n_rare
+    p_common = np.array([1.0 / t**2 for t in range(1, n_common + 1)])
+    p_common /= p_common.sum()
+    p_flex = np.concatenate([0.9 * p_common, np.full(n_rare, 0.1 / n_rare)])
+
+    def zipf_bouts(count: int) -> list[list[int]]:
+        out = []
+        for _ in range(count):
+            seq = [2 + int(kn_rng.choice(vocab - 2, p=p_flex))]
+            for _ in range(int(kn_rng.integers(4, 10))):
+                if seq[-1] == 2:
+                    seq.append(1)
+                elif seq[-1] == 1:
+                    seq.append(0)
+                else:
+                    seq.append(2 + int(kn_rng.choice(vocab - 2, p=p_flex)))
+            out.append(seq)
+        return out
+
+    train, test = zipf_bouts(80), zipf_bouts(200)
+    old = FirstOrder(vocab, backoff="unigram").fit(train)
+    new = FirstOrder(vocab, backoff="continuation").fit(train)
+    for a in old.rows:
+        assert np.array_equal(old.row(a), new.row(a)), (
+            f"seen-context row for {a} changed under the continuation backoff"
+        )
+    ll_old = ll_new = n_unseen_ctx = 0
+    for seq in test:
+        for a, b in zip(seq, seq[1:]):
+            if a not in old.rows and old.pair_counts[(a, b)] == 0:
+                ll_old += math.log(old.row(a)[b])
+                ll_new += math.log(new.row(a)[b])
+                n_unseen_ctx += 1
+    assert n_unseen_ctx > 20, f"Zipfian fixture made only {n_unseen_ctx} unseen contexts"
+    assert ll_new / n_unseen_ctx > ll_old / n_unseen_ctx + 0.15, (
+        f"continuation row must beat the unigram row on unseen contexts: "
+        f"{ll_old / n_unseen_ctx:+.3f} -> {ll_new / n_unseen_ctx:+.3f}"
+    )
+
     if verbose:
         print(
             "syntax self-test ok: M2 wins on repeat-count data, holds on "
-            "first-order data, M3 recovers a two-state process, unseen backs off"
+            "first-order data, M3 recovers a two-state process, unseen backs off, "
+            "continuation backoff wins unseen contexts and leaves seen rows untouched"
         )
 
 

@@ -77,3 +77,9 @@ both follow it. Date: 2026-07-28.
     dialect maps. Structure first; meaning only from playback. **P1 result inside:**
     the bake-off is run — first-order stays (the HMM's win is a smoothing artifact;
     the real find is the unseen-transition backoff weakness).
+19. [`19-spectral-bench.md`](19-spectral-bench.md) — the uncomfortable one: the 28-d
+    resynthesis cosine, the pipeline's universal fit objective, does **not**
+    correlate with audible spectral distortion (r ≈ 0.1 against both MCD and
+    multi-res STFT, n=200, two agreeing metrics). The cosine keeps its proven role
+    as the clustering guardrail; the mel-patch fit target becomes the priority, and
+    every future fit gate reads the bench.

@@ -2,6 +2,16 @@
 
 **Landed today (uncommitted at this writing — user commits):**
 
+- **Spectral bench — the uncomfortable finding (docs/19, `specbench.py` +
+  `birdy-pipeline specbench`):** the 28-d resynthesis cosine, the pipeline's
+  universal fit objective, does NOT correlate with audible spectral distortion
+  (Pearson/Spearman ≈ 0.1 vs both MCD and multi-res STFT, n=200 on debug-100 vs the
+  iNat cache; robustness: recomputed cosine matches stored at 0.921, MCD↔STFT agree
+  at 0.925). The cosine keeps its proven role as the *clustering* statistic;
+  respfit/docrefit/fricative adoption gates now carry the caveat; the **mel-patch
+  fit target is promoted to the priority** (objective = audible metric at last), and
+  future fit gates read the bench. Stage-1's invariance verdict is unaffected
+  (judged on kNN lift, not cosine).
 - **`build --clustering both`**: one render writes `<out>/known` (kmeans, every type
   named) + `<out>/unknown` (hdbscan, discovery view), each a complete verified asset
   set. **This is the debug cycle's default now** — the known and unknown views of a
@@ -27,6 +37,21 @@
   is the 10 % unseen tail (M1 −9.25 vs M3 −4.16): smoothing shape, not hidden
   structure. Recorded follow-up: repair M1's unseen backoff as a *smoothing* fix,
   re-run the bake-off after the depth harvest.
+- **Backoff repair shipped** (same day): `FirstOrder backoff="continuation"`
+  (Kneser–Ney continuation counts) passes its gate on BOTH debug stores (+1.90 /
+  +2.32 nats/token on unseen-context transitions, seen side bit-identical).
+  Full-tail gain is +0.37/+0.65 (80 % of the tail is seen-context, out of scope) —
+  and it narrows the HMM's tail advantage, confirming M3's win was smoothing shape.
+- **Debug-100 cycle run end-to-end** (/tmp/birdy-debug/harvest-100): subset → learn
+  (100/100 species fitted) → bake-off re-run (M3 wins the rule again at +0.240, but
+  only 12/100 species have ≥ 20 bouts — the depth ceiling in one number) →
+  `--clustering both` build. The user's full-harvest stop stands: depth work uses
+  debug stores, no bulk network harvests. **Embed-space note:** the descriptor-space
+  unknown map degenerated on this corpus (3 clusters, one holding 95 % — iNat
+  soundscape is one density blob in 28-d); the embed space has real structure (98
+  clusters, 53 % unassigned, both verifies green) and the known map improved with it
+  (purity 29.1 % → 41.6 %). Debug builds should pass `--space embed` once
+  embeddings.f32 exists (auto does, now that the store holds it).
 
 **Earlier same day (committed e242f88):**
 
