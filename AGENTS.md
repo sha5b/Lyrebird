@@ -107,6 +107,15 @@ Notes:
   `state.json` — read that line, or pass `--store out/harvest-gan` explicitly.
 - Iterating on clustering? `build --dump-points /tmp/points.npz` writes the standardised
   matrix + labels once; experiment against that file, never re-render per idea.
+- Iterating on the space map / per-session quality (docs/20)?
+  `build --dump-spacemap-eval /tmp/eval.npz` writes the map's held-out rows with
+  recording ids, the fit-side descriptor cloud, and the galaxy's centroids —
+  one build, all the session analysis (single-clustering builds only).
+- Debug builds that are not about the geometry battery should pass
+  `--no-relations --no-compare-projections`: on the 56 k-point debug corpus a
+  default build ran 33+ min at full CPU and timed out, with the relations
+  permutation tests + all-projection comparison as the only skipped phases in
+  the lean re-run (2026-07-31; the comparison timing is recorded in docs/20).
 - `build --clustering both` renders the corpus once and writes the kmeans map to
   `<out>/known` + the hdbscan map to `<out>/unknown` (each a complete, verifiable
   asset set) — the debug cycle's default, so the named and the discovery views of the

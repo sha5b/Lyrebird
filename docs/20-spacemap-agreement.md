@@ -97,3 +97,29 @@ A signal that passes G1 but fails G2 still ships as an *honesty* gate (the app
 says "this session is off everything the galaxy knows" instead of lighting
 knots) — that fallback is pre-registered too, so it cannot be invented
 post-hoc to save a failed lever.
+
+### 20.3.1 Interim: the proxies, and G3's verdict (2026-07-31)
+
+Measured on store-only replications (28-d frame = store window statistics, no
+render corpus — the build's frame mixes renders in, so absolute cosines run
+~0.02–0.06 low here; rankings are what's read):
+
+- **Signal 5 (harvest quality) is untestable on both debug stores** — `snr` is
+  unpopulated and `clipped` never true in harvest-d100/b100 (the fields arrived
+  with the 2026-07-30 quality work; these stores predate its harvests). It
+  stays a candidate for the next harvest epoch.
+- **Signal 1 (off-manifold 5-NN) separates consistently**: AUC 0.875 (d100) /
+  0.808 (b100) against the bad-session label, Spearman −0.82 with session
+  cosine. Below the 0.9 gate so far; the real-build frame (phase 3) and the
+  pre-registered two-signal combination are still to come.
+- **G3 (fit-side pruning): FAILS, both stores.** Dropping the worst-quintile
+  off-manifold fit sessions moves eval median cosine −0.0147 (d100) and
+  −0.0062 (b100) against the ≤ 0.005 allowance. The recorded risk was real:
+  the weird sessions *are* manifold coverage, and pruning them hurts the next
+  unseen weird session. The fit keeps every session; gating is a live-path
+  action only.
+- Regime caveat: on these store-only replications the "bad session" count is
+  far higher than §20.1's 8/45 and includes iNat — an artifact of the missing
+  render corpus in the frame (phase 3 settles it on the real build). The
+  Wryneck session (XC122542, cos 0.116, 99 % flip, 9 % of the loss)
+  reproduces exactly.

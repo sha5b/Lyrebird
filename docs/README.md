@@ -92,4 +92,7 @@ both follow it. Date: 2026-07-28.
     agreement decomposed: 76 % is boundary near-ties (tie-adjusted agreement is
     0.91), genuine map failure is ~2 % of rows, and 8 bad xeno-canto sessions carry
     24 % of the loss. Metric problem, not a map problem; no ONNX, no new bridge —
-    species-level live matching is the honest claim.
+    species-level live matching is the honest claim. §20.3 attacks the bad
+    sessions: fit-side pruning fails its gate (weird sessions are manifold
+    coverage), the live-path off-manifold signal and the margin-aware mapQuality
+    fields are the surviving direction.
