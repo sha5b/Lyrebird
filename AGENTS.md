@@ -153,6 +153,10 @@ App checks run from `app/`: `npm run check` (4 pre-existing errors in
 
 - Match the repo's docstring voice: dense, explains *why*, cites the measured numbers
   behind decisions. Refutations are recorded in place, not deleted.
+- `docs/` prose (and the whitepaper) is written in STE-flavored Simplified Technical
+  English (owner decision, 2026-08-01): short sentences (≤ ~25 words), active voice, one
+  name for one thing, no semicolons in prose, no marketing adjectives. Keep new docs prose
+  in that form; the full ruleset is the user's `ste-writing` skill.
 - Minimal, scoped diffs; no drive-by refactors; no new dependencies without checking
   they're already in `pyproject.toml`/`package.json`.
 - No `git commit/push` unless the user explicitly asks.

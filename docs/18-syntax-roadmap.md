@@ -7,65 +7,70 @@ ships from a full run until it has won on the debug store.
 
 ## Where we stand
 
-- Rhythm is measured, not invented: 26 897 per-transition gaps; >1 s = bout boundary.
+- Rhythm is measured, not invented: 26 897 per-transition gaps. A gap of >1 s marks a
+  bout boundary.
 - Syntax is first-order only: transitions, mined chunks, HMM song types (docs/12).
-  The literature is unambiguous that birdsong is not first-order (Jin & Kozhevnikov
-  2011 — repeat-count adaptation; Lu et al. 2025 — POMMs beat HMMs on Bengalese
-  finch). This is a known, documented under-model, not a surprise.
+  The literature is unambiguous: birdsong is not first-order. Jin & Kozhevnikov
+  2011 show repeat-count adaptation. Lu et al. 2025 show POMMs beat HMMs on Bengalese
+  finch. This is a known, documented under-model, not a surprise.
 - The galaxy is syllable-level. A song-level space does not exist yet.
-- Two gating constraints from elsewhere: **depth** (~10 recordings/species is too
-  thin for song structure) and the **recorder confound** (docs/14 §14.4; Stage 1's
-  retrain is the fix being swept — a pattern space built on a recorder-organised
-  embedding would cluster microphones, not songs).
+- Two gating constraints come from elsewhere. The first is **depth**: ~10
+  recordings/species is too thin for song structure. The second is the **recorder
+  confound** (docs/14 §14.4). Stage 1's retrain is the fix under test. A pattern space
+  built on a recorder-organized embedding would cluster microphones, not songs.
 
 ## P0 — Depth harvest (the unblocker)
 
-20–50 recordings each for ~100 chosen species, audio retained in the cache (owner
-exception). Species chosen for: documented syntax cases (chickadee chick-a-dee,
-Japanese tit ABC-D congeners, starling mimicry, sparrow dialects), repertoire depth,
-and playback anchors already in the inventory. **This one action unblocks P2, P4,
-and the spectral bench simultaneously — nothing else on this page does that.**
-Debug: `subset --diverse` already exists for choosing the bench species honestly.
+This stage gets 20–50 recordings each for ~100 chosen species. The cache retains the
+audio (owner exception). The selection favors species with documented syntax cases:
+chickadee chick-a-dee, Japanese tit ABC-D congeners, starling mimicry, sparrow
+dialects. It also weighs repertoire depth and playback anchors already in the
+inventory.
+
+**This one action unblocks P2, P4, and the spectral bench at the same time. Nothing
+else on this page does that.** Debug: `subset --diverse` already exists for choosing
+the bench species honestly.
 
 ## P1 — Grammar model comparison (can start now, on debug data)
 
-Pre-registered bake-off on the deepest species we already have: current first-order
-transitions vs **Jin–Kozhevnikov** (repeat-count-dependent transitions, the minimal
-sufficient model for finch syntax) vs **POMM** (partially observable Markov). Metric:
-held-out bout likelihood + transition entropy, same bouts, same splits. Ships only
-the winner; a wash keeps first-order and is documented. No new data needed — this is
-a model question, and mechanics are debug-testable today.
+Pre-registered bake-off on the deepest species we already have. The contenders: current
+first-order transitions vs **Jin–Kozhevnikov** (repeat-count-dependent transitions, the
+minimal sufficient model for finch syntax) vs **POMM** (partially observable Markov).
+Metric: held-out bout likelihood + transition entropy, same bouts, same splits.
+
+Ship only the winner. A wash keeps first-order, and this doc records it. This needs no
+new data. It is a model question, and the mechanics are debug-testable today.
 
 ## P2 — Song-level embedding (lens #5)
 
 Whole bouts as points: syllable-type tokens + measured gaps + tempo. Start with a
 parameter-free sequence kernel (edit distance over token×gap sequences) before any
-learned encoder — the critic's own discipline says the hand-written baseline comes
+learned encoder. The critic's own discipline says the hand-written baseline comes
 first, so the learned one has something to beat. Pre-registered: kNN lift by
 species vs by individual vs by recordist (the last must stay ~0 or Stage 1 failed
 upstream). **Blocked on P0 (bouts per bird) and Stage 1 (invariance).**
 
 ## P3 — CETI-style factorization
 
-Decompose each deep species' songs into independent axes — rhythm, tempo, rubato,
-ornamentation — the way sperm-whale codas factorized into a 156-unit alphabet
+Decompose each deep species' songs into independent axes: rhythm, tempo, rubato,
+ornamentation. Sperm-whale codas factorized into a 156-unit alphabet the same way
 (Sharma et al. 2024). The raw material already exists: typed tokens, measured gaps,
 contour shapes. Deliverable: per-species combinatorial alphabets and their usage
-statistics — the strongest honest claim available without playback.
+statistics. This is the strongest honest claim available without playback.
 
 ## P4 — Dialect & individual maps
 
-With P0 depth: same-species song variants placed geographically (the white-crowned
-sparrow dialect literature, and Otter 2026's continent-wide song takeover, are the
-template), individuals separated where 10–16 bouts each exist (literature-proven
-sufficient). The galaxy gains a song-level view beside the syllable one — and the
-two-map discipline (`--clustering both`) applies to it from day one.
+With P0 depth, place same-species song variants geographically. The white-crowned
+sparrow dialect literature and Otter 2026's continent-wide song takeover are the
+template. Separate individuals where 10–16 bouts each exist (literature-proven
+sufficient). The galaxy gains a song-level view beside the syllable one. The two-map
+discipline (`--clustering both`) applies to it from day one.
 
 ## P5 — Function propagation through syntax
 
-The playback anchors stay the only proof. What patterns add is *channels*: a motif
-appearing in the same sequence position across individuals is a stronger function
-candidate than a bare acoustic match, and is propagated as exactly that — a
+The playback anchors stay the only proof. What patterns add is *channels*. A motif that
+appears in the same sequence position across individuals is a stronger function
+candidate than a bare acoustic match. The pipeline propagates it as exactly that: a
 candidate, with shares and a confidence label.
 
 ## P6 — Unknown-bird syntax
@@ -78,8 +83,8 @@ the syllable stays `unlabelled: real acoustics, no documented function`.
 
 **Now:** P1 (no new data needed). **After Stage 1's verdict:** P0 (deliberate
 harvest). **After P0:** P2 → P3 → P4. **Continuous:** P5, P6 as each layer lands.
-Each stage is judged on the debug store with both maps built, and a negative result
-is written down, not deleted.
+The debug store judges each stage with both maps built, and the project writes a
+negative result down instead of deleting it.
 
 ## P1 result (2026-07-31): the grammar bake-off — first-order stays
 
@@ -93,66 +98,70 @@ deterministic — two runs bit-identical). The pre-registered table:
 | M3 hidden-state HMM (K ∈ {4,8,16}) | **+0.422** | 29 / 30 |
 
 By the letter of the rule M3 wins. **The decomposition is the honest reading, and
-it reverses the adoption**: split held-out tokens into transitions seen vs unseen
-in train — on the 90 % seen, first-order is the best model (−1.525 vs M3's −1.624
-nats/token, better in 15/30 species; M2 worse in 25/30); M3's whole advantage comes
-from the 10 % unseen tail, where M1 pays −9.25 and M3 only −4.16 nats/token. That
-is a property of smoothing *shape* (a mixture predictive is heavy-tailed), not of
-recovered hidden structure. So:
+it reverses the adoption.** Split the held-out tokens into transitions seen vs unseen
+in train. On the 90 % seen, first-order is the best model (−1.525 vs M3's −1.624
+nats/token, better in 15/30 species, M2 worse in 25/30).
+
+M3's whole advantage comes from the 10 % unseen tail, where M1 pays −9.25 and M3
+only −4.16 nats/token. That is a property of smoothing *shape* (a mixture predictive
+is heavy-tailed), not of recovered hidden structure. So:
 
 - **First-order stays the shipped model.** M2's mechanism fragments counts on this
-  corpus and adds nothing; M3's win is real as scored and meaningless as structure.
+  corpus and adds nothing. M3's win is real as scored and meaningless as structure.
   Adopting a heavier model for a smoothing artifact is the wrong lesson.
 - **The one real weakness the bake-off exposed is M1's unseen-transition backoff**
-  (−9.25 nats/token on a tenth of held-out transitions). A repair — softer unigram
-  backoff or Kneser–Ney-style continuation counts — is a *smoothing* fix, to be
-  judged on its own pre-registered terms, not smuggled in as a model upgrade.
+  (−9.25 nats/token on a tenth of held-out transitions). A repair, such as softer
+  unigram backoff or Kneser–Ney-style continuation counts, is a *smoothing* fix.
+  Judge it on its own pre-registered terms, not smuggled in as a model upgrade.
 - **Re-run after the depth harvest (P0).** At current depth ~10 % of held-out
-  transitions are unseen; depth shrinks that tail and may change the picture — thin
+  transitions are unseen. Depth shrinks that tail and may change the picture. Thin
   data is exactly where higher-order models starve (M2's 0/30 says so).
 
 ### The backoff repair (same day, pre-registered separately) — shipped
 
 `FirstOrder` in syntax.py gains `backoff="continuation"` (Kneser–Ney lower order:
-P(next) ∝ distinct contexts `next` followed, add-α to uniform; seen contexts
+P(next) ∝ distinct contexts `next` followed, add-α to uniform, seen contexts
 bit-identical to the old row). Gate: ≥ +1 nat/token on unseen-*context* transitions
 with seen-side loss ≤ 0.01. **Passes on both debug corpora**: +1.90 (37-species
-store) and +2.32 (debug-100) nats/token, seen loss exactly 0.0000. Two honest
-caveats: 80 % of the unseen tail is *seen context, unseen continuation* — outside
-the repair's scope, so the full-tail gain is +0.37/+0.65, not the headline +1.9; and
-the repair narrows the HMM's unseen-tail advantage, confirming that M3's "win" was
-smoothing shape. The shipped grammar artifact is untouched either way — the repair
-improves the *measurement baseline* future bake-offs are judged against.
+store) and +2.32 (debug-100) nats/token, seen loss exactly 0.0000.
+
+Two honest caveats. First, 80 % of the unseen tail is *seen context, unseen
+continuation*, outside the repair's scope, so the full-tail gain is +0.37/+0.65, not
+the +1.9 headline. Second, the repair narrows the HMM's unseen-tail advantage, which
+confirms that M3's "win" was smoothing shape. The shipped grammar artifact is
+untouched either way. The repair improves the *measurement baseline* future bake-offs
+are judged against.
 
 ## P2 result (2026-07-31): the song-level kernel baseline does not hold
 
-`songspace.py` + `birdy-pipeline songspace`: bouts as (type, gap) sequences, a
-weighted edit-distance kernel (substitution/indel 1, match cost |Δlog gap| priced
-inside the DP, so the edit path *is* the rhythm alignment), judged by the
-pre-registered rule: species kNN lift must beat bag-of-types over the same bouts
-AND recordist lift must stay < 0.05. **It fails both gates on both debug stores:**
+`songspace.py` + `birdy-pipeline songspace`: bouts as (type, gap) sequences, with a
+weighted edit-distance kernel. Substitution/indel costs 1, and the match cost
+|Δlog gap| is priced inside the DP, so the edit path *is* the rhythm alignment.
+The pre-registered rule judges it: species kNN lift must beat bag-of-types over the
+same bouts AND recordist lift must stay < 0.05. **It fails both gates on both debug
+stores:**
 
 | store | species lift, kernel | species lift, bag-of-types | recordist lift |
 |---|---|---|---|
 | harvest-test (37 spp, 3 750 bouts) | +0.877 | **+0.924** | **+0.264** |
 | harvest-100 (100 spp, 889 bouts) | +0.050 | +0.081 | **+0.087** |
 
-Post-hoc exact-kNN (no MDS) reproduces the lifts — not an embedding-truncation
-artifact. The measured details, each worth keeping:
+Post-hoc exact-kNN (no MDS) reproduces the lifts, so the loss is not an
+embedding-truncation artifact. The measured details, each worth keeping:
 
 - **Within-species song structure exists**: 18/18 deep species separate recordings
-  clearly (parus_major +0.68, cuculus_solitarius +0.43, strix_aluco +0.27) — but
+  clearly (parus_major +0.68, cuculus_solitarius +0.43, strix_aluco +0.27). But
   bag-of-types matches it almost everywhere. The structure is already entirely in
-  the token marginals; **order and rhythm add nothing measurable at current
-  depth** — the P0-depth caveat, confirmed from a second direction.
-- **The rhythm term costs** species lift (ablation w=1: +0.877 vs w=0: +0.896) —
-  priced variation the corpus does not organise by.
-- The recordist gate failure is corpus composition (recordist ↔ species/geography
-  correlate; bag shows the same lift), reported as a failure per the
-  pre-registration; the mechanism is visible in the baseline's identical number.
+  the token marginals. **Order and rhythm add nothing measurable at current
+  depth.** This is the P0-depth caveat, confirmed from a second direction.
+- **The rhythm term costs** species lift (ablation w=1: +0.877 vs w=0: +0.896).
+  It prices variation the corpus does not organize by.
+- The recordist gate failure is corpus composition: recordist ↔ species/geography
+  correlate, and bag shows the same lift. The gate keeps its failure status per the
+  pre-registration. The mechanism is visible in the baseline's identical number.
 - **The bar for any learned song encoder is bag-of-types (+0.924), not the edit
-  kernel** — and depth is the real unblocker. A learned encoder is unpromising
-  until then; this slot in the roadmap is now "beat bag-of-types, after P0".
+  kernel.** Depth is the real unblocker. A learned encoder is unpromising
+  until then. This slot in the roadmap is now "beat bag-of-types, after P0".
 - OOM receipt: `geometry._silhouette` builds an (n,n,d) diff — 212 GB at
-  4 000 × 1 658 dims. That is what took the host down twice today; the statistic
+  4 000 × 1 658 dims. That is what took the host down twice today. The statistic
   survives at rank ≤ 128. Flagged for the next high-rank use of `geometry.measure`.

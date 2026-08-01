@@ -9,6 +9,18 @@
   data/learned-inventory.json rewritten. Unlabelled pool: 28 arrivals → 12
   inherited, 2 candidates. **Next: P1 bake-off re-run (pre-registered,
   docs/18), then the production build decision.**
+- **Detected song types are now playable songs (owner report).** The dropdown
+  only ever offered "learned bout" (a generated sample) because the pipeline
+  writes detected songs under `grammar.songTypes`, never under `songs`. The
+  detection itself was always in (docs/12: run-collapsed medoid sequences
+  with counts — 48/2 423 species carry them today, growing with P0 depth).
+  `assets.ts` now surfaces each song type heard ≥ 2× as a Song
+  (`S01 · heard 6×`, confidence `inferred`, gloss says repeats are sampled
+  from the bird's measured self-transition rates), runs re-expanded
+  deterministically (seeded on species+song id), gaps from the measured
+  transition table (`grammar.gaps`, now also typed in types.ts — it shipped
+  untyped since 2026-07-30). Works in shard and whole-file modes; the chorus
+  treats them as the synthesized class. Shard contract test passes.
 - **Ink-mode accent bug found + fixed (owner report).** `easeAccent` in
   PointCloud retinted the accent to the subject's species hue whenever
   `plain` was true — and with the three-way mode split, `plain` covers BOTH

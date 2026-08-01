@@ -131,6 +131,59 @@ async function getJson<T>(path: string, fetcher: typeof fetch, bust = ''): Promi
  * the stamp pinning, the shard view, the sidecar fetches — works unchanged. The
  * default `''` is byte-for-byte the historical single-map load.
  */
+/**
+ * Surface detected song types as playable songs (docs/12). The pipeline mines
+ * recurring run-collapsed sequences from real bouts and writes them under
+ * `grammar.songTypes` — measured, not invented — but never under `songs`, so the
+ * pickers could not see them. Each becomes a Song here: runs re-expanded by
+ * sampling the bird's own measured self-transition rates (the same geometric rule
+ * as compose.ts's expandSongType, seeded per song so it is stable), gaps from the
+ * measured transition table. Confidence 'inferred': a recurring pattern with no
+ * documented function. Types heard fewer than twice stay out — once is not a song.
+ */
+const withDetectedSongs = (sp: Species): Species => {
+	const detected = sp.grammar?.songTypes;
+	if (!detected?.length) return sp;
+	const gapsOf = (sp.grammar?.gaps ?? {}) as Record<string, number>;
+	const transitions = sp.grammar?.transitions ?? {};
+	const existing = new Set(sp.songs.map((s) => s.id));
+	const songs = [...sp.songs];
+	for (const t of detected) {
+		if ((t.count ?? 0) < 2 || existing.has(t.id) || !t.sequence?.length) continue;
+		// One deterministic expansion per song: run lengths sampled from the measured
+		// self-transition probability, seeded on the song's id so the same build
+		// always plays the same realization.
+		let h = 2166136261;
+		for (const c of `${sp.id}/${t.id}`) {
+			h ^= c.charCodeAt(0);
+			h = Math.imul(h, 16777619);
+		}
+		const rng = () => ((h = Math.imul(h ^ (h >>> 15), 2246822519) >>> 0) / 4294967296);
+		const seq: string[] = [];
+		for (const typeId of t.sequence) {
+			if (!sp.syllables.some((s) => s.id === typeId)) continue;
+			const pSelf = transitions[typeId]?.[typeId] ?? 0;
+			const run =
+				pSelf > 0 && pSelf < 1
+					? Math.max(1, Math.min(40, 1 + Math.floor(Math.log(1 - rng()) / Math.log(pSelf))))
+					: 1;
+			for (let i = 0; i < run; i++) seq.push(typeId);
+		}
+		if (!seq.length) continue;
+		songs.push({
+			id: t.id,
+			label: `${t.id} · heard ${t.count}×`,
+			gloss: 'recurring song type from field recordings; repeats sampled from measured rates',
+			function: 'detected pattern — no documented function',
+			confidence: 'inferred',
+			refs: [],
+			sequence: seq,
+			gaps: seq.slice(1).map((to, i) => gapsOf[`${seq[i]}>${to}`] ?? 0.3)
+		});
+	}
+	return songs.length === sp.songs.length ? sp : { ...sp, songs };
+};
+
 export async function loadAssets(
 	fetcher: typeof fetch = fetch,
 	bust = '',
@@ -158,7 +211,10 @@ export async function loadAssets(
 					banks: index.banks,
 					species: []
 				})
-			: getJson<Inventory>(`${dir}inventory.json`, fetcher, stamp),
+			: getJson<Inventory>(`${dir}inventory.json`, fetcher, stamp).then((inv) => ({
+					...inv,
+					species: inv.species.map(withDetectedSongs)
+				})),
 		getJson<FeatureSpace & NestedFeatureSpace>(`${dir}feature-space.json`, fetcher, stamp),
 		getJson<PointCloudMeta>(`${dir}points.json`, fetcher, stamp),
 		getJson<Centroids>(`${dir}centroids.json`, fetcher, stamp)
@@ -239,6 +295,8 @@ export async function loadAssets(
 			songs: s.songs.length
 		}));
 	const commonById = new Map(inventoryIndex.map((s) => [s.id, s.common]));
+
+
 	// Cache by promise, not by result: two selections of the same bird in the same tick
 	// share one fetch, and a cached 404 stays answered rather than retried per lookup.
 	const shardCache = new Map<string, Promise<Species | undefined>>();
@@ -252,8 +310,9 @@ export async function loadAssets(
 				.then((sp) => {
 					// The shard is the whole file's entry for this bird, so once it is here
 					// every sync reader (speciesById, the engine, the grammar) sees it.
-					if (!inventory.species.some((s) => s.id === sp.id)) inventory.species.push(sp);
-					return sp;
+					const full = withDetectedSongs(sp);
+					if (!inventory.species.some((s) => s.id === sp.id)) inventory.species.push(full);
+					return full;
 				})
 				.catch(() => undefined);
 			shardCache.set(id, pending);
@@ -270,7 +329,9 @@ export async function loadAssets(
 		// a single fetch beats one request per species.
 		const whole = await getJson<Inventory>(`${dir}inventory.json`, fetcher, stamp);
 		const held = new Set(inventory.species.map((s) => s.id));
-		inventory.species.push(...whole.species.filter((s) => !held.has(s.id)));
+		inventory.species.push(
+			...whole.species.filter((s) => !held.has(s.id)).map(withDetectedSongs)
+		);
 	};
 	const speciesCommon = (id: string): string => commonById.get(id) ?? id;
 

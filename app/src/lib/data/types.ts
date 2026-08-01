@@ -158,6 +158,12 @@ export interface Grammar {
 	 */
 	chunks?: Chunk[];
 	/**
+	 * Measured per-transition pauses in seconds, keyed `from>to` ("L100>L114"). The
+	 * 2026-07-30 grammar.gaps work (26 897 measured gaps): no invented rhythm is left
+	 * in a learned inventory. Optional because authored and older entries predate it.
+	 */
+	gaps?: Record<string, number>;
+	/**
 	 * Recurring song types, as run-collapsed medoid sequences: one entry per *act*, so a
 	 * trill is a single token and playing a type means re-expanding runs (compose.ts).
 	 */

@@ -124,8 +124,8 @@ Pure tones are a filter effect and the tract tracks F0 (`04-…` §4.1,
 Beckers et al. 2003), so the tract is **not** cosmetic:
 
 - one two-pole resonant bandpass (RBJ biquad, `bandpass` form) centred on the
-  *instantaneous* `f0`, Q per timbre above, coefficients recomputed every 32 samples;
-- optional second bandpass at `2*f0` scaled by `harmonic`;
+  *instantaneous* `f0`, Q per timbre above, coefficients recomputed every 32 samples.
+- optional second bandpass at `2*f0` scaled by `harmonic`.
 - a fixed 180 Hz one-pole highpass (DC block) and a 12 kHz one-pole lowpass
   (tracheal roll-off) on the sum.
 
@@ -210,9 +210,9 @@ predicted for its 45 mm trachea. The northern cardinal shows ~2, 5, 8, 12 kHz, i
 searching for it.** A trachea is a tube of fixed length that belongs to the bird,
 not to the note. So every syllable that species sings carries the same absolute
 resonances. `learn.measure_trachea_f1` averages the per-syllable MFCC means over all
-of a species' observations. It inverts them to a 26-band log spectral envelope,
-detrends the overall tilt, and scans for the `f_1` whose odd-harmonic series best
-aligns with what is left.
+of a species' observations. It inverts them to a 26-band log spectral envelope and
+detrends the overall tilt. Then it scans for the `f_1` whose odd-harmonic series
+best aligns with what is left.
 
 Those syllables span many recordings and a wide range of f0, so pitch-dependent
 structure averages away. Only resonances fixed in Hz survive. This is the
@@ -277,17 +277,17 @@ A linear 0.01 step would put fifteen samples in it.
 `app/scripts/verify-parity.mjs` renders a case list through the real AudioWorklet
 and through the Python renderer, then compares them. §8.1 has always said the two
 halves implement the same model, but nothing enforced it. Six divergences had
-accumulated. They included AM applied *twice* in the browser, a `hold` decay of
-`dur*0.12` against the spec's `dur/2.5`, a missing pre-tract highpass, ODE initial
-conditions of 0.001 against 1e-4, a per-Euler-step clamp at ±40 that flattened the
-peaks of the high-amplitude regimes, and an invented `Q*0.8` on the harmonic band.
+accumulated. AM was applied *twice* in the browser. The `hold` decay was `dur*0.12`
+against the spec's `dur/2.5`. The pre-tract highpass was missing. The ODE initial
+conditions were 0.001 against 1e-4, and a per-Euler-step clamp at ±40 flattened the
+peaks of the high-amplitude regimes. An invented `Q*0.8` sat on the harmonic band.
 All twelve cases now agree to 2.8e-08, which is float32 rounding.
 
 The harness also checks the ~20 ms that each voice runs *past* the envelope's grid,
 where Python has no samples to compare against. That region is a decay, so nothing
 in it may exceed the body level. This is not hypothetical. A release ramp that
 continued past its endpoint went negative there. It reached about −3.3× and read as
-an audible click on the tail of every note, while a sample-for-sample check over the
+an audible click on the tail of every note. Yet a sample-for-sample check over the
 first `n` samples reported all-clear.
 
 ### F0 of a rich waveform is not measured by counting zero crossings
@@ -322,18 +322,18 @@ We tested two more hypotheses, and **both are disproved**. We record them here s
 nobody tries them again.
 
 *"Our syntheses are all narrowband tones clustered together, so which real centroid
-is nearest is near-arbitrary."* Measured on mean mel envelopes
-(`features.mel_envelope`) over the 22 species: between-species spread is 1.92 for
-our resynthesis against 1.87 for the real recordings, and within-envelope detail
+is nearest is near-arbitrary."* The measurement ran on mean mel envelopes
+(`features.mel_envelope`) over the 22 species. Between-species spread is 1.92 for
+our resynthesis against 1.87 for the real recordings. Within-envelope detail is
 1.13 against 1.06. **We express 103 % of the real between-species variation and
 106 % of the spectral shape.** The envelopes are not collapsed and not smooth. They
 are as varied and as detailed as the real ones. They vary along *different axes*.
 
 *"There is a systematic spectral tilt error."* There is one. Relative energy above
-6 kHz sits at −0.01 for us against −1.59 for the recordings, so our tract roll-off
-is far too gentle (one pole at 12 kHz). But correcting it does not help. A 6 kHz
-two-pole roll-off lands the bias at −1.588, essentially exactly on the real figure,
-and cross-species placement *falls* from 23.1 % to 20.2 %. Every roll-off we tried
+6 kHz sits at −0.01 for us against −1.59 for the recordings. Our tract roll-off is
+far too gentle (one pole at 12 kHz). But correcting it does not help. A 6 kHz
+two-pole roll-off lands the bias at −1.588, essentially exactly on the real figure.
+And cross-species placement *falls* from 23.1 % to 20.2 %. Every roll-off we tried
 was worse than none. (Part of that −1.59 is a recording artifact rather than a bird:
 xeno-canto is largely mp3, which lowpasses.)
 
@@ -342,13 +342,13 @@ per-species and per-syllable, and that points at the **evidence** rather than at
 filter chain. The store keeps a harvested syllable as 28 numbers. The spectral
 envelope is 13 heavily smoothed cepstral coefficients, and that vector is both the
 fit's only evidence *and* its objective. A median cosine of 0.775 against it then
-means the fit has largely saturated what the stored descriptor can express, while
-the sound is still not right.
+means the fit has largely saturated what the stored descriptor can express. Yet the
+sound is still not right.
 
 **The ceiling is the descriptor, not the synthesiser.** To go further, the harvest
 must measure more from the audio while it is briefly in memory. That means a
 harmonic-amplitude trajectory and a noise residual per syllable type, on the order
-of 60–80 extra floats, rather than another parameter fitted against the same 28
+of 60–80 extra floats. It does not mean another parameter fitted against the same 28
 numbers.
 
 ### Four hypotheses tested, four refuted — and what that leaves
@@ -379,9 +379,9 @@ often a resynthesis lands nearest its own species.
 
 Point 4 is the informative one. **The two objectives conflict.** Matching the
 spectral trajectory costs the spectral average, and vice versa. A better proxy does
-not replace a bad one here. The synthesiser cannot satisfy both at once. Combined
-with points 1–3 — variety is not lacking, no global correction helps, and richer
-evidence does not help — the remaining constraint is the **expressive capacity of
+not replace a bad one here. The synthesiser cannot satisfy both at once. Points 1–3
+add the rest: variety is not lacking, no global correction helps, and richer
+evidence does not help. The remaining constraint is the **expressive capacity of
 the filter chain**. It is not the fit, not the objective, and not the measurements.
 
 This makes the structural change the one worth doing. It is the only candidate that
@@ -464,13 +464,13 @@ direction. It now has a second, independent line of evidence behind it. **The ne
 thing to fix is what "closer to the real bird" means, not what the filter chain
 contains.**
 
-Still to do before the waveguide can be judged fairly: an objective that is not a
-28-number time-averaged summary, then re-enable and re-measure, and mirror
-`_tube_comb` in the worklet. Ranked next after that, from the same review: inject
-`ẏ` rather than `y` at the tract input, and replace the per-syllable envelope with
-the two-state respiratory oscillator of Fainstein, Goller & Mindlin
-(arXiv:2509.11019). It generates attack shape, asymmetry and cross-syllable memory
-from five parameters instead of a designed envelope.
+Two things remain before anyone can judge the waveguide fairly. The fit needs an
+objective that is not a 28-number time-averaged summary, then a re-enable and a
+re-measure. The worklet needs a mirror of `_tube_comb`. Two changes rank next, from
+the same review. Inject `ẏ` rather than `y` at the tract input. Replace the
+per-syllable envelope with the two-state respiratory oscillator of Fainstein, Goller
+& Mindlin (arXiv:2509.11019). It generates attack shape, asymmetry and
+cross-syllable memory from five parameters instead of a designed envelope.
 
 The delay-line waveguide that the Mindlin implementations use remains worth trying.
 Its form is `Pi[n] = src[n] − r·Pi[n−N]`, `N = round(2L·fs/c)`, cascaded into a
@@ -494,17 +494,17 @@ sides implement this exactly. Do **not** rely on library defaults.
 
 Framing:
 
-- sample rate **48000**, mono, peak-normalised to 0.9;
-- frame 1024, hop 512, window = symmetric Hann: `w[i] = 0.5 - 0.5*cos(2*pi*i/(N-1))`;
-- `mag[k] = |rfft(frame * w)[k]|` for `k` in `[0, 512)` — no normalisation;
-- `rms` is computed on the **unwindowed** frame;
+- sample rate **48000**, mono, peak-normalised to 0.9
+- frame 1024, hop 512, window = symmetric Hann: `w[i] = 0.5 - 0.5*cos(2*pi*i/(N-1))`.
+- `mag[k] = |rfft(frame * w)[k]|` for `k` in `[0, 512)` — no normalisation.
+- `rms` is computed on the **unwindowed** frame.
 - a frame is *voiced* if `rms > 1e-4` and `rms > 0.05 * clipMaxRms`. Unvoiced frames
   are dropped. A clip with no voiced frame is skipped.
 
 Per voiced frame:
 
-- **MFCC (13)**: 26 triangular mel filters applied to the *power* spectrum `mag^2`;
-  band energy floored at 1e-10; natural log; then unnormalised DCT-II:
+- **MFCC (13)**: 26 triangular mel filters applied to the *power* spectrum `mag^2`,
+  band energy floored at 1e-10 before the natural log and the unnormalised DCT-II:
   `c[i] = sum_j log(E[j]) * cos(pi*i*(j+0.5)/26)`, `i` in `[0, 13)`.
 
   Build the bank as follows. This is normative, because a different triangle
@@ -526,7 +526,7 @@ Per voiced frame:
 - **centroid**: `sum(f[k]*mag[k]) / sum(mag[k])` in Hz, then `log2(max(centroid, 20))`.
 - **flatness**: `exp(mean(log(mag+1e-10))) / (mean(mag)+1e-10)`.
 
-Descriptor (order is fixed; `dimNames` is shipped in `feature-space.json`):
+Descriptor (order is fixed, and `dimNames` is shipped in `feature-space.json`):
 
 | index | value |
 |---|---|
@@ -573,9 +573,9 @@ median anchor plus renders of measured member realisations
 with no harvest data. The window reservoir still feeds `feature-space.json`'s
 mean/std, because the live browser path analyses windows.
 
-In an **embed-space build** (`build --space embed`), the default when the store
-carries `embeddings.f32` written by `critic embed`: projection, clustering, and
-centroids run on the critic's 32-d embedding. `centroids.json` items carry
+An **embed-space build** (`build --space embed`) is the default when the store
+carries `embeddings.f32` written by `critic embed`. In it, projection, clustering,
+and centroids run on the critic's 32-d embedding. `centroids.json` items carry
 `vector32` (32-d standardised), with `vector` kept as a 28-d fallback where members
 carry descriptors. `feature-space.json` gains
 
@@ -623,8 +623,8 @@ the learned space without torch. The pipeline measures `mapQuality` on held-out
 pipeline measures F0 from zero crossings of the steady-state segment (last 60 % of
 a 250 ms run). It writes bins where the oscillator is silent or aperiodic
 (crossing-interval CV > 0.25) as 0 and fills them by interpolation along beta. It
-measures `ampPP` over the same segment. The source normalisation in §8.1 divides by
-`ampPP`.
+measures `ampPP` over the same segment, and the source normalisation in §8.1
+divides by it.
 
 ## 8.6 Measured behaviour of the oscillator
 
@@ -647,7 +647,7 @@ Notes that matter for the mapping:
 - `alpha` mainly sets the amplitude, and it grows with `beta`. This is why the
   source normalisation divides by `ampPP`.
 - Below `beta ≈ 0.15` at low pressure the oscillator falls silent (below threshold).
-  Clamp `beta` rather than letting a contour ask for it.
+  Clamp it rather than letting a contour ask for it.
 - Crossing-interval CV stays under 0.15 across this range, rising with `beta`: the
   buzzy timbres come from pushing pressure high, not from instability.
 - All these numbers are measured **above** `beta = 0.2`, i.e. in the tonal regime.

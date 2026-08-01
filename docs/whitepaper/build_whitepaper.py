@@ -269,7 +269,7 @@ def chart_session_gate() -> str:
     fig, ax = plt.subplots(figsize=(5.2, 2.5))
     ax.bar(range(3), aucs, color=[ACCENT, GREY, ACCENT], width=0.55)
     ax.axhline(0.9, color="#555555", linewidth=0.9, linestyle="--")
-    ax.text(2.4, 0.905, "adoption gate AUC 0.9", fontsize=7.5, color="#555555", ha="right")
+    ax.text(-0.45, 0.907, "gate 0.9", fontsize=7.5, color="#555555", ha="left")
     for i, v in enumerate(aucs):
         ax.text(i, v + 0.004, f"{v:.3f}", ha="center", fontsize=8)
     ax.set_xticks(range(3))
@@ -444,11 +444,11 @@ def diagram_architecture() -> str:
 
     y, h, w = 3.35, 1.55, 1.95
     xs = [0.45, 2.75, 5.05, 7.35, 9.65]
-    _box(ax, xs[0], y, w, h, "harvest\nxeno-canto · iNatSounds\ndecode → describe\n→ delete", ec=GREY, fs=7.2)
-    _box(ax, xs[1], y, w, h, "store\n28-d descriptors\n+ 32×23 mel patches\n(audio deleted)", ec=GREY, fs=7.2)
-    _box(ax, xs[2], y, w, h, "learn\nKMeans types +\ngesture inversion\n(bit-identical ∥)", fs=7.2)
-    _box(ax, xs[3], y, w, h, "build\ngalaxy assets\nJSON / f32\nno torch weights", fc="#f2ecf7", fs=7.2)
-    _box(ax, xs[4], y, w, h, "app\n3-D galaxy · synth\nmic analysis", fc="#f2ecf7", fs=7.2)
+    _box(ax, xs[0], y, w, h, "harvest\nxeno-canto ·\niNatSounds\ndecode → describe\n→ delete", ec=GREY, fs=6.9)
+    _box(ax, xs[1], y, w, h, "store\n28-d descriptors\n+ 32×23 patches\n(audio deleted)", ec=GREY, fs=6.9)
+    _box(ax, xs[2], y, w, h, "learn\nKMeans types +\ngesture inversion\n(bit-identical ∥)", fs=6.9)
+    _box(ax, xs[3], y, w, h, "build\ngalaxy assets\nJSON / f32\nno torch weights", fc="#f2ecf7", fs=6.9)
+    _box(ax, xs[4], y, w, h, "app\n3-D galaxy\nsynth · mic", fc="#f2ecf7", fs=6.9)
     for i, x in enumerate(xs):
         ax.add_patch(plt.Circle((x + w / 2, y + h + 0.42), 0.21, facecolor=ACCENT, edgecolor="none"))
         ax.text(x + w / 2, y + h + 0.42, str(i + 1), ha="center", va="center",
@@ -465,7 +465,7 @@ def diagram_architecture() -> str:
     ax.text(6.0, 0.62,
             "honesty layer over everything the app shows:  experimental · documented · inferred · "
             "invented · “unlabelled: real acoustics, no documented function”",
-            ha="center", va="center", fontsize=7.2, color="#241f33")
+            ha="center", va="center", fontsize=6.9, color="#241f33")
     fig.tight_layout()
     return _save(fig, "architecture.png")
 
@@ -1161,7 +1161,7 @@ def build_docx(eq_paths, figs):
             ["Google Bird Sounds [24]", "t-SNE map of thousands of recordings", "no", "no", "yes — web experiment", "yes — Apache 2.0", "no", "no"],
             ["Sainburg et al. [22]", "VAE latent space across species", "no", "latent, not physiological", "not documented", "not documented", "no", "not documented"],
             ["Goffinet et al. [23]", "learned low-d features for individual and group differences", "no", "no", "not documented", "not documented", "no", "not documented"],
-            ["generative audio models [38]", "waveform generators", "yes", "no", "no", "training-data licences unclear", "no", "no"],
+            ["generative audio models [39]", "waveform generators", "yes", "no", "no", "training-data licences unclear", "no", "no"],
             ["Birdy (this work)", "physical syrinx + measurement-only corpus", "yes", "yes — physiological parameters", "yes", "yes — no audio retained", "yes — four levels", "yes — playback-tested [10, 15]"],
         ],
         widths=[2.5, 3.3, 1.6, 2.0, 2.4, 2.2, 1.6, 1.9],
@@ -1404,3 +1404,368 @@ def build_docx(eq_paths, figs):
         C("d18", "handoff"),
         T("."),
     ])
+
+    # ================= 6. Limitations: what does not work =================
+    H1(doc, "6. Limitations: what does not work (measured)")
+    plain_terms(
+        doc,
+        "This section is the spine of the paper, and it is as long as the good news on "
+        "purpose. Birdy's rule: a measurement that contradicts the plan is the deliverable. "
+        "Every failure below has a number, a fixed corpus, and a written-down verdict. It "
+        "stays in the record so nobody tries it again. Three big things do not work yet. The "
+        "number the pipeline optimises is not the number a listener hears. The embedding "
+        "organises by microphone before it organises by bird. The corpus is too shallow for "
+        "song grammar to show up in it."
+    )
+    H2(doc, "6.1 The objective does not measure the audible")
+    P(doc, [
+        T("Every fit decision in the pipeline is judged by the 28-d descriptor cosine: the "
+          "inversion's gesture search, the respiration and two-voice ship gates, and the "
+          "fricative routing. The spectral bench asked the obvious question nobody had asked: "
+          "is a cosine gain an audible gain? It rendered 200 fitted types against their "
+          "medoid members' cached audio and scored two independent spectral distances: "
+          "mel-cepstral distortion and multi-resolution STFT error. The answer is no. The "
+          "correlations sit at ≈ 0.1, with p-values that cannot reject zero, and the point "
+          "estimates lean the wrong way (docs/19 §19.2)"),
+        C("d19"),
+        T(". This is not a bench artifact. The recomputed cosine matches the stored one at "
+          "0.921. The two distances agree with each other at 0.925: they measure something "
+          "coherent, and the cosine does not measure it."),
+    ])
+    add_figure(doc, figs["bench"], [
+        B("Figure 7 — The objective carries no information about audible distortion. "),
+        T("The mel-path target does (signs correct: higher similarity ↔ lower distortion). "
+          "n = 200 types, debug-100 store against the iNat cache. Source: docs/19 §19.2, "
+          "§19.4"),
+        C("d19"),
+    ])
+    P(doc, [
+        T("The mel-path target — time-resolved exp(−LSD) similarity to the type's measured "
+          "mel trajectory — is the better "),
+        I("measurement"),
+        T(": Spearman −0.420 vs MCD where the cosine reads +0.100. It is the worse "),
+        I("optimiser"),
+        T(". At blend weight 1.0 the cosine guardrail collapses by 0.377. The n = 10 probe's "
+          "7/3 MCD win did not survive n = 80: 31 % win share against a 60 % gate, median "
+          "ΔMCD exactly 0.0 dB, one type losing 0.12 cosine (docs/19 §19.4, §19.5). The "
+          "honest state, verbatim: "),
+        I("“measure spectrally, optimise descriptor-ly”"),
+        T(". Gates are read on the bench. The inversion keeps climbing the cosine. An "
+          "objective that is both remains unfound."),
+    ])
+    P(doc, [
+        T("The learned alternative failed the same way, earlier and harder. A realism-trained "
+          "critic is itself excellent: AUC 0.990–1.000 on entirely held-out species. Used as "
+          "the fit objective, it is monotonically harmful in its weight. At w = 1 the cosine "
+          "collapses 0.762 → 0.335 and placement drops to 17.3 %. The refutation replicated "
+          "at 40 k: 38.4 % → 31.9 % at w = 0.5. Separating two distributions perfectly is "
+          "not the same as having a gradient that points at the nearer one. The retained "
+          "cosine guardrail is what made the gaming visible (docs/09 §9.7, §9.8)"),
+        C("d09"),
+        T(". A structurally better tract tells a similar story. A fixed waveguide with 32× "
+          "the spectral freedom of the tracking band improved all three metrics at once on "
+          "five species, and it was a regression over 22: 23.1 % → 22.2 % placement. It was "
+          "later shown to have been rejected by badly defined types, not by the objective. "
+          "It now wins on the gan store under learned typing (37.0 %) and pays for it in "
+          "cosine, so it stays promising and unconfirmed (docs/08 §8.1c, docs/09 §9.7)"),
+        C("d08", "d09"),
+        T("."),
+    ])
+    P(doc, [
+        B("The oldest open problem is species identity. "),
+        T("On the original 22-species store, a resynthesis lands nearest its own species only "
+          "23.1 % of the time, against 4.5 % chance. Four hypotheses were tested and refuted "
+          "in place (docs/08 §8.1a). The envelopes are not collapsed: the synth expresses "
+          "103 % of the real between-species spread and 106 % of the spectral detail, varied "
+          "along different axes. There is a spectral tilt error, but correcting it exactly "
+          "drops placement to 20.2 %. The harmonic structure is not missing: real syllables "
+          "resolve to a mean of 2.2 partials. A time-resolved objective improves its own "
+          "metric 36 % while placement falls 61.7 % → 43.2 %: the two objectives conflict. "
+          "The ceiling is the descriptor and the filter chain's capacity, not the search."),
+    ])
+    H2(doc, "6.2 The embedding organises by recorder before bird")
+    P(doc, [
+        T("The geometry battery scores how much a grouping organises the embedding: the "
+          "same-label rate among a point's nearest neighbours, minus a permutation null:"),
+    ])
+    add_equation(doc, eq_paths, "knnlift", 8)
+    P(doc, [
+        T("On the production embedding the strongest relation is "),
+        I("source"),
+        T(" — which recorder, not which bird: recordist kNN lift +0.488 against species' "
+          "+0.196 (docs/14 §14.4)"),
+        C("d14"),
+        T(". Every consumer of the embedding inherits that confound. The literature is "
+          "unambiguous that invariance is a training-time problem"),
+        C("moummad", "morocutti", "avex"),
+        T(", and Birdy swept it three times on pre-registered gates (docs/17)"),
+        C("d17"),
+        T("."),
+    ])
+    P(doc, [
+        B("Loss engineering trades one for one with species. "),
+        T("Channel-EQ simulation and Freq-MixStyle augmentation are perfectly species-safe, "
+          "and they move recordist lift not at all (−0.7 % relative). The "
+          "recordist-adversarial head does move it, and the trade is almost perfectly linear "
+          "in log weight: −33 % recordist at w = 0.05 costs species accuracy −14.7 points. "
+          "At w = 0.3 the embedding is destroyed: species accuracy 0.199, realism AUC 0.862. "
+          "No swept weight buys the required −30 % recordist while holding species within "
+          "the gates: "),
+        I("recorder invariance costs species information at roughly one to one"),
+        T(" (docs/17 §17.3)."),
+    ])
+    add_figure(doc, figs["adv"], [
+        B("Figure 8 — Adversarial sweeps on the 37-species debug store (debug-scale). "),
+        T("Left: the recordist head trades recordist lift for species lift ~1:1. Right: the "
+          "recording-within-species head never touches species — and barely reaches the "
+          "recordist (−6 % at w = 0.1 against the −30 % gate, dotted). Sources: docs/17 "
+          "§17.3, §17.5"),
+        C("d17"),
+    ])
+    P(doc, [
+        B("The species-safe factorization cannot reach the confound. "),
+        T("Masking the adversarial softmax to recordings of the patch's own species fences "
+          "species information out by construction. It works: species lift is flat to +10 % "
+          "at every weight. But the target buys only −6 % against the −30 % gate. The "
+          "recordist signal is carried "),
+        I("between"),
+        T(" species — each species' recordings come from different people — where a "
+          "species-factored head is forbidden to look (docs/17 §17.5)."),
+    ])
+    P(doc, [
+        B("Data helps, and the honest re-test shrank it. "),
+        T("The AVEX direction"),
+        C("avex"),
+        T(" held: merging two recording domains per species beat every loss. The first test "
+          "was 12 species with a 3-species holdout. The pre-registered bigger re-test used "
+          "63 both-domain species with 16 held out, and it shrank every delta. The naive "
+          "merge's +14.4 points became +3.6. The cross-domain contrastive mechanism's "
+          "+13.4-point boost became +1.7, against a +10 gate: small-sample structure, the "
+          "same lesson as the mel-weight probe. What survives at both scales is the "
+          "ordering. More domains per species helps. The mechanism adds ≈ nothing on top. "
+          "No loss term buys invariance cheaper than data (docs/17 §17.4, §17.6)."),
+    ])
+    add_figure(doc, figs["avex"], [
+        B("Figure 9 — Cross-domain species retrieval, three arms, two tests. "),
+        T("Both debug-scale; absolute levels are only comparable arm-vs-arm within each "
+          "panel. The naive merge (B) beats single-domain (A) in both. The contrastive "
+          "mechanism (C) looked decisive at 12 species and added +1.7 points at 63. "
+          "Sources: docs/17 §17.4, §17.6"),
+        C("d17"),
+    ])
+    H2(doc, "6.3 Song structure starves at current depth")
+    P(doc, [
+        T("Birdsong is not first-order: repeat-count adaptation and partially observable "
+          "structure are established"),
+        C("jin2011", "lu2025"),
+        T(". Birdy ran the pre-registered bake-off anyway: current first-order transitions "
+          "against Jin–Kozhevnikov repeat-count and a hidden-state HMM, scored on held-out "
+          "bout likelihood. M2 loses decisively: −0.348 nats/token, 0 of 30 species. M3 "
+          "wins the rule: +0.422, 29 of 30. The decomposition then reverses the adoption. "
+          "On the 90 % of held-out transitions seen in training, first-order is the best "
+          "model: −1.525 against M3's −1.624. M3's entire advantage sits in the 10 % unseen "
+          "tail: −9.25 against −4.16. That is a property of smoothing "),
+        I("shape"),
+        T(", not recovered hidden structure. Adopting a heavier model for a smoothing "
+          "artifact is the wrong lesson; first-order stays (docs/18 P1)"),
+        C("d18"),
+        T("."),
+    ])
+    P(doc, [
+        T("The song-level kernel failed both its gates. A weighted edit distance over (type, "
+          "gap) sequences loses species lift to plain bag-of-types: +0.877 against +0.924 "
+          "on the 37-species store, and +0.050 against +0.081 on debug-100. It also fails "
+          "the recordist gate at +0.264. Within-species song structure exists — all 18 deep "
+          "species separate their recordings — but it lives entirely in the token "
+          "marginals: "),
+        B("order and rhythm add nothing measurable at current depth"),
+        T(". The reason is one number: only 12 of the debug-100 species have ≥ 20 bouts. "
+          "The bar for any learned song encoder is now bag-of-types, after the depth "
+          "harvest (docs/18 P2)"),
+        C("d18"),
+        T("."),
+    ])
+    add_figure(doc, figs["depth"], [
+        B("Figure 10 — Why syntax starves. "),
+        T("Species of the debug-100 store with enough bouts for song-level structure (≥ 20 "
+          "bouts after run-collapse). Debug-scale. Source: docs/18 (debug-100 cycle note)"),
+        C("d18"),
+    ])
+    H2(doc, "6.4 Smaller refutations, kept on the record")
+    P(doc, [
+        B("The galaxy map's 0.61 is a metric problem, not a map problem. "),
+        T("Decomposing the centroid-agreement loss over 3 731 held-out syllables: 76.4 % of "
+          "it is boundary near-ties (74 % of all rows sit within margin 0.05; tie-adjusted "
+          "agreement is 0.91, and 41 % of flips land on the runner-up knot). Genuine "
+          "big-margin map failure is ~2 % of rows. No better map class can fix near-ties. "
+          "The honest single-label claim is species-level agreement: 0.78 (docs/20 §20.1)"),
+        C("d20"),
+        T("."),
+    ])
+    add_figure(doc, figs["spacemap"], [
+        B("Figure 11 — Decomposition of the 38.6 % knot-agreement loss. "),
+        T("1 439 flips over 3 731 held-out syllables, debug build. Most of the “error” is "
+          "the question being ill-posed at knot boundaries; genuine map failure is the two "
+          "small violet bars. Source: docs/20 §20.1"),
+        C("d20"),
+    ])
+    P(doc, [
+        B("Pruning bad sessions from the fit fails. "),
+        T("Dropping the worst-quintile off-manifold sessions costs −0.006 and −0.015 eval "
+          "cosine on the two debug stores, against a ≤ 0.005 allowance. The weird sessions "),
+        I("are"),
+        T(" manifold coverage, and pruning them hurts the next unseen weird session. Gating "
+          "is a live-path action only (docs/20 §20.3.1). "),
+        B("The learned inverse failed its ship rule. "),
+        T("An encoder predicting synthesis parameters from mel patches — trained on 150 k "
+          "free rendered pairs — matched the coordinate descent on cosine (0.737 vs 0.734), "
+          "but the pre-registered 2× speedup never existed on the hardware (0.2 s either "
+          "way). It stays experimental, documented in place (docs/10 §10.5). "),
+        B("Novelty thresholds do not transfer across harvest epochs. "),
+        T("A threshold calibrated for 5 % false positives on the 9 k store flagged 29.8 % of "
+          "the 47 k store. Recalibration is cheap and now automatic. The honest ROCs are "
+          "reported per epoch — 0.596 → 0.786 → 0.846 — rather than the best one (docs/10 "
+          "§10.3, docs/14 §14.3, docs/16 §16.2)"),
+        C("d10", "d14", "d16"),
+        T("."),
+    ])
+
+    # ================= 7. The unknown-bird pipeline =================
+    H1(doc, "7. The unknown-bird pipeline")
+    plain_terms(
+        doc,
+        "What happens when a bird the system has never heard starts to sing? Not a guess, "
+        "and not silence. The arrival is measured and compared against everything known. If "
+        "it fits nothing, it is allowed to be new. It gathers with similar arrivals until "
+        "enough of them agree to found a new knot in the galaxy. The label is exactly as "
+        "honest as the situation deserves: real acoustics, no documented function. An "
+        "external model may suggest which species it resembles. That suggestion is metadata, "
+        "never identity."
+    )
+    P(doc, [
+        T("The arrival pipeline is live end to end (docs/10 §10.3, §10.4; docs/16 §16.5)"),
+        C("d10", "d16"),
+        T(". At ingest, each new observation is embedded and scored against the calibrated "
+          "novelty threshold — a chosen false-positive rate, not a discovered one. "
+          "Known-looking syllables inherit the nearest type. In a relabel-recovery test, "
+          "97.4 % of relabelled syllables inherited a known type, and 65.2 % inherited the "
+          "correct species' type. Misassignments go to similar-sounding types of other "
+          "species: the detector prices acoustic neighbourhood, not taxonomy, and the wren "
+          "counterexample proves it. Novel syllables are not force-assigned. Below quorum "
+          "they stay unassigned. At quorum — ≥ 8 coherent pending points, 0.70 cosine "
+          "radius, 0.75 cohesion floor — they found a new knot labelled "),
+        I("“unheard syllable”"),
+        T(", confidence "),
+        B("unlabelled: real acoustics, no documented function"),
+        T("."),
+    ])
+    P(doc, [
+        T("A Perch 2.0 pass"),
+        C("perch"),
+        T(" labels the novel-flagged syllables from the training cache. It runs as ONNX, "
+          "offline, at ~48 ms per window. Its label reads "),
+        I("“closest documented species (Perch 2.0 inference, unverified)”"),
+        T(" — metadata only, never typing ground truth; nothing in the learn path may read "
+          "it. The store holds 23 697 novel syllables. 841 of them are honestly "
+          "unlabelable, because their xeno-canto audio was deleted by design, and the "
+          "pipeline says so rather than guessing. Structure above the syllable — sequence "
+          "statistics, candidate song types for undocumented birds — inherits the same "
+          "label all the way up (docs/18 P6)"),
+        C("d18"),
+        T(". Anything more confident than this pipeline is numerology, and the interface "
+          "keeps saying so."),
+    ])
+
+    # ================= 8. Roadmap =================
+    H1(doc, "8. Roadmap")
+    plain_terms(
+        doc,
+        "The next steps, in order, each with the number that would prove it. First: listen "
+        "longer to fewer birds. Nearly every open problem — grammar, dialects, the bench — "
+        "is starved by shallow coverage, not by missing machinery. Then re-run the "
+        "bake-offs that depth was blocking. The metrology problem underneath everything "
+        "stays open and named."
+    )
+    P(doc, [
+        B("P0 — Depth harvest (in progress at this writing). "),
+        T("100 species × up to 30 recordings each, chosen for documented syntax cases, "
+          "repertoire depth, and existing playback anchors. The harvest runs in 25-species "
+          "batches, with the log read between batches (docs/18 P0; HANDOFF 2026-07-31)"),
+        C("d18", "handoff"),
+        T(". This one action unblocks the grammar re-test, the song-level space, and the "
+          "widening of the spectral bench. Nothing else on the roadmap does that."),
+    ])
+    P(doc, [
+        B("P1 — Re-bake-off after depth. "),
+        T("The first-order, Jin–Kozhevnikov, and POMM comparison runs again once the "
+          "unseen-transition tail shrinks. Thin data is exactly where higher-order models "
+          "starve, and M2's 0 of 30 says so. "),
+        B("P2 — Song-level embedding. "),
+        T("Bouts as points. The parameter-free kernel baseline already failed, so the bar "
+          "any learned encoder must beat is bag-of-types (+0.924), with the recordist lift "
+          "gate upstream (docs/18). "),
+        B("P3 — CETI-style factorization"),
+        C("sharma2024"),
+        T(": decompose each deep species' songs into independent axes — rhythm, tempo, "
+          "ornamentation — toward per-species combinatorial alphabets, the strongest honest "
+          "claim available without playback. "),
+        B("P4 — Dialect and individual maps. "),
+        T("With depth: same-species variants placed geographically, individuals separated "
+          "where 10–16 bouts each exist — literature-proven sufficient (docs/18 P3–P4)"),
+        C("d18"),
+        T("."),
+    ])
+    P(doc, [
+        B("The open problem, named. "),
+        T("Underneath the roadmap sits metrology. The project optimises one number: the "
+          "descriptor cosine, cluster-safe and audibly blind. It measures with another: "
+          "MCD and STFT, audibly faithful and optimiser-hostile. It has refuted the learned "
+          "third: the realism logit. "),
+        I("“An objective that is both remains unfound.”"),
+        T(" Every future fit gate reads the bench. Every future objective candidate is "
+          "pre-registered against it (docs/19 §19.5)"),
+        C("d19"),
+        T(". Structure first, meaning only from playback. That ordering is the roadmap's "
+          "spine, and it does not move."),
+    ])
+
+    # ================= 9. References =================
+    H1(doc, "9. References")
+    P(doc, [
+        T("External literature and internal research notes, numbered in list order; in-text "
+          "superscripts resolve here. Internal notes live in the repository's docs/ "
+          "directory."),
+    ])
+    for i, (_, text) in enumerate(REFERENCES):
+        p = P(doc, [B(f"[{i + 1}] "), T(text)], space_after=3)
+        for run in p.runs:
+            run.font.size = Pt(9)
+
+    doc.save(DOCX_PATH)
+    return DOCX_PATH
+
+
+def main():
+    os.makedirs(FIG, exist_ok=True)
+    eq_paths = render_equations()
+    figs = {
+        "arch": diagram_architecture(),
+        "chain": diagram_signal_chain(),
+        "spaces": diagram_spaces(),
+        "wins": chart_wins(),
+        "growth": chart_corpus_growth(),
+        "bench": chart_bench(),
+        "adv": chart_adversarial(),
+        "avex": chart_avex(),
+        "spacemap": chart_spacemap(),
+        "gate": chart_session_gate(),
+        "depth": chart_depth(),
+    }
+    out = build_docx(eq_paths, figs)
+    print(f"equations: {len(eq_paths)} in {os.path.join(FIG, 'eq')}")
+    print(f"charts:    {len(figs)} in {FIG}")
+    print(f"docx:      {out}")
+
+
+if __name__ == "__main__":
+    main()
