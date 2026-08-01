@@ -48,6 +48,60 @@ is the §17.3 trade again under a new name, and fails.
 this space, which strengthens §17.4's "invariance is a data action" from a conclusion
 into a boundary.
 
+### 23.1.1 Result, 2026-08-01 — the road is closed at a third end
+
+`batcheffect.py`, 20 000 syllables of the production embedding over 885 species, 1 001
+recordists and 3 265 recordings, every arm scored by `geometry.measure` against its own
+permutation null, blocked by recording.
+
+| arm | species lift | recordist lift | ratio |
+|---|---|---|---|
+| baseline | 0.1643 | 0.1665 | 0.99 |
+| centre by recordist | 0.1113 | 0.1687 | 0.66 |
+| whiten by recordist | 0.0955 | 0.154 | 0.62 |
+| harmony by recordist | 0.0501 | 0.0478 | 1.05 |
+| centre by recording | 0.0432 | 0.0408 | 1.06 |
+| whiten by recording | 0.0342 | 0.0331 | 1.03 |
+| harmony by recording | 0.0463 | 0.0501 | 0.92 |
+
+**No arm passes.** The gate wanted the recordist lift halved with species held, and every
+arm that halves the one halves the other.
+
+Three findings, in order of how much they change the picture.
+
+**The confound is not a location shift.** Subtracting each recordist's mean leaves the
+recordist lift *higher* than it started (0.1665 to 0.1687) while costing a third of the
+species structure. Adding the scale term barely helps. Whatever marks a recordist in
+this embedding, it is not an offset and not a per-dimension gain — which is a
+mechanistic explanation for why §17.3 and §17.5 failed, and it was never available
+before, because both of those attacked the confound during training where nothing can be
+inspected.
+
+**Harmony reaches it and pays §17.3's price exactly.** The one non-linear arm cuts the
+recordist lift 71 % — the first half of the gate, which nothing else managed — and cuts
+species 70 % with it. That is the same one-for-one trade docs/17 §17.3 measured for the
+adversarial head, obtained post-hoc, with no training, by a completely different method.
+Two unrelated mechanisms landing on the same exchange rate is evidence about the data
+rather than about either mechanism.
+
+**Correcting by recording removes both because they are nearly nested.** A recording
+normally holds one bird of one species, so the recording label almost implies the species
+label, and a correction that flattens recordings flattens species. This is a statement
+about how the corpus was collected, not about the embedding.
+
+**Read together with §17.3 and §17.5, the road is closed at three ends** — during
+training with an adversarial head, during training with a factored target, and post-hoc
+with the genomics toolkit including its strongest member. The reason is now visible:
+species and recordist are **confounded in the sample**, not merely in the model. Most
+species in this corpus are carried by a handful of recordists, so no method that only
+sees the embedding can separate labels the data never separated.
+
+That promotes §17.4's "invariance is a data action" from a conclusion to a boundary, and
+it names the specific action: **more recordists per species**, which is the same
+prescription AVEX reached from the other direction with more domains per species. It also
+raises the value of W6's T1, which asks whether a model trained on the same archives at a
+hundred times the scale escapes the same trap.
+
 ## 23.2 W2 — Model-free sequence statistics
 
 **The failure.** Every syntax test so far fits a model and compares. P1 kept first

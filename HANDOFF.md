@@ -75,6 +75,29 @@ configuration the command line abandoned, and was fixed. Evidence: docs/22.
   rule — every tab build is a production build), `respfit`/`docrefit`, and the new build
   flags. Flagged, not done.
 
+- **W1 RUN: NO ADOPTION, and it closes the road at a third end** (docs/23 §23.1.1,
+  `batcheffect.py` + self-test, `analysis` extra). 20 000 syllables of the production
+  embedding, 885 species / 1 001 recordists / 3 265 recordings, every arm scored by
+  `geometry.measure` against its own null. **No arm passes the gate.** Three findings.
+  (1) **The confound is not a location shift**: subtracting each recordist's mean leaves
+  the recordist lift *higher* (0.1665 -> 0.1687) and costs a third of the species
+  structure — which explains mechanically why §17.3 and §17.5 failed, since both
+  attacked it during training where nothing can be inspected. (2) **Harmony reaches it
+  and pays §17.3's exact price**: recordist lift -71 %, species lift -70 %, the same
+  one-for-one trade as the adversarial head, by a completely unrelated post-hoc method.
+  (3) **Correcting by recording removes both** (-74 % / -75 %) because a recording holds
+  one bird of one species, so the labels are nearly nested. Together with §17.3 and
+  §17.5 the road is now closed during training twice and post-hoc once, and the reason
+  is visible: species and recordist are **confounded in the sample**, not in the model.
+  §17.4's "invariance is a data action" is now a boundary, and the action is named —
+  more recordists per species. Raises the value of W6's T1.
+- **Two dependency repairs while doing it.** `harmonypy` and `pandas` are declared as the
+  new `analysis` extra. And `docs/whitepaper/build_whitepaper.py` had **undeclared**
+  dependencies (python-docx, matplotlib, pillow) installed by hand, so the first
+  `uv sync` that did not name them removed them and the builder stopped importing; they
+  are now the `whitepaper` extra. Sync line for a full working tree:
+  `uv sync --extra critic --extra analysis --extra whitepaper`.
+
 - **W2 RUN, and it is three results and one retracted test** (docs/23 §23.2.1,
   `seqstats.py` + self-test). On the production corpus, 34 696 bouts against docs/12's
   control: **the tokens are not arbitrary** — H(next | previous 1) is 0.941 bits against

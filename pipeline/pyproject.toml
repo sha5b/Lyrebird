@@ -45,7 +45,8 @@ perch = ["onnxruntime>=1.17", "kagglehub>=1.0", "huggingface_hub>=0.24"]
 # (docs/14 §14.4, docs/17 §§17.3, 17.5), which genomics calls a batch effect and has
 # spent fifteen years on; Harmony corrects an existing embedding post-hoc and needs no
 # retraining, which is what makes it testable here at all.
-analysis = ["harmonypy>=0.0.9"]
+# harmonypy needs pandas at import time and does not declare it, so it is named here.
+analysis = ["harmonypy>=0.0.9", "pandas>=2.0"]
 
 # `docs/whitepaper/build_whitepaper.py`, which draws its own figures and writes the
 # DOCX. These were installed by hand and undeclared until 2026-08-01, so the first
