@@ -973,6 +973,41 @@ def species_queries(
 # --- the harvest loop -------------------------------------------------------------
 
 
+#: Licence prefixes whose audio may be **kept on this machine** (owner decision,
+#: 2026-08-01). The project is non-commercial and open source, so the NC and SA clauses
+#: impose nothing it does not already satisfy, and retention is not redistribution — the
+#: audio still never reaches the browser or an asset set. Two exclusions, and both are
+#: refusals rather than oversights:
+#:
+#: - **NoDerivatives.** Retention alone is arguably fine, but everything this pipeline does
+#:   next produces derived measurements, and ND is the one clause where that is not clearly
+#:   covered. 9.7 % of the corpus, declined.
+#: - **An unrecorded licence.** Absence of a licence is not permission.
+#:
+#: Measured over the production store when this shipped: 90.3 % of 10 184 recordings pass,
+#: and all 10 184 carry a recordist, so attribution is available for every kept file.
+CACHEABLE_LICENCES = ("by", "by-nc", "by-nc-sa", "by-sa", "zero", "publicdomain", "cc0")
+
+
+def audio_may_be_cached(licence: str) -> bool:
+    """Whether this recording's licence permits keeping the audio locally.
+
+    Conservative by construction: an unknown or unparseable licence returns False, so a new
+    source that reports something this has never seen withholds rather than assumes.
+    """
+    text = (licence or "").strip().lower().rstrip("/")
+    if not text:
+        return False
+    if "publicdomain" in text or "/zero" in text or text.endswith("cc0"):
+        return True
+    if "/licenses/" not in text:
+        return False
+    code = text.split("/licenses/")[1].split("/")[0]
+    if "nd" in code.split("-"):
+        return False
+    return code in CACHEABLE_LICENCES
+
+
 @dataclass
 class HarvestReport:
     recordings: int = 0
@@ -982,6 +1017,10 @@ class HarvestReport:
     retained: int = 0
     syllables: int = 0
     seconds: float = 0.0
+    #: Audio files kept under `CACHEABLE_LICENCES`, and those withheld because the licence
+    #: did not permit it — counted separately so a harvest says which it was.
+    audio_cached: int = 0
+    audio_withheld: int = 0
 
 
 def ingest_file(
@@ -1044,8 +1083,16 @@ def harvest_xeno_canto(
     should_stop: Callable[[], bool] | None = None,
     max_length_seconds: float | None = DEFAULT_MAX_LENGTH_SECONDS,
     clean_only: bool = False,
+    keep_audio: Path | None = None,
 ) -> HarvestReport:
     """`should_stop` is polled between recordings, so a run can be asked to end.
+
+    `keep_audio` copies each analysed recording into that directory when its licence
+    permits (`audio_may_be_cached`), before the temporary directory it was fetched into
+    disappears. Without it the loop is unchanged: fetch, describe, delete. The reason to
+    keep it is measured rather than convenient — an external model (Perch, BirdNET) and
+    any per-syllable re-measurement need the waveform, and docs/23 §23.6.1 could only run
+    on the 6 453 of 10 184 recordings whose audio still existed.
 
     Between, not during: one recording is one indivisible unit of work — it is fetched,
     analysed and deleted — and everything already ingested is kept, because a stopped
@@ -1177,7 +1224,15 @@ def harvest_xeno_canto(
                             redacted += 1
                     log(f"  skip {rid}: {exc}")
                     continue
-            # the TemporaryDirectory is gone here: the audio existed for one iteration
+                # Still inside the `with`: after it, the file is gone.
+                if keep_audio is not None:
+                    if audio_may_be_cached(info["licence"]):
+                        keep_audio.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(audio_path, keep_audio / f"{rid}{audio_path.suffix}")
+                        report.audio_cached += 1
+                    else:
+                        report.audio_withheld += 1
+            # the TemporaryDirectory is gone here unless keep_audio took a copy
             store.note_recording(rid, info)
             taken += 1
             report.recordings += 1
@@ -1330,11 +1385,30 @@ def self_test(verbose: bool = True) -> None:
             f"the novel flag did not survive save/load: {[o.novel for o in loaded.syllables]}"
         )
 
+    # The licence gate decides whether audio may stay on this machine, so a wrong answer
+    # is a licence violation rather than a bug. Both directions are pinned, and the two
+    # refusals — NoDerivatives and an unrecorded licence — are pinned *as* refusals.
+    cc = "https://creativecommons.org/licenses/"
+    for url, want in (
+        (f"{cc}by-nc/4.0/", True),
+        (f"{cc}by-nc-sa/4.0/", True),
+        (f"{cc}by-sa/4.0/", True),
+        (f"{cc}by/4.0/", True),
+        ("https://creativecommons.org/publicdomain/zero/1.0/", True),
+        (f"{cc}by-nc-nd/4.0/", False),
+        (f"{cc}by-nd/4.0/", False),
+        ("", False),
+        ("local file", False),
+        ("http://example.com/unknown-terms", False),
+    ):
+        assert audio_may_be_cached(url) is want, f"licence gate wrong for {url!r}"
+
     if verbose:
         print(
             f"harvest self-test ok: cap trims per species ({len(plan)} survived), "
             f"recordings stay whole, a lightweight store refuses to save, "
-            f"the novel flag survives save/load"
+            f"the novel flag survives save/load, the licence gate keeps NC/SA and "
+            f"refuses ND and unrecorded"
         )
 
 

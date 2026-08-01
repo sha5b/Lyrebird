@@ -435,6 +435,32 @@ the pair test — with `min_group=2`, is a recording's nearest neighbour from it
 small population deliberately, where the permutation null rather than the group size is
 what keeps the test honest. §23.6.2 runs it.
 
+### 23.6.1b Why ONNX and not torch, and what the GPU would actually buy
+
+Asked directly, and worth writing down because the answer is not the obvious one.
+
+**Torch is not an option for either model, so it was never the choice.** Perch 2.0's
+official artifact is a TensorFlow SavedModel; BirdNET ships TFLite. Neither has PyTorch
+weights. "Use torch" would mean converting an already-converted ONNX graph a second time
+(`onnx2torch`), on a model whose frontend and logit calibration were verified against the
+reference preset — numeric-drift risk for no new capability. The choice `perch.py` actually
+faced and recorded was ONNX **against TensorFlow**: one 40 MB dependency instead of a
+~600 MB wheel, and the same for BirdNET, whose ONNX export removes the last reason to add a
+TFLite runtime.
+
+**The GPU is a separate question, and there the answer is yes, but not for free.** This
+machine has an RTX 3500 Ada and torch runs on it (`2.11.0+cu128`), but `onnxruntime` is the
+CPU build and the T1 run above was explicitly on `CPUExecutionProvider` at 37 ms per 5 s
+window. Installing `onnxruntime-gpu` 1.28 does *not* fix it: it requires **CUDA 13 and
+cuDNN 9**, this machine has CUDA 12.8, and the CUDA provider fails to load
+(`libcublasLt.so.13`) and falls back to CPU silently — measured at 37.7 ms/window against
+the CPU build's 37.1, i.e. no change. A CUDA-12-matched runtime build is the fix, and it is
+worth doing for one specific reason rather than for speed in general: **the per-syllable
+embedding §23.6 asks for and §23.6.2 could not run.** 340 079 syllables is about 3.3 hours
+on this CPU, which is why the per-recording form was measured first and why T3's caveat —
+that Perch beat the critic as a per-recording space and syllable-for-syllable was never
+tested — is still open.
+
 ### 23.6.2 T3, and T1 on a second draw — Perch wins species 8x, and the two draws disagree
 
 The pair test §23.6.1's constraint forces: 958 species with two cached recordings each,
@@ -474,6 +500,55 @@ descriptor for W1 (better species structure, weaker recordist structure than our
 weakens the case for building the BirdNET port to answer T1 — T1 is answered. It does not
 license retiring the critic's species head, which §23.6 made conditional on T1 *and* T3
 landing: T3 landed, T1 did not. And it leaves T2 (novelty AUC) unrun.
+
+### 23.6.3 BirdNET run too — and it is WORSE than our critic, which settles it
+
+BirdNET was tried after all, because three of §23.6's assumptions about its cost were
+wrong: there is an **ONNX export** by the same author as the Perch port this repo already
+trusts (`justinchuby/BirdNET-onnx`), so it needs no TFLite runtime and no TensorFlow —
+`onnxruntime` runs it; the backbone export (`biodiversica/BirdNET-onnx-backbone`) outputs
+**1024-d**, not the 320-d §23.6 states; and it is 52 MB + 25 MB against Perch's 391 MB.
+Chain checked first on cached audio: 3 of 6 cold recordings named exactly right, the misses
+congeners of the right genus. Same populations, same per-recording representation, same
+estimator, same splits as §23.6.1-2 — only the embedder differs.
+
+| population | space | species lift | recordist lift |
+|---|---|---|---|
+| T1, recordist-stratified | critic 32-d | not estimable | 0.0891 |
+| | Perch 1536-d | not estimable | 0.0744 |
+| | **BirdNET 1024-d** | not estimable | **0.1107** |
+| T3, species pairs | critic 32-d | 0.0074 | 0.1684 |
+| | Perch 1536-d | **0.0588** | 0.1155 |
+| | **BirdNET 1024-d** | 0.0393 | **0.1755** |
+
+**T1 fails harder with BirdNET than it did with Perch: the recordist lift is *above* our
+own critic's in both populations** (+24 % and +4 %). An open classifier trained on these
+archives at roughly a hundred times our scale, with no realism term anywhere in it, encodes
+who recorded the audio *more* strongly than the embedding we fitted ourselves.
+
+**And the two external models disagree with each other by more than either differs from
+ours** — Perch −16.5 %, BirdNET +24 % on the same rows. That is the finding, and it is
+stronger than either model alone could give: **recorder invariance is not something
+archive-scale training confers.** If it were, the two biggest models trained on these
+archives would both have it, and they would agree. One is better than ours and one is
+worse, which locates the property in the archives rather than in any model's loss — the
+same conclusion §23.1.1 reached from the batch-effect side, now reached from outside with
+two independent instruments.
+
+**T3 replicates in direction, not in size.** BirdNET beats our critic on species pair
+retrieval 5.3x (0.0393 against 0.0074), so "an external space is the better per-recording
+species descriptor" holds for both models; Perch is the better of the two (0.0588). In
+BirdNET's space the recordist lift is **4.5x its species lift** (Perch 2x, our critic 23x):
+every space tested is confounded in the same direction, and they differ only in degree.
+
+**What follows.** No further external model is worth running against T1 — the question is
+answered three ways. Perch stays the per-recording batch descriptor for W1 (best species
+structure, weakest recordist structure of the three). BirdNET's remaining unique offer is
+its **occurrence meta-model**, a 14 MB ONNX taking `[latitude, longitude, week]` to 6 522
+species priors, which is blocked on metadata rather than on machinery: the store keeps
+`date` (so the week is exact) and `country`, but **no coordinates**. Both archives return
+them; the harvester did not record them. That is a metadata-only re-fetch, and it is the
+gate on the only part of W6 still unanswered.
 
 ## 23.7 W7 — Mimicry as ground truth
 

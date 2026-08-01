@@ -803,6 +803,9 @@ def cmd_harvest(args: argparse.Namespace) -> int:
                 dry_run=args.dry_run,
                 max_length_seconds=args.max_length,
                 clean_only=args.clean_only,
+                keep_audio=(
+                    Path(args.keep_audio) if getattr(args, "keep_audio", None) else None
+                ),
             )
         except RuntimeError as exc:
             log(str(exc))
@@ -1180,6 +1183,46 @@ def cmd_grow(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_inverse(args: argparse.Namespace) -> int:
+    """Train the amortised inverse of docs/09 §9.3 Part 2: mel patch -> syrinx parameters.
+
+    The training data is generated here and thrown away: sample plausible parameter
+    vectors from the fitted inventory's own marginals, render each through the same
+    `syrinx.render_syllable` the app uses, measure it with the same `features.mel_patch`
+    the critic consumes. No audio, no annotation, no licensing — and no confound, which is
+    what separates this from every other learned component in the pipeline.
+    """
+    from . import inverse as inverse_mod
+
+    inverse_mod.self_test(verbose=False)
+    log("inverse self-test ok")
+    inventory = load_inventory(Path(args.inventory))
+    calibration = ensure_calibration(Path(args.calibration_dir))
+    sampler = inverse_mod.EmpiricalSampler(inventory)
+    log(f"sampling {args.pairs} pairs from {Path(args.inventory).name}'s marginals")
+    data = inverse_mod.build_dataset(
+        args.pairs, sampler, calibration=calibration, seed=args.seed, log=log
+    )
+    cfg = inverse_mod.InverseConfig(
+        epochs=args.epochs, seed=args.seed, pairs=args.pairs, prefer_gpu=not args.cpu
+    )
+    model = inverse_mod.train(data, cfg, log=log)
+    out = Path(args.out)
+    model.save(out)
+    r = model.report
+    log(f"\nwrote {out}")
+    log(f"  {r.epochs} epochs on {r.n_train} train / {r.n_val} val pairs, device {r.device}")
+    log(f"  final validation loss {r.final_val_loss:.4f}; timbre {r.timbre_val_accuracy:.3f}, "
+        f"hold {r.hold_val_accuracy:.3f} accurate")
+    for name, mse in sorted(r.group_val_mse.items()):
+        log(f"  {name:16} val MSE {mse:.4f}")
+    log("\nThis is a starting point for the fit, not a fit: `learn --inverse "
+        f"{out}` re-initialises each type's gesture axes from its own patch and lets the "
+        "same coordinate descent polish. Judge it on docs/09 §9.3's gate — the "
+        "resynthesis cosine of the types that ship — never on the validation loss above.")
+    return 0
+
+
 def cmd_learn(args: argparse.Namespace) -> int:
     """Fit syllables and syntax to the harvested observations, and check the model sings them."""
     store = harvest.HarvestStore(Path(args.store))
@@ -1188,6 +1231,16 @@ def cmd_learn(args: argparse.Namespace) -> int:
         return 2
     inventory = load_inventory(Path(args.inventory))
     calibration = ensure_calibration(Path(args.calibration_dir))
+    # The amortised inverse, when asked for. Imported here rather than at module scope
+    # for the same reason the critic is: it pulls in torch, and a learn without it must
+    # not need torch installed at all.
+    inverse_encoder = None
+    if getattr(args, "inverse", None):
+        from . import inverse as inverse_mod
+
+        inverse_encoder = inverse_mod.Inverse.load(Path(args.inverse), prefer_gpu=not args.cpu)
+        log(f"inverse encoder: {args.inverse} on {inverse_encoder.device} — the gesture "
+            "axes start from each type's own patch, and the descent still decides")
     # Cheap, and it checks the one property that would otherwise fail silently: that a fit
     # with no critic is bit-identical to the one that shipped before the critic existed.
     features.self_test(verbose=False)
@@ -1281,6 +1334,7 @@ def cmd_learn(args: argparse.Namespace) -> int:
         use_tube=args.use_tube,
         use_respiration=args.respiration,
         use_two_voice=args.two_voice,
+        inverse=inverse_encoder,
         mel_weight=args.mel_weight,
         jobs=args.jobs,
         prior=prior,
@@ -3167,6 +3221,18 @@ def build_parser() -> argparse.ArgumentParser:
              "(0 disables); xeno-canto reports the duration in the search result",
     )
     h.add_argument(
+        "--keep-audio",
+        default=None,
+        metavar="DIR",
+        help="keep each analysed recording here when its licence permits "
+             "(harvest.audio_may_be_cached: no NoDerivatives, no unrecorded licence — "
+             "90.3 %% of the production corpus passes). Local only: the audio still never "
+             "reaches the browser or an asset set. Without this the loop is unchanged, "
+             "fetch/describe/delete. The reason to keep it is that an external model "
+             "(Perch, BirdNET) and any per-syllable re-measurement need the waveform, and "
+             "docs/23 §23.6 could only run on the recordings whose audio still existed",
+    )
+    h.add_argument(
         "--clean-only",
         action="store_true",
         help="skip recordings with other species audible in them, which xeno-canto lists "
@@ -3303,6 +3369,16 @@ def build_parser() -> argparse.ArgumentParser:
                      help="re-enable the waveguide tract, gated off because the 28-d "
                           "objective rejected it. Turning this on together with --critic is "
                           "the plan's own test of whether the learned objective is better")
+    lrn.add_argument("--inverse", default=None, metavar="PT",
+                     help="re-initialise each type's gesture axes from its own mean mel "
+                          "patch with the trained encoder of `birdy-pipeline inverse` "
+                          "(docs/09 §9.3 Part 2) before the coordinate descent runs. The "
+                          "descent still decides — it only moves on an improvement — so "
+                          "this proposes a basin and cannot force a worse fit than it "
+                          "found. The measured contour and duration are kept; only the "
+                          "gesture axes the cluster median has no value for are taken "
+                          "from the encoder. Off = bit-identical to the shipped fit. "
+                          "Holds a torch model, so it fits serially, like --critic")
     lrn.add_argument("--mel-weight", type=float, default=0.0, metavar="W",
                      help="give each type's mean member mel-path a share W of the "
                           "inversion's objective (docs/19 §19.4: the spectral target "
@@ -3632,6 +3708,27 @@ def build_parser() -> argparse.ArgumentParser:
                      help="also write the full report (per-type rows + correlations) "
                           "as JSON here")
     spb.set_defaults(func=cmd_specbench)
+
+    inv_p = sub.add_parser(
+        "inverse",
+        help="train the amortised inverse (mel patch -> syrinx parameters, docs/09 §9.3 "
+             "Part 2). Its training data is generated and discarded: we own the forward "
+             "model, so the pairs are free, perfectly labelled and unconfounded",
+    )
+    inv_p.add_argument("--inventory", default=str(DEFAULT_LEARNED_INVENTORY),
+                       help="the fitted inventory whose marginals the sampler draws from "
+                            "— a uniform box over 16 axes samples syllables no bird sings")
+    inv_p.add_argument("--pairs", type=int, default=150_000,
+                       help="render/patch pairs to train on (default %(default)s; ~810/s "
+                            "single-core, so this is a few minutes)")
+    inv_p.add_argument("--epochs", type=int, default=80)
+    inv_p.add_argument("--seed", type=int, default=0)
+    inv_p.add_argument("--cpu", action="store_true", help="train on the CPU")
+    inv_p.add_argument("--calibration-dir", default=str(REPO_ROOT / "pipeline" / "out"),
+                       help="where syrinx-calibration.json lives")
+    inv_p.add_argument("--out", default=str(REPO_ROOT / "pipeline" / "out" / "inverse.pt"),
+                       help="where to write the trained encoder")
+    inv_p.set_defaults(func=cmd_inverse)
 
     sy = sub.add_parser(
         "syntax",

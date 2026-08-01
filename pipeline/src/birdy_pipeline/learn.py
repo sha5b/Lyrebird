@@ -2702,6 +2702,7 @@ def learn_species(
     use_two_voice: bool = False,
     mel_weight: float = 0.0,
     gap_seconds: float = GAP_BOUT_SECONDS,
+    inverse: "Any | None" = None,
 ) -> dict[str, Any] | None:
     """Fitted syllables + a measured grammar for one species, or None if too little data.
 
@@ -2908,6 +2909,23 @@ def learn_species(
     for i, t in enumerate(fitted):
         # Search first, then measure: the reported cosine has to describe the syllable
         # that ships, not the median it started from.
+        # **The encoder proposes the basin; the descent still decides.** `invert_gestures`
+        # only ever moves on an improvement, so it cannot leave a bad starting point — and
+        # the §8.1a gesture fields start at their defaults (gammaScale 1.0, tractQ/noise/
+        # rough 0) no matter what the syllable sounds like, which `inverse.py` measured as
+        # wrong for 78 % of types on gammaScale alone. One forward pass from the type's own
+        # mean mel patch re-initialises those axes; the measured contour and duration are
+        # kept by `init_syllable`, because they are measurements and the prediction is not.
+        #
+        # Nothing is forced: the search re-scores from wherever this lands, against the
+        # same objective, and a worse start simply costs a few renders. `inverse=None` is
+        # the shipped path and is bit-identical to the fit before this existed.
+        if inverse is not None and real[i] is not None:
+            patches = [o.mel_patch for o in t.members if o.mel_patch is not None]
+            if patches:
+                t.syllable = inverse.init_syllable(
+                    t.syllable, np.mean(np.asarray(patches, dtype=np.float64), axis=0)
+                )
         if invert and real[i] is not None:
             before, after = invert_gestures(
                 t, real[i], calibration, frame, realism=realism, mel=mels[i]
@@ -3196,6 +3214,7 @@ def build_learned_inventory(
     on_species: "Callable[[dict[str, Any], list[dict[str, Any]]], None] | None" = None,
     jobs: int = 1,
     gap_seconds: float = GAP_BOUT_SECONDS,
+    inverse: "Any | None" = None,
 ) -> dict[str, Any]:
     """A full inventory document in the schema of `data/inventory.json`.
 
@@ -3271,8 +3290,10 @@ def build_learned_inventory(
     order = sorted(grouped, key=lambda s: -len(grouped[s]))
     parallel: dict[str, dict[str, Any] | None] | None = None
     if jobs > 1 and len(order) > 1:
-        if realism is not None:
-            log(f"--jobs {jobs} ignored: a realism term holds the critic and cannot "
+        if realism is not None or inverse is not None:
+            held = "a realism term holds the critic" if realism is not None else (
+                "the inverse encoder holds a torch model")
+            log(f"--jobs {jobs} ignored: {held} and cannot "
                 "cross into a worker process — fitting serially")
         else:
             parallel = _fit_species_parallel(
@@ -3307,6 +3328,7 @@ def build_learned_inventory(
                 use_respiration=use_respiration, use_two_voice=use_two_voice,
                 mel_weight=mel_weight,
                 gap_seconds=gap_seconds,
+                inverse=inverse,
             )
         if learned is None:
             continue

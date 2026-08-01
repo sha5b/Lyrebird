@@ -20,7 +20,21 @@ Operational conventions for agents working in this repo. Read this first.
 
 ## Hard constraints (violating these breaks the project)
 
-- **No audio is ever retained or shipped — with one owner-sanctioned exception.**
+- **No audio is ever *shipped*. Audio may now be *retained* where the licence permits**
+  (owner decision, 2026-08-01, replacing the blanket rule below). The project is
+  non-commercial and open source, so CC's NC and SA clauses impose nothing it does not
+  already satisfy, and keeping a file is not redistributing it. `harvest --keep-audio DIR`
+  and `harvest.audio_may_be_cached` gate it per recording: **NoDerivatives is refused**
+  (9.7 % of the corpus — everything downstream produces derived measurements) and **an
+  unrecorded licence is refused** (absence of a licence is not permission). 90.3 % of the
+  production store's 10 184 recordings pass, and all 10 184 carry a recordist, so
+  attribution exists for every kept file. Pinned by `harvest.self_test`.
+  **The browser still gets none of it** — the owner declined shipping audio in the app on
+  the same day, so `out/audio-cache/` and its siblings stay local, out of every asset set.
+  The reason to keep audio is measured, not convenient: an external model (Perch, BirdNET)
+  and any per-syllable re-measurement need the waveform, and docs/23 §23.6 could only run
+  on the 6 453 of 10 184 recordings whose audio still existed.
+- **The older blanket rule, kept for context — with one owner-sanctioned exception.**
   `harvest.py`'s decode → describe → delete loop remains the default and is
   load-bearing for licensing. Exception (owner decision, 2026-07-30): `sources fetch
   --keep-audio <dir>` may cache staged audio under `pipeline/out/audio-cache/` for

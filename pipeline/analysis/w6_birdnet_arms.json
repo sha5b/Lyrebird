@@ -1,0 +1,55 @@
+{
+ "windowBudget": 10,
+ "runs": [
+  {
+   "population": "T1 (recordist-stratified)",
+   "recordings": 1567,
+   "species": 1341,
+   "recordists": 135,
+   "arms": [
+    {
+     "space": "critic 32-d",
+     "dims": 32,
+     "species": null,
+     "speciesCoverage": null,
+     "recordist": 0.0891,
+     "recordistCoverage": 0.9068
+    },
+    {
+     "space": "birdnet 1024-d",
+     "dims": 1024,
+     "species": null,
+     "speciesCoverage": null,
+     "recordist": 0.1107,
+     "recordistCoverage": 0.9068
+    }
+   ],
+   "seconds": 317.9
+  },
+  {
+   "population": "T3 (species pairs)",
+   "recordings": 1644,
+   "species": 958,
+   "recordists": 760,
+   "arms": [
+    {
+     "space": "critic 32-d",
+     "dims": 32,
+     "species": 0.0074,
+     "speciesCoverage": 0.8345,
+     "recordist": 0.1684,
+     "recordistCoverage": 0.3291
+    },
+    {
+     "space": "birdnet 1024-d",
+     "dims": 1024,
+     "species": 0.0393,
+     "speciesCoverage": 0.8345,
+     "recordist": 0.1755,
+     "recordistCoverage": 0.3291
+    }
+   ],
+   "seconds": 328.4
+  }
+ ]
+}
