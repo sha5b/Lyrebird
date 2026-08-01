@@ -85,6 +85,46 @@
   calls with negative bases (spec-undefined, NaN-vanish hazard on exp2/log2
   drivers) now square explicitly. npm check 4/4 baseline, parity 18/18,
   verify:features pass.
+- **Authored-call corpus crack found + fixed (2026-08-01).** The first
+  production build's known map verified green (694 144 points, 1 024 clusters)
+  but had **zero documented knots**: every authored call of a harvest-covered
+  species (wrenChip, hooLong, chickA, cuck, oo — 33 syllables over 10 species)
+  fell between the two render paths — `measured_corpus` renders only types
+  with member observations, and the typed/authored species split sent those
+  species down the measured path entirely, so the authored syllables of typed
+  species never rendered. Symptom: confidence mix `unlabelled=1024`, no
+  hoo*/wren* points. Fix (cli.py): the observed-type fallback — syllables of
+  typed species with no members render jittered through `synthetic_corpus`,
+  exactly the pre-split behaviour; verified on the real inventory (33 fallen
+  syllables, all the documented calls, zero learned types). Rebuild running.
+  **Fallback v2 (same day):** the v1 fallback crashed the rebuild —
+  `KeyError: song 'learned_bout' references unknown syllable 'L31'`: the
+  kept-only syllable table was paired with the species' full song list, and
+  learned songs sequence learned types. But `measured_corpus` already renders
+  EVERY song of a typed species against the full table, so the fallback now
+  sends `songs: []` — songs would have been duplicate points as well as the
+  crash. Verified: 66 clips render, no learned ids, ruff clean. Also note the
+  trap that cost a diagnosis cycle: the first rebuild piped its log through
+  `tail -30`, so mid-run checks read the PREVIOUS build's stale output files
+  and looked like "the fix did not fire" — rebuilds now log to a file.
+  **Outcome (rebuild v3, same day): the rendering crack is fixed, but
+  documented knots are still zero — and that is now a design finding, not a
+  bug.** The 33 documented calls render (24 points each, seeded as knots),
+  yet all 1 024 clusters are named learned types. Two mechanisms stack: the
+  k-cap (1 024 clusters vs 13 903 types — the build itself reports "the cap
+  cost 12 879 types their only one", type coverage 968/13 903 = 7.0 %), and
+  `label_cluster`'s pure point-count majority: a documented call's seeded
+  cluster is flooded by hundreds-to-thousands of field points of OTHER
+  species' learned types (wrenChip's 24 points sit in a 2 017-point
+  mega-cluster named poecile_palustris/L05; hooLong's in an 11 653-point one
+  named cuculus_canorus/L08), so the documented name, function and citation
+  lose every vote. Forcing the documented name onto such a cluster would
+  mislabel thousands of unrelated field points — the honesty rule forbids the
+  cheap fix. The real options (raise K_CAP, weight the vote, pin documented
+  knots outside the cap) are owner-level calls; until one is taken, the
+  galaxy's knots are learned-type-only and the documented calls exist as
+  points without knots. Recorded here so the next session does not re-hunt
+  this as a rendering bug.
 - **P0 depth harvest COMPLETE (owner call, batched — docs/18 P0).** 100 species
   (the debug-100 working corpus, deepest-first) × up to 30 recordings each,
   four 25-species batches run singularly with per-species logs in

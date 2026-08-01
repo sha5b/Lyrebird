@@ -406,6 +406,37 @@ def cmd_build(
                     seed=args.seed,
                     should_stop=should_stop,
                 )
+            # The syllables of typed species that have no member observations fall
+            # between the two paths: measured_corpus only renders types with members,
+            # and the whole-species split sent their species down the measured path.
+            # Those are the hand-authored calls (wrenChip, hooLong, chickA...) — the
+            # inventory's documented knowledge — and a build without them loses every
+            # documented knot, which is exactly what the 2026-08-01 production build
+            # shipped before this fallback existed. Render them jittered, as before.
+            observed = {sp["id"]: set(members.get(sp["id"], {})) for sp in typed}
+            fallen = []
+            for sp in typed:
+                kept = [s for s in sp["syllables"] if s["id"] not in observed[sp["id"]]]
+                if not kept:
+                    continue
+                # Songs are NOT rendered here: measured_corpus already renders every
+                # song of a typed species against its full syllable table, and a
+                # learned song's sequence references learned types this kept-only
+                # table does not have — rendering them again would both duplicate the
+                # points and raise KeyError (the 2026-08-01 rebuild died on exactly
+                # that). What is missing from the measured path is the syllables.
+                fallen.append({**sp, "syllables": kept, "songs": []})
+            if fallen:
+                log(f"jitter renders for the {sum(len(sp['syllables']) for sp in fallen)} "
+                    f"syllables with no observations (authored calls of typed species)")
+                clips += synthetic_corpus(
+                    {"species": fallen},
+                    calibration,
+                    variants=args.variants,
+                    song_variants=args.song_variants,
+                    seed=args.seed,
+                    should_stop=should_stop,
+                )
         else:
             clips = synthetic_corpus(
                 inventory,
