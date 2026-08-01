@@ -75,6 +75,23 @@ configuration the command line abandoned, and was fixed. Evidence: docs/22.
   rule — every tab build is a production build), `respfit`/`docrefit`, and the new build
   flags. Flagged, not done.
 
+- **W2 RUN, and it is three results and one retracted test** (docs/23 §23.2.1,
+  `seqstats.py` + self-test). On the production corpus, 34 696 bouts against docs/12's
+  control: **the tokens are not arbitrary** — H(next | previous 1) is 0.941 bits against
+  the shuffle's 3.343, which is the "are these units" question answered in the
+  affirmative and the premise of P2/P3 surviving. **Menzerath does not hold** (median
+  exponent +0.019; 45.7 % of species negative against the control's 8.5 %, so a weak
+  effect in the law's direction but not the law). **NCD is refuted** — the control
+  separates species *better* (0.038 vs 0.018), so compression distance reads alphabet
+  and marginals rather than order, and no song encoder should be measured against it.
+  **The second-order arm was a badly designed test and is recorded as one**: comparing
+  the k=1→2 drop between real and control is invalid when the curves start 2.4 bits
+  apart, and past k=3 the control's curve falls *below* the real one because a plug-in
+  estimator reports near-unique contexts as determined. `_verdict` now refuses that
+  comparison instead of returning the answer it would have returned. The honest
+  instrument is docs/18's held-out cross-entropy, which is unbiased — so P1 stands and
+  this arm needs re-running with it.
+
 - **New plan written from the failures: docs/23.** Five workstreams, each naming the
   measured failure it attacks, the method, the gate stated before the run, and what a
   negative result would mean — with the methods taken from fields that solved the same

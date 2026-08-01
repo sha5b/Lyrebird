@@ -5,8 +5,8 @@ the measured failure it attacks, the method, the gate stated before the run, and
 negative result would mean. Methods are taken from fields that solved the same problem
 on other data. Birdsong is the subject here, not the boundary of the reading list.
 
-The order is by cost over payoff, not by ambition. Two of the five need no new data, no
-network and no training run.
+The order is by cost over payoff, not by ambition. Three of the six need no new data,
+no network and no training run.
 
 ## 23.0 The pattern this plan answers
 
@@ -80,6 +80,49 @@ the shuffled corpus reproduces says nothing about birds.
 **Why it goes early.** If the inventory fails Menzerath, every song-level encoder built
 on those tokens is built on sand, and P2/P3 should be re-aimed before anyone writes one.
 If it passes, the roadmap gains its first evidence that the units are units.
+
+### 23.2.1 Result, 2026-08-01 — run on the production corpus
+
+`seqstats.py`, 34 696 bouts, 327 164 tokens, 2 421 species, against docs/12's control.
+
+| statistic | real | control | reading |
+|---|---|---|---|
+| Menzerath exponent, median | **+0.019** | +0.051 | the law does not hold |
+| species with a negative exponent | 45.7 % | 8.5 % | a weak effect in the right direction |
+| NCD, across minus within | 0.018 | **0.038** | adds nothing |
+| H(next given 1 previous) | **0.941 bits** | 3.343 | very strong first-order structure |
+| H(next given 3 previous) | 0.435 | **0.293** | the control has fallen below the real |
+
+**What holds.** The tokens are not arbitrary. 0.941 bits against a shuffle's 3.343 is
+not a subtle effect, and it is the question behind "are these units" answered in the
+affirmative. Whatever `learn_types` cut out, the sequences built from it are strongly
+predictable at first order.
+
+**Menzerath does not hold here.** The median exponent is positive. The share of species
+with a negative one is 45.7 % against the control's 8.5 %, so there is something in the
+law's direction, but this corpus does not look like the primate and cetacean results.
+Note also that the *control* has a consistently positive exponent, which is a sampling
+artefact and not a finding: a mean over more draws sits closer to the species mean, and
+a log of it rises with the count. That artefact is exactly why the control is run.
+
+**NCD is refuted.** The control separates species *better* than the real corpus does.
+Compression distance here reads alphabet and marginals, which the shuffle preserves, and
+not order. No learned song encoder should be measured against it.
+
+**The second-order arm was a badly designed test, and it is being recorded as one.**
+The pre-registration compared the k=1 to k=2 drop between real and control. That is not
+a test: the curves start 2.4 bits apart, so the control drops further for the trivial
+reason that it has more entropy to lose, and past k=3 its curve falls *below* the real
+one because a plug-in estimator on shuffled tokens reports near-unique contexts as
+determined. Both effects are bias. `_verdict` now refuses the comparison and says so
+rather than returning the answer it would have returned. **The honest instrument for
+this question is the held-out cross-entropy the docs/18 bake-off already used**, which
+is unbiased by construction — so P1's verdict stands, and this arm needs re-running with
+that estimator rather than with this one.
+
+**Consequence for the roadmap.** The premise of P2 and P3 survives: the tokens carry
+real sequence structure. What does not survive is the hope that a model-free statistic
+would settle the depth question cheaply.
 
 ## 23.3 W3 — Fitting the syrinx by inference, not by search
 
@@ -163,16 +206,122 @@ zero in every arm and proves nothing either way.
 **Cost.** The first half is a flag that already exists. The second half is a build-side
 change of a few hundred lines.
 
-## 23.6 Order, and why
+## 23.6 W6 — A pretrained bird embedding as a second opinion
+
+**The failure.** Two of them, and they are the same failure seen from two sides. The
+recordist confound survived every attempt to train it away (§17.3, §17.5). And the map's
+own space is contaminated by our synthesiser, because the critic's leading loss term is
+realism and the galaxy is then built in that space out of both kinds of point (docs/22
+§22.6). Both say the analysis space is doing a job it was not designed for.
+
+**What has not been tried.** BirdNET is an open bird classifier trained on the same
+archives as this corpus, at roughly a hundred times the scale. Its code is MIT and its
+models are CC BY-NC-SA 4.0 — non-commercial, which the owner has accepted for research
+use (2026-08-01). Three properties matter here:
+
+- a 320-d embedding taken from the second-to-last layer, at 3-second resolution;
+- **no realism term anywhere in it** — it was never trained to tell our resynthesis from
+  a bird, so it cannot encode the axis that splits every type into two seeds here;
+- a species-occurrence meta-model over latitude, longitude and week of year, which is a
+  kind of prior this pipeline has nothing equivalent to.
+
+**The boundary, stated so nobody expects more.** BirdNET is species-level at 3 seconds.
+This project is syllable-level at 20 ms to 2 s with a physical synthesiser. So it can
+improve *which bird, is this new, where and when*, and it can say nothing about what a
+sound is made of. It does not touch the syrinx model, the typing, the grammar, the knot
+budget or the song funnel.
+
+**Gate, stated before the run.** Three read-only tests on the fixed store, through
+`geometry.measure` and its permutation null — no training, no new data:
+
+- **T1** recordist lift and source lift in the BirdNET space against the critic space.
+- **T2** novelty AUC against the critic's 0.846 / TPR 32.2 % at 5 % false positives.
+- **T3** species retrieval lift against the critic's 0.513.
+
+T1 is the whole bet. Note what it can return: BirdNET has never seen synthetic audio
+either, and out-of-distribution input often clumps on its own, so a *higher* source lift
+is a real possible outcome and not a bug.
+
+**A negative result is the valuable one.** If a model trained on the same archives at a
+hundred times the scale is no more recorder-invariant than ours, the confound lives in
+the archives rather than in our critic, and the question §17.3 and §17.5 both failed to
+close is closed — by measurement, from the outside.
+
+**What it would let go of, if T1 and T3 land.** The critic's species head exists to stop
+the embedding being about our synthesiser (docs/09 §9.2b); a grounded external space
+makes that term redundant and collapses the critic to the realism head the fit actually
+consumes. Perch's 409 MB ONNX port may also become redundant at a tenth the size.
+
+**Implementation.** The Perch pattern of AGENTS.md exactly: optional extra, lazy import,
+model in a gitignored local directory, **labels are metadata and never typing ground
+truth**, nothing ships to the browser. Practical check first — BirdNET ships TFLite and
+this repo deliberately carries no TensorFlow, so it is `tflite-runtime` or an ONNX
+export. Two embeddings are worth writing, not one: **per recording** (a session and
+channel descriptor computed independently of our own features, which is what W1 wants as
+its batch representation) and **per syllable** (the 3-second window centred on it, which
+gives a syllable descriptor with context that neither the 28-d nor the critic space has).
+
+## 23.7 W7 — Mimicry as ground truth
+
+**The failure it attacks.** Every cross-species similarity claim this project makes is
+judged against a permutation null, because there is no ground truth for "these two
+species' sounds are alike". `relations.json` ships 6 441 such pairs as candidates and
+says so. The same gap makes docs/19's problem unfixable from inside: we have no measure
+of audible fidelity that does not come from our own metric.
+
+**What has not been tried.** Vocal mimics supply both, from outside.
+
+- **A mimic is a labelled cross-species similarity.** A lyrebird singing a grey
+  shrike-thrush produces syllables whose acoustics are shrike-thrush and whose label is
+  lyrebird. That is ground truth nature produced, and it tests directly whether our
+  embedding encodes acoustic form or species identity.
+- **The accuracy has been certified by the receiving birds, not by us.** Dalziell and
+  Magrath used playback bioassays: shrike-thrushes responded to lyrebird imitations as
+  strongly as to conspecific song. Mimic and model recordings are therefore pairs known
+  to be *perceptually equivalent to the animals concerned*. That is a fidelity yardstick
+  for the docs/19 bench which owes nothing to our synthesiser or to our cosine.
+- **A note for docs/21.** Lyrebirds have three pairs of syringeal muscles where
+  songbirds typically have four, and whether that simplification helps mimicry is
+  explicitly unknown. The most accurate imitator known has the *simpler* apparatus,
+  which argues the expressive bottleneck is the control signal rather than the
+  oscillator — the bet W3 already makes, now with an animal behind it.
+
+**Pilot, run 2026-08-01, and it is a data verdict.** The store holds **31** lyrebird
+syllables (the 221 and 33 in `seenPerSpecies` are records seen, not syllables kept).
+Against the 12 393 type centroids of the production fit, those 31 syllables match **13
+distinct non-lyrebird species** where random syllables of the corpus match 29.9 (sd
+1.0) — concentrated, in the direction mimicry predicts. Two of the top matches,
+`philemon_citreogularis` and `haliastur_sphenurus`, are Australian species that co-occur
+with lyrebirds and are plausible models. The rest are Neotropical and African and cannot
+be mimicry. At n = 31 this is a well-formed test with an empty corpus, and the
+"nearest centroid is its own type" figure of 83.9 % is circular by construction, since
+those syllables are inside those centroids.
+
+**The action is a targeted harvest, not a method.** Xeno-canto's lyrebird recordings
+frequently name the mimicked species in the remarks, so the harvest returns *labelled*
+mimic-to-model pairs. Other mimics — mockingbirds, starlings, marsh warblers, drongos —
+extend the same set.
+
+**Gate.** With a corpus of a few hundred mimetic syllables and their named models: the
+share whose nearest non-conspecific type belongs to the named model species, against the
+null of a random species drawn from the same geography. And, for the fidelity half, the
+resynthesis metric's ordering of mimic-versus-model pairs against the published
+behavioural equivalence.
+
+## 23.8 Order, and why
 
 1. **W2**, because it is an afternoon and it can refute the premise of the whole syntax
    roadmap before more is built on it.
 2. **W1**, because it is hours and it attacks the most-recorded failure in the project
    with a method the project has never tried.
 3. **W5**, because the measurement is already done and what remains is a decision.
-4. **W4**, because it is the only route to function this corpus can support.
-5. **W3**, because it is the largest and it should start after W2 says what the units
+4. **W6**, straight after W1: it runs on the same fixed store through the same battery,
+   and its T1 either explains W1's result or replaces it.
+5. **W4**, because it is the only route to function this corpus can support.
+6. **W3**, because it is the largest and it should start after W2 says what the units
    are.
+7. **W7** whenever a harvest is being run anyway: it costs a species list, and it is the
+   only ground truth for cross-species similarity this corpus can obtain.
 
 One heavy job at a time (AGENTS.md). W1 and W2 are read-only against a fixed store and
 can share a session with anything else.
