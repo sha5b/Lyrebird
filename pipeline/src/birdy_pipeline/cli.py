@@ -391,7 +391,7 @@ def cmd_build(
                         if args.member_variants is None
                         else args.member_variants
                     ),
-                    anchor=not args.no_member_anchor,
+                    anchor=args.member_anchor,
                     song_variants=args.song_variants,
                     seed=args.seed,
                     should_stop=should_stop,
@@ -641,7 +641,7 @@ def cmd_build(
                 "audioDir": str(args.audio_dir) if args.audio_dir else None,
                 "variantsPerSyllable": args.variants if args.source == "synthetic" else None,
                 "memberVariants": args.member_variants,
-                "memberAnchor": not args.no_member_anchor,
+                "memberAnchor": args.member_anchor,
                 "variantsPerSong": args.song_variants if args.source == "synthetic" else None,
                 "harvest": harvest_info,
                 "betaClamp": [syrinx.BETA_MIN, syrinx.BETA_MAX],
@@ -2705,7 +2705,7 @@ def cmd_thresholds(args: argparse.Namespace) -> int:
     space = json.loads((out / "feature-space.json").read_text(encoding="utf-8"))
     mean = np.asarray(space["mean"], dtype=float)
     std = np.maximum(np.asarray(space["std"], dtype=float), 1.0e-6)
-    vectors = np.stack([np.asarray(c["vector"], dtype=float) for c in centroids["items"]])
+    vectors = galaxy.centroid_vectors(out, centroids)["vector"]
     vectors = vectors / np.maximum(np.linalg.norm(vectors, axis=1, keepdims=True), 1.0e-12)
 
     def best_match(descriptor: np.ndarray) -> tuple[float, int]:
@@ -2807,9 +2807,11 @@ def verify(out: Path) -> int:
                 )
 
     centroids = json.loads((out / "centroids.json").read_text())
-    lo_centroids = np.asarray(
-        [it.get("featuresLo", []) for it in centroids["items"]], dtype=np.float64
-    )
+    # The three per-cluster float arrays live in `centroid-vectors.f32` since 2026-08-01
+    # (64 % of centroids.json's bytes; galaxy.py says why). `centroid_vectors` reads either
+    # layout, so this check covers old asset directories too.
+    blocks = galaxy.centroid_vectors(out, centroids)
+    lo_centroids = blocks.get("featuresLo", np.zeros((0, 0)))
     if lo_centroids.shape != (centroids["k"], lo_dim):
         problems.append(
             f"centroid featuresLo are {lo_centroids.shape}, expected {(centroids['k'], lo_dim)}"
@@ -2824,9 +2826,7 @@ def verify(out: Path) -> int:
                 f"point-features.f32 does not separate clusters: mean similarity to own "
                 f"centroid {own.mean():.3f} vs {float((lo @ lo_centroids.T).mean()):.3f} to all"
             )
-    vectors = np.asarray(
-        [it.get("vector", []) for it in centroids["items"]], dtype=np.float64
-    )
+    vectors = blocks.get("vector", np.zeros((0, 0)))
     if centroids["dims"] == features.DIM:
         # The descriptor-space build: `vector` is the centroid, as it always was.
         if vectors.shape != (centroids["k"], centroids["dims"]):
@@ -2837,9 +2837,7 @@ def verify(out: Path) -> int:
     else:
         # The embed-space build: the primary centroid is `vector32`, and `vector` is the
         # 28-d member centroid shipped for the browser's fallback path.
-        v32 = np.asarray(
-            [it.get("vector32", []) for it in centroids["items"]], dtype=np.float64
-        )
+        v32 = blocks.get("vector32", np.zeros((0, 0)))
         if v32.shape != (centroids["k"], centroids["dims"]):
             problems.append(f"centroid vector32s are {v32.shape}, expected "
                             f"{(centroids['k'], centroids['dims'])}")
@@ -3036,23 +3034,24 @@ def build_parser() -> argparse.ArgumentParser:
                    help="renders per learned syllable type, built from measured member "
                         "observations, and per hand-authored syllable, built by jitter "
                         "(default %(default)s)")
+    b.add_argument("--member-anchor", action="store_true",
+                   help="render the fitted median plus --member-variants measured "
+                        "realisations for a learned type that HAS member observations. "
+                        "**Off by default since 2026-08-01** (W5, docs/22 §22.6 + §22.8): "
+                        "such a type already exists in the galaxy as the real syllables "
+                        "typing.json assigned to it, and rendering it again made the "
+                        "corpus half a duplicate of itself (production: 347 531 synthetic "
+                        "against 340 079 field) and split every type into two seeds. "
+                        "Rendering nothing takes seed demand 2.00 -> 1.00 per type and k "
+                        "4 298 -> 2 155 on debug-100, for no measured change in "
+                        "field-point retrieval (+0.02) — the case is the map's size, not "
+                        "its accuracy. This flag buys back the rendered voice's own place "
+                        "on the map, which is a claim about our synthesiser")
     b.add_argument("--member-variants", type=int, default=None, metavar="N",
-                   help="renders per learned type that HAS member observations, "
-                        "overriding --variants for those types only. The default "
-                        "renders 24 measured realisations of a type whose members are "
-                        "already in the galaxy as field points, so the corpus is half a "
-                        "duplicate of itself (production build: 347 531 synthetic "
-                        "against 340 079 field) and every type splits into two seeds. "
-                        "0 keeps the fitted anchor alone — the point the cluster gets "
-                        "its name from — and leaves the extent to the real members")
-    b.add_argument("--no-member-anchor", action="store_true",
-                   help="render NOTHING for a learned type that has member "
-                        "observations — the type lives in the galaxy as the real "
-                        "syllables typing.json already assigned to it. With "
-                        "--member-variants 0 this is the arm measured in docs/22 "
-                        "§22.6: seed demand 2.00 -> 1.00 per type (a source split "
-                        "needs a point on both sides), cluster purity 0.423 -> 0.577. "
-                        "It gives up the rendered voice's own place on the map")
+                   help="renders per learned type that has member observations, "
+                        "overriding --variants for those types only. Only has an effect "
+                        "with --member-anchor, since without it such a type renders "
+                        "nothing at all")
     b.add_argument("--song-variants", type=int, default=3, help="renders per song")
     b.add_argument("--seed", type=int, default=0)
     b.add_argument("--k", type=int, default=None, help="clusters (default: syllable types)")

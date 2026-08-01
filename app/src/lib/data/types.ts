@@ -378,19 +378,19 @@ export interface Centroid {
 	confidence: Confidence;
 	refs: string[];
 	position: [number, number, number];
-	vector: number[];
+	vector: VectorRow;
 	/**
 	 * The centroid in the critic's 32-d embedding space — the primary vector of a
 	 * `--space embed` build, where `vector` is the 28-d member centroid kept for the
 	 * fallback path. Absent in descriptor-space assets.
 	 */
-	vector32?: number[];
+	vector32?: VectorRow;
 	count: number;
 	/**
 	 * The centroid in the reduced space of `point-features.f32`. Used only to decide how
 	 * brightly each individual point responds; the reported match still uses `vector`.
 	 */
-	featuresLo?: number[];
+	featuresLo?: VectorRow;
 	/**
 	 * Behavioural class of the documented function — alarm, recruitment, courtship,
 	 * territorial, contact, structural or unclassified. Derived by the pipeline from an
@@ -421,9 +421,35 @@ export interface Centroid {
 	};
 }
 
+/**
+ * A per-cluster float array as the client sees it: a `Float32Array` view into the
+ * `centroid-vectors.f32` sidecar on a current build, a plain array on one from before
+ * 2026-08-01 that still carries its vectors inline. Every consumer only indexes, reads
+ * `.length`, or copies with `Float32Array.from` / `Array.from`, all of which both do.
+ */
+export type VectorRow = number[] | Float32Array;
+
+/** The sidecar's layout, as `centroids.json` declares it (see `centroid-vectors.ts`). */
+export interface CentroidVectorBlock {
+	file: string;
+	format?: string;
+	order: string[];
+	dims: Record<string, number>;
+	rowFloats: number;
+	bytes?: number;
+	note?: string;
+}
+
 export interface Centroids {
 	k: number;
 	dims: number;
+	/**
+	 * Where the per-cluster float arrays actually live: `centroid-vectors.f32`, because
+	 * they were 64 % of this file's bytes and it is parsed whole before the first frame
+	 * (see `centroid-vectors.ts`). Absent on builds from before 2026-08-01, which carry
+	 * the arrays inline on each item.
+	 */
+	vectors?: CentroidVectorBlock;
 	items: Centroid[];
 }
 

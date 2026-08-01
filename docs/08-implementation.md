@@ -560,7 +560,8 @@ app/static/birdy/
                            (+ `embedding` block in embed builds, see below)
   positions.f32            Float32Array, 3*N, xyz per point, max|coord| = 1
   points.json              parallel metadata arrays, length N
-  centroids.json           K labelled clusters with 3D position + cluster vector
+  centroids.json           K labelled clusters with 3D position (vectors: sidecar below)
+  centroid-vectors.f32     Float32Array, K rows of the per-cluster vectors
   relations.json           cross-species shared types + species similarity (doc 10 §10.4)
   novel-pool.json          grow's pending novel embeddings awaiting quorum (doc 10 §10.3)
 ```
@@ -601,10 +602,26 @@ the learned space without torch. The pipeline measures `mapQuality` on held-out
 
 ```json
 { "k": 0, "dims": 28,
+  "vectors": { "file": "centroid-vectors.f32", "order": ["vector", "featuresLo"],
+               "dims": { "vector": 28, "featuresLo": 8 }, "rowFloats": 36 },
   "items": [{ "id": 0, "label": "", "speciesId": "", "syllableId": "",
               "function": "", "confidence": "", "refs": [],
-              "position": [0,0,0], "vector": [], "count": 0 }] }
+              "position": [0,0,0], "count": 0 }] }
 ```
+
+**The per-cluster float arrays live in `centroid-vectors.f32`, not in the JSON.**
+`vector32`, `vector` and `featuresLo` were 64 % of centroids.json's bytes (744 of 1 159
+per cluster, measured), and the file is fetched and parsed whole before the first frame —
+at the production corpus's 27 862 clusters that is a 44 MB parse. The sidecar is
+little-endian float32, row-major, one row per cluster, `rowFloats` wide, with the blocks
+in the order `vectors.order` names; an embed build's order is
+`["vector32", "vector", "featuresLo"]`. Values keep the 6-decimal rounding they had when
+they were JSON, so no match moves because of the move, and an empty cluster's 28-d block
+is zeros where the JSON used to omit the key.
+
+A consumer reads it with `galaxy.centroid_vectors` (Python) or
+`data/centroid-vectors.ts` (browser and the node scripts); both also accept an asset set
+from before 2026-08-01, which carries the arrays inline and has no `vectors` block.
 
 ## 8.4 syrinx-calibration.json
 

@@ -224,6 +224,17 @@ The purity gain above is real but it is measured over a set this arm shrank. Wha
 is size: the same field-point retrieval on **half the knots and a quarter fewer points**.
 Argue for it on the map's size, not on its accuracy.
 
+**ADOPTED as the default, 2026-08-01** (owner's call, on the size argument below).
+`measured_corpus(anchor=...)` now defaults to False and the flag inverted:
+`--member-anchor` buys the rendered voice back, `--no-member-anchor` is gone. Built on
+debug-100 with label assignment: **160 579 points (−25 %), k = 2 155, zero source splits**
+— the split needs a point on both sides and there is now only one — type coverage
+2 143/2 143, verify green, 246 s against 375 s. One number moved the wrong way and it is a
+picture number, not a claim: 3D distance faithfulness fell 0.903 → 0.747 (kNN agreement
+rose 20.7 % → 28.0 %). Removing 53 575 rendered points removes structure the projection
+found easy, so *distance on screen means less than it did*; the knots and the matching are
+unaffected, because neither ever used the 3D positions.
+
 Two honest limits on that row. It gives up the rendered voice's own place on the map,
 which is a claim about our synthesiser rather than about a bird — a design decision, so
 it ships as `--member-variants 0 --no-member-anchor` and not as a default. And the cap
@@ -395,13 +406,26 @@ map line reads "the knots are the labels, not a second finding". `--clustering h
 remains the map that can answer "none of these", and `--clustering kmeans` remains the
 default.
 
-**What it costs at production scale.** k becomes 27 762 type blobs + 100 for the 20 241
-untyped points = **27 862 clusters**, and the constraint moves from the clustering to the
-assets: `centroids.json` is written whole and the browser loads it whole. Measured on the
-debug build, a label row is **1 596 bytes** (against kmeans' 1 716), so production would
-ship about **44 MB** of centroids — the next thing to fix, and the fix `inventory.json`
-already has: shard it, or move the two float vectors to an `.f32` sidecar the way
-`point-features` is. The build warns with the projected size whenever k passes `K_CAP`. The renderer is not the limit any more
+**What it cost at production scale, and what was done about it.** k becomes 27 762 type
+blobs + 100 for the 20 241 untyped points = **27 862 clusters**, and the constraint moved
+from the clustering to the assets: `centroids.json` is written whole and the browser parses
+it whole, at a measured 1 596 bytes per cluster — about **44 MB**. Two decisions taken
+2026-08-01 removed it, and they compound:
+
+- **W5 as the default** (§22.6) halves the cluster count, because a type with no rendered
+  copy cannot source-split: 27 862 → about **14 003**.
+- **The per-cluster vectors moved to a binary sidecar.** `vector32`, `vector` and
+  `featuresLo` were **64 % of the file's bytes** (744 of 1 159 per cluster, measured), so
+  they now ship as `centroid-vectors.f32` — little-endian float32, row-major, layout
+  declared in centroids.json's own `vectors` block, values rounded exactly as they were in
+  the JSON so no match moves. Contract in docs/08 §8.3; readers are
+  `galaxy.centroid_vectors` and `data/centroid-vectors.ts`, both of which still accept the
+  older inline layout.
+
+Measured together on the debug-100 build: **centroids.json 6.86 MB → 1.18 MB** plus 0.59 MB
+of binary, so 548 bytes of JSON and 272 of float per cluster. At production's 14 003 that
+projects to about **7.7 MB + 3.8 MB against the original 44 MB**. The build still warns with
+the projected size whenever k passes `K_CAP`. The renderer is not the limit any more
 (the cluster-state `DataTexture` is 1 024 wide, so 27 862 knots is 28 rows), and the
 clustering itself stops being a cost at all — 0.2 s against 65 s here, and against a
 k = 8 192 Lloyd's iteration over 694 936 points there.

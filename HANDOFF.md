@@ -72,6 +72,36 @@ are why it ships as a flag rather than as the default.
   The fix is the one `inventory.json` already had — shard it, or move the two float
   vectors to an `.f32` sidecar beside `point-features.f32`. The build prints the projected
   size whenever k passes `K_CAP` rather than shipping the surprise.
+- **BOTH OWNER DECISIONS TAKEN, 2026-08-01, and both are built and verified.**
+  1. **W5 is now the default.** `measured_corpus(anchor=)` defaults to False; the flag
+     inverted — `--member-anchor` buys the rendered voice back, `--no-member-anchor` is
+     gone. Debug-100 with label assignment: **160 579 points (−25 %), k = 2 155, zero
+     source splits**, type coverage 2 143/2 143, verify green, 246 s against 375 s. One
+     number moved the wrong way and it is a picture number: 3D distance faithfulness
+     0.903 → 0.747 (kNN agreement 20.7 → 28.0 %). Removing 53 575 rendered points removes
+     structure the projection found easy, so *distance on screen means less than it did*;
+     knots and matching never used the 3D positions.
+  2. **The per-cluster vectors moved to `centroid-vectors.f32`** — they were **64 % of
+     centroids.json's bytes**. Little-endian float32, row-major, layout declared in
+     centroids.json's own `vectors` block, values rounded exactly as before so no match
+     moves. Contract in docs/08 §8.3. Readers: `galaxy.centroid_vectors` and
+     `app/src/lib/data/centroid-vectors.ts`, **both of which still read the old inline
+     layout**, so `app/static/birdy` keeps verifying untouched.
+
+  Measured together: **centroids.json 6.86 MB → 1.18 MB** + 0.59 MB binary on debug-100
+  (548 B of JSON and 272 B of float per cluster). At production's 14 003 clusters that is
+  about **7.7 MB + 3.8 MB, against the 44 MB that blocked the build**. Production is now
+  unblocked; the build itself is still your call to run.
+- **Two app-side repairs found while wiring it.** `verify-features.mjs` had a
+  **TDZ bug**: the session-gate block assigned `failed` before its `let`, so the script
+  crashed with `ReferenceError` at the first failure instead of reporting it — every run
+  since the gate shipped ended at that crash, hiding the check below it. Now it reports
+  both failures on the shipped assets, and both are the known corpus mismatch (debug-100
+  holds none of the 44 authored syllables the script renders), not new breakage; confirmed
+  pre-existing by re-running with today's app changes stashed. And `features.ts` had two
+  places that assumed the vectors were plain arrays — `Float32Array.map` returns a
+  `Float32Array`, which `flatMap` does not flatten, so the raw-vector median would have
+  been taken over typed arrays.
 - **W5 measured against a query population that does not move — and it buys nothing in
   accuracy** (docs/22 §22.8's square; this is the evidence decision 1 below was waiting
   for, and it is not the evidence that was expected). Retrieval over *all* points is not

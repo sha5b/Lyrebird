@@ -177,7 +177,7 @@ def measured_corpus(
     sample_rate: int = SAMPLE_RATE,
     verbose: bool = True,
     should_stop: Callable[[], bool] | None = None,
-    anchor: bool = True,
+    anchor: bool = False,
 ) -> list[Clip]:
     """The anchor render plus `variants` measured realisations per learned type.
 
@@ -218,16 +218,28 @@ def measured_corpus(
             if fitted is None or not members:
                 continue
             n_types += 1
-            # The anchor: the fitted median exactly as fitted, jitter off.
+            # **The default is to render nothing here** (`anchor=False`, W5 of docs/23,
+            # adopted 2026-08-01): a type that has member observations already exists in
+            # the galaxy as those real syllables, and rendering it again adds our
+            # synthesiser's opinion of a sound the corpus already contains.
             #
-            # `anchor=False` renders nothing at all for a type that has members, so the
-            # type exists in the galaxy only as the real observations `typing.json`
-            # already assigned to it. Measured on the debug-100 dump (docs/22 §22.6):
-            # the seed demand falls from 2.00 to exactly 1.00 seeds per type — every
-            # source split disappears, because a split needs a point on both sides —
-            # and cluster purity rises 0.423 -> 0.577. What it gives up is the rendered
-            # voice's own place on the map, which is a claim about our synthesiser
-            # rather than about the bird, so it is the owner's call and not a default.
+            # Measured on the debug-100 dump, and the second measurement is why the
+            # first one is not the argument (docs/22 §22.6, §22.8). Seed demand falls
+            # 2.00 -> exactly 1.00 per type, because a source split needs a point on
+            # both sides and now there is only one side; k falls 4 298 -> 2 155 and the
+            # corpus by a quarter. But scored on a query population that does not move
+            # with the arm — the field points, which every arm holds — this buys *no*
+            # retrieval accuracy at all (+0.02 points). So the case is the map's size,
+            # which at production scale is the difference between a 44 MB centroids file
+            # and a 22 MB one, and not a claim that the map got better.
+            #
+            # `anchor=True` (`--member-anchor`) restores the fitted median as one
+            # unjittered point plus `variants` measured realisations. What that buys back
+            # is the rendered voice's own place on the map — a claim about our
+            # synthesiser rather than about a bird, which is why it is now the option
+            # rather than the default. A type with *no* members is untouched by this: it
+            # renders through `synthetic_corpus`, because renders are all the evidence it
+            # has.
             if not anchor:
                 continue
             audio = render_syllable(

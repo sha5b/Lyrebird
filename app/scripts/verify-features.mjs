@@ -11,12 +11,25 @@
  *   npm run verify:features
  */
 import { ActivationTracker, FeatureExtractor, SessionGate, standardise } from '../src/lib/audio/features.ts';
-import { loadGenerated, loadInventory, render } from './lib/worklet-host.mjs';
+import { attach } from '../src/lib/data/centroid-vectors.ts';
+import { loadGenerated, loadGeneratedFloats, loadInventory, render } from './lib/worklet-host.mjs';
 
 const inventory = loadInventory();
 const rawSpace = loadGenerated('feature-space.json');
 const centroids = loadGenerated('centroids.json');
 const calibration = loadGenerated('syrinx-calibration.json');
+
+// The per-cluster vectors are a binary sidecar since 2026-08-01 (centroid-vectors.ts):
+// 64 % of centroids.json's bytes, and this script needs them to build a matcher at all.
+// A build from before that carries them inline and needs nothing here.
+if (centroids?.vectors) {
+	const floats = loadGeneratedFloats(centroids.vectors.file);
+	if (!floats) {
+		console.error(`centroids.json names ${centroids.vectors.file}, which is not there.`);
+		process.exit(2);
+	}
+	attach(centroids, centroids.vectors, floats);
+}
 
 if (!rawSpace || !centroids) {
 	console.error('Generated assets missing. Run: cd pipeline && uv run birdy-pipeline build');
@@ -150,6 +163,11 @@ for (const [name, signal] of Object.entries(probes)) {
  * The corpus's own renders are in-manifold by construction, so they must not flag;
  * broadband noise is the negative control, and it must.
  */
+// Declared before the session-gate block, which was the first writer of it: `let` is
+// hoisted but not initialised, so the gate's own `failed = true` threw a TDZ
+// ReferenceError and the failure it was reporting never got printed.
+let failed = false;
+
 console.log('\nsession gate (docs/20 §20.3):');
 const gateSpec = rawSpace.embedding?.sessionGate;
 if (!gateSpec?.anchors?.length) {
@@ -178,7 +196,6 @@ if (!gateSpec?.anchors?.length) {
 // A live sound only has to land in the right neighbourhood for the galaxy to be honest,
 // so this gate is deliberately loose; a collapse below it means the halves have drifted.
 const floor = 0.5;
-let failed = false;
 if (hits / total < floor) {
 	console.error(`\nFAIL: exact match rate below ${floor * 100}% — the two halves have drifted apart`);
 	failed = true;

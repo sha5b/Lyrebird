@@ -50,10 +50,21 @@ export function loadInventory() {
 	return JSON.parse(readFileSync(join(REPO_ROOT, 'data/inventory.json'), 'utf8'));
 }
 
+/** Where `build` writes; the binary sidecars live here beside the JSON. */
+export const GENERATED_DIR = join(APP_ROOT, 'static/birdy');
+
 /** The generated asset, or null when the pipeline has not been run. */
 export function loadGenerated(name) {
-	const path = join(APP_ROOT, 'static/birdy', name);
+	const path = join(GENERATED_DIR, name);
 	return existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : null;
+}
+
+/** A generated binary sidecar as a Float32Array, or null when it is not there. */
+export function loadGeneratedFloats(name) {
+	const path = join(GENERATED_DIR, name);
+	if (!existsSync(path)) return null;
+	const raw = readFileSync(path);
+	return new Float32Array(raw.buffer, raw.byteOffset, raw.byteLength / 4);
 }
 
 /**

@@ -466,7 +466,12 @@ export class ActivationTracker {
 			// 1/44, and nothing anywhere reports an error. A median is unmoved by one bad
 			// cluster, and the two cases it has to tell apart are nowhere near each other:
 			// standardised vectors sit around 0.6, raw descriptors an order of magnitude up.
-			const magnitudes = centroids.items.flatMap((c) => c.vector.map(Math.abs)).sort((a, b) => a - b);
+			// Array.from, not .map: a Float32Array's map returns a Float32Array, which
+			// flatMap does not flatten (it only flattens real arrays), and the median
+			// would then be taken over typed arrays instead of numbers.
+			const magnitudes = centroids.items
+				.flatMap((c) => Array.from(c.vector, Math.abs))
+				.sort((a, b) => a - b);
 			const median = magnitudes[magnitudes.length >> 1] ?? 0;
 			const looksRaw = median > 4;
 			this.vectors = centroids.items.map((c) =>
@@ -630,7 +635,7 @@ export class PointTracker {
 		const lo = assets.centroids.items.map((c) => c.featuresLo);
 		this.centroidsLo =
 			this.features && lo.every((v) => v?.length === this.dims)
-				? Float32Array.from(lo.flatMap((v) => v as number[]))
+				? Float32Array.from(lo.flatMap((v) => Array.from(v as ArrayLike<number>)))
 				: null;
 
 		if (!this.centroidsLo) {

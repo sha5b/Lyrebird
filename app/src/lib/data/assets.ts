@@ -1,4 +1,5 @@
 import { base } from '$app/paths';
+import { hydrateCentroids } from './centroid-vectors';
 import type { BirdyAssets, Centroid, Centroids, EmbeddingSpace, FeatureSpace, Inventory, InventoryIndex, Manifest, PointCloudMeta, RelationsDoc, Species, SpeciesIndexEntry, SyrinxCalibration } from './types';
 
 const ROOT = 'birdy';
@@ -219,6 +220,12 @@ export async function loadAssets(
 		getJson<PointCloudMeta>(`${dir}points.json`, fetcher, stamp),
 		getJson<Centroids>(`${dir}centroids.json`, fetcher, stamp)
 	]);
+	// The per-cluster vectors are a binary sidecar, not JSON — 64 % of centroids.json's
+	// bytes, parsed whole before the first frame (centroid-vectors.ts). Attached as views
+	// onto one buffer, so `c.vector32` / `c.vector` / `c.featuresLo` read as they always
+	// did. A build from before 2026-08-01 has them inline and this is a no-op.
+	await hydrateCentroids(centroids, fetcher, (file) => assetUrl(`${dir}${file}`, stamp));
+
 	const featureSpace = normaliseFeatureSpace(rawFeatureSpace);
 
 	// The rff-ridge map's weights ship in a binary sidecar (123 k floats are nobody's

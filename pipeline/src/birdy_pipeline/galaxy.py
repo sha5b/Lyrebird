@@ -71,6 +71,9 @@ TEMPERATURE = 0.12
 # only what has no label (docs/22 §22.5, the vote the build currently re-derives).
 K_CAP = 8192
 
+#: The per-cluster float arrays, moved out of centroids.json (see where it is written).
+CENTROID_VECTORS_NAME = "centroid-vectors.f32"
+
 #: `harvest.SOURCE`, duplicated rather than imported: harvest pulls in the audio decode
 #: stack and galaxy must stay importable where only numpy/sklearn exist.
 FIELD_SOURCE = "field"
@@ -751,6 +754,43 @@ def _type_seed_means(
     owners = [(key, rank) for key, rank, _ in blobs]
     n_split = sum(1 for _, rank, _ in blobs if rank == 1)
     return seeds, n_split, owners
+
+
+def centroid_vectors(out_dir: Path, centroids: dict[str, Any]) -> dict[str, np.ndarray]:
+    """The per-cluster float arrays, from the sidecar or from an older inline build.
+
+    One reader for every consumer — `verify`, `thresholds`, any analysis — so the move of
+    these arrays out of centroids.json is a change in one place. An asset set written
+    before 2026-08-01 carries `vector` / `vector32` / `featuresLo` inside each item and no
+    `vectors` block; those still read, because a shipped galaxy that suddenly cannot be
+    verified is worse than a branch.
+
+    Returns each block as a `(k, width)` float64 matrix, keyed by its name.
+    """
+    block = centroids.get("vectors")
+    if not block:
+        legacy: dict[str, np.ndarray] = {}
+        for name in ("vector32", "vector", "featuresLo"):
+            rows = [it.get(name, []) for it in centroids["items"]]
+            if any(len(r) for r in rows):
+                legacy[name] = np.asarray(rows, dtype=np.float64)
+        return legacy
+    k = int(centroids["k"])
+    row_floats = int(block["rowFloats"])
+    raw = np.fromfile(Path(out_dir) / block["file"], dtype="<f4")
+    if raw.size != k * row_floats:
+        raise RuntimeError(
+            f"{block['file']} holds {raw.size} floats, but {k} clusters x "
+            f"{row_floats} = {k * row_floats} — the sidecar and centroids.json disagree"
+        )
+    matrix = raw.reshape(k, row_floats).astype(np.float64)
+    out: dict[str, np.ndarray] = {}
+    at = 0
+    for name in block["order"]:
+        width = int(block["dims"][name])
+        out[name] = matrix[:, at : at + width]
+        at += width
+    return out
 
 
 def label_assign(
@@ -1445,6 +1485,7 @@ def build_galaxy(
     common_names = {sp["id"]: sp.get("common", sp["id"]) for sp in inventory.get("species", [])}
     items: list[dict[str, Any]] = []
     counts: list[int] = []
+    vector_rows: list[list[float]] = []
     for c in range(k_final):
         sel = np.nonzero(cluster_id == c)[0]
         members = [
@@ -1466,23 +1507,32 @@ def build_galaxy(
         # fallback path (and any asset consumer that only knows 28-d) still has a vector in
         # the space it understands. In the descriptor space `vector` is the KMeans centroid,
         # as it always was.
-        item_vectors: dict[str, Any] = {}
+        # These three arrays used to live in centroids.json and were **64 % of its bytes**
+        # (measured: 744 of 1 159 per cluster), which at production's k = 27 862 is the
+        # difference between a 44 MB file the browser parses whole and a 6 MB one beside a
+        # 4 MB binary. They go to a sidecar the way the per-point features already do —
+        # same little-endian float32, same row-major order — and they keep the JSON's
+        # 6-decimal rounding, so no matcher number moves because of the move.
+        row: list[float] = []
         if space == "embed":
-            item_vectors["vector32"] = [round(float(v), 6) for v in centre_vectors[c]]
-            if sel.size:
-                item_vectors["vector"] = [
-                    round(float(v), 6) for v in z28[sel].mean(axis=0)
-                ]
+            row.extend(round(float(v), 6) for v in centre_vectors[c])
+            # An empty cluster has no members to average, so its 28-d block is zeros.
+            # The old JSON omitted the key instead; a zero vector scores cosine 0 rather
+            # than crashing a consumer that assumed the key was there.
+            row.extend(
+                round(float(v), 6) for v in
+                (z28[sel].mean(axis=0) if sel.size else np.zeros(z28.shape[1]))
+            )
         else:
-            item_vectors["vector"] = [round(float(v), 6) for v in centre_vectors[c]]
+            row.extend(round(float(v), 6) for v in centre_vectors[c])
+        row.extend(round(float(v), 6) for v in lo_centroids[c])
+        vector_rows.append(row)
         items.append(
             {
                 "id": c,
                 **info,
                 "position": [round(float(v), 6) for v in position],
                 "functionClass": function_class(info["function"]),
-                **item_vectors,
-                "featuresLo": [round(float(v), 6) for v in lo_centroids[c]],
                 "count": int(sel.size),
                 # Small per-cluster summary the interface can put on screen next to the
                 # node without fetching anything else.
@@ -1647,7 +1697,41 @@ def build_galaxy(
             "source": kept.source,
         },
     )
-    _write_json(out_dir / "centroids.json", {"k": k_final, "dims": space_dims, "items": items})
+    # The sidecar's layout, stated in the file that points at it so a consumer needs
+    # nothing else to read it. `order` is what each row holds, in order, and `dims` says
+    # how wide each block is — 28-d `vector` is absent from the descriptor-space build
+    # because there the primary centroid already *is* the 28-d one.
+    vector_order = (
+        [("vector32", space_dims), ("vector", z28.shape[1]), ("featuresLo", POINT_FEATURE_DIMS)]
+        if space == "embed"
+        else [("vector", space_dims), ("featuresLo", POINT_FEATURE_DIMS)]
+    )
+    row_floats = sum(width for _name, width in vector_order)
+    vectors_block = {
+        "file": CENTROID_VECTORS_NAME,
+        "format": f"little-endian float32, {row_floats}*k, row-major, one row per cluster",
+        "order": [name for name, _ in vector_order],
+        "dims": {name: width for name, width in vector_order},
+        "rowFloats": row_floats,
+        "bytes": k_final * row_floats * 4,
+        "note": (
+            "these three arrays were 64 % of this file's bytes; at k = 27 862 that is a "
+            "44 MB parse on every cold load. Values are rounded to 6 decimals exactly as "
+            "they were when they lived here, so no match changes. An empty cluster's 28-d "
+            "block is zeros"
+        ),
+    }
+    if vector_rows and len(vector_rows[0]) != row_floats:
+        raise RuntimeError(
+            f"centroid vector rows are {len(vector_rows[0])} floats, layout says {row_floats}"
+        )
+    (out_dir / CENTROID_VECTORS_NAME).write_bytes(
+        np.asarray(vector_rows, dtype="<f4").ravel(order="C").tobytes()
+    )
+    _write_json(
+        out_dir / "centroids.json",
+        {"k": k_final, "dims": space_dims, "vectors": vectors_block, "items": items},
+    )
 
     # The embedding block, when the build ran in the learned space: the standardisation
     # moments of the 32-d space, the browser's 28-d -> 32-d ridge map, and the map's gate
@@ -2005,6 +2089,7 @@ def build_galaxy(
             "point-features.f32",
             "points.json",
             "centroids.json",
+            CENTROID_VECTORS_NAME,
             *([map_file] if map_file else []),
         ],
         **(build_info or {}),

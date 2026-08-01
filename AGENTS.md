@@ -116,6 +116,14 @@ Notes:
   default build ran 33+ min at full CPU and timed out, with the relations
   permutation tests + all-projection comparison as the only skipped phases in
   the lean re-run (2026-07-31; the comparison timing is recorded in docs/20).
+- **A type with member observations renders nothing since 2026-08-01** (W5 adopted): it
+  already exists in the galaxy as the real syllables `typing.json` assigned to it.
+  `--member-anchor` buys the rendered voice back (`--no-member-anchor` is gone). This
+  halves the knot count, because a source split needs a point on both sides.
+- **The per-cluster vectors are a binary sidecar**, `centroid-vectors.f32` — they were 64 %
+  of centroids.json's bytes and it is parsed whole before the first frame. Read it with
+  `galaxy.centroid_vectors` or `app/src/lib/data/centroid-vectors.ts`; never re-derive the
+  layout, both accept the pre-2026-08-01 inline form. Contract: docs/08 §8.3.
 - `build --clustering label` gives every typed point the knot of the type it already
   carries and fits kmeans only over the untyped remainder (docs/22 §22.8). It is the
   answer where `K_CAP` binds — production wants 27 862 clusters and keeps 8 192 — and
