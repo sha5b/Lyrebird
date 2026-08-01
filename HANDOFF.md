@@ -1,3 +1,240 @@
+# Birdy — Session Handoff (2026-08-01, night: the production build landed, and the 1 fps was the labels)
+
+**The production build is done and green.** `/tmp/birdy-prod/assets-v5`, `--space embed
+--clustering label`, **348 461 points, k = 14 003** (13 903 type blobs with 0 source
+splits + 100 kmeans clusters for the 20 241 points with no label), **type coverage
+13 903/13 903 = 100 %**, 1 136.8 s, **all checks passed**. The size predictions held to
+within a rounding error: **centroids.json 7.69 MB + centroid-vectors.f32 3.81 MB**
+against the 44 MB that blocked the build. Projection: distance pearson 0.691 /
+spearman 0.689 over 200 000 pairs, purity 94.5 %. Confidence mix documented=27,
+experimental=10, inferred=16, invented=31, unlabelled=13 919.
+
+**The owner's report — "the whole browser slows to 1 fps" — was diagnosed, and it was
+not the point cloud.** The cloud has a level of detail. **The label layer had none.**
+`NodeLabels` rendered one full specimen tag per knot: at the shipped 4 298-knot build
+that is **~77 000 DOM elements**, every one of them carrying `will-change: transform,
+opacity` — so the compositor is asked for 4 298 layers — and `NodeProjector` then
+projected every centroid, sorted every centroid, and wrote **seven style properties to
+every one of those elements every frame**, i.e. **~30 000 style mutations a frame to draw
+at most 26 tags**. `MAX_LABELS` was already 26; the budget capped what was *visible* and
+nothing capped what was *touched*. At the new build's 14 003 knots it would have been
+~250 000 elements and ~98 000 writes a frame. The layer's own comment said it was
+"written for 44 clusters".
+
+**Fixed as a fixed-size pool** (`app/src/lib/galaxy/labels.ts`, `LABEL_SLOTS = 28`).
+`slots[s]` is the knot bound into tag element `s`; the `{#each}` is keyed by slot so the
+element is built once and only the text inside a rebound slot re-renders. The projector
+now does a **cheap scalar pass** over the activations first — a knot at rest with nothing
+lingering costs one comparison — and only that handful is projected, sorted, culled and
+written. **DOM cost and per-frame cost are now the pool's, and neither moves when the
+corpus grows.** Nothing about the picture changes: same ordering, same collision culling,
+same linger envelope, same three colour languages.
+
+- **A second load-time wall, found while there and fixed with a test.** The wavefront's
+  reach is quoted in knot-spacings, and the median nearest-neighbour distance was a plain
+  `k²` double loop: 18 M distance tests at 4 298 knots, **196 M at 14 003 — measured at
+  5 670 ms of frozen tab**. Replaced with a uniform grid sized to one cell per knot plus a
+  ring search that stops as soon as the best distance is inside the radius the searched
+  rings have cleared: **9 ms, a 600x cut, and exact**. Memberless knots are now excluded,
+  because their centroid is (0,0,0) — a position `layouts.ts` already documents as a lie —
+  and including them dragged the median toward zero. Same fix caught a latent
+  off-by-population bug: the median was indexed `clusterCount >> 1` into an array that
+  only holds the knots with members.
+- **The repo now has its first renderer test**: `npm run verify:layout`
+  (`app/scripts/verify-layout.mjs`) checks the grid against the brute-force loop it
+  replaced, on six shapes at six knot counts — uniform cube, flat sheet, one line, tight
+  clumps with far outliers, half the knots memberless, every knot coincident — and
+  **agrees exactly on all 36 cases** (max difference 1.4e-14). Known-broken item 9 was
+  "no renderer tests exist"; this is one.
+- **`relations.json` on this build is 760 MB, and the app fetched it unconditionally
+  before the first frame.** 2 929 410 species pairs written whole, where the UI reads
+  three at a time; `--no-relations` skips the battery, not the file. It sat inside a
+  `try/catch` written for a *missing* file, so the failure mode was a tab that does not
+  come back rather than an error. **App side is guarded now**: an optional JSON asset over
+  **32 MB** (debug-100 ships 1.5 MB) is refused on its `Content-Length`, the body is
+  cancelled unread, and it is treated exactly like an absent asset — with a console
+  warning, because a silently dropped asset and a corpus with no relations look identical
+  in the UI. **The pipeline side is untouched and is the real bug**: writing 2.9 M pairs
+  when 26 859 cleared the threshold is the owner's call to change.
+- **The browser is running WebGL on the Intel iGPU, not the RTX 3500 Ada.** `glxinfo -B`
+  reports `Mesa Intel(R) Graphics (RPL-S)` as the default renderer and `nvidia-smi` shows
+  the discrete GPU at 218 MiB, i.e. idle. Verified that offload works:
+  `__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia glxinfo -B` reports the
+  RTX. So a share of the fill-rate problem is the machine's, not the code's, and the same
+  two variables in front of the browser move it. **This is now visible in the app** rather
+  than being something only a terminal can answer.
+- **The UI thing: a "What this costs" readout** in the Display panel, off by default.
+  Frame rate and frame time, points drawn against the corpus total (plus the responding
+  count when audio is playing), which LOD level is in force, tags drawn against the knot
+  count, and **the GPU string the browser actually gave us**, via
+  `WEBGL_debug_renderer_info`. The renderer writes a plain non-reactive object every frame
+  (`app/src/lib/galaxy/stats.ts`) and the page copies it four times a second, so reading
+  the instrument cannot become the thing being measured. It exists because both of this
+  project's renderer regressions were invisible from inside the app and both are one
+  number.
+- **`npm run check` at the 4 known baseline errors** (all four in
+  `syrinx-processor.js`), **`verify:synth` 44/44 syllables ok** at 0.3 % median pitch
+  error, **`verify:layout` green**. `verify:features` still reports its two failures —
+  confirmed pre-existing by re-running with the app changes stashed, byte-identical
+  output; that is the known corpus mismatch, not this work.
+
+**The LOD's own bug, found on the owner's first look ("still a bit buggy") and fixed:
+the three levels were not nested.** Level 0 draws one representative per knot — the member
+nearest its own centroid — and level 1 drew a plain `i % 4` stride. A representative has no
+reason to be a multiple of four, so **flying in from galaxy distance made 57 % of the
+points you were looking at vanish** and unrelated members of the same knots appear in
+their place (measured on a synthetic corpus of the shipped shape: 10 796 of 19 003). The
+point count went *up* while the picture flickered, which reads as a fault rather than as
+detail arriving. Level 1 is now level 0 ∪ the stride, so **level 0 ⊂ level 1 ⊂ level 2** and
+coming in can only ever *add* marks. Both index arrays are ascending by construction now,
+so the sort is gone and the index buffer is in vertex order.
+
+Two cheaper things in the same function: the no-focus case is now **a single typed-array
+copy** instead of a full-corpus scan, and the focused-bird branch reuses its membership
+scratch instead of allocating **348 kB of garbage per swap — produced exactly while the
+camera is moving**, which is the worst possible moment for a GC pause.
+
+**Two LOD levers left deliberately untouched, both now visible in the readout**
+
+- **`LOD_NEAR = 1.6` cloud radii is where "every point" engages**, which at 348 461 points
+  is the whole corpus drawn for most of the range anyone actually looks from. Raising the
+  bar is a one-line tuning call, and the "detail" line in the cost readout is what should
+  decide it — with a number, not by feel.
+- **The responding pass is not LOD-bounded.** At galaxy distance a sung knot lights all of
+  its members even though only its representative was drawn at rest, so a chorus there
+  costs far more than the resting picture suggests. That is arguably right — the response
+  is the content — but it is the reason a quiet galaxy and a singing one can be different
+  frame rates at the same camera distance. The readout's "responding" count says so.
+
+**Open, for whoever is next**
+
+1. **The production assets are built but not installed.** `app/static/birdy` still holds
+   the debug-100 build (214 154 points, k = 4 298, `clustering: kmeans`). Copying v5 in is
+   the real test of everything above, and the cost readout is the thing to watch while
+   doing it — **do not copy `relations.json`**.
+2. **The point cloud itself is still unmeasured at 348 461 points.** The LOD's galaxy
+   level draws one representative per knot, which is now 14 003 sprites rather than
+   1 024 — 14x the level that existed to make the galaxy view cheap. Inside a bird it
+   draws all 348 461. On the iGPU that is the remaining fill-rate question and the readout
+   will answer it in a second.
+3. **The pipeline's `relations.json` size** (above) — an app guard is not a fix.
+
+# Birdy — Session Handoff (2026-08-01, evening: knots, W2/W5/W6, licences, the inverse)
+
+**Read this first if you are here for the point cloud.** The corpus the renderer draws
+changed shape today and the numbers below are the ones that matter to it: **points roughly
+halved** (production 694 936 -> 348 461) because a type with real members no longer renders
+a synthetic copy of itself, **clusters roughly halved** (27 862 wanted -> about 14 000, and
+every one of them now *has* a knot), and the per-cluster float arrays moved out of
+`centroids.json` into a binary sidecar the loader already reads. One number moved the wrong
+way and it is a picture number: on debug-100, 3D distance faithfulness fell 0.903 -> 0.747
+while kNN agreement rose 20.7 % -> 28.0 %. Removing the rendered copies removed structure
+the projection found easy, so **distance on screen now means less than it did** — worth
+knowing before tuning anything visual. Nothing about knots or matching depends on those 3D
+positions.
+
+**PRODUCTION BUILT AND VERIFIED, and it fixes the thing §22.5 was written about.**
+`/tmp/birdy-prod/assets-v5`, 19 minutes, `--space embed --clustering label` with today's
+defaults. **Not copied into `app/static/birdy`** — that placement is one command and it is
+the owner's.
+
+| | old (v4, kmeans k=1024) | **new (v5, label + W5)** |
+|---|---|---|
+| points | 694 936 | **348 461** |
+| clusters | 1 024 | **14 003** (13 903 types + 100, zero source splits) |
+| type coverage | 968/13 903 = 7.0 % | **13 903/13 903 = 100 %** |
+| **authored calls with a knot** | **0 / 44** | **44 / 44** |
+| centroids | 44 MB projected | **7.69 MB JSON + 3.81 MB sidecar** |
+| verify | green | green |
+
+The zero-documented-knots finding is closed: every authored call now owns the knot that
+carries its function and citation, and the confidence mix reads `documented=27,
+experimental=10, inferred=16, invented=31` where v4 read `unlabelled=1024` and nothing else.
+
+Two numbers to be honest about. **3D distance faithfulness is 0.691** (pearson) with kNN
+agreement 12.0 %, down from v4's; the projection has 348 461 points and 14 003 knots to
+place and the rendered copies that used to make it tidy are gone. And **cluster purity
+reads 94.5 %, which is not a measurement** — it is 1.0 by construction on the labelled
+clusters, and the manifest says so in `clusterPurityNote`.
+
+**The new blocker is `relations.json`, and it is 66x worse than the one that was just
+fixed.** 2 929 410 species pairs = **760 MB** at production scale, against 1.49 MB on the
+shipped debug asset. It is **pre-existing** — v4 has the identical 760 MB — and it is
+quadratic in species count, so it grows with every discovery. Measured: only **12 762 pairs
+(0.44 %) carry a shared type at all**, and filtering to those would be **6.57 MB**. The app
+loads the file optionally and uses it for one line ("shares call shapes with …"), so the
+fix is to write only the pairs that say something, or shard per species the way
+`inventory.json` already is. It changes an asset contract, so it is the owner's call, and it
+is the one thing standing between v5 and a shippable production asset set.
+
+**Restart `serve`** (it is holding pre-today pipeline code; it was already running when this
+session started).
+
+**Open, for the next session — the point cloud**
+
+The renderer work from the previous session (knot-level LOD, the two-pass draw, the
+cluster-state `DataTexture`) has **still never been seen running**, and there are no
+renderer tests. That is the first thing to do, and it is now more interesting because the
+corpus it draws is half the size and every type owns a knot. Specifics worth knowing:
+
+- **Per-frame cost scales with cluster count.** `SpectralMatcher.update` walks every
+  centroid every frame (cosine over 32 dims). At debug's 2 155 that is nothing; at
+  production's ~14 000 it is ~450 k multiply-adds per frame. Measured CPU headroom before
+  today was 1.9 ms of a 16.7 ms budget at 214 154 points, so this is probably fine —
+  probably is not measured.
+- **`layouts.ts` allocates per cluster** too (`centroidsOf`, the counts array).
+- **The LOD's galaxy level draws one representative per knot.** With ~14 000 knots instead
+  of 1 024 that is 14x the galaxy-level sprite count — the level that existed to make the
+  galaxy view cheap.
+- **The provenance colouring loses a class.** With W5 on, a typed species has no synthetic
+  points at all, so "synthesized" only appears for types with no members. The legend and
+  the three colour languages should be re-read against that.
+- **`verify-features.mjs` reports two failures on the shipped assets** and both are the
+  known corpus mismatch (debug-100 holds none of the 44 authored syllables the script
+  renders). It used to *crash* on the first one — a TDZ bug, fixed today — so this is newly
+  visible rather than newly broken.
+
+**The five things that shipped**
+
+1. **`build --clustering label`** (docs/22 §22.8) — typed points go to their own type's
+   knot, k-means runs only over the unlabelled remainder. Type coverage 100 % by
+   construction, 0.2 s of clustering against 65 s. Its pre-registered gate *failed* against
+   an uncapped kmeans build (+2.5 points of type retrieval against +10) and passes by +14.2
+   where the cap binds, which is production's condition — so it is a flag, not a default,
+   and it is now the third choice on the Learn tab ("Use the labels").
+2. **W5 adopted as the default** — `measured_corpus(anchor=False)`; `--member-anchor` buys
+   the rendered voice back, `--no-member-anchor` is gone. Scored on a query population that
+   does not move with the arm it buys **+0.02 points of retrieval, i.e. nothing**; the case
+   is size, and the owner took it on that basis.
+3. **The per-cluster vectors are a sidecar**, `centroid-vectors.f32` — they were **64 % of
+   centroids.json's bytes**. Debug: 6.86 MB -> 1.18 MB + 0.59 MB. Contract in docs/08 §8.3;
+   readers `galaxy.centroid_vectors` and `app/src/lib/data/centroid-vectors.ts`, both of
+   which still read the pre-2026-08-01 inline layout.
+4. **Audio may now be kept where the licence permits** (owner decision) — `harvest
+   --keep-audio`, ND and unrecorded licences refused, 90.3 % of 10 184 recordings pass, all
+   10 184 carry a recordist. **Nothing ships to the browser**; that half was declined.
+5. **The Learn tab gained the label build** and says what it costs in honesty terms.
+
+**Four honest negatives, which are the part worth carrying**
+
+- **W2's second-order arm, re-run with the unbiased estimator: no structure** (docs/23
+  §23.2.2). Median species *loses* 0.091 bits/token at order 2, at three seeds. The
+  by-product is stronger than the arm: order 1 buys **0.98 bits/token** held out while on
+  the shuffle it *costs* 0.75 — the cleanest evidence yet that the tokens are units.
+- **W6 closed with two external models, and they disagree** (§23.6.1-3). Perch cuts the
+  recordist lift 16.5 %, **BirdNET raises it 24 % — worse than our own critic**. If
+  archive-scale training conferred recorder invariance both would have it and they would
+  agree. It is in the archives, not in anyone's loss. §17.4's data action is all that is
+  left.
+- **The amortised inverse fails its gate on all three conditions** (docs/09 §9.3 status
+  note). +0.0135 median cosine against +0.02, 52.8 % of types improved against 60 %, one
+  species down 0.0816 against 0.05. **The starting point was not the binding constraint** —
+  the descent already finds a comparable basin about half the time. `--inverse` exists,
+  default off, deliberately *not* in the UI.
+- **BirdNET's occurrence prior is blocked on metadata, not machinery.** It wants
+  `[lat, lon, week]`; the store keeps `date` and `country` and **no coordinates**. Both
+  archives return them; the harvester never recorded them.
+
 # Birdy — Session Handoff (2026-08-01, label assignment + W2 + W5 + W6)
 
 **In one paragraph:** the production knot problem now has its instrument.
@@ -152,6 +389,35 @@ are why it ships as a flag rather than as the default.
   "these tokens are units". P1 stands, P2/P3's premise is confirmed, and the depth question
   is now measured as **data-limited, not method-limited** — 217 of 2 421 species can be
   asked at all.
+- **The amortised inverse: BUILT, WIRED, MEASURED, NOT ADOPTED** (docs/09 §9.3 Part 2 status
+  note; gate and result in `pipeline/analysis/inverse_gate.md`). `inverse.py` had been
+  complete and **imported by nothing** for weeks — 984 lines, self-test green, unreachable.
+  It is now reachable: `birdy-pipeline inverse` trains it (150 k free, perfectly-labelled
+  pairs from our own forward model; early stop epoch 26, best val 1.333, on the GPU) and
+  `learn --inverse PT` re-initialises each type's gesture axes from its own mean mel patch
+  before the same coordinate descent runs. The seam keeps the measured contour and duration.
+
+  **The gate was written before the run and fails on all three conditions**, over two
+  serial debug-100 fits sharing all 1 661 types:
+
+  | | baseline | encoder | gate |
+  |---|---|---|---|
+  | median resynthesis cosine | 0.7411 | 0.7546 (**+0.0135**) | +0.02 |
+  | types improved | | 877/1 661 = **52.8 %** | 60 % |
+  | worst species | | **−0.0816** (`gampsonyx_swainsonii`) | −0.05 |
+
+  **Default unchanged, `--inverse` opt-in and off.** The median and mean both rise, so it
+  does something real, but it improves barely more types than a coin and costs one species a
+  tenth of its fit. **The finding that matters: the starting point is not the binding
+  constraint** — the descent from the cluster median already reaches a comparable basin about
+  half the time, which is more than §9.3 assumed. What is left of docs/21's "the fit is what
+  fails" is the objective (docs/19: cosine correlates ~0.1 with audible distortion) and the
+  physics beyond the oscillator, not where the search starts. Both predicted weak spots were
+  recorded *before* the run and survive: `tractQ` val MSE 1.125, timbre accuracy 0.442.
+  **UI wiring was deliberately not done** — it was conditional on the gate.
+  One follow-up is pre-registered in the same file: a **two-start descent** (median start
+  and encoder start, keep the better), which cannot regress by construction; its bar is
+  +0.02 median with *no* species worse at all.
 - **W6 T1 RUN with Perch instead of BirdNET: THE CONFOUND SURVIVES, and this is the fourth
   end of the road** (docs/23 §23.6.1). T1 turns on two properties — same archives, ~100×
   the scale, and **no realism term** — and Perch 2.0 has both and is *already ported*

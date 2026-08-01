@@ -12,9 +12,12 @@
 	import NodeProjector from './NodeProjector.svelte';
 	import PointCloud from './PointCloud.svelte';
 	import Spinner from './Spinner.svelte';
+	import Stats from './Stats.svelte';
 	import Trajectory from './Trajectory.svelte';
+	import { LABEL_SLOTS } from './labels';
 	import { createLayoutView } from './layouts';
 	import { type VisualSignal } from './shaders';
+	import type { GalaxyStats } from './stats';
 
 	interface Props {
 		assets: BirdyAssets;
@@ -58,6 +61,11 @@
 		onpick?: (cluster: number) => void;
 		/** Fired on a click that hit no node, so the page can clear its selection. */
 		onbackground?: () => void;
+		/**
+		 * Written by the renderer, read by whoever wants to draw it. Plain object, not
+		 * state: it is written inside the render loop. See stats.ts.
+		 */
+		stats?: GalaxyStats;
 	}
 
 	let {
@@ -76,13 +84,21 @@
 		provShown = [true, true, true, true, true],
 		bird = false,
 		onpick,
-		onbackground
+		onbackground,
+		stats
 	}: Props = $props();
 
 	// Plain array, deliberately not reactive: NodeLabels writes the elements into it and
 	// NodeProjector moves them every frame. Routing that through Svelte state would mean
 	// thousands of proxy writes a second to position some text.
 	const labelElements: (HTMLElement | null)[] = [];
+	/**
+	 * Which knot each tag slot holds, or -1. This one *is* reactive, because a rebind has
+	 * to re-render the tag's text — and only a rebind does, which is a few times a second
+	 * at most. The pool is fixed-size, so neither the DOM nor the per-frame write cost
+	 * moves when the corpus grows; see labels.ts for the measurement behind that.
+	 */
+	const labelSlots = $state<number[]>(Array.from({ length: LABEL_SLOTS }, () => -1));
 	// The corpus does not change while this is mounted, so the view is sized once.
 	const view = untrack(() => createLayoutView(assets));
 
@@ -158,19 +174,23 @@
 			The cloud, the trajectories and the label anchors share one group: the rotation
 			has to apply to all of them or the lines and the tags drift off their points.
 		-->
+		{#if stats}
+			<Stats {stats} />
+		{/if}
+
 		<Spinner {spin} scale={spread} bind:group={cloud}>
 			<GridBurst {assets} {signal} {view} prov={!plain} />
 			<ContextPaths {assets} {signal} {view} prov={!plain} {bird} />
-			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} {provShown} {bird} />
+			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} {provShown} {bird} {stats} />
 			<Trajectory {assets} {signal} {view} {spread} {pointSize} prov={!plain} {bird} />
 			{#if labels}
-				<NodeProjector {assets} {signal} elements={labelElements} {focus} {pinned} {view} prov={!plain} {bird} />
+				<NodeProjector {assets} {signal} elements={labelElements} slots={labelSlots} {focus} {pinned} {view} prov={!plain} {bird} {stats} />
 			{/if}
 		</Spinner>
 	</Canvas>
 
 	{#if labels}
-		<NodeLabels {assets} elements={labelElements} prov={!plain} {bird} {onpick} />
+		<NodeLabels {assets} slots={labelSlots} elements={labelElements} prov={!plain} {bird} {onpick} />
 	{/if}
 </div>
 

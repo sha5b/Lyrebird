@@ -31,7 +31,8 @@
 		provenanceColour,
 		speciesColour
 	} from './palette';
-	import { buildLayout, type LayoutView } from './layouts';
+	import { buildLayout, nearestNeighbourDistances, type LayoutView } from './layouts';
+	import type { GalaxyStats } from './stats';
 
 	interface Props {
 		assets: BirdyAssets;
@@ -66,6 +67,8 @@
 		 * the same hash the labels use, so a point and its tag always agree on "who".
 		 */
 		bird?: boolean;
+		/** Written, never read: how many points each pass actually drew. See stats.ts. */
+		stats?: GalaxyStats;
 	}
 
 	let {
@@ -79,7 +82,8 @@
 		learning = [],
 		plain = false,
 		provShown = [true, true, true, true, true],
-		bird = false
+		bird = false,
+		stats
 	}: Props = $props();
 
 	// The corpus never changes while the component is alive, so the buffers are built once
@@ -430,29 +434,20 @@
 	 * the sounding knot and its immediate neighbours, never as a cloud-wide wash.
 	 */
 	untrack(() => {
-		const cents = layout.centroids;
-		const k = clusterCount;
-		if (k < 2) return;
-		const nn: number[] = [];
-		for (let i = 0; i < k; i++) {
-			let best = Infinity;
-			for (let j = 0; j < k; j++) {
-				if (j === i) continue;
-				const d = Math.hypot(
-					cents[i * 3] - cents[j * 3],
-					cents[i * 3 + 1] - cents[j * 3 + 1],
-					cents[i * 3 + 2] - cents[j * 3 + 2]
-				);
-				if (d < best) best = d;
-			}
-			nn.push(best);
-		}
+		if (clusterCount < 2) return;
+		const nn = nearestNeighbourDistances(layout.centroids, layout.counts, clusterCount);
+		if (!nn.length) return;
 		nn.sort((a, b) => a - b);
 		// Four knot-spacings of reach, doubled from two at the owner's call (2026-08-01):
 		// the front read as a knot-local flash, and the point of a wave is that it is
 		// seen to *travel* — four spacings crosses a real share of the cloud before the
 		// Gaussian takes it under.
-		material.uniforms.uWaveLocal.value = 4 * (nn[k >> 1] ?? 0.135);
+		//
+		// The median is taken over the knots that HAVE members, which is what `nn` holds —
+		// so it is `nn.length >> 1`, not `clusterCount >> 1`. Indexing by the cluster count
+		// on a build where some knots are empty reads past the middle of the array and, at
+		// a high enough empty share, past its end entirely.
+		material.uniforms.uWaveLocal.value = 4 * (nn[nn.length >> 1] ?? 0.135);
 	});
 
 	// Registered after construction rather than in the geometry block above, because
@@ -542,16 +537,40 @@
 		}
 		// A point in no cluster has no knot to stand in for it, and it is the one point
 		// the discovery map exists to show — so it draws at every level, always.
+		const inFar = new Uint8Array(n);
+		for (let i = 0; i < n; i++) if (cluster[i] < 0) inFar[i] = 1;
+		for (const { i } of bestFor.values()) inFar[i] = 1;
+
+		// **The levels are nested: level 0 ⊂ level 1 ⊂ level 2.** This is what stops the
+		// swap from being visible. The mid level used to be a plain `i % 4` stride, which
+		// is a quarter of the points but *not a superset of the galaxy level* — a knot's
+		// representative is the member nearest its centroid and has no reason to be a
+		// multiple of four, so flying in from galaxy distance made the point you were
+		// looking at vanish and unrelated members of the same knot appear in its place.
+		// The count went up and the picture flickered, which reads as a fault rather than
+		// as detail arriving. Coming in must only ever *add* marks.
+		//
+		// Ascending by construction, so no sort is needed and the index buffer is in
+		// vertex order, which is also the order the GPU would prefer to fetch it in.
 		const far: number[] = [];
-		for (let i = 0; i < n; i++) if (cluster[i] < 0) far.push(i);
-		for (const { i } of bestFor.values()) far.push(i);
-		far.sort((a, b) => a - b);
 		const mid: number[] = [];
-		for (let i = 0; i < n; i++) if (cluster[i] < 0 || i % 4 === 0) mid.push(i);
+		for (let i = 0; i < n; i++) {
+			if (inFar[i]) {
+				far.push(i);
+				mid.push(i);
+			} else if (i % 4 === 0) {
+				mid.push(i);
+			}
+		}
 		return [new Uint32Array(far), new Uint32Array(mid), null] as const;
 	});
 
 	const restIndex = untrack(() => new Uint32Array(Math.max(1, assets.points.n)));
+	/**
+	 * Membership scratch for the focused-bird branch of `updateLod`, allocated once.
+	 * Only that branch needs it, and it is the rarest of the three.
+	 */
+	const lodMask = untrack(() => new Uint8Array(Math.max(1, assets.points.n)));
 	const restIndexAttribute = untrack(() =>
 		new THREE.BufferAttribute(restIndex, 1).setUsage(THREE.DynamicDrawUsage)
 	);
@@ -583,29 +602,37 @@
 		lodFocus = focus;
 
 		const base = lodLevels[lodLevel];
-		if (base === null && focus < 0) {
-			// Everything: no index needed, and the identity index is what the full cloud is.
+		if (base === null) {
+			// Everything: the identity index IS the full cloud, whether or not a bird is
+			// chosen — a focus can only ever add points, and at this level there are none
+			// left to add.
 			for (let i = 0; i < restIndex.length; i++) restIndex[i] = i;
 			restGeometry.setDrawRange(0, restIndex.length);
+		} else if (focus < 0) {
+			// The common case, and it is a single typed-array copy. It used to scan the whole
+			// corpus and allocate a fresh byte per point to do it — 348 kB of garbage per
+			// swap at the production build, produced exactly while the camera is moving.
+			restIndex.set(base);
+			restGeometry.setDrawRange(0, base.length);
 		} else {
+			// A chosen bird draws whole, whatever the distance: selecting it is the request
+			// to see its marks, not a summary of them. This is the one branch that has to
+			// visit every point, and its membership scratch is reused rather than allocated.
+			const species = geometry.attributes.aSpecies.array as Float32Array;
+			const inBase = lodMask;
+			inBase.fill(0);
+			for (let k = 0; k < base.length; k++) inBase[base[k]] = 1;
 			let n = 0;
-			if (base === null) {
-				for (let i = 0; i < restIndex.length; i++) restIndex[n++] = i;
-			} else {
-				const species = geometry.attributes.aSpecies.array as Float32Array;
-				const inBase = new Uint8Array(restIndex.length);
-				for (let k = 0; k < base.length; k++) inBase[base[k]] = 1;
-				for (let i = 0; i < restIndex.length; i++) {
-					// A chosen bird draws whole, whatever the distance: selecting it is
-					// the request to see its marks, not a summary of them.
-					if (inBase[i] || (focus >= 0 && Math.abs(species[i] - focus) < 0.5)) {
-						restIndex[n++] = i;
-					}
-				}
+			for (let i = 0; i < restIndex.length; i++) {
+				if (inBase[i] || Math.abs(species[i] - focus) < 0.5) restIndex[n++] = i;
 			}
 			restGeometry.setDrawRange(0, n);
 		}
 		restIndexAttribute.needsUpdate = true;
+		if (stats) {
+			stats.lod = lodLevel;
+			stats.pointsDrawn = restGeometry.drawRange.count;
+		}
 	}
 
 	/**
@@ -669,6 +696,7 @@
 		// pass is skipped and an idle galaxy costs nothing to explore.
 		if (!signal.level && signal.best < 0 && !waveActive && !learning.length) {
 			if (activeGeometry.drawRange.count !== 0) activeGeometry.setDrawRange(0, 0);
+			if (stats) stats.pointsResponding = 0;
 			return;
 		}
 		let n = 0;
@@ -685,6 +713,7 @@
 		}
 		activeIndexAttribute.needsUpdate = true;
 		activeGeometry.setDrawRange(0, n);
+		if (stats) stats.pointsResponding = n;
 	}
 
 	/**

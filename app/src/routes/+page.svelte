@@ -33,6 +33,7 @@
 	} from '$lib/lang/compose';
 	import { citationsFor, confidenceLabel, type Reading } from '$lib/lang/translate';
 	import { createSignal, type VisualSignal } from '$lib/galaxy/shaders';
+	import { createStats, type GalaxyStats } from '$lib/galaxy/stats';
 	import {
 		MONO_HOT,
 		PROV_NAMES,
@@ -152,6 +153,37 @@
 	 * Hiding removes points from the picture, never from the corpus.
 	 */
 	let provShown = $state<boolean[]>([true, true, true, true, true]);
+	/**
+	 * What the stage costs, and whether to show it.
+	 *
+	 * This is here because the renderer's cost has twice scaled with the corpus in a way
+	 * nobody could see from inside the app — most recently the label layer, which built a
+	 * DOM tag for every one of 4 298 knots and moved all of them every frame to draw at
+	 * most 26. "It feels slow" does not name a cause; `points 4 298 / 214 154 · tags 3 ·
+	 * 58 fps` does, and so does the GPU line, because on a laptop with two of them the
+	 * browser routinely picks the integrated one and then the whole fill-rate budget is a
+	 * fraction of the machine's.
+	 *
+	 * Off by default — it is an instrument, not part of the picture. The renderer writes a
+	 * plain object every frame (see stats.ts); this copies it four times a second, so
+	 * drawing the readout cannot itself become the thing being measured.
+	 */
+	let costOpen = $state(false);
+	const galaxyStats = $derived(
+		assets ? createStats(assets.points.n, assets.centroids.items.length) : null
+	);
+	let cost = $state<GalaxyStats | null>(null);
+	$effect(() => {
+		const source = galaxyStats;
+		if (!costOpen || !source) {
+			cost = null;
+			return;
+		}
+		const sample = () => (cost = { ...source });
+		sample();
+		const id = setInterval(sample, 250);
+		return () => clearInterval(id);
+	});
 	/**
 	 * Which songs the chorus may draw from, in the same provenance vocabulary the
 	 * points speak: documented (a person named it — literature or playback-verified),
@@ -1282,7 +1314,7 @@
 	 * the rest unassigned. Only the second can say "this belongs to none of them", which
 	 * is the answer that matters for audio nobody has identified.
 	 */
-	let buildClustering = $state<'kmeans' | 'hdbscan'>('kmeans');
+	let buildClustering = $state<'kmeans' | 'hdbscan' | 'label'>('kmeans');
 	let buildMinCluster = $state(25);
 
 	/** Seconds spent waiting for a control process that is not answering yet. */
@@ -1646,6 +1678,7 @@ uv run birdy-pipeline build</pre>
 				pinned={pinnedCluster}
 				frame={frameNodes}
 				learning={learningClusters}
+				stats={galaxyStats ?? undefined}
 				onpick={pickCluster}
 				onbackground={backgroundClicked}
 			/>
@@ -1785,6 +1818,66 @@ uv run birdy-pipeline build</pre>
 											provShown = [true, true, true, true, true];
 										}}>show everything</button
 									>
+								{/if}
+							</section>
+							<!--
+								The cost of the picture, measured. Not decoration: the two renderer
+								regressions this project has had were both invisible from inside the
+								app, and both are one number here.
+							-->
+							<section class="block">
+								<div class="checks">
+									<label
+										class="check"
+										title="Frame rate, how many points and tags the stage actually drew, and which GPU the browser gave us."
+									>
+										<input type="checkbox" bind:checked={costOpen} /> What this costs
+									</label>
+								</div>
+								{#if costOpen}
+									{#if cost}
+										<dl class="cost mono">
+											<div>
+												<dt>frame</dt>
+												<dd>{cost.fps.toFixed(0)} fps · {cost.frameMs.toFixed(1)} ms</dd>
+											</div>
+											<div>
+												<dt>points</dt>
+												<dd>
+													{cost.pointsDrawn.toLocaleString()} of {cost.pointsTotal.toLocaleString()}{#if cost.pointsResponding > 0}
+														· {cost.pointsResponding.toLocaleString()} responding{/if}
+												</dd>
+											</div>
+											<div>
+												<dt>detail</dt>
+												<dd>
+													{cost.lod === 0
+														? 'one point per knot'
+														: cost.lod === 1
+															? 'a quarter of the points'
+															: cost.lod === 2
+																? 'every point'
+																: 'settling'}
+												</dd>
+											</div>
+											<div>
+												<dt>tags</dt>
+												<dd>{cost.tagsDrawn} of {cost.clusters.toLocaleString()} knots</dd>
+											</div>
+											<div>
+												<dt>gpu</dt>
+												<dd class="gpu">{cost.renderer || 'not reported'}</dd>
+											</div>
+										</dl>
+										<p class="note faint">
+											The point count is the level of detail's answer, not the corpus size:
+											back away and the cloud draws one point per knot. If the GPU line names
+											an integrated chip on a machine that has a discrete one, the browser
+											chose it, and the fill rate is a fraction of what it could be.
+										</p>
+									{:else}
+										<p class="note faint">Waiting for the first frame.</p>
+									{/if}
 								{/if}
 							</section>
 						</div>
@@ -3061,7 +3154,26 @@ uv run birdy-pipeline serve</pre>
 									title="Find however many dense regions there are and leave the rest unassigned. Regions of real audio with nothing documented in them are flagged `unknown` — candidate new syllables. Coverage is not guaranteed, so this is for discovery rather than for the galaxy you listen in."
 									>Find the unknown</button
 								>
+								<button
+									class:on={buildClustering === 'label'}
+									onclick={() => (buildClustering = 'label')}
+									title="Skip the clustering for every sound that already carries a type and give each type its own knot; k-means runs only over the sounds with no label. Every type gets a knot, so nothing sings without lighting — but the knots are then the labels rather than a second, independent finding, and this view still cannot report an unidentified sound. This is the answer at full-corpus scale, where asking k-means for 27 862 groups is the wrong instrument (docs/22 §22.5)."
+									>Use the labels</button
+								>
 							</div>
+							{#if buildClustering === 'label'}
+								<!--
+									Said on the surface that offers it, because it is the one honesty
+									difference between this and "Name everything": coverage becomes
+									certain and purity stops being a measurement (docs/22 §22.8).
+								-->
+								<p class="note faint">
+									Every type gets its own knot, so type coverage will read 100 % — by
+									construction, not as a finding. Cluster purity stops measuring the map for
+									the same reason; what still measures it is whether a live sound's nearest
+									knot is its own type.
+								</p>
+							{/if}
 							{#if buildClustering === 'hdbscan'}
 								<label class="field">
 									<span class="lbl">
@@ -3641,6 +3753,41 @@ uv run birdy-pipeline serve</pre>
 	   fact from the colour simply being missing, and only one of them is a bug. */
 	.legend li.absent {
 		opacity: 0.5;
+	}
+
+	/* The cost readout. A label column and a figures column, like the meters in the
+	   header, so it reads as an instrument rather than as part of the picture. */
+	.cost {
+		display: grid;
+		gap: 0.2rem;
+		margin: 0.35rem 0 0;
+	}
+
+	.cost div {
+		display: grid;
+		grid-template-columns: 3.2rem minmax(0, 1fr);
+		gap: 0.5rem;
+		align-items: baseline;
+	}
+
+	.cost dt {
+		font-size: 0.62rem;
+		color: var(--ink-faint);
+		letter-spacing: 0.04em;
+	}
+
+	.cost dd {
+		margin: 0;
+		font-size: 0.68rem;
+		color: var(--ink-dim);
+	}
+
+	/* Vendor strings run long ("ANGLE (Intel, Mesa Intel(R) Graphics (RPL-S), OpenGL
+	   4.6)") and the panel is narrow, so this one wraps instead of widening it. */
+	.cost dd.gpu {
+		font-size: 0.6rem;
+		line-height: 1.3;
+		overflow-wrap: anywhere;
 	}
 
 	/* The "Reading the galaxy" key reuses the legend's swatch-plus-text row, but the

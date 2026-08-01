@@ -179,9 +179,16 @@ def measured_corpus(
     should_stop: Callable[[], bool] | None = None,
     anchor: bool = False,
 ) -> list[Clip]:
-    """The anchor render plus `variants` measured realisations per learned type.
+    """Songs, and — only with `anchor=True` — the fitted median plus `variants` measured
+    realisations per learned type.
 
-    **The difference from `synthetic_corpus` is what a knot's extent is made of.** There
+    **By default a type with member observations renders nothing at all** (W5, adopted
+    2026-08-01; see the comment at the `anchor` check below for the measurement). It is
+    already in the galaxy as the real syllables `typing.json` assigned to it, so the only
+    thing this renders for a typed species is its songs.
+
+    **With `anchor=True`, the difference from `synthetic_corpus` is what a knot's extent is
+    made of.** There
     it is `Jitter` — 3 % pitch, 8 % duration, 10 % level — applied to one median render
     over and over: a sampling distribution of our own parameters. Here every variant is
     a real bird: one stored observation's measured contour, duration, level, attack and
@@ -307,9 +314,17 @@ def measured_corpus(
                     )
                 )
         if verbose:
+            # Says what was rendered, not what the flags would allow. With the default
+            # `anchor=False` a type with members renders *nothing* here, and a line
+            # claiming "1 anchor + 24 measured" beside a count of 3 was describing a
+            # configuration this build did not run.
+            per_type = (
+                f"{n_types} types x (1 anchor + {variants} measured)"
+                if anchor
+                else f"{n_types} types rendered nothing (they are their own members)"
+            )
             print(
-                f"  {sid:24} {len(clips) - n_before:4d} clips "
-                f"({n_types} types x (1 anchor + {variants} measured) + "
+                f"  {sid:24} {len(clips) - n_before:4d} clips ({per_type} + "
                 f"{len(species.get('songs', []))} songs x {song_variants})",
                 file=sys.stderr,
             )

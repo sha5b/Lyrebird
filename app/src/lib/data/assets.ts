@@ -117,6 +117,57 @@ async function getJson<T>(path: string, fetcher: typeof fetch, bust = ''): Promi
 }
 
 /**
+ * How large an *optional* json asset may be before the loader refuses to parse it.
+ *
+ * **Measured against a real build.** The 2026-08-01 production build wrote a
+ * `relations.json` of **760 MB** — it holds every one of 2 929 410 species pairs, while
+ * the UI reads three of them at a time — and this loader fetched it unconditionally
+ * before the first frame. `JSON.parse` on that is not slow, it is a tab that does not
+ * come back, and it happened inside a `try/catch` written for a missing file, so the
+ * failure mode was a hang rather than an error.
+ *
+ * 32 MB is far past any relations file anyone intends (debug-100 ships 1.5 MB) and far
+ * short of one that cannot be parsed. An asset over the budget is treated exactly like
+ * an absent one, which every reader of an optional asset already handles — and it says
+ * so, because a silently dropped asset and a corpus that genuinely has no relations look
+ * identical in the UI.
+ */
+const OPTIONAL_ASSET_BUDGET_BYTES = 32 * 1024 * 1024;
+
+/**
+ * Fetch an optional json asset, or `null` if it is missing **or too large to parse**.
+ *
+ * The size is read from `Content-Length` and the body is cancelled without being read,
+ * so an oversized asset costs one set of response headers rather than its own transfer.
+ * A server that declares no length gets the benefit of the doubt: the check cannot be
+ * made, and refusing on a missing header would drop assets that are perfectly fine.
+ */
+async function getOptionalJson<T>(
+	path: string,
+	fetcher: typeof fetch,
+	bust = ''
+): Promise<T | null> {
+	try {
+		const res = await fetcher(assetUrl(path, bust));
+		if (!res.ok) return null;
+		const declared = Number(res.headers.get('content-length') ?? NaN);
+		if (Number.isFinite(declared) && declared > OPTIONAL_ASSET_BUDGET_BYTES) {
+			await res.body?.cancel();
+			console.warn(
+				`${path} is ${(declared / 1e6).toFixed(0)} MB, past the ${(
+					OPTIONAL_ASSET_BUDGET_BYTES / 1e6
+				).toFixed(0)} MB budget for an optional asset — not loaded. ` +
+					`The app runs without it; the build that wrote it is what wants looking at.`
+			);
+			return null;
+		}
+		return (await res.json()) as T;
+	} catch {
+		return null;
+	}
+}
+
+/**
  * Loads the generated galaxy + inventory. The pipeline is the only writer of these
  * files, so a missing one means the offline stage has not been run yet.
  *
@@ -265,12 +316,9 @@ export async function loadAssets(
 
 	// Cross-species relations (relations.py): optional like every learned asset, and
 	// candidates rather than facts even when present — the UI labels them that way.
-	let relations: RelationsDoc | null = null;
-	try {
-		relations = await getJson<RelationsDoc>(`${dir}relations.json`, fetcher, stamp);
-	} catch {
-		relations = null;
-	}
+	// Size-guarded, because a production build wrote 760 MB of it; see
+	// OPTIONAL_ASSET_BUDGET_BYTES.
+	const relations = await getOptionalJson<RelationsDoc>(`${dir}relations.json`, fetcher, stamp);
 
 	const posRes = await fetcher(assetUrl(`${dir}positions.f32`, stamp));
 	if (!posRes.ok) throw new AssetsMissingError(`${dir}positions.f32`);

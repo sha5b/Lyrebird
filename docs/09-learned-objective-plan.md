@@ -213,6 +213,23 @@ an unlimited perfectly-labeled dataset. No audio retention, no annotation, no li
 This is DDSP's architecture, with our syrinx as the decoder instead of a learned one. That is
 why it keeps the interpretability DDSP normally gives up.
 
+**Status, 2026-08-01: built, wired, measured, NOT ADOPTED.** `inverse.py` had been complete
+and imported by nothing for weeks. It is now reachable — `birdy-pipeline inverse` trains it
+(150 k pairs, early stop at epoch 26, best val 1.333, on the GPU) and `learn --inverse PT`
+re-initialises each type's gesture axes from its own mean mel patch before the same descent
+runs. The gate was written before the run (`pipeline/analysis/inverse_gate.md`) and **fails
+on all three conditions**: median resynthesis cosine +0.0135 against a +0.02 bar, 52.8 % of
+1 661 types improved against 60 %, and one species down 0.0816 against a 0.05 allowance.
+
+The useful part is what it says about the diagnosis. The starting point is **not** the
+binding constraint: coordinate descent from the cluster median already reaches a comparable
+basin about half the time, which is more than this section assumed when it described the
+search as trapped. What remains of docs/21's "the fit is what fails" therefore lives in the
+objective (docs/19: the 28-d cosine correlates ~0.1 with audible distortion) and in the
+physics beyond the oscillator — not in where the search starts. The flag stays, default off,
+and the one follow-up worth running is a two-start descent that keeps the better of the two
+proposals; its gate is stated in the same file.
+
 ## 9.4 Hard constraints — do not break these
 
 - **No audio is retained.** Log-mel patches only. `harvest.py`'s decode → describe → delete

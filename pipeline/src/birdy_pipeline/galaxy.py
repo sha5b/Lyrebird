@@ -1361,11 +1361,15 @@ def build_galaxy(
                 # Not a pipeline limit any more — but the assets are, and silence about
                 # a 48 MB centroids.json is exactly the kind of surprise the cap warning
                 # existed to prevent.
+                # Measured per-cluster costs, post-sidecar: 548 bytes of JSON and 272 of
+                # float (debug-100, 2 155 clusters). The first version of this line quoted
+                # the pre-sidecar 1 716 and overstated a production build by 3x, which is
+                # exactly the kind of number nobody re-checks once it is printed.
                 print(
                     f"  NOTE: {k_final} clusters is past the kmeans cap of {K_CAP}, which "
-                    "label assignment does not need — but centroids.json is written whole "
-                    f"and the browser loads it whole: about {k_final * 1.7 / 1024:.1f} MB "
-                    "at this k",
+                    "label assignment does not need. The browser parses centroids.json "
+                    f"whole: about {k_final * 548 / 1e6:.1f} MB of JSON beside "
+                    f"{k_final * 272 / 1e6:.1f} MB of {CENTROID_VECTORS_NAME}",
                     file=sys.stderr,
                 )
     else:

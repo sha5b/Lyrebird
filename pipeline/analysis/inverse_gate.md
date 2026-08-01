@@ -77,3 +77,51 @@ against `gammaScale`'s 0.102), and **timbre classification is 0.442** over three
 where chance is 0.333. Both feed the seam. If the gate passes, it passes despite them; if
 it fails, they are the first place to look, and neither is a reason to re-run the gate
 with a different bar.
+
+
+## Result, 2026-08-01 — THE GATE FAILS, on all three conditions
+
+Two `learn` runs on the debug-100 store, serial, seed 0, 1 661 fitted types in both, all
+1 661 shared.
+
+| | baseline | encoder | |
+|---|---|---|---|
+| median resynthesis cosine | 0.7411 | 0.7546 | **+0.0135**, gate wanted +0.02 |
+| mean | 0.6824 | 0.6997 | +0.0173 |
+| types improved | | 877 / 1 661 | **52.8 %**, gate wanted 60 % |
+| worst species | | `gampsonyx_swainsonii` | **−0.0816**, gate allowed −0.05 |
+
+**The encoder is not adopted and the default is unchanged** (`--inverse` stays opt-in and
+off). Read plainly: the median and the mean both rise, so the encoder is doing *something*
+real — but it improves barely more types than a coin would, and it costs one species a
+tenth of its fit. A starting point that is better on average and worse for half of what it
+touches is not a starting point you turn on for 13 903 types.
+
+**What this says about docs/21's "the fit is what fails".** The starting point was *not*
+the binding constraint. Coordinate descent from the cluster median already reaches a
+comparable basin about half the time, which is more than §9.3 Part 2 assumed when it
+described the search as unable to escape a bad basin. The remaining fit error is therefore
+mostly *not* a basin problem, and the two candidates left are the ones docs/19 and docs/21
+already name: the objective (the 28-d cosine correlates ~0.1 with audible distortion) and
+the physics beyond the oscillator (periphery, jitter, static tract).
+
+**The predicted reasons were written down before the run and both survive.** `tractQ` was
+the worst-learned head by an order of magnitude (val MSE 1.125 against `gammaScale`'s
+0.102) and timbre classification reached 0.442 over three classes. Both feed the seam, and
+neither is a reason to move the bar.
+
+## The one follow-up worth pre-registering, and why it is not a re-run
+
+The failure is specifically *inconsistency* — 52.8 % — with the median still up. The
+standard response to that is not a better encoder but a **two-start descent**: run
+`invert_gestures` from the cluster median *and* from the encoder's proposal, keep whichever
+scores better on the objective that already decides. That is a different mechanism, not a
+softened gate: it cannot regress by construction (the baseline start is always one of the
+two candidates), so G3 is satisfied trivially and the honest question becomes cost — two
+descents per type, roughly doubling the inversion phase.
+
+Its gate, stated now: **median resynthesis cosine ≥ baseline + 0.02, and no species worse
+than baseline at all** (not −0.05: with the baseline start always available, any regression
+is a bug in the selection rather than a trade). If it cannot clear +0.02 even while taking
+the better of two starts, then the encoder's proposals are not adding reachable basins and
+this road closes with a measurement rather than a shrug.

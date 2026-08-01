@@ -1,12 +1,20 @@
 <script lang="ts">
 	/**
-	 * The floating specimen tag beside every cluster.
+	 * The floating specimen tag beside a responding cluster.
 	 *
-	 * Each node carries the things you would want written on a slide next to it: what the
+	 * Each tag carries the things you would want written on a slide next to it: what the
 	 * cluster is, whose repertoire it belongs to, how many corpus points fell into it, how
 	 * tight it is, and — while audio is playing — how strongly the live sound matches it.
 	 * The tag stays terse until its cluster activates, then it opens up and shows the
 	 * documented function and the live figures.
+	 *
+	 * **This is a fixed pool of tags, not one tag per knot** — see labels.ts for the
+	 * measurement that forced it. `slots[s]` is the centroid index bound into slot `s`,
+	 * or -1 for a slot nothing is using; NodeProjector owns that array and rebinds a slot
+	 * only when the set of tags on screen actually changes, which is a few times a second
+	 * rather than sixty. The `{#each}` is keyed by slot, so the outer element is built
+	 * once and lives for the session while Svelte re-renders only the text inside a slot
+	 * that changed hands.
 	 *
 	 * Positioning is done by NodeProjector, which writes transforms straight onto these
 	 * elements. This component owns only the markup and the styling.
@@ -22,7 +30,16 @@
 
 	interface Props {
 		assets: BirdyAssets;
-		/** Written into by this component, read by NodeProjector. Plain array, not state. */
+		/**
+		 * Centroid index bound into each slot, or -1. Owned by Galaxy, written by
+		 * NodeProjector, read here. Reactive, because a rebind has to re-render the tag's
+		 * text — and only a rebind does.
+		 */
+		slots: number[];
+		/**
+		 * Written into by this component, read by NodeProjector. **Slot-aligned, not
+		 * centroid-aligned.** Plain array, not state.
+		 */
 		elements: (HTMLElement | null)[];
 		/**
 		 * Colour the tags by the knot's provenance class instead of by its bird, to match
@@ -35,9 +52,9 @@
 		onpick?: (cluster: number) => void;
 	}
 
-	let { assets, elements, prov = false, bird = false, onpick }: Props = $props();
+	let { assets, slots, elements, prov = false, bird = false, onpick }: Props = $props();
 
-	// The corpus does not change while this is mounted, so the tags are built once.
+	// The corpus does not change while this is mounted, so the lookups are built once.
 	// Names come from the inventory index: a tag must name its bird without fetching
 	// that bird's shard first.
 	const centroids = untrack(() => assets.centroids.items);
@@ -61,57 +78,67 @@
 	 * two colours are related — so the whole picture speaks one language at a time.
 	 * Either way the tag still *names* the bird in words right beside the dot, which is
 	 * why hue is free to carry the other axis.
+	 *
+	 * Both per-knot arrays are one pass over the corpus, so they stay lazy: on a build
+	 * with 14 000 knots the provenance tally is not work to do before the first frame
+	 * when the mode it serves may never be switched on.
 	 */
-	const heat = untrack(() => knotHeat(assets));
-	const knotClass = untrack(() => clusterProvenance(assets));
+	let heat: Float32Array | null = null;
+	let knotClass: Float32Array | null = null;
 	const knotColour = (c: Centroid, i: number): string => {
+		heat ??= knotHeat(assets);
 		const light = 0.9 + (heat[i] ?? 0.5) * 0.2;
-		return prov
-			? provenanceColourScaled(knotClass[i] ?? 4, light)
-			: bird
-				? speciesColourScaled(c.speciesId, light)
-				: INK_NEUTRAL;
+		if (prov) {
+			knotClass ??= clusterProvenance(assets);
+			return provenanceColourScaled(knotClass[i] ?? 4, light);
+		}
+		return bird ? speciesColourScaled(c.speciesId, light) : INK_NEUTRAL;
 	};
 </script>
 
 <div class="layer" aria-hidden="true">
-	{#each centroids as centroid, i (centroid.id)}
-		<!-- `--hot` (0 or 1) and `--act` (0..1) are written per frame by NodeProjector -->
-		<div class="tag" bind:this={elements[i]}>
-			<button
-				class="dot"
-				style:color={knotColour(centroid, i)}
-				type="button"
-				tabindex="-1"
-				aria-label={centroid.label}
-				onclick={() => onpick?.(i)}
-			></button>
-			<div class="card">
-				<div class="head">
-					<span class="id mono">C{String(centroid.id).padStart(2, '0')}</span>
-					<!-- full label on hover: learned names run long and the card caps their width -->
-					<span class="name" title={centroid.label}>{centroid.label}</span>
-				</div>
-				<div class="meta mono">
-					<span>{speciesName(centroid.speciesId)}</span>
-					<span>n={centroid.count}</span>
-					{#if centroid.meanDuration}<span>{Math.round(centroid.meanDuration * 1000)} ms</span>{/if}
-				</div>
-				<div class="detail">
-					<div class="bar"><span></span></div>
-					<div class="figures mono">
-						<!-- written by NodeProjector, and only when the rounded value changes -->
-						<span class="match" data-match>—</span>
-						{#if centroid.cohesion !== undefined}<span>ρ {centroid.cohesion.toFixed(2)}</span>{/if}
-						{#if centroid.radius !== undefined}<span>r {centroid.radius.toFixed(2)}</span>{/if}
-						{#if evidenceLabel(centroid)}<span class="evidence">{evidenceLabel(centroid)}</span>{/if}
-						<span class="conf">{confidenceLabel(centroid.confidence).text}</span>
+	{#each slots as ci, s (s)}
+		<!-- `--hot` (0 or 1) and `--act` (0..1) are written per frame by NodeProjector.
+		     The wrapper is keyed by slot, so it is created once and only its contents
+		     change when a different knot is bound into it. -->
+		<div class="tag" bind:this={elements[s]}>
+			{#if ci >= 0}
+				{@const centroid = centroids[ci]}
+				<button
+					class="dot"
+					style:color={knotColour(centroid, ci)}
+					type="button"
+					tabindex="-1"
+					aria-label={centroid.label}
+					onclick={() => onpick?.(ci)}
+				></button>
+				<div class="card">
+					<div class="head">
+						<span class="id mono">C{String(centroid.id).padStart(2, '0')}</span>
+						<!-- full label on hover: learned names run long and the card caps their width -->
+						<span class="name" title={centroid.label}>{centroid.label}</span>
 					</div>
-					{#if centroid.function}
-						<p class="function">{centroid.function}</p>
-					{/if}
+					<div class="meta mono">
+						<span>{speciesName(centroid.speciesId)}</span>
+						<span>n={centroid.count}</span>
+						{#if centroid.meanDuration}<span>{Math.round(centroid.meanDuration * 1000)} ms</span>{/if}
+					</div>
+					<div class="detail">
+						<div class="bar"><span></span></div>
+						<div class="figures mono">
+							<!-- written by NodeProjector, and only when the rounded value changes -->
+							<span class="match" data-match>—</span>
+							{#if centroid.cohesion !== undefined}<span>ρ {centroid.cohesion.toFixed(2)}</span>{/if}
+							{#if centroid.radius !== undefined}<span>r {centroid.radius.toFixed(2)}</span>{/if}
+							{#if evidenceLabel(centroid)}<span class="evidence">{evidenceLabel(centroid)}</span>{/if}
+							<span class="conf">{confidenceLabel(centroid.confidence).text}</span>
+						</div>
+						{#if centroid.function}
+							<p class="function">{centroid.function}</p>
+						{/if}
+					</div>
 				</div>
-			</div>
+			{/if}
 		</div>
 	{/each}
 </div>

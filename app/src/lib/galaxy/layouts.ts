@@ -139,3 +139,137 @@ export function buildLayout(assets: BirdyAssets): Layout {
 		counts
 	};
 }
+
+/**
+ * Each knot's distance to its nearest other knot, for the callers that quote a length in
+ * knot-spacings rather than in box units — the wavefront's reach is the one that does.
+ *
+ * **Why this is a grid and not two nested loops.** It used to be the obvious `k²` scan,
+ * which is 18 million distance tests at the shipped 4 298-knot build (about a second of
+ * a frozen tab at load) and **196 million at the production build's ~14 000**, where it
+ * becomes a load-time stall long enough to read as a hang. A uniform grid sized to one
+ * cell per knot answers the same question exactly in roughly linear time: bucket the
+ * knots, then for each one walk outward a ring of cells at a time and stop as soon as the
+ * best distance found is inside the radius the searched rings have already cleared.
+ *
+ * **A memberless knot does not take part.** Its centroid is (0,0,0) — the centre of the
+ * box, a position that is a lie, per `counts` above — so including them would put every
+ * empty knot at distance 0 from every other and drag the median toward nothing. Callers
+ * get the spacing of the knots that are really there.
+ */
+export function nearestNeighbourDistances(
+	centroids: Float32Array,
+	counts: Uint32Array,
+	k: number
+): number[] {
+	const real: number[] = [];
+	for (let i = 0; i < k; i++) if ((counts[i] ?? 0) > 0) real.push(i);
+	if (real.length < 2) return [];
+
+	let minX = Infinity;
+	let minY = Infinity;
+	let minZ = Infinity;
+	let maxX = -Infinity;
+	let maxY = -Infinity;
+	let maxZ = -Infinity;
+	for (const i of real) {
+		const x = centroids[i * 3];
+		const y = centroids[i * 3 + 1];
+		const z = centroids[i * 3 + 2];
+		if (x < minX) minX = x;
+		if (x > maxX) maxX = x;
+		if (y < minY) minY = y;
+		if (y > maxY) maxY = y;
+		if (z < minZ) minZ = z;
+		if (z > maxZ) maxZ = z;
+	}
+	const spanX = maxX - minX;
+	const spanY = maxY - minY;
+	const spanZ = maxZ - minZ;
+	const longest = Math.max(spanX, spanY, spanZ);
+	// Every knot in one place (a degenerate build): the answer is zero everywhere, and
+	// there is no grid to build.
+	if (!(longest > 0)) return real.map(() => 0);
+	// The cell edge divides the LONGEST axis into about the cube root of the knot count,
+	// so the grid holds at most ~k cells however flat the cloud is — a cell edge taken
+	// from the bounding volume instead would explode when one axis collapses.
+	const divisions = Math.max(1, Math.ceil(Math.cbrt(real.length)));
+	const cell = longest / divisions;
+	const nx = Math.max(1, Math.min(divisions, Math.ceil(spanX / cell)));
+	const ny = Math.max(1, Math.min(divisions, Math.ceil(spanY / cell)));
+	const nz = Math.max(1, Math.min(divisions, Math.ceil(spanZ / cell)));
+	const total = nx * ny * nz;
+
+	const cellX = new Int32Array(real.length);
+	const cellY = new Int32Array(real.length);
+	const cellZ = new Int32Array(real.length);
+	const starts = new Int32Array(total + 1);
+	for (let n = 0; n < real.length; n++) {
+		const i = real[n];
+		const cx = Math.min(nx - 1, Math.max(0, Math.floor((centroids[i * 3] - minX) / cell)));
+		const cy = Math.min(ny - 1, Math.max(0, Math.floor((centroids[i * 3 + 1] - minY) / cell)));
+		const cz = Math.min(nz - 1, Math.max(0, Math.floor((centroids[i * 3 + 2] - minZ) / cell)));
+		cellX[n] = cx;
+		cellY[n] = cy;
+		cellZ[n] = cz;
+		starts[cx + nx * (cy + ny * cz) + 1]++;
+	}
+	for (let c = 0; c < total; c++) starts[c + 1] += starts[c];
+	const cursor = starts.slice(0, total);
+	const items = new Int32Array(real.length);
+	for (let n = 0; n < real.length; n++) {
+		items[cursor[cellX[n] + nx * (cellY[n] + ny * cellZ[n])]++] = n;
+	}
+
+	const out: number[] = [];
+	const maxRing = nx + ny + nz;
+	for (let n = 0; n < real.length; n++) {
+		const i = real[n];
+		const px = centroids[i * 3];
+		const py = centroids[i * 3 + 1];
+		const pz = centroids[i * 3 + 2];
+		let best = Infinity;
+		for (let r = 0; ; r++) {
+			// Rings 0…r-1 have been searched, so every cell within `r - 1` cells of this
+			// one is done and anything still unseen sits in a cell at least `r` away. The
+			// query is somewhere inside its own cell and that cell begins one full cell
+			// short of the unsearched ones, so the radius already cleared is
+			// `(r - 1) * cell` — a best inside that cannot be beaten. Compared squared,
+			// which is what `best` holds.
+			if (r > 0) {
+				const cleared = (r - 1) * cell;
+				if (best <= cleared * cleared) break;
+			}
+			if (r > maxRing) break;
+			const x0 = Math.max(0, cellX[n] - r);
+			const x1 = Math.min(nx - 1, cellX[n] + r);
+			const y0 = Math.max(0, cellY[n] - r);
+			const y1 = Math.min(ny - 1, cellY[n] + r);
+			const z0 = Math.max(0, cellZ[n] - r);
+			const z1 = Math.min(nz - 1, cellZ[n] + r);
+			for (let cz = z0; cz <= z1; cz++) {
+				const edgeZ = Math.abs(cz - cellZ[n]) === r;
+				for (let cy = y0; cy <= y1; cy++) {
+					const edgeY = Math.abs(cy - cellY[n]) === r;
+					for (let cx = x0; cx <= x1; cx++) {
+						// Only the shell of the cube is new; its interior was ring `r - 1`.
+						if (r > 0 && !edgeZ && !edgeY && Math.abs(cx - cellX[n]) !== r) continue;
+						const c = cx + nx * (cy + ny * cz);
+						for (let s = starts[c]; s < starts[c + 1]; s++) {
+							const m = items[s];
+							if (m === n) continue;
+							const j = real[m];
+							const dx = px - centroids[j * 3];
+							const dy = py - centroids[j * 3 + 1];
+							const dz = pz - centroids[j * 3 + 2];
+							const d = dx * dx + dy * dy + dz * dz;
+							if (d < best) best = d;
+						}
+					}
+				}
+			}
+		}
+		out.push(best === Infinity ? 0 : Math.sqrt(best));
+	}
+	return out;
+}
