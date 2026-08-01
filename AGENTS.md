@@ -173,3 +173,11 @@ Two agent sessions work in this repo: **pipeline-side** (this one's scope: `pipe
 `data/`, `docs/`, asset builds) and **app-side** (`app/src/**`). Check `git log` before
 assuming the tree matches your last session — the other side commits independently.
 See `HANDOFF.md` for the current state and open items.
+
+## One-off measurement runners
+
+`pipeline/analysis/` holds the arms that were run once to settle a recorded question — W2's
+held-out order scaling, W5's label/kmeans square, W6's Perch tests. Nothing imports them and
+nothing ships them; they are in the repo because **each file's docstring is the
+pre-registered gate of its run**, and a result whose gate cannot be re-read is not evidence.
+`pipeline/analysis/README.md` maps file to question to verdict to the docs section.

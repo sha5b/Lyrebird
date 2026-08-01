@@ -1,4 +1,4 @@
-# Birdy — Session Handoff (2026-08-01, label assignment + W2 re-run)
+# Birdy — Session Handoff (2026-08-01, label assignment + W2 + W5 + W6)
 
 **In one paragraph:** the production knot problem now has its instrument.
 `build --clustering label` (docs/22 §22.8) stops clustering the 96 % of points that
@@ -122,14 +122,62 @@ are why it ships as a flag rather than as the default.
   "these tokens are units". P1 stands, P2/P3's premise is confirmed, and the depth question
   is now measured as **data-limited, not method-limited** — 217 of 2 421 species can be
   asked at all.
-- **W6: NOT STARTED, but its practical check is done and it is cheaper than §23.6
-  assumed.** The repo already has the exact shape BirdNET needs: `perch.py` runs Perch 2.0
-  from a community **ONNX** port under `onnxruntime` alone (~50 ms per 5 s window, CPU),
-  imported in that one module and declared as the optional `perch` extra. So W6's T1 needs
-  no TensorFlow and no `tflite-runtime` — it needs a BirdNET ONNX export and a second
-  module shaped like `perch.py`. Note the current tree has **none of onnxruntime,
-  tflite_runtime, tensorflow or ai_edge_litert installed**: `uv sync --extra perch` first,
-  and the model download is a deliberate, owner-called network step.
+- **W6 T1 RUN with Perch instead of BirdNET: THE CONFOUND SURVIVES, and this is the fourth
+  end of the road** (docs/23 §23.6.1). T1 turns on two properties — same archives, ~100×
+  the scale, and **no realism term** — and Perch 2.0 has both and is *already ported*
+  (`perch.py`, ONNX, 1536-d), so T1 could be asked today instead of after a BirdNET port.
+  One point per recording (§23.6's own ask for W1's batch representation, and a form where
+  same-recording leakage is impossible rather than excluded): Perch = mean of the first six
+  5 s windows, critic = mean of that recording's syllable embeddings, both through
+  `geometry.measure` against its own null, same 1 567 rows, coverage 0.907 either way.
+
+  | space | dims | recordist lift |
+  |---|---|---|
+  | critic 32-d | 32 | **0.0891** |
+  | Perch 1536-d | 1 536 | **0.0744** |
+
+  **−16.5 % against a −30 % gate: T1 fails.** A model that has never been asked to tell our
+  resynthesis from a bird still carries five sixths of the recordist structure ours does.
+  §17.3 closed this road during training, §17.5 with a factored target, §23.1.1 post-hoc,
+  and this closes it **from outside our own loss entirely** — the first end that cannot be
+  blamed on anything we built. §17.4's "invariance is a data action" is now the only action
+  left: more recordists per species.
+- **W6 T3 RUN: Perch retrieves species 8x better than our critic does** (docs/23 §23.6.2).
+  The pair test the cache forces — 958 species with two recordings each, 1 644 recordings,
+  760 recordists, `min_group=2` for species:
+
+  | space | species lift (cov 0.834) | recordist lift (cov 0.329) |
+  |---|---|---|
+  | critic 32-d | 0.0074 | 0.1684 |
+  | Perch 1536-d | **0.0588** | **0.1155** |
+
+  **T3 passes decisively.** Caveat that belongs with the number: the critic's is a
+  *syllable* space averaged over a recording, which is not its job, so this says Perch is
+  the better **per-recording** space — exactly what W1 wants as its batch descriptor — and
+  says nothing about syllable-for-syllable, which was not run. **T1 passes here at −31.4 %
+  and failed at −16.5 % in §23.6.1, and the tie-break is coverage**: the recordist estimate
+  covers 0.907 of rows there and 0.329 here, so the population built for the question wins
+  and **T1's verdict stays fail**. What holds in both draws is the sentence worth carrying:
+  in the Perch space the recordist lift is still **twice the species lift**. A 100×-scale
+  model that has never seen a resynthesis still encodes who recorded it more strongly than
+  which bird it is. **T2 (novelty AUC) is unrun**, and §23.6's offer to retire the critic's
+  species head does not trigger — it needed T1 *and* T3.
+- **A hard constraint on the rest of W6, found by running it.** The audio cache holds **at
+  most two recordings per species** (2 616 species with exactly two, 1 221 with one, none
+  with three) — iNat took no more, xeno-canto audio is deleted at harvest. So the species
+  half of T1, and T3 as §23.6 states it, cannot be estimated on any audio this machine
+  holds; a species-stratified draw returns zero recordings. Anything in W6 needing several
+  recordings of one species **needs audio re-fetched first**, which is your call. What the
+  cache does support is the pair test (`min_group=2`: is a recording's nearest neighbour its
+  own species?), which `geometry.measure` explicitly allows — running as §23.6.2.
+- **Practical notes for whoever does the BirdNET port.** No TensorFlow and no
+  `tflite-runtime` are needed for the Perch route; `uv sync --extra critic --extra analysis
+  --extra whitepaper --extra perch` is now the full tree. The 391 MB ONNX landed in
+  `~/.cache/huggingface`, not `pipeline/out/perch`, because `HF_HOME` is already set in this
+  environment — which `perch.ensure_model` documents as allowed. T1 read only the embedding,
+  so it loaded the session directly and skipped `ensure_model`'s Kaggle class-list fetch:
+  the labels are the one thing §23.6 says must never become ground truth, and they were
+  never fetched.
 - **Correction to the entry below:** the shipped debug-100 assets are purity **0.5797**,
   not 0.423 — 0.423 is the k = 1 024 figure from §22.6's table, carried into the paragraph
   about the 4 298-cluster build by mistake. The manifest has said 0.5797 since it was built.

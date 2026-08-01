@@ -377,6 +377,104 @@ channel descriptor computed independently of our own features, which is what W1 
 its batch representation) and **per syllable** (the 3-second window centred on it, which
 gives a syllable descriptor with context that neither the 28-d nor the critic space has).
 
+### 23.6.1 T1 run with Perch instead of BirdNET, 2026-08-01 — THE CONFOUND SURVIVES
+
+**Why Perch and not BirdNET.** T1 turns on two properties: a model trained on the same
+archives at roughly a hundred times our scale, and **no realism term anywhere in it**.
+Perch 2.0 has both, and it is already ported here — `perch.py`, a community ONNX export,
+1536-d at the second-to-last layer, 5 s windows at 32 kHz. So T1 could be asked today
+instead of after a BirdNET port, and if the answer is "no better", the port is not the
+next thing to build. BirdNET keeps its own reasons (the occurrence prior over latitude,
+longitude and week; a third opinion at a tenth the size), and this does not replace it.
+
+**What was measured.** One point per recording, which is what §23.6 says W1 wants as its
+batch representation and which has a property the syllable-level test had to block for:
+two points from the same recording cannot exist, so same-recording leakage is impossible
+by construction rather than by exclusion. Perch's point is the mean of the first six 5 s
+window embeddings; the critic's is the mean of that recording's syllable embeddings from
+`embeddings.f32`. Both scored by `geometry.measure` against its own permutation null, the
+same estimator W1 used, on the same rows.
+
+Population: the audio cache is the constraint and it turns out not to bind — all 6 453
+cached iNat recordings carry a recordist (1 836 distinct), so no new harvest was needed.
+Selection was fixed before the run: recordists with ≥ 8 cached recordings, at most 20 each
+(seeded), capped at 2 000. That gave **1 567 recordings, 135 recordists, 1 341 species**,
+coverage 0.907 in both spaces.
+
+| space | dims | recordist lift | species lift |
+|---|---|---|---|
+| critic 32-d | 32 | **0.0891** | not estimable here |
+| Perch 1536-d | 1 536 | **0.0744** | not estimable here |
+
+**T1 fails: −16.5 % against a −30 % gate.** A model trained on the same archives at a
+hundred times the scale, which has never been asked to tell our resynthesis from a bird
+and therefore cannot have learned the axis that splits our types in two, still carries
+**five sixths** of the recordist structure our own critic carries. §23.6 said in advance
+what that means, and it is worth quoting rather than softening: *if a model trained on the
+same archives at a hundred times the scale is no more recorder-invariant than ours, the
+confound lives in the archives rather than in our critic.* It does. §17.3 closed the road
+during training, §17.5 closed it with a factored target, §23.1.1 closed it post-hoc, and
+this closes it **from outside our own loss function entirely** — the fourth end, and the
+first one that could not be blamed on anything we built. The action §17.4 named is now the
+only action left: more recordists per species, in the data.
+
+**One honest limit on this population, and it is not a selection mistake.** No species
+reaches `geometry.MIN_GROUP` = 8 recordings here (1 341 species over 1 567 recordings), so
+the species half of the T1 gate could not be estimated. Re-drawing for species replication
+returned **zero** recordings, and the reason is structural: **the audio cache holds at most
+two recordings per species** — 2 616 species with exactly two, 1 221 with one, none with
+three. The iNat ingest took no more than two apiece, and the xeno-canto audio was deleted
+at harvest by design. So an 8-recording species group does not exist on any audio this
+machine holds, and no selection rule can produce one.
+
+That is worth stating as a constraint on the whole workstream rather than as a footnote to
+one run: **any test in W6 that needs several recordings of one species needs audio to be
+re-fetched first**, which is an owner-called network step. What the cache does support is
+the pair test — with `min_group=2`, is a recording's nearest neighbour from its own species?
+— and `geometry.measure` allows exactly that, keeping `min_group` for callers testing a
+small population deliberately, where the permutation null rather than the group size is
+what keeps the test honest. §23.6.2 runs it.
+
+### 23.6.2 T3, and T1 on a second draw — Perch wins species 8x, and the two draws disagree
+
+The pair test §23.6.1's constraint forces: 958 species with two cached recordings each,
+1 644 recordings, 760 recordists, `min_group=2` for species and the usual 8 for recordist.
+Same estimator, same per-recording representation, same rows in both spaces.
+
+| space | dims | species lift (cov 0.834) | recordist lift (cov 0.329) |
+|---|---|---|---|
+| critic 32-d | 32 | 0.0074 | 0.1684 |
+| Perch 1536-d | 1 536 | **0.0588** | **0.1155** |
+
+**T3 passes, and not narrowly: Perch retrieves a species' other recording 8x better than
+our critic does** (0.0588 against 0.0074, same rows, same null). One caveat belongs with
+that number rather than after it: the critic's embedding is a *syllable* space being
+averaged over a recording, which is not what it was fitted for, so this says Perch is the
+better **per-recording** space — the representation W1 wants as its batch descriptor — and
+it does not say Perch beats the critic syllable for syllable. That comparison has not been
+run.
+
+**T1 passes here (−31.4 %) and failed in §23.6.1 (−16.5 %), and the disagreement is the
+result.** The two draws hold different things constant, and the tie-break is coverage:
+§23.6.1's population was built for this question and its recordist estimate covers **0.907**
+of rows; this one was built for species and covers **0.329**, because only a third of these
+recordings belong to a recordist with eight of them. The instrument designed for the
+question is the one to believe, so the honest verdict on T1 is **fail** — Perch reduces the
+recordist structure by something between a sixth and a third, and does not remove it.
+
+**The finding that holds in both draws, and is the one to carry forward.** In the Perch
+space the recordist lift (0.1155) is still **twice the species lift** (0.0588). A model
+trained on the same archives at a hundred times our scale, which has never been shown a
+resynthesis, still encodes *who recorded it* more strongly than *which bird it is*. That is
+the confound stated without reference to anything this project built, and it is the fourth
+independent closure of the road §17.4 opened.
+
+**What this does and does not license.** It licenses Perch as the per-recording batch
+descriptor for W1 (better species structure, weaker recordist structure than ours) and it
+weakens the case for building the BirdNET port to answer T1 — T1 is answered. It does not
+license retiring the critic's species head, which §23.6 made conditional on T1 *and* T3
+landing: T3 landed, T1 did not. And it leaves T2 (novelty AUC) unrun.
+
 ## 23.7 W7 — Mimicry as ground truth
 
 **The failure it attacks.** Every cross-species similarity claim this project makes is
