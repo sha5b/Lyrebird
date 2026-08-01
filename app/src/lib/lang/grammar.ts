@@ -41,12 +41,14 @@ interface DocumentedEntry {
 /**
  * Only calls whose function is actually described in the literature are listed here.
  * See docs/03-decoding-science.md §3.2 for the sources behind each row.
+ * The keyword lists were widened with synonyms 2026-08; every row still maps to the
+ * same playback-verified call.
  */
 const DOCUMENTED: DocumentedEntry[] = [
 	{
 		speciesId: 'parus_minor',
 		songId: 'abc',
-		keywords: ['danger', 'snake', 'predator', 'look out', 'watch out', 'careful', 'scan', 'alert']
+		keywords: ['danger', 'snake', 'predator', 'look out', 'watch out', 'careful', 'scan', 'alert', 'beware', 'warning']
 	},
 	{
 		speciesId: 'parus_minor',
@@ -61,7 +63,7 @@ const DOCUMENTED: DocumentedEntry[] = [
 	{
 		speciesId: 'poecile_atricapillus',
 		songId: 'chick_a_dee',
-		keywords: ['flock', 'contact', 'where are you', 'together', 'hello', 'friend']
+		keywords: ['flock', 'contact', 'where are you', 'together', 'hello', 'friend', 'hi', 'hey', 'anyone']
 	},
 	{
 		speciesId: 'poecile_atricapillus',
@@ -71,7 +73,7 @@ const DOCUMENTED: DocumentedEntry[] = [
 	{
 		speciesId: 'perisoreus_infaustus',
 		songId: 'jay_attack',
-		keywords: ['attack', 'hawk', 'take cover', 'dive', 'now', 'run']
+		keywords: ['attack', 'hawk', 'take cover', 'dive', 'now', 'run', 'raptor', 'falcon']
 	},
 	{
 		speciesId: 'perisoreus_infaustus',
@@ -86,12 +88,12 @@ const DOCUMENTED: DocumentedEntry[] = [
 	{
 		speciesId: 'taeniopygia_guttata',
 		songId: 'zf_song',
-		keywords: ['love', 'courtship', 'beautiful', 'marry', 'sing to me']
+		keywords: ['love', 'courtship', 'beautiful', 'marry', 'sing to me', 'mate', 'attract', 'desire']
 	},
 	{
 		speciesId: 'strix_aluco',
 		songId: 'owl_hoot',
-		keywords: ['night', 'occupied', 'who', 'dark']
+		keywords: ['night', 'occupied', 'who', 'dark', 'evening', 'midnight']
 	}
 ];
 

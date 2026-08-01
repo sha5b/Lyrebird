@@ -23,7 +23,11 @@ export interface GalaxyStats {
 	pointsTotal: number;
 	/** Points the responding pass drew last frame; 0 on a silent frame. */
 	pointsResponding: number;
-	/** Level of detail in force: 0 one point per knot, 1 a quarter, 2 everything. */
+	/**
+	 * Share of the corpus in front of the level-of-detail frontier, 0..1 — a live
+	 * fraction, not a level: the representatives' share at galaxy distance, 1 close
+	 * up. -1 until the first frame reports.
+	 */
 	lod: number;
 	/** Name tags positioned last frame. Bounded by the pool, never by the corpus. */
 	tagsDrawn: number;

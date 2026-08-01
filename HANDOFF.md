@@ -1,3 +1,47 @@
+# Birdy — Session Handoff (2026-08-01, late: smooth LOD, chorus stops on Compose, text-first Compose tab)
+
+**Three owner-reported UI issues fixed, all in the app.** Checks green: `npm run check`
+at the 4 baseline errors, `verify-parity` 18/18, `verify:layout` green. **Not yet
+verified visually** — fps before/after and the zoom feel need a run on the owner's
+machine with the Display panel's cost readout open.
+
+- **The LOD pop and the fps tank.** `PointCloud.svelte`'s discrete 3-level LOD is gone.
+  The index is now **one fixed priority order** (knot representatives + unclustered
+  points first, then stride tiers), uploaded once at load and re-uploaded only when the
+  focused bird changes. A **continuous frontier** replaces the thresholds: smoothstep
+  from one-point-per-knot at 3.2 cloud radii to everything at 1.6, applied per frame as
+  integer `setDrawRange` calls — no buffer traffic, no hysteresis, no pop. A new `aRank`
+  attribute + `uLod` uniform fade the ~2 % of points at the frontier in, same idiom as
+  the arrival ramp. **The resting pass is now 64 chunked geometries** (4×4×4 grid over
+  the bbox, shared attributes, per-cell exact bounding spheres padded 0.12 box units,
+  `frustumCulled: true`) — zoomed into one bird, off-screen cells cost nothing.
+  **Silent frames no longer upload anything**: activation/orphan/front/cluster-texture
+  uploads and the O(n) active-index scan are all skipped when nothing sounds (one zero
+  upload on the transition into quiet). Point-size ceiling 42 → 24 px (overdraw on the
+  iGPU). `stats.lod` is now the live 0..1 fraction and the cost readout prints it as a
+  percentage. The active (responding) pass is untouched.
+- **Chorus stops on the Compose tab.** A new `$effect` on `tab` calls `silence()` when
+  entering Compose with a chorus running; returning to Sing does not resume (explicit
+  stop semantics). The selection → solo-chorus effect is now gated on `tab === 'sing'`,
+  so the Compose tab's species picker no longer hijacks or starts a chorus. Galaxy
+  clicks still work: `pickCluster` sets `tab = 'sing'` in the same handler and effects
+  run after state settles.
+- **Compose tab is text-first now.** Order: Species → words textarea ("Words for the
+  bird to sing") → interpretation callout → strip → Sing it / Clear. One new primary
+  button, **"Sing the words"**, fills the strip to the text's rhythm and plays it in
+  one click (replaces "Set the rhythm from the words"). The callout shows the honest
+  case both ways: documented match unchanged (real call, citation, its own button), and
+  a new invented branch ("No documented call matches these words…") with the existing
+  badge machinery. All the manual machinery (Free/Guided/Song types, suggestions,
+  motifs, keyboard) lives in a collapsed `<details>` "build the strip by hand" — same
+  code, relocated. `grammar.ts`'s DOCUMENTED keyword rows gained obvious synonyms only
+  (raptor/falcon, mate/attract/desire, beware/warning, hi/hey/anyone, evening/midnight);
+  every row still maps to the same playback-verified call.
+- **Answer recorded for the owner's question "is there a words→meaning-space
+  mechanism": no.** The DOCUMENTED table is the only semantic path; everything else is
+  rhythm + measured grammar. The centroid vectors are audio embeddings with no text
+  alignment — a true cross-modal bridge is pipeline-side research, not a UI change.
+
 # Birdy — Session Handoff (2026-08-01, night: the production build landed, and the 1 fps was the labels)
 
 **The production build is done and green.** `/tmp/birdy-prod/assets-v5`, `--space embed
@@ -187,6 +231,33 @@ provenance, so it was not done.
   half is false at 11.02 against 3.92. Without the `if (micActive)`, playing Birdy's own
   voice near an open mic would light the Reading panel's *first* branch — "off the map,
   positions are guesses" — about our own corpus.
+
+**A PRODUCTION LEARN WITH `--inverse` RUNS SERIALLY ON 28 CORES, AND THAT IS THE REAL COST
+OF THE TWO-START — not the two descents**
+
+Measured on the v6 run: **7.5 species/min, so ~5.4 h for 2 421 species** against the ~23 min
+a plain production learn takes. Two causes, and the second is the structural one:
+
+1. **`learn --jobs` defaults to 1.** The v6 command was copied from the debug arm-C/D
+   invocation, where serial is fine at 100 species and is not fine at 2 421.
+2. **Passing `--jobs` would not have helped.** `learn.py` forces serial whenever `realism`
+   or `inverse` is not None — a torch model cannot be pickled into a fork worker, so the
+   pool is skipped with a logged reason. `--jobs 8` is *ignored* under `--inverse`.
+
+Observed while running: **28 cores, load average 2.04, GPU 0 % / 216 MiB.** The GPU holds the
+encoder and does nothing, because the encoder runs **once per type** (`init_syllable`) while
+the actual work — render, descriptor, cosine, twice per type — is CPU numpy.
+
+**The fix, for whoever runs the next one.** Batch every encoder proposal up front on the GPU
+(one forward pass over all types, which is what the GPU is for and it is idle), cache the
+proposed starting syllables, then fit in parallel with **no torch in the workers**. That
+removes the reason for the serial gate entirely and should recover most of the 8-14x the
+machine is offering. The two descents per type are a 2x cost and were predicted; the 14x is
+the fork gate, and it was not.
+
+Left running rather than fixed mid-flight: the run was 1.6 h in, healthy, and with the
+encoder basin winning a steady 51 %. Restarting would have cost the elapsed time plus an
+untested change.
 
 **THE PRODUCTION BUILD'S MAP AGREEMENT IS 12-14 POINTS WORSE THAN THE DEBUG BUILD, AND THIS
 IS THE RE-MEASUREMENT docs/20 ASKED FOR BEFORE ANY PRODUCTION DECISION** (it shipped without

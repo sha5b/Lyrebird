@@ -141,6 +141,14 @@ export function vertexShader(): string {
 		 */
 		attribute float aBloom;
 		attribute vec3 aTarget;
+		/**
+		 * Position in the level-of-detail priority order, 0..1 within the point's own
+		 * spatial cell's unfocused remainder; a focused bird's points are all 0, so
+		 * they never sit on the fade frontier. Representatives and unclustered points
+		 * rank lowest, so they are the last to thin as the camera backs off. Rewritten
+		 * only when the order changes — load and focus changes — never per frame.
+		 */
+		attribute float aRank;
 
 		/**
 		 * The three per-cluster channels, as one texture rather than three uniform arrays.
@@ -178,6 +186,16 @@ export function vertexShader(): string {
 		uniform float uSizeScale;
 		uniform float uFocus;
 		uniform float uFocusDim;
+		/**
+		 * The level-of-detail frontier, 0..1 of the priority order: the CPU's drawRange
+		 * cuts what lies past it, and the resting pass dissolves the band just behind
+		 * it in through vLod. Continuous, so coming closer only ever adds a frame's
+		 * worth of marks — the discrete levels it replaced jumped a quarter of the
+		 * corpus to all of it in one frame, which read as a pop. The responding pass
+		 * ignores it: vLod is 1 there, because activation is a claim and claims are
+		 * not thinned by the camera.
+		 */
+		uniform float uLod;
 		uniform float uMorph;
 		/** The newest generation, and how far its arrival has run (0..1). */
 		uniform float uGeneration;
@@ -224,6 +242,8 @@ export function vertexShader(): string {
 		varying float vUnassigned;
 		/** 0..1 while a newly added point is arriving. */
 		varying float vArrive;
+		/** 0..1 across the level-of-detail frontier's fade band (see aRank/uLod). */
+		varying float vLod;
 		/** Provenance category of this point (see aProv). */
 		varying float vProv;
 		/** The point's species hue (see aBird). */
@@ -308,6 +328,20 @@ export function vertexShader(): string {
 			// them read as a drift of new material settling rather than one block.
 			float born = step(uGeneration - 0.5, aBorn);
 			vArrive = mix(1.0, clamp((uArrival - aSeed * 0.35) / 0.65, 0.0, 1.0), born);
+
+			// The level-of-detail frontier, as a dissolve: points just behind it grow
+			// and fade in across a narrow band of the priority ranking (the size and
+			// alpha multipliers below) instead of appearing between two frames as the
+			// drawRange walks past them. Two percent of a cell's order is ~110 marks on
+			// the shipped corpus, so a crossing reads as a drift of detail, not a pop.
+			// Points past the frontier are not drawn at all; points well behind it sit
+			// at full weight. The responding pass exempts itself: a lit point is a
+			// claim, and claims are not thinned by the camera.
+#ifdef ACTIVE_PASS
+			vLod = 1.0;
+#else
+			vLod = smoothstep(0.0, 0.02, uLod - aRank);
+#endif
 
 			// Rearranging between layouts. Each point takes its own slightly different
 			// share of the transition, so the cloud flows apart and back together instead
@@ -440,7 +474,7 @@ export function vertexShader(): string {
 			// not structure, and at the same weight a third of the corpus in no cluster
 			// reads as a cloud that has one.
 			float size = uPointSize * (1.0 + grow) * (1.0 + 0.7 * vChosen)
-				* (1.0 - 0.35 * vUnassigned) * mix(0.35, 1.0, vArrive);
+				* (1.0 - 0.35 * vUnassigned) * mix(0.35, 1.0, vArrive) * mix(0.35, 1.0, vLod);
 			// uHighlight idles at -1 in silence, which is also the unassigned marker: without
 			// the guard every unassigned point drew 15 % larger whenever nothing sounded
 			// (the hdbscan map's haze "breathed" at note onsets, inverting the intent).
@@ -458,8 +492,11 @@ export function vertexShader(): string {
 			// point's own response: at whole-galaxy zoom persp pins every mark to the
 			// floor, which used to erase the size channel exactly when the whole cloud
 			// was visible — a responding point is now strictly larger than a resting one
-			// at every distance.
-			gl_PointSize = clamp(size * uPixelRatio * persp, 3.0 + vAct * 2.0, 42.0);
+			// at every distance. The ceiling dropped from 42 to 24: zoomed-in saucers
+			// are the worst overdraw source on an integrated GPU — transparent sprites
+			// stack, and fill rate is the budget there — and a 24 px mark is still a
+			// readable disc.
+			gl_PointSize = clamp(size * uPixelRatio * persp, 3.0 + vAct * 2.0, 24.0);
 		}
 	`;
 }
@@ -524,6 +561,8 @@ export const fragmentShader = /* glsl */ `
 	varying float vAccent;
 	varying float vUnassigned;
 	varying float vArrive;
+	/** 0..1 across the level-of-detail frontier's fade band; 1 in the active pass. */
+	varying float vLod;
 	varying float vProv;
 	varying vec3 vBird;
 	varying float vOrphan;
@@ -707,9 +746,11 @@ export const fragmentShader = /* glsl */ `
 		// a silhouette and the per-point detail disappears.
 		// A chosen point also carries more ink than the same point unselected, so the bird
 		// separates from the crowd by weight as well as by everyone else fading.
+		// vLod is the level-of-detail dissolve (see the vertex stage): 1 everywhere
+		// except the narrow band at the frontier, where it fades the new marks in.
 		float alpha =
 			uOpacity * mask * (0.62 + vAct * 0.38) * vFocus * (1.0 + 0.35 * vChosen) *
-			(1.0 - fog * 0.45) * (1.0 - 0.45 * vUnassigned) * vArrive;
+			(1.0 - fog * 0.45) * (1.0 - 0.45 * vUnassigned) * vArrive * vLod;
 		// The resting point also gives up a fifth of its weight, so "this knot is
 		// answering" moves two channels at once — class colour to full brightness
 		// above, ink weight here. Rest lands at 0.62 × 0.8 ≈ 0.50 of full alpha

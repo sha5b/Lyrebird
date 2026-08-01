@@ -208,6 +208,35 @@
 		synthesized: ['inferred', 'invented'],
 		recorded: ['unlabelled']
 	};
+	/**
+	 * How many songs each chorus class can actually draw on, over the inventory as
+	 * loaded — so a toggle that cannot change what the chorus plays says so instead of
+	 * looking live.
+	 *
+	 * **These are songs by claim strength, and the points' classes are sounds by origin.
+	 * They are two axes, and on this corpus they nearly invert.** Every song but sixteen
+	 * is `invented` — our arrangement — while 94 % of the *points* are `field`, real
+	 * recorded audio. An invented song made of recorded syllables is the normal case
+	 * here, not a contradiction: we chose the order, the bird made the sounds. Sharing
+	 * one vocabulary across both filters was meant to remove a parallel taxonomy and
+	 * instead implied the two were the same question. Both filters now name their axis.
+	 *
+	 * `null` while the inventory is unread — in shard mode `species` starts empty and a
+	 * count of zero would be a statement about the loader, not about the corpus.
+	 */
+	const chorusClassSongs = $derived.by<Record<string, number> | null>(() => {
+		const species = assets?.inventory.species ?? [];
+		if (!species.length) return null;
+		const out: Record<string, number> = { documented: 0, synthesized: 0, recorded: 0 };
+		for (const sp of species) {
+			for (const song of sp.songs ?? []) {
+				for (const [cls, values] of Object.entries(CHORUS_CLASS_CONFIDENCE)) {
+					if (values.includes(song.confidence)) out[cls]++;
+				}
+			}
+		}
+		return out;
+	});
 	let tempo = $state(1);
 	// How often the chorus starts a song, as a multiplier on its Poisson rate. Read by
 	// the scheduler per gap, so the slider retunes the next pause live (engine.songRate).
@@ -411,6 +440,12 @@
 		lastSpeciesChoice = chosen;
 		untrack(() => {
 			if (!engine) return;
+			// Handing the air to a solo chorus is a Sing-tab behaviour. The Compose tab
+			// has a species picker of its own but no chorus controls, so a pick there
+			// must not start — or hijack — a chorus the user cannot see. pickCluster
+			// switches listen → sing in the same handler and effects run after state
+			// settles, so galaxy clicks still arrive here with tab already 'sing'.
+			if (tab !== 'sing') return;
 			if (chosen) {
 				if (chorus !== 'solo') {
 					resumeGlobal = chorus === 'global';
@@ -1045,6 +1080,17 @@
 	}
 
 	/**
+	 * The text-first path: fill the strip to the words' rhythm and play it in one
+	 * click. The strip stays editable afterwards — this is a starting point, not a
+	 * locked rendering.
+	 */
+	function singWordsRhythm() {
+		if (!currentSpecies || !text.trim()) return;
+		applyRhythm();
+		singCompose();
+	}
+
+	/**
 	 * Playing a type re-expands the run-collapsed medoid — a trill is one act in the
 	 * stored sequence — and the expansion is sampled from the measured repeat rates, so
 	 * two plays of one type honestly differ in trill length. The strip shows what played.
@@ -1220,6 +1266,14 @@
 		contextSpecies = null;
 		refreshSelection();
 	}
+
+	// A tab with no chorus controls must not hold a running chorus: entering Compose
+	// stops one the same way the Stop button does — voices cut, trajectories cleared,
+	// resumeGlobal dropped, so nothing resumes behind the user's back. Returning to
+	// Sing stays silent, because an explicit stop survives the round trip.
+	$effect(() => {
+		if (tab === 'words' && chorus !== 'off') silence();
+	});
 
 	/** Redraws the selected call's thread and its species backdrop. */
 	function refreshSelection() {
@@ -1806,12 +1860,28 @@ uv run birdy-pipeline build</pre>
 									"what don't we know" is a picture, not a count. Hiding a class
 									removes its points from the picture, never from the corpus.
 								-->
+								<p class="axis mono">where the sound came from</p>
 								<div class="checks">
 									{#each [PROVENANCE.documented, PROVENANCE.learned, PROVENANCE.field, PROVENANCE.unlabelled, PROVENANCE.candidate] as cls (cls)}
-										<label class="check">
-											<input type="checkbox" bind:checked={provShown[cls]} />
+										{@const share = provShare[cls] ?? 0}
+										<!--
+											A class with no points on the loaded build gets a disabled toggle
+											rather than a live one that cannot do anything. On a W5 build
+											"synthesized" is empty by construction — a type with member
+											observations renders no synthetic copy — so the control existed and
+											could never change the picture.
+										-->
+										<label class="check" class:absent={share === 0}>
+											<input
+												type="checkbox"
+												bind:checked={provShown[cls]}
+												disabled={share === 0}
+											/>
 											<i class="swatch" style:background={provenanceColour(cls)}></i>
 											{PROV_NAMES[cls]}
+											<span class="mono faint"
+												>{share === 0 ? 'none' : `${(share * 100).toFixed(share < 0.01 ? 2 : 0)}%`}</span
+											>
 										</label>
 									{/each}
 								</div>
@@ -1861,13 +1931,8 @@ uv run birdy-pipeline build</pre>
 											<div>
 												<dt>detail</dt>
 												<dd>
-													{cost.lod === 0
-														? 'one point per knot'
-														: cost.lod === 1
-															? 'a quarter of the points'
-															: cost.lod === 2
-																? 'every point'
-																: 'settling'}
+													<!-- stats.lod is now the continuous frontier (0..1 of the corpus), not a level -->
+													{cost.lod < 0 ? 'settling' : `${Math.round(cost.lod * 100)}% of the points`}
 												</dd>
 											</div>
 											<div>
@@ -2373,6 +2438,15 @@ uv run birdy-pipeline build</pre>
 							</div>
 						{/if}
 						{#if chorus !== 'off'}
+							<!--
+								Named, because this filter and the points' one share three words and
+								answer different questions: this is songs by how strong the claim on
+								them is, that is sounds by where the audio came from. On this corpus
+								they nearly invert — nearly every song is our arrangement, nearly every
+								point is real recorded audio — so an unlabelled pair of filters reads as
+								one axis contradicting itself.
+							-->
+							<p class="axis mono">songs, by how strong the claim is</p>
 							<div class="checks">
 								{#each ['documented', 'synthesized', 'recorded'] as cls, i (cls)}
 									{@const hint =
@@ -2381,8 +2455,13 @@ uv run birdy-pipeline build</pre>
 											: cls === 'synthesized'
 												? 'Our own mapping: fitted from recordings or composed from them. Not a claim about real birds.'
 												: 'Real audio of this species with no documented function attached.'}
-									<label class="check" title={hint}>
-										<input type="checkbox" bind:checked={chorusClasses[cls]} />
+									{@const have = chorusClassSongs === null ? null : chorusClassSongs[cls]}
+									<label class="check" class:absent={have === 0} title={hint}>
+										<input
+											type="checkbox"
+											bind:checked={chorusClasses[cls]}
+											disabled={have === 0}
+										/>
 										<i
 											class="swatch"
 											style:background={provenanceColour(
@@ -2390,6 +2469,9 @@ uv run birdy-pipeline build</pre>
 											)}
 										></i>
 										{cls}
+										{#if have !== null}
+											<span class="mono faint">{have === 0 ? 'none' : have}</span>
+										{/if}
 									</label>
 								{/each}
 							</div>
@@ -2468,26 +2550,66 @@ uv run birdy-pipeline build</pre>
 							</select>
 						</label>
 						<!--
-							Three ways to fill one strip. The mode changes only what the context
-							row offers; every mode ends in the same singPhrase, so badge, note, galaxy
-							thread and coverage tally are the existing machinery throughout.
+							Text survives as rhythm only. splitSyllables yields the token count and
+							word boundaries; syllable choice comes from the measured grammar, never
+							from the words, and fitted contours are never transposed. The documented
+							keyword path below is unchanged and still renders the real call.
 						-->
-						<div class="segmented">
+						<label class="field">
+							<span class="lbl">Words for the bird to sing</span>
+							<textarea bind:value={text} placeholder="danger — come here"></textarea>
+						</label>
+						{#if preview?.source === 'documented'}
+							<div class="callout">
+								<span class="badge {preview.confidence}">{confidenceLabel(preview.confidence).text}</span>
+								<p class="note">
+									Matched <span class="mono">{preview.matched.join(', ')}</span> → {preview.label}
+								</p>
+								<p class="note faint">{preview.note}</p>
+								<button
+									class="primary wide"
+									disabled={!engine}
+									onclick={singWords}
+									title="Render the playback-verified call, unchanged by the composer."
+								>Sing the documented call</button>
+							</div>
+						{:else if preview}
+							<!--
+								The inverse case is said out loud: no keyword matched, so what
+								plays is the words' rhythm in this bird's own syllables — labelled
+								invented, because that is what it is (docs/08 §8.5).
+							-->
+							<div class="callout">
+								<span class="badge {preview.confidence}">{confidenceLabel(preview.confidence).text}</span>
+								<p class="note">No documented call matches these words.</p>
+								<p class="note faint">
+									What plays is a rendering of the words' rhythm in this bird's own
+									syllables — invented, not a translation of the words.
+								</p>
+							</div>
+							{#if preview.documentedElsewhere?.length}
+								<p class="note faint">
+									A documented call for this exists, but not for this bird:
+									{#each preview.documentedElsewhere as other (other)}
+										<button class="link" onclick={() => (speciesId = other)}>
+											{assets.speciesCommon(other)}
+										</button>
+									{/each}
+								</p>
+							{/if}
+						{/if}
+						<!--
+							The primary path: one click turns the words into a strip (their
+							rhythm, this bird's syllables) and plays it. The strip stays
+							editable afterwards — the button is a starting point, not a lock.
+						-->
+						<div class="row">
 							<button
-								class:on={composeMode === 'free'}
-								onclick={() => (composeMode = 'free')}
-								title="Build a sequence from this bird's fitted syllable types, in your order. Labelled invented: our sequence."
-							>Free</button>
-							<button
-								class:on={composeMode === 'guided'}
-								onclick={() => (composeMode = 'guided')}
-								title="The same chips, ranked by the transition probabilities counted from this bird's field recordings, with repeated motifs offered whole. Labelled: measured statistics, our bout."
-							>Guided</button>
-							<button
-								class:on={composeMode === 'types'}
-								onclick={() => (composeMode = 'types')}
-								title="Orderings this bird was recorded singing, re-expanded into playable bouts. Trill lengths are sampled from the measured repeat rates."
-							>Song types</button>
+								class="primary"
+								disabled={!engine || !currentSpecies || !text.trim()}
+								onclick={singWordsRhythm}
+								title="Fill the strip to the words' rhythm — syllable count and word breaks; the words choose nothing else — and play it straight away."
+							>Sing the words</button>
 						</div>
 
 						{#if composeTokens.length}
@@ -2529,12 +2651,44 @@ uv run birdy-pipeline build</pre>
 						{:else}
 							<p class="note faint">
 								{#if composeMode === 'types'}
-									Pick a song type below — the strip shows what played.
+									Pick a song type from "Build the strip by hand" — the strip shows what played.
 								{:else}
-									The strip is empty. Add chips below, or let a text set the rhythm.
+									The strip is empty. Write words above, or open "Build the strip by hand".
 								{/if}
 							</p>
 						{/if}
+
+						<!--
+							The manual machinery — mode switch, suggestions, motif offers,
+							song types, the keyboard — folds behind one line: the words are the
+							primary input now, and three ways to fill a strip by hand should not be
+							the first thing the tab shows. Nothing inside changed; only its place
+							in the markup moved.
+						-->
+						<details class="rollup block">
+							<summary class="mono faint">build the strip by hand</summary>
+							<!--
+								Three ways to fill one strip. The mode changes only what the context
+								row offers; every mode ends in the same singPhrase, so badge, note, galaxy
+								thread and coverage tally are the existing machinery throughout.
+							-->
+							<div class="segmented">
+								<button
+									class:on={composeMode === 'free'}
+									onclick={() => (composeMode = 'free')}
+									title="Build a sequence from this bird's fitted syllable types, in your order. Labelled invented: our sequence."
+								>Free</button>
+								<button
+									class:on={composeMode === 'guided'}
+									onclick={() => (composeMode = 'guided')}
+									title="The same chips, ranked by the transition probabilities counted from this bird's field recordings, with repeated motifs offered whole. Labelled: measured statistics, our bout."
+								>Guided</button>
+								<button
+									class:on={composeMode === 'types'}
+									onclick={() => (composeMode = 'types')}
+									title="Orderings this bird was recorded singing, re-expanded into playable bouts. Trill lengths are sampled from the measured repeat rates."
+								>Song types</button>
+							</div>
 
 						{#if composeMode === 'types'}
 							{#if composeTyping}
@@ -2646,47 +2800,8 @@ uv run birdy-pipeline build</pre>
 									</button>
 								{/each}
 							</div>
-							<!--
-								Text survives as rhythm only. splitSyllables yields the token count and
-								word boundaries; syllable choice comes from the suggestions, never from
-								the hash, and fitted contours are never transposed. The documented
-								keyword path below is unchanged and still renders the real call.
-							-->
-							<label class="field">
-								<span class="lbl">Phrase rhythm from words</span>
-								<textarea bind:value={text} placeholder="danger — come here"></textarea>
-							</label>
-							<button
-								class="wide"
-								disabled={!currentSpecies || !text.trim()}
-								onclick={applyRhythm}
-								title="Fill the strip to this text's rhythm: its syllable count and word breaks. The words choose nothing else — syllables come from the measured syntax."
-							>Set the rhythm from the words</button>
-							{#if preview?.source === 'documented'}
-								<div class="callout">
-									<span class="badge {preview.confidence}">{confidenceLabel(preview.confidence).text}</span>
-									<p class="note">
-										Matched <span class="mono">{preview.matched.join(', ')}</span> → {preview.label}
-									</p>
-									<p class="note faint">{preview.note}</p>
-									<button
-										class="primary wide"
-										disabled={!engine}
-										onclick={singWords}
-										title="Render the playback-verified call, unchanged by the composer."
-									>Sing the documented call</button>
-								</div>
-							{:else if preview?.documentedElsewhere?.length}
-								<p class="note faint">
-									A documented call for this exists, but not for this bird:
-									{#each preview.documentedElsewhere as other (other)}
-										<button class="link" onclick={() => (speciesId = other)}>
-											{assets.speciesCommon(other)}
-										</button>
-									{/each}
-								</p>
-							{/if}
 						{/if}
+						</details>
 					</section>
 				{:else if tab === 'listen'}
 					<section class="block">
@@ -3711,6 +3826,28 @@ uv run birdy-pipeline serve</pre>
 
 	.check input {
 		width: auto;
+	}
+
+	/* A class with nothing in it on the loaded build. Kept visible rather than removed:
+	   "this corpus has none of these" is a fact about the corpus and worth reading, and a
+	   row that vanishes cannot say it. Same treatment as `.legend li.absent`. */
+	.check.absent {
+		opacity: 0.5;
+	}
+
+	.check.absent input {
+		cursor: not-allowed;
+	}
+
+	/* Which question a filter answers. The chorus filter and the point filter share three
+	   words and are two different axes; before this the only way to know was to read the
+	   source. */
+	.axis {
+		margin: 0 0 0.3rem;
+		font-size: 0.6rem;
+		letter-spacing: 0.04em;
+		text-transform: lowercase;
+		color: var(--ink-faint);
 	}
 
 	.check .swatch {

@@ -166,7 +166,8 @@
 		material.uniforms.uAccent.value = eased;
 	}
 
-	// One float per point, rewritten every frame from the listener's per-point response.
+	// One float per point, rewritten from the listener's per-point response every frame
+	// that something sounds — silent frames upload nothing, see the gate in useTask.
 	// A dynamic attribute rather than a texture: 4287 floats is 17 kB, and going through
 	// a data texture would cost a fetch per vertex to save an upload that is already free.
 	const activation = untrack(() => new Float32Array(assets.points.n));
@@ -180,9 +181,9 @@
 	const orphan = untrack(() => new Float32Array(assets.points.n));
 	const orphanAttribute = new THREE.BufferAttribute(orphan, 1).setUsage(THREE.DynamicDrawUsage);
 
-	// The wavefront channel: one float per point, rewritten every frame from the front
-	// pass below. The third dynamic per-point attribute — same 75 k floats, same free
-	// upload as `activation` and `orphan`.
+	// The wavefront channel: one float per point, rewritten from the front pass below
+	// while a front is travelling. The third dynamic per-point attribute — same 75 k
+	// floats, same free upload as `activation` and `orphan`.
 	const front = untrack(() => new Float32Array(assets.points.n));
 	const frontAttribute = new THREE.BufferAttribute(front, 1).setUsage(THREE.DynamicDrawUsage);
 
@@ -328,6 +329,10 @@
 			// extra weight already say which bird it is; the crowd has to stay visible for
 			// there to be anything to stand out *of*.
 			uFocusDim: { value: 0.22 },
+			// The level-of-detail frontier, 0..1 of the priority order — rewritten every
+			// frame from the camera distance by updateLod, so the initial value only has
+			// to be sane for the first frame. The responding pass ignores it (see vLod).
+			uLod: { value: 1 },
 			uOpacity: { value: 1 },
 			uProvHide: { value: new THREE.Vector4() },
 			uProvHideCand: { value: 0 },
@@ -497,7 +502,7 @@
 	const prevAct = new Float32Array(clusterCount);
 
 	/**
-	 * **Level of detail, by knot.**
+	 * **Level of detail: one priority order, one moving frontier.**
 	 *
 	 * Measured, not guessed: the per-frame CPU work of this component is 1.9 ms of a
 	 * 16.7 ms budget at 214 154 points, and almost all of that is the active-index scan
@@ -505,17 +510,34 @@
 	 * blended sprites — so the only thing that buys frames is drawing fewer of them,
 	 * and no amount of tightening the JS would have helped.
 	 *
-	 * The subsample is by knot rather than by stride, because a knot is the thing that
-	 * has a name, a function and a citation: at galaxy distance the cloud is drawn as
-	 * one representative per cluster — the member nearest its own centroid, an observed
-	 * point and never an average — and the members fade in as the camera comes down.
-	 * A random stride would thin the same picture; this one thins toward the structure
-	 * the galaxy is *about*, and it is exactly what the reader can act on at that
-	 * distance, since a knot is all a label can point at from there.
+	 * The order is by knot rather than by stride, because a knot is the thing that has
+	 * a name, a function and a citation: first come one representative per cluster —
+	 * the member nearest its own centroid, an observed point and never an average —
+	 * and every unclustered point, the ones the discovery map exists to show. The
+	 * remainder follows in stride tiers. A random stride would thin the same picture;
+	 * this one thins toward the structure the galaxy is *about*, and it is exactly what
+	 * the reader can act on at a distance, since a knot is all a label can point at
+	 * from there.
 	 *
-	 * Three levels, all built once at load, swapped by camera distance with a hysteresis
-	 * band so a slow drift across a threshold cannot flicker. A focused species always
-	 * draws in full: choosing a bird is asking to see its marks.
+	 * What replaced the three discrete levels is a continuous frontier: the resting
+	 * pass draws the first `shownFraction(viewRadii)` of the order, smoothstepped from
+	 * the representatives' share at LOD_FAR to everything at LOD_NEAR, and the shader
+	 * dissolves the band just behind the frontier in (aRank/uLod, see shaders.ts). The
+	 * levels used to jump from a quarter of the corpus to all of it in one frame at
+	 * LOD_NEAR — up to ~260 k sprites appearing at once, with a full 348 k index
+	 * re-upload on top, exactly while the camera was moving. A frontier only ever adds
+	 * or removes a frame's worth of marks, so it needs no hysteresis, and the index
+	 * buffers upload once at load and once per focus change, never per swap.
+	 *
+	 * The resting pass is also split into 64 spatial cells (a 4×4×4 grid over the
+	 * cloud's bounds), each with its own bounding sphere and frustum culling on. Both
+	 * passes used to run with culling off, so a close zoom paid vertex cost for the
+	 * whole corpus while up to nine tenths of it sat behind the camera — on the
+	 * owner's Intel iGPU that was the close-zoom half of the frame-rate collapse. Each
+	 * cell holds its points in the same global priority order, so applying the fraction
+	 * within the cell keeps the semantics: the frontier is per cell, the order is the
+	 * corpus's. A focused species leads every cell's order, so choosing a bird still
+	 * draws its marks whole, whatever the distance.
 	 */
 	/**
 	 * Per-frame retention of the resting wash's driver, at 60 Hz, rising and falling.
@@ -530,16 +552,43 @@
 
 	const LOD_FAR = 3.2;
 	const LOD_NEAR = 1.6;
-	const LOD_HYSTERESIS = 0.15;
+	/**
+	 * Cells per axis of the resting pass's spatial split: 4³ = 64. Few enough that the
+	 * extra draw calls cost nothing next to the rasterisation they save, fine enough
+	 * that a close zoom leaves most of the corpus outside the frustum.
+	 */
+	const LOD_GRID = 4;
 
-	const lodLevels = untrack(() => {
+	/**
+	 * The point's position in its cell's priority order, normalised 0..1 — the `aRank`
+	 * the shader's frontier fade is quoted against. Rewritten only when the order
+	 * changes (load, and a focus change via `reorderCells`), so a static attribute
+	 * with a manual needsUpdate, not one of the per-frame dynamics.
+	 */
+	const rank = untrack(() => new Float32Array(assets.points.n));
+	const rankAttribute = untrack(() => new THREE.BufferAttribute(rank, 1));
+
+	interface RestCell {
+		/** Grid index 0..63, stable across reorders — the {#each} key. */
+		key: number;
+		/** The cell's points in the global priority order; the index is a reorder of this. */
+		base: Uint32Array;
+		index: THREE.BufferAttribute;
+		geometry: THREE.BufferGeometry;
+		/** Leading points belonging to the focused species; 0 when nothing is focused. */
+		focused: number;
+		/** base.length - focused: the share the frontier fraction applies to. */
+		rest: number;
+	}
+
+	const lod = untrack(() => {
 		const n = assets.points.n;
 		const cluster = geometry.attributes.aCluster.array as Float32Array;
 		const pos = layout.positions;
 		const centroids = view.centroids;
 		// The representative of each knot: the member closest to the knot's centroid.
 		const bestFor = new Map<number, { i: number; d: number }>();
-        for (let i = 0; i < n; i++) {
+		for (let i = 0; i < n; i++) {
 			const c = cluster[i];
 			if (c < 0) continue;
 			const dx = pos[i * 3] - centroids[c * 3];
@@ -549,103 +598,202 @@
 			const held = bestFor.get(c);
 			if (!held || d < held.d) bestFor.set(c, { i, d });
 		}
-		// A point in no cluster has no knot to stand in for it, and it is the one point
-		// the discovery map exists to show — so it draws at every level, always.
-		const inFar = new Uint8Array(n);
-		for (let i = 0; i < n; i++) if (cluster[i] < 0) inFar[i] = 1;
-		for (const { i } of bestFor.values()) inFar[i] = 1;
+		// Head of the order: every representative, plus every point in no cluster — a
+		// point with no knot has nothing to stand in for it, and it is the one point
+		// the discovery map exists to show, so it draws ahead of every frontier.
+		const head = new Uint8Array(n);
+		for (let i = 0; i < n; i++) if (cluster[i] < 0) head[i] = 1;
+		for (const { i } of bestFor.values()) head[i] = 1;
+		let repCount = 0;
+		for (let i = 0; i < n; i++) repCount += head[i];
 
-		// **The levels are nested: level 0 ⊂ level 1 ⊂ level 2.** This is what stops the
-		// swap from being visible. The mid level used to be a plain `i % 4` stride, which
-		// is a quarter of the points but *not a superset of the galaxy level* — a knot's
-		// representative is the member nearest its centroid and has no reason to be a
-		// multiple of four, so flying in from galaxy distance made the point you were
-		// looking at vanish and unrelated members of the same knot appear in its place.
-		// The count went up and the picture flickered, which reads as a fault rather than
-		// as detail arriving. Coming in must only ever *add* marks.
-		//
-		// Ascending by construction, so no sort is needed and the index buffer is in
-		// vertex order, which is also the order the GPU would prefer to fetch it in.
-		const far: number[] = [];
-		const mid: number[] = [];
+		// One fixed ordering: the head first, then every remaining point in stride
+		// tiers (i % 4). Nested by construction — raising the frontier only ever *adds*
+		// marks, which is what stops a crossing from reading as a fault.
+		const priority = new Uint32Array(n);
+		let k = 0;
+		for (let i = 0; i < n; i++) if (head[i]) priority[k++] = i;
+		for (let tier = 0; tier < 4; tier++) {
+			for (let i = 0; i < n; i++) if (!head[i] && i % 4 === tier) priority[k++] = i;
+		}
+
+		// The 4×4×4 grid over the cloud's own bounds. A degenerate axis lands every
+		// point in cell 0 of that axis, which is correct — they genuinely coincide.
+		let minX = Infinity,
+			minY = Infinity,
+			minZ = Infinity;
+		let maxX = -Infinity,
+			maxY = -Infinity,
+			maxZ = -Infinity;
 		for (let i = 0; i < n; i++) {
-			if (inFar[i]) {
-				far.push(i);
-				mid.push(i);
-			} else if (i % 4 === 0) {
-				mid.push(i);
-			}
+			const x = pos[i * 3];
+			const y = pos[i * 3 + 1];
+			const z = pos[i * 3 + 2];
+			if (x < minX) minX = x;
+			if (x > maxX) maxX = x;
+			if (y < minY) minY = y;
+			if (y > maxY) maxY = y;
+			if (z < minZ) minZ = z;
+			if (z > maxZ) maxZ = z;
 		}
-		return [new Uint32Array(far), new Uint32Array(mid), null] as const;
+		const sx = LOD_GRID / Math.max(1e-6, maxX - minX);
+		const sy = LOD_GRID / Math.max(1e-6, maxY - minY);
+		const sz = LOD_GRID / Math.max(1e-6, maxZ - minZ);
+		const cellOf = (i: number) => {
+			const ix = Math.min(LOD_GRID - 1, ((pos[i * 3] - minX) * sx) | 0);
+			const iy = Math.min(LOD_GRID - 1, ((pos[i * 3 + 1] - minY) * sy) | 0);
+			const iz = Math.min(LOD_GRID - 1, ((pos[i * 3 + 2] - minZ) * sz) | 0);
+			return ix + LOD_GRID * (iy + LOD_GRID * iz);
+		};
+
+		// Each cell holds its points in the SAME global priority order, so a per-cell
+		// drawRange of the one fraction keeps the frontier's meaning: anywhere you
+		// look, the first marks are the knots' representatives.
+		const cellCount = LOD_GRID * LOD_GRID * LOD_GRID;
+		const counts = new Uint32Array(cellCount);
+		for (let m = 0; m < n; m++) counts[cellOf(priority[m])]++;
+		const bases: (Uint32Array | null)[] = new Array(cellCount).fill(null);
+		for (let c = 0; c < cellCount; c++) {
+			if (counts[c]) bases[c] = new Uint32Array(counts[c]);
+		}
+		const cursor = new Uint32Array(cellCount);
+		for (let m = 0; m < n; m++) {
+			const p = priority[m];
+			const c = cellOf(p);
+			bases[c]![cursor[c]++] = p;
+		}
+
+		geometry.setAttribute('aRank', rankAttribute);
+		// Reach past the point's resting position. A tight bounding sphere would let the
+		// frustum test cull a cell whose marks are in fact visible, and the marks move:
+		// the wave displaces resting points up to 0.06 box units (the launch cap), the
+		// idle drift 0.004, the sub-discard response terms ~0.005, and a 24 px sprite
+		// spans ~0.01 at a close zoom — ~0.08 against the [-1,1] box the projection
+		// normalises to, measured on the shipped build (radius 1.60). 0.12 covers it
+		// with margin and costs a fifth of a cell's width (cells are 0.5 across).
+		const pad = 0.12;
+		const cells: RestCell[] = [];
+		for (let c = 0; c < cellCount; c++) {
+			const base = bases[c];
+			if (!base) continue;
+			// Centre as the mean, radius as the farthest point: exact, and computed
+			// once — the arrangement no longer morphs, so the cells never move.
+			let cx = 0,
+				cy = 0,
+				cz = 0;
+			for (let m = 0; m < base.length; m++) {
+				cx += pos[base[m] * 3];
+				cy += pos[base[m] * 3 + 1];
+				cz += pos[base[m] * 3 + 2];
+			}
+			cx /= base.length;
+			cy /= base.length;
+			cz /= base.length;
+			let r2 = 0;
+			for (let m = 0; m < base.length; m++) {
+				const dx = pos[base[m] * 3] - cx;
+				const dy = pos[base[m] * 3 + 1] - cy;
+				const dz = pos[base[m] * 3 + 2] - cz;
+				const d2 = dx * dx + dy * dy + dz * dz;
+				if (d2 > r2) r2 = d2;
+			}
+			const index = new THREE.BufferAttribute(new Uint32Array(base), 1);
+			const g = new THREE.BufferGeometry();
+			// The same BufferAttribute objects the base geometry holds, so all 64 cells
+			// name the same GPU buffers and a per-frame upload still happens exactly
+			// once. Only the index — the cell's slice of the order — is its own.
+			for (const [name, attribute] of Object.entries(geometry.attributes)) {
+				g.setAttribute(name, attribute as THREE.BufferAttribute);
+			}
+			g.setIndex(index);
+			g.boundingSphere = new THREE.Sphere(
+				new THREE.Vector3(cx, cy, cz),
+				Math.sqrt(r2) + pad
+			);
+			g.setDrawRange(0, 0);
+			for (let m = 0; m < base.length; m++) {
+				rank[base[m]] = base.length > 1 ? m / (base.length - 1) : 0;
+			}
+			cells.push({ key: c, base, index, geometry: g, focused: 0, rest: base.length });
+		}
+		return { cells, repFraction: repCount / n };
 	});
 
-	const restIndex = untrack(() => new Uint32Array(Math.max(1, assets.points.n)));
 	/**
-	 * Membership scratch for the focused-bird branch of `updateLod`, allocated once.
-	 * Only that branch needs it, and it is the rarest of the three.
+	 * The share of the priority order in front of the frontier, smoothstepped from the
+	 * representatives' share at LOD_FAR to the whole corpus at LOD_NEAR.
 	 */
-	const lodMask = untrack(() => new Uint8Array(Math.max(1, assets.points.n)));
-	const restIndexAttribute = untrack(() =>
-		new THREE.BufferAttribute(restIndex, 1).setUsage(THREE.DynamicDrawUsage)
-	);
-	const restGeometry = untrack(() => {
-		const g = new THREE.BufferGeometry();
-		for (const [name, attribute] of Object.entries(geometry.attributes)) {
-			g.setAttribute(name, attribute as THREE.BufferAttribute);
+	function shownFraction(radii: number): number {
+		const t = Math.min(1, Math.max(0, (LOD_FAR - radii) / (LOD_FAR - LOD_NEAR)));
+		const s = t * t * (3 - 2 * t);
+		return lod.repFraction + (1 - lod.repFraction) * s;
+	}
+
+	/**
+	 * Put the focused bird's marks first in every cell, and re-rank.
+	 *
+	 * A chosen bird draws whole, whatever the distance: selecting it is the request to
+	 * see its marks, not a summary of them. Its points take rank 0, so they never sit
+	 * on the fade frontier either; the remainder keeps the global priority order and
+	 * is ranked over itself, so the fraction applies to it exactly. This is the only
+	 * reorder there is — it runs on a focus change, never per frame, and the uploads
+	 * it triggers (64 small indices plus the rank attribute) happen only then.
+	 */
+	function reorderCells(focus: number) {
+		const species = geometry.attributes.aSpecies.array as Float32Array;
+		for (const cell of lod.cells) {
+			const idx = cell.index.array as Uint32Array;
+			let f = 0;
+			if (focus >= 0) {
+				for (let m = 0; m < cell.base.length; m++) {
+					const p = cell.base[m];
+					if (Math.abs(species[p] - focus) < 0.5) {
+						idx[f++] = p;
+						rank[p] = 0;
+					}
+				}
+			}
+			let r = 0;
+			const restCount = cell.base.length - f;
+			for (let m = 0; m < cell.base.length; m++) {
+				const p = cell.base[m];
+				if (focus >= 0 && Math.abs(species[p] - focus) < 0.5) continue;
+				idx[f + r] = p;
+				rank[p] = restCount > 1 ? r / (restCount - 1) : 0;
+				r++;
+			}
+			cell.focused = f;
+			cell.rest = restCount;
+			cell.index.needsUpdate = true;
 		}
-		g.setIndex(restIndexAttribute);
-		g.boundingSphere = geometry.boundingSphere;
-		g.setDrawRange(0, 0);
-		return g;
-	});
-	let lodLevel = -1;
+		rankAttribute.needsUpdate = true;
+	}
+
 	let lodFocus = -2;
 
+	/**
+	 * Walk the frontier to where the camera is. A frame's work is one uniform write and
+	 * 64 drawRange updates — integers into index buffers that do not move — so there
+	 * is no per-frame buffer traffic here at all. The only upload is `reorderCells`,
+	 * on a focus change.
+	 */
 	function updateLod() {
 		const focus = material.uniforms.uFocus.value as number;
-		// Hysteresis: a level only changes once the camera is clearly past the band it
-		// would move into, so drifting along a threshold cannot toggle every frame.
-		let wanted = lodLevel;
-		const far = viewRadii > LOD_FAR + (lodLevel === 0 ? -LOD_HYSTERESIS : LOD_HYSTERESIS);
-		const near = viewRadii < LOD_NEAR - (lodLevel === 2 ? -LOD_HYSTERESIS : LOD_HYSTERESIS);
-		if (far) wanted = 0;
-		else if (near) wanted = 2;
-		else if (lodLevel !== 1 && !far && !near) wanted = 1;
-		if (wanted === lodLevel && focus === lodFocus) return;
-		lodLevel = wanted < 0 ? 1 : wanted;
-		lodFocus = focus;
-
-		const base = lodLevels[lodLevel];
-		if (base === null) {
-			// Everything: the identity index IS the full cloud, whether or not a bird is
-			// chosen — a focus can only ever add points, and at this level there are none
-			// left to add.
-			for (let i = 0; i < restIndex.length; i++) restIndex[i] = i;
-			restGeometry.setDrawRange(0, restIndex.length);
-		} else if (focus < 0) {
-			// The common case, and it is a single typed-array copy. It used to scan the whole
-			// corpus and allocate a fresh byte per point to do it — 348 kB of garbage per
-			// swap at the production build, produced exactly while the camera is moving.
-			restIndex.set(base);
-			restGeometry.setDrawRange(0, base.length);
-		} else {
-			// A chosen bird draws whole, whatever the distance: selecting it is the request
-			// to see its marks, not a summary of them. This is the one branch that has to
-			// visit every point, and its membership scratch is reused rather than allocated.
-			const species = geometry.attributes.aSpecies.array as Float32Array;
-			const inBase = lodMask;
-			inBase.fill(0);
-			for (let k = 0; k < base.length; k++) inBase[base[k]] = 1;
-			let n = 0;
-			for (let i = 0; i < restIndex.length; i++) {
-				if (inBase[i] || Math.abs(species[i] - focus) < 0.5) restIndex[n++] = i;
-			}
-			restGeometry.setDrawRange(0, n);
+		if (focus !== lodFocus) {
+			lodFocus = focus;
+			reorderCells(focus);
 		}
-		restIndexAttribute.needsUpdate = true;
+		const fraction = shownFraction(viewRadii);
+		material.uniforms.uLod.value = fraction;
+		let drawn = 0;
+		for (const cell of lod.cells) {
+			const count = cell.focused + Math.round(fraction * cell.rest);
+			cell.geometry.setDrawRange(0, count);
+			drawn += count;
+		}
 		if (stats) {
-			stats.lod = lodLevel;
-			stats.pointsDrawn = restGeometry.drawRange.count;
+			stats.lod = fraction;
+			stats.pointsDrawn = drawn;
 		}
 	}
 
@@ -659,6 +807,13 @@
 
 	/** Set by `updateFronts`: is any wavefront still travelling this frame. */
 	let waveActive = false;
+	/**
+	 * Whether the previous frame was silent, for the upload gate below: sustained quiet
+	 * skips the four GPU uploads and the O(n) active-index scan; the transition into
+	 * quiet uploads zeros once, so the GPU state matches what the full path would have
+	 * left behind.
+	 */
+	let wasQuiet = false;
 
 	/** Scratch for the learning channel, so the texture write allocates nothing. */
 	const learnPerCluster = untrack(() => new Float32Array(Math.max(1, clusterCount)));
@@ -743,8 +898,10 @@
 	 * - amplitude: the member's own measured response, with the cluster activation as
 	 *   floor, so the front ignites the most-similar members hardest.
 	 *
-	 * Cost is bounded by the live clusters' members, not the corpus: a resting frame
-	 * touches only the two fill(0)s, and a chorus frame a few hundred points.
+	 * Cost is bounded by the live clusters' members, not the corpus: a frame with no
+	 * front travelling touches only the fill(0), and a chorus frame a few hundred
+	 * points. (A fully silent frame no longer calls this at all — see the upload gate
+	 * in useTask.)
 	 */
 	function updateFronts(delta: number) {
 		const acts = signal.activations;
@@ -817,7 +974,7 @@
 	 * a little inside the front of the cloud, far edge a little past the back, so the
 	 * gradient always spans the thing being looked at.
 	 */
-	function fitFog(points: THREE.Points | undefined) {
+	function fitFog(points: THREE.Object3D | undefined) {
 		const cam = camera.current;
 		const sphere = geometry.boundingSphere;
 		if (!cam || !points || !sphere) return;
@@ -833,7 +990,7 @@
 	}
 	let viewRadii = 3;
 
-	let points = $state<THREE.Points | undefined>();
+	let points = $state<THREE.Group | undefined>();
 
 	/**
 	 * Pitch the wave is quoted against — near the middle of the corpus, in octaves. The
@@ -984,37 +1141,67 @@
 		u.uAnswer.value += (answer - u.uAnswer.value) * (1 - Math.pow(rate, delta * 60));
 		u.uHighlight.value = signal.best;
 
-		// The three channels, interleaved into the texture's RGB. One pass over the
-		// clusters (a thousand, not a corpus), where the uniform-array version did three
-		// bulk copies and three uniform uploads per material per frame.
-		//
-		// The learning pipeline breathes through its own channel, not the audio one.
-		// Slower than a note and never marked as sung: this is work happening at a place
-		// in the corpus, not a sound, and it must not be mistaken for one — the shader
-		// turns it into a slow swell and keeps the 9 Hz jump for actual responses.
-		const acts = signal.activations;
-		const sungs = signal.sung;
-		const breath = learning.length ? 0.45 + 0.35 * Math.sin(u.uTime.value * 3.2) : 0;
-		learnPerCluster.fill(0);
-		for (const c of learning) {
-			if (c >= 0 && c < clusterCount) {
-				learnPerCluster[c] = Math.max(learnPerCluster[c], breath);
+		// **Silent frames upload nothing.** The four GPU writes below — three
+		// corpus-length attributes (activation, orphan, front ≈ 3 × 1.4 MB at the
+		// production corpus) and the cluster-state texture — used to fire every frame,
+		// sounding or not: ~250 MB/s of shared-memory traffic on the owner's Intel
+		// iGPU for a picture that was not changing. Quiet is the same four-way idle
+		// test `updateActiveIndex` already early-outs on; a sounding orphan note keeps
+		// `level` up because the extractor hears the synth's own output, so the pulse
+		// channel is safe under it. Sustained quiet skips the lot, including the O(n)
+		// active-index scan; the first silent frame uploads zeros once.
+		const quiet = !signal.level && signal.best < 0 && !waveActive && !learning.length;
+		if (!quiet) {
+			wasQuiet = false;
+			// The three channels, interleaved into the texture's RGB. One pass over the
+			// clusters (a thousand, not a corpus), where the uniform-array version did three
+			// bulk copies and three uniform uploads per material per frame.
+			//
+			// The learning pipeline breathes through its own channel, not the audio one.
+			// Slower than a note and never marked as sung: this is work happening at a place
+			// in the corpus, not a sound, and it must not be mistaken for one — the shader
+			// turns it into a slow swell and keeps the 9 Hz jump for actual responses.
+			const acts = signal.activations;
+			const sungs = signal.sung;
+			const breath = learning.length ? 0.45 + 0.35 * Math.sin(u.uTime.value * 3.2) : 0;
+			learnPerCluster.fill(0);
+			for (const c of learning) {
+				if (c >= 0 && c < clusterCount) {
+					learnPerCluster[c] = Math.max(learnPerCluster[c], breath);
+				}
 			}
-		}
-		for (let c = 0; c < clusterCount; c++) {
-			const o = c * 4;
-			clusterState[o] = acts[c] ?? 0;
-			clusterState[o + 1] = sungs[c] ?? 0;
-			clusterState[o + 2] = learnPerCluster[c];
-		}
-		clusterTexture.needsUpdate = true;
+			for (let c = 0; c < clusterCount; c++) {
+				const o = c * 4;
+				clusterState[o] = acts[c] ?? 0;
+				clusterState[o + 1] = sungs[c] ?? 0;
+				clusterState[o + 2] = learnPerCluster[c];
+			}
+			clusterTexture.needsUpdate = true;
 
-		activation.set(signal.pointActivation.subarray(0, activation.length));
-		activationAttribute.needsUpdate = true;
-		orphan.set(signal.orphanPulse.subarray(0, orphan.length));
-		orphanAttribute.needsUpdate = true;
-		updateFronts(delta * speed);
-		updateActiveIndex();
+			activation.set(signal.pointActivation.subarray(0, activation.length));
+			activationAttribute.needsUpdate = true;
+			orphan.set(signal.orphanPulse.subarray(0, orphan.length));
+			orphanAttribute.needsUpdate = true;
+			updateFronts(delta * speed);
+			updateActiveIndex();
+		} else if (!wasQuiet) {
+			wasQuiet = true;
+			clusterState.fill(0);
+			clusterTexture.needsUpdate = true;
+			activation.fill(0);
+			activationAttribute.needsUpdate = true;
+			orphan.fill(0);
+			orphanAttribute.needsUpdate = true;
+			front.fill(0);
+			frontAttribute.needsUpdate = true;
+			// The front bookkeeping resets with the channel: a stale prevAct would
+			// swallow the rising edge of the first note after the silence.
+			prevAct.fill(0);
+			frontAge.fill(Number.POSITIVE_INFINITY);
+			learnPerCluster.fill(0);
+			if (activeGeometry.drawRange.count !== 0) activeGeometry.setDrawRange(0, 0);
+			if (stats) stats.pointsResponding = 0;
+		}
 		updateLod();
 
 		// "Heard, but nothing claimed": ease the regional breath toward the nearest
@@ -1035,9 +1222,9 @@
 
 	$effect(() => () => {
 		geometry.dispose();
-		restGeometry.dispose();
-		// Disposes its own index; the attributes it shares with `geometry` are that
-		// geometry's to free, and freeing them twice would drop live GPU buffers.
+		// Each cell disposes its own index; the attributes every geometry shares are
+		// `geometry`'s to free, and freeing them twice would drop live GPU buffers.
+		for (const cell of lod.cells) cell.geometry.dispose();
 		activeGeometry.dispose();
 		clusterTexture.dispose();
 		material.dispose();
@@ -1045,7 +1232,15 @@
 	});
 </script>
 
-<T.Points bind:ref={points} geometry={restGeometry} {material} frustumCulled={false} />
+<!-- The resting pass, one Points per spatial cell: same material, shared attribute
+	buffers, per-cell index + bounding sphere, so the frustum culls what a close zoom
+	leaves behind the camera. The group stands in for the old single Points in fitFog —
+	the cells carry no transform of their own, so its matrixWorld is theirs. -->
+<T.Group bind:ref={points}>
+	{#each lod.cells as cell (cell.key)}
+		<T.Points geometry={cell.geometry} {material} frustumCulled={true} />
+	{/each}
+</T.Group>
 <T.Points
 	geometry={activeGeometry}
 	material={materialActive}
