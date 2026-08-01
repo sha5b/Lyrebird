@@ -52,7 +52,24 @@ TEMPERATURE = 0.12
 # with no node to light, no trajectory to draw and no label to show. The cap is now high
 # enough that the corpus decides the number, and `cluster_plan` says out loud when it is
 # the cap talking instead.
-K_CAP = 1024
+#
+# **Raised from 1024 on 2026-08-01, once the renderer stopped being the reason for it.**
+# 1024 was not a pipeline number at all: the browser declared the three per-cluster
+# channels as `uniform float[clusterCount]` arrays in its *vertex* shader, so 1 024
+# knots cost 3 072 vertex uniform floats and stood only because the development GPU is
+# generous. The cost of that ceiling was measured and is not small — on the 2 143-type
+# debug corpus, **1 231 types (57 %) had no cluster**, and a type with no cluster lights
+# nothing when it sounds: 26 of 100 songs could not light a single note. The channels
+# now live in a data texture (`app/src/lib/galaxy/shaders.ts`, `uClusterState`), so the
+# renderer's ceiling is texture size and no longer binds.
+#
+# What binds now is k-means: Lloyd's iteration is O(n k d), so k is a build-time cost
+# rather than a browser one. 8192 covers the debug corpora outright and cuts what the
+# production corpus has to shed by 8x. A corpus that wants more than this does not want
+# a bigger k-means — 96 % of points already carry a type from `typing.json`, so the
+# honest answer at that scale is to assign those points to their own type and cluster
+# only what has no label (docs/22 §22.5, the vote the build currently re-derives).
+K_CAP = 8192
 
 #: `harvest.SOURCE`, duplicated rather than imported: harvest pulls in the audio decode
 #: stack and galaxy must stay importable where only numpy/sklearn exist.

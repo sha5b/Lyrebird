@@ -97,7 +97,13 @@ export const WAVE_SOURCES = 3;
  */
 export const SIZE_REFERENCE = 4.0;
 
-export function vertexShader(clusterCount: number): string {
+/**
+ * The point cloud's vertex stage. It no longer takes the cluster count: the three
+ * per-cluster channels moved into `uClusterState` (see the uniform's comment), so the
+ * shader's source is the same string for a 64-knot galaxy and a 14 000-knot one, and
+ * the number of knots is no longer a compile-time constant of the renderer.
+ */
+export function vertexShader(): string {
 	return /* glsl */ `
 		#define WAVE_SOURCES ${WAVE_SOURCES}
 
@@ -136,15 +142,34 @@ export function vertexShader(clusterCount: number): string {
 		attribute float aBloom;
 		attribute vec3 aTarget;
 
-		uniform float uActivation[${Math.max(1, clusterCount)}];
-		/** 1 where this cluster is the note being sung, 0 where it merely resembles it. */
-		uniform float uSung[${Math.max(1, clusterCount)}];
 		/**
-		 * Where the pipeline is working right now. Its own channel, deliberately below a
-		 * response: folded into uActivation it drove the same 9 Hz jump and the same ink as
-		 * a match, and silent pipeline work read as knots dancing for no reason.
+		 * The three per-cluster channels, as one texture rather than three uniform arrays.
+		 *
+		 * **This is what the cluster count is limited by, so it is why the texture exists.**
+		 * Declared as three float arrays of length N, the channels cost 3N vertex uniform
+		 * floats: at N = 1024 that is 3 072, already past the WebGL2 guaranteed minimum and
+		 * standing only because this machine's GPU is generous. It also put a hard ceiling
+		 * on the pipeline's K_CAP, and a capped build is one where types lose their knot and the
+		 * sound they name lights nothing — on the 2 143-type debug corpus, 1 231 types
+		 * (57 %) had no cluster and could not light, label or draw a trajectory. A texture
+		 * is sampled, not declared, so the ceiling moves to texture size and the number of
+		 * knots becomes the corpus's decision again.
+		 *
+		 * R = activation (live match or scheduled pulse), G = sung (1 only for a note we
+		 * scheduled and know the identity of), B = learning (pipeline work, a slow swell
+		 * that must never read as a response — folded into R it drove the same 9 Hz jump
+		 * and the same ink as a match).
 		 */
-		uniform float uLearning[${Math.max(1, clusterCount)}];
+		uniform sampler2D uClusterState;
+		uniform vec2 uClusterTexSize;
+
+		/** Row-major cluster index -> its RGB channels, at texel centres, nearest-filtered. */
+		vec3 clusterState(int index) {
+			float i = float(index);
+			float x = (mod(i, uClusterTexSize.x) + 0.5) / uClusterTexSize.x;
+			float y = (floor(i / uClusterTexSize.x) + 0.5) / uClusterTexSize.y;
+			return texture2D(uClusterState, vec2(x, y)).rgb;
+		}
 		uniform float uTime;
 		uniform float uLevel;
 		uniform float uPointSize;
@@ -237,7 +262,8 @@ export function vertexShader(clusterCount: number): string {
 			bool assigned = aCluster >= -0.5;
 			int index = assigned ? int(aCluster + 0.5) : 0;
 			vUnassigned = assigned ? 0.0 : 1.0;
-			float clusterAct = assigned ? uActivation[index] : 0.0;
+			vec3 state = assigned ? clusterState(index) : vec3(0.0);
+			float clusterAct = state.r;
 			// aAct already folds the cluster activation into the point's own affinity; the
 			// cluster array is the floor, so a scheduled node still lights every member
 			// even when nothing is being matched against it.
@@ -246,7 +272,7 @@ export function vertexShader(clusterCount: number): string {
 			// breathes at the rate the breath arrives with, but it never drives the 9 Hz
 			// jump below — that motion is reserved for sound, so work and audio can no
 			// longer be mistaken for each other.
-			float learn = assigned ? uLearning[index] : 0.0;
+			float learn = state.b;
 			vAct = max(act, learn * 0.55);
 			vSeed = aSeed;
 			// Selection is a two-sided change, not just a dimming of everyone else. With
@@ -274,7 +300,7 @@ export function vertexShader(clusterCount: number): string {
 			// An unassigned point is never the note being sung: it is not in the cluster
 			// that is sounding, because it is not in a cluster.
 			vAccent = assigned
-				? ((uFocus < 0.0) ? clamp(uSung[index], 0.0, 1.0) : vChosen)
+				? ((uFocus < 0.0) ? clamp(state.g, 0.0, 1.0) : vChosen)
 				: 0.0;
 
 			// Arriving. Points added by the newest grow fade and swell in rather than

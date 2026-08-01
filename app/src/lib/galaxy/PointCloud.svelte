@@ -244,13 +244,44 @@
 		return g;
 	});
 
+	/**
+	 * The three per-cluster channels as one RGB texture (see `uClusterState` in
+	 * shaders.ts for why it is not three uniform arrays). Width is capped at 1024 so
+	 * the texture stays within every implementation's 2D limit whatever the corpus
+	 * asks for: 1 024 knots is one row, 13 903 is fourteen.
+	 */
+	const clusterTexWidth = Math.min(1024, Math.max(1, clusterCount));
+	const clusterTexHeight = Math.max(1, Math.ceil(Math.max(1, clusterCount) / clusterTexWidth));
+	const clusterState = untrack(
+		() => new Float32Array(clusterTexWidth * clusterTexHeight * 4)
+	);
+	const clusterTexture = untrack(() => {
+		const t = new THREE.DataTexture(
+			clusterState,
+			clusterTexWidth,
+			clusterTexHeight,
+			THREE.RGBAFormat,
+			THREE.FloatType
+		);
+		// Nearest, no mipmaps: every read is an exact texel lookup of one cluster's
+		// channels. Any filtering here would blend one knot's activation into its
+		// neighbour's, which is a claim about the corpus that the sampler would be
+		// making on its own.
+		t.minFilter = THREE.NearestFilter;
+		t.magFilter = THREE.NearestFilter;
+		t.generateMipmaps = false;
+		t.needsUpdate = true;
+		return t;
+	});
+
 	const material = new THREE.ShaderMaterial({
-		vertexShader: vertexShader(clusterCount),
+		vertexShader: vertexShader(),
 		fragmentShader,
 		uniforms: {
-			uActivation: { value: new Float32Array(clusterCount) },
-			uSung: { value: new Float32Array(clusterCount) },
-			uLearning: { value: new Float32Array(clusterCount) },
+			uClusterState: { value: clusterTexture },
+			uClusterTexSize: {
+				value: new THREE.Vector2(clusterTexWidth, clusterTexHeight)
+			},
 			// The live accent: `accentNow` below is mutated in place each frame, and the
 			// renderer reads the colour object's channels when it uploads the uniform.
 			uAccent: { value: new THREE.Color(ACCENT) },
@@ -466,6 +497,72 @@
 	 */
 	const frontAge = new Float32Array(clusterCount).fill(Number.POSITIVE_INFINITY);
 	const prevAct = new Float32Array(clusterCount);
+
+	/**
+	 * Each point's cluster, read straight off the attribute the shader reads, so the
+	 * CPU-side active test and the GPU-side one can never disagree about membership.
+	 */
+	const clusterOfPoint = untrack(
+		() => geometry.attributes.aCluster.array as Float32Array
+	);
+
+	/** Scratch for the learning channel, so the texture write allocates nothing. */
+	const learnPerCluster = untrack(() => new Float32Array(Math.max(1, clusterCount)));
+
+	/**
+	 * The responding pass draws only the points that can respond.
+	 *
+	 * **Why this exists.** Both passes used to draw the whole corpus, and the fragment
+	 * shader threw away whichever half it did not want (`ACTIVE_PASS` discards
+	 * everything resting, the resting pass discards everything responding). That is two
+	 * full vertex passes and two full sprite rasterisations per frame for a picture in
+	 * which, on a quiet frame, nothing at all is responding — 428 000 vertex
+	 * invocations at 214 154 points, and it scales with the corpus, which is what made
+	 * the frame rate fall when the galaxy went from 52 670 points to 214 154.
+	 *
+	 * The index is rebuilt per frame from the same quantities the vertex shader reads,
+	 * with the thresholds set *below* the shader's cuts (0.22 against 0.25, 0.04
+	 * against 0.05). A point that clears the shader's bar but not this one would vanish
+	 * from both passes, so the set is deliberately a superset: it may draw a point the
+	 * fragment shader then discards, and it may never omit one the shader would keep.
+	 * The resting pass still draws everything, because on a quiet frame everything is
+	 * resting and that is the picture.
+	 */
+	const activeIndex = untrack(() => new Uint32Array(Math.max(1, assets.points.n)));
+	const activeIndexAttribute = untrack(() =>
+		new THREE.BufferAttribute(activeIndex, 1).setUsage(THREE.DynamicDrawUsage)
+	);
+	const activeGeometry = untrack(() => {
+		const g = new THREE.BufferGeometry();
+		// The same BufferAttribute objects, so both geometries name the same GPU buffers
+		// and every per-frame upload still happens exactly once.
+		for (const [name, attribute] of Object.entries(geometry.attributes)) {
+			g.setAttribute(name, attribute as THREE.BufferAttribute);
+		}
+		g.setIndex(activeIndexAttribute);
+		g.boundingSphere = geometry.boundingSphere;
+		g.setDrawRange(0, 0);
+		return g;
+	});
+
+	function updateActiveIndex() {
+		const pointAct = signal.pointActivation;
+		const acts = signal.activations;
+		let n = 0;
+		for (let i = 0; i < clusterOfPoint.length; i++) {
+			const c = clusterOfPoint[i];
+			let v = pointAct[i] ?? 0;
+			if (c >= 0) {
+				const clusterAct = (acts[c] ?? 0) * 0.25;
+				if (clusterAct > v) v = clusterAct;
+				const learn = learnPerCluster[c] * 0.55;
+				if (learn > v) v = learn;
+			}
+			if (v >= 0.22 || front[i] >= 0.04) activeIndex[n++] = i;
+		}
+		activeIndexAttribute.needsUpdate = true;
+		activeGeometry.setDrawRange(0, n);
+	}
 
 	/**
 	 * The per-frame front pass. Everything it draws with is a measurement:
@@ -703,29 +800,38 @@
 
 		u.uLevel.value = signal.level;
 		u.uHighlight.value = signal.best;
-		const target = u.uActivation.value as Float32Array;
-		target.set(signal.activations.subarray(0, target.length));
-		const sung = u.uSung.value as Float32Array;
-		sung.set(signal.sung.subarray(0, sung.length));
 
+		// The three channels, interleaved into the texture's RGB. One pass over the
+		// clusters (a thousand, not a corpus), where the uniform-array version did three
+		// bulk copies and three uniform uploads per material per frame.
+		//
 		// The learning pipeline breathes through its own channel, not the audio one.
 		// Slower than a note and never marked as sung: this is work happening at a place
 		// in the corpus, not a sound, and it must not be mistaken for one — the shader
 		// turns it into a slow swell and keeps the 9 Hz jump for actual responses.
-		const learn = u.uLearning.value as Float32Array;
-		learn.fill(0);
-		if (learning.length) {
-			const breath = 0.45 + 0.35 * Math.sin(u.uTime.value * 3.2);
-			for (const c of learning) {
-				if (c >= 0 && c < learn.length) learn[c] = Math.max(learn[c], breath);
+		const acts = signal.activations;
+		const sungs = signal.sung;
+		const breath = learning.length ? 0.45 + 0.35 * Math.sin(u.uTime.value * 3.2) : 0;
+		learnPerCluster.fill(0);
+		for (const c of learning) {
+			if (c >= 0 && c < clusterCount) {
+				learnPerCluster[c] = Math.max(learnPerCluster[c], breath);
 			}
 		}
+		for (let c = 0; c < clusterCount; c++) {
+			const o = c * 4;
+			clusterState[o] = acts[c] ?? 0;
+			clusterState[o + 1] = sungs[c] ?? 0;
+			clusterState[o + 2] = learnPerCluster[c];
+		}
+		clusterTexture.needsUpdate = true;
 
 		activation.set(signal.pointActivation.subarray(0, activation.length));
 		activationAttribute.needsUpdate = true;
 		orphan.set(signal.orphanPulse.subarray(0, orphan.length));
 		orphanAttribute.needsUpdate = true;
 		updateFronts(delta * speed);
+		updateActiveIndex();
 
 		// "Heard, but nothing claimed": ease the regional breath toward the nearest
 		// knot the listener reports, or back to silence. Eased rather than switched,
@@ -745,10 +851,19 @@
 
 	$effect(() => () => {
 		geometry.dispose();
+		// Disposes its own index; the attributes it shares with `geometry` are that
+		// geometry's to free, and freeing them twice would drop live GPU buffers.
+		activeGeometry.dispose();
+		clusterTexture.dispose();
 		material.dispose();
 		materialActive.dispose();
 	});
 </script>
 
 <T.Points bind:ref={points} {geometry} {material} frustumCulled={false} />
-<T.Points {geometry} material={materialActive} renderOrder={1} frustumCulled={false} />
+<T.Points
+	geometry={activeGeometry}
+	material={materialActive}
+	renderOrder={1}
+	frustumCulled={false}
+/>
