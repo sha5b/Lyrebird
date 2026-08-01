@@ -139,6 +139,20 @@ class Pipeline:
         #: flag should be visible in the shell history; this is the surface where it should
         #: just do the better thing. `--no-embed-typing` turns it off.
         embed_typing: bool = True,
+        #: The amortised inverse encoder, when one has been trained (`birdy-pipeline inverse`).
+        #: Absent on most machines and absent until something has been trained, in which case
+        #: every fit here starts from the cluster median exactly as before.
+        inverse_path: Path | None = None,
+        #: **On by default whenever an encoder is actually present**, for the same reason
+        #: `embed_typing` is: the two-start descent runs the search from the cluster median
+        #: AND from the encoder's proposal and keeps the better, so it **cannot fit worse
+        #: than the median-only path by construction** — and it passed its pre-registered
+        #: gate at +0.0330 median resynthesis cosine with 0 of 1 661 types and 0 of 100
+        #: species regressing (`pipeline/analysis/inverse_gate.md`). Making a
+        #: never-worse arm opt-in would mean this surface defaulting to the worse of two
+        #: things it has in front of it. It costs about 5x the fit time, which is why the
+        #: command line stays explicit and this is where it just does the better thing.
+        inverse_two_start: bool = True,
     ):
         self.store_path = Path(store_path)
         self.inventory_path = Path(inventory_path)
@@ -153,6 +167,8 @@ class Pipeline:
         self.critic_path = Path(critic_path) if critic_path else None
         self.critic_weight = float(critic_weight)
         self.embed_typing = bool(embed_typing)
+        self.inverse_path = Path(inverse_path) if inverse_path else None
+        self.inverse_two_start = bool(inverse_two_start)
         self.job: Job | None = None
         self._lock = threading.Lock()
         #: The novelty scorer cache: (critic mtime, centroids mtime, critic, scorer).
@@ -481,6 +497,24 @@ class Pipeline:
 
         typing: list[dict[str, Any]] = []
         prior = learn.previous_fit(self.learned_path)
+        # The amortised inverse, when a model is on disk. Imported here rather than at module
+        # scope because it pulls in torch, and a server on a machine without torch must still
+        # serve every other verb. A load failure is logged and treated as absence: a fit that
+        # starts from the cluster median is the shipped behaviour, not a degraded one.
+        inverse_encoder = None
+        if self.inverse_path is not None and self.inverse_path.exists():
+            try:
+                from . import inverse as inverse_mod
+
+                inverse_encoder = inverse_mod.Inverse.load(self.inverse_path)
+                job.log(
+                    f"inverse encoder {self.inverse_path.name} on {inverse_encoder.device}"
+                    + (" — TWO-START: the descent runs from the cluster median and from the "
+                       "encoder's proposal and the better one wins, so this cannot fit worse "
+                       "than the median alone" if self.inverse_two_start else "")
+                )
+            except Exception as exc:  # a missing torch, a stale format: not fatal here
+                job.log(f"inverse encoder not used: {exc}")
         discovered = list(harvest.load_discovered(self.discovered_path))
         named = {sp["id"] for sp in inventory.get("species", [])} | {
             e["id"] for e in discovered if e.get("id")
@@ -535,6 +569,11 @@ class Pipeline:
             typing=typing,
             on_species=_on_species,
             jobs=default_jobs() if jobs is None else max(1, int(jobs)),
+            # Read per fit, for the same reason the critic is: `inverse train` may have
+            # rewritten it since the server started. `None` is the median-only path and is
+            # bit-identical to the fit before any of this existed.
+            inverse=inverse_encoder,
+            inverse_two_start=self.inverse_two_start,
         )
         # The label-free tail, identical to `cmd_learn`'s — this is the fit the ingested
         # (unlabelled) audio actually arrives through, so it must not drift from the

@@ -1311,10 +1311,20 @@
 	/**
 	 * How the knots are found. `kmeans` asks "which of these k groups is this sound in"
 	 * and answers for every sound; `hdbscan` asks where the dense regions are and leaves
-	 * the rest unassigned. Only the second can say "this belongs to none of them", which
-	 * is the answer that matters for audio nobody has identified.
+	 * the rest unassigned — only that one can say "this belongs to none of them", which is
+	 * the answer that matters for audio nobody has identified; `label` gives every typed
+	 * sound its own type's knot and runs k-means over the untyped remainder.
+	 *
+	 * **`label` is the default because it is what shipped and what measured best.** It is
+	 * worth +4.3 points of field-point retrieval over k-means on the same corpus, in both
+	 * anchor conditions, and the shipped production build is a `label` build — 348 461
+	 * points, 14 003 knots, every type covered (docs/22 §22.8). Defaulting to `kmeans` here
+	 * meant the one button most likely to be pressed rebuilt the galaxy with the arm the
+	 * evidence rejected, and quietly disagreed with the build the app was loading.
+	 * Discovery still needs `hdbscan` and coverage-at-any-cost still needs `kmeans`; both
+	 * are one click away.
 	 */
-	let buildClustering = $state<'kmeans' | 'hdbscan' | 'label'>('kmeans');
+	let buildClustering = $state<'kmeans' | 'hdbscan' | 'label'>('label');
 	let buildMinCluster = $state(25);
 
 	/** Seconds spent waiting for a control process that is not answering yet. */

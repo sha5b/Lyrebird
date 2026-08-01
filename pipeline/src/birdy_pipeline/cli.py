@@ -49,6 +49,8 @@ DEFAULT_HARVEST_STORE = REPO_ROOT / "pipeline" / "out" / "harvest"
 DEFAULT_LEARNED_INVENTORY = REPO_ROOT / "data" / "learned-inventory.json"
 DEFAULT_DISCOVERED = REPO_ROOT / "data" / "discovered-species.json"
 DEFAULT_CRITIC = REPO_ROOT / "pipeline" / "out" / "critic.pt"
+#: Where `inverse train` writes, and where `serve` looks for an encoder to fit with.
+DEFAULT_INVERSE = REPO_ROOT / "pipeline" / "out" / "inverse.pt"
 CALIBRATION_NAME = "syrinx-calibration.json"
 #: The store-sidecar `critic embed` writes: one 32-d embedding per stored syllable, in
 #: `syllables.jsonl`/`patches.f16` row order. Its presence is what makes `build --space
@@ -2705,6 +2707,8 @@ def cmd_serve(args: argparse.Namespace) -> int:
             critic_path=Path(args.critic) if args.critic else None,
             critic_weight=args.critic_weight,
             embed_typing=args.embed_typing,
+            inverse_path=Path(args.inverse) if args.inverse else None,
+            inverse_two_start=not args.no_inverse_two_start,
         ),
         port=args.port,
     )
@@ -3885,6 +3889,22 @@ def build_parser() -> argparse.ArgumentParser:
                    help="cluster syllable types with the seven hand-weighted numbers of "
                         "`learn._observation_vector` instead of the critic's learned "
                         "embedding, even when a critic is loaded")
+    # The amortised inverse, on the same "use it when it exists" footing as the critic. The
+    # two-start it enables cannot fit worse than the median-only path by construction and
+    # passed its gate at +0.0330 median cosine with nothing regressing
+    # (pipeline/analysis/inverse_gate.md), so the Learn tab uses it when a model is on disk.
+    # It costs roughly 5x the fit time, which is the reason for the off switch.
+    s.add_argument("--inverse", default=str(DEFAULT_INVERSE),
+                   help="trained inverse encoder every fit started from the Learn tab should "
+                        "use, when it exists (default %(default)s)")
+    s.add_argument("--no-inverse", dest="inverse", action="store_const", const=None,
+                   help="ignore any trained inverse encoder; every fit starts from the "
+                        "cluster median, which is bit-identical to the shipped path")
+    s.add_argument("--no-inverse-two-start", action="store_true",
+                   help="with an encoder present, start from its proposal ONLY instead of "
+                        "descending from both starts and keeping the better. Cheaper and "
+                        "measured worse: the single-start arm failed its gate at +0.0140 "
+                        "against a +0.02 bar with 45 %% of types regressing")
     s.set_defaults(func=cmd_serve, embed_typing=True)
 
     d = sub.add_parser("demo", help="render a few example wavs for listening")

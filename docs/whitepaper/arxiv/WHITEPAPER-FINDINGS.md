@@ -514,3 +514,198 @@ correction in place.
 6. **#12**, **#13**, **#17**, **#19** — documentation drift, one pass.
 7. **#4** — the bench re-judgment of the cosine-gated set, and one spectrogram pair. This is
    the largest piece of work on the list and the one a reviewer will ask for first.
+
+---
+
+# Findings from building the figures
+
+Appended 2026-08-01 by the agent that wrote `docs/whitepaper/arxiv/figures.py`.
+Collected while joining `data/learned-inventory.json` to
+`pipeline/out/harvest-gan/{typing.json,syllables.jsonl}` and the audio cache,
+rendering through `birdy_pipeline.syrinx`, and re-plotting every chart in
+`docs/whitepaper/build_whitepaper.py` against `docs/01`–`docs/23`.
+
+**Nothing here was fixed.** Numbering continues from the list above.
+
+## HIGH
+
+### 24. The old builder's `fig_corpus` plots a "harvest-gan at 40 k" row that is a different measurement from the rows around it, and the figure never says so
+
+`build_whitepaper.py` lines 391–397 plot five store rows with species counts
+`22, 13, 121, 3 811, 3 811`. The `13` is the store-trim bug of finding #3 /
+`docs/09` §9.8 — the row is a *13-species* store where chance placement is 7.7 %,
+sitting between a 22-species row and a 121-species row where chance is 4.5 % and
+0.8 %. In the PNG the species counts are also drawn with
+`transform=a1.get_yaxis_transform()` at `x=-0.02`, which puts them on top of the
+store names, so the defect is invisible *and* illegible (this is finding #20's
+rendering defect, and the two compound).
+
+The new `corpus.pdf` splits the two units into two panels and marks that row in
+clay with the caveat in the caption. But the underlying issue is that **the repo
+has no single place that lists the five stores with their species counts and their
+chance levels together**, so any future figure will re-inherit the same trap.
+`docs/14` §14.3 and `docs/09` §9.8 each hold half of it.
+
+**Severity: high** for a published figure; the fix in the figure is done, the fix
+in the docs is not.
+
+### 25. The audio cache is 22.05 kHz mono, while the whole descriptor and fit path is specified at 48 kHz — and every spectral comparison in `docs/19` was measured against it
+
+`pipeline/out/audio-cache/INAT*.wav` is uniformly `22050 Hz, 1 ch, PCM_16`
+(checked with `soundfile.info` over the directory). `docs/08` §8.2 and
+`features.SAMPLE_RATE` specify 48 kHz mono, and `render_syllable`'s default is
+48 kHz.
+
+Consequences that are not stated where the numbers are quoted:
+
+- Nothing above **11.025 kHz** exists in the cache. The corpus holds syllables
+  whose fitted contours reach 8–9 kHz, whose second and third partials are
+  therefore simply absent from any cached-audio comparison.
+- `docs/19`'s MCD and multi-resolution STFT distances, `docs/21`'s spectral bench,
+  and the specbench fixtures are all computed against this cache. Whatever
+  resampling happens on the way in is a *fixed* transformation applied to the real
+  side and not to the render side, so it is a systematic asymmetry in the very
+  measurement used to argue that the cosine cannot hear. It does not overturn the
+  argument — a 0.1 correlation is not going to become 0.4 — but "the ruler is
+  measured on half-bandwidth audio" belongs next to the ruler's numbers.
+- The tonal-pin comparison of §21.2 (real spectral flatness 0.044 against ours
+  0.0005) is a real-versus-render comparison across that same asymmetry.
+
+**Severity: high**, because it is a stated-methods gap in the paper's central
+negative result, and cheap to state.
+
+### 26. Every cached member of a fitted type routinely comes from ONE recording, so the type's own within-type spread is unmeasurable from the cache
+
+Joining `typing.json` to the cache for the three types the new
+`spectral-examples.pdf` plots: `monarcha_melanopsis/L02` has 18 cached members
+from **1** recording, `arundinax_aedon/L06` has 23 from **1**, and
+`pellorneum_tickelli/L02` has 19 from **1**. Sampling more widely: of the 2 773
+fitted types with at least 8 cached members and a fitted duration in
+0.10–0.45 s, the overwhelming majority draw all of them from a single recording,
+**2 573 of those 2 773 types (92.8 %) draw every cached member from
+exactly one recording**, and the remaining 200 draw from two; none from three.
+That follows directly from the cache holding at most two recordings per species
+(`docs/23` §23.6.1).
+
+This matters beyond the figure. `docs/22` §22.8's field-point retrieval, and any
+"the type's members agree" statement, are being read on populations where "member"
+and "same recording" are nearly the same predicate — which is exactly the
+recordist confound of Wall 2 re-entering through the query population rather than
+through the embedding. `docs/20` is careful to gate on held-out *recordings* for
+the bridge; the type-level statistics are not gated the same way and it is not
+recorded that they cannot be.
+
+**Severity: high** as a scope statement on the type-level numbers.
+
+## MEDIUM
+
+### 27. `main.tex` is a one-column `article`, but the figure brief and the figure set are sized for two columns
+
+`main.tex` line 36 is `\documentclass[11pt,a4paper]{article}` with
+`\usepackage[margin=2.6cm]{geometry}`, so `\linewidth` is 6.22 in and there is no
+second column. Every existing `\includegraphics` uses `width=\linewidth`.
+
+`figures.py` provides the two widths the brief asked for (3.4 in and 7.0 in) and
+carries font-size headroom for the resulting 0.89 scale, but the mismatch is real
+and someone has to decide it: either the manuscript goes two-column (in which case
+the single-column width is right and the full-width figures need `figure*`), or
+the figures should be drawn at 6.22 in and 3.0 in. Drawn widths are recorded per
+figure in `figures/MANIFEST.md`.
+
+Also, and separately: `\graphicspath{{../figures/}}` points at the old PNG
+directory, and the `\includegraphics` calls name `.png` explicitly, so **the
+manuscript as committed will not pick up any of the new PDFs**. Two one-line edits,
+listed at the top of the manifest. Not made here, because `main.tex` is another
+agent's file.
+
+**Severity: medium** — the paper does not compile against the new figures until
+those two lines change.
+
+### 28. The old `fig_spaces` figure quotes a bridge cosine of 0.962 as "the debug build", which is right, next to a 0.8 gate — but `docs/11` §11.3 reports 0.9268 for the same mechanism on the 47 k store, and the two are used interchangeably
+
+`build_whitepaper.py` line 533 prints "The debug build passes at 0.962; the linear
+ridge it replaced broke at 0.7997." Both numbers check out —
+`docs/20` line 5 gives 0.962 / 0.9623 for the end-to-end debug build, and
+`docs/11` line 52 gives 0.7997 for the linear map — but `docs/11` line 79's
+in-build comparison is `0.7997 → 0.9268`, i.e. the RFF ridge scores 0.9268 there,
+not 0.962. Three RFF numbers (0.9268, 0.962, 0.9623) exist for three different
+stores and the docs do not always name which. The new `spaces-bridge.pdf` plots
+0.8585 / 0.7997 / 0.9623 and names the store for each in its footnote; a reader
+of `docs/11` alone would build a different bar chart from the same claim.
+
+**Severity: medium** (a reader can quote the wrong one).
+
+### 29. `docs/21` §21.2's clamp count is 6 617 of 12 724 types, but none of the three types the acoustic figure plots rides the clamp at all, and `clamp_incidence` disagrees with the headline on the examples
+
+`syrinx.clamp_incidence` measured on the three pinned example types returns zero
+floor and zero ceiling incidence while audible, on a 0.15–16.0 clamp. That is
+consistent with 52 % of types clamping — three types are a tiny sample — but it
+means the corpus-level statistic cannot be illustrated on an arbitrary type, and
+`gestures.pdf` says "no clamp while audible" on all three panels. Worth checking
+whether the 6 617 figure is dominated by a particular timbre class or pitch range
+before it is quoted again as "over half the corpus"; `cli.py report_reachability`
+logs it but the docs record no breakdown.
+
+**Severity: medium** — the number is probably fine, its *distribution* is
+undocumented, and the paper leans on it as a headline in Wall 5.
+
+### 30. `data/learned-inventory.json` holds 13 903 syllable entries over 2 423 species, of which 13 859 carry a `resynthesisCosine` — and the manuscript quotes 13 859 types over 2 421 species
+
+Counted directly: 2 423 species entries, 13 903 syllable entries, 13 859 with
+`learned.resynthesisCosine`. The 44-entry difference is the authored inventory
+(`data/inventory.json`'s hand-written syllables, which have no `learned` block and
+should not be counted as fitted types). So "13 859 types" is right and "2 421
+species" is right *for fitted species*, while the file's own species array is
+2 423 — the 2 421 / 2 423 discrepancy of finding #22, now located: **the species
+array includes species that contribute only authored syllables.** No code change
+needed; the arithmetic just needs one sentence somewhere, because three plausible
+counts (2 421, 2 423, 3 811) are all live in the docs.
+
+Median resynthesis cosine over the 13 859 recomputes to **0.6477**, mean 0.597,
+min $-0.4447$, max 0.9797, share above 0.7 = 40.5 %, share below 0.3 = 12.0 %.
+That reproduces `docs/16` §16.3's 0.648 and the worst type's $-0.445$ exactly.
+
+**Severity: medium** (reproduces cleanly; only the species-count provenance is
+undocumented).
+
+## LOW
+
+### 31. The old figure set's palette contains a colour that fails the project's own accessibility bar, and the failure is load-bearing
+
+`build_whitepaper.py`'s `VIOLET_PALE` (`#e7dff0`) and `SLATE_PALE` (`#dcdee4`) are
+used as *series* fills carrying distinct meanings — for example
+`fig_avex` distinguishes arms A, B and C as `SLATE_PALE / VIOLET / VIOLET_PALE`,
+and `fig_map_quality`'s stack uses `VIOLET_PALE` against `SLATE_PALE` for two
+adjacent segments. Run through the house data-viz validator against a white
+surface, that pair measures normal-vision ΔE **2.3** against a floor of 15 (and
+ΔE 1.7 under simulated protanopia), with contrast 1.35:1 and 1.30:1 against the
+page — so on a greyscale print, or for a colour-blind reader, or at any
+reasonable reading distance, the two arms are one colour. The new set keeps the violet/clay/slate *semantics* and
+replaces the pale-against-pale distinctions with a validated
+violet / moss / ochre / clay set plus a single-hue ordinal ramp for the one
+part-to-whole stack.
+
+**Severity: low** (cosmetic in effect, but it silently removed a distinction the
+old figures needed).
+
+### 32. `docs/whitepaper/figures/eq/*.png` are matplotlib mathtext renders of equations the manuscript now sets in LaTeX
+
+`render_equations()` writes eight transparent PNGs (`syrinx`, `gamma`, `comb`,
+`respiration`, `ntxent`, `rff`, `cosine`, `knnlift`). `main.tex` sets all of these
+as real LaTeX. They have no consumer once the DOCX builder goes, and
+`figures.py` deliberately does not reproduce them.
+
+**Severity: low** (cleanup note).
+
+### 33. cmr10, the only Computer Modern face matplotlib bundles, silently renders `>` as an inverted question mark
+
+Not a repo defect, recorded because it bit this work and will bit anyone who
+matches the manuscript's `lmodern` in a matplotlib figure: with
+`font.serif = ['cmr10']`, a literal `>` or `<` in figure text renders as a glyph
+from TeX's OT1 slot, not as a comparison operator, **with no warning**. The first
+build of `tonal-pin.pdf` read "SCI ¿ 1.5". cmr10 also has no bold face and no em
+dash. `figures.py` routes all comparison operators and signs through mathtext and
+uses no bold anywhere; the reason is in its module docstring.
+
+**Severity: low**, but it is a silent-corruption class of bug in any figure code
+that uses this font.

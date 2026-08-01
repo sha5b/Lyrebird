@@ -86,7 +86,7 @@
 \usepackage{xcolor}
 \usepackage[colorlinks=true,allcolors=blue!55!black,breaklinks=true]{hyperref}
 
-\graphicspath{{../figures/}}
+\graphicspath{{figures/}}
 
 \captionsetup{font=small,labelfont=bf}
 \captionsetup[table]{skip=4pt}
@@ -445,13 +445,20 @@ its answer.
 \section{The system}
 \label{sec:system}
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{corpus}
+\caption{The corpus grew in breadth and then in depth. Syllable counts and species counts are separate panels because they are separate units. The second row is drawn in clay because a store-trim bug deleted twelve of its 25 species, so any per-species figure measured on it has chance 7.7\,\% rather than 4.0\,\% and is not comparable to the rows around it. The right panel is the depth harvest: 71 of the 100 targeted species reach the 20-recording bar, and the tenth percentile of 5 is the archive's ceiling rather than the harvest's.}
+\label{fig:corpus}
+\end{figure*}
+
 Figure~\ref{fig:architecture} gives the whole chain. Stages 1--4 run offline in Python;
 stage 5 is a browser application reading static assets, with no Python process and no model
 weights.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\linewidth]{architecture.png}
+\includegraphics[width=\linewidth]{architecture}
 \caption{The system end to end. Stages 1--4 are offline and are the subject of
 Sections~\ref{sec:system}. Stage 5 reads static JSON and \texttt{float32} assets. The
 evidence labels of Section~\ref{sec:premise} sit over everything stage 5 displays.}
@@ -558,7 +565,7 @@ literature.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\linewidth]{signal-chain.png}
+\includegraphics[width=\linewidth]{signal-chain}
 \caption{The synthesis chain. Two gesture contours drive the oscillator; turbulence, the
 $f_0$-tracking resonance and the fixed tracheal comb shape the result. The dashed blocks are
 implemented, parity-tested and off by default: their published physics is not in doubt, but
@@ -633,7 +640,7 @@ noise generator is part of the contract: xorshift32 with a specified seeding rul
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\linewidth]{claim-ladder.png}
+\includegraphics[width=\linewidth]{claim-ladder}
 \caption{The five evidence labels, the requirement for each, and the corpus counts at the
 time of writing. Every phrase the application speaks carries one of them; nothing renders
 without one.}
@@ -643,6 +650,20 @@ without one.}
 % =====================================================================
 \section{What is done differently, and where it stops}
 \label{sec:walls}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{gestures}
+\caption{The fitted gestures behind the three acoustic examples. Every syllable in the corpus is two named physical contours --- air-sac pressure and labial tension --- rather than a latent code, and this is the whole of the interpretability claim. The dashed line is the tension clamp of the parameterisation; a contour that rides it is at a limit of the parameterisation rather than at a fitted value, which happens in 6\,617 of 12\,724 types across the production learn.}
+\label{fig:gestures}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{spectral-examples}
+\caption{What the physical model reproduces, and what it misses. Three fitted types, taken from the top, the middle and the bottom of the resynthesis-cosine ordering over the types whose members have cached audio; the corpus median is 0.648 over 13\,859 types, so the middle row is a median type rather than a chosen success. Top: a clean descending whistle, which the oscillator and its tracking tract reproduce closely. Middle: the median case --- the pitch is right, and the pulse train that carries the real syllable's timbre is replaced by a steady tone. Bottom: a failure, and the third panel says why --- the type's member contours disagree by kilohertz, so the cluster median the fit starts from describes no member well. The cosine is the objective the fit optimised and is \emph{not} a ranking of audible fidelity (Section~\ref{sec:walls}).}
+\label{fig:spectral}
+\end{figure*}
 
 \subsection{The contribution, stated plainly}
 
@@ -679,7 +700,7 @@ each other at 0.925.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\linewidth]{ruler.png}
+\includegraphics[width=\linewidth]{ruler}
 \caption{Left: correlation with audible distortion for the incumbent objective and its
 proposed replacement, $n = 200$ types on the 100-species debug store against the cached
 audio. Right: the replacement's win share at exploratory scale and at pre-registered gate
@@ -718,7 +739,7 @@ novelty and the unknown-bird path.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\linewidth]{confound.png}
+\includegraphics[width=\linewidth]{confound}
 \caption{Left: what the embedding organises by. Right: every swept point from both
 adversarial heads, as relative change in recordist lift against relative change in species
 lift. The shaded region is what the pre-registered gates asked for and no arm reaches it.
@@ -786,7 +807,7 @@ regions''; no better map class was pursued, because the addressable loss is at m
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\linewidth]{map-quality.png}
+\includegraphics[width=\linewidth]{map-quality}
 \caption{Top: the 38.6\,\% region disagreement between the browser's bridge and the critic,
 decomposed over 3\,731 held-out syllables. Bottom: separation of the eight pathological
 sessions by each candidate live signal, against the pre-registered adoption gate.
@@ -822,7 +843,7 @@ is one static fitted depth per type.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\linewidth]{tonal-pin.png}
+\includegraphics[width=\linewidth]{tonal-pin}
 \caption{The tonal-regime pin. Left: share of syllables above two spectral-content
 thresholds, resynthesis against real. Right: median spectral flatness on a log axis. The
 model contains the pulse-like regime that produces the missing tail; the fit does not reach
@@ -844,6 +865,13 @@ objective and the physics beyond the oscillator.
 % =====================================================================
 \section{Our methods against each other}
 \label{sec:internal}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{retrieval-population}
+\caption{Type retrieval against the cluster budget, and against the query population. The question is the one the browser asks of live audio: is the nearest centroid by cosine the point's own type? Left: scored over all points, label assignment beats the shipped $k$-means by 2.5 points against a pre-registered 10, and fails --- on a corpus that fits under the cluster cap, seeded $k$-means is nearly as good as knowing the answer. Right: scored on the field points every arm holds unchanged, which is the population the question is about. The query population changes the same arm's answer by more than any arm changes it. Debug-scale.}
+\label{fig:retrieval}
+\end{figure*}
 
 This section reports the head-to-head arms the project ran against itself. Each states what
 it licenses and what it does not. Unless noted, arms sharing a table were run on one fixed
@@ -935,7 +963,7 @@ in the descriptor. The embedding is the better similarity space and the worse-be
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\linewidth]{spaces-bridge.png}
+\includegraphics[width=\linewidth]{spaces-bridge}
 \caption{The two feature spaces and the bridge between them. The browser computes only the
 28-dimensional descriptor; the map lives in the critic's 32-dimensional embedding; a kernel
 ridge over random Fourier features maps one into the other behind a ship gate on held-out
@@ -944,6 +972,7 @@ recordings.}
 \end{figure*}
 
 \subsection{Objectives: cosine against a mel-path target}
+\label{sec:ruler}
 
 Reported above in Section~\ref{sec:walls} and summarised here for the comparison table. The
 mel target is the better \emph{measurement} and the worse \emph{optimiser}: it ranks audible
@@ -1227,7 +1256,7 @@ advantage, which confirms the diagnosis.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\linewidth]{syntax-depth.png}
+\includegraphics[width=\linewidth]{syntax-depth}
 \caption{Left: held-out likelihood split by whether the transition was seen in training. The
 heavier grammar's whole advantage lives where the data runs out. Right: species of the
 100-species debug store with enough bouts to attempt song-level structure, counted before
@@ -1341,6 +1370,20 @@ because it eliminates one of the two remaining explanations for the fit's failur
 % =====================================================================
 \section{Our methods against other approaches}
 \label{sec:external}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{batch-exchange}
+\caption{Post-hoc batch correction of the production embedding reaches the confound and pays exactly the price a gradient-reversed adversarial head paid. The gate asked for the recordist lift halved with species lift not falling at all; no arm lands in it. Two unrelated mechanisms landing on the same exchange rate is evidence about the data rather than about either mechanism, and the fact that subtracting each recordist's mean leaves the recordist lift \emph{higher} than it started says the confound is not a location shift.}
+\label{fig:batch}
+\end{figure}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{external-spaces}
+\caption{Three spaces, two populations. Recordist and species nearest-neighbour lift over a permutation null, per recording, for our 32-dimensional critic and two archive-scale external models. Perch 2.0 --- trained on the same archives at roughly a hundred times our scale and never asked to tell our resynthesis from a bird --- still carries five sixths of the recordist structure ours does, and BirdNET carries more than ours in both populations. If archive-scale training conferred recorder invariance the two largest models trained on these archives would both have it and they would agree; one is better than ours and one is worse, which locates the property in the archives. The right panel is the comparison we lose, and lose clearly. Hue carries model identity here, not a verdict.}
+\label{fig:external}
+\end{figure*}
 
 \subsection{What is and is not a fair comparison}
 
@@ -1509,7 +1552,7 @@ nothing on top of the data.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\linewidth]{avex.png}
+\includegraphics[width=\linewidth]{avex}
 \caption{Cross-domain species retrieval for three training arms at two scales. Both panels
 are debug-scale and absolute levels are comparable only arm against arm inside each panel.
 The pre-registered re-test shrank every effect; the ordering survived.}
@@ -1557,6 +1600,20 @@ evidence behind every claim built on it.
 % =====================================================================
 \section{What the data supports}
 \label{sec:findings}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{song-funnel}
+\caption{The song funnel on the production store, drawn in the three units it actually changes through rather than on one axis. Of 340\,079 syllable observations, 327\,164 are typed and form 34\,696 bouts, of which 56.9\,\% collapse to a single token and 30.4\,\% survive as candidates; 366 species have enough candidates to ask the question and 48 got a motif song type. Adding a repeat class --- one collapsed string heard at least six times, matched by equality --- takes that to 98 species with the permutation control unmoved to the bout.}
+\label{fig:funnel}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{orders}
+\caption{Held-out order scaling. A first-order transition model over the learned syllable-type inventory buys 0.98 bits per token on bouts it has not seen, while on a within-species shuffle of the same tokens, with bout lengths and marginals preserved, the same model \emph{costs} 0.75 bits. The estimator is unbiased by construction, so a model can only win if the transitions are real. A second order is not supported: the median species loses 0.091 bits per token, which fails the magnitude criterion, while a quarter of species gain something, which passes the share criterion. Production scale.}
+\label{fig:orders}
+\end{figure*}
 
 This section states what can be read out of the corpus, at what strength, with the ceiling
 attached to each claim. Numbers from the 100-species debug subset are marked
@@ -1972,7 +2029,7 @@ just over half. The tie-adjusted figure says most of the disagreement is a near-
 adjacent knots rather than an unrelated region, which is the difference between a blurred
 answer and a wrong one --- but it does not make the raw figure larger, and the raw figure is
 what a reader should hold. Taken with the 0.602 retrieval ceiling of
-\S\ref{sec:methods-vs-each-other}, the honest bound on ``sing and the right region lights'' at
+\S\ref{sec:internal}, the honest bound on ``sing and the right region lights'' at
 production scale is lower than any debug number in this paper.
 % app/static/birdy/feature-space.json embedding.mapQuality, production v5 (348 461 points,
 % k = 14 003); debug comparators /tmp/birdy-debug/assets-label (k = 4 298) and assets-w5.
@@ -2267,50 +2324,5 @@ Thirteen gesture axes are searched per type by coordinate descent; the measured 
 and duration are excluded from the search, because the pitch tracker reaches them to about
 1\,\% and a search must not overwrite a measurement.
 
-% ---------------------------------------------------------------------
-% FIGURES WANTED — the new structure needs these and they do not exist.
-% Do NOT hand-draw them; generate them from the cited sources.
-%
-% FIGURE WANTED (high priority, for Section \ref{sec:findings}):
-%   "held-out order scaling". Two lines, bits per token on the y axis against
-%   Markov order k = 0..3 on the x axis: the real corpus (3.284, 2.301, 2.546,
-%   2.866) and its within-species shuffle (2.879, 3.634, 4.868, 5.313). Annotate
-%   the order-1 gap: real gains 0.98 bits, control loses 0.75. Source: docs/23
-%   §23.2.2. This is the paper's strongest result and currently has no figure.
-%
-% FIGURE WANTED (high priority, for Section \ref{sec:internal}):
-%   "type retrieval against the cluster budget". Grouped bars of field-point type
-%   retrieval for the four arms of Table \ref{tab:w5} (0.7176 / 0.7604 / 0.7606 /
-%   0.7156) beside all-points type retrieval for the four arms of Table
-%   \ref{tab:clustering} (0.5775 / 0.4599 / 0.4227 / 0.6020), with the 0.602
-%   ceiling drawn as a horizontal line. The point of the figure is that the query
-%   population changes the answer by 18 points. Source: docs/22 §22.8.
-%
-% FIGURE WANTED (high priority, for Section \ref{sec:external}):
-%   "three spaces, two populations". Paired bars of recordist lift and species
-%   lift for critic / Perch / BirdNET on the T1 and T3 populations, with the
-%   -30 % gate marked on the recordist panel and the coverage of each estimate
-%   printed under it. Source: docs/23 §23.6.1-3, analysis/w6_birdnet_arms.json.
-%
-% FIGURE WANTED (medium):
-%   A corrected corpus-growth figure. docs/whitepaper/figures/corpus.png exists
-%   but its left panel's species labels overprint the store names and are
-%   illegible, and its species counts (22, 13, 121, 3 811, 3 811) need the trim-bug
-%   caveat in the caption to be readable at all. See WHITEPAPER-FINDINGS.md.
-%
-% FIGURE WANTED (medium, and the biggest gap in the paper):
-%   An acoustic example. One species, one syllable type: the mean measured
-%   log-mel patch beside the resynthesis's, plus the fitted pressure and tension
-%   contours, plus the resynthesis cosine. The manuscript contains no spectrogram
-%   and no audio example of any kind, which for a synthesis paper is a real
-%   omission. Choose a type near the median cosine (0.648), not a best case, and
-%   say so in the caption.
-%
-% FIGURE WANTED (low):
-%   The song funnel as a Sankey or a stepped bar: 340 079 observations -> 327 164
-%   typed -> 34 696 bouts -> 10 550 candidates -> 366 species with enough
-%   candidates -> 48 species with a song, and the same chain with repeat classes
-%   reaching 98. Source: docs/22 §22.1-22.2.
-% ---------------------------------------------------------------------
 
 \end{document}

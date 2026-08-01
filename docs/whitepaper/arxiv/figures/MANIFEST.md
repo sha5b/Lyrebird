@@ -8,7 +8,7 @@ cd pipeline && uv run python ../docs/whitepaper/arxiv/figures.py
 ```
 
 Every file is vector PDF. Spectrogram meshes are rasterised inside an otherwise
-vector figure, so axes and type stay sharp.
+vector figure, so axes and type stay sharp and the files stay small.
 
 ## Widths
 
@@ -28,8 +28,35 @@ made by this script, which does not touch `main.tex`:
 2. `\includegraphics` names the `.png` extension explicitly. Dropping the
    extension lets LaTeX pick up the PDF.
 
-File base names are unchanged from the old figure set wherever a figure survived,
-so the diff is one line per figure.
+Base names are unchanged from the old figure set wherever a figure survived, so
+that diff is one line per figure.
+
+## Reconciliation with `main.tex`
+
+| file | manuscript `\label` | status |
+|---|---|---|
+| `architecture.pdf` | `fig:architecture` | rewritten, same content |
+| `signal-chain.pdf` | `fig:signalchain` | rewritten, same content |
+| `claim-ladder.pdf` | `fig:claimladder` | rewritten; the region counts are now the v5 build's, and the old figure's stale per-level examples are gone. The existing caption still fits. |
+| `spaces-bridge.pdf` | `fig:spaces` | **redesigned, new content.** The old figure was two boxes and an arrow carrying no data. It now plots the five controlled-subset metrics and the three bridge arms against the ship gate. The existing caption still describes it, but a sentence about the metrics would earn its place. |
+| `ruler.pdf` | `fig:ruler` | rewritten, same content |
+| `confound.pdf` | `fig:confound` | rewritten, same content |
+| `map-quality.pdf` | `fig:mapquality` | rewritten; the bottom panel is now a dot plot, because three AUCs that need a truncated axis to be told apart must not be drawn as bars. Content unchanged. |
+| `tonal-pin.pdf` | `fig:tonalpin` | rewritten, plus a third panel for the tension clamp. **The existing caption does not mention the third panel.** |
+| `syntax-depth.pdf` | `fig:syntaxdepth` | rewritten, same content |
+| `avex.pdf` | `fig:avex` | rewritten, plus a third panel giving the two effect sizes at both scales against the +10 gate. **The existing caption does not mention the third panel.** |
+| `corpus.pdf` | none yet | answers the medium-priority FIGURE WANTED: the overprinting is fixed and the trim-bug row is marked |
+| `orders.pdf` | none yet | answers the high-priority FIGURE WANTED for Section `sec:findings` |
+| `retrieval-population.pdf` | none yet | answers the high-priority FIGURE WANTED for Section `sec:internal` |
+| `external-spaces.pdf` | none yet | answers the high-priority FIGURE WANTED for Section `sec:external` |
+| `song-funnel.pdf` | none yet | answers the low-priority FIGURE WANTED, as a stepped bar in three units rather than a Sankey |
+| `spectral-examples.pdf` | none yet | answers the "biggest gap in the paper" FIGURE WANTED, from real audio rather than from the mean log-mel patch |
+| `gestures.pdf` | none yet | new. The fitted pressure and tension contours the same FIGURE WANTED asks for, given their own figure |
+| `batch-exchange.pdf` | none yet | new. Table `tab:batch`'s one-for-one exchange rate, which the manuscript calls a headline and had no figure for |
+
+Nothing from the old set was dropped outright. `docs/whitepaper/figures/eq/*.png`
+(the mathtext equation images) are not reproduced: the manuscript sets its
+equations in LaTeX, so they have no consumer.
 
 ## Colour semantics
 
@@ -45,20 +72,33 @@ so the diff is one line per figure.
 than a verdict; its gate lines carry the verdict instead. The categorical set
 violet / moss / ochre / clay passes every all-pairs gate of the house data-viz
 validator on a white surface (worst pair CVD dE 7.8, normal-vision dE 15.2, all
-four above 3:1 contrast), and every series is also directly labelled.
+four above 3:1 contrast), and every series is also directly labelled, which is
+what the 6-8 dE band requires. Stacked decompositions use a four-step ordinal
+violet ramp validated with the light end at 2.45:1 against white. Spectrograms use
+a one-hue sequential ramp built from the same violet, white at the noise floor, so
+near-zero energy recedes into the page instead of printing as a dark slab.
+
+## Type
+
+Body face is `cmr10`, matching the manuscript's `lmodern`. It has no bold face, so
+nothing in the figure set is bold: emphasis is carried by colour and size. It also
+has no em dash and no U+2212, so figure text uses ASCII punctuation and mathtext
+for signs.
 
 ## Figures
 
 ### `architecture.pdf`
-- **width** full (7.0 in), 14 kB
+
+- **width** full (target 7.0 in, drawn 7.00 x 2.30 in), 15 kB
 - **shows** the five pipeline stages, what each holds, the critic's position, and the evidence-label strip that sits over everything the app shows
-- **source** docs/06 §6.1, docs/08 §8.3, corpus counts from HANDOFF.md 2026-08-01
+- **source** docs/06 §6.1, docs/08 §8.3; corpus counts from HANDOFF.md 2026-08-01
 - **caption**
 
-  > The system end to end. Stages 1--4 are offline; stage 5 is a browser application reading static JSON and float32 assets, with no Python process and no model weights. The critic is the only learned component and never generates. The five evidence labels sit over everything stage 5 displays.
+  > The system end to end. Stages 1--4 are offline; stage 5 is a browser application reading static JSON and \texttt{float32} assets, with no Python process and no model weights. The critic is the only learned component and never generates. The five evidence labels sit over everything stage 5 displays.
 
 ### `signal-chain.pdf`
-- **width** full (7.0 in), 21 kB
+
+- **width** full (target 7.0 in, drawn 7.00 x 2.75 in), 21 kB
 - **shows** the synthesis chain from the two gesture contours to sound, with the one extension that ships and the two that are parked, each annotated with the bake-off number that decided it
 - **source** docs/08 §8.1, §8.1a; docs/15 §1, §5; docs/16 §16.4, §16.7
 - **caption**
@@ -66,7 +106,8 @@ four above 3:1 contrast), and every series is also directly labelled.
   > The synthesis chain. Two gesture contours drive the oscillator; turbulence, the $f_0$-tracking resonance and the fixed tracheal comb shape the result. The dashed blocks are implemented, parity-tested and off by default: their published physics is not in doubt, but their hand-set default parameter sets lost their pre-registered bake-offs, and only the per-species fits ship, per type, where they win.
 
 ### `claim-ladder.pdf`
-- **width** full (7.0 in), 12 kB
+
+- **width** full (target 7.0 in, drawn 7.00 x 2.10 in), 13 kB
 - **shows** the five evidence labels, what each requires, and how many map regions the production build places at each level
 - **source** docs/08 §8.5 for the levels; HANDOFF.md 2026-08-01 for the v5 region mix over 14 003 regions
 - **caption**
@@ -74,7 +115,8 @@ four above 3:1 contrast), and every series is also directly labelled.
   > The five evidence labels, the requirement for each, and the production build's region counts. Every phrase the application speaks carries one of them; nothing renders without one. The distribution is the point: 13\,919 of 14\,003 regions are \emph{unlabelled}, and the interface is required to keep saying so.
 
 ### `spaces-bridge.pdf`
-- **width** full (7.0 in), 22 kB
+
+- **width** full (target 7.0 in, drawn 7.00 x 2.70 in), 22 kB
 - **shows** left: the four map-quality metrics and the one counterweight when the build moves from the 28-d descriptor to the 32-d embedding, on one controlled subset; right: the three bridge arms against the 0.80 ship gate
 - **source** docs/10 §10.2 (625 syllables, 3 species); docs/11 §11.3 and docs/20 §20.1 for the bridge arms
 - **caption**
@@ -82,23 +124,26 @@ four above 3:1 contrast), and every series is also directly labelled.
   > The two feature spaces and the bridge between them. Left: on one controlled subset --- 625 field syllables, three species, identical points, one seed, only the space changed --- the embedding improves every map-quality metric, and the one metric that moves the wrong way is drawn in clay. Right: the browser computes only the 28-dimensional descriptor, so a kernel ridge over random Fourier features maps it into the 32-dimensional space the map lives in, behind a ship gate read on held-out recordings. Debug-scale.
 
 ### `corpus.pdf`
-- **width** full (7.0 in), 14 kB
+
+- **width** full (target 7.0 in, drawn 7.00 x 2.45 in), 15 kB
 - **shows** corpus growth in syllables and in species over the four documented harvest steps, and the depth reached on the 100 targeted species
 - **source** docs/09 §9.7-9.8, docs/14 §14.1, docs/16 §16.1, HANDOFF.md 2026-07-31 (P0). Replaces docs/whitepaper/figures/corpus.png, whose species labels overprinted the store names.
 - **caption**
 
-  > The corpus grew in breadth and then in depth. Syllable counts and species counts are separate panels because they are separate units; the second row is drawn in clay because a store-trim bug deleted twelve of its 25 species, so any per-species figure measured on it has chance 7.7\,\% rather than 4.0\,\% and is not comparable to the rows around it. The right panel is the depth harvest: 71 of the 100 targeted species reach the 20-recording bar, and the tenth percentile of 5 is the archive's ceiling rather than the harvest's.
+  > The corpus grew in breadth and then in depth. Syllable counts and species counts are separate panels because they are separate units. The second row is drawn in clay because a store-trim bug deleted twelve of its 25 species, so any per-species figure measured on it has chance 7.7\,\% rather than 4.0\,\% and is not comparable to the rows around it. The right panel is the depth harvest: 71 of the 100 targeted species reach the 20-recording bar, and the tenth percentile of 5 is the archive's ceiling rather than the harvest's.
 
 ### `ruler.pdf`
-- **width** full (7.0 in), 22 kB
+
+- **width** full (target 7.0 in, drawn 7.00 x 2.55 in), 22 kB
 - **shows** left: how strongly the incumbent fit objective and its proposed replacement correlate with two independent audible-distance metrics; right: the replacement's win share at probe and at gate scale
-- **source** docs/19 §19.2 (n = 200 types), §19.4-§19.5 (n = 80, pre-registered gate) — 100-species debug store against the iNat audio cache
+- **source** docs/19 §19.2 (n = 200 types), §19.4-§19.5 (n = 80, pre-registered gate) - 100-species debug store against the iNat audio cache
 - **caption**
 
   > The fit objective does not rank audible fidelity. Left: correlation with mel-cepstral distortion and with multi-resolution log-spectral distance, for the incumbent 28-dimensional cosine and for the proposed mel-path replacement. Neither of the cosine's correlations is distinguishable from zero and both point estimates lean the wrong way. Right: the replacement is the better measurement and the worse optimiser --- it wins 31\,\% of types against a pre-registered 60\,\% bar. Both panels are debug-scale.
 
 ### `confound.pdf`
-- **width** full (7.0 in), 17 kB
+
+- **width** full (target 7.0 in, drawn 7.00 x 2.75 in), 17 kB
 - **shows** left: what the critic's embedding organises by; right: every swept arm of the two adversarial heads as relative change in recordist lift against relative change in species lift, with the pre-registered gate region and the one-for-one diagonal
 - **source** docs/14 §14.4 (production store) for the two lifts; docs/17 §17.2, §17.3, §17.5 for the swept arms (37-species debug store)
 - **caption**
@@ -106,23 +151,26 @@ four above 3:1 contrast), and every series is also directly labelled.
   > The recordist, not the bird. Left: in the critic's embedding the strongest relation is who recorded the sound, not which animal made it. Right: every swept point from both adversarial heads. The shaded region is what the pre-registered gates asked for and no arm reaches it; the diagonal is a one-for-one exchange of recordist structure for species structure, and the plain adversarial head tracks it. The right panel is 37-species debug-scale.
 
 ### `batch-exchange.pdf`
-- **width** single (3.4 in), 13 kB
+
+- **width** single (target 3.4 in, drawn 3.40 x 2.95 in), 14 kB
 - **shows** species lift against recordist lift for seven post-hoc batch-effect correction arms, with the one-for-one diagonal and the pre-registered gate region
-- **source** docs/23 §23.1.1, batcheffect.py — 20 000 syllables of the production embedding
+- **source** docs/23 §23.1.1, batcheffect.py - 20 000 syllables of the production embedding, 885 species, 1 001 recordists, 3 265 recordings
 - **caption**
 
-  > Post-hoc batch correction of the production embedding reaches the confound and pays exactly the price a gradient-reversed adversarial head paid. The gate asked for the recordist lift halved with species lift not falling at all; no arm lands in it. Two unrelated mechanisms landing on the same exchange rate is evidence about the data rather than about either mechanism.
+  > Post-hoc batch correction of the production embedding reaches the confound and pays exactly the price a gradient-reversed adversarial head paid. The gate asked for the recordist lift halved with species lift not falling at all; no arm lands in it. Two unrelated mechanisms landing on the same exchange rate is evidence about the data rather than about either mechanism, and the fact that subtracting each recordist's mean leaves the recordist lift \emph{higher} than it started says the confound is not a location shift.
 
 ### `map-quality.pdf`
-- **width** full (7.0 in), 20 kB
+
+- **width** full (target 7.0 in, drawn 7.00 x 3.05 in), 15 kB
 - **shows** top: the decomposition of the bridge's region disagreement over 3 731 held-out syllables; bottom: how well each candidate live signal separates the eight pathological sessions, against the adoption gate
-- **source** docs/20 §20.1, §20.2 for the decomposition; §20.3.1-§20.3.2 for the session signals — end-to-end debug build
+- **source** docs/20 §20.1, §20.2 for the decomposition; §20.3.1-§20.3.2 for the session signals - end-to-end debug build
 - **caption**
 
-  > Top: the 38.6\,\% region disagreement between the browser's bridge and the critic itself, decomposed over 3\,731 held-out syllables. Three quarters of it is boundary near-ties; genuine large-margin map failure is 4.3\,\% of the loss. Bottom: the eight pathological sessions separate at AUC 0.953 on a statistic the browser can compute from the 28-dimensional side alone, and the two-signal combination adds nothing. End-to-end debug build; debug-scale.
+  > Top: the 38.6\,\% region disagreement between the browser's bridge and the critic itself, decomposed over 3\,731 held-out syllables. Three quarters of it is boundary near-ties; genuine large-margin map failure is 4.3\,\% of the loss. Bottom: the eight pathological recording sessions separate at AUC 0.953 on a statistic the browser can compute from the 28-dimensional side alone, and the two-signal combination adds nothing. End-to-end debug build; debug-scale.
 
 ### `tonal-pin.pdf`
-- **width** full (7.0 in), 17 kB
+
+- **width** full (target 7.0 in, drawn 7.00 x 2.40 in), 20 kB
 - **shows** the resynthesis reproduces the median spectral content index and none of its tail, is three orders of magnitude too pure, and rides the tension clamp in over half of all fitted types
 - **source** docs/08 §8.1a, docs/21 §21.2; clamp incidence from cli.py report_reachability on the production learn (12 724 types)
 - **caption**
@@ -130,23 +178,26 @@ four above 3:1 contrast), and every series is also directly labelled.
   > The tonal-regime pin. Pinning every syllable to $\beta \approx 1$ places it at the tonal end of the model: the median spectral content index is reproduced almost exactly, the rich tail is absent, and median spectral flatness is three orders of magnitude too pure. The right panel is the parameterisation's own limit: the tension clamp bites in 6\,617 of 12\,724 types while the syllable is audible. The model contains the pulse-like regime that produces the missing tail; the fit does not reach it.
 
 ### `orders.pdf`
-- **width** full (7.0 in), 22 kB
+
+- **width** full (target 7.0 in, drawn 7.00 x 2.75 in), 21 kB
 - **shows** held-out cross-entropy against Markov order for the real corpus and its within-species shuffle, and the two halves of the order-2 gate
-- **source** docs/23 §23.2.2, pipeline/analysis/w2_heldout_orders.py — production corpus, 34 696 bouts, 327 164 tokens, 2 421 species
+- **source** docs/23 §23.2.2, pipeline/analysis/w2_heldout_orders.py - production corpus, 34 696 bouts, 327 164 tokens, 2 421 species
 - **caption**
 
   > Held-out order scaling. A first-order transition model over the learned syllable-type inventory buys 0.98 bits per token on bouts it has not seen, while on a within-species shuffle of the same tokens, with bout lengths and marginals preserved, the same model \emph{costs} 0.75 bits. The estimator is unbiased by construction, so a model can only win if the transitions are real. A second order is not supported: the median species loses 0.091 bits per token, which fails the magnitude criterion, while a quarter of species gain something, which passes the share criterion. Production scale.
 
 ### `retrieval-population.pdf`
-- **width** full (7.0 in), 18 kB
+
+- **width** full (target 7.0 in, drawn 7.00 x 3.00 in), 18 kB
 - **shows** type retrieval for the four clustering arms of each table, scored on all points and on the field points every arm holds unchanged, with the 0.602 all-types-own-cluster ceiling drawn across both
-- **source** docs/22 §22.8, pipeline/analysis/w5_field_retrieval.py — one fixed 100-species debug matrix
+- **source** docs/22 §22.8, pipeline/analysis/w5_field_retrieval.py - one fixed 100-species debug matrix
 - **caption**
 
   > Type retrieval against the cluster budget, and against the query population. The question is the one the browser asks of live audio: is the nearest centroid by cosine the point's own type? Left: scored over all points, label assignment beats the shipped $k$-means by 2.5 points against a pre-registered 10, and fails --- on a corpus that fits under the cluster cap, seeded $k$-means is nearly as good as knowing the answer. Right: scored on the field points every arm holds unchanged, which is the population the question is about. The query population changes the same arm's answer by more than any arm changes it. Debug-scale.
 
 ### `avex.pdf`
-- **width** full (7.0 in), 16 kB
+
+- **width** full (target 7.0 in, drawn 7.00 x 2.55 in), 16 kB
 - **shows** cross-domain species retrieval for three training arms at two scales, and the two effect sizes as measured first and on the pre-registered re-test
 - **source** docs/17 §17.4 (12 species, 3 held out) and §17.6.1 (63 species, 16 held out)
 - **caption**
@@ -154,7 +205,8 @@ four above 3:1 contrast), and every series is also directly labelled.
   > The data road works and its effect size shrank honestly when re-tested. Merging two genuinely different recording domains bought $+14.4$ points of cross-domain species retrieval on 12 species and $+3.6$ on 63; a cross-domain contrastive mechanism on top reached $+13.4$ at the small scale and $+1.7$ against a $+10$ gate at the larger one, so the mechanism's boost was small-sample structure. What survives the bigger test is the ordering: more domains per species helps, and the mechanism adds approximately nothing on top of the data. Both panels are debug-scale.
 
 ### `syntax-depth.pdf`
-- **width** full (7.0 in), 17 kB
+
+- **width** full (target 7.0 in, drawn 7.00 x 2.60 in), 17 kB
 - **shows** left: held-out likelihood split by whether the transition was seen in training, first-order against a hidden-state model; right: how few species of the debug store have the bouts to attempt song-level structure
 - **source** docs/18 P1 and its 2026-08-01 re-run; the bout count is the 100-species debug store
 - **caption**
@@ -162,34 +214,38 @@ four above 3:1 contrast), and every series is also directly labelled.
   > Left: held-out likelihood split by whether the transition was seen in training. The heavier grammar's whole advantage lives where the data runs out, which is a property of smoothing shape rather than of recovered hidden structure. Right: species of the 100-species debug store with enough bouts to attempt song-level structure, counted before the depth harvest. Both panels are debug-scale.
 
 ### `song-funnel.pdf`
-- **width** full (7.0 in), 13 kB
+
+- **width** full (target 7.0 in, drawn 7.00 x 2.45 in), 14 kB
 - **shows** the song funnel stage by stage, in the three units it passes through: syllable observations, bouts, and species with a measured song
-- **source** docs/22 §22.1, §22.2; docs/12 §12.2-§12.3 — production store
+- **source** docs/22 §22.1, §22.2; docs/12 §12.2-§12.3 - production store
 - **caption**
 
   > The song funnel on the production store, drawn in the three units it actually changes through rather than on one axis. Of 340\,079 syllable observations, 327\,164 are typed and form 34\,696 bouts, of which 56.9\,\% collapse to a single token and 30.4\,\% survive as candidates; 366 species have enough candidates to ask the question and 48 got a motif song type. Adding a repeat class --- one collapsed string heard at least six times, matched by equality --- takes that to 98 species with the permutation control unmoved to the bout.
 
 ### `external-spaces.pdf`
-- **width** full (7.0 in), 19 kB
+
+- **width** full (target 7.0 in, drawn 7.00 x 2.95 in), 18 kB
 - **shows** recordist and species nearest-neighbour lift for our 32-d critic and two archive-scale external models, on the two populations, with the T1 gate and each estimate's coverage
 - **source** docs/23 §23.6.1, §23.6.2, §23.6.3; pipeline/analysis/w6_birdnet_arms.json
 - **caption**
 
-  > Three spaces, two populations. Recordist and species nearest-neighbour lift over a permutation null, per recording, for our 32-dimensional critic and two archive-scale external models. Perch 2.0 --- trained on the same archives at roughly a hundred times our scale and never asked to tell our resynthesis from a bird --- still carries five sixths of the recordist structure ours does, and BirdNET carries more than ours in both populations. If archive-scale training conferred recorder invariance the two largest models would both have it and they would agree; one is better than ours and one is worse, which locates the property in the archives. The species panel is the comparison we lose, and lose clearly. Hue carries model identity here, not a verdict.
+  > Three spaces, two populations. Recordist and species nearest-neighbour lift over a permutation null, per recording, for our 32-dimensional critic and two archive-scale external models. Perch 2.0 --- trained on the same archives at roughly a hundred times our scale and never asked to tell our resynthesis from a bird --- still carries five sixths of the recordist structure ours does, and BirdNET carries more than ours in both populations. If archive-scale training conferred recorder invariance the two largest models trained on these archives would both have it and they would agree; one is better than ours and one is worse, which locates the property in the archives. The right panel is the comparison we lose, and lose clearly. Hue carries model identity here, not a verdict.
 
 ### `spectral-examples.pdf`
-- **width** full (7.0 in), 115 kB
+
+- **width** full (target 7.0 in, drawn 7.00 x 5.85 in), 115 kB
 - **shows** for three fitted types spanning the corpus's fit quality, the original recording's syllable, our resynthesis of the type on the same axes and colour scale, and the measured pitch contours of every cached member against the contour the fit ships
 - **source** pipeline/out/harvest-gan/{typing.json,syllables.jsonl}, data/learned-inventory.json, pipeline/out/audio-cache/, rendered through birdy_pipeline.syrinx.render_syllable with app/static/birdy/syrinx-calibration.json
 - **caption**
 
-  > What the physical model reproduces, and what it misses. Three fitted types, taken from the top, the middle and the bottom of the resynthesis-cosine ordering over the types whose members have cached audio; the corpus median is 0.648 over 13\,859 types, so the middle row is a median type rather than a chosen success. Top: a clean descending whistle, which the oscillator and its tracking tract reproduce closely. Middle: the median case --- the pitch is right and the pulse train that carries the real syllable's timbre is replaced by a steady tone. Bottom: a failure, and the third panel says why: the type's member contours disagree by kilohertz, so the cluster median the fit starts from describes no member well. The cosine is the objective the fit optimised and is \emph{not} a ranking of audible fidelity (Section~\ref{sec:walls}).
+  > What the physical model reproduces, and what it misses. Three fitted types, taken from the top, the middle and the bottom of the resynthesis-cosine ordering over the types whose members have cached audio; the corpus median is 0.648 over 13\,859 types, so the middle row is a median type rather than a chosen success. Top: a clean descending whistle, which the oscillator and its tracking tract reproduce closely. Middle: the median case --- the pitch is right, and the pulse train that carries the real syllable's timbre is replaced by a steady tone. Bottom: a failure, and the third panel says why --- the type's member contours disagree by kilohertz, so the cluster median the fit starts from describes no member well. The cosine is the objective the fit optimised and is \emph{not} a ranking of audible fidelity (Section~\ref{sec:walls}).
 
 ### `gestures.pdf`
-- **width** full (7.0 in), 25 kB
+
+- **width** full (target 7.0 in, drawn 7.00 x 2.95 in), 24 kB
 - **shows** the fitted air-sac pressure and labial-tension contours behind the three acoustic examples, with the measured tension-clamp incidence for each
-- **source** data/learned-inventory.json rendered through birdy_pipeline.syrinx.render_plan / beta_for / clamp_incidence with app/static/birdy/syrinx-calibration.json; clamp corpus total from cli.py report_reachability
+- **source** data/learned-inventory.json rendered through birdy_pipeline.syrinx.render_plan / beta_for / clamp_incidence with app/static/birdy/syrinx-calibration.json; the corpus-wide clamp total from cli.py report_reachability
 - **caption**
 
-  > The fitted gestures behind the three examples. Every syllable in the corpus is two named physical contours --- air-sac pressure and labial tension --- rather than a latent code, and this is the whole of the interpretability claim. The dashed line is the tension clamp of the parameterisation; a contour that rides it is at a limit of the parameterisation rather than at a fitted value, which happens in 6\,617 of 12\,724 types across the production learn.
+  > The fitted gestures behind the three acoustic examples. Every syllable in the corpus is two named physical contours --- air-sac pressure and labial tension --- rather than a latent code, and this is the whole of the interpretability claim. The dashed line is the tension clamp of the parameterisation; a contour that rides it is at a limit of the parameterisation rather than at a fitted value, which happens in 6\,617 of 12\,724 types across the production learn.
 
