@@ -51,8 +51,10 @@ def log(msg: str) -> None:
 
 
 #: The shipped bout rule: a `gap_before` over a second ends a bout rather than
-#: making a (spurious) transition across a pause (`learn.learn_grammar`).
-GAP_BOUT_SECONDS = 1.0
+#: making a (spurious) transition across a pause. Re-exported from `learn`, not
+#: restated — this was a second literal 1.0 until 2026-08-01, and a bake-off run
+#: against a different bout rule than the grammar's is a bake-off of nothing.
+GAP_BOUT_SECONDS = learn.GAP_BOUT_SECONDS
 #: A bout shorter than this carries no structure a sequence model can score —
 #: two tokens are one transition, which is the unigram with extra steps.
 MIN_BOUT_TOKENS = 3

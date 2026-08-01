@@ -3,6 +3,10 @@
 
 Run:  cd pipeline && uv run python ../docs/whitepaper/build_whitepaper.py
 
+The DOCX is the product. If LibreOffice is on PATH the build also writes
+birdy-whitepaper.pdf and .odt from it. If LibreOffice is absent the build
+prints the conversion command and still succeeds.
+
 Every number in the document comes from the repository's research notes
 (docs/NN, HANDOFF.md, AGENTS.md). Each figure caption names its source. In-text
 superscripts resolve to the numbered literature list; internal notes are cited
@@ -21,6 +25,8 @@ Deterministic: no randomness anywhere. Every chart is plotted from literals.
 """
 
 import os
+import shutil
+import subprocess
 
 import matplotlib
 
@@ -1338,30 +1344,29 @@ def build_title_page(doc):
 
     P(doc, [
         B("Abstract.  "),
-        T("Birdy is an instrument in three parts. It sings with a physical model "
-          "of the bird syrinx, two equations driven by air-sac pressure and "
-          "labial tension, fitted to field recordings by gesture inversion. It "
-          "remembers 340 079 measured syllables and no audio: the harvest "
-          "decodes each recording, describes it as numbers, and deletes the "
-          "file, so nothing Birdy ships carries a licence. It shows the result "
-          "as a three-dimensional map with one point per measured syllable. "
-          "What Birdy claims about meaning is narrow and stated on the face of "
-          "it: call type to documented behavioural function, with a confidence "
-          "label on every phrase it speaks. Playback experiments are the only "
-          "proof of meaning the field accepts, and Birdy has run none of its "
-          "own, so everything past the literature is labelled as inference or "
-          "as invention. This note reports the instrument and its evidence. The "
-          "learned syllable embedding lifts species placement by 13.3 points. "
-          "The parallel learn is bit-identical to the serial one and about "
-          "twelve times faster. A session-quality gate separates pathological "
-          "recordings at AUC 0.953. Against that: the number the pipeline "
-          "optimises carries almost no information about audible distortion "
-          "(r ≈ 0.1), the embedding organises by microphone before it "
-          "organises by bird (+0.488 against +0.196), and no loss term yet "
-          "found buys recorder invariance more cheaply than more data does. "
-          "Section 9 is a ledger of every pre-registered gate and how it came "
-          "out, wins and losses in one table. Refutations stay in the record. "
-          "That is the method, not an apology."),
+        T("Birdy is an instrument in three parts. It sings with a physical "
+          "model of the bird syrinx: two equations driven by air-sac pressure "
+          "and labial tension, fitted to field recordings by gesture "
+          "inversion. It remembers 340 079 measured syllables, held as numbers "
+          "and never as audio. It shows the result as a three-dimensional map "
+          "with one point per measured syllable. Its claim about meaning is "
+          "narrow and stated on "
+          "the face of it: call type to documented behavioural function, with "
+          "a confidence label on every phrase it speaks. Playback experiments "
+          "are the only proof of meaning the field accepts. Birdy has run none "
+          "of its own, so everything past the literature is labelled as "
+          "inference or as invention. This note reports the instrument and its "
+          "evidence. The learned syllable embedding lifts species placement by "
+          "13.3 points. The parallel learn is bit-identical to the serial one "
+          "and about twelve times faster. A session-quality gate separates "
+          "pathological recordings at AUC 0.953. Three measurements run the "
+          "other way. The number the pipeline optimises carries almost no "
+          "information about audible distortion (r ≈ 0.1). The embedding "
+          "organises by microphone before it organises by bird (+0.488 against "
+          "+0.196). And more data buys recorder invariance more cheaply than "
+          "any loss term tried so far. Section 9 lists every pre-registered "
+          "gate and its result in one table. Refutations stay in the record. "
+          "That is the method."),
     ], space_after=14)
 
     kw = P(doc, [
@@ -1383,7 +1388,7 @@ def build_contents(doc):
     p.runs[0].font.bold = True
 
     entries = [
-        ("1", "What Birdy is, and what it refuses to claim"),
+        ("1", "What Birdy is, and what it claims"),
         ("2", "The voice: a syrinx, and the audit of it"),
         ("3", "The corpus: decode, describe, delete"),
         ("4", "The critic, the two spaces, and the recorder in the way"),
@@ -1425,18 +1430,17 @@ def build_docx(eq_paths, figs):
     build_contents(doc)
 
     # ============ 1. What Birdy is ============
-    H1(doc, "1", "What Birdy is, and what it refuses to claim")
+    H1(doc, "1", "What Birdy is, and what it claims")
     lede(
         doc,
         "A great tit does not improvise. It owns a small set of calls, and one "
         "of them is a sentence: three notes that mean scan for danger, then one "
         "note that means come here. In that order, other tits do both things. "
         "Played backwards, they do nothing. So birdsong is structure, and a "
-        "machine can learn structure. What no machine can yet do is say what an "
-        "unheard call means. The only proof of meaning the field accepts is a "
-        "playback experiment — play the sound to a bird and watch what the bird "
-        "does. Birdy is built on both halves of that. It learns the structure "
-        "hard, and it labels the meaning honestly."
+        "machine can learn structure. Meaning is the harder half. The field "
+        "accepts one proof of it, the playback experiment — play the sound to "
+        "a bird and watch what the bird does. Birdy is built on both halves. "
+        "It learns the structure hard, and it labels the meaning honestly."
     )
     P(doc, [
         T("The field's own position has three parts"),
@@ -1458,8 +1462,7 @@ def build_docx(eq_paths, figs):
         B("functional translation"),
         T(": call type to documented behavioural function, plus species, "
           "individual identity and urgency, each with a confidence label. "
-          "Word-for-word translation is marketing. The app says so in its own "
-          "interface."),
+          "Word-for-word translation is marketing."),
     ])
     P(doc, [
         T("The vocabularies behind the language set are real, and each one is "
@@ -1480,13 +1483,14 @@ def build_docx(eq_paths, figs):
         T(". The Bengalese finch sings a finite-state syntax"),
         C("okanoya"),
         T(". That literature-anchored set is what Birdy calls a documented "
-          "function. Everything outside it is labelled as what it is."),
+          "function. The five labels below cover everything outside it."),
     ])
     P(doc, [
-        B("Five labels, and nothing renders without one. "),
-        T("The honesty rule (docs/08 §8.5) is a product requirement rather than "
-          "a nicety, and it is the reason the rest of this note can be read at "
-          "face value. Every phrase the app speaks carries its confidence: "),
+        B("The honesty rule: five labels, and every claim carries one. "),
+        T("The rule (docs/08 §8.5) is a product requirement, and it is the "
+          "reason the rest of this note can be read at face value. This "
+          "section states it once, and the sections after it report "
+          "measurements. Every phrase the app speaks carries its confidence: "),
         I("experimental"),
         T(" for playback-verified, "),
         I("documented"),
@@ -1497,7 +1501,8 @@ def build_docx(eq_paths, figs):
         T(" for a designed mapping, always named as designed. Anything the "
           "system flags as new gets the fifth label, "),
         B("“unlabelled: real acoustics, no documented function”"),
-        T(", because detecting that a sound is new is not knowing what it means."),
+        T(". Detection reports that a sound is new. The label claims exactly "
+          "that much and stops there."),
     ])
     add_figure(doc, figs["ladder"], [
         B("Figure 1 — The claim ladder. "),
@@ -1518,12 +1523,9 @@ def build_docx(eq_paths, figs):
         T(", and wild territorial sparrows respond to it as they do to a real "
           "rival"),
         C("bistel2024"),
-        T(". Legally, it is the only clean voice available. Xeno-canto "
-          "recordings carry per-file Creative Commons licences, largely "
-          "non-commercial, so Birdy retains and ships "),
-        B("no audio at all"),
-        T(". Every sound the app makes is synthesised from fitted parameters, "
-          "and every point in its map is a measurement rather than a file."),
+        T(". Legally, it is the only clean voice available, for the reason "
+          "section 3 sets out. Every sound the app makes is synthesised from "
+          "fitted parameters, and every point in its map is a measurement."),
     ])
     add_figure(doc, figs["arch"], [
         B("Figure 2 — The instrument, end to end. "),
@@ -1535,8 +1537,8 @@ def build_docx(eq_paths, figs):
     P(doc, [
         T("Table 1 is the legend to that figure. It names every technique, the "
           "place it runs, and the reason it is there. Rows marked parked are "
-          "implemented and parity-tested but ship off by default, and section 2 "
-          "explains what they cost."),
+          "implemented and parity-tested, and they ship off by default. "
+          "Section 2 gives their measured cost."),
     ])
     add_table(
         doc,
@@ -1641,7 +1643,7 @@ def build_docx(eq_paths, figs):
     add_equation(doc, eq_paths, "gamma", 2)
     P(doc, [
         T("Φ was measured once on a calibration sweep, so the value above is a "
-          "measurement rather than a fitted parameter"),
+          "measured constant of the model"),
         C("perl2011"),
         T(". The bifurcation that starts the oscillation decides the timbre. At "
           "high tension a Hopf bifurcation gives tonal, whistle-like notes. At "
@@ -1649,14 +1651,14 @@ def build_docx(eq_paths, figs):
           "harmonically dense ones, and the spectral content index is a "
           "function of tension alone"),
         C("sitt2008"),
-        T(". The tonal-to-rich axis is therefore the model's own tension scale "
-          "and not a filter setting. The integrator is deliberately plain: "
-          "forward Euler at 16× oversampling at 48 kHz. RK4 agrees to within "
-          "2 % of F0, so Euler is what ships."),
+        T(". The tonal-to-rich axis is therefore the model's own tension scale, "
+          "set at the source. The integrator is deliberately plain: forward "
+          "Euler at 16× oversampling at 48 kHz. RK4 agrees to within 2 % of "
+          "F0, so Euler is what ships."),
     ])
     H2(doc, "2.2  The tube above it")
     P(doc, [
-        T("The vocal tract is not cosmetic. Pure-tone birdsong is a filter "
+        T("The vocal tract does acoustic work. Pure-tone birdsong is a filter "
           "effect, in which the tract suppresses the harmonics the source "
           "produces, and heliox experiments prove it"),
         C("nowicki1987", "beckers2003"),
@@ -1666,8 +1668,8 @@ def build_docx(eq_paths, figs):
         T(". So one resonance in Birdy follows the instantaneous f₀. A tracking "
           "resonance on its own would make every spectrum pitch-invariant, and "
           "two species at the same pitch would become the same instrument. The "
-          "part that does not move is the trachea. It is a tube closed at the "
-          "syrinx, and it resonates as a stopped quarter-wave pipe at the odd "
+          "trachea supplies the fixed part. It is a tube closed at the syrinx, "
+          "and it resonates as a stopped quarter-wave pipe at the odd "
           "harmonics of one body-fixed frequency:"),
     ])
     add_equation(doc, eq_paths, "comb", 3)
@@ -1682,19 +1684,19 @@ def build_docx(eq_paths, figs):
         C("riede2009"),
         T(". Birdy measures f₁ per species from the harvest itself, where "
           "pitch-dependent structure averages away and only body-fixed "
-          "resonances survive. The comb ships only where the resynthesis scores "
+          "resonances survive. The comb ships where the resynthesis scores "
           "better with it, which was 10 of 22 species on the original corpus "
           "(docs/08 §8.1a)."),
     ])
     H2(doc, "2.3  Texture, which is also physics")
     P(doc, [
-        T("Turbulence is injected at the labia and scaled by air flow, so a "
-          "silent bird does not hiss. Roughness perturbs "),
+        T("Birdy injects turbulence at the labia and scales it by air flow, so "
+          "a silent bird stays silent. Roughness perturbs "),
         I("β"),
-        T(", the tension, rather than the output. The literature is specific "
-          "here: matching the fundamental and the filters was not enough to "
-          "drive selective forebrain neurons, noise on tension was required, "
-          "and an intermediate amount scored best"),
+        T(", the tension, at the source. The literature is specific here. "
+          "Selective forebrain neurons required noise on tension as well as a "
+          "matched fundamental and matched filters, and an intermediate amount "
+          "scored best"),
         C("amador2021"),
         T(". The modulation sits at 140 Hz, inside the 80 to 250 Hz band that "
           "syringeal muscle can follow"),
@@ -1702,23 +1704,23 @@ def build_docx(eq_paths, figs):
         T(". Because the perturbation acts through the oscillator, f₀ and "
           "amplitude wobble arrive correlated, as they do in real song"),
         C("chen2013"),
-        T(". All noise comes from a seeded xorshift32 stream, which makes “the "
-          "same turbulence” a testable claim on both sides of the contract."),
+        T(". All noise comes from a seeded xorshift32 stream, so the pipeline "
+          "and the browser generate the same turbulence."),
     ])
     P(doc, [
         B("The fricative route, which is the one extension that ships. "),
         T("A real chip note is a broadband burst shaped by the tract, closer to "
-          "a whispered vowel than to a tone with hiss on it. The evidence was "
-          "two species parked at the noise ceiling and still failing: Algerian "
-          "nuthatch types scored cosine 0.16 to 0.60 with the noise parameter "
-          "already at 0.60 to 0.85. The fit was reporting a missing "),
+          "a whispered vowel than to a tone with hiss on it. The evidence came "
+          "from two species already at the noise ceiling: Algerian nuthatch "
+          "types scored cosine 0.16 to 0.60 with the noise parameter at 0.60 "
+          "to 0.85. The fit was asking for a missing "),
         I("shape"),
-        T(", not a missing amount. The route sends turbulence around the "
-          "f₀-tracking band into the syllable's own fitted formant set, driven "
-          "by the same pressure gesture as the tonal source. The bench median "
-          "moved 0.584 to 0.656, end to end 13 wins and 0 losses, and it ships "
-          "per type only where the resynthesis beats the tonal fit. Syllables "
-          "without the flag render bit-identically (docs/16 §16.7)."),
+        T(", and more noise was the wrong axis. The route sends turbulence "
+          "around the f₀-tracking band into the syllable's own fitted formant "
+          "set, driven by the same pressure gesture as the tonal source. The "
+          "bench median moved 0.584 to 0.656, end to end 13 wins and 0 losses. "
+          "It ships per type where the resynthesis beats the tonal fit, and "
+          "every other syllable renders exactly as before (docs/16 §16.7)."),
     ])
     add_figure(doc, figs["chain"], [
         B("Figure 3 — The synthesis signal chain. "),
@@ -1737,12 +1739,12 @@ def build_docx(eq_paths, figs):
     add_equation(doc, eq_paths, "respiration", 4)
     P(doc, [
         T("A Heaviside conductance asymmetry between inflow and outflow lets "
-          "attack shape and cross-syllable memory emerge instead of being "
-          "designed. The hand-set default lost its pre-registered bake-off: "
-          "median cosine 0.343 to 0.336, with the losses concentrated in "
-          "sub-50 ms notes whose onsets the physically correct 20 to 40 ms "
-          "attack eats. The second extension couples the syrinx's two sides "
-          "through the shared tracheal pressure"),
+          "attack shape and cross-syllable memory emerge from the dynamics. "
+          "The hand-set default lost its pre-registered bake-off: median "
+          "cosine 0.343 to 0.336, with the losses concentrated in sub-50 ms "
+          "notes whose onsets the physically correct 20 to 40 ms attack eats. "
+          "The second extension couples the syrinx's two sides through the "
+          "shared tracheal pressure"),
         C("laje2005", "suthers1990", "goller1996"),
         T(", and it is parked for the same reason, 0.343 to 0.294 with the "
           "hand-set default, although the two worst-fitting low-pitched species "
@@ -1770,23 +1772,22 @@ def build_docx(eq_paths, figs):
           "strong-coupling boundary falls exactly where its paper says the "
           "weak-coupling approximation dies"),
         C("laje2005"),
-        T(". Nothing the project has measured implicates the oscillator."),
+        T(". The oscillator survives every measurement the project has made."),
     ])
     P(doc, [
-        T("Everything it has measured implicates three other places. The "),
+        T("Those measurements implicate three other places. The "),
         B("representation"),
         T(" of a syllable — one tension contour, one envelope, one static tract "
           "— cannot hold what a real note carries. The "),
         B("gesture sources"),
-        T(" are designed rather than measured, which is what section 2.4 costs. "
-          "And the "),
+        T(" are designed by hand, and section 2.4 prices that. And the "),
         B("objective"),
         T(" is unproven as a fidelity ranking, which is section 8. The most "
-          "legible symptom is a parameterisation choice. The γ rule parks every "
-          "syllable's median pitch at "),
+          "legible symptom is a parameterisation choice. The γ rule parks "
+          "every syllable's median pitch at "),
         I("β"),
-        T(" ≈ 1, the tonal end of the model rather than its middle, and the "
-          "spectrally rich tail is simply absent from the output."),
+        T(" ≈ 1, the tonal end of the model, and the output loses the "
+          "spectrally rich tail."),
     ])
     add_figure(doc, figs["pin"], [
         B("Figure 4 — The tonal-regime pin. "),
@@ -1804,8 +1805,7 @@ def build_docx(eq_paths, figs):
           "tension floor or ceiling while audible, so their pitch rides the "
           "clamp instead of the dynamics. The fit is asking the equations for "
           "frequencies outside the range the calibration table measures. The "
-          "honest fix is on the fit side, in per-syllable γ and wider sweeps, "
-          "and not in new equations."),
+          "fix belongs on the fit side, in per-syllable γ and wider sweeps."),
     ])
     P(doc, [
         T("Table 2 is the useful form of this. What a listener calls noise or "
@@ -1818,7 +1818,7 @@ def build_docx(eq_paths, figs):
           "files both as artificial, because real syringes live between the "
           "regimes, and the model contains that middle"),
         C("sitt2008", "amador2008"),
-        T(" while the fit cannot find its way there."),
+        T(" while the fit stays at one end of it."),
     ])
     add_table(
         doc,
@@ -1863,7 +1863,7 @@ def build_docx(eq_paths, figs):
     )
     add_caption(doc, [
         B("Table 2 — The noise-and-machine taxonomy. "),
-        T("Six symptoms, six measured causes, and not one of them in the "
+        T("Six symptoms and six measured causes, all of them outside the "
           "oscillator. Source: docs/21 §21.2."),
     ])
 
@@ -1871,14 +1871,16 @@ def build_docx(eq_paths, figs):
     H1(doc, "3", "The corpus: decode, describe, delete")
     lede(
         doc,
-        "The harvest downloads a recording, decodes it, measures every syllable "
-        "in it, and deletes the file. What survives is two sets of numbers per "
-        "syllable. This is load-bearing rather than tidy: xeno-canto recordings "
-        "carry per-file Creative Commons licences, largely non-commercial, so a "
-        "corpus that keeps no audio is the only corpus this project is allowed "
-        "to ship. One exception exists and is owner-sanctioned — a local "
-        "training cache, gitignored, deleted at the end of the phase, and never "
-        "read by the app."
+        "The harvest downloads a recording, decodes it, measures every "
+        "syllable in it, and deletes the file. What survives is two sets of "
+        "numbers per syllable. This is the design constraint the whole "
+        "project is built on, and it is worth stating once, here, in full. "
+        "Xeno-canto recordings carry per-file Creative Commons licences, "
+        "largely non-commercial. A corpus of measurements carries none of "
+        "them, so a corpus of measurements is the one this project can build "
+        "on, ship and share. One exception is owner-sanctioned: a local cache "
+        "holds staged audio for the current training phase, on the machine "
+        "that fits the model, and it is deleted when the phase ends."
     )
     P(doc, [
         T("The first measurement is a 28-dimensional descriptor: 13 MFCC means, "
@@ -1887,14 +1889,14 @@ def build_docx(eq_paths, figs):
           "contract, 48 kHz mono with 1024/512 Hann frames, which the browser "
           "re-implements sample for sample (docs/08 §8.2). The second is a "
           "fixed 32×23 log-mel patch: 736 numbers, log magnitude only, no "
-          "phase, resampled onto the syllable's own duration. A patch cannot be "
-          "turned back into recognisable audio, so the licensing property holds "
-          "while a spectral fingerprint survives (docs/09 §9.3)."),
+          "phase, resampled onto the syllable's own duration. The patch keeps "
+          "the spectral fingerprint the critic learns from, at a resolution "
+          "no decoder can return to recognisable audio (docs/09 §9.3)."),
     ])
     P(doc, [
         B("The stores, because every number in this note names one. "),
-        T("No measurement here is quoted without the corpus it came from. Table "
-          "3 lists them in order, and figure 5 shows what each ingest bought."),
+        T("Every measurement here names the corpus it came from. Table 3 lists "
+          "the stores in order, and figure 5 shows what each ingest bought."),
     ])
     add_table(
         doc,
@@ -1926,16 +1928,16 @@ def build_docx(eq_paths, figs):
     ])
     P(doc, [
         B("Breadth came first, and depth had to be bought separately. "),
-        T("The iNatSounds ingest multiplied the species count by 31 and did "
-          "nothing for depth per species, which is what nearly every open "
-          "problem in this note actually needs. The P0 depth harvest was the "
+        T("The iNatSounds ingest multiplied the species count by 31 and left "
+          "depth per species where it was. Depth is what nearly every open "
+          "problem in this note needs. The P0 depth harvest was the "
           "correction: 100 species chosen for documented syntax cases, "
           "repertoire depth and existing playback anchors, up to 30 recordings "
-          "each, run in four batches of 25 with every species exiting clean. It "
-          "added 139 440 syllables and took the target 100 to a median of 29 "
-          "recordings per species, with 71 of them above the 20-recording "
-          "threshold. The tenth percentile is 5, and that is not a harvest "
-          "failure — xeno-canto has no more for those birds. The store grew "
+          "each, run in four batches of 25 with every species exiting clean. "
+          "It added 139 440 syllables and took the target 100 to a median of "
+          "29 recordings per species, with 71 of them above the 20-recording "
+          "threshold. The tenth percentile is 5, which is the archive's own "
+          "ceiling — xeno-canto holds no more for those birds. The store grew "
           "28.65 MB per species, all of it measurements."),
     ])
     add_figure(doc, figs["corpus"], [
@@ -1950,36 +1952,33 @@ def build_docx(eq_paths, figs):
         T("Syllable identity was once decided by seven hand-weighted numbers "
           "with guessed weights. It is now KMeans clustering in the critic's "
           "32-d embedding, with the cluster count chosen by silhouette. Each "
-          "type is then fitted by gesture inversion, a coordinate descent over "
-          "about 16 axes of the synthesiser's parameter vector in three passes, "
-          "scored against the reference observation by the descriptor cosine:"),
+          "type is then fitted by gesture inversion. That is a coordinate "
+          "descent over about 16 axes of the synthesiser's parameter vector, "
+          "in three passes. The descriptor cosine scores each candidate "
+          "against the reference observation:"),
     ])
     add_equation(doc, eq_paths, "cosine", 7)
     P(doc, [
         I("z"),
         T(" is the standardised 28-d descriptor in the harvest population "
-          "frame. Section 8 is largely about what is wrong with this number. It "
-          "remains the optimiser because its failure is bounded and "
-          "cluster-safe. The learn itself is parallel and streaming, with "
-          "per-species fits in a fork pool after one GPU embedding pass and "
-          "checkpoints every 100 species, and it is verified bit-identical to "
-          "the serial fit (docs/16 §16.3). Rhythm is measured rather than "
-          "invented: 26 897 per-transition gaps come out of the same pass, and "
-          "no invented rhythm is left in the app."),
+          "frame. Section 8 examines this number in detail. It remains the "
+          "optimiser because its failure is bounded and cluster-safe. The same "
+          "pass measures rhythm. 26 897 per-transition gaps come out of it, "
+          "and the app plays every gap from that table."),
     ])
 
     # ============ 4. The critic and the two spaces ============
     H1(doc, "4", "The critic, the two spaces, and the recorder in the way")
     lede(
         doc,
-        "One learned component sits in the pipeline, and it never makes a "
-        "sound. The critic is a small convolutional network over the log-mel "
-        "patch. It decides which syllables are the same syllable, it flags the "
-        "ones it has never heard, and its internal representation is the "
-        "coordinate system of the map. It also organises that map by "
-        "microphone before it organises it by bird, which is the largest "
-        "unsolved problem in this note and is stated here rather than in a "
-        "footnote."
+        "One learned component sits in the pipeline. It scores and it types, "
+        "and it never generates audio. The critic is a small convolutional "
+        "network over the log-mel patch. It decides which syllables are the "
+        "same syllable, it flags the ones it has never heard, and its "
+        "internal representation is the coordinate system of the map. It also "
+        "organises that map by microphone before it organises it by bird. "
+        "That is the largest unsolved problem in this note, and section 4.4 "
+        "measures it."
     )
     H2(doc, "4.1  A critic that scores, never sings")
     P(doc, [
@@ -1996,8 +1995,8 @@ def build_docx(eq_paths, figs):
     ])
     add_equation(doc, eq_paths, "ntxent", 5)
     P(doc, [
-        T("Augmentations are time stretches, gain changes and added noise, "
-          "never pitch shifts, which are genuinely type-diagnostic. Whole "
+        T("Augmentations are time stretches, gain changes and added noise. "
+          "Pitch shifts stay out, because pitch is type-diagnostic. Whole "
           "species are held out of training, so realism and novelty are "
           "measured on birds the network has never seen. The current critic "
           "trained on 2 686 species with 895 held out entirely. It scores "
@@ -2005,8 +2004,8 @@ def build_docx(eq_paths, figs):
           "over 2 686 classes against chance of 0.0004. Its novelty ROC is "
           "0.846, flagging 32.2 % of unheard species' syllables at a chosen 5 % "
           "false-positive rate (docs/16 §16.2). The 32-d embedding is the "
-          "deliverable. The realism logit is a refuted objective, and section 8 "
-          "records how it failed."),
+          "deliverable. Section 8 records how the realism logit failed as a "
+          "fit objective."),
     ])
     H2(doc, "4.2  What the embedding bought")
     P(doc, [
@@ -2015,29 +2014,29 @@ def build_docx(eq_paths, figs):
           "on the 9 k store against chance of 4.0 %. On the 40 k store it moved "
           "placement from 38.4 % to 51.7 %, a gain of 13.3 points, against "
           "chance of 7.7 %. The guardrail cosine held at 0.807 to 0.796 and F0 "
-          "error improved from 3.3 % to 2.2 %. Nothing regressed, on two "
-          "independent stores (docs/09 §9.7 and §9.8). The same retrain epochs "
-          "lifted novelty detection through 0.596, 0.786 and 0.846, with the "
-          "true-positive rate at 5 % false positives going from 7.4 % to "
-          "32.2 %. Those three ROC numbers are reported per epoch on purpose, "
-          "rather than as the best one."),
+          "error improved from 3.3 % to 2.2 %. Every tracked metric held or "
+          "improved, on two independent stores (docs/09 §9.7 and §9.8). The "
+          "same retrain epochs lifted novelty detection through 0.596, 0.786 "
+          "and 0.846, with the true-positive rate at 5 % false positives going "
+          "from 7.4 % to 32.2 %. The three ROC numbers are reported per epoch, "
+          "so the whole trajectory stays visible."),
     ])
     P(doc, [
         T("The learn that consumes it is fast and exactly reproducible. "
-          "Parallel per-species fitting is verified bit-identical to the serial "
-          "fit, and the 3 800-species learn went from about three hours to "
-          "about fifteen minutes on sixteen workers. Checkpointing every 100 "
-          "species arrived after two crash losses taught the lesson. The "
-          "current learn on the deepened store fitted 2 421 species into 13 859 "
-          "types in 23 minutes, and every fitted species carries a recovered "
-          "common name."),
+          "Per-species fits run in a fork pool after one GPU embedding pass, "
+          "verified bit-identical to the serial fit, and the 3 800-species "
+          "learn went from about three hours to about fifteen minutes on "
+          "sixteen workers. It checkpoints every 100 species. The current "
+          "learn on the deepened store fitted 2 421 species into 13 859 types "
+          "in 23 minutes, and every fitted species carries a recovered common "
+          "name (docs/16 §16.3)."),
     ])
     H2(doc, "4.3  Two feature spaces and a bridge")
     P(doc, [
         T("Two feature spaces coexist because of one constraint. The "
           "hand-written 28-d descriptor is what the browser can compute live. "
-          "The critic's 32-d embedding is what the map is clustered in. No "
-          "torch ships to the browser, so a bridge maps the first space into "
+          "The critic's 32-d embedding is what the map is clustered in. The "
+          "browser runs without torch, so a bridge maps the first space into "
           "the second: random Fourier features approximating an RBF kernel, "
           "then a closed-form ridge regression, fitted on descriptor-embedding "
           "pairs from the store with the knobs chosen on held-out recordings "
@@ -2046,14 +2045,13 @@ def build_docx(eq_paths, figs):
     add_equation(doc, eq_paths, "rff", 6)
     P(doc, [
         T("The bridge ships as plain numbers, D = 2048 features with σ = 4 and "
-          "λ = 1 on the reference fit, and it is gated. A median mapped-versus-"
-          "true cosine below 0.8 on held-out recordings ships "),
-        I("accepted: false"),
-        T(" and the browser stays on the 28-d path. The debug build passes at "
-          "0.962. A linear ridge was the original and more honest choice, and "
-          "it broke at 0.7997, just under the gate, once the embedding grew "
-          "finer. That refutation is recorded in place rather than quietly "
-          "replaced."),
+          "λ = 1 on the reference fit, and it ships only when it earns its "
+          "place. It goes to the browser when the median mapped-versus-true "
+          "cosine on held-out recordings reaches 0.8. Below that the browser "
+          "works from the 28-d descriptor alone. The debug build passes at "
+          "0.962. A linear ridge came first. It reached 0.7997 once the "
+          "embedding grew finer, just under the gate, so the random-Fourier "
+          "version replaced it."),
     ])
     add_figure(doc, figs["spaces"], [
         B("Figure 6 — Two feature spaces and the bridge. "),
@@ -2070,8 +2068,7 @@ def build_docx(eq_paths, figs):
     ])
     add_equation(doc, eq_paths, "knnlift", 8)
     P(doc, [
-        T("On the production embedding the strongest relation is not the bird. "
-          "It is "),
+        T("On the production embedding the strongest relation is "),
         I("which recordist made the recording"),
         T(": kNN lift +0.488, against species at +0.196 (docs/14 §14.4). Every "
           "consumer of the embedding inherits that. The typing, the novelty "
@@ -2080,25 +2077,26 @@ def build_docx(eq_paths, figs):
           "invariance is a training-time problem"),
         C("moummad", "morocutti", "avex"),
         T(", so Birdy attacked it there, three times, on pre-registered gates "
-          "(docs/17). All three attacks on the loss failed, and they failed "
-          "informatively."),
+          "(docs/17). All three attempts on the loss side missed their gate, "
+          "and each one named a reason."),
     ])
     P(doc, [
-        B("Augmentation is free and does nothing. "),
+        B("Augmentation is free, and it leaves the confound where it was. "),
         T("Channel-EQ simulation and Freq-MixStyle on log-mel patches are "
           "perfectly species-safe, and they move recordist lift by −0.7 % "
-          "relative, which is nothing. "),
+          "relative. "),
         B("The adversarial head works and costs exactly what it buys. "),
         T("A recordist-adversarial head does move the target, and the trade is "
-          "almost perfectly linear in log weight. At w = 0.05 it takes 33 % off "
-          "recordist lift and 14.7 points off species accuracy. At w = 0.3 the "
-          "embedding is destroyed, with species accuracy at 0.199 and realism "
-          "AUC at 0.862. No swept weight buys the required 30 % while holding "
-          "species inside the gates. Recorder invariance costs species "
-          "information at roughly one to one (docs/17 §17.3)."),
+          "almost perfectly linear in log weight. At w = 0.05 it takes 33 % "
+          "off recordist lift and 14.7 points off species accuracy. At w = 0.3 "
+          "the embedding is destroyed, with species accuracy at 0.199 and "
+          "realism AUC at 0.862. Every swept weight that reaches the required "
+          "30 % puts species accuracy outside the gate. Recorder invariance "
+          "costs species information at roughly one to one (docs/17 §17.3)."),
     ])
     P(doc, [
-        B("The species-safe version cannot reach the confound at all. "),
+        B("The species-safe version protects species and leaves the confound "
+          "standing. "),
         T("Masking the adversarial softmax to recordings of the patch's own "
           "species fences species information out by construction, and it does "
           "exactly that: species lift stays flat to +10 % at every weight. But "
@@ -2106,8 +2104,8 @@ def build_docx(eq_paths, figs):
           "part. The recordist signal is carried "),
         I("between"),
         T(" species, because each species' recordings come from different "
-          "people, and that is precisely where a species-factored head is "
-          "forbidden to look (docs/17 §17.5)."),
+          "people. That is precisely the place a species-factored head is "
+          "built to ignore (docs/17 §17.5)."),
     ])
     add_figure(doc, figs["confound"], [
         B("Figure 7 — The confound, and why the loss road is closed. "),
@@ -2122,7 +2120,7 @@ def build_docx(eq_paths, figs):
         B("Data helps, and the honest re-test shrank the help. "),
         T("The AVEX direction"),
         C("avex"),
-        T(" held where the losses did not: merging two recording domains per "
+        T(" held: merging two recording domains per "
           "species beat every loss term tried. The first test used 12 species "
           "with a 3-species holdout, and the pre-registered bigger re-test used "
           "63 both-domain species with 16 held out. The re-test shrank every "
@@ -2130,9 +2128,9 @@ def build_docx(eq_paths, figs):
           "contrastive mechanism's +13.4-point boost became +1.7 against a +10 "
           "gate, and the AUC drop that had counted against it reversed. What "
           "survives at both scales is the ordering, and the ordering is what "
-          "matters: more domains per species helps, the mechanism adds about "
-          "nothing on top, and no loss term buys invariance more cheaply than "
-          "data does (docs/17 §17.4 and §17.6). The same lesson arrives twice "
+          "matters: more domains per species helps, the mechanism adds little "
+          "on top, and data buys invariance more cheaply than any loss term "
+          "tried (docs/17 §17.4 and §17.6). The same lesson arrives twice "
           "in this note, from two directions. Small samples flatter whichever "
           "arm you hoped for."),
     ])
@@ -2149,12 +2147,11 @@ def build_docx(eq_paths, figs):
     lede(
         doc,
         "The map is a precomputed three-dimensional point cloud with one point "
-        "per measured syllable. It is a measurement rather than an "
-        "illustration, which is a distinction the project pays for: hand-set "
-        "jitter survives only where no measurement exists, and where it "
-        "survives it is labelled invented. The app that reads it is a static "
-        "site. It loads JSON and float arrays, synthesises in an AudioWorklet, "
-        "analyses the microphone, and never calls a Python process."
+        "per measured syllable. Where a measurement exists the map shows it. "
+        "Where none exists, hand-set jitter fills the gap and carries the "
+        "invented label. The app that reads the map is a static site. It "
+        "loads JSON and float arrays, synthesises in an AudioWorklet, "
+        "analyses the microphone, and runs entirely in the browser."
     )
     P(doc, [
         T("The browser runs the same oscillator as the pipeline and the same "
@@ -2171,14 +2168,13 @@ def build_docx(eq_paths, figs):
         T("Raw knot-level agreement between the bridged position and the true "
           "one is 0.61 on held-out recordings, which reads like a failing map. "
           "Decomposing the 38.6 % disagreement over 3 731 held-out syllables "
-          "says otherwise. 76.4 % of it is boundary near-ties, with 74 % of all "
+          "locates it. 76.4 % of it is boundary near-ties, with 74 % of all "
           "rows sitting within a margin of 0.05 and 41 % of flips landing on "
-          "the runner-up knot. Tie-adjusted agreement is 0.91. Genuine "
-          "big-margin map failure is about 4 % of rows, and no better map class "
-          "can fix a near-tie, because at a knot boundary the question is "
-          "ill-posed. The honest single-label claim is species-level agreement, "
-          "which is 0.78, and that is the claim the interface makes (docs/20 "
-          "§20.1)."),
+          "the runner-up knot. Tie-adjusted agreement is 0.91. Big-margin map "
+          "failure accounts for about 4 % of rows. At a knot boundary the "
+          "question is ill-posed, so a better map class would leave the "
+          "near-ties where they are. The single-label claim the interface "
+          "makes is species-level agreement, which is 0.78 (docs/20 §20.1)."),
     ])
     P(doc, [
         B("Eight recordings carry a quarter of the damage. "),
@@ -2186,13 +2182,13 @@ def build_docx(eq_paths, figs):
           "map's flip loss, and all 8 are xeno-canto. They separate cleanly. An "
           "off-manifold 5-NN distance — computable from the 28-d side alone, "
           "which is all the browser will ever have — reaches AUC 0.953 against "
-          "the bad-session label, and a shipped cloud of 256 random anchors "
+          "the bad-session label. A shipped cloud of 256 random anchors "
           "weighing 28 kB holds AUC at or above 0.92. The pre-registered "
-          "two-signal combination adds nothing at 0.954, so it does not ship. "
-          "The lever gate failed its raw bar at +3.5 points against +5, so the "
-          "pre-registered fallback fired and the signal ships as an "),
+          "two-signal combination reaches 0.954, so the single signal ships "
+          "alone. The map-flip lever measured +3.5 points against a +5 bar, so "
+          "the pre-registered fallback fired. The signal ships as an "),
         B("honesty gate"),
-        T(" instead of a correction: “this session is off everything the galaxy "
+        T(" rather than a correction: “this session is off everything the galaxy "
           "knows, and positions are guesses.” On the shipped operating point it "
           "flags 8 of 45 sessions, catches 5 of the 8 bad ones including the "
           "three worst loss-carriers, and produces 3 clean false flags, all "
@@ -2208,12 +2204,13 @@ def build_docx(eq_paths, figs):
     ])
     P(doc, [
         B("Removing the bad sessions from the fit makes things worse. "),
-        T("The obvious move is to drop the worst-quintile off-manifold sessions "
-          "before fitting. It costs 0.006 and 0.015 of evaluation cosine on the "
-          "two debug stores, against an allowance of 0.005, so it failed its "
-          "gate. The reading is more useful than the fail: the weird sessions "
-          "are manifold coverage, and pruning them hurts the next unseen weird "
-          "session. Gating is a live-path action only (docs/20 §20.3.1)."),
+        T("The obvious move is to drop the worst-quintile off-manifold "
+          "sessions before fitting. It costs 0.006 and 0.015 of evaluation "
+          "cosine on the two debug stores, against an allowance of 0.005, so "
+          "it missed its gate. The reading is the useful part: the weird "
+          "sessions are manifold coverage, and pruning them hurts the next "
+          "unseen weird session. Gating belongs on the live path (docs/20 "
+          "§20.3.1)."),
     ])
 
     # ============ 6. Structure above the syllable ============
@@ -2223,14 +2220,14 @@ def build_docx(eq_paths, figs):
         "A syllable is not a sentence. Above the syllable sit transitions, "
         "bouts, song types and dialects, and this is where a project about "
         "birdsong either becomes interesting or admits it is a sound library. "
-        "Birdy measures what it can at this level and reports that most of it "
-        "is currently starved by corpus depth rather than by missing machinery. "
-        "The machinery has been built and pre-registered anyway, so the re-test "
-        "after the depth harvest is a re-run rather than a project."
+        "Birdy measures what it can at this level. Corpus depth is what "
+        "starves most of it, and the machinery is already built and "
+        "pre-registered. The re-test after the depth harvest is therefore a "
+        "re-run."
     )
     P(doc, [
-        T("Birdsong is not first-order. Repeat-count adaptation and partially "
-          "observable structure are both established"),
+        T("The literature places birdsong above first order. Repeat-count "
+          "adaptation and partially observable structure are both established"),
         C("jin2011", "lu2025"),
         T(". Birdy ran the pre-registered bake-off anyway: the shipped "
           "first-order transitions against Jin–Kozhevnikov repeat-count "
@@ -2243,8 +2240,7 @@ def build_docx(eq_paths, figs):
           "−1.624. The HMM's entire advantage sits in the 10 % unseen tail, "
           "−9.25 against −4.16. That is a property of smoothing "),
         I("shape"),
-        T(", not of recovered hidden structure, and adopting a heavier model "
-          "for a smoothing artifact is the wrong lesson. First-order stays "
+        T(", and not of recovered hidden structure. First-order stays "
           "(docs/18 P1)."),
     ])
     P(doc, [
@@ -2253,13 +2249,13 @@ def build_docx(eq_paths, figs):
           "that has a cheap fix. A Kneser–Ney continuation backoff gained +1.90 "
           "and +2.32 nats per token on unseen-context transitions across the "
           "two debug stores, while the seen side stayed bit-identical with loss "
-          "of exactly 0.0000. The honest scope belongs next to it: 80 % of the "
-          "unseen tail is seen-context, so the gain over the full tail is +0.37 "
-          "and +0.65."),
+          "of exactly 0.0000. The scope belongs next to it: 80 % of the "
+          "unseen tail is seen-context, so the gain over the full tail is "
+          "+0.37 and +0.65."),
     ])
     add_figure(doc, figs["syntax"], [
-        B("Figure 10 — Why the heavier grammar was refused, and why syntax "
-          "starves. "),
+        B("Figure 10 — Where the heavier grammar's advantage lives, and what "
+          "syntax still needs. "),
         T("Left: held-out likelihood split by whether the transition was seen "
           "in training. Right: species of the debug-100 store with enough bouts "
           "to attempt song-level structure. Both debug-scale. Source: docs/18 "
@@ -2270,30 +2266,29 @@ def build_docx(eq_paths, figs):
         T("Clustering run-collapsed sequences of type ids by normalised edit "
           "distance found 50 song types across 13 of 35 species, placing 693 of "
           "2 419 candidate bouts. A global-permutation control yields 0.2 % at "
-          "the shipped constants, which is one spurious type, so the recurrence "
-          "floor is measured rather than assumed. The nightingale, the famous "
+          "the shipped constants, which is one spurious type, so the "
+          "recurrence floor is measured. The nightingale, the famous "
           "improviser, yields zero types over 275 candidate bouts, and that "
-          "agreement with a century of field notes is the most reassuring "
-          "negative in the project (docs/12). Forty-eight species carry "
-          "detected song types today, and the app plays each type heard at "
-          "least twice as a song, with repeats sampled from the bird's own "
-          "measured self-transition rates and gaps from the measured transition "
-          "table."),
+          "agrees with a century of field notes (docs/12). Forty-eight species "
+          "carry detected song types today. The app plays each type heard at "
+          "least twice as a song. Repeats are sampled from the bird's own "
+          "measured self-transition rates, and the gaps come from the measured "
+          "transition table."),
     ])
     P(doc, [
-        B("The song-level kernel failed both its gates, and the reason is one "
-          "number. "),
+        B("The song-level kernel lost to a simpler baseline, and one number "
+          "says why. "),
         T("A weighted edit distance over sequences of type and gap loses "
           "species lift to plain bag-of-types, +0.877 against +0.924 on the "
           "37-species store and +0.050 against +0.081 on debug-100. It also "
-          "fails the recordist gate at +0.264. Within-species song structure "
-          "does exist, and all 18 deep species separate their own recordings, "
-          "but it lives entirely in the token marginals. Order and rhythm add "
-          "nothing measurable at current depth. The one number is that only 12 "
-          "of the debug-100 species have 20 or more bouts after run-collapse. "
-          "The bar any learned song encoder must beat is now bag-of-types, and "
-          "the depth harvest is what makes the attempt worth running (docs/18 "
-          "P2)."),
+          "misses the recordist gate at +0.264. Within-species song structure "
+          "does exist, and all 18 deep species separate their own recordings. "
+          "It lives entirely in the token marginals, so order and rhythm sit "
+          "at the measurement floor at current depth. The one number is that "
+          "only 12 of the debug-100 species have 20 or more bouts after "
+          "run-collapse. The bar any learned song encoder must beat is now "
+          "bag-of-types, and the depth harvest is what makes the attempt worth "
+          "running (docs/18 P2)."),
     ])
 
     # ============ 7. The unknown bird ============
@@ -2301,25 +2296,24 @@ def build_docx(eq_paths, figs):
     lede(
         doc,
         "What happens when a bird the system has never heard starts to sing? "
-        "Not a guess, and not silence. The arrival is measured and compared "
-        "against everything known. If it fits nothing, it is allowed to be new. "
+        "The arrival is measured and compared against everything known. A "
+        "syllable that matches nothing is allowed to be new. "
         "It waits with similar arrivals until enough of them agree to found a "
         "new knot in the map. An external model may suggest which species it "
         "resembles, and that suggestion is metadata, never identity."
     )
     P(doc, [
         T("The arrival pipeline is live end to end. Each new observation is "
-          "embedded and scored against a calibrated novelty threshold, which is "
-          "a chosen false-positive rate rather than a discovered boundary. "
-          "Known-looking syllables inherit the nearest type. In a "
-          "relabel-recovery test, 97.4 % of relabelled syllables inherited a "
-          "known type and 65.2 % inherited the correct species' type. The "
-          "misassignments go to similar-sounding types of other species, which "
-          "is the detector behaving as designed: it prices acoustic "
-          "neighbourhood, not taxonomy. Novel syllables are not force-assigned. "
-          "Below quorum they stay unassigned. At quorum, which is 8 or more "
-          "coherent pending points inside a 0.70 cosine radius above a 0.75 "
-          "cohesion floor, they found a new knot labelled "),
+          "embedded and scored against a calibrated novelty threshold, which "
+          "is set at a chosen false-positive rate. Known-looking syllables "
+          "inherit the nearest type. In a relabel-recovery test, 97.4 % of "
+          "relabelled syllables inherited a known type and 65.2 % inherited "
+          "the correct species' type. The misassignments go to "
+          "similar-sounding types of other species, which is the detector "
+          "behaving as designed: it prices acoustic neighbourhood. Novel "
+          "syllables wait. Below quorum they stay unassigned. Quorum is 8 or "
+          "more coherent pending points inside a 0.70 cosine radius, above a "
+          "0.75 cohesion floor. At quorum they found a new knot labelled "),
         I("unheard syllable"),
         T(", at confidence "),
         B("“unlabelled: real acoustics, no documented function”"),
@@ -2331,20 +2325,17 @@ def build_docx(eq_paths, figs):
         T(" labels the novel-flagged syllables from the training cache. It runs "
           "as ONNX, offline, at about 48 ms per window, and its label reads "),
         I("closest documented species, Perch 2.0 inference, unverified"),
-        T(". It is metadata only. Nothing in the learn path may read it. The "
-          "store holds 23 697 novel syllables, and 841 of them are honestly "
-          "unlabelable because their xeno-canto audio was deleted by design, "
-          "which the pipeline states rather than guesses around. Structure "
-          "above the syllable inherits the same label all the way up (docs/18 "
-          "P6)."),
+        T(". The label is metadata, and the typing path never reads it. The "
+          "store holds 23 697 novel syllables, and the pipeline reports 841 of "
+          "them as unlabelable, because their xeno-canto audio was deleted by "
+          "design. Structure above the syllable inherits the same label all "
+          "the way up (docs/18 P6)."),
     ])
     P(doc, [
-        B("Thresholds do not transfer, and that was found the hard way. "),
+        B("A threshold holds only for the corpus that calibrated it. "),
         T("A novelty threshold calibrated for 5 % false positives on the 9 k "
           "store flagged 29.8 % of the 47 k store. Recalibration is cheap and "
-          "is now automatic, and the ROC is reported per corpus epoch rather "
-          "than as the best one ever measured. Anything more confident than "
-          "this pipeline is numerology, and the interface keeps saying so."),
+          "now runs automatically, and the ROC is reported per corpus epoch."),
     ])
 
     # ============ 8. The ruler problem ============
@@ -2355,10 +2346,10 @@ def build_docx(eq_paths, figs):
         "gesture search, the respiration and two-voice ship gates, the "
         "fricative routing, the extension bake-offs. That number is the cosine "
         "between the resynthesis's 28-d descriptor and the real audio's. In "
-        "2026 the project finally asked the question none of those gates could "
-        "ask. Is a cosine gain an audible gain? It is not. This section is the "
-        "answer and its consequences, and it is the reason section 11 is "
-        "ordered the way it is."
+        "2026 the project measured the assumption under all of those gates. "
+        "Is a cosine gain an audible gain? It is not. This section reports "
+        "that measurement and its consequences, and it is the reason section "
+        "11 is ordered the way it is."
     )
     P(doc, [
         T("The bench (docs/19 §19.1) is the instrument. For a fitted type, "
@@ -2380,13 +2371,14 @@ def build_docx(eq_paths, figs):
     P(doc, [
         B("The finding. "),
         T("Over 200 fitted types on the debug-100 store, the cosine's "
-          "correlation with audible distortion sits at about 0.1, with "
-          "p-values that cannot reject zero and point estimates that lean the "
-          "wrong way. This is not a bench artifact. The recomputed cosine "
-          "reproduces the stored one at Pearson 0.921, so the bench measured "
-          "the number the learn actually uses. MCD and STFT agree with each "
-          "other at 0.925, so they measure something coherent, and the cosine "
-          "does not measure it. There is even a plausible mechanism for the "
+          "correlation with audible distortion sits at about 0.1. The p-values "
+          "cannot reject zero, and the point estimates lean the wrong way. "
+          "Two controls place the finding in the objective itself. "
+          "The recomputed cosine reproduces the stored one at Pearson 0.921, "
+          "so the bench measured the number the learn actually uses. MCD and "
+          "STFT agree with each other at 0.925, so they measure something "
+          "coherent, and the cosine tracks something else. There is even a "
+          "plausible mechanism for the "
           "wrong-way lean. High-cosine types are clean whistles whose renders "
           "concentrate energy in one band while the field audio carries "
           "broadband noise everywhere else, so the spectral distance is large. "
@@ -2394,23 +2386,24 @@ def build_docx(eq_paths, figs):
           "sides, so their distance is small."),
     ])
     P(doc, [
-        T("The obvious fix was tried and did not survive its own sample size. "
-          "A mel-path target — a time-resolved exp(−LSD) similarity to the "
+        T("The obvious fix was tried at two sample sizes, and the larger one "
+          "settled it. A mel-path target — a time-resolved exp(−LSD) similarity to the "
           "type's measured mel trajectory — is the better "),
         I("measurement"),
         T(" by a wide margin, at Spearman −0.420 against MCD where the cosine "
           "reads +0.100, signs correct. It is the worse "),
         I("optimiser"),
         T(". At blend weight 1.0 the cosine guardrail collapses by 0.377. A "
-          "10-type probe won 7 of 10 on MCD, and the pre-registered 80-type "
-          "gate run took that to a 31 % win share against a 60 % bar, with a "
-          "median ΔMCD of exactly 0.0 dB and one type losing 0.120 cosine. The "
-          "honest reading is better than the bare fail: the objective change "
-          "mostly does nothing, because the inversion already lands where the "
-          "blend would send it. It occasionally helps enormously, with a mean "
-          "of +2.07 dB pulled by a handful of types at +13.8 dB. And it "
-          "sometimes wanders. An objective that is a wash on the median with an "
-          "unguarded tail is not a default (docs/19 §19.4 and §19.5)."),
+          "10-type probe won 7 of 10 on MCD. The pre-registered 80-type gate "
+          "run took that to a 31 % win share against a 60 % bar, with a median "
+          "ΔMCD of exactly 0.0 dB and one type losing 0.120 cosine. The "
+          "reading is better than the bare verdict. The objective change "
+          "mostly leaves the fit where it was, because the inversion already "
+          "lands where the blend would send it. It occasionally helps "
+          "enormously, with a mean of +2.07 dB pulled by a handful of types at "
+          "+13.8 dB. And it sometimes wanders. An objective with a flat median "
+          "and an unguarded tail stays off by default (docs/19 §19.4 and "
+          "§19.5)."),
     ])
     add_figure(doc, figs["ruler"], [
         B("Figure 11 — The ruler problem, in two panels. "),
@@ -2427,44 +2420,46 @@ def build_docx(eq_paths, figs):
           "monotonically harmful in its weight. At w = 1 the cosine collapses "
           "from 0.762 to 0.335 and placement drops to 17.3 %. The refutation "
           "replicated on the 40 k store, where placement went from 38.4 % to "
-          "31.9 % at w = 0.5. Separating two distributions perfectly is not the "
-          "same as having a gradient that points at the nearer one, and the "
-          "retained cosine guardrail is what made the gaming visible at all "
+          "31.9 % at w = 0.5. Perfect separation of two distributions and a "
+          "gradient that points at the nearer one are different properties. "
+          "The retained cosine guardrail is what made the gaming visible "
           "(docs/09 §9.7 and §9.8)."),
     ])
     P(doc, [
         B("A structurally better tract tells the same story from a third "
           "angle. "),
         T("A fixed waveguide with 32 times the spectral freedom of the tracking "
-          "band improved all three metrics at once on five species, and it was "
-          "a regression across 22, at 23.1 % against 22.2 % placement. It was "
-          "later shown to have been rejected by badly defined types rather than "
-          "by the objective. It now wins on the gan store under learned typing "
-          "at 37.0 % and pays for it in cosine, so it stays promising and "
+          "band improved all three metrics at once on five species. Across 22 "
+          "species it was a regression, at 23.1 % against 22.2 % placement. "
+          "Later "
+          "work traced that rejection to badly defined types, upstream of the "
+          "objective. It now wins on the gan store under learned typing at "
+          "37.0 % and pays for it in cosine, so it stays promising and "
           "unconfirmed (docs/08 §8.1c, docs/09 §9.7)."),
     ])
     P(doc, [
-        B("The oldest open problem is species identity, and four explanations "
-          "for it are already dead. "),
-        T("On the original 22-species store a resynthesis lands nearest its own "
-          "species 23.1 % of the time against chance of 4.5 %. The envelopes "
-          "are not collapsed: the synthesiser expresses 103 % of the real "
-          "between-species spread and 106 % of the spectral detail, varied "
-          "along different axes. A spectral tilt error does exist, and "
+        B("The oldest open problem is species identity, and four candidate "
+          "explanations are measured out. "),
+        T("On the original 22-species store a resynthesis lands nearest its "
+          "own species 23.1 % of the time against chance of 4.5 %. The "
+          "envelopes keep their spread: the synthesiser expresses 103 % of the "
+          "real between-species spread and 106 % of the spectral detail, "
+          "varied along different axes. A spectral tilt error does exist, and "
           "correcting it exactly drops placement to 20.2 %. The harmonic "
-          "structure is not missing, because real syllables resolve to a mean "
-          "of 2.2 partials. And a time-resolved objective improves its own "
-          "metric by 36 % while placement falls from 61.7 % to 43.2 %, which "
-          "means the two objectives conflict. The ceiling is the descriptor and "
-          "the filter chain's capacity rather than the search (docs/08 §8.1a)."),
+          "structure is present, because real syllables resolve to a mean of "
+          "2.2 partials. And a time-resolved objective improves its own metric "
+          "by 36 % while placement falls from 61.7 % to 43.2 %, which means "
+          "the two objectives conflict. The ceiling sits in the descriptor and "
+          "the filter chain's capacity, upstream of the search (docs/08 "
+          "§8.1a)."),
     ])
     P(doc, [
         T("The state of the metrology, verbatim from docs/19 §19.5: "),
         I("“measure spectrally, optimise descriptor-ly”"),
         T(". Every fit gate from here reads the bench. The inversion keeps "
-          "climbing the cosine, because its failure is at least bounded and "
-          "cluster-safe. An objective that is both remains unfound, and that "
-          "sentence is the most important one in this note."),
+          "climbing the cosine, because its failure is bounded and "
+          "cluster-safe. An objective that is both audible and optimisable "
+          "remains the open problem of this note."),
     ])
 
     # ============ 9. The ledger ============
@@ -2571,9 +2566,9 @@ def build_docx(eq_paths, figs):
           "objective. Sources: docs/08 to docs/21 as cited in the body."),
     ])
     P(doc, [
-        T("The shape of that table is the argument. A project that reports only "
-          "the twelve is indistinguishable, from the outside, from a project "
-          "that ran twelve experiments and got lucky. The sixteen are what make "
+        T("The shape of that table is the argument. A project that reports "
+          "only the twelve looks, from the outside, like a project that ran "
+          "twelve experiments and got lucky. The sixteen are what make "
           "the twelve legible. Three of them cost real work and are worth "
           "naming as the expensive lessons: hand-set physics loses bake-offs, "
           "small samples flatter the arm you hoped for, and an objective can be "
@@ -2586,10 +2581,10 @@ def build_docx(eq_paths, figs):
     lede(
         doc,
         "Birdy sits among bioacoustic tools that classify, embed, map or "
-        "generate. None of them is a voice. Table 5 puts the approaches beside "
-        "each other on the properties this project has to care about. A cell "
-        "says “not documented” where the project's own references do not answer "
-        "the question, and the table claims nothing past its sources."
+        "generate. Table 5 puts the approaches beside each other on the "
+        "properties this project has to care about. A cell says “not "
+        "documented” where the project's own references leave the question "
+        "open."
     )
     add_table(
         doc,
@@ -2639,8 +2634,8 @@ def build_docx(eq_paths, figs):
         C("birdnet"),
         T(". A generative audio model would trade interpretability, the claim "
           "ladder and the playback-tested realism evidence for sample quality "
-          "the field cannot yet measure. On the documented cells of table 5, no "
-          "listed approach combines Birdy's particular triple: a bird-validated "
+          "the field cannot yet measure. On the documented cells of table 5, "
+          "Birdy stands alone in combining three properties: a bird-validated "
           "physical voice, a corpus that keeps no audio, and a label on every "
           "claim."),
     ])
@@ -2651,16 +2646,16 @@ def build_docx(eq_paths, figs):
         doc,
         "In order, each with the number that would prove it. The depth harvest "
         "that blocked most of this list is done, so the next steps are re-runs "
-        "of pre-registered comparisons rather than new projects. Under all of "
-        "them sits the metrology problem, which is named and open."
+        "of pre-registered comparisons. Under all of them sits the metrology "
+        "problem of section 8, which stays named and open."
     )
     P(doc, [
         B("Done: the depth harvest. "),
         T("100 species, up to 30 recordings each, +139 440 syllables, median 29 "
           "recordings per species and 71 of 100 above the syntax threshold. "
           "That one action unblocked the grammar re-test, the song-level space "
-          "and the widening of the spectral bench, and nothing else on this "
-          "list has that reach."),
+          "and the widening of the spectral bench. It has the widest reach of "
+          "anything on this list."),
     ])
     P(doc, [
         B("Next: the grammar bake-off, again. "),
@@ -2670,8 +2665,8 @@ def build_docx(eq_paths, figs):
           "repeat-count model's 0 of 30 says so. The bake-off is a re-run, and "
           "its result is pre-committed. "),
         B("Then the song-level embedding. "),
-        T("Bouts as points. The parameter-free kernel baseline already failed, "
-          "so the bar any learned encoder must beat is bag-of-types at +0.924, "
+        T("Bouts as points. The parameter-free kernel baseline already lost, "
+          "so the bar for any learned encoder is bag-of-types at +0.924, "
           "with the recordist-lift gate upstream of it (docs/18 P2)."),
     ])
     P(doc, [
@@ -2694,29 +2689,31 @@ def build_docx(eq_paths, figs):
           "type's measured gesture rather than a median envelope. Its gate is "
           "the bench: an MCD win share of 60 % or better, a median ΔMCD better "
           "than 1 dB, a median cosine drop no worse than 0.02 and a maximum no "
-          "worse than 0.05, on the debug-100 store with the audio cache. That "
-          "is the same set of gates that killed the mel-weight objective, "
-          "applied deliberately. Second, measured physiological jitter and "
+          "worse than 0.05, measured on the debug-100 store against its cached "
+          "audio. Those are the same gates that refused the mel-weight "
+          "objective, applied deliberately. Second, measured physiological "
+          "jitter and "
           "tremor per type: two scalars extending the existing roughness "
           "mechanism into a two-band measured gesture, against the roughly 1 % "
           "rendition-to-rendition frequency variation the literature reports"),
         C("tumer2007", "wood2013"),
-        T(". Its gate is a KS distance halved against the unmodulated render "
-          "with no type regressing more than 1 dB of MCD, on the 100 deepest "
-          "species of the depth harvest, which is the first corpus with enough "
-          "renditions to measure the target at all (docs/21 §21.3)."),
+        T(". Its gate is a KS distance halved against the unmodulated render, "
+          "with no type regressing more than 1 dB of MCD. It runs on the 100 "
+          "deepest species of the depth harvest. That is the first corpus with "
+          "enough renditions to measure the target at all (docs/21 §21.3)."),
     ])
     P(doc, [
-        B("What will not be done, and why it is a decision rather than a gap. "),
-        T("No neural audio generation. No DDSP decoder, no RAVE, no diffusion "
-          "vocoder, no neural timbre transfer. Three reasons, in increasing "
-          "order of weight. They are not parametrically controllable and not "
-          "interpretable. They ship weights the browser contract forbids. And "
-          "they cannot carry the claim ladder, because every claim in the "
-          "interface needs a confidence label grounded in a mechanism a user "
-          "can inspect, and a neural generator's mechanism is a weight matrix. "
-          "The project's own evidence discipline makes the same argument from "
-          "the other side: hand-set "),
+        B("The road the project declines, and the reasons for it. "),
+        T("Neural audio generation stays out: no DDSP decoder, no RAVE, no "
+          "diffusion vocoder, no neural timbre transfer. Three reasons, in "
+          "increasing order of weight. First, they give up parametric control "
+          "and interpretable parameters. Second, they ship weights the browser "
+          "contract forbids. Third, they cannot carry the claim ladder. Every "
+          "claim in the interface needs a confidence label grounded in a "
+          "mechanism a user can inspect, and a neural generator's mechanism is "
+          "a weight matrix. The project's own "
+          "evidence discipline makes the same argument from the other side: "
+          "hand-set "),
         I("physical"),
         T(" extensions, with five interpretable parameters and the "
           "literature's own equations, still had to lose two bake-offs in "
@@ -2743,10 +2740,8 @@ def build_docx(eq_paths, figs):
         T("External literature, numbered in list order, resolving the "
           "superscripts in the body. Internal research notes are cited inline "
           "as “docs/19 §19.2”, which is how they are addressed in the "
-          "repository. They live in the "),
-        I("docs/"),
-        T(" directory, and docs/08 is the normative contract both halves of the "
-          "codebase implement."),
+          "repository. Of these, docs/08 is the normative contract that both "
+          "halves of the codebase implement."),
     ], space_after=10)
     for i, (_, text) in enumerate(REFERENCES):
         p = doc.add_paragraph()
@@ -2763,6 +2758,42 @@ def build_docx(eq_paths, figs):
 
     doc.save(DOCX_PATH)
     return DOCX_PATH
+
+
+def export_with_soffice(docx_path, formats=("pdf", "odt")):
+    """Convert the DOCX with LibreOffice, if LibreOffice is on this machine.
+
+    The DOCX is the build's real product. This step is a convenience, so a
+    missing or unhappy `soffice` prints the command and returns an empty
+    list. The builder never depends on LibreOffice.
+    """
+    soffice = shutil.which("soffice") or shutil.which("libreoffice")
+    if soffice is None:
+        print("pdf:       skipped, no soffice on PATH. To convert by hand:")
+        print(f"           soffice --headless --convert-to pdf --outdir "
+              f"{HERE} {docx_path}")
+        return []
+
+    written = []
+    for fmt in formats:
+        out = os.path.join(HERE, f"birdy-whitepaper.{fmt}")
+        try:
+            subprocess.run(
+                [soffice, "--headless",
+                 "-env:UserInstallation=file:///tmp/lo-birdy",
+                 "--convert-to", fmt, "--outdir", HERE, docx_path],
+                check=True, capture_output=True, timeout=600,
+            )
+        except (subprocess.SubprocessError, OSError) as exc:
+            print(f"{fmt + ':':10s} skipped, soffice failed ({exc}). "
+                  f"To convert by hand:")
+            print(f"           soffice --headless --convert-to {fmt} "
+                  f"--outdir {HERE} {docx_path}")
+            continue
+        if os.path.exists(out):
+            written.append(out)
+            print(f"{fmt + ':':10s} {out}")
+    return written
 
 
 def main():
@@ -2785,6 +2816,7 @@ def main():
     print(f"equations: {len(eq_paths)} in {os.path.join(FIG, 'eq')}")
     print(f"figures:   {len(figs)} in {FIG}")
     print(f"docx:      {out}")
+    export_with_soffice(out)
 
 
 if __name__ == "__main__":

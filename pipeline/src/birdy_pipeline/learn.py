@@ -1605,18 +1605,83 @@ def fricative_seed(
     return before, before
 
 
-# --- syntax ------------------------------------------------------------------------
+# --- syntax: the bout rule ----------------------------------------------------------------------
+
+#: A gap longer than this ends a bout. One second, and until 2026-08-01 it was three
+#: separate literals — `learn_grammar`'s, `bout_sequences`' and `syntax`'s — for one
+#: rule that the grammar, the chunk miner, the bake-off and the song types must all be
+#: defined over or they are measuring different strings. One name, one number.
+GAP_BOUT_SECONDS = 1.0
+#: `species_bout_gaps`' multiplier on a species' own median gap.
+#:
+#: **Why a per-species rule is even a question.** One constant serves 2 421 birds whose
+#: median inter-syllable gap runs from 0.033 s to 0.291 s (p10 to p90 on the production
+#: store), and 21 species have a median gap *over* the constant — for those every
+#: syllable is its own bout, so they cannot have a song at any bar. Five times the
+#: species' own median is the standard shape of a bout-criterion interval: far enough
+#: above the within-bout rhythm to survive its skew, far below the silences between
+#: songs. Measured on the store, it moves candidate bouts 10 550 -> 11 930 and the
+#: species clearing the candidate gate 366 -> 522.
+#:
+#: It is **not** the default, and it did not win its gate. Changing the bout rule
+#: redefines the strings the grammar, `mine_chunks` and the whole docs/18 bake-off are
+#: measured over, so it ships as an opt-in the way every other machinery here does —
+#: and the measurement says keep it off. Measured on the production store against the
+#: same 0.2 % control bar (docs/22): the rule reaches 105 species with a song against
+#: the fixed rule's 98, and the corpus-wide shuffle yield goes **0.170 % -> 0.628 %**.
+#: Splitting a fast singer's bouts finer produces more short strings, and short strings
+#: are what chance can chain. The seven extra species are bought, not found.
+BOUT_GAP_MULTIPLE = 5.0
+#: Clamps on that product. A species whose median gap is 5 ms would otherwise get a
+#: 25 ms bout rule (every trill becomes a hundred bouts), and one recorded only in
+#: sparse dawn song a rule so long it never breaks at all.
+BOUT_GAP_MIN = 0.3
+BOUT_GAP_MAX = 10.0
+
+
+def _gap_rule(gap_seconds: float | dict[str, float], species_id: str) -> float:
+    """The bout gap for one species: a constant, or its entry in a per-species map."""
+    if isinstance(gap_seconds, dict):
+        return float(gap_seconds.get(species_id, GAP_BOUT_SECONDS))
+    return float(gap_seconds)
+
+
+def species_bout_gaps(
+    observations: Sequence[SyllableObservation],
+    multiple: float = BOUT_GAP_MULTIPLE,
+) -> dict[str, float]:
+    """Per-species bout gap: `multiple` x the species' own median `gap_before`, clamped.
+
+    The opt-in bout rule of `BOUT_GAP_MULTIPLE`, as a map `bout_sequences`,
+    `type_sequences` and `learn_grammar` all take. The median rather than a quantile
+    because it is the one statistic a species with forty gaps can carry honestly, and
+    the clamps are what keep a badly-sampled species from redefining a bout as a
+    millisecond or a minute.
+    """
+    gaps: dict[str, list[float]] = defaultdict(list)
+    for o in observations:
+        gaps[o.species_id].append(float(o.gap_before))
+    return {
+        species_id: float(
+            min(BOUT_GAP_MAX, max(BOUT_GAP_MIN, multiple * float(np.median(values))))
+        )
+        for species_id, values in gaps.items()
+        if values
+    }
 
 
 def learn_grammar(
-    observations: Sequence[SyllableObservation], type_of: dict[int, str]
+    observations: Sequence[SyllableObservation],
+    type_of: dict[int, str],
+    gap_seconds: float | dict[str, float] = GAP_BOUT_SECONDS,
 ) -> dict[str, Any]:
     """First-order transitions between syllable types, within each recording.
 
     `type_of` maps an observation's position in `observations` to its learned type id.
-    Transitions across a gap longer than a second are treated as the end of a bout
-    rather than as a transition, or every pause in a recording would become a
-    (spurious) link between two unrelated phrases.
+    Transitions across a gap longer than `gap_seconds` — `GAP_BOUT_SECONDS`, or a
+    per-species map from `species_bout_gaps` — are treated as the end of a bout rather
+    than as a transition, or every pause in a recording would become a (spurious) link
+    between two unrelated phrases.
 
     Also measures the one rhythm number the app can honestly play back: `gaps`, the
     median `gap_before` of the second token of each transition, keyed `"L29>L14"`.
@@ -1640,7 +1705,7 @@ def learn_grammar(
             current = type_of.get(i)
             if current is None:
                 continue
-            if previous is None or o.gap_before > 1.0:
+            if previous is None or o.gap_before > _gap_rule(gap_seconds, o.species_id):
                 if previous is not None:
                     transitions[previous][END] += 1
                 starts[current] += 1
@@ -1702,6 +1767,7 @@ CHUNK_MIN_EVIDENCE = 6.0
 def type_sequences(
     observations: Sequence[SyllableObservation],
     typing: Sequence[dict[str, Any]],
+    gap_seconds: float | dict[str, float] = GAP_BOUT_SECONDS,
 ) -> list[tuple[str, list[str]]]:
     """Per-recording type-id sequences, one per bout: `(species_id, [typeId, ...])`.
 
@@ -1713,7 +1779,10 @@ def type_sequences(
     Observations with no type id are skipped without breaking the bout, exactly as
     `learn_grammar` skips them.
     """
-    return [(species_id, seq) for species_id, _, seq in bout_sequences(observations, typing)]
+    return [
+        (species_id, seq)
+        for species_id, _, seq in bout_sequences(observations, typing, gap_seconds)
+    ]
 
 
 def mine_chunks(
@@ -1886,19 +1955,92 @@ SONG_MIN_MOTIF = 3
 #: song type. Two renditions of a motif differ by a syllable or two (≤ 0.4 at motif
 #: lengths), chance strings by most of their length, so the cut sits between the two.
 SONG_MAX_RADIUS = 0.5
+#: Fewest syllables a *short* bout needs before it may be called a repeat class.
+#:
+#: **Why repeat classes exist at all.** `_collapse_runs` reads `A A A A A` as the motif
+#: `A`, which then falls under `SONG_MIN_MOTIF` and is set aside as "short" — so a bird
+#: whose song *is* a trill has never been able to have a song type, however many times
+#: it was heard. Measured on the 340 079-syllable store: 19 738 of 34 696 bouts (57 %)
+#: collapse to one token, and **6 940 of those are three syllables or more** — genuine
+#: repeats, not single notes. That is the largest single loss in the song funnel, and
+#: it is a loss of accounting, not of evidence.
+#:
+#: The claim a repeat class makes is deliberately weaker than a motif's: not "these
+#: bouts share an order of distinct acts" but "this bird was heard repeating this one
+#: sound, this often". The recurrence bar is the same `min_cluster_size`, the same
+#: permutation control judges it, and `kind` on the shipped type says which of the two
+#: it is, so nothing downstream has to guess. Three is the floor because two syllables
+#: of one type is the transition table's self-loop, already carried by the grammar.
+SONG_MIN_REPEATS = 3
+#: Lowest `min_cluster_size` a species may drop to when its own permutation control
+#: finds nothing there. `SONG_MIN_CLUSTER` is one number measured once, on the 47 k
+#: store, against a *global* control — and the corpus has grown eight-fold since. The
+#: measured cost of that single number: 366 species clear the candidate gate, the median
+#: one with 8 candidate bouts, so HDBSCAN is asked to find a six-member cluster in eight
+#: points and finds nothing for 318 of them. Four is the floor because docs/12 measured
+#: the global control chaining 3.0 % of bouts into spurious types at 4 — which is
+#: exactly why a species may only go there on the strength of *its own* control.
+#:
+#: **NO ADOPTION — the road is closed, and the numbers are why** (docs/22, measured on
+#: the 340 079-syllable store, pre-registered bar: the corpus-wide shuffle control's
+#: yield stays at docs/12's 0.2 % of candidate bouts). The per-species control cannot
+#: buy the looser bar at any candidate requirement:
+#:
+#:     required candidates   species with songs   control yield
+#:               none                 202             0.442 %
+#:                 10                 114             0.399 %
+#:                 15                 108             0.378 %
+#:                 20                 103             0.378 %
+#:                 30                 101             0.356 %
+#:                 50                  99             0.266 %
+#:
+#: Every row fails, and the rows that come closest are the rows that gain almost
+#: nothing over the 98 species the strict bar already reaches (`SONG_MIN_REPEATS`).
+#: A looser bar finds chance strings faster than it finds songs, whichever way the
+#: licence to loosen it is earned. `floor` therefore stays opt-in machinery with a
+#: recorded refutation, in the pattern of docs/17 §17.5: the measurement is the
+#: deliverable, and the default is unchanged.
+SONG_MIN_CLUSTER_FLOOR = 4
+#: Shuffles per species per candidate size in that control. Five is enough to make
+#: "the control placed nothing" a statement about the species rather than about one
+#: lucky permutation, and the clustering is per-species and small (median 8 candidate
+#: bouts), so the whole sweep costs seconds on the production store.
+SONG_CONTROL_PERMUTATIONS = 5
+#: Fewest candidate bouts a species needs before it may use `floor` at all.
+#:
+#: **The power requirement, and it is not optional.** The first run of the per-species
+#: floor let 2 398 of 2 421 species take the loosest bar, because a species with eight
+#: candidate bouts has a control that cannot place anything at any size — "the control
+#: found nothing" meant "the control had nothing to work with". Measured cost of that
+#: version: the corpus-wide shuffle yield went 0.170 % -> 0.442 % of candidate bouts,
+#: past docs/12's 0.2 % bar, so the extra species were bought with chance. With the
+#: requirement, a species only earns the looser bar where its own control could have
+#: failed and did not — 56 species take it at this value, against 2 398 without it.
+#:
+#: It was meant to be calibrated the way `SONG_MIN_CLUSTER` was, at the value that
+#: returns the corpus control to the bar. **No value does** (the sweep is in
+#: `SONG_MIN_CLUSTER_FLOOR`), so this number is the honest middle of a road that ends
+#: in a refutation rather than a knee: it makes `floor` mean what it says, and `floor`
+#: is off.
+SONG_FLOOR_MIN_CANDIDATES = 20
 
 
 def bout_sequences(
     observations: Sequence[SyllableObservation],
     typing: Sequence[dict[str, Any]],
+    gap_seconds: float | dict[str, float] = GAP_BOUT_SECONDS,
 ) -> list[tuple[str, tuple[str, int], list[str]]]:
     """Per-recording type-id sequences, one per bout, with the bout's store key.
 
     The general form of `type_sequences`: same bouts under the same two rules (order is
-    meaningful within a recording and meaningless across; a gap over a second breaks a
-    bout; untyped observations are skipped without breaking it), but each bout also
-    carries `(recording_id, first_order)` — the order of its first typed syllable — so a
-    song-level fit can name the bouts it claims, the way `typing_rows` names syllables.
+    meaningful within a recording and meaningless across; a gap over `gap_seconds`
+    breaks a bout; untyped observations are skipped without breaking it), but each bout
+    also carries `(recording_id, first_order)` — the order of its first typed syllable —
+    so a song-level fit can name the bouts it claims, the way `typing_rows` names
+    syllables. `gap_seconds` is the constant, or a per-species map from
+    `species_bout_gaps`; every caller of the bout rule takes the same argument, so the
+    grammar, the chunks, the bake-off and the song types cannot drift onto different
+    strings.
     """
     type_of = {
         (e["speciesId"], e["recordingId"], int(e["order"])): str(e["typeId"])
@@ -1913,7 +2055,7 @@ def bout_sequences(
         bout: list[str] = []
         first = 0
         for o in items:
-            if o.gap_before > 1.0 and bout:
+            if o.gap_before > _gap_rule(gap_seconds, species_id) and bout:
                 out.append((species_id, (recording_id, first), bout))
                 bout = []
             tid = type_of.get((o.species_id, o.recording_id, o.order))
@@ -1955,9 +2097,162 @@ def _edit_distance(a: tuple[str, ...], b: tuple[str, ...]) -> int:
     return previous[-1]
 
 
+def _motif_clusters(
+    items: Sequence[tuple[Any, tuple[str, ...]]], min_cluster_size: int
+) -> tuple[list[dict[str, Any]], np.ndarray]:
+    """HDBSCAN over collapsed strings: the motif half of `cluster_song_types`.
+
+    Split out of the loop body so the permutation control can run exactly the clustering
+    it is a control for, rather than a re-implementation of it. Returns the surviving
+    clusters (medoid sequence, bout count, HDBSCAN label) and the per-bout label array,
+    with the radius gate's demotions already written back into the labels.
+    """
+    from sklearn.cluster import HDBSCAN
+
+    labels = np.full(len(items), -1, dtype=int)
+    uniques = sorted({collapsed for _, collapsed in items})
+    if len(items) < max(2, min_cluster_size) or len(uniques) < 2:
+        return [], labels
+
+    index = {collapsed: i for i, collapsed in enumerate(uniques)}
+    n = len(uniques)
+    distances = np.zeros((n, n), dtype=np.float64)
+    for i in range(n):
+        for j in range(i + 1, n):
+            d = _edit_distance(uniques[i], uniques[j]) / max(
+                len(uniques[i]), len(uniques[j])
+            )
+            distances[i, j] = distances[j, i] = d
+    per_bout = np.array([index[collapsed] for _, collapsed in items])
+    model = HDBSCAN(
+        min_cluster_size=int(max(2, min_cluster_size)),
+        metric="precomputed",
+        cluster_selection_method="eom",
+        copy=True,
+    ).fit(distances[np.ix_(per_bout, per_bout)])
+    labels = model.labels_.astype(int)
+    k = int(labels.max()) + 1 if labels.size and labels.max() >= 0 else 0
+
+    clusters: list[dict[str, Any]] = []
+    for c in range(k):
+        member_rows = np.nonzero(labels == c)[0]
+        member_strings = sorted({int(per_bout[i]) for i in member_rows})
+        # The exemplar is the medoid: the member string least far from the rest of
+        # the cluster, weighted by how often each string was heard — an observed
+        # bout, never an average of bouts, so the app could play exactly this.
+        weights = np.array(
+            [(per_bout[member_rows] == u).sum() for u in member_strings],
+            dtype=np.float64,
+        )
+        sub = distances[np.ix_(member_strings, member_strings)]
+        medoid = uniques[member_strings[int((sub * weights).sum(axis=1).argmin())]]
+        # The radius gate. EOM will select a cluster out of uniformly far-apart
+        # noise if it is slightly denser than its surroundings (measured: five
+        # random six-token strings, ~0.8 from their own medoid, reported as a song
+        # type). Density decides *where* clusters are; this decides whether what it
+        # found is one — a cluster whose members are not actually near their medoid
+        # is noise wearing a label, and is demoted to it.
+        to_medoid = distances[np.ix_(member_strings, [uniques.index(medoid)])][:, 0]
+        if float((to_medoid * weights).sum() / weights.sum()) > SONG_MAX_RADIUS:
+            labels[member_rows] = -1
+            continue
+        clusters.append({
+            "sequence": list(medoid),
+            "count": int(len(member_rows)),
+            "label": c,
+            "kind": "motif",
+        })
+    return clusters, labels
+
+
+def _repeat_classes(
+    short: Sequence[tuple[Any, tuple[str, ...], int]], min_cluster_size: int
+) -> tuple[list[dict[str, Any]], np.ndarray]:
+    """Recurring repeats: the bouts `_collapse_runs` reduced below `SONG_MIN_MOTIF`.
+
+    `short` is `(key, collapsed, raw_length)` per set-aside bout. A repeat class is one
+    collapsed string — `('L03',)`, or a two-token alternation — heard `min_cluster_size`
+    times or more in bouts of at least `SONG_MIN_REPEATS` syllables. No distance and no
+    density: at one or two tokens the only honest similarity is equality, which is the
+    same reason `SONG_MIN_MOTIF` refuses to hand these strings to HDBSCAN (chance
+    two-token strings sit one substitution apart and chain into clusters of pure noise).
+    Equality cannot chain, so the noise mode the motif path has to gate against does not
+    exist here; what remains to check is recurrence, which the shared permutation control
+    checks — shuffling a species' tokens destroys runs, so a control that still produces
+    repeat classes is a species whose repeats were an artefact of its type marginals.
+
+    Returns the classes and the per-bout label array, aligned to `short`, -1 for unplaced.
+    """
+    labels = np.full(len(short), -1, dtype=int)
+    counts = Counter(
+        collapsed for _, collapsed, raw in short if raw >= SONG_MIN_REPEATS
+    )
+    kept = [
+        collapsed
+        for collapsed, n in counts.items()
+        if n >= max(2, min_cluster_size)
+    ]
+    if not kept:
+        return [], labels
+    label_of = {collapsed: i for i, collapsed in enumerate(sorted(kept))}
+    for i, (_, collapsed, raw) in enumerate(short):
+        if raw >= SONG_MIN_REPEATS and collapsed in label_of:
+            labels[i] = label_of[collapsed]
+    return [
+        {
+            "sequence": list(collapsed),
+            "count": int(counts[collapsed]),
+            "label": label_of[collapsed],
+            "kind": "repeat",
+        }
+        for collapsed in sorted(kept)
+    ], labels
+
+
+def _control_placed(
+    raw: Sequence[Sequence[str]], min_cluster_size: int, permutations: int, seed: int
+) -> int:
+    """Bouts the same clustering places after the species' own tokens are shuffled.
+
+    The chunk miner's control, run per species instead of once for the corpus: pool this
+    species' tokens, redeal them keeping every bout's length, re-collapse, and cluster
+    the result exactly as the real strings are clustered — both halves, because a
+    shuffle that destroys motifs destroys runs too and the repeat classes have to answer
+    to it as well. Returns the worst placed-bout count over `permutations` shuffles, so
+    "the control placed nothing" means nothing in any of them.
+    """
+    rng = np.random.default_rng(seed)
+    pool = [t for seq in raw for t in seq]
+    worst = 0
+    for _ in range(max(1, permutations)):
+        dealt = list(rng.permutation(np.asarray(pool, dtype=object)))
+        pos = 0
+        items: list[tuple[int, tuple[str, ...]]] = []
+        short: list[tuple[int, tuple[str, ...], int]] = []
+        for i, seq in enumerate(raw):
+            piece = tuple(str(t) for t in dealt[pos : pos + len(seq)])
+            pos += len(seq)
+            collapsed = _collapse_runs(piece)
+            if not collapsed:
+                continue
+            if len(collapsed) >= SONG_MIN_MOTIF:
+                items.append((i, collapsed))
+            else:
+                short.append((i, collapsed, len(piece)))
+        _, motif_labels = _motif_clusters(items, min_cluster_size)
+        _, repeat_labels = _repeat_classes(short, min_cluster_size)
+        placed = int((motif_labels >= 0).sum() + (repeat_labels >= 0).sum())
+        worst = max(worst, placed)
+    return worst
+
+
 def cluster_song_types(
     sequences: Sequence[tuple[str, tuple[str, int], Sequence[str]]],
     min_cluster_size: int = SONG_MIN_CLUSTER,
+    floor: int | None = None,
+    floor_min_candidates: int = SONG_FLOOR_MIN_CANDIDATES,
+    control_permutations: int = SONG_CONTROL_PERMUTATIONS,
+    seed: int = 0,
 ) -> dict[str, dict[str, Any]]:
     """Cluster each species' bouts into song types: motifs that recur across recordings.
 
@@ -1970,15 +2265,23 @@ def cluster_song_types(
 
     Method. Each bout is run-collapsed (`_collapse_runs`), so the distance is about the
     order of distinct acts. **Bouts that collapse to fewer than `SONG_MIN_MOTIF` tokens
-    are set aside, not clustered**: a one- or two-token string is a unigram or a bigram,
-    and those are the transition table's business, not a song type's — `mine_chunks`
-    starts at n = 3 for the same reason. The measured cost of skipping this gate: at the
-    store's alphabet sizes, chance two-token strings sit one substitution (a normalised
-    distance of 0.5) from each other often enough for HDBSCAN to chain them into
-    clusters of pure noise — the first run of this function reported a "song type" of
-    six unrelated random bouts, and the permutation control catches exactly that shape.
-    What remains is reported under the summary's `short`, honestly out of scope rather
-    than silently unplaced.
+    are not handed to the density clustering**: a one- or two-token string is a unigram
+    or a bigram, and those are the transition table's business — `mine_chunks` starts at
+    n = 3 for the same reason. The measured cost of skipping that gate: at the store's
+    alphabet sizes, chance two-token strings sit one substitution (a normalised distance
+    of 0.5) from each other often enough for HDBSCAN to chain them into clusters of pure
+    noise — the first run of this function reported a "song type" of six unrelated
+    random bouts, and the permutation control catches exactly that shape.
+
+    They are not, however, thrown away. `_repeat_classes` reads the set-aside bouts by
+    *equality* — the one similarity a two-token string can carry honestly — and calls a
+    string heard `min_cluster_size` times in bouts of `SONG_MIN_REPEATS` syllables or
+    more a **repeat class**: "this bird was heard repeating this sound, this often". On
+    the 340 079-syllable store that recovers 6 940 bouts the collapse used to drop,
+    which is the largest single loss in the song funnel and the reason a trilling
+    species could never have a song type. Both kinds carry `kind` (`motif` or `repeat`)
+    so no reader has to infer which claim is being made, and both answer to the same
+    control. What is still out of scope is reported under the summary's `short`.
 
     Similarity between two candidate bouts is the Levenshtein distance between their
     collapsed strings, normalised by the longer string's length — two bouts of one song
@@ -2006,105 +2309,116 @@ def cluster_song_types(
     `SONG_MIN_CLUSTER` is set at the knee where the control's yield is 0.2 % of
     candidate bouts (and the residual is reported, not hidden).
 
-    Ids are `S01`, `S02`, … ranked by bout count. Unlike syllable ids (`assign_ids`)
-    they are **not** stabilised across refits — a re-learnt typing renumbers the strings
-    themselves, so stability has to wait on the syllable ids it would be defined over.
-    """
-    from sklearn.cluster import HDBSCAN
+    **`floor` turns that one global number into a per-species question.** With it set,
+    a species with at least `floor_min_candidates` candidate bouts may drop its
+    `min_cluster_size` one step at a time toward the floor, and takes each step only if
+    `_control_placed` places *zero* bouts at that size in every shuffle of its own
+    tokens — the first step that fails ends the descent. The candidate requirement is
+    what makes the control mean anything: without it, 2 398 of 2 421 species took the
+    loosest bar on the strength of a control too small to place a bout at any size, and
+    the corpus-wide shuffle yield went 0.170 % -> 0.442 % of candidate bouts. The reason
+    to want it: the corpus grew eight-fold since the knee was measured, and the median
+    species that clears the candidate gate has eight candidate bouts, so a six-member
+    bar asks HDBSCAN to find six of eight and finds nothing for 318 of 366 species. The
+    reason it is a control and not a looser constant: at 4 the *global* control chained
+    3.0 % of bouts into spurious types, so the licence to go there has to be earned by
+    the species that goes. `summary.minClusterSize` records where each species landed
+    and `summary.controlPlaced` what its control found there. `floor=None` (the default)
+    is the pre-registered behaviour, bit-identical.
 
-    by_species: dict[str, list[tuple[tuple[str, int], tuple[str, ...]]]] = defaultdict(list)
+    Ids are `S01`, `S02`, … ranked by bout count, motifs and repeat classes ranked
+    together. Unlike syllable ids (`assign_ids`) they are **not** stabilised across
+    refits — a re-learnt typing renumbers the strings themselves, so stability has to
+    wait on the syllable ids it would be defined over.
+    """
+    by_species: dict[str, list[tuple[tuple[str, int], tuple[str, ...], list[str]]]] = (
+        defaultdict(list)
+    )
     for species_id, key, seq in sequences:
         collapsed = _collapse_runs(seq)
         if collapsed:
-            by_species[species_id].append((key, collapsed))
+            by_species[species_id].append((key, collapsed, list(seq)))
 
     out: dict[str, dict[str, Any]] = {}
     for species_id in sorted(by_species):
-        short = [(key, c) for key, c in by_species[species_id] if len(c) < SONG_MIN_MOTIF]
-        items = [(key, c) for key, c in by_species[species_id] if len(c) >= SONG_MIN_MOTIF]
-        uniques = sorted({collapsed for _, collapsed in items})
+        rows = by_species[species_id]
+        short = [(key, c, len(raw)) for key, c, raw in rows if len(c) < SONG_MIN_MOTIF]
+        items = [(key, c) for key, c, _ in rows if len(c) >= SONG_MIN_MOTIF]
+        raw_seqs = [raw for _, _, raw in rows]
         summary = {
             "bouts": len(items) + len(short),
             "short": len(short),
             "candidates": len(items),
+            "repeatCandidates": sum(1 for _, _, n in short if n >= SONG_MIN_REPEATS),
             "types": 0,
+            "repeatTypes": 0,
             "inTypes": 0,
             "unplaced": len(items),
             "minClusterSize": int(min_cluster_size),
+            "controlPlaced": 0,
         }
         entry: dict[str, Any] = {"types": [], "rows": [], "summary": summary}
         out[species_id] = entry
-        if len(items) < max(2, min_cluster_size) or len(uniques) < 2:
+
+        # Where this species' recurrence bar lands. Without a floor it is the corpus
+        # constant and nothing is measured; with one, each step down has to be paid for
+        # by this species' own shuffled tokens placing nothing at that size.
+        size = int(min_cluster_size)
+        if floor is not None and len(items) >= floor_min_candidates:
+            for candidate in range(int(min_cluster_size) - 1, int(floor) - 1, -1):
+                placed = _control_placed(
+                    raw_seqs, candidate, control_permutations, seed
+                )
+                if placed:
+                    summary["controlPlaced"] = int(placed)
+                    break
+                size = candidate
+            summary["minClusterSize"] = size
+
+        clusters, labels = _motif_clusters(items, size)
+        repeats, repeat_labels = _repeat_classes(short, size)
+        if not clusters and not repeats:
             continue
 
-        index = {collapsed: i for i, collapsed in enumerate(uniques)}
-        n = len(uniques)
-        distances = np.zeros((n, n), dtype=np.float64)
-        for i in range(n):
-            for j in range(i + 1, n):
-                d = _edit_distance(uniques[i], uniques[j]) / max(
-                    len(uniques[i]), len(uniques[j])
-                )
-                distances[i, j] = distances[j, i] = d
-        per_bout = np.array([index[collapsed] for _, collapsed in items])
-        model = HDBSCAN(
-            min_cluster_size=int(max(2, min_cluster_size)),
-            metric="precomputed",
-            cluster_selection_method="eom",
-            copy=True,
-        ).fit(distances[np.ix_(per_bout, per_bout)])
-        labels = model.labels_.astype(int)
-        k = int(labels.max()) + 1 if labels.size and labels.max() >= 0 else 0
-
-        clusters: list[dict[str, Any]] = []
-        for c in range(k):
-            member_rows = np.nonzero(labels == c)[0]
-            member_strings = sorted({int(per_bout[i]) for i in member_rows})
-            # The exemplar is the medoid: the member string least far from the rest of
-            # the cluster, weighted by how often each string was heard — an observed
-            # bout, never an average of bouts, so the app could play exactly this.
-            weights = np.array(
-                [(per_bout[member_rows] == u).sum() for u in member_strings],
-                dtype=np.float64,
-            )
-            sub = distances[np.ix_(member_strings, member_strings)]
-            medoid = uniques[member_strings[int((sub * weights).sum(axis=1).argmin())]]
-            # The radius gate. EOM will select a cluster out of uniformly far-apart
-            # noise if it is slightly denser than its surroundings (measured: five
-            # random six-token strings, ~0.8 from their own medoid, reported as a song
-            # type). Density decides *where* clusters are; this decides whether what it
-            # found is one — a cluster whose members are not actually near their medoid
-            # is noise wearing a label, and is demoted to it.
-            to_medoid = distances[np.ix_(member_strings, [uniques.index(medoid)])][:, 0]
-            if float((to_medoid * weights).sum() / weights.sum()) > SONG_MAX_RADIUS:
-                labels[member_rows] = -1
-                continue
-            clusters.append({"sequence": list(medoid), "count": int(len(member_rows)),
-                             "label": c})
-        clusters.sort(key=lambda t: (-t["count"], t["sequence"]))
-        id_of = {t["label"]: f"S{rank + 1:02d}" for rank, t in enumerate(clusters)}
+        # Ranked together: a repeat class heard forty times is more of this bird's
+        # repertoire than a motif heard six, and the ids are a ranking, not a taxonomy.
+        ranked = sorted(clusters + repeats, key=lambda t: (-t["count"], t["sequence"]))
+        id_of = {
+            (t["kind"], t["label"]): f"S{rank + 1:02d}" for rank, t in enumerate(ranked)
+        }
 
         entry["types"] = [
             {
-                "id": id_of[t["label"]],
+                "id": id_of[(t["kind"], t["label"])],
                 "sequence": t["sequence"],
                 "count": t["count"],
                 # Of every bout this species sang, short ones included — the shares,
                 # `short` and `unplaced` sum to the whole.
                 "share": round(t["count"] / (len(items) + len(short)), 4),
+                # Which claim this type makes: an order of distinct acts, or one sound
+                # heard repeating. The app says them differently; nothing should have
+                # to infer it from the sequence length.
+                "kind": t["kind"],
             }
-            for t in clusters
+            for t in ranked
         ]
-        for i, (key, _) in enumerate(items):
-            if labels[i] >= 0:
+        for kind, source, label_array in (
+            ("motif", items, labels),
+            ("repeat", short, repeat_labels),
+        ):
+            for i, row in enumerate(source):
+                if label_array[i] < 0:
+                    continue
+                key = row[0]
                 entry["rows"].append({
                     "speciesId": species_id,
                     "recordingId": key[0],
                     "firstOrder": int(key[1]),
-                    "songTypeId": id_of[int(labels[i])],
+                    "songTypeId": id_of[(kind, int(label_array[i]))],
                 })
-        summary["types"] = len(clusters)
-        summary["inTypes"] = int((labels >= 0).sum())
+        summary["types"] = len(ranked)
+        summary["repeatTypes"] = len(repeats)
+        summary["inTypes"] = int((labels >= 0).sum() + (repeat_labels >= 0).sum())
         summary["unplaced"] = int((labels < 0).sum())
     return out
 
@@ -2114,22 +2428,27 @@ def attach_song_types(
     observations: Sequence[SyllableObservation],
     typing: Sequence[dict[str, Any]],
     min_cluster_size: int = SONG_MIN_CLUSTER,
+    floor: int | None = None,
+    gap_seconds: float | dict[str, float] = GAP_BOUT_SECONDS,
     verbose: bool = True,
 ) -> list[dict[str, Any]]:
     """Cluster every species' bouts into song types and hang them on each grammar.
 
     The song-level counterpart of `attach_chunks`: one pass over `bout_sequences`, then
     each species' grammar carries its song types under `grammar.songTypes` (id, medoid
-    sequence, bout count, share of the species' bouts) and the census under
+    sequence, bout count, share of the species' bouts, and `kind`) and the census under
     `grammar.songTyping` (how many bouts, how many too short to be a motif, how many
-    placed, how many heard once and never again). Returns the flat membership rows —
-    the store-side `song-typing.json` table, so a later build or grow can key a bout to
-    its song type without reclustering.
+    placed, how many heard once and never again, and where the species' recurrence bar
+    landed). `floor` is `cluster_song_types`'s, which see. Returns the flat membership
+    rows — the store-side `song-typing.json` table, so a later build or grow can key a
+    bout to its song type without reclustering.
     """
     if not typing:
         return []
     found = cluster_song_types(
-        bout_sequences(observations, typing), min_cluster_size=min_cluster_size
+        bout_sequences(observations, typing, gap_seconds),
+        min_cluster_size=min_cluster_size,
+        floor=floor,
     )
     rows: list[dict[str, Any]] = []
     for sp in document.get("species", []):
@@ -2144,10 +2463,14 @@ def attach_song_types(
         total = sum(e["summary"]["candidates"] for e in found.values())
         placed = sum(e["summary"]["inTypes"] for e in found.values())
         short = sum(e["summary"]["short"] for e in found.values())
-        log(f"song-level typing: {sum(e['summary']['types'] for e in found.values())} "
-            f"song types over {total} candidate bouts, {placed} placed and "
-            f"{total - placed} heard once (never repeated — the song-level novelty "
-            f"answer); {short} short bouts left to the transition table")
+        types = sum(e["summary"]["types"] for e in found.values())
+        repeats = sum(e["summary"]["repeatTypes"] for e in found.values())
+        named = sum(1 for e in found.values() if e["summary"]["types"])
+        log(f"song-level typing: {types} song types ({types - repeats} motifs, "
+            f"{repeats} repeat classes) over {named} species, {total} candidate bouts, "
+            f"{placed} bouts placed; {short} short bouts, "
+            f"{sum(e['summary']['repeatCandidates'] for e in found.values())} of them "
+            "long enough to be a repeat class")
     return rows
 
 
@@ -2417,6 +2740,7 @@ def attach_chunks(
     observations: Sequence[SyllableObservation],
     typing: Sequence[dict[str, Any]],
     min_count: int = CHUNK_MIN_COUNT,
+    gap_seconds: float | dict[str, float] = GAP_BOUT_SECONDS,
     verbose: bool = True,
 ) -> list[dict[str, Any]]:
     """Mine chunks over every typed sequence and hang them on each species' grammar.
@@ -2428,7 +2752,9 @@ def attach_chunks(
     """
     if not typing:
         return []
-    chunks = mine_chunks(type_sequences(observations, typing), min_count=min_count)
+    chunks = mine_chunks(
+        type_sequences(observations, typing, gap_seconds), min_count=min_count
+    )
     for sp in document.get("species", []):
         mine = [c for c in chunks if sp["id"] in c["species"]]
         if mine:
@@ -2538,6 +2864,7 @@ def learn_species(
     use_respiration: bool = False,
     use_two_voice: bool = False,
     mel_weight: float = 0.0,
+    gap_seconds: float = GAP_BOUT_SECONDS,
 ) -> dict[str, Any] | None:
     """Fitted syllables + a measured grammar for one species, or None if too little data.
 
@@ -2789,7 +3116,7 @@ def learn_species(
                 f"f0err={abs(t.f0_error_percent):.2f} members={len(t.members)}"
             )
 
-    grammar = learn_grammar(observations, type_of)
+    grammar = learn_grammar(observations, type_of, gap_seconds)
     cosines = [t.resynthesis_cosine for t in fitted if t.resynthesis_cosine]
     errors = [abs(t.f0_error_percent) for t in fitted]
     placed = sum(1 for t in fitted if t.nearest_own)
@@ -2879,18 +3206,18 @@ def _learn_species_worker(
     task: tuple[str, list[SyllableObservation], dict[str, np.ndarray] | None,
                  Calibration | None, int, int, bool,
                  tuple[np.ndarray, np.ndarray] | None,
-                 dict[str, dict[str, Any]] | None, bool, bool, bool, float],
+                 dict[str, dict[str, Any]] | None, bool, bool, bool, float, float],
 ) -> tuple[str, dict[str, Any] | None]:
     """One species through `learn_species`, for the pool. Verbose off: the parent logs."""
     (species_id, observations, descriptors, calibration, types, seed, invert, frame,
-     previous, use_tube, use_respiration, use_two_voice, mel_weight) = task
+     previous, use_tube, use_respiration, use_two_voice, mel_weight, gap_seconds) = task
     learned = learn_species(
         species_id, observations, descriptors, calibration,
         types=types, seed=seed, verbose=False, frame=frame, invert=invert,
         previous=previous,
         embedder=_precomputed_embedder if _PRE_EMBED else None,
         use_tube=use_tube, use_respiration=use_respiration,
-        use_two_voice=use_two_voice, mel_weight=mel_weight,
+        use_two_voice=use_two_voice, mel_weight=mel_weight, gap_seconds=gap_seconds,
     )
     return species_id, learned
 
@@ -2913,6 +3240,7 @@ def _fit_species_parallel(
     jobs: int,
     verbose: bool,
     mel_weight: float = 0.0,
+    gap_seconds: float | dict[str, float] = GAP_BOUT_SECONDS,
 ) -> dict[str, dict[str, Any] | None]:
     """Fit every species in a fork pool: same function, same seeds, same results as the
     serial loop — just all cores instead of one.
@@ -2941,7 +3269,7 @@ def _fit_species_parallel(
     tasks = [
         (species_id, grouped[species_id], descriptors, calibration, types, seed,
          invert, frame, (prior or {}).get(species_id), use_tube, use_respiration,
-         use_two_voice, mel_weight)
+         use_two_voice, mel_weight, _gap_rule(gap_seconds, species_id))
         for species_id in order
         if species_id != UNLABELLED_SPECIES
     ]
@@ -3030,6 +3358,7 @@ def build_learned_inventory(
     typing: list[dict[str, Any]] | None = None,
     on_species: "Callable[[dict[str, Any], list[dict[str, Any]]], None] | None" = None,
     jobs: int = 1,
+    gap_seconds: float | dict[str, float] = GAP_BOUT_SECONDS,
 ) -> dict[str, Any]:
     """A full inventory document in the schema of `data/inventory.json`.
 
@@ -3113,6 +3442,7 @@ def build_learned_inventory(
                 order, grouped, observations_list, descriptors, calibration, types,
                 seed, invert, frame, prior, embedder, use_tube, use_respiration,
                 use_two_voice, jobs, verbose, mel_weight=mel_weight,
+                gap_seconds=gap_seconds,
             )
     species_out: list[dict[str, Any]] = []
     for species_id in order:
@@ -3139,6 +3469,7 @@ def build_learned_inventory(
                 embedder=embedder, realism=realism, use_tube=use_tube,
                 use_respiration=use_respiration, use_two_voice=use_two_voice,
                 mel_weight=mel_weight,
+                gap_seconds=_gap_rule(gap_seconds, species_id),
             )
         if learned is None:
             continue
@@ -3785,12 +4116,77 @@ def self_test(verbose: bool = True) -> None:
         pos += len(seq)
     control = cluster_song_types(shuffled_songs, min_cluster_size=4)["sp"]
     assert not control["types"], f"permutation control found song types: {control['types']}"
+
+    # 11b. Repeat classes: a bird whose song *is* a trill. Eight bouts of one type
+    #      repeated five times collapse to a single token, so the motif path cannot see
+    #      them by construction — before `_repeat_classes` they were 6 940 bouts of the
+    #      production store's silence. Two things must hold: the class is found and
+    #      marked `repeat`, and a single-syllable bout never becomes one (that is the
+    #      transition table's self-loop, not a song).
+    trills = list(songs)
+    trills += [("sp", ("t", i), ["T20"] * 5) for i in range(8)]
+    trills += [("sp", ("t", 100 + i), ["T21"]) for i in range(8)]
+    with_repeats = cluster_song_types(trills, min_cluster_size=4)["sp"]
+    kinds = {t["id"]: t["kind"] for t in with_repeats["types"]}
+    repeat_ids = [i for i, k in kinds.items() if k == "repeat"]
+    assert len(repeat_ids) == 1, f"trill class not recovered: {with_repeats['types']}"
+    repeat_type = next(t for t in with_repeats["types"] if t["kind"] == "repeat")
+    assert repeat_type["sequence"] == ["T20"] and repeat_type["count"] == 8, repeat_type
+    assert with_repeats["summary"]["repeatTypes"] == 1
+    assert with_repeats["summary"]["repeatCandidates"] == 8, (
+        "single-syllable bouts must not count as repeat candidates: "
+        f"{with_repeats['summary']}"
+    )
+    assert sum(1 for r in with_repeats["rows"] if r["songTypeId"] == repeat_type["id"]) == 8
+    # The motifs are untouched by the addition, and the shuffle control still finds
+    # nothing — a shuffle destroys runs, so a repeat class it *could* reproduce would
+    # be an artefact of the type marginals rather than a bird repeating itself.
+    assert {tuple(t["sequence"]) for t in with_repeats["types"] if t["kind"] == "motif"} == {
+        m1, m2,
+    }, with_repeats["types"]
+    assert _control_placed([list(seq) for _, _, seq in trills], 4, 3, 0) == 0
+
+    # 11c. The per-species floor: a motif heard four times is invisible at a bar of six,
+    #      and visible at four only because this species' own shuffles place nothing
+    #      there. `floor=None` must leave the strict answer exactly as it was.
+    # Its own generator: the filler decides what the control finds, so this fixture
+    # must not move when a test above it draws one more random number.
+    srng = np.random.default_rng(11)
+    m3 = ("T30", "T31", "T32", "T33")
+    sparse = [("sp", ("s", i), list(m3)) for i in range(5)]
+    sparse += [
+        ("sp", ("s", 100 + i), [vocab[v] for v in srng.integers(40, size=int(n))])
+        for i, n in enumerate(srng.integers(3, 9, size=60))
+    ]
+    strict = cluster_song_types(sparse, min_cluster_size=6)["sp"]
+    assert not strict["types"], f"six-bar found a four-bout motif: {strict['types']}"
+    assert strict["summary"]["minClusterSize"] == 6
+    loosened = cluster_song_types(sparse, min_cluster_size=6, floor=4)["sp"]
+    assert {tuple(t["sequence"]) for t in loosened["types"]} == {m3}, loosened["types"]
+    assert loosened["summary"]["minClusterSize"] == 4, loosened["summary"]
+    assert loosened["summary"]["controlPlaced"] == 0, loosened["summary"]
     # `type_sequences` and `bout_sequences` must agree bout for bout — they are one code
     # path, and a drift between them is a grammar mined over different strings than the
     # song types were clustered from.
     keyed = bout_sequences(gap_obs, rows)
     assert [(sid, seq) for sid, _, seq in keyed] == type_sequences(gap_obs, rows)
     assert [key for _, key, _ in keyed] == [("r", 0), ("r", 2)]
+
+    # 11d. The bout rule is one rule. Every caller takes the same argument, so a
+    #      per-species map moves the grammar, the chunks and the song types together —
+    #      the failure this replaces is three literal 1.0s drifting apart. The gap
+    #      fixture's one break is at 1.5 s: a 2 s rule sees one bout, a 0.5 s rule
+    #      sees the same two, and `species_bout_gaps` returns a clamped number.
+    assert len(bout_sequences(gap_obs, rows, 2.0)) == 1
+    assert len(bout_sequences(gap_obs, rows, {"s": 2.0})) == 1
+    assert len(bout_sequences(gap_obs, rows, {"other": 2.0})) == 2  # default for "s"
+    wide = learn_grammar(gap_obs, {i: r["typeId"] for i, r in enumerate(rows)}, 2.0)
+    narrow = learn_grammar(gap_obs, {i: r["typeId"] for i, r in enumerate(rows)})
+    assert wide["transitions"] != narrow["transitions"], (
+        "the grammar must follow the bout rule it is given"
+    )
+    gaps_map = species_bout_gaps(gap_obs)
+    assert BOUT_GAP_MIN <= gaps_map["s"] <= BOUT_GAP_MAX, gaps_map
 
     if verbose:
         print(

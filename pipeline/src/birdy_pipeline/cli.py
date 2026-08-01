@@ -389,7 +389,11 @@ def cmd_build(
                     {"species": typed},
                     members,
                     calibration,
-                    variants=args.variants,
+                    variants=(
+                        args.variants
+                        if args.member_variants is None
+                        else args.member_variants
+                    ),
                     song_variants=args.song_variants,
                     seed=args.seed,
                     should_stop=should_stop,
@@ -638,6 +642,7 @@ def cmd_build(
                 "source": args.source,
                 "audioDir": str(args.audio_dir) if args.audio_dir else None,
                 "variantsPerSyllable": args.variants if args.source == "synthetic" else None,
+                "memberVariants": args.member_variants,
                 "variantsPerSong": args.song_variants if args.source == "synthetic" else None,
                 "harvest": harvest_info,
                 "betaClamp": [syrinx.BETA_MIN, syrinx.BETA_MAX],
@@ -657,6 +662,7 @@ def cmd_build(
                 if args.dump_spacemap_eval and len(modes) == 1
                 else None
             ),
+            deflate_source=args.deflate_source,
         )
 
     # Cross-species relations (phase 4): shared/convergent types and species similarity
@@ -1261,6 +1267,17 @@ def cmd_learn(args: argparse.Namespace) -> int:
         e["id"] for e in discovered if e.get("id")
     }
     discovered += learn.recording_names(store.recordings, named)
+    # The bout rule, once, for everything defined over bouts. It has to be decided
+    # before the fit, not after it: `learn_species` measures the grammar, and a
+    # per-species rule that reached only the chunks and the song types would be exactly
+    # the drift `learn.GAP_BOUT_SECONDS` was consolidated to stop.
+    gap_rule: float | dict[str, float] = learn.GAP_BOUT_SECONDS
+    if args.adaptive_bouts:
+        gap_rule = learn.species_bout_gaps(store.syllables)
+        median_gap = float(np.median(list(gap_rule.values()))) if gap_rule else 0.0
+        log(f"bout rule: per species, {learn.BOUT_GAP_MULTIPLE:g}x its own median gap "
+            f"({median_gap:.2f} s across species, clamped to "
+            f"[{learn.BOUT_GAP_MIN:g}, {learn.BOUT_GAP_MAX:g}])")
     document = learn.build_learned_inventory(
         store.syllables,
         inventory,
@@ -1285,6 +1302,7 @@ def cmd_learn(args: argparse.Namespace) -> int:
         discovered=discovered,
         typing=typing,
         on_species=_on_species,
+        gap_seconds=gap_rule,
     )
 
     # --- label-free typing and syntax mining (phase 4) ---
@@ -1320,8 +1338,10 @@ def cmd_learn(args: argparse.Namespace) -> int:
         seed=args.seed,
         previous=prior.get(learn.UNLABELLED_SPECIES),
     )
-    learn.attach_chunks(document, store.syllables, typing)
-    song_rows = learn.attach_song_types(document, store.syllables, typing)
+    learn.attach_chunks(document, store.syllables, typing, gap_seconds=gap_rule)
+    song_rows = learn.attach_song_types(
+        document, store.syllables, typing, floor=args.song_floor, gap_seconds=gap_rule
+    )
     if not document["species"]:
         log("no species had enough observations to fit — harvest more recordings")
         return 2
@@ -3008,6 +3028,21 @@ def build_parser() -> argparse.ArgumentParser:
                    help="renders per learned syllable type, built from measured member "
                         "observations, and per hand-authored syllable, built by jitter "
                         "(default %(default)s)")
+    b.add_argument("--member-variants", type=int, default=None, metavar="N",
+                   help="renders per learned type that HAS member observations, "
+                        "overriding --variants for those types only. The default "
+                        "renders 24 measured realisations of a type whose members are "
+                        "already in the galaxy as field points, so the corpus is half a "
+                        "duplicate of itself (production build: 347 531 synthetic "
+                        "against 340 079 field) and every type splits into two seeds. "
+                        "0 keeps the fitted anchor alone — the point the cluster gets "
+                        "its name from — and leaves the extent to the real members")
+    b.add_argument("--deflate-source", action="store_true",
+                   help="project the recorded-vs-synthesised axis out of the feature "
+                        "space before clustering (galaxy.deflate_direction). It is the "
+                        "axis the critic's realism head was trained to encode and the "
+                        "strongest relation in its embedding, and it is what splits "
+                        "every type into two seeds")
     b.add_argument("--song-variants", type=int, default=3, help="renders per song")
     b.add_argument("--seed", type=int, default=0)
     b.add_argument("--k", type=int, default=None, help="clusters (default: syllable types)")
@@ -3277,6 +3312,20 @@ def build_parser() -> argparse.ArgumentParser:
                           "Hand-set until the pre-registered per-species fit exists; "
                           "the reported cosine measures the two-voice render, which "
                           "is the bake-off comparison")
+    lrn.add_argument("--song-floor", type=int, default=None, metavar="N",
+                     help="let a species drop its song-type recurrence bar from "
+                          f"{learn.SONG_MIN_CLUSTER} toward N, one step at a time, "
+                          "taking each step only where that species' own shuffled "
+                          "tokens place nothing at that size (learn.cluster_song_types). "
+                          f"{learn.SONG_MIN_CLUSTER_FLOOR} is the measured floor; "
+                          "omitted keeps the single corpus-wide bar")
+    lrn.add_argument("--adaptive-bouts", action="store_true",
+                     help="define a bout per species — "
+                          f"{learn.BOUT_GAP_MULTIPLE:g}x that species' own median gap, "
+                          f"clamped to [{learn.BOUT_GAP_MIN:g}, {learn.BOUT_GAP_MAX:g}] s "
+                          "— instead of the one-second constant. Moves the grammar, the "
+                          "chunks and the song types together, so a run with it is not "
+                          "comparable to one without: opt-in, and off by default")
     lrn.add_argument("--cpu", action="store_true",
                      help="run the critic on the CPU even where a GPU is available")
     lrn.set_defaults(func=cmd_learn)
