@@ -5,7 +5,10 @@ A per-species recurrence bar and a per-species bout rule both fail their control
 ship off. Fewer rendered variants and deflating the source axis both fail to move the
 seed demand — the split is binary and it is not one direction. What halves the seed
 demand is rendering nothing for a type that has real members, which is the owner's call
-because it changes what the map contains. The Learn tab was fixed separately (§22.7).
+because it changes what the map contains. Assigning typed points to their own type
+instead of clustering them (§22.8) is worth +14 to +18 points of type retrieval where the
+cap binds, +2.5 where it does not, and it ships as `--clustering label`, not as the
+default. The Learn tab was fixed separately (§22.7).
 
 Two questions, asked of the data rather than of the code: why does a corpus of 2 423
 species hold only 96 measured songs, and why did the first production build ship zero
@@ -252,3 +255,106 @@ all fixed on 2026-08-01:
 
 `serve` holds the pipeline in memory, so these reach a running control surface only
 after a restart (AGENTS.md).
+
+## 22.8 Label assignment: the vote removed, and where removing it is worth anything
+
+§22.5's third link is not a defect but a design decision, and this is the arm that takes
+the other side of it. 96 % of a production corpus's points carry a `(species, syllable)`
+by construction — rendered points because we rendered them from that type, field points
+because `typing.json` assigned them — and the kmeans path throws that away, partitions
+the space geometrically, and asks each partition to vote a name back. `label_assign`
+(`galaxy.py`, `build --clustering label`) sends every labelled point to its own type's
+source blob and fits k-means only over the points with no label. The seeding and the
+assignment now read *one* partition, `_type_blobs`, and `galaxy.self_test` pins that they
+cannot drift apart.
+
+Measured on §22.6's fixed matrix — the same debug-100 `--dump-points` set, 214 154 points,
+2 143 types — through the shipped `type_seeds` / `label_assign` / `_purity` /
+`label_cluster`. Two checks say the harness is sound before any arm is read: the k = 1 024
+row reproduces §22.6's base row exactly (purity 0.4232, coverage 0.4260), and the k = 4 298
+row reproduces the shipped debug build's own manifest (`clusterPurity` 0.5797,
+`typeCoverage` 0.9258).
+
+**Pre-registered before the run.** G1: *type retrieval* — for each labelled point, is the
+nearest centroid by cosine in the standardised 32-d space (the lookup `SpectralMatcher`
+performs on live audio) a cluster whose majority name is that point's own type? Gate:
+label assignment ≥ kmeans + 10 points. G2: type coverage = 1.000. G3: clustering wall
+clock below kmeans. G4: documented knots — reported, not gated, because debug-100 is the
+deepest hundred species and holds no authored calls.
+
+| arm | k | purity | type coverage | **type retrieval** | clustering s |
+|---|---|---|---|---|---|
+| kmeans, uncapped (as shipped) | 4 298 | 0.5797 | 0.9258 | 0.5775 | 64.9 |
+| kmeans, k at production's shed ratio | 1 264 | 0.4601 | 0.5114 | 0.4599 | 25.5 |
+| kmeans, k = 1 024 (§22.6's base) | 1 024 | 0.4232 | 0.4260 | 0.4227 | 27.2 |
+| **label assignment** | 4 298 | 0.9988 | **1.0000** | **0.6020** | **0.2** |
+
+**G1 fails as written, and the failure is the useful part.** Against the uncapped kmeans
+build — the one shipped today — label assignment buys **+2.5 points** of type retrieval
+against a +10 gate. The mechanism G1 was predicted from is types shedding their only knot,
+and at `K_CAP` 8 192 this corpus wants 4 298 and gets all 4 298, so that mechanism never
+fires. **On a corpus that fits under the cap, seeded kmeans is already almost as good as
+knowing the answer**, which is a real result about the seeding and an argument against
+making this the default.
+
+Production is not that corpus. It wants 27 862 seeds against the same 8 192 and keeps
+29.4 % of them. Putting this corpus in that ratio (k = 1 264) and at §22.6's k = 1 024
+gives the comparison that matches production's condition, and there label assignment wins
+by **+14.2** and **+17.9** points. That is the scope of the claim: *label assignment is
+worth what the cap costs, and nothing more.*
+
+**Two of the build's headline numbers stop being measurements.** Purity is 0.9988 and type
+coverage is 1.0000 because a type *is* a cluster here — by construction, not by finding.
+(The 0.12 % is the 300 song-level points, which carry a song id and no syllable.) Any
+report that keeps quoting those two as evidence of a good map is quoting an identity. Type
+retrieval is the statistic that survives, because nothing forces it.
+
+**And it exposes a ceiling the cap was hiding.** Even with every type owning its own knot,
+type retrieval is **0.602** — for 40 % of points the nearest centroid belongs to another
+type. That is not the clustering's failure; it is the embedding's own confusion between
+types, and the k-means arm could not show it because a type with no knot could not be
+retrieved anyway. It is the honest bound on "sing and the right knot lights", and it is
+now measurable at every k. Raising it is a space problem (docs/17, docs/23 W1/W6), not a
+clustering one.
+
+**Built end to end, and it verifies.** `build --clustering label` on the debug-100 store
+(`/tmp/birdy-debug/assets-label`, 214 154 points, 375 s after the render): k = 4 298 read
+off the labels — 2 143 types, all 2 143 source-split, plus 12 kmeans clusters for the 300
+song-level points that carry no syllable — **type coverage 2 143/2 143 (100.0 %)**, every
+`verify` check green. Against the kmeans build of the same corpus
+(`/tmp/birdy-debug/assets-8192`), where coverage is 1 984/2 143.
+
+**One measured cost, and it is in the live path.** The browser reaches the galaxy through
+the 28-d → 32-d bridge, and docs/20's agreement numbers move against this arm:
+
+| | kmeans | label |
+|---|---|---|
+| centroid agreement | 0.6572 | **0.6316** |
+| tie-adjusted | 0.8032 | **0.8136** |
+| species agreement | 0.7421 | **0.6831** |
+
+Raw agreement falls 2.6 points and species agreement 5.9, while the tie-adjusted figure
+*rises* 1.0. Read together that is more near-ties, not worse decisions: centroids placed
+at label means are less separated than centroids Lloyd's iteration pushed apart, so more
+live sounds land between two knots — and the ones that land decisively land better. It is
+the same trade docs/20 already named, arriving from the other side. A build that wants
+the species claim to be its headline should know this before switching.
+
+**What it gives up** is the discovery claim over the labelled 96 %: those knots are no
+longer a geometric finding that agrees with the labels, they are the labels. Every asset
+and the app's Reading panel say so — the manifest's `clustering` reads `label`, its
+`kmeans` block states that k-means ran over the unlabelled points only, and the panel's
+map line reads "the knots are the labels, not a second finding". `--clustering hdbscan`
+remains the map that can answer "none of these", and `--clustering kmeans` remains the
+default.
+
+**What it costs at production scale.** k becomes 27 762 type blobs + 100 for the 20 241
+untyped points = **27 862 clusters**, and the constraint moves from the clustering to the
+assets: `centroids.json` is written whole and the browser loads it whole. Measured on the
+debug build, a label row is **1 596 bytes** (against kmeans' 1 716), so production would
+ship about **44 MB** of centroids — the next thing to fix, and the fix `inventory.json`
+already has: shard it, or move the two float vectors to an `.f32` sidecar the way
+`point-features` is. The build warns with the projected size whenever k passes `K_CAP`. The renderer is not the limit any more
+(the cluster-state `DataTexture` is 1 024 wide, so 27 862 knots is 28 rows), and the
+clustering itself stops being a cost at all — 0.2 s against 65 s here, and against a
+k = 8 192 Lloyd's iteration over 694 936 points there.

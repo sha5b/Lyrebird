@@ -116,6 +116,12 @@ Notes:
   default build ran 33+ min at full CPU and timed out, with the relations
   permutation tests + all-projection comparison as the only skipped phases in
   the lean re-run (2026-07-31; the comparison timing is recorded in docs/20).
+- `build --clustering label` gives every typed point the knot of the type it already
+  carries and fits kmeans only over the untyped remainder (docs/22 §22.8). It is the
+  answer where `K_CAP` binds — production wants 27 862 clusters and keeps 8 192 — and
+  worth +14 to +18 points of type retrieval there against +2.5 where the cap does not
+  bind, so it is not the default. It also makes cluster purity and type coverage
+  identities rather than measurements; read type retrieval instead.
 - `build --clustering both` renders the corpus once and writes the kmeans map to
   `<out>/known` + the hdbscan map to `<out>/unknown` (each a complete, verifiable
   asset set) — the debug cycle's default, so the named and the discovery views of the

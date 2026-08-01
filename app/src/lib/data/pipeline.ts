@@ -236,9 +236,11 @@ export class PipelineClient {
 		/**
 		 * `kmeans` fits exactly k groups and puts every point in one; `hdbscan` finds how
 		 * many dense regions there are and leaves the rest unassigned, which is the only
-		 * way a sound can come out as "none of these".
+		 * way a sound can come out as "none of these"; `label` gives every typed point the
+		 * knot of its own type and runs kmeans only over the untyped remainder, which is
+		 * the answer at production scale (docs/22 §22.5).
 		 */
-		clustering?: 'kmeans' | 'hdbscan';
+		clustering?: 'kmeans' | 'hdbscan' | 'label';
 		minClusterSize?: number;
 	}) {
 		return this.call<{ job: JobStatus }>('/api/build', options);

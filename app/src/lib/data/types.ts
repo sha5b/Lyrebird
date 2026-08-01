@@ -439,7 +439,11 @@ export interface Manifest {
 	clusters: number;
 	sourceMix?: Record<string, number>;
 	projection?: string;
-	/** Which clustering produced the knots: `kmeans` or `hdbscan`. */
+	/**
+	 * Which clustering produced the knots: `kmeans`, `hdbscan`, or `label` — the last
+	 * being no clustering of the named points at all, each one going to the knot of the
+	 * type it already carries (docs/22 §22.5).
+	 */
 	clustering?: string;
 	/** Points the density clustering placed in no cluster at all. */
 	unassigned?: number;

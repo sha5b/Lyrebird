@@ -2098,7 +2098,18 @@ uv run birdy-pipeline build</pre>
 						build is exactly the build whose honesty number this is).
 					-->
 					<p class="caveat note">
-						{#if mapKind === 'known'}
+						{#if assets.manifest.clustering === 'label'}
+							<!--
+								A label build does not cluster the named 96 % at all — it puts every
+								sound in the knot of the type it already carries (docs/22 §22.5). The
+								knots are then the labels, not a separate finding that agrees with
+								them, and saying "one knot per type" without saying that would claim
+								a measurement the build did not make.
+							-->
+							Map: one knot per type, taken from the type each sound already carries — the
+							knots are the labels, not a second finding. This view cannot report an
+							unidentified sound.
+						{:else if mapKind === 'known'}
 							Map: one knot per type, every sound assigned — this view cannot report an
 							unidentified sound.
 						{:else}

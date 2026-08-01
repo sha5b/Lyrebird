@@ -688,6 +688,43 @@ def _print_projection_table(results: dict[str, dict[str, Any]], chosen: str) -> 
     print("", file=sys.stderr)
 
 
+def _type_blobs(
+    z: np.ndarray, points: PointSet, gate: float = SOURCE_SEED_GATE
+) -> list[tuple[tuple[str, str], int, np.ndarray]]:
+    """Every labelled point's home group: one per type, two when its sources disagree.
+
+    The one rule for "which points belong together by their label", so the seeding
+    (`_type_seed_means`) and the assignment (`label_assign`) cannot drift onto different
+    partitions. A type is split in two when it holds points on both sides of the source
+    gap and its two means point further apart than `gate` — the measurement behind that
+    gate is in `_type_seed_means`.
+
+    Returns `(key, rank, row indices)` per blob, sorted by key, rank 0 first; on a split
+    rank 0 is the *field* blob and rank 1 the synthetic one.
+    """
+    labelled: dict[tuple[str, str], list[int]] = {}
+    for i, (sp, syl) in enumerate(zip(points.species_id, points.syllable_id)):
+        if syl:
+            labelled.setdefault((sp, syl), []).append(i)
+    blobs: list[tuple[tuple[str, str], int, np.ndarray]] = []
+    for key, idx in sorted(labelled.items()):
+        ix = np.asarray(idx)
+        is_field = np.asarray([points.source[i] == FIELD_SOURCE for i in ix])
+        f, s = ix[is_field], ix[~is_field]
+        if f.size and s.size:
+            fm, sm = z[f].mean(axis=0), z[s].mean(axis=0)
+            cos = float(
+                np.dot(fm, sm)
+                / max(float(np.linalg.norm(fm) * np.linalg.norm(sm)), 1.0e-12)
+            )
+            if cos < gate:
+                blobs.append((key, 0, f))
+                blobs.append((key, 1, s))
+                continue
+        blobs.append((key, 0, ix))
+    return blobs
+
+
 def _type_seed_means(
     z: np.ndarray, points: PointSet, gate: float = SOURCE_SEED_GATE
 ) -> tuple[list[np.ndarray], int, list[tuple[tuple[str, str], int]]]:
@@ -707,33 +744,98 @@ def _type_seed_means(
     The third return value names every seed: `((species, syllable), rank)` with rank 0
     the type's primary (or only) blob and 1 the second blob of a source split — the
     information `type_seeds` needs to decide which seeds a capped build can afford to
-    lose.
+    lose. The partition itself is `_type_blobs`, shared with `label_assign`.
     """
-    labelled: dict[tuple[str, str], list[int]] = {}
-    for i, (sp, syl) in enumerate(zip(points.species_id, points.syllable_id)):
-        if syl:
-            labelled.setdefault((sp, syl), []).append(i)
-    seeds: list[np.ndarray] = []
-    owners: list[tuple[tuple[str, str], int]] = []
-    n_split = 0
-    for key, idx in sorted(labelled.items()):
-        ix = np.asarray(idx)
-        is_field = np.asarray([points.source[i] == FIELD_SOURCE for i in ix])
-        f, s = ix[is_field], ix[~is_field]
-        if f.size and s.size:
-            fm, sm = z[f].mean(axis=0), z[s].mean(axis=0)
-            cos = float(
-                np.dot(fm, sm)
-                / max(float(np.linalg.norm(fm) * np.linalg.norm(sm)), 1.0e-12)
-            )
-            if cos < gate:
-                seeds.extend((fm, sm))
-                owners.extend(((key, 0), (key, 1)))
-                n_split += 1
-                continue
-        seeds.append(z[ix].mean(axis=0))
-        owners.append((key, 0))
+    blobs = _type_blobs(z, points, gate)
+    seeds = [z[ix].mean(axis=0) for _, _, ix in blobs]
+    owners = [(key, rank) for key, rank, _ in blobs]
+    n_split = sum(1 for _, rank, _ in blobs if rank == 1)
     return seeds, n_split, owners
+
+
+def label_assign(
+    z: np.ndarray,
+    points: PointSet,
+    gate: float = SOURCE_SEED_GATE,
+    seed: int = 0,
+    allowance: int | None = None,
+) -> tuple[np.ndarray, np.ndarray, int, dict[str, Any]]:
+    """Clusters read off the labels the build already holds; k-means only where there are
+    none.
+
+    **The kmeans path discards a label and then tries to recover it by majority vote.**
+    96 % of a production corpus's points carry a `(species, syllable)` by construction —
+    rendered points because we rendered them from that type, field points because
+    `typing.json` assigned them. Three costs of throwing that away were measured on the
+    2026-08-01 production build (docs/22 §22.5): every documented call lost the vote to
+    the field points of unrelated species sharing its cluster (24 points against 2 017,
+    so the build named zero documented knots); 12 879 types exceeded `K_CAP` and lost
+    their only knot; and Lloyd's iteration is O(n k d) per pass, which at k = 27 862 over
+    694 936 points is the wrong instrument for a partition that is already known.
+
+    So: every labelled point goes to its own type's blob — `_type_blobs`, the same
+    partition the seeding uses, source split included, because a type whose two source
+    blobs sit apart wants two knots rather than one centroid in the empty space between
+    them — and k-means runs over the points with no label, which is what a discovery
+    clustering is for. Cost is O(n) plus k-means on the remainder, and `k` follows the
+    corpus rather than a cap.
+
+    Two of the build's headline numbers stop being measurements here, and that is
+    mechanism rather than a result: type coverage is 1.0 because a type *is* a cluster,
+    and purity is 1.0 on the labelled clusters for the same reason. The statistic that
+    still measures something is whether a point's nearest centroid is its own type's
+    knot — the lookup the browser actually performs — which this does not force.
+
+    What it gives up is the discovery claim over the labelled 96 %: those knots are no
+    longer a geometric finding that happens to agree with the labels, they are the
+    labels. `--clustering hdbscan` stays the map that can answer "none of these".
+
+    Returns the per-point cluster id, the centroid matrix, `k`, and the plan report.
+    """
+    blobs = _type_blobs(z, points, gate)
+    if not blobs:
+        raise RuntimeError(
+            "label assignment needs typed points and this corpus has none — build with "
+            "--clustering kmeans, or type the corpus first"
+        )
+    n = len(points.species_id)
+    cluster_id = np.full(n, -1, dtype=int)
+    centres: list[np.ndarray] = []
+    for c, (_, _, ix) in enumerate(blobs):
+        cluster_id[ix] = c
+        centres.append(z[ix].mean(axis=0))
+    keys = {key for key, _, _ in blobs}
+
+    untyped = np.nonzero(cluster_id < 0)[0]
+    extra = 0
+    if untyped.size:
+        # The same sqrt(n/2) allowance `cluster_plan` gives the untyped points, for the
+        # same reason: it claims a number of kinds of sound, not a number of birds.
+        want = allowance if allowance is not None else int(math.sqrt(untyped.size / 2))
+        extra = max(1, min(want, int(untyped.size)))
+        km = KMeans(n_clusters=extra, n_init=3, random_state=seed).fit(z[untyped])
+        cluster_id[untyped] = km.labels_.astype(int) + len(blobs)
+        centres.extend(km.cluster_centers_)
+
+    report = {
+        "k": len(centres),
+        "types": len(keys),
+        "typeSeeds": len(blobs),
+        "sourceSplitTypes": len(blobs) - len(keys),
+        "unlabelledPoints": int(untyped.size),
+        "allowance": extra,
+        "wanted": len(centres),
+        "capped": False,
+        "cap": None,
+        "seededTypes": len(blobs),
+        "typesLost": 0,
+        "splitKnotsLost": 0,
+        "assignment": (
+            "labelled points assigned to their own type's source blob; kmeans over the "
+            "points with no label"
+        ),
+    }
+    return cluster_id, np.stack(centres), len(centres), report
 
 
 
@@ -1191,6 +1293,41 @@ def build_galaxy(
                 f"unknown {density_summary['unknown']}",
                 file=sys.stderr,
             )
+    elif clustering == "label":
+        if k is not None:
+            raise ValueError(
+                "--k has no meaning with --clustering label: the labels decide how many "
+                "clusters there are (one per type, two where its sources disagree) plus "
+                "the sqrt allowance for the points that have none"
+            )
+        cluster_id, centre_vectors, k_final, plan_report = label_assign(z, kept, seed=seed)
+        anchors = None
+        if verbose:
+            print(
+                f"label assignment: k={k_final} from the labels — "
+                f"{plan_report['types']} types "
+                f"({plan_report['sourceSplitTypes']} split by source) + "
+                f"{plan_report['allowance']} kmeans clusters for "
+                f"{plan_report['unlabelledPoints']} points with no label",
+                file=sys.stderr,
+            )
+            print(
+                "  every type owns its knot and no vote is taken over it: cluster purity "
+                "and type coverage are 1.0 by construction on the labelled clusters and "
+                "measure nothing here (docs/22 §22.5)",
+                file=sys.stderr,
+            )
+            if k_final > K_CAP:
+                # Not a pipeline limit any more — but the assets are, and silence about
+                # a 48 MB centroids.json is exactly the kind of surprise the cap warning
+                # existed to prevent.
+                print(
+                    f"  NOTE: {k_final} clusters is past the kmeans cap of {K_CAP}, which "
+                    "label assignment does not need — but centroids.json is written whole "
+                    f"and the browser loads it whole: about {k_final * 1.7 / 1024:.1f} MB "
+                    "at this k",
+                    file=sys.stderr,
+                )
     else:
         plan = cluster_plan(kept, z)
         plan_report = plan
@@ -1791,9 +1928,24 @@ def build_galaxy(
             if space == "embed"
             else {}
         ),
-        "kmeans": {"k": stats.k, "nInit": 10, "randomState": seed,
-                   "inputSpace": f"standardised {space_dims}-d "
-                   f"{'critic embedding' if space == 'embed' else 'descriptors'}"},
+        "kmeans": {
+            "k": stats.k,
+            # A label build fits no k-means over the corpus at all — only over the
+            # points with no label — and a manifest that still said nInit 10 would be
+            # describing a run that did not happen.
+            **(
+                {
+                    "nInit": 3,
+                    "fittedOver": "the points with no label only",
+                    "assignment": (plan_report or {}).get("assignment", ""),
+                }
+                if clustering == "label"
+                else {"nInit": 10}
+            ),
+            "randomState": seed,
+            "inputSpace": f"standardised {space_dims}-d "
+            f"{'critic embedding' if space == 'embed' else 'descriptors'}",
+        },
         "positions": {
             "format": "little-endian float32, 3*n, xyz",
             "bytes": stats.n_points * 3 * 4,
@@ -1824,6 +1976,22 @@ def build_galaxy(
         "speciesMix": {s: int(n) for s, n in Counter(kept.species_id).most_common()},
         "durationSeconds": [round(stats.duration_range[0], 4), round(stats.duration_range[1], 4)],
         "clusterPurity": round(stats.purity, 4),
+        # Under label assignment purity and typeCoverage are identities, not findings —
+        # a type is a cluster, so of course its cluster holds one type — and a reader
+        # who takes 1.0 as a good map is reading the definition back. Said in the file
+        # the reader has open (docs/22 §22.8).
+        **(
+            {
+                "clusterPurityNote": (
+                    "1.0 by construction: label assignment puts each typed point in its "
+                    "own type's cluster, so purity and typeCoverage measure nothing "
+                    "here. The statistic that still measures the map is whether a "
+                    "point's nearest centroid is its own type's knot (docs/22 §22.8)"
+                )
+            }
+            if clustering == "label"
+            else {}
+        ),
         **({"density": density_summary} if density_summary else {}),
         "unassigned": n_noise,
         "meanRadius": round(stats.spread, 4),
@@ -1895,3 +2063,82 @@ def _write_inventory_shards(out_dir: Path, inventory: dict[str, Any]) -> None:
 
 def _write_json(path: Path, data: Any) -> None:
     path.write_text(json.dumps(data, indent=1), encoding="utf-8")
+
+
+def self_test(verbose: bool = True) -> None:
+    """One planted corpus, three claims about who belongs with whom.
+
+    The seeding and the assignment must read the *same* partition — that is the whole
+    reason `_type_blobs` exists — so the fixture plants a type whose two source blobs are
+    far apart (must split), a type whose blobs coincide (must not), and points with no
+    label at all (must reach the kmeans remainder, never a type's knot).
+    """
+    rng = np.random.default_rng(0)
+
+    def cloud(centre: Sequence[float], n: int) -> np.ndarray:
+        return np.asarray(centre, dtype=np.float64) + rng.normal(0, 0.01, (n, 3))
+
+    # split: field at +x, synthetic at +y — orthogonal, so cosine 0 < the 0.9 gate.
+    # together: both clouds at +x, cosine ~1 >= the gate.
+    rows, species, syllable, song, source = [], [], [], [], []
+
+    def add(block: np.ndarray, sp: str, syl: str, src: str) -> None:
+        rows.append(block)
+        species.extend([sp] * len(block))
+        syllable.extend([syl] * len(block))
+        song.extend([""] * len(block))
+        source.extend([src] * len(block))
+
+    add(cloud([1, 0, 0], 30), "sp_a", "L01", FIELD_SOURCE)
+    add(cloud([0, 1, 0], 20), "sp_a", "L01", "synthetic")
+    add(cloud([1, 0, 0], 25), "sp_b", "L02", FIELD_SOURCE)
+    add(cloud([1, 0, 0], 15), "sp_b", "L02", "synthetic")
+    add(cloud([0, 0, 1], 40), "", "", FIELD_SOURCE)
+    z = np.vstack(rows)
+    points = PointSet(
+        x=z,
+        species_id=species,
+        syllable_id=syllable,
+        song_id=song,
+        duration=[0.1] * len(z),
+        source=source,
+    )
+
+    blobs = _type_blobs(z, points)
+    got = {(key, rank): len(ix) for key, rank, ix in blobs}
+    assert got == {
+        (("sp_a", "L01"), 0): 30,
+        (("sp_a", "L01"), 1): 20,
+        (("sp_b", "L02"), 0): 40,
+    }, f"blobs not as planted: {got}"
+
+    seeds, n_split, owners = _type_seed_means(z, points)
+    assert n_split == 1 and len(seeds) == 3, f"seeding disagrees with the blobs: {owners}"
+    assert [o for o, _ in owners].count(("sp_a", "L01")) == 2
+
+    cluster_id, centres, k, report = label_assign(z, points, seed=0)
+    assert k == len(centres) == 3 + report["allowance"], (k, report)
+    # Every labelled point in its own type's cluster, and never in the remainder.
+    for i, (sp, syl) in enumerate(zip(points.species_id, points.syllable_id)):
+        if not syl:
+            assert cluster_id[i] >= 3, "an unlabelled point took a type's knot"
+            continue
+        key, rank, _ = blobs[cluster_id[i]]
+        assert key == (sp, syl), f"point {i} landed in {key}, not {(sp, syl)}"
+    assert (cluster_id >= 0).all(), "label assignment left a point in no cluster"
+
+    # The claim that follows: the vote cannot lose a type, because there is no vote.
+    named = set()
+    for c in range(k):
+        sel = np.nonzero(cluster_id == c)[0]
+        info = label_cluster(
+            [(points.species_id[i], points.syllable_id[i], points.song_id[i]) for i in sel],
+            {},
+            {},
+        )
+        if info["syllableId"]:
+            named.add((info["speciesId"], info["syllableId"]))
+    assert named == {("sp_a", "L01"), ("sp_b", "L02")}, named
+
+    if verbose:
+        print("galaxy self-test ok: blobs shared, labels assigned, no type unnamed")

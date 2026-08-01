@@ -1,3 +1,73 @@
+# Birdy — Session Handoff (2026-08-01, label assignment)
+
+**In one paragraph:** the production knot problem now has its instrument.
+`build --clustering label` (docs/22 §22.8) stops clustering the 96 % of points that
+already carry a type and gives each type its own knot, fitting kmeans only over the
+points with no label. It builds, it verifies, and **type coverage is 100 %** where the
+shipped kmeans build reaches 92.6 % on the same corpus. It also **failed its own headline
+gate against the uncapped build** (+2.5 points of type retrieval against a +10 bar), and
+it costs 5.9 points of species agreement in the live path. Both are in the doc, and both
+are why it ships as a flag rather than as the default.
+
+- **`--clustering label`: ADOPTED as a flag, not a default** (docs/22 §22.8,
+  `galaxy.label_assign` + `galaxy.self_test`). Every labelled point goes to its own type's
+  source blob — `_type_blobs`, now the *one* partition the seeding and the assignment both
+  read, pinned by a self-test the build runs at start — and kmeans fits only the untyped
+  remainder. Cost is O(n) plus that remainder: **0.2 s against 65 s** on the debug matrix.
+- **Measured on §22.6's fixed matrix, through the shipped functions.** The harness is
+  validated twice before any arm is read: the k = 1 024 row reproduces §22.6's base row
+  exactly (purity 0.4232, coverage 0.4260) and the k = 4 298 row reproduces the shipped
+  debug manifest (0.5797 / 0.9258).
+
+  | arm | k | purity | type coverage | **type retrieval** |
+  |---|---|---|---|---|
+  | kmeans, uncapped (as shipped) | 4 298 | 0.5797 | 0.9258 | 0.5775 |
+  | kmeans at production's shed ratio | 1 264 | 0.4601 | 0.5114 | 0.4599 |
+  | kmeans, k = 1 024 (§22.6 base) | 1 024 | 0.4232 | 0.4260 | 0.4227 |
+  | **label assignment** | 4 298 | 0.9988 | 1.0000 | **0.6020** |
+
+  **Type retrieval** is the new statistic and the only one of these that still measures
+  anything under label assignment: for each point, is the nearest centroid by cosine — the
+  lookup `SpectralMatcher` performs on live audio — a cluster whose name is that point's
+  own type. Purity and coverage are identities here (a type *is* a cluster); the manifest
+  now says so in a `clusterPurityNote`, because 1.0 read as a good map is reading the
+  definition back.
+- **The pre-registered gate FAILED where the cap does not bind.** +2.5 points against the
+  uncapped kmeans build, gate +10. The mechanism it was predicted from is types shedding
+  their only knot, and at `K_CAP` 8 192 the debug corpus wants 4 298 and gets all of them.
+  **On a corpus that fits under the cap, seeded kmeans is nearly as good as knowing the
+  answer** — a real result about the seeding, and the argument against a default. It
+  passes at production's shedding ratio (k = 1 264, **+14.2**) and at k = 1 024 (**+17.9**),
+  which is the condition production is actually in: 27 862 wanted against 8 192.
+- **A ceiling the cap was hiding.** Even with every type owning a knot, type retrieval is
+  **0.602** — for 40 % of points the nearest centroid belongs to another type. That is the
+  embedding's own confusion, not the clustering's, and the kmeans arm could not show it
+  because a type with no knot cannot be retrieved at all. It is the honest bound on "sing
+  and the right knot lights", it is now measurable at every k, and raising it is docs/23
+  W1/W6 work, not clustering work.
+- **The live-path cost, measured on the built assets.** Against the kmeans build of the
+  same corpus: centroid agreement **0.6572 → 0.6316**, species agreement **0.7421 →
+  0.6831**, tie-adjusted **0.8032 → 0.8136**. More near-ties, not worse decisions —
+  centroids at label means are less separated than centroids Lloyd's pushed apart. Anyone
+  switching a build whose headline is the species claim should read that row first.
+- **Built and verified end to end**: `/tmp/birdy-debug/assets-label`, 214 154 points,
+  k = 4 298 (2 143 types all source-split + 12 for the 300 song-level points), 375 s after
+  the render, `verify` all checks passed, **type coverage 2 143/2 143**. The app says what
+  it is: the manifest carries `clustering: label`, its `kmeans` block states that kmeans
+  fitted the unlabelled points only, and the Reading panel's map line reads "the knots are
+  the labels, not a second finding". `npm run check` at the 4 known baseline errors.
+- **What still blocks the production build, and it is no longer the clustering** (this
+  supersedes decision 2 of the entry below — the instrument it asked for now exists). k would
+  be 27 862 (27 762 type blobs + 100), which the renderer's cluster-state texture takes
+  without complaint (1 024 wide, 28 rows). `centroids.json` is the wall: **1 596 bytes per
+  cluster measured**, so about **44 MB**, written whole and loaded whole by the browser.
+  The fix is the one `inventory.json` already had — shard it, or move the two float
+  vectors to an `.f32` sidecar beside `point-features.f32`. The build prints the projected
+  size whenever k passes `K_CAP` rather than shipping the surprise.
+- **Correction to the entry below:** the shipped debug-100 assets are purity **0.5797**,
+  not 0.423 — 0.423 is the k = 1 024 figure from §22.6's table, carried into the paragraph
+  about the 4 298-cluster build by mistake. The manifest has said 0.5797 since it was built.
+
 # Birdy — Session Handoff (2026-08-01, data audit)
 
 **The day's second half in one paragraph:** the data was audited against the code that

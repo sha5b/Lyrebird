@@ -246,7 +246,8 @@ def cmd_build(
     out.mkdir(parents=True, exist_ok=True)
     apply_beta_min(args.beta_min)
     features.self_test(verbose=False)
-    log("features self-test ok")
+    galaxy.self_test(verbose=False)
+    log("features + galaxy self-tests ok")
 
     inventory_path = Path(args.inventory)
     inventory = load_inventory(inventory_path)
@@ -3057,14 +3058,18 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--k", type=int, default=None, help="clusters (default: syllable types)")
     b.add_argument(
         "--clustering",
-        choices=("kmeans", "hdbscan", "both"),
+        choices=("kmeans", "hdbscan", "label", "both"),
         default="kmeans",
         help="kmeans fits exactly --k groups and puts every point in one of them; "
              "hdbscan discovers how many dense regions there are and leaves the rest "
              "unassigned, which is the only way a sound can come out as 'none of "
-             "these'. 'both' renders the corpus once and writes the kmeans map to "
-             "<out>/known and the hdbscan map to <out>/unknown — the pair the "
-             "known-vs-unknown comparison always wants, for one render",
+             "these'; label skips the geometry for the 96 %% of points that already "
+             "carry a type and gives each type its own knot, running kmeans only over "
+             "the points with no label (docs/22 §22.5 — the answer at production scale, "
+             "where kmeans wants 27 862 clusters over 694 936 points and the vote loses "
+             "every documented call). 'both' renders the corpus once and writes the "
+             "kmeans map to <out>/known and the hdbscan map to <out>/unknown — the pair "
+             "the known-vs-unknown comparison always wants, for one render",
     )
     b.add_argument(
         "--min-cluster-size",
