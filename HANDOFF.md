@@ -75,6 +75,35 @@ configuration the command line abandoned, and was fixed. Evidence: docs/22.
   rule — every tab build is a production build), `respfit`/`docrefit`, and the new build
   flags. Flagged, not done.
 
+- **The cap was an app constraint, and it is gone — the silence with it.** The renderer
+  declared the three per-cluster channels as `uniform float[clusterCount]` arrays in its
+  **vertex** shader, so 1 024 knots cost 3 072 vertex uniform floats and `K_CAP` was
+  really a WebGL limit wearing a pipeline constant's name. They now live in a
+  `DataTexture` (`uClusterState`, RGB = activation/sung/learning, nearest-filtered,
+  width capped at 1 024). `K_CAP` 1 024 -> 8 192. Rebuilt debug-100 at k=**4 298** with
+  nothing shed: **type coverage 42.6 % -> 92.6 %**, and the symptom the owner reported —
+  "sound plays, nothing reacts" — went from **26 songs that could light nothing to 1**
+  (songs lighting every note 28 -> 85; song types referencing no knot 54 -> 6). Those
+  assets are what `app/static/birdy` now holds (214 154 points, purity 0.423). 4 298
+  clusters is itself the proof the texture works: the old uniform arrays could not hold
+  it. **Production is NOT rebuilt at the new cap** — `/tmp/birdy-prod/assets-v4` is
+  green but was built under 1 024 (7.0 % coverage), and production wants 27 862 seeds so
+  8 192 still binds there; at that scale the answer is docs/22 §22.5's label assignment,
+  not a bigger k-means.
+- **Point-cloud performance: measured first, then fixed.** The per-frame CPU work is
+  1.9 ms of a 16.7 ms budget at 214 154 points, so the frame is **not** CPU-bound and
+  gating the attribute uploads would have bought nothing — the cost is GPU fill rate,
+  two full-geometry passes of blended sprites. Fixed as: (1) the responding pass draws
+  only points that can respond, via a shared-attribute geometry with a per-frame index,
+  and is **skipped entirely** when nothing is sounding; (2) **knot-level LOD** — at
+  galaxy distance the cloud draws **one representative per knot (1 024 points, 0.5 %)**,
+  the member nearest its own centroid and never an average; 25 % at mid distance; all of
+  it inside a bird, with a focused species always drawn whole. Points in no cluster draw
+  at every level, because they are what the discovery map exists to show. Three levels
+  built once at load, hysteresis band on the swap. npm check at the 4 known baseline
+  errors, parity 18/18. **Not browser-tested — there are no renderer tests, and the
+  fill-rate diagnosis is inferred from sprite count, so the first look is the real test.**
+
 - **W1 RUN: NO ADOPTION, and it closes the road at a third end** (docs/23 §23.1.1,
   `batcheffect.py` + self-test, `analysis` extra). 20 000 syllables of the production
   embedding, 885 species / 1 001 recordists / 3 265 recordings, every arm scored by
@@ -130,6 +159,53 @@ configuration the command line abandoned, and was fixed. Evidence: docs/22.
   annotations, and the cross-species convergence test `relations.json` already has the
   data for. W5 stop contaminating the analysis space with our own renderer (docs/22
   §22.6's measured arm). Order: W2, W1, W5, W4, W3 — cheapest and most refutative first.
+
+
+## Open, for the next session
+
+**Decisions waiting on the owner**
+1. **W5 — the measurement is done, the call is not** (docs/22 §22.6). Giving a type with
+   member observations no synthetic point at all gives seeds/type exactly 1.000, purity
+   0.423 -> 0.577, coverage 0.432, on 25 % fewer points. It ships today as
+   `--member-variants 0 --no-member-anchor`, off. It changes what the map contains — the
+   rendered voice loses its own place — so it is a claim, not a default.
+2. **Production build at the new cap.** `/tmp/birdy-prod/assets-v4` is green but capped
+   at 1 024. A production rebuild wants 27 862 seeds against `K_CAP` 8 192, so it still
+   sheds, and k-means at that k on 694 936 points is the wrong instrument. docs/22 §22.5:
+   assign labelled points to their own type, cluster only what has no label.
+3. **Whitepaper structure.** Both STE passes landed and the PDF is at
+   `docs/whitepaper/birdy-whitepaper.pdf` (25 pages, verified). The agent flagged one
+   thing prose cannot fix: the document's spine is a 28-row pre-registered gate ledger,
+   so it reads like a test report *structurally*. Making it narrative is a restructure
+   (results section, ledger to an appendix) and was deliberately not done.
+
+**Work queued, in docs/23's order**
+4. **W6 — BirdNET second opinion** (§23.6). T1 is the whole bet and W1 just raised its
+   value: does a model trained on the same archives at ~100x the scale escape the same
+   trap? Practical check first — BirdNET ships TFLite and this repo carries no
+   TensorFlow, so `tflite-runtime` or an ONNX export.
+5. **W7 — mimicry as ground truth** (§23.7). Pilot run: the test is well-formed, the
+   corpus holds 31 lyrebird syllables. It is a targeted harvest, and xeno-canto's
+   lyrebird records often name the mimicked species, so the harvest returns labelled
+   mimic-to-model pairs.
+6. **W2's second-order arm, re-run properly** (§23.2.1). The plug-in estimator cannot
+   answer it; docs/18's held-out cross-entropy can, and is unbiased by construction.
+7. **W4** (function without playback) and **W3** (SBI / differentiable DSP) — untouched.
+
+**Known-broken and known-untested**
+8. `verify-features.mjs` **fails on the shipped assets** — it checks that documented
+   syllables match their own cluster, and debug-100 is the deepest hundred species and
+   contains none of the 44 authored syllables. It is the corpus, not the code. A build
+   from a subset chosen to *contain* authored species is what would exercise it.
+9. **The renderer changes have never been seen running.** No renderer tests exist.
+10. **Restart `serve`** to pick up the Learn-tab fixes (it holds the pipeline in memory).
+11. The Learn tab still has no `subset`, `verify` or `respfit`/`docrefit` verbs, so it
+    structurally cannot obey the debug-100 rule — every tab build is a production build.
+
+**Environment**
+12. `uv sync --extra critic --extra analysis --extra whitepaper` is the full working
+    tree. The `whitepaper` extra exists because those dependencies were installed by
+    hand and undeclared, and a plain `uv sync` removed them.
 
 
 # Birdy — Session Handoff (2026-07-31)
