@@ -86,7 +86,7 @@ numbers.)
 **Verdict: no adoption.** The four gates, in order. Augmentation alone is
 perfectly species-safe and moves the recordist needle *not at all*: −0.7 %
 relative. The simulated ±3 dB channel simply does not span how much real
-channels differ. The adversarial head does move the needle, and the trade is
+channels differ. The adversarial head does move the needle. The trade is
 almost perfectly linear in log weight: −33 % recordist at w 0.05 (but species
 lift −29 %, accuracy −14.7 points), −61 % at w 0.3 (with the embedding
 destroyed: species accuracy 0.199, realism AUC 0.862). No swept weight buys the
@@ -227,8 +227,8 @@ the best embedding on every geometry measure (+27.8 cross-domain retrieval
 against B's +14.4). But it failed its gate on a 0.012 realism-AUC drop measured
 over a **3-species holdout** — noise range, not evidence. The recorded honest
 move was a bigger re-test, and the corpus now allows it. The gan store holds
-**79 species in both domains** (iNat soundscape + xeno-canto focal), 63 of them
-with ≥ 100 syllables, against the 12 (4 holdout-eligible… 3 held out) of §17.4.
+**79 species in both domains** (iNat soundscape + xeno-canto focal). 63 of them
+have ≥ 100 syllables, against the 12 (4 holdout-eligible… 3 held out) of §17.4.
 
 **Protocol** (mirrors §17.4 exactly, only bigger): a /tmp subset of
 `out/harvest-gan` restricted to the 63 both-domain species with ≥ 100
@@ -267,7 +267,7 @@ mostly iNat-side), 14 208 synthetic, seed 0, one shared fake side.
 
 Gate 1 (C ≥ B + 10 pts): measured **+1.7 — FAIL**. Gates 2 and 3 pass (AUC
 +0.007, acc +0.2). **The 0.012 AUC drop that failed C in §17.4 does not
-replicate — it reverses.** But the gate that matters kills it: the +13.4-pt
+replicate — it reverses.** But the gate that matters kills it. The +13.4-pt
 contrastive boost over B was small-sample structure, like the mel-weight
 10-type probe (docs/19 §19.5). **No adoption. The machinery stays
 default-off.**

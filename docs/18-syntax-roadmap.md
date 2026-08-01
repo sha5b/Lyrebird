@@ -165,3 +165,38 @@ embedding-truncation artifact. The measured details, each worth keeping:
 - OOM receipt: `geometry._silhouette` builds an (n,n,d) diff — 212 GB at
   4 000 × 1 658 dims. That is what took the host down twice today. The statistic
   survives at rank ≤ 128. Flagged for the next high-rank use of `geometry.measure`.
+
+## P1 re-run after P0 (2026-08-01): M3 wins again — and now against the repaired M1
+
+Same bake-off, same pre-registered rule, on the deepened store (P0: median 29
+recordings/species for the target 100). **Qualifying species went 30 → 104**
+(the depth harvest's whole point; the debug-100 store had 12). Results:
+
+| model | mean ΔLL/token vs M1 | beats M1 on | verdict |
+|---|---|---|---|
+| M2 (repeat-count) | −0.1736 | 17/104 | does not win |
+| **M3 (hidden-state)** | **+0.4976** | **78/104** | **WINS the rule** |
+
+The adoption question this time is whether the edge is still smoothing shape,
+because the M1 in the bake-off is the *unrepaired* one (unigram backoff —
+`FirstOrder`'s default). The repair's own re-measurement on this store
+(`syntax --compare-backoff`, same splits): the continuation backoff gains
+**+0.1253 nats/token pooled** (seen rows untouched by construction; the
+unseen-context bucket gains +2.60 and passes its adoption gate at full scale).
+Subtracting on the shared protocol: **M3 beats the *repaired* M1 by ≈ +0.37
+nats/token** — still well over the +0.1 gate, on 104 species with real depth.
+The debug-era explanation (the whole edge is the unseen tail, M1 −9.25 vs M3
+−4.16) cannot account for a residual that size: something closer to genuine
+hidden structure is scoring better now that the data can support it.
+
+What this does NOT yet do: ship M3. The inventory grammar is `learn_grammar`'s
+raw first-order counts — there is no HMM-state grammar writer, and adopting
+one changes what `learn` emits, what the app improvises from, and what
+`song-typing` aligns against. That adoption needs its own pre-registered task:
+per-species HMM decode → states as inventory grammar, judged against the
+first-order inventory on the build's own numbers. Recorded here as the next
+syntax task, with the number to beat: **+0.37 nats/token over the repaired
+first-order, 104 qualifying species.** Also recorded: the inventory grammar
+still ships raw counts — neither the add-α backoff nor the continuation repair
+is in `learn_grammar`'s output table, a known gap the app currently papers
+over with its own alpha at improv time.

@@ -1,9 +1,9 @@
 # 16 — iNatSounds ingest, the 2 686-species critic, and the naturalness program
 
-This is the evidence record for the 2026-07-30 session(s): the first large
-source ingest beyond xeno-canto, a critic retrained on 2 686 species, the
-parallel/streaming learn, the first two synth extensions (respiration,
-two-voice), and the Perch 2.0 pseudo-labeller. The build/verify/placement
+This is the evidence record for the 2026-07-30 session(s). It covers the
+first large source ingest beyond xeno-canto and a critic retrained on 2 686
+species. It also covers the parallel/streaming learn, the first two synth
+extensions (respiration, two-voice), and the Perch 2.0 pseudo-labeller. The build/verify/placement
 numbers are filled in at the end (§16.6). We wrote this file while the
 production build runs.
 
@@ -122,9 +122,9 @@ syllable, so background birds can dominate.
 ## 16.7 The fricative path (design, pre-registered)
 
 **The evidence.** Two independent species parked their fits at the noise
-ceiling and still failed: chestnut-headed oropendola (L02/L04 `noise=0.85`,
-cos 0.12–0.77) and Algerian nuthatch (5 of 8 types at `noise=0.60–0.85`,
-cos 0.16–0.60). The debug spectrogram comparison (real against render on
+ceiling and still failed. They are the chestnut-headed oropendola (L02/L04
+`noise=0.85`, cos 0.12–0.77) and the Algerian nuthatch (5 of 8 types at
+`noise=0.60–0.85`, cos 0.16–0.60). The debug spectrogram comparison (real against render on
 cached iNat audio) shows the class. Real chip notes are **broadband bursts
 with formant structure**. Our renders of them are tonal. When the fit gives up
 and maxes the axis, they are flat white noise.
@@ -164,8 +164,8 @@ learn (~2 min) → embed → build → verify — **all green**: 45 592 points,
 0.9624/0.6634, shards live (55 MB → 312 KB index). This is the build discipline
 going forward: debug-100 first, full run when it passes.
 
-The judgment pass on it found and fixed several problems: trajectory tangle (a
-static context backdrop with no lifecycle), rest-wash too faint (0.34 → 0.5,
+The judgment pass on it found and fixed several problems. The fixes:
+trajectory tangle (a static context backdrop with no lifecycle), rest-wash too faint (0.34 → 0.5,
 class separation 0.146 → 0.215), activation firing at *inferred* knots for
 orphan notes ("known-unplaced beats inferred"), chorus solo leak, and all-birds
 auto-chorus. It also shipped the full color language: points = provenance,

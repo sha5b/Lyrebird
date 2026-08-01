@@ -23,7 +23,7 @@ Kaggle key. The critic's measured weaknesses are coverage weaknesses (docs/11
 
 `critic embed` (39 874×32, no NaN) → `learn --critic --embed-typing` → novelty
 recalibration (`fit_novelty`, target 5 % FPR) → `build --space embed` → `verify`
-(all checks passed). We did **not** retrain the critic itself: 85 of the new
+(all checks passed). We did **not** retrain the critic itself. 85 of the new
 species carry ~3 recordings each, far below the training bar, and a retrain is
 its own pre-registered decision. The embeddings for the new species are the
 16-species critic's, read off-distribution. Read everything below with that in
@@ -49,10 +49,10 @@ The rest of the battery:
 
 - **Novelty, recalibrated**: threshold 0.1912 → **0.1737**. ROC AUC 0.672 →
   **0.786**, TPR@5 %FPR 14.8 % → **22.3 %**. But the test changed with the
-  store: the novel side is now 25 892 syllables of 105 genuinely non-training
-  species instead of 5 chosen holdouts, a harder and more honest ROC. The
-  improvement is real, but the two numbers are not the same measurement. Both
-  are recorded.
+  store. The novel side is now 25 892 syllables of 105 genuinely non-training
+  species instead of 5 chosen holdouts. This is a harder and more honest ROC.
+  The improvement is real, but the two numbers are not the same measurement.
+  Both are recorded.
 - **Galaxy**: 986 clusters / 59 700 points → **1 024 clusters / 75 743 points**.
   Space map 0.9268/0.5688 → **0.9531 / 0.5921** (better). Relations 210 pairs /
   129 shared → 6 441 pairs / 915 shared.
@@ -82,10 +82,10 @@ was +0.444 on the 36-species store). The variety ingest did what it was supposed
 to do: more species, more recording conditions. The critic, never retrained,
 organizes the new space by recorder before bird. This is now the pipeline's most
 honest open measurement: variety without a retrain buys coverage and costs
-invariance. It directly motivates the docs/13 order: a bigger, more varied
-ingest (iNatSounds, GBIF archives) followed by a deliberate critic **retrain**
-with the source-invariance question pre-registered, not another incremental
-chain.
+invariance. It motivates the docs/13 order of a bigger, more varied ingest
+(iNatSounds, GBIF archives) and then a deliberate critic **retrain**. The
+retrain has the source-invariance question pre-registered, not another
+incremental chain.
 
 ## 14.5 State after this round
 
