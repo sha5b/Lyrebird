@@ -1,0 +1,177 @@
+{
+ "id": "pogonotriccus_eximius",
+ "common": "Southern Bristle-Tyrant",
+ "scientific": "Pogonotriccus eximius",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 41 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 5366 Hz \u00b7 41 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0413,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     5235.4
+    ],
+    [
+     1.0,
+     5499.9
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 140.0,
+   "amDepth": 0.15,
+   "gammaScale": 2.0,
+   "tractQ": 30.0,
+   "noise": 0.0,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.834,
+    "rivalCosine": 0.7966,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.99
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 5432 Hz \u00b7 32 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.032,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5391.0
+    ],
+    [
+     1.0,
+     5474.1
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.3,
+   "gammaScale": 1.5,
+   "rough": 0.4,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.01
+   },
+   "tractQ": 6.0,
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.7215,
+    "rivalCosine": 0.7661,
+    "nearestOwn": false,
+    "f0ErrorPercent": -0.87
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 6876 Hz \u00b7 65 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0653,
+   "level": 0.75,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     6756.7
+    ],
+    [
+     0.875,
+     7035.3
+    ],
+    [
+     1.0,
+     6839.1
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 80.0,
+   "amDepth": 0.8,
+   "gammaScale": 1.5,
+   "noise": 0.4,
+   "rough": 0.65,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.7772,
+    "rivalCosine": 0.1015,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.07
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02"
+   ],
+   "gaps": []
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8571,
+    "end": 0.1429
+   },
+   "L01": {
+    "L01": 0.9048,
+    "L00": 0.0952
+   },
+   "L02": {
+    "end": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.04,
+   "L01>L00": 0.019,
+   "L01>L01": 0.024
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 3,
+   "candidates": 2,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

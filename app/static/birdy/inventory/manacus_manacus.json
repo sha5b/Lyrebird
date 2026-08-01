@@ -1,0 +1,190 @@
+{
+ "id": "manacus_manacus",
+ "common": "White-bearded Manakin",
+ "scientific": "Manacus manacus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 24 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 936 Hz \u00b7 85 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0853,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     857.9
+    ],
+    [
+     0.125,
+     997.1
+    ],
+    [
+     0.25,
+     1018.8
+    ],
+    [
+     0.5,
+     909.5
+    ],
+    [
+     0.625,
+     979.9
+    ],
+    [
+     0.75,
+     885.6
+    ],
+    [
+     0.875,
+     986.3
+    ],
+    [
+     1.0,
+     868.0
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.7,
+   "gammaScale": 6.0,
+   "noise": 0.85,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
+   },
+   "rough": 0.08,
+   "amDepth": 0.3,
+   "am": 30.0,
+   "fricative": true,
+   "formants": [
+    [
+     1063.304792525682,
+     2.0,
+     0.5
+    ],
+    [
+     6830.618534315889,
+     2.0,
+     0.5
+    ]
+   ],
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.9015,
+    "rivalCosine": 0.1824,
+    "nearestOwn": true,
+    "f0ErrorPercent": 12.78
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3928 Hz \u00b7 197 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1973,
+   "level": 0.94,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5389.7
+    ],
+    [
+     0.125,
+     6721.5
+    ],
+    [
+     0.375,
+     6538.2
+    ],
+    [
+     0.5,
+     3749.4
+    ],
+    [
+     0.625,
+     3192.1
+    ],
+    [
+     0.75,
+     2139.0
+    ],
+    [
+     0.875,
+     3291.4
+    ],
+    [
+     1.0,
+     2841.5
+    ]
+   ],
+   "attack": 0.06,
+   "hold": true,
+   "harmonic": 0.7,
+   "am": 140.0,
+   "amDepth": 0.45,
+   "vib": {
+    "rate": 5.21,
+    "depth": 0.216
+   },
+   "gammaScale": 4.5,
+   "two": true,
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.8311,
+    "rivalCosine": 0.1321,
+    "nearestOwn": true,
+    "f0ErrorPercent": -8.45
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01"
+   ],
+   "gaps": []
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "end": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.031
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 4,
+   "candidates": 0,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

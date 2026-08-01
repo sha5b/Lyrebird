@@ -1,0 +1,263 @@
+{
+ "id": "trichoglossus_chlorolepidotus",
+ "common": "Scaly-breasted Lorikeet",
+ "scientific": "Trichoglossus chlorolepidotus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 45 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 606 Hz \u00b7 77 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0773,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     568.8
+    ],
+    [
+     0.125,
+     636.2
+    ],
+    [
+     0.25,
+     603.7
+    ],
+    [
+     0.375,
+     629.4
+    ],
+    [
+     0.5,
+     601.2
+    ],
+    [
+     0.75,
+     661.3
+    ],
+    [
+     1.0,
+     548.8
+    ]
+   ],
+   "attack": 0.004,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 25.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.3
+    ]
+   ],
+   "tractQ": 20.0,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.3734,
+    "rivalCosine": -0.4503,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.42
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3382 Hz \u00b7 88 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.088,
+   "level": 0.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3729.4
+    ],
+    [
+     0.25,
+     3375.6
+    ],
+    [
+     0.5,
+     3623.0
+    ],
+    [
+     0.875,
+     3397.8
+    ],
+    [
+     1.0,
+     2854.8
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.264,
+   "am": 45.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 9.15,
+    "depth": 0.05
+   },
+   "formants": [
+    [
+     845.2861410183435,
+     4.0,
+     2.0
+    ],
+    [
+     2711.2989394619476,
+     4.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "fricative": true,
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.5424,
+    "rivalCosine": 0.7322,
+    "nearestOwn": false,
+    "f0ErrorPercent": 0.84
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 4295 Hz \u00b7 233 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2334,
+   "level": 0.529,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4038.2
+    ],
+    [
+     0.125,
+     4298.8
+    ],
+    [
+     0.25,
+     4045.3
+    ],
+    [
+     0.375,
+     4439.8
+    ],
+    [
+     0.5,
+     4345.2
+    ],
+    [
+     0.625,
+     4536.2
+    ],
+    [
+     0.75,
+     4292.4
+    ],
+    [
+     0.875,
+     4534.5
+    ],
+    [
+     1.0,
+     4158.3
+    ]
+   ],
+   "attack": 0.0706,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 12.95,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.133
+   },
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 4.5,
+   "learned": {
+    "members": 22,
+    "resynthesisCosine": 0.8753,
+    "rivalCosine": 0.3464,
+    "nearestOwn": true,
+    "f0ErrorPercent": -18.09
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.75,
+    "end": 0.25
+   },
+   "L01": {
+    "L02": 0.6,
+    "L01": 0.4
+   },
+   "L02": {
+    "L02": 0.5714,
+    "L01": 0.4286
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.224,
+   "L01>L01": 0.068,
+   "L01>L02": 0.139,
+   "L02>L01": 0.117,
+   "L02>L02": 0.139
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 2,
+   "candidates": 1,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

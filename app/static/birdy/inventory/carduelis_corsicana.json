@@ -1,0 +1,184 @@
+{
+ "id": "carduelis_corsicana",
+ "common": "Corsican Finch",
+ "scientific": "Carduelis corsicana",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 32 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 448 Hz \u00b7 109 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1093,
+   "level": 0.9,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     457.0
+    ],
+    [
+     0.875,
+     439.7
+    ],
+    [
+     1.0,
+     448.9
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     0.3
+    ],
+    [
+     9584.9,
+     6.0,
+     0.1
+    ]
+   ],
+   "tractQ": 3.0,
+   "noise": 0.05,
+   "gammaScale": 1.5,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.849,
+    "rivalCosine": 0.6468,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.98
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 485 Hz \u00b7 237 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2373,
+   "level": 0.9,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     480.6
+    ],
+    [
+     0.125,
+     471.1
+    ],
+    [
+     0.25,
+     528.3
+    ],
+    [
+     0.5,
+     528.1
+    ],
+    [
+     0.625,
+     477.4
+    ],
+    [
+     1.0,
+     431.6
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.5,
+   "vib": {
+    "rate": 8.15,
+    "depth": 0.09
+   },
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     0.3
+    ],
+    [
+     9584.9,
+     6.0,
+     0.1
+    ]
+   ],
+   "amDepth": 0.8,
+   "am": 25.0,
+   "tractQ": 20.0,
+   "learned": {
+    "members": 17,
+    "resynthesisCosine": 0.8044,
+    "rivalCosine": 0.6844,
+    "nearestOwn": true,
+    "f0ErrorPercent": 6.46
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5,
+    "end": 0.5
+   },
+   "L01": {
+    "L01": 0.5882,
+    "L00": 0.2353,
+    "end": 0.1765
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.211,
+   "L01>L00": 0.093,
+   "L01>L01": 0.171
+  },
+  "songTyping": {
+   "bouts": 10,
+   "short": 10,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

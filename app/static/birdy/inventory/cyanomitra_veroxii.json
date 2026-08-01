@@ -1,0 +1,175 @@
+{
+ "id": "cyanomitra_veroxii",
+ "common": "Mouse-colored Sunbird",
+ "scientific": "Cyanomitra veroxii",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 496 Hz \u00b7 72 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.072,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     475.5
+    ],
+    [
+     0.25,
+     514.6
+    ],
+    [
+     0.375,
+     487.5
+    ],
+    [
+     0.5,
+     511.6
+    ],
+    [
+     0.75,
+     508.2
+    ],
+    [
+     0.875,
+     474.0
+    ],
+    [
+     1.0,
+     500.1
+    ]
+   ],
+   "attack": 0.004,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     4071.3,
+     6.0,
+     0.3
+    ]
+   ],
+   "tractQ": 30.0,
+   "rough": 0.08,
+   "gammaScale": 0.5,
+   "two": true,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.6072,
+    "rivalCosine": -0.1487,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.97
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4476 Hz \u00b7 99 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0987,
+   "level": 1.2,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     5230.0
+    ],
+    [
+     0.125,
+     4571.9
+    ],
+    [
+     1.0,
+     3750.0
+    ]
+   ],
+   "attack": 0.0293,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 80.0,
+   "amDepth": 0.15,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
+   "formants": [
+    [
+     4071.3,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 30.0,
+   "two": true,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.8966,
+    "rivalCosine": -0.255,
+    "nearestOwn": true,
+    "f0ErrorPercent": -10.58
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8421,
+    "end": 0.1579
+   },
+   "L01": {
+    "L01": 0.8,
+    "end": 0.2
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.137,
+   "L01>L01": 0.151
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 5,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

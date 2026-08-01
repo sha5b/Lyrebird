@@ -1,0 +1,180 @@
+{
+ "id": "campylorhynchus_jocosus",
+ "common": "Boucard's Wren",
+ "scientific": "Campylorhynchus jocosus",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 3897 Hz \u00b7 55 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0547,
+   "level": 1.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3801.8
+    ],
+    [
+     0.5,
+     3817.2
+    ],
+    [
+     1.0,
+     4076.8
+    ]
+   ],
+   "attack": 0.0094,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 20.28,
+   "amDepth": 0.228,
+   "formants": [
+    [
+     4378.3,
+     8.0,
+     0.5
+    ],
+    [
+     1063.304792525682,
+     8.0,
+     0.5
+    ],
+    [
+     4368.450554124434,
+     8.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 20.0,
+   "noise": 0.4,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.05
+   },
+   "fricative": true,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.2825,
+    "rivalCosine": 0.4992,
+    "nearestOwn": false,
+    "f0ErrorPercent": 11.35
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3945 Hz \u00b7 51 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0507,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3775.0
+    ],
+    [
+     0.125,
+     4069.1
+    ],
+    [
+     1.0,
+     3996.9
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 23.44,
+   "amDepth": 0.0,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.15
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 12.0,
+   "noise": 0.6,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.7351,
+    "rivalCosine": 0.4713,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.29
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L01",
+    "L01",
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.375,
+    "L01": 0.375,
+    "L00": 0.25
+   },
+   "L01": {
+    "end": 0.4444,
+    "L01": 0.3333,
+    "L00": 0.2222
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.435,
+   "L00>L01": 0.035,
+   "L01>L00": 0.629,
+   "L01>L01": 0.032
+  },
+  "songTyping": {
+   "bouts": 10,
+   "short": 8,
+   "candidates": 2,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,189 @@
+{
+ "id": "tanysiptera_galatea",
+ "common": "Common Paradise-Kingfisher",
+ "scientific": "Tanysiptera galatea",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 45 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1752 Hz \u00b7 111 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1107,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1925.1
+    ],
+    [
+     1.0,
+     1595.0
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 14.52,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "tractQ": 20.0,
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.4118,
+    "rivalCosine": 0.3693,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.03
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1758 Hz \u00b7 87 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0867,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1937.2
+    ],
+    [
+     1.0,
+     1596.2
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 15.65,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "tractQ": 20.0,
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.35,
+    "rivalCosine": 0.3996,
+    "nearestOwn": false,
+    "f0ErrorPercent": -1.63
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2120 Hz \u00b7 197 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1973,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2022.3
+    ],
+    [
+     0.5,
+     2126.1
+    ],
+    [
+     0.75,
+     2055.5
+    ],
+    [
+     0.875,
+     2206.0
+    ],
+    [
+     1.0,
+     2196.8
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.0,
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "rough": 0.4,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.09
+   },
+   "noise": 0.85,
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.5172,
+    "rivalCosine": 0.4936,
+    "nearestOwn": true,
+    "f0ErrorPercent": 6.39
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L02",
+    "L02"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L02",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8571,
+    "end": 0.1429
+   },
+   "L01": {
+    "L01": 0.85,
+    "L02": 0.15
+   },
+   "L02": {
+    "L02": 0.6,
+    "end": 0.4
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.032,
+   "L01>L01": 0.037,
+   "L01>L02": 0.016,
+   "L02>L02": 0.059
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 5,
+   "candidates": 1,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

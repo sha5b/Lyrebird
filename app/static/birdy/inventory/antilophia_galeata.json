@@ -1,0 +1,175 @@
+{
+ "id": "antilophia_galeata",
+ "common": "Helmeted Manakin",
+ "scientific": "Antilophia galeata",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2182 Hz \u00b7 153 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1533,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2171.4
+    ],
+    [
+     1.0,
+     2193.2
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 80.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.09
+   },
+   "formants": [
+    [
+     2447.2,
+     6.0,
+     0.15
+    ],
+    [
+     7341.7,
+     6.0,
+     0.05
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 30.0,
+   "noise": 0.05,
+   "two": false,
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.6511,
+    "rivalCosine": 0.4477,
+    "nearestOwn": true,
+    "f0ErrorPercent": 9.12
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2233 Hz \u00b7 155 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1547,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2070.2
+    ],
+    [
+     0.125,
+     2138.7
+    ],
+    [
+     0.25,
+     2336.9
+    ],
+    [
+     0.625,
+     2378.5
+    ],
+    [
+     1.0,
+     2255.6
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 13.64,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.05
+   },
+   "formants": [
+    [
+     2447.2,
+     6.0,
+     0.15
+    ],
+    [
+     7341.7,
+     6.0,
+     0.05
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 12.0,
+   "rough": 0.65,
+   "two": true,
+   "noise": 0.12,
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.6516,
+    "rivalCosine": 0.7996,
+    "nearestOwn": false,
+    "f0ErrorPercent": 4.91
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7778,
+    "end": 0.2222
+   },
+   "L01": {
+    "L01": 0.5714,
+    "end": 0.4286
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.079,
+   "L01>L01": 0.211
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 7,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

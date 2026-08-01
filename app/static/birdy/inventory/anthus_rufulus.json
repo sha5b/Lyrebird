@@ -1,0 +1,170 @@
+{
+ "id": "anthus_rufulus",
+ "common": "Oriental Pipit",
+ "scientific": "Anthus rufulus",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 32 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 681 Hz \u00b7 63 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0626,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     664.5
+    ],
+    [
+     0.5,
+     650.6
+    ],
+    [
+     0.75,
+     709.8
+    ],
+    [
+     0.875,
+     659.3
+    ],
+    [
+     1.0,
+     724.6
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     4071.3,
+     6.0,
+     0.15
+    ]
+   ],
+   "noise": 0.05,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.09
+   },
+   "tractQ": 0.0,
+   "learned": {
+    "members": 22,
+    "resynthesisCosine": 0.3045,
+    "rivalCosine": 0.0178,
+    "nearestOwn": true,
+    "f0ErrorPercent": 5.53
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3260 Hz \u00b7 93 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0933,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2560.0
+    ],
+    [
+     0.125,
+     2932.4
+    ],
+    [
+     0.25,
+     3797.3
+    ],
+    [
+     1.0,
+     3963.5
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.45,
+   "formants": [
+    [
+     4071.3,
+     6.0,
+     0.15
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "noise": 0.85,
+   "rough": 0.4,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.0171,
+    "rivalCosine": -0.3744,
+    "nearestOwn": true,
+    "f0ErrorPercent": 16.73
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.9048,
+    "end": 0.0952
+   },
+   "L01": {
+    "L01": 0.7,
+    "L00": 0.3
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.072,
+   "L01>L00": 0.045,
+   "L01>L01": 0.027
+  },
+  "songTyping": {
+   "bouts": 2,
+   "short": 1,
+   "candidates": 1,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

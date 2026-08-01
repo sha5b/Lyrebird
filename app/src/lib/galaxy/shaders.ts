@@ -486,9 +486,22 @@ export const fragmentShader = /* glsl */ `
 	uniform float uBird;
 	/** The same clock the vertex stage pulses by; the orphan pulse breathes on it. */
 	uniform float uTime;
-	/** Live input level, 0..1 — while anything sounds, resting ink gives up weight
-	 * so the responding points carry the picture. */
+	/** Live input level, 0..1 — drives the pulse and the growth in the vertex stage. */
 	uniform float uLevel;
+	/**
+	 * How much the corpus is actually answering, 0..1, smoothed: loudness times match
+	 * strength, eased. This is what the resting wash gives way to, and it is deliberately
+	 * NOT uLevel.
+	 *
+	 * Driving the dim off loudness alone meant a sound the corpus could not place — a pure
+	 * tone matches almost no bird syllable — dimmed the whole cloud by 40 % and lit
+	 * nothing, so a one-tone bird read as the galaxy flinching. And uLevel is the raw
+	 * per-frame level, which flickers at audio rate, so the whole picture flickered with
+	 * it. Gated on the match, the wash only steps back when there is something behind it
+	 * to see; smoothed, it steps back at a speed an eye reads as light rather than as a
+	 * fault.
+	 */
+	uniform float uAnswer;
 	/** Per-class visibility (documented, learned, field, unlabelled in x..w, candidate
 	 * in uProvHideCand): 1 hides the class outright — the Display panel's filter for
 	 * isolating, say, only the sounds nobody has named. */
@@ -703,11 +716,13 @@ export const fragmentShader = /* glsl */ `
 		// (raised from 0.41 when the rest wash went up: the mist needed presence,
 		// and the 2× jump on response is what keeps activation legible above it).
 		alpha *= 0.8 + 0.2 * vAct;
-		// While anything sounds, resting ink gives up another share of its weight. Paint
-		// order still lets a resting sprite overpaint a lit one behind it (the ACTIVE_PASS
-		// split covers the clear responders; this softens the borderline rest), so the
-		// response stays legible in the thick of the cloud.
-		alpha *= 1.0 - 0.4 * uLevel * (1.0 - vAct);
+		// While the corpus is answering, resting ink gives up another share of its weight.
+		// Paint order still lets a resting sprite overpaint a lit one behind it (the
+		// ACTIVE_PASS split covers the clear responders; this softens the borderline rest),
+		// so the response stays legible in the thick of the cloud. Driven by uAnswer, not
+		// uLevel — see that uniform for why a loud sound the corpus cannot place must not
+		// dim anything.
+		alpha *= 1.0 - 0.4 * uAnswer * (1.0 - vAct);
 		// The dim half of the orphan pulse: it breathes the mark *down* against the
 		// paper, the opposite direction from a response.
 		alpha *= 1.0 - 0.55 * oPulse;

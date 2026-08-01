@@ -1,0 +1,252 @@
+{
+ "id": "sialia_mexicana",
+ "common": "Western Bluebird",
+ "scientific": "Sialia mexicana",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 41 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 581 Hz \u00b7 253 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2533,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     657.5
+    ],
+    [
+     0.25,
+     490.4
+    ],
+    [
+     0.375,
+     698.8
+    ],
+    [
+     0.5,
+     577.2
+    ],
+    [
+     0.625,
+     658.0
+    ],
+    [
+     0.75,
+     536.5
+    ],
+    [
+     1.0,
+     489.4
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 1.0,
+   "tractQ": 3.0,
+   "rough": 0.65,
+   "amDepth": 0.0,
+   "am": 140.0,
+   "noise": 0.85,
+   "fricative": true,
+   "formants": [
+    [
+     1063.304792525682,
+     2.0,
+     2.0
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.4335,
+    "rivalCosine": 0.0148,
+    "nearestOwn": true,
+    "f0ErrorPercent": 5.25
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 769 Hz \u00b7 55 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0547,
+   "level": 0.9,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     740.5
+    ],
+    [
+     0.125,
+     748.4
+    ],
+    [
+     0.25,
+     825.8
+    ],
+    [
+     0.375,
+     772.8
+    ],
+    [
+     0.5,
+     880.7
+    ],
+    [
+     0.75,
+     783.8
+    ],
+    [
+     0.875,
+     676.2
+    ],
+    [
+     1.0,
+     739.2
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 1.5,
+   "tractQ": 3.0,
+   "noise": 0.25,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.6416,
+    "rivalCosine": 0.4917,
+    "nearestOwn": true,
+    "f0ErrorPercent": 18.81
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 880 Hz \u00b7 51 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0507,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     848.2
+    ],
+    [
+     0.125,
+     810.0
+    ],
+    [
+     0.25,
+     906.1
+    ],
+    [
+     0.875,
+     859.5
+    ],
+    [
+     1.0,
+     984.0
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 80.0,
+   "amDepth": 0.45,
+   "tractQ": 0.0,
+   "noise": 0.6,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.05
+   },
+   "rough": 0.2,
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.4822,
+    "rivalCosine": 0.6077,
+    "nearestOwn": false,
+    "f0ErrorPercent": 6.56
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L02",
+    "L01",
+    "L01",
+    "L02",
+    "L02"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 0.7143,
+    "L02": 0.2857
+   },
+   "L02": {
+    "L02": 0.6667,
+    "end": 0.1905,
+    "L01": 0.1429
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.021,
+   "L01>L01": 0.041,
+   "L01>L02": 0.297,
+   "L02>L01": 0.269,
+   "L02>L02": 0.056
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 4,
+   "candidates": 1,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,160 @@
+{
+ "id": "porphyrio_melanotus",
+ "common": "South-west Pacific Swamphen",
+ "scientific": "Porphyrio melanotus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 35 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 518 Hz \u00b7 80 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.08,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     513.9
+    ],
+    [
+     0.75,
+     498.0
+    ],
+    [
+     0.875,
+     532.6
+    ],
+    [
+     1.0,
+     528.7
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 1.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
+   "rough": 0.65,
+   "learned": {
+    "members": 28,
+    "resynthesisCosine": 0.5081,
+    "rivalCosine": -0.1896,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.5
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1507 Hz \u00b7 40 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.04,
+   "level": 0.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1365.4
+    ],
+    [
+     0.125,
+     1544.7
+    ],
+    [
+     0.375,
+     1590.9
+    ],
+    [
+     0.5,
+     1450.1
+    ],
+    [
+     0.625,
+     1441.9
+    ],
+    [
+     0.75,
+     1586.3
+    ],
+    [
+     1.0,
+     1583.3
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 45.0,
+   "amDepth": 0.6,
+   "gammaScale": 3.0,
+   "tractQ": 0.0,
+   "noise": 0.6,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.4007,
+    "rivalCosine": -0.0649,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.44
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.9286,
+    "end": 0.0714
+   },
+   "L01": {
+    "end": 0.5714,
+    "L01": 0.4286
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.049,
+   "L01>L01": 0.016
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 6,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

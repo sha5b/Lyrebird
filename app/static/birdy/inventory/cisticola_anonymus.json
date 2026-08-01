@@ -1,0 +1,242 @@
+{
+ "id": "cisticola_anonymus",
+ "common": "Chattering Cisticola",
+ "scientific": "Cisticola anonymus",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 43 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 4336 Hz \u00b7 61 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0613,
+   "level": 0.821,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5308.4
+    ],
+    [
+     0.125,
+     4380.1
+    ],
+    [
+     0.625,
+     3904.6
+    ],
+    [
+     0.875,
+     4121.2
+    ],
+    [
+     1.0,
+     4097.1
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 25.0,
+   "amDepth": 0.6,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 6.0,
+   "two": true,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.5932,
+    "rivalCosine": 0.5761,
+    "nearestOwn": true,
+    "f0ErrorPercent": -8.77
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4746 Hz \u00b7 833 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.8333,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4735.7
+    ],
+    [
+     0.125,
+     4350.4
+    ],
+    [
+     0.375,
+     4428.2
+    ],
+    [
+     0.5,
+     3752.7
+    ],
+    [
+     0.625,
+     4902.2
+    ],
+    [
+     0.75,
+     4844.8
+    ],
+    [
+     0.875,
+     5551.5
+    ],
+    [
+     1.0,
+     5701.4
+    ]
+   ],
+   "attack": 0.12,
+   "hold": false,
+   "harmonic": 0.7,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.05
+   },
+   "formants": [
+    [
+     3741.776844777196,
+     8.0,
+     0.5
+    ],
+    [
+     6830.618534315889,
+     8.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 30.0,
+   "rough": 0.4,
+   "two": true,
+   "fricative": true,
+   "learned": {
+    "members": 2,
+    "resynthesisCosine": 0.677,
+    "rivalCosine": 0.3213,
+    "nearestOwn": true,
+    "f0ErrorPercent": -16.05
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 5433 Hz \u00b7 172 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.172,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5432.4
+    ],
+    [
+     1.0,
+     5432.9
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.7,
+   "formants": [
+    [
+     845.2861410183435,
+     2.0,
+     0.5
+    ],
+    [
+     5899.517283512816,
+     2.0,
+     0.5
+    ]
+   ],
+   "noise": 0.85,
+   "gammaScale": 1.5,
+   "rough": 0.08,
+   "fricative": true,
+   "learned": {
+    "members": 38,
+    "resynthesisCosine": 0.723,
+    "rivalCosine": 0.2858,
+    "nearestOwn": true,
+    "f0ErrorPercent": 39.1
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L02"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L02": 1.0
+   },
+   "L02": {
+    "L02": 0.9189,
+    "end": 0.0811
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.024,
+   "L01>L02": 0.015,
+   "L02>L02": 0.021
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 1,
+   "candidates": 2,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,161 @@
+{
+ "id": "mimus_gilvus",
+ "common": "Tropical Mockingbird",
+ "scientific": "Mimus gilvus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 34 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 681 Hz \u00b7 233 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2334,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     615.3
+    ],
+    [
+     0.125,
+     740.3
+    ],
+    [
+     0.25,
+     693.0
+    ],
+    [
+     0.375,
+     562.1
+    ],
+    [
+     0.625,
+     749.3
+    ],
+    [
+     0.875,
+     690.8
+    ],
+    [
+     1.0,
+     743.1
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.35,
+   "am": 140.0,
+   "amDepth": 0.0,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.15
+    ]
+   ],
+   "rough": 0.65,
+   "noise": 0.85,
+   "gammaScale": 3.0,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.4102,
+    "rivalCosine": 0.2311,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.09
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4397 Hz \u00b7 44 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.044,
+   "level": 1.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     4451.5
+    ],
+    [
+     1.0,
+     4342.9
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 80.0,
+   "amDepth": 0.0,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.15
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 30.0,
+   "noise": 0.05,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.7381,
+    "rivalCosine": -0.2998,
+    "nearestOwn": true,
+    "f0ErrorPercent": 17.57
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01"
+   ],
+   "gaps": []
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7222,
+    "end": 0.2778
+   },
+   "L01": {
+    "end": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.016
+  },
+  "songTyping": {
+   "bouts": 21,
+   "short": 21,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

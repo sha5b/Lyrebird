@@ -1,0 +1,182 @@
+{
+ "id": "cecropis_daurica",
+ "common": "Red-rumped Swallow",
+ "scientific": "Cecropis daurica",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 562 Hz \u00b7 145 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1454,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     560.1
+    ],
+    [
+     0.125,
+     582.2
+    ],
+    [
+     0.25,
+     492.8
+    ],
+    [
+     0.5,
+     558.4
+    ],
+    [
+     0.625,
+     573.3
+    ],
+    [
+     0.75,
+     654.9
+    ],
+    [
+     0.875,
+     567.0
+    ],
+    [
+     1.0,
+     518.4
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.6
+    ]
+   ],
+   "rough": 0.65,
+   "gammaScale": 1.5,
+   "tractQ": 3.0,
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.2132,
+    "rivalCosine": -0.1529,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.01
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4037 Hz \u00b7 227 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2266,
+   "level": 0.677,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     4092.5
+    ],
+    [
+     0.25,
+     4159.8
+    ],
+    [
+     0.375,
+     3783.6
+    ],
+    [
+     0.5,
+     4092.1
+    ],
+    [
+     1.0,
+     4069.6
+    ]
+   ],
+   "attack": 0.06,
+   "hold": true,
+   "harmonic": 0.2,
+   "am": 140.0,
+   "amDepth": 0.6,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 30.0,
+   "noise": 0.12,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.025
+   },
+   "rough": 0.2,
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.6039,
+    "rivalCosine": -0.2896,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.06
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8571,
+    "end": 0.1429
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.037,
+   "L01>L01": 0.107
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 3,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

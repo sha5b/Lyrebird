@@ -1,0 +1,245 @@
+{
+ "id": "sterna_hirundo",
+ "common": "Common Tern",
+ "scientific": "Sterna hirundo",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 37 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 846 Hz \u00b7 44 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.044,
+   "level": 1.05,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     881.0
+    ],
+    [
+     0.125,
+     973.8
+    ],
+    [
+     0.25,
+     941.5
+    ],
+    [
+     0.375,
+     1048.3
+    ],
+    [
+     0.5,
+     820.3
+    ],
+    [
+     0.625,
+     808.4
+    ],
+    [
+     0.875,
+     682.1
+    ],
+    [
+     1.0,
+     683.8
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.7,
+   "am": 140.0,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.15
+    ]
+   ],
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.025
+   },
+   "tractQ": 0.0,
+   "rough": 0.08,
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.0605,
+    "rivalCosine": 0.1671,
+    "nearestOwn": false,
+    "f0ErrorPercent": 0.74
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2643 Hz \u00b7 96 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.096,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2623.0
+    ],
+    [
+     0.625,
+     2775.2
+    ],
+    [
+     0.75,
+     2580.3
+    ],
+    [
+     1.0,
+     2598.5
+    ]
+   ],
+   "attack": 0.024,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     1063.304792525682,
+     4.0,
+     2.0
+    ],
+    [
+     2711.2989394619476,
+     4.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 3.0,
+   "noise": 0.85,
+   "amDepth": 0.6,
+   "am": 12.0,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.09
+   },
+   "fricative": true,
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.5443,
+    "rivalCosine": 0.0766,
+    "nearestOwn": true,
+    "f0ErrorPercent": -26.1
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 3675 Hz \u00b7 67 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0667,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3767.0
+    ],
+    [
+     1.0,
+     3585.7
+    ]
+   ],
+   "attack": 0.0146,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     1595.9601420802412,
+     8.0,
+     0.5
+    ],
+    [
+     4368.450554124434,
+     8.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 30.0,
+   "noise": 0.25,
+   "two": true,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.09
+   },
+   "fricative": true,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.562,
+    "rivalCosine": 0.224,
+    "nearestOwn": true,
+    "f0ErrorPercent": -8.24
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6471,
+    "end": 0.3529
+   },
+   "L01": {
+    "L01": 0.6667,
+    "end": 0.3333
+   },
+   "L02": {
+    "L02": 0.7,
+    "end": 0.3
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.136,
+   "L01>L01": 0.044,
+   "L02>L02": 0.416
+  },
+  "songTyping": {
+   "bouts": 12,
+   "short": 12,
+   "candidates": 0,
+   "repeatCandidates": 7,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,287 @@
+{
+ "id": "pachyramphus_castaneus",
+ "common": "Chestnut-crowned Becard",
+ "scientific": "Pachyramphus castaneus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 4 syllable types fitted from 53 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1862 Hz \u00b7 48 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.048,
+   "level": 0.9,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1870.5
+    ],
+    [
+     1.0,
+     1854.4
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     4071.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "noise": 0.4,
+   "rough": 0.08,
+   "am": 80.0,
+   "amDepth": 0.3,
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.6763,
+    "rivalCosine": 0.6648,
+    "nearestOwn": true,
+    "f0ErrorPercent": -10.45
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3131 Hz \u00b7 304 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.304,
+   "level": 0.9,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3110.0
+    ],
+    [
+     0.125,
+     3232.6
+    ],
+    [
+     1.0,
+     3052.5
+    ]
+   ],
+   "attack": 0.12,
+   "hold": false,
+   "harmonic": 0.296,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     4071.3,
+     2.0,
+     2.0
+    ],
+    [
+     3192.5863689730877,
+     2.0,
+     2.0
+    ],
+    [
+     6830.618534315889,
+     2.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 3.0,
+   "two": true,
+   "fricative": true,
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.3839,
+    "rivalCosine": -0.0962,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.34
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 4040 Hz \u00b7 145 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1453,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3884.7
+    ],
+    [
+     1.0,
+     4201.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 14.07,
+   "amDepth": 0.0,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.025
+   },
+   "formants": [
+    [
+     654.2237665009833,
+     2.0,
+     0.5
+    ],
+    [
+     4368.450554124434,
+     2.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 0.5,
+   "noise": 0.85,
+   "rough": 0.0,
+   "two": true,
+   "tractQ": 6.0,
+   "fricative": true,
+   "learned": {
+    "members": 28,
+    "resynthesisCosine": 0.8419,
+    "rivalCosine": 0.586,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.01
+   }
+  },
+  {
+   "id": "L03",
+   "label": "learned L03 \u00b7 5879 Hz \u00b7 181 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1813,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     6282.8
+    ],
+    [
+     1.0,
+     5500.5
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.7,
+   "am": 12.0,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     1063.304792525682,
+     2.0,
+     1.0
+    ],
+    [
+     5899.517283512816,
+     2.0,
+     1.0
+    ]
+   ],
+   "noise": 0.85,
+   "rough": 0.2,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.05
+   },
+   "gammaScale": 0.5,
+   "two": false,
+   "fricative": true,
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.8238,
+    "rivalCosine": 0.5469,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.15
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L02",
+    "L01",
+    "L01",
+    "L02",
+    "L02"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 0.8182,
+    "L02": 0.1818
+   },
+   "L02": {
+    "L02": 0.8519,
+    "L01": 0.0741,
+    "L03": 0.0741
+   },
+   "L03": {
+    "end": 0.6,
+    "L03": 0.4
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.02,
+   "L01>L01": 0.032,
+   "L01>L02": 0.468,
+   "L02>L01": 0.697,
+   "L02>L02": 0.075,
+   "L02>L03": 0.044,
+   "L03>L03": 0.028
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 3,
+   "candidates": 3,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 3,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

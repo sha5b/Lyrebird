@@ -1,0 +1,179 @@
+{
+ "id": "pipilo_chlorurus",
+ "common": "Green-tailed Towhee",
+ "scientific": "Pipilo chlorurus",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 3863 Hz \u00b7 51 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0507,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4375.5
+    ],
+    [
+     0.375,
+     4354.4
+    ],
+    [
+     0.5,
+     3950.5
+    ],
+    [
+     0.625,
+     3829.9
+    ],
+    [
+     0.75,
+     3429.0
+    ],
+    [
+     1.0,
+     3361.1
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 80.0,
+   "amDepth": 0.0,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 0.0,
+   "rough": 0.65,
+   "learned": {
+    "members": 23,
+    "resynthesisCosine": 0.5846,
+    "rivalCosine": 0.2427,
+    "nearestOwn": true,
+    "f0ErrorPercent": 12.38
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 5616 Hz \u00b7 57 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0573,
+   "level": 0.376,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5892.8
+    ],
+    [
+     0.25,
+     6141.8
+    ],
+    [
+     0.375,
+     4952.4
+    ],
+    [
+     0.5,
+     5811.9
+    ],
+    [
+     0.625,
+     5063.2
+    ],
+    [
+     0.875,
+     5792.8
+    ],
+    [
+     1.0,
+     5769.4
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 22.06,
+   "amDepth": 0.6,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 30.0,
+   "noise": 0.05,
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.6297,
+    "rivalCosine": 0.2281,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.79
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7826,
+    "L01": 0.1304,
+    "end": 0.087
+   },
+   "L01": {
+    "end": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.025,
+   "L00>L01": 0.152
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 3,
+   "candidates": 1,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

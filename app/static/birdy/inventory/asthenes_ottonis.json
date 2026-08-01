@@ -1,0 +1,215 @@
+{
+ "id": "asthenes_ottonis",
+ "common": "Rusty-fronted Canastero",
+ "scientific": "Asthenes ottonis",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 576 Hz \u00b7 123 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1227,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     513.2
+    ],
+    [
+     0.125,
+     602.3
+    ],
+    [
+     0.375,
+     655.5
+    ],
+    [
+     0.5,
+     599.9
+    ],
+    [
+     0.625,
+     606.5
+    ],
+    [
+     0.875,
+     513.6
+    ],
+    [
+     1.0,
+     556.5
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 1.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     3695.1,
+     6.0,
+     0.3
+    ],
+    [
+     11085.3,
+     6.0,
+     0.1
+    ]
+   ],
+   "tractQ": 0.0,
+   "rough": 0.08,
+   "learned": {
+    "members": 17,
+    "resynthesisCosine": 0.3634,
+    "rivalCosine": 0.0643,
+    "nearestOwn": true,
+    "f0ErrorPercent": 9.62
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2195 Hz \u00b7 181 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1813,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1160.5
+    ],
+    [
+     0.125,
+     2140.5
+    ],
+    [
+     0.25,
+     2531.9
+    ],
+    [
+     0.375,
+     3312.3
+    ],
+    [
+     0.5,
+     3159.5
+    ],
+    [
+     0.625,
+     2395.4
+    ],
+    [
+     0.75,
+     1803.6
+    ],
+    [
+     0.875,
+     2566.0
+    ],
+    [
+     1.0,
+     1623.9
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 80.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 6.94,
+    "depth": 0.4
+   },
+   "formants": [
+    [
+     3695.1,
+     6.0,
+     0.3
+    ],
+    [
+     11085.3,
+     6.0,
+     0.1
+    ]
+   ],
+   "tractQ": 20.0,
+   "noise": 0.12,
+   "gammaScale": 0.5,
+   "rough": 0.2,
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.376,
+    "rivalCosine": -0.5969,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.01
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7647,
+    "L01": 0.1176,
+    "end": 0.1176
+   },
+   "L01": {
+    "L01": 0.7692,
+    "L00": 0.2308
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.048,
+   "L00>L01": 0.016,
+   "L01>L00": 0.021,
+   "L01>L01": 0.021
+  },
+  "songTyping": {
+   "bouts": 2,
+   "short": 1,
+   "candidates": 1,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

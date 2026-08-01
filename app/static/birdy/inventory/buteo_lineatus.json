@@ -1,0 +1,181 @@
+{
+ "id": "buteo_lineatus",
+ "common": "Red-shouldered Hawk",
+ "scientific": "Buteo lineatus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 696 Hz \u00b7 251 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2507,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     690.0
+    ],
+    [
+     0.375,
+     715.2
+    ],
+    [
+     0.5,
+     680.0
+    ],
+    [
+     0.625,
+     709.0
+    ],
+    [
+     1.0,
+     685.4
+    ]
+   ],
+   "attack": 0.06,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "rough": 0.65,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.01
+   },
+   "tractQ": 3.0,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.4017,
+    "rivalCosine": -0.1509,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.33
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 794 Hz \u00b7 245 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2453,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     769.2
+    ],
+    [
+     0.25,
+     882.7
+    ],
+    [
+     0.375,
+     740.8
+    ],
+    [
+     0.5,
+     839.7
+    ],
+    [
+     0.625,
+     790.2
+    ],
+    [
+     0.75,
+     789.3
+    ],
+    [
+     0.875,
+     745.4
+    ],
+    [
+     1.0,
+     807.5
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 1.0,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "noise": 0.85,
+   "rough": 0.2,
+   "gammaScale": 3.0,
+   "tractQ": 3.0,
+   "two": true,
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.5563,
+    "rivalCosine": -0.1127,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.76
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6875,
+    "end": 0.3125
+   },
+   "L01": {
+    "L01": 0.7333,
+    "end": 0.2667
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.019,
+   "L01>L01": 0.024
+  },
+  "songTyping": {
+   "bouts": 9,
+   "short": 9,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

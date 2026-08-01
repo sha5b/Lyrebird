@@ -1,0 +1,131 @@
+{
+ "id": "scytalopus_novacapitalis",
+ "common": "Bras\u00edlia Tapaculo",
+ "scientific": "Scytalopus novacapitalis",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 32 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2929 Hz \u00b7 112 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.112,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2773.4
+    ],
+    [
+     0.5,
+     2945.2
+    ],
+    [
+     1.0,
+     3075.3
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.7,
+   "am": 9.74,
+   "amDepth": 0.8,
+   "gammaScale": 6.0,
+   "tractQ": 30.0,
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.7494,
+    "rivalCosine": 0.7381,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.99
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2945 Hz \u00b7 88 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.088,
+   "level": 0.75,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2852.5
+    ],
+    [
+     1.0,
+     3040.8
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.45,
+   "gammaScale": 6.0,
+   "tractQ": 30.0,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.7913,
+    "rivalCosine": 0.7979,
+    "nearestOwn": false,
+    "f0ErrorPercent": 0.35
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.64,
+   "L01>L01": 0.659
+  },
+  "songTyping": {
+   "bouts": 1,
+   "short": 1,
+   "candidates": 0,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

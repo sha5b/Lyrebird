@@ -1,0 +1,148 @@
+{
+ "id": "catherpes_mexicanus",
+ "common": "Canyon Wren",
+ "scientific": "Catherpes mexicanus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 26 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 428 Hz \u00b7 177 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1774,
+   "level": 1.05,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     429.0
+    ],
+    [
+     0.75,
+     425.0
+    ],
+    [
+     0.875,
+     439.7
+    ],
+    [
+     1.0,
+     419.3
+    ]
+   ],
+   "attack": 0.056,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.6,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 12.0,
+   "learned": {
+    "members": 22,
+    "resynthesisCosine": 0.5831,
+    "rivalCosine": 0.6228,
+    "nearestOwn": false,
+    "f0ErrorPercent": -1.26
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 756 Hz \u00b7 61 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0614,
+   "level": 1.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     443.2
+    ],
+    [
+     1.0,
+     1291.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "rough": 0.65,
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.2722,
+    "rivalCosine": 0.2658,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.04
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.9091,
+    "end": 0.0909
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.043,
+   "L01>L01": 0.04
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 3,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

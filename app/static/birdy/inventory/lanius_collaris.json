@@ -1,0 +1,175 @@
+{
+ "id": "lanius_collaris",
+ "common": "Southern Fiscal",
+ "scientific": "Lanius collaris",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 455 Hz \u00b7 101 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1013,
+   "level": 0.6,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     452.3
+    ],
+    [
+     0.125,
+     477.6
+    ],
+    [
+     0.75,
+     460.3
+    ],
+    [
+     1.0,
+     430.4
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.7,
+   "am": 12.0,
+   "amDepth": 0.267,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "tractQ": 6.0,
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.6672,
+    "rivalCosine": -0.2479,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.09
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2457 Hz \u00b7 53 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0534,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1320.6
+    ],
+    [
+     0.125,
+     2053.9
+    ],
+    [
+     0.25,
+     2134.7
+    ],
+    [
+     0.375,
+     3140.8
+    ],
+    [
+     0.5,
+     3064.7
+    ],
+    [
+     0.875,
+     3258.3
+    ],
+    [
+     1.0,
+     2977.2
+    ]
+   ],
+   "attack": 0.002,
+   "hold": true,
+   "harmonic": 0.5,
+   "formants": [
+    [
+     3192.5863689730877,
+     2.0,
+     2.0
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 2.0,
+   "noise": 0.85,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.09
+   },
+   "amDepth": 0.3,
+   "am": 45.0,
+   "fricative": true,
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.7632,
+    "rivalCosine": -0.6196,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.72
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.044,
+   "L01>L01": 0.296
+  },
+  "songTyping": {
+   "bouts": 2,
+   "short": 2,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

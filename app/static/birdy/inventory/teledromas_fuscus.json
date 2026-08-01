@@ -1,0 +1,237 @@
+{
+ "id": "teledromas_fuscus",
+ "common": "Sandy Gallito",
+ "scientific": "Teledromas fuscus",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 38 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1807 Hz \u00b7 43 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0427,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2062.0
+    ],
+    [
+     0.75,
+     1947.4
+    ],
+    [
+     1.0,
+     1469.8
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.45,
+   "formants": [
+    [
+     1920.5,
+     6.0,
+     0.15
+    ],
+    [
+     5761.5,
+     6.0,
+     0.05
+    ],
+    [
+     9602.5,
+     6.0,
+     0.03
+    ]
+   ],
+   "gammaScale": 1.5,
+   "noise": 0.25,
+   "two": true,
+   "rough": 0.4,
+   "tractQ": 12.0,
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.7808,
+    "rivalCosine": 0.6534,
+    "nearestOwn": true,
+    "f0ErrorPercent": 10.13
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1814 Hz \u00b7 96 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.096,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2245.1
+    ],
+    [
+     0.75,
+     1890.2
+    ],
+    [
+     1.0,
+     1405.9
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 140.0,
+   "amDepth": 0.45,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.025
+   },
+   "formants": [
+    [
+     1920.5,
+     6.0,
+     0.15
+    ],
+    [
+     5761.5,
+     6.0,
+     0.05
+    ],
+    [
+     9602.5,
+     6.0,
+     0.03
+    ]
+   ],
+   "gammaScale": 1.0,
+   "learned": {
+    "members": 31,
+    "resynthesisCosine": 0.8907,
+    "rivalCosine": 0.6228,
+    "nearestOwn": true,
+    "f0ErrorPercent": 12.01
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 1993 Hz \u00b7 33 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0334,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2066.8
+    ],
+    [
+     1.0,
+     1921.8
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.35,
+   "formants": [
+    [
+     1920.5,
+     6.0,
+     0.15
+    ],
+    [
+     5761.5,
+     6.0,
+     0.05
+    ],
+    [
+     9602.5,
+     6.0,
+     0.03
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 30.0,
+   "amDepth": 0.45,
+   "am": 25.0,
+   "two": true,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.025
+   },
+   "noise": 0.25,
+   "learned": {
+    "members": 2,
+    "resynthesisCosine": 0.8382,
+    "rivalCosine": 0.4632,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.46
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L01": 1.0
+   },
+   "L01": {
+    "L01": 0.8065,
+    "end": 0.1935
+   },
+   "L02": {
+    "L02": 0.5,
+    "end": 0.5
+   }
+  },
+  "gaps": {
+   "L00>L01": 0.344,
+   "L01>L01": 0.28
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 7,
+   "candidates": 0,
+   "repeatCandidates": 6,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

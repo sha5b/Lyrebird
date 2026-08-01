@@ -1,0 +1,253 @@
+{
+ "id": "pericrocotus_speciosus",
+ "common": "Scarlet Minivet",
+ "scientific": "Pericrocotus speciosus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 4 syllable types fitted from 54 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1249 Hz \u00b7 49 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0494,
+   "level": 0.6,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1357.0
+    ],
+    [
+     0.125,
+     863.5
+    ],
+    [
+     0.25,
+     1091.3
+    ],
+    [
+     0.375,
+     1379.2
+    ],
+    [
+     0.625,
+     950.1
+    ],
+    [
+     0.75,
+     1684.3
+    ],
+    [
+     1.0,
+     1684.0
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.35,
+   "tractQ": 3.0,
+   "noise": 0.4,
+   "rough": 0.65,
+   "am": 12.0,
+   "amDepth": 0.15,
+   "gammaScale": 3.0,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.5612,
+    "rivalCosine": 0.3953,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.71
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2613 Hz \u00b7 65 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0653,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2741.2
+    ],
+    [
+     0.25,
+     2752.7
+    ],
+    [
+     0.625,
+     2513.4
+    ],
+    [
+     0.75,
+     2587.7
+    ],
+    [
+     0.875,
+     2492.0
+    ],
+    [
+     1.0,
+     2600.5
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.235,
+   "am": 25.0,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "rough": 0.2,
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.3054,
+    "rivalCosine": 0.3007,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.76
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 4639 Hz \u00b7 123 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1227,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4557.6
+    ],
+    [
+     1.0,
+     4721.7
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.7,
+   "noise": 0.05,
+   "rough": 0.08,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.01
+   },
+   "gammaScale": 0.5,
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.4631,
+    "rivalCosine": 0.3174,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.62
+   }
+  },
+  {
+   "id": "L03",
+   "label": "learned L03 \u00b7 5234 Hz \u00b7 195 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1947,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4995.3
+    ],
+    [
+     1.0,
+     5483.7
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 5.36,
+    "depth": 0.053
+   },
+   "gammaScale": 1.5,
+   "two": true,
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.7477,
+    "rivalCosine": 0.1768,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.62
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L03",
+    "L03"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L03",
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.75,
+    "end": 0.25
+   },
+   "L01": {
+    "L01": 0.6667,
+    "L02": 0.3333
+   },
+   "L02": {
+    "L02": 0.6667,
+    "L01": 0.3333
+   },
+   "L03": {
+    "L03": 0.7895,
+    "end": 0.2105
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.037,
+   "L01>L01": 0.027,
+   "L01>L02": 0.079,
+   "L02>L01": 0.104,
+   "L02>L02": 0.121,
+   "L03>L03": 0.107
+  },
+  "songTyping": {
+   "bouts": 8,
+   "short": 6,
+   "candidates": 2,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

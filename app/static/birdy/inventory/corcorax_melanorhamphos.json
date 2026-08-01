@@ -1,0 +1,136 @@
+{
+ "id": "corcorax_melanorhamphos",
+ "common": "White-winged Chough",
+ "scientific": "Corcorax melanorhamphos",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1546 Hz \u00b7 92 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.092,
+   "level": 0.75,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1559.0
+    ],
+    [
+     1.0,
+     1532.6
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "gammaScale": 1.5,
+   "tractQ": 30.0,
+   "noise": 0.05,
+   "rough": 0.08,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.7958,
+    "rivalCosine": 0.5228,
+    "nearestOwn": true,
+    "f0ErrorPercent": 7.2
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1919 Hz \u00b7 123 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1227,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1938.4
+    ],
+    [
+     1.0,
+     1900.5
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 24.19,
+   "amDepth": 0.8,
+   "tractQ": 30.0,
+   "rough": 0.4,
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.6442,
+    "rivalCosine": 0.4492,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.22
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L01": 0.375,
+    "end": 0.375,
+    "L00": 0.25
+   },
+   "L01": {
+    "L01": 0.85,
+    "end": 0.15
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.311,
+   "L00>L01": 0.04,
+   "L01>L01": 0.045
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 6,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,259 @@
+{
+ "id": "cyanistes_cyanus",
+ "common": "Azure Tit",
+ "scientific": "Cyanistes cyanus",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 43 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 813 Hz \u00b7 52 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.052,
+   "level": 0.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     841.2
+    ],
+    [
+     0.125,
+     808.2
+    ],
+    [
+     0.75,
+     837.9
+    ],
+    [
+     0.875,
+     772.7
+    ],
+    [
+     1.0,
+     805.8
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.991,
+   "formants": [
+    [
+     5063.7,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 3.0,
+   "noise": 0.25,
+   "am": 12.0,
+   "amDepth": 0.15,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 24,
+    "resynthesisCosine": 0.6933,
+    "rivalCosine": 0.005,
+    "nearestOwn": true,
+    "f0ErrorPercent": 6.41
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4064 Hz \u00b7 117 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1173,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5961.0
+    ],
+    [
+     0.25,
+     5560.0
+    ],
+    [
+     0.5,
+     4219.2
+    ],
+    [
+     0.625,
+     2953.6
+    ],
+    [
+     1.0,
+     2684.3
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.5,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.348
+   },
+   "formants": [
+    [
+     1063.304792525682,
+     8.0,
+     0.5
+    ],
+    [
+     5083.5393171114765,
+     8.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 0.5,
+   "rough": 0.4,
+   "fricative": true,
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.8517,
+    "rivalCosine": 0.1684,
+    "nearestOwn": true,
+    "f0ErrorPercent": 41.14
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 4686 Hz \u00b7 77 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0774,
+   "level": 0.36,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4340.1
+    ],
+    [
+     0.125,
+     4649.9
+    ],
+    [
+     0.375,
+     4606.6
+    ],
+    [
+     0.5,
+     4899.7
+    ],
+    [
+     1.0,
+     4957.9
+    ]
+   ],
+   "attack": 0.0213,
+   "hold": false,
+   "harmonic": 0.35,
+   "am": 19.34,
+   "amDepth": 0.6,
+   "vib": {
+    "rate": 11.18,
+    "depth": 0.09
+   },
+   "formants": [
+    [
+     1063.304792525682,
+     8.0,
+     0.5
+    ],
+    [
+     5083.5393171114765,
+     8.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 4.5,
+   "noise": 0.6,
+   "two": true,
+   "tractQ": 3.0,
+   "fricative": true,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.5385,
+    "rivalCosine": 0.4804,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.03
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L02",
+    "L01",
+    "L02",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8696,
+    "L02": 0.1304
+   },
+   "L01": {
+    "L02": 0.6667,
+    "L00": 0.3333
+   },
+   "L02": {
+    "L01": 0.5833,
+    "L02": 0.4167
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.125,
+   "L00>L02": 0.299,
+   "L01>L00": 0.604,
+   "L01>L02": 0.136,
+   "L02>L01": 0.069,
+   "L02>L02": 0.019
+  },
+  "songTyping": {
+   "bouts": 2,
+   "short": 0,
+   "candidates": 2,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

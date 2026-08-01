@@ -1,0 +1,227 @@
+{
+ "id": "pernis_apivorus",
+ "common": "European Honey Buzzard",
+ "scientific": "Pernis apivorus",
+ "bank": "learned",
+ "summary": "Learned from 3 field recordings: 3 syllable types fitted from 42 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L08",
+   "label": "learned L08 \u00b7 444 Hz \u00b7 117 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1173,
+   "level": 1.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     436.5
+    ],
+    [
+     0.125,
+     462.6
+    ],
+    [
+     0.25,
+     446.6
+    ],
+    [
+     1.0,
+     430.1
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 20.0,
+   "learned": {
+    "members": 23,
+    "resynthesisCosine": 0.6253,
+    "rivalCosine": 0.399,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.9
+   }
+  },
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 562 Hz \u00b7 56 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.056,
+   "level": 0.75,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     508.1
+    ],
+    [
+     0.125,
+     496.0
+    ],
+    [
+     0.25,
+     643.4
+    ],
+    [
+     0.5,
+     569.8
+    ],
+    [
+     0.625,
+     556.6
+    ],
+    [
+     0.75,
+     801.6
+    ],
+    [
+     0.875,
+     505.3
+    ],
+    [
+     1.0,
+     476.9
+    ]
+   ],
+   "attack": 0.0267,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 12.0,
+   "amDepth": 0.6,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "tractQ": 3.0,
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.4434,
+    "rivalCosine": 0.4268,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.31
+   }
+  },
+  {
+   "id": "L05",
+   "label": "learned L05 \u00b7 2689 Hz \u00b7 201 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2014,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2638.1
+    ],
+    [
+     0.125,
+     2835.5
+    ],
+    [
+     1.0,
+     2599.2
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.173,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "tractQ": 0.0,
+   "amDepth": 0.8,
+   "am": 140.0,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.05
+   },
+   "gammaScale": 1.5,
+   "noise": 0.05,
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.8654,
+    "rivalCosine": -0.2126,
+    "nearestOwn": true,
+    "f0ErrorPercent": 5.28
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L05",
+    "L05"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L05",
+   "L08",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.6,
+    "L00": 0.4
+   },
+   "L05": {
+    "end": 0.7143,
+    "L05": 0.2857
+   },
+   "L08": {
+    "L08": 0.8696,
+    "end": 0.1304
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.344,
+   "L05>L05": 0.083,
+   "L08>L08": 0.123
+  },
+  "songTyping": {
+   "bouts": 16,
+   "short": 16,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

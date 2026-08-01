@@ -1,0 +1,167 @@
+{
+ "id": "sporophila_nigricollis",
+ "common": "Yellow-bellied Seedeater",
+ "scientific": "Sporophila nigricollis",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 796 Hz \u00b7 149 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1493,
+   "level": 1.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     894.8
+    ],
+    [
+     0.125,
+     808.8
+    ],
+    [
+     0.25,
+     663.4
+    ],
+    [
+     0.5,
+     611.1
+    ],
+    [
+     0.625,
+     1005.8
+    ],
+    [
+     0.75,
+     955.1
+    ],
+    [
+     0.875,
+     643.7
+    ],
+    [
+     1.0,
+     891.9
+    ]
+   ],
+   "attack": 0.0066,
+   "hold": true,
+   "harmonic": 0.9,
+   "gammaScale": 2.0,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "amDepth": 0.3,
+   "am": 30.0,
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.718,
+    "rivalCosine": -0.1395,
+    "nearestOwn": true,
+    "f0ErrorPercent": -9.6
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4047 Hz \u00b7 104 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.104,
+   "level": 1.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     4838.4
+    ],
+    [
+     0.125,
+     4699.1
+    ],
+    [
+     0.25,
+     3877.0
+    ],
+    [
+     0.75,
+     3756.1
+    ],
+    [
+     0.875,
+     3582.8
+    ],
+    [
+     1.0,
+     3704.1
+    ]
+   ],
+   "attack": 0.0293,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 13.16,
+   "amDepth": 0.0,
+   "gammaScale": 4.5,
+   "tractQ": 30.0,
+   "two": true,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.8317,
+    "rivalCosine": -0.4007,
+    "nearestOwn": true,
+    "f0ErrorPercent": -7.35
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00"
+   ],
+   "gaps": []
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "L01": 0.9048,
+    "end": 0.0952
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.048
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 5,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,256 @@
+{
+ "id": "pogoniulus_bilineatus",
+ "common": "Yellow-rumped Tinkerbird",
+ "scientific": "Pogoniulus bilineatus",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 37 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 467 Hz \u00b7 223 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2232,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     460.1
+    ],
+    [
+     0.125,
+     506.8
+    ],
+    [
+     0.25,
+     467.5
+    ],
+    [
+     0.5,
+     441.7
+    ],
+    [
+     0.625,
+     460.7
+    ],
+    [
+     0.75,
+     451.7
+    ],
+    [
+     0.875,
+     482.5
+    ],
+    [
+     1.0,
+     464.0
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     5063.7,
+     6.0,
+     0.6
+    ]
+   ],
+   "rough": 0.65,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.01
+   },
+   "am": 140.0,
+   "amDepth": 0.3,
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.6667,
+    "rivalCosine": 0.5159,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.55
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 481 Hz \u00b7 148 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.148,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     421.5
+    ],
+    [
+     0.125,
+     513.6
+    ],
+    [
+     0.25,
+     465.1
+    ],
+    [
+     0.375,
+     456.7
+    ],
+    [
+     0.5,
+     520.9
+    ],
+    [
+     0.75,
+     473.3
+    ],
+    [
+     1.0,
+     525.8
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     5063.7,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "rough": 0.65,
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.5159,
+    "rivalCosine": 0.6273,
+    "nearestOwn": false,
+    "f0ErrorPercent": 1.85
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 493 Hz \u00b7 137 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1373,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     516.8
+    ],
+    [
+     0.125,
+     467.5
+    ],
+    [
+     0.375,
+     483.2
+    ],
+    [
+     0.5,
+     513.3
+    ],
+    [
+     0.75,
+     472.9
+    ],
+    [
+     1.0,
+     503.7
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.45,
+   "formants": [
+    [
+     5063.7,
+     6.0,
+     0.6
+    ]
+   ],
+   "tractQ": 3.0,
+   "rough": 0.08,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.025
+   },
+   "noise": 0.05,
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.6205,
+    "rivalCosine": 0.6796,
+    "nearestOwn": false,
+    "f0ErrorPercent": -0.18
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L02"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8667,
+    "end": 0.1333
+   },
+   "L01": {
+    "L01": 0.5,
+    "L02": 0.5
+   },
+   "L02": {
+    "L02": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.04,
+   "L01>L01": 0.517,
+   "L01>L02": 0.215,
+   "L02>L02": 0.059
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 2,
+   "candidates": 1,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

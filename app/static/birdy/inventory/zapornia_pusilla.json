@@ -1,0 +1,188 @@
+{
+ "id": "zapornia_pusilla",
+ "common": "Baillon's Crake",
+ "scientific": "Zapornia pusilla",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 34 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 493 Hz \u00b7 92 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.092,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     453.4
+    ],
+    [
+     0.25,
+     488.5
+    ],
+    [
+     0.375,
+     462.0
+    ],
+    [
+     0.5,
+     691.1
+    ],
+    [
+     0.75,
+     446.0
+    ],
+    [
+     1.0,
+     456.8
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.5,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     1.0
+    ],
+    [
+     9584.9,
+     6.0,
+     0.3333
+    ]
+   ],
+   "gammaScale": 0.5,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.4338,
+    "rivalCosine": -0.3298,
+    "nearestOwn": true,
+    "f0ErrorPercent": 26.66
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3538 Hz \u00b7 48 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.048,
+   "level": 0.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3569.7
+    ],
+    [
+     1.0,
+     3506.3
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 28.32,
+   "amDepth": 0.6,
+   "formants": [
+    [
+     3195.0,
+     4.0,
+     2.0
+    ],
+    [
+     9584.9,
+     4.0,
+     2.0
+    ],
+    [
+     3741.776844777196,
+     4.0,
+     2.0
+    ],
+    [
+     7893.0853838443245,
+     4.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 30.0,
+   "noise": 0.12,
+   "rough": 0.2,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.025
+   },
+   "fricative": true,
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.0673,
+    "rivalCosine": -0.2624,
+    "nearestOwn": true,
+    "f0ErrorPercent": 11.96
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.6,
+    "L00": 0.4
+   },
+   "L01": {
+    "end": 0.5,
+    "L01": 0.2778,
+    "L00": 0.2222
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.141,
+   "L01>L00": 0.511,
+   "L01>L01": 0.171
+  },
+  "songTyping": {
+   "bouts": 18,
+   "short": 18,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

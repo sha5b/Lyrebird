@@ -1,0 +1,180 @@
+{
+ "id": "nemosia_pileata",
+ "common": "Hooded Tanager",
+ "scientific": "Nemosia pileata",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1124 Hz \u00b7 56 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.056,
+   "level": 0.9,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1456.4
+    ],
+    [
+     0.125,
+     1240.3
+    ],
+    [
+     0.375,
+     1223.3
+    ],
+    [
+     0.625,
+     898.7
+    ],
+    [
+     0.75,
+     922.9
+    ],
+    [
+     0.875,
+     1221.5
+    ],
+    [
+     1.0,
+     1013.0
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 1.0,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.05
+   },
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
+   "noise": 0.25,
+   "rough": 0.2,
+   "fricative": true,
+   "formants": [
+    [
+     1919.8885853658714,
+     8.0,
+     2.0
+    ],
+    [
+     7893.0853838443245,
+     8.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.4769,
+    "rivalCosine": 0.1273,
+    "nearestOwn": true,
+    "f0ErrorPercent": -8.64
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 6849 Hz \u00b7 63 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0627,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     6748.7
+    ],
+    [
+     0.5,
+     7096.0
+    ],
+    [
+     0.625,
+     6292.2
+    ],
+    [
+     0.75,
+     7052.0
+    ],
+    [
+     1.0,
+     7091.8
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.5,
+   "am": 21.59,
+   "amDepth": 0.3,
+   "gammaScale": 4.5,
+   "noise": 0.12,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.01
+   },
+   "two": true,
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.8304,
+    "rivalCosine": 0.2414,
+    "nearestOwn": true,
+    "f0ErrorPercent": 6.52
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.147,
+   "L01>L01": 0.237
+  },
+  "songTyping": {
+   "bouts": 2,
+   "short": 2,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

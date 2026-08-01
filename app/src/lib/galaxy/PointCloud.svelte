@@ -302,6 +302,9 @@
 			uUnmatchedStrength: { value: 0 },
 			uTime: { value: 0 },
 			uLevel: { value: 0 },
+			// Smoothed loudness x match: what the resting wash gives way to. See uAnswer
+			// in shaders.ts — the raw level dimmed the cloud for sounds it could not place.
+			uAnswer: { value: 0 },
 			uPointSize: { value: untrack(() => pointSize) },
 			uPixelRatio: { value: typeof window === 'undefined' ? 1 : Math.min(2, window.devicePixelRatio) },
 			uHighlight: { value: -1 },
@@ -514,6 +517,17 @@
 	 * band so a slow drift across a threshold cannot flicker. A focused species always
 	 * draws in full: choosing a bird is asking to see its marks.
 	 */
+	/**
+	 * Per-frame retention of the resting wash's driver, at 60 Hz, rising and falling.
+	 *
+	 * Both are delta-scaled where they are used, so the half-life is the same on a 60 Hz
+	 * and a 144 Hz display. It rises over about 80 ms — fast enough that the wash is out
+	 * of the way by the time a syllable's second half sounds — and falls over about 250 ms,
+	 * because ink coming back slower than it left reads as light rather than as a flicker.
+	 */
+	const ANSWER_RISE = 0.6;
+	const ANSWER_FALL = 0.86;
+
 	const LOD_FAR = 3.2;
 	const LOD_NEAR = 1.6;
 	const LOD_HYSTERESIS = 0.15;
@@ -959,6 +973,15 @@
 		easeAccent(delta);
 
 		u.uLevel.value = signal.level;
+		// The resting wash gives way to what the corpus is *answering*, not to how loud the
+		// room is. `strength` is the match, so a sound the galaxy cannot place leaves the
+		// picture alone instead of dimming all of it and lighting none of it. Eased on a
+		// fixed half-life, delta-scaled, so the step back is not the level's own flicker —
+		// and it falls faster than it rises, because a picture that keeps dimming after the
+		// sound has stopped reads as a lag.
+		const answer = signal.level * signal.strength;
+		const rate = answer > u.uAnswer.value ? ANSWER_RISE : ANSWER_FALL;
+		u.uAnswer.value += (answer - u.uAnswer.value) * (1 - Math.pow(rate, delta * 60));
 		u.uHighlight.value = signal.best;
 
 		// The three channels, interleaved into the texture's RGB. One pass over the

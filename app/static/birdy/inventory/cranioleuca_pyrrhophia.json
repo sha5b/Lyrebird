@@ -1,0 +1,183 @@
+{
+ "id": "cranioleuca_pyrrhophia",
+ "common": "Stripe-crowned Spinetail",
+ "scientific": "Cranioleuca pyrrhophia",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2541 Hz \u00b7 88 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.088,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5152.3
+    ],
+    [
+     0.125,
+     4028.2
+    ],
+    [
+     0.25,
+     4877.0
+    ],
+    [
+     0.375,
+     1975.5
+    ],
+    [
+     0.5,
+     2053.8
+    ],
+    [
+     0.75,
+     1414.7
+    ],
+    [
+     0.875,
+     3058.1
+    ],
+    [
+     1.0,
+     978.3
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 12.93,
+   "amDepth": 0.0,
+   "formants": [
+    [
+     1919.8885853658714,
+     4.0,
+     2.0
+    ],
+    [
+     5083.5393171114765,
+     4.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 3.0,
+   "noise": 0.85,
+   "rough": 0.08,
+   "fricative": true,
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.3082,
+    "rivalCosine": 0.4282,
+    "nearestOwn": false,
+    "f0ErrorPercent": 11.84
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 5722 Hz \u00b7 65 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0653,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5453.0
+    ],
+    [
+     1.0,
+     6003.3
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.35,
+   "am": 18.3,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     5856.3,
+     8.0,
+     0.5
+    ],
+    [
+     1919.8885853658714,
+     8.0,
+     0.5
+    ],
+    [
+     5899.517283512816,
+     8.0,
+     0.5
+    ]
+   ],
+   "noise": 0.4,
+   "rough": 0.65,
+   "gammaScale": 0.5,
+   "fricative": true,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.67,
+    "rivalCosine": 0.0609,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.1
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8182,
+    "end": 0.1818
+   },
+   "L01": {
+    "L01": 0.8125,
+    "end": 0.1875
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.032,
+   "L01>L01": 0.048
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 5,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

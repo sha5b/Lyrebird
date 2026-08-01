@@ -1,0 +1,274 @@
+{
+ "id": "cyanoramphus_auriceps",
+ "common": "Yellow-crowned Parakeet",
+ "scientific": "Cyanoramphus auriceps",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 4 syllable types fitted from 48 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2848 Hz \u00b7 45 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0454,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2787.0
+    ],
+    [
+     0.875,
+     2791.3
+    ],
+    [
+     1.0,
+     2968.8
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 26.93,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
+   "noise": 0.6,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.025
+   },
+   "rough": 0.65,
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.888,
+    "rivalCosine": 0.4105,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.35
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3112 Hz \u00b7 243 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2427,
+   "level": 0.674,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2824.8
+    ],
+    [
+     0.125,
+     3115.6
+    ],
+    [
+     0.375,
+     3028.3
+    ],
+    [
+     0.5,
+     3432.8
+    ],
+    [
+     0.875,
+     3130.8
+    ],
+    [
+     1.0,
+     3170.4
+    ]
+   ],
+   "attack": 0.06,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.196,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.05
+   },
+   "gammaScale": 6.0,
+   "tractQ": 30.0,
+   "noise": 0.05,
+   "two": true,
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.7654,
+    "rivalCosine": 0.4626,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.29
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 3724 Hz \u00b7 137 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1373,
+   "level": 0.423,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3679.0
+    ],
+    [
+     0.875,
+     3804.3
+    ],
+    [
+     1.0,
+     3690.9
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.5,
+   "am": 45.0,
+   "amDepth": 0.0,
+   "tractQ": 0.0,
+   "rough": 0.65,
+   "gammaScale": 1.5,
+   "fricative": true,
+   "formants": [
+    [
+     3741.776844777196,
+     8.0,
+     0.5
+    ],
+    [
+     7893.0853838443245,
+     8.0,
+     0.5
+    ]
+   ],
+   "learned": {
+    "members": 24,
+    "resynthesisCosine": 0.6548,
+    "rivalCosine": 0.4355,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.75
+   }
+  },
+  {
+   "id": "L03",
+   "label": "learned L03 \u00b7 4225 Hz \u00b7 69 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0693,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4244.7
+    ],
+    [
+     1.0,
+     4205.8
+    ]
+   ],
+   "attack": 0.0213,
+   "hold": false,
+   "harmonic": 0.7,
+   "am": 22.5,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "noise": 0.6,
+   "rough": 0.2,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.7828,
+    "rivalCosine": 0.5496,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.72
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L02",
+    "L01",
+    "L02",
+    "L02",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L03",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L02": 0.4286,
+    "L03": 0.2857,
+    "end": 0.2857
+   },
+   "L02": {
+    "L02": 0.6957,
+    "L01": 0.2174,
+    "end": 0.087
+   },
+   "L03": {
+    "L03": 0.4444,
+    "L02": 0.3333,
+    "L01": 0.2222
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.024,
+   "L01>L02": 0.032,
+   "L01>L03": 0.473,
+   "L02>L01": 0.283,
+   "L02>L02": 0.043,
+   "L03>L01": 0.041,
+   "L03>L02": 0.053,
+   "L03>L03": 0.032
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 1,
+   "candidates": 4,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 4,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

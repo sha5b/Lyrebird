@@ -1,0 +1,243 @@
+{
+ "id": "microcerculus_philomela",
+ "common": "Nightingale Wren",
+ "scientific": "Microcerculus philomela",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 4 syllable types fitted from 54 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2964 Hz \u00b7 203 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2026,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2986.3
+    ],
+    [
+     1.0,
+     2941.5
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 12.0,
+   "amDepth": 0.0,
+   "gammaScale": 0.5,
+   "tractQ": 6.0,
+   "noise": 0.05,
+   "rough": 0.08,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.6217,
+    "rivalCosine": 0.0717,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.91
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3269 Hz \u00b7 53 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0533,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3885.7
+    ],
+    [
+     0.125,
+     3840.3
+    ],
+    [
+     0.25,
+     2669.3
+    ],
+    [
+     0.375,
+     2582.0
+    ],
+    [
+     0.625,
+     2642.5
+    ],
+    [
+     0.75,
+     3842.4
+    ],
+    [
+     1.0,
+     3823.4
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "tractQ": 20.0,
+   "learned": {
+    "members": 23,
+    "resynthesisCosine": -0.2821,
+    "rivalCosine": 0.3275,
+    "nearestOwn": false,
+    "f0ErrorPercent": -21.07
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 3323 Hz \u00b7 88 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.088,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3321.1
+    ],
+    [
+     1.0,
+     3324.7
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.0,
+   "gammaScale": 1.0,
+   "tractQ": 30.0,
+   "noise": 0.12,
+   "rough": 0.2,
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.4984,
+    "rivalCosine": 0.2771,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.92
+   }
+  },
+  {
+   "id": "L03",
+   "label": "learned L03 \u00b7 4841 Hz \u00b7 103 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1027,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     4841.0
+    ],
+    [
+     1.0,
+     4840.5
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.1,
+   "am": 12.0,
+   "amDepth": 0.15,
+   "gammaScale": 1.5,
+   "tractQ": 12.0,
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.5887,
+    "rivalCosine": -0.0115,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.95
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L02",
+    "L02",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L02",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7,
+    "L03": 0.3
+   },
+   "L01": {
+    "L01": 0.6522,
+    "end": 0.2174,
+    "L02": 0.1304
+   },
+   "L02": {
+    "end": 0.4615,
+    "L02": 0.3077,
+    "L01": 0.2308
+   },
+   "L03": {
+    "L03": 0.5,
+    "L00": 0.5
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.109,
+   "L00>L03": 0.555,
+   "L01>L01": 0.051,
+   "L01>L02": 0.483,
+   "L02>L01": 0.461,
+   "L02>L02": 0.231,
+   "L03>L00": 0.435,
+   "L03>L03": 0.024
+  },
+  "songTyping": {
+   "bouts": 12,
+   "short": 9,
+   "candidates": 3,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 3,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,166 @@
+{
+ "id": "syrigma_sibilatrix",
+ "common": "Whistling Heron",
+ "scientific": "Syrigma sibilatrix",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 26 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2389 Hz \u00b7 103 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1026,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2458.8
+    ],
+    [
+     0.5,
+     2304.8
+    ],
+    [
+     0.875,
+     2334.2
+    ],
+    [
+     1.0,
+     2461.7
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 3.0,
+   "tractQ": 30.0,
+   "noise": 0.6,
+   "rough": 0.2,
+   "am": 80.0,
+   "amDepth": 0.15,
+   "two": true,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 22,
+    "resynthesisCosine": 0.4082,
+    "rivalCosine": -0.0234,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.98
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4369 Hz \u00b7 192 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.192,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2807.7
+    ],
+    [
+     0.125,
+     4128.8
+    ],
+    [
+     0.375,
+     5084.3
+    ],
+    [
+     0.5,
+     5237.0
+    ],
+    [
+     0.625,
+     3669.2
+    ],
+    [
+     0.75,
+     5121.3
+    ],
+    [
+     1.0,
+     5240.8
+    ]
+   ],
+   "attack": 0.0494,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 12.0,
+   "amDepth": 0.206,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.244
+   },
+   "gammaScale": 4.5,
+   "tractQ": 3.0,
+   "noise": 0.05,
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.6519,
+    "rivalCosine": -0.1698,
+    "nearestOwn": true,
+    "f0ErrorPercent": -28.04
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7727,
+    "end": 0.2273
+   },
+   "L01": {
+    "L01": 0.5,
+    "end": 0.5
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.051,
+   "L01>L01": 0.197
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 7,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

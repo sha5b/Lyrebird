@@ -1,0 +1,156 @@
+{
+ "id": "baryphthengus_ruficapillus",
+ "common": "Rufous-capped Motmot",
+ "scientific": "Baryphthengus ruficapillus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 538 Hz \u00b7 72 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.072,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     524.8
+    ],
+    [
+     0.875,
+     518.2
+    ],
+    [
+     1.0,
+     572.4
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.1,
+   "am": 25.0,
+   "amDepth": 0.45,
+   "gammaScale": 0.5,
+   "tractQ": 6.0,
+   "noise": 0.12,
+   "rough": 0.65,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 25,
+    "resynthesisCosine": 0.8272,
+    "rivalCosine": 0.0018,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.22
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1401 Hz \u00b7 47 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0466,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1337.2
+    ],
+    [
+     0.25,
+     1342.6
+    ],
+    [
+     0.5,
+     1601.2
+    ],
+    [
+     0.75,
+     1563.7
+    ],
+    [
+     0.875,
+     1350.4
+    ],
+    [
+     1.0,
+     1246.8
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.5,
+   "am": 140.0,
+   "amDepth": 0.15,
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "two": true,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.8611,
+    "rivalCosine": -0.0539,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.46
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.64,
+    "end": 0.36
+   },
+   "L01": {
+    "end": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.023
+  },
+  "songTyping": {
+   "bouts": 11,
+   "short": 11,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

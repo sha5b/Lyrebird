@@ -1,0 +1,236 @@
+{
+ "id": "morus_serrator",
+ "common": "Australasian Gannet",
+ "scientific": "Morus serrator",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 40 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 514 Hz \u00b7 83 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0827,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     460.9
+    ],
+    [
+     0.25,
+     625.4
+    ],
+    [
+     0.375,
+     523.3
+    ],
+    [
+     0.625,
+     467.7
+    ],
+    [
+     0.875,
+     511.2
+    ],
+    [
+     1.0,
+     510.7
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 1.0,
+   "am": 12.0,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 3.0,
+   "rough": 0.4,
+   "learned": {
+    "members": 23,
+    "resynthesisCosine": 0.3733,
+    "rivalCosine": -0.1009,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.01
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1284 Hz \u00b7 36 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.036,
+   "level": 0.6,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1215.7
+    ],
+    [
+     1.0,
+     1356.1
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 45.0,
+   "amDepth": 0.0,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 12.0,
+   "noise": 0.25,
+   "two": true,
+   "rough": 0.08,
+   "fricative": true,
+   "learned": {
+    "members": 2,
+    "resynthesisCosine": 0.6517,
+    "rivalCosine": 0.0787,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.79
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 3758 Hz \u00b7 184 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.184,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3969.3
+    ],
+    [
+     0.125,
+     4155.2
+    ],
+    [
+     0.25,
+     3337.0
+    ],
+    [
+     0.375,
+     3842.3
+    ],
+    [
+     0.625,
+     3579.1
+    ],
+    [
+     0.75,
+     3772.7
+    ],
+    [
+     1.0,
+     3709.5
+    ]
+   ],
+   "attack": 0.06,
+   "hold": true,
+   "harmonic": 0.7,
+   "am": 140.0,
+   "amDepth": 0.45,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.05
+   },
+   "formants": [
+    [
+     2711.2989394619476,
+     8.0,
+     0.5
+    ],
+    [
+     4368.450554124434,
+     8.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 6.0,
+   "noise": 0.0,
+   "two": true,
+   "fricative": true,
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.6239,
+    "rivalCosine": -0.2505,
+    "nearestOwn": true,
+    "f0ErrorPercent": -14.57
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.913,
+    "end": 0.087
+   },
+   "L01": {
+    "L01": 0.5,
+    "L02": 0.5
+   },
+   "L02": {
+    "L02": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.024,
+   "L02>L02": 0.283
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 2,
+   "candidates": 1,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

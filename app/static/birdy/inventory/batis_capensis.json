@@ -1,0 +1,226 @@
+{
+ "id": "batis_capensis",
+ "common": "Cape Batis",
+ "scientific": "Batis capensis",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 44 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2417 Hz \u00b7 69 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0693,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2416.8
+    ],
+    [
+     1.0,
+     2416.6
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.0,
+   "formants": [
+    [
+     2696.4,
+     6.0,
+     0.15
+    ],
+    [
+     8089.2,
+     6.0,
+     0.05
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 12.0,
+   "noise": 0.05,
+   "rough": 0.4,
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.5406,
+    "rivalCosine": 0.4258,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.02
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2627 Hz \u00b7 53 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0533,
+   "level": 1.2,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2670.6
+    ],
+    [
+     0.125,
+     2569.9
+    ],
+    [
+     0.25,
+     2717.6
+    ],
+    [
+     0.375,
+     2546.2
+    ],
+    [
+     1.0,
+     2633.5
+    ]
+   ],
+   "attack": 0.0267,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     2696.4,
+     6.0,
+     0.15
+    ],
+    [
+     8089.2,
+     6.0,
+     0.05
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "rough": 0.4,
+   "two": true,
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.543,
+    "rivalCosine": 0.5246,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.76
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2911 Hz \u00b7 93 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0934,
+   "level": 0.6,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2853.5
+    ],
+    [
+     1.0,
+     2969.7
+    ]
+   ],
+   "attack": 0.0334,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.6,
+   "formants": [
+    [
+     2696.4,
+     6.0,
+     0.15
+    ],
+    [
+     8089.2,
+     6.0,
+     0.05
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 20.0,
+   "noise": 0.05,
+   "rough": 0.08,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.6263,
+    "rivalCosine": 0.4944,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.65
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6154,
+    "end": 0.3846
+   },
+   "L01": {
+    "L01": 0.8333,
+    "L02": 0.1667
+   },
+   "L02": {
+    "L02": 0.6667,
+    "end": 0.1667,
+    "L01": 0.1667
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.468,
+   "L01>L01": 0.043,
+   "L01>L02": 0.093,
+   "L02>L01": 0.04,
+   "L02>L02": 0.043
+  },
+  "songTyping": {
+   "bouts": 9,
+   "short": 7,
+   "candidates": 2,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

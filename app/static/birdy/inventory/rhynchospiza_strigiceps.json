@@ -1,0 +1,225 @@
+{
+ "id": "rhynchospiza_strigiceps",
+ "common": "Stripe-capped Sparrow",
+ "scientific": "Rhynchospiza strigiceps",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 45 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1630 Hz \u00b7 56 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.056,
+   "level": 0.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     4639.1
+    ],
+    [
+     0.125,
+     4731.6
+    ],
+    [
+     0.25,
+     2171.2
+    ],
+    [
+     0.375,
+     479.9
+    ],
+    [
+     0.5,
+     634.9
+    ],
+    [
+     0.625,
+     495.8
+    ],
+    [
+     0.75,
+     871.7
+    ],
+    [
+     0.875,
+     2385.1
+    ],
+    [
+     1.0,
+     5413.4
+    ]
+   ],
+   "attack": 0.0107,
+   "hold": false,
+   "harmonic": 1.0,
+   "am": 20.83,
+   "amDepth": 0.0,
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.7837,
+    "rivalCosine": 0.2549,
+    "nearestOwn": true,
+    "f0ErrorPercent": -28.76
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4641 Hz \u00b7 53 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0533,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     6437.6
+    ],
+    [
+     0.625,
+     4436.9
+    ],
+    [
+     1.0,
+     3499.2
+    ]
+   ],
+   "attack": 0.0107,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 22.06,
+   "amDepth": 0.6,
+   "gammaScale": 4.5,
+   "tractQ": 20.0,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 32,
+    "resynthesisCosine": 0.8371,
+    "rivalCosine": 0.7188,
+    "nearestOwn": true,
+    "f0ErrorPercent": 6.16
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 5946 Hz \u00b7 160 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.16,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     4702.9
+    ],
+    [
+     0.125,
+     5737.3
+    ],
+    [
+     0.25,
+     6450.0
+    ],
+    [
+     1.0,
+     7184.7
+    ]
+   ],
+   "attack": 0.068,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 14.42,
+   "amDepth": 0.235,
+   "vib": {
+    "rate": 6.96,
+    "depth": 0.05
+   },
+   "gammaScale": 3.0,
+   "tractQ": 6.0,
+   "rough": 0.2,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.8859,
+    "rivalCosine": 0.7661,
+    "nearestOwn": true,
+    "f0ErrorPercent": -25.9
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L02",
+    "L02",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L02": 1.0
+   },
+   "L01": {
+    "L01": 0.875,
+    "end": 0.125
+   },
+   "L02": {
+    "L02": 0.5556,
+    "L01": 0.4444
+   }
+  },
+  "gaps": {
+   "L00>L02": 0.371,
+   "L01>L01": 0.051,
+   "L02>L01": 0.084,
+   "L02>L02": 0.099
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 5,
+   "candidates": 1,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

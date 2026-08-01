@@ -1,0 +1,480 @@
+{
+ "id": "butorides_striata",
+ "common": "Striated Heron",
+ "scientific": "Butorides striata",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 4 syllable types fitted from 48 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 491 Hz \u00b7 59 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0587,
+   "level": 0.365,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     475.1
+    ],
+    [
+     0.125,
+     495.4
+    ],
+    [
+     0.5,
+     493.8
+    ],
+    [
+     0.75,
+     470.4
+    ],
+    [
+     1.0,
+     521.7
+    ]
+   ],
+   "attack": 0.0053,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 140.0,
+   "amDepth": 0.45,
+   "gammaScale": 1.5,
+   "rough": 0.2,
+   "tractQ": 20.0,
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.5381,
+    "rivalCosine": 0.2975,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.1
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1021 Hz \u00b7 68 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.068,
+   "level": 0.6,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     979.2
+    ],
+    [
+     0.125,
+     1097.9
+    ],
+    [
+     0.25,
+     1001.6
+    ],
+    [
+     0.375,
+     1037.5
+    ],
+    [
+     0.625,
+     912.7
+    ],
+    [
+     0.75,
+     1054.7
+    ],
+    [
+     0.875,
+     1090.7
+    ],
+    [
+     1.0,
+     1005.9
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 20.28,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
+   },
+   "tractQ": 12.0,
+   "two": true,
+   "rough": 0.08,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.4432,
+    "rivalCosine": 0.2377,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.48
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 1975 Hz \u00b7 61 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0613,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1993.1
+    ],
+    [
+     0.125,
+     1937.5
+    ],
+    [
+     0.375,
+     2032.7
+    ],
+    [
+     1.0,
+     1937.3
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.1,
+   "am": 25.0,
+   "amDepth": 0.6,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.121
+   },
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "two": true,
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.3694,
+    "rivalCosine": 0.3447,
+    "nearestOwn": true,
+    "f0ErrorPercent": 9.45
+   }
+  },
+  {
+   "id": "L03",
+   "label": "learned L03 \u00b7 2206 Hz \u00b7 75 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0747,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2922.1
+    ],
+    [
+     0.125,
+     2232.7
+    ],
+    [
+     0.625,
+     2191.5
+    ],
+    [
+     0.875,
+     1904.9
+    ],
+    [
+     1.0,
+     1917.8
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "gammaScale": 6.0,
+   "two": true,
+   "tractQ": 30.0,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.6395,
+    "rivalCosine": -0.1374,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.08
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L03",
+    "L03",
+    "L00",
+    "L00",
+    "L03",
+    "L03"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L03",
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8462,
+    "L03": 0.1538
+   },
+   "L01": {
+    "L02": 0.5,
+    "L01": 0.5
+   },
+   "L02": {
+    "L02": 0.6154,
+    "L01": 0.3846
+   },
+   "L03": {
+    "L03": 0.6,
+    "L00": 0.2,
+    "end": 0.2
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.064,
+   "L00>L03": 0.06,
+   "L01>L01": 0.056,
+   "L01>L02": 0.033,
+   "L02>L01": 0.067,
+   "L02>L02": 0.123,
+   "L03>L00": 0.34,
+   "L03>L03": 0.468
+  },
+  "chunks": [
+   {
+    "sequence": [
+     "L01",
+     "L02",
+     "L01",
+     "L01",
+     "L01"
+    ],
+    "count": 217,
+    "species": [
+     "acanthiza_apicalis",
+     "accipiter_fasciatus",
+     "accipiter_minullus",
+     "aethopyga_christinae",
+     "agelaius_humeralis",
+     "aix_sponsa",
+     "amazona_farinosa",
+     "anarhynchus_wilsonia",
+     "andigena_nigrirostris",
+     "anthobaphes_violacea",
+     "antrostomus_salvini",
+     "aphelocoma_wollweberi",
+     "apus_apus",
+     "aramides_mangle",
+     "asthenes_pyrrholeuca",
+     "athene_noctua",
+     "atlapetes_albinucha",
+     "aythya_collaris",
+     "berlepschia_rikeri",
+     "biatas_nigropectus",
+     "brachypteryx_floris",
+     "burhinus_oedicnemus",
+     "butorides_striata",
+     "cairina_moschata",
+     "campephilus_guatemalensis",
+     "campylorhynchus_griseus",
+     "campylorhynchus_zonatus",
+     "caryothraustes_canadensis",
+     "catamblyrhynchus_diadema",
+     "centronyx_bairdii",
+     "chamaeza_meruloides",
+     "chamaeza_mollissima",
+     "chloroceryle_americana",
+     "chondestes_grammacus",
+     "chroicocephalus_cirrocephalus",
+     "cichlocolaptes_leucophrus",
+     "cincloramphus_timoriensis",
+     "cinnyris_chalybeus",
+     "claravis_pretiosa",
+     "columbina_cruziana",
+     "conopias_trivirgatus",
+     "contopus_pertinax",
+     "contopus_virens",
+     "crithagra_scotops",
+     "cyanocorax_mystacalis",
+     "cyrtonyx_montezumae",
+     "dendrocoptes_medius",
+     "dendroplex_kienerii",
+     "doliornis_sclateri",
+     "drymophila_devillei",
+     "drymophila_squamata",
+     "elaenia_flavogaster",
+     "empidonax_flaviventris",
+     "epinecrophylla_ornata",
+     "erpornis_zantholeuca",
+     "eudyptes_pachyrhynchus",
+     "euphonia_pectoralis",
+     "euphonia_rufiventris",
+     "eurostopodus_mystacalis",
+     "formicivora_erythronotos",
+     "forpus_conspicillatus",
+     "fringilla_coelebs",
+     "fulica_americana",
+     "gallinula_galeata",
+     "garrulax_canorus",
+     "garrulax_monileger",
+     "geothlypis_speciosa",
+     "geotrygon_chrysia",
+     "gerygone_mouki",
+     "glaucidium_brasilianum",
+     "glaucidium_jardinii",
+     "grallaria_gravesi",
+     "haemorhous_mexicanus",
+     "haliastur_sphenurus",
+     "heterotetrax_vigorsii",
+     "himantopus_himantopus",
+     "hippolais_olivetorum",
+     "horornis_flavolivaceus",
+     "hypsipetes_amaurotis",
+     "icteria_virens",
+     "icterus_pectoralis",
+     "kleinothraupis_atropileus",
+     "larus_brachyrhynchus",
+     "larus_livens",
+     "larus_marinus",
+     "larvivora_akahige",
+     "limosa_fedoa",
+     "lophostrix_cristata",
+     "lophotriccus_pileatus",
+     "lybius_torquatus",
+     "megascops_marshalli",
+     "megaxenops_parnaguae",
+     "melanopareia_torquata",
+     "merops_muelleri",
+     "metallura_tyrianthina",
+     "microcerculus_marginatus",
+     "motacilla_citreola",
+     "myadestes_melanops",
+     "myiornis_auricularis",
+     "myiothlypis_coronata",
+     "myrmelastes_schistaceus",
+     "myrmophylax_atrothorax",
+     "myrmornis_torquata",
+     "myzomela_sanguinolenta",
+     "neosericornis_citreogularis",
+     "ninox_philippensis",
+     "ochthoeca_cinnamomeiventris",
+     "ortygornis_pondicerianus",
+     "pachycephala_fuliginosa",
+     "passer_griseus",
+     "passerina_caerulea",
+     "phaeochroa_cuvierii",
+     "phaeoptila_sordida",
+     "phaethornis_idaliae",
+     "phasianus_versicolor",
+     "pheugopedius_spadix",
+     "phylidonyris_pyrrhopterus",
+     "phyllergates_cucullatus",
+     "phylloscopus_nitidus",
+     "pipilo_maculatus",
+     "pipreola_arcuata",
+     "pitangus_sulphuratus",
+     "pitta_nympha",
+     "pogoniulus_pusillus",
+     "porphyrio_porphyrio",
+     "promerops_cafer",
+     "pseudocolopteryx_citreola",
+     "psophodes_occidentalis",
+     "pteroptochos_megapodius",
+     "pycnonotus_cafer",
+     "pyrilia_haematotis",
+     "rallus_crepitans",
+     "ramphastos_vitellinus",
+     "recurvirostra_americana",
+     "rhegmatorhina_melanosticta",
+     "rhopospina_alaudina",
+     "rufirallus_viridis",
+     "sarothrura_affinis",
+     "scytalopus_altirostris",
+     "scytalopus_latebricola",
+     "scytalopus_spillmanni",
+     "smicrornis_brevirostris",
+     "spinus_psaltria",
+     "spinus_spinus",
+     "spizella_breweri",
+     "sporophila_cinnamomea",
+     "stigmatura_budytoides",
+     "surniculus_lugubris",
+     "suthora_webbiana",
+     "synallaxis_albescens",
+     "synallaxis_spixi",
+     "tadorna_variegata",
+     "tauraco_corythaix",
+     "thamnomanes_caesius",
+     "thamnophilus_caerulescens",
+     "thamnophilus_doliatus",
+     "thripadectes_holostictus",
+     "thryophilus_sernai",
+     "todirostrum_poliocephalum",
+     "todus_multicolor",
+     "tolmomyias_sulphurescens",
+     "troglodytes_aedon",
+     "trogon_melanurus",
+     "trogon_mexicanus",
+     "turdoides_plebejus",
+     "turdus_sanchezorum",
+     "turdus_subalaris",
+     "uria_lomvia",
+     "uropsila_leucogastra",
+     "vireo_vicinior",
+     "xipholena_punicea",
+     "xiphorhynchus_guttatus",
+     "zenaida_aurita",
+     "zentrygon_frenata",
+     "zosterops_virens"
+    ],
+    "pmi": 0.418
+   }
+  ],
+  "songTyping": {
+   "bouts": 4,
+   "short": 1,
+   "candidates": 3,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 3,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,177 @@
+{
+ "id": "amazona_vinacea",
+ "common": "Vinaceous Parrot",
+ "scientific": "Amazona vinacea",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 33 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 661 Hz \u00b7 51 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0507,
+   "level": 1.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     658.4
+    ],
+    [
+     1.0,
+     664.6
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.35,
+   "am": 28.85,
+   "amDepth": 0.0,
+   "tractQ": 3.0,
+   "noise": 0.4,
+   "rough": 0.08,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.01
+   },
+   "fricative": true,
+   "formants": [
+    [
+     654.2237665009833,
+     2.0,
+     0.5
+    ],
+    [
+     1919.8885853658714,
+     2.0,
+     0.5
+    ]
+   ],
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.9198,
+    "rivalCosine": 0.2721,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.41
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1954 Hz \u00b7 207 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2067,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1754.4
+    ],
+    [
+     0.25,
+     1936.3
+    ],
+    [
+     0.375,
+     2097.0
+    ],
+    [
+     0.5,
+     2024.9
+    ],
+    [
+     0.625,
+     1827.2
+    ],
+    [
+     0.75,
+     2123.4
+    ],
+    [
+     1.0,
+     1941.6
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.09
+   },
+   "gammaScale": 3.0,
+   "tractQ": 3.0,
+   "noise": 0.6,
+   "learned": {
+    "members": 28,
+    "resynthesisCosine": 0.5997,
+    "rivalCosine": 0.3689,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.82
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L01",
+    "L01",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L01": 0.6,
+    "L00": 0.4
+   },
+   "L01": {
+    "L01": 0.7857,
+    "end": 0.1071,
+    "L00": 0.1071
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.259,
+   "L00>L01": 0.213,
+   "L01>L00": 0.109,
+   "L01>L01": 0.087
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 1,
+   "candidates": 2,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,270 @@
+{
+ "id": "bombycilla_garrulus",
+ "common": "Bohemian Waxwing",
+ "scientific": "Bombycilla garrulus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 42 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 610 Hz \u00b7 45 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0453,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     507.7
+    ],
+    [
+     0.125,
+     592.4
+    ],
+    [
+     0.625,
+     536.8
+    ],
+    [
+     0.75,
+     817.7
+    ],
+    [
+     0.875,
+     802.5
+    ],
+    [
+     1.0,
+     487.4
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.926,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
+   "two": true,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.392,
+    "rivalCosine": 0.5557,
+    "nearestOwn": false,
+    "f0ErrorPercent": -9.48
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 709 Hz \u00b7 81 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0814,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     765.4
+    ],
+    [
+     0.125,
+     678.4
+    ],
+    [
+     0.375,
+     606.3
+    ],
+    [
+     0.5,
+     721.1
+    ],
+    [
+     0.625,
+     765.9
+    ],
+    [
+     0.75,
+     704.3
+    ],
+    [
+     0.875,
+     739.3
+    ],
+    [
+     1.0,
+     702.2
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 1.0,
+   "am": 25.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 12.5,
+    "depth": 0.09
+   },
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "rough": 0.4,
+   "learned": {
+    "members": 22,
+    "resynthesisCosine": 0.3946,
+    "rivalCosine": 0.1089,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.59
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 860 Hz \u00b7 83 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0827,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     457.7
+    ],
+    [
+     0.125,
+     458.9
+    ],
+    [
+     0.25,
+     513.4
+    ],
+    [
+     0.375,
+     787.8
+    ],
+    [
+     0.5,
+     1296.0
+    ],
+    [
+     0.625,
+     2336.0
+    ],
+    [
+     0.75,
+     1293.4
+    ],
+    [
+     0.875,
+     860.7
+    ],
+    [
+     1.0,
+     900.5
+    ]
+   ],
+   "attack": 0.06,
+   "hold": true,
+   "harmonic": 0.7,
+   "am": 80.0,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.398,
+    "rivalCosine": 0.1907,
+    "nearestOwn": true,
+    "f0ErrorPercent": 30.02
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L02",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.75,
+    "L00": 0.25
+   },
+   "L01": {
+    "L01": 1.0
+   },
+   "L02": {
+    "L02": 0.6364,
+    "L00": 0.1818,
+    "end": 0.1818
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.204,
+   "L01>L01": 0.051,
+   "L02>L00": 0.416,
+   "L02>L02": 0.328
+  },
+  "songTyping": {
+   "bouts": 9,
+   "short": 9,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

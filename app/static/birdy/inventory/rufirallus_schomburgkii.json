@@ -1,0 +1,183 @@
+{
+ "id": "rufirallus_schomburgkii",
+ "common": "Ocellated Crake",
+ "scientific": "Rufirallus schomburgkii",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 34 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 584 Hz \u00b7 56 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.056,
+   "level": 0.6,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     607.1
+    ],
+    [
+     0.25,
+     582.6
+    ],
+    [
+     0.5,
+     707.5
+    ],
+    [
+     0.625,
+     547.6
+    ],
+    [
+     0.75,
+     536.4
+    ],
+    [
+     0.875,
+     567.9
+    ],
+    [
+     1.0,
+     554.9
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 20.83,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.2314,
+    "rivalCosine": -0.0722,
+    "nearestOwn": true,
+    "f0ErrorPercent": 14.69
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3418 Hz \u00b7 77 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0773,
+   "level": 1.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3403.8
+    ],
+    [
+     0.125,
+     3170.8
+    ],
+    [
+     0.375,
+     3232.9
+    ],
+    [
+     0.5,
+     4243.9
+    ],
+    [
+     0.625,
+     3187.4
+    ],
+    [
+     0.875,
+     3398.1
+    ],
+    [
+     1.0,
+     3399.5
+    ]
+   ],
+   "attack": 0.024,
+   "hold": false,
+   "harmonic": 0.35,
+   "am": 22.06,
+   "amDepth": 0.339,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 12.0,
+   "two": true,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 23,
+    "resynthesisCosine": 0.1699,
+    "rivalCosine": -0.4223,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.48
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7273,
+    "end": 0.2727
+   },
+   "L01": {
+    "L01": 0.8261,
+    "end": 0.1739
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.157,
+   "L01>L01": 0.059
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 7,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

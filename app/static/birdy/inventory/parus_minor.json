@@ -1,0 +1,413 @@
+{
+ "id": "parus_minor",
+ "common": "Japanese great tit",
+ "scientific": "Parus minor",
+ "bank": "jp",
+ "summary": "Strongest evidence for word-order rules in birds: ABC = scan for danger, D = approach, ABC-D is a compound with a distinct behavioural response; the reversed order D-ABC elicits nothing.",
+ "syllables": [
+  {
+   "id": "A",
+   "label": "A note",
+   "function": "component of the ABC alarm cluster (snake/predator vigilance)",
+   "confidence": "experimental",
+   "refs": [
+    "suzuki2016",
+    "suzuki2014"
+   ],
+   "dur": 0.09,
+   "level": 0.85,
+   "timbre": "pure",
+   "attack": 0.006,
+   "contour": [
+    [
+     0.0,
+     4200
+    ],
+    [
+     0.35,
+     5600
+    ],
+    [
+     1.0,
+     4400
+    ]
+   ]
+  },
+  {
+   "id": "B",
+   "label": "B note",
+   "function": "component of the ABC alarm cluster",
+   "confidence": "experimental",
+   "refs": [
+    "suzuki2016"
+   ],
+   "dur": 0.08,
+   "level": 0.8,
+   "timbre": "pure",
+   "attack": 0.005,
+   "contour": [
+    [
+     0.0,
+     5200
+    ],
+    [
+     0.5,
+     4300
+    ],
+    [
+     1.0,
+     5000
+    ]
+   ]
+  },
+  {
+   "id": "C",
+   "label": "C note",
+   "function": "component of the ABC alarm cluster",
+   "confidence": "experimental",
+   "refs": [
+    "suzuki2016"
+   ],
+   "dur": 0.1,
+   "level": 0.82,
+   "timbre": "reed",
+   "harmonic": 0.25,
+   "contour": [
+    [
+     0.0,
+     3600
+    ],
+    [
+     0.6,
+     4900
+    ],
+    [
+     1.0,
+     3800
+    ]
+   ]
+  },
+  {
+   "id": "D",
+   "label": "D note",
+   "function": "recruitment / approach the caller",
+   "confidence": "experimental",
+   "refs": [
+    "suzuki2016"
+   ],
+   "dur": 0.14,
+   "level": 0.95,
+   "timbre": "buzz",
+   "am": 95,
+   "amDepth": 0.55,
+   "harmonic": 0.4,
+   "contour": [
+    [
+     0.0,
+     3000
+    ],
+    [
+     0.5,
+     3200
+    ],
+    [
+     1.0,
+     2600
+    ]
+   ]
+  },
+  {
+   "id": "jar",
+   "label": "jar note",
+   "function": "mobbing / general agitation",
+   "confidence": "documented",
+   "refs": [
+    "suzuki2014"
+   ],
+   "dur": 0.18,
+   "level": 0.9,
+   "timbre": "buzz",
+   "am": 60,
+   "amDepth": 0.7,
+   "harmonic": 0.55,
+   "contour": [
+    [
+     0.0,
+     2400
+    ],
+    [
+     0.5,
+     2800
+    ],
+    [
+     1.0,
+     2200
+    ]
+   ]
+  },
+  {
+   "id": "tsupi",
+   "label": "tsu-pi song note",
+   "function": "territorial song element",
+   "confidence": "documented",
+   "refs": [
+    "suzuki2014"
+   ],
+   "dur": 0.13,
+   "level": 0.9,
+   "timbre": "pure",
+   "two": true,
+   "contour": [
+    [
+     0.0,
+     4600
+    ],
+    [
+     0.25,
+     5200
+    ],
+    [
+     0.5,
+     3500
+    ],
+    [
+     1.0,
+     3300
+    ]
+   ]
+  },
+  {
+   "id": "L32",
+   "label": "learned L32 \u00b7 5131 Hz \u00b7 261 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2613,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     6030.2
+    ],
+    [
+     0.125,
+     6373.6
+    ],
+    [
+     0.25,
+     6248.9
+    ],
+    [
+     0.375,
+     3377.8
+    ],
+    [
+     1.0,
+     4384.5
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 45.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.253
+   },
+   "rough": 0.08,
+   "two": true,
+   "learned": {
+    "members": 27,
+    "resynthesisCosine": 0.8868,
+    "rivalCosine": -0.357,
+    "nearestOwn": true,
+    "f0ErrorPercent": -18.89
+   }
+  },
+  {
+   "id": "L31",
+   "label": "learned L31 \u00b7 6351 Hz \u00b7 48 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.048,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     6098.9
+    ],
+    [
+     1.0,
+     6613.2
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.35,
+   "gammaScale": 1.5,
+   "rough": 0.65,
+   "amDepth": 0.15,
+   "am": 12.0,
+   "tractQ": 6.0,
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.646,
+    "rivalCosine": -0.0256,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.7
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "abc",
+   "label": "ABC",
+   "gloss": "scan for danger",
+   "function": "receivers scan horizontally for a predator",
+   "confidence": "experimental",
+   "refs": [
+    "suzuki2016"
+   ],
+   "sequence": [
+    "A",
+    "B",
+    "C"
+   ],
+   "gaps": [
+    0.05,
+    0.05
+   ]
+  },
+  {
+   "id": "d",
+   "label": "D",
+   "gloss": "come here",
+   "function": "receivers approach the caller",
+   "confidence": "experimental",
+   "refs": [
+    "suzuki2016"
+   ],
+   "sequence": [
+    "D",
+    "D"
+   ],
+   "gaps": [
+    0.07
+   ]
+  },
+  {
+   "id": "abc_d",
+   "label": "ABC-D",
+   "gloss": "scan for danger, then come here",
+   "function": "compound message; elicits both responses, more than the sum of its parts",
+   "confidence": "experimental",
+   "refs": [
+    "suzuki2016"
+   ],
+   "sequence": [
+    "A",
+    "B",
+    "C",
+    "D"
+   ],
+   "gaps": [
+    0.05,
+    0.05,
+    0.11
+   ]
+  },
+  {
+   "id": "d_abc",
+   "label": "D-ABC (reversed)",
+   "gloss": "ungrammatical",
+   "function": "artificially reversed order; in playback experiments it elicits neither response",
+   "confidence": "experimental",
+   "refs": [
+    "suzuki2016"
+   ],
+   "sequence": [
+    "D",
+    "A",
+    "B",
+    "C"
+   ],
+   "gaps": [
+    0.11,
+    0.05,
+    0.05
+   ]
+  },
+  {
+   "id": "tsupi_song",
+   "label": "tsu-pi tsu-pi",
+   "gloss": "this is my territory",
+   "function": "advertising song",
+   "confidence": "documented",
+   "refs": [
+    "suzuki2014"
+   ],
+   "sequence": [
+    "tsupi",
+    "tsupi",
+    "tsupi"
+   ],
+   "gaps": [
+    0.12,
+    0.12
+   ]
+  },
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L31",
+    "L32",
+    "L32"
+   ],
+   "gaps": [
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L31",
+   "L32"
+  ],
+  "transitions": {
+   "L31": {
+    "L32": 1.0
+   },
+   "L32": {
+    "L32": 0.7778,
+    "end": 0.2222
+   }
+  },
+  "gaps": {
+   "L31>L32": 0.044,
+   "L32>L32": 0.149
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 6,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ },
+ "learnedFrom": "Learned from 1 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them."
+}

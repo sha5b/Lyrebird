@@ -1,0 +1,174 @@
+{
+ "id": "asemospiza_obscura",
+ "common": "Dull-colored Grassquit",
+ "scientific": "Asemospiza obscura",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 5453 Hz \u00b7 64 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.064,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5411.2
+    ],
+    [
+     1.0,
+     5495.5
+    ]
+   ],
+   "attack": 0.0267,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 26.79,
+   "amDepth": 0.331,
+   "formants": [
+    [
+     3192.5863689730877,
+     8.0,
+     1.0
+    ],
+    [
+     6830.618534315889,
+     8.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 4.5,
+   "fricative": true,
+   "learned": {
+    "members": 17,
+    "resynthesisCosine": 0.6352,
+    "rivalCosine": 0.5426,
+    "nearestOwn": true,
+    "f0ErrorPercent": -21.22
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 5982 Hz \u00b7 112 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.112,
+   "level": 0.426,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     6451.3
+    ],
+    [
+     0.125,
+     5977.8
+    ],
+    [
+     0.25,
+     6316.9
+    ],
+    [
+     0.375,
+     6196.1
+    ],
+    [
+     0.5,
+     6801.7
+    ],
+    [
+     0.625,
+     6404.7
+    ],
+    [
+     0.75,
+     5581.8
+    ],
+    [
+     1.0,
+     4469.7
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 13.28,
+   "amDepth": 0.6,
+   "vib": {
+    "rate": 6.82,
+    "depth": 0.05
+   },
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 0.0,
+   "two": true,
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.7886,
+    "rivalCosine": 0.5179,
+    "nearestOwn": true,
+    "f0ErrorPercent": 11.91
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8235,
+    "end": 0.1765
+   },
+   "L01": {
+    "L01": 0.7143,
+    "end": 0.2857
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.057,
+   "L01>L01": 0.032
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 7,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

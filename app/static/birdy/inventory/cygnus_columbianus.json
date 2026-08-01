@@ -1,0 +1,217 @@
+{
+ "id": "cygnus_columbianus",
+ "common": "Tundra Swan",
+ "scientific": "Cygnus columbianus",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 26 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 568 Hz \u00b7 157 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1573,
+   "level": 0.75,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     426.5
+    ],
+    [
+     0.25,
+     643.2
+    ],
+    [
+     0.375,
+     465.3
+    ],
+    [
+     0.5,
+     436.4
+    ],
+    [
+     0.625,
+     737.3
+    ],
+    [
+     0.875,
+     647.8
+    ],
+    [
+     1.0,
+     720.6
+    ]
+   ],
+   "attack": 0.04,
+   "hold": false,
+   "harmonic": 0.35,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     1367.9,
+     6.0,
+     0.15
+    ],
+    [
+     4103.6,
+     6.0,
+     0.05
+    ],
+    [
+     6839.4,
+     6.0,
+     0.03
+    ],
+    [
+     9575.1,
+     6.0,
+     0.0214
+    ]
+   ],
+   "tractQ": 3.0,
+   "rough": 0.65,
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.4088,
+    "rivalCosine": 0.1856,
+    "nearestOwn": true,
+    "f0ErrorPercent": -18.91
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1050 Hz \u00b7 64 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.064,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     976.8
+    ],
+    [
+     0.25,
+     1138.7
+    ],
+    [
+     0.5,
+     1136.6
+    ],
+    [
+     0.625,
+     976.1
+    ],
+    [
+     0.75,
+     1052.0
+    ],
+    [
+     1.0,
+     1030.8
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 45.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     1367.9,
+     6.0,
+     0.15
+    ],
+    [
+     4103.6,
+     6.0,
+     0.05
+    ],
+    [
+     6839.4,
+     6.0,
+     0.03
+    ],
+    [
+     9575.1,
+     6.0,
+     0.0214
+    ]
+   ],
+   "tractQ": 20.0,
+   "rough": 0.65,
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.4081,
+    "rivalCosine": 0.4598,
+    "nearestOwn": false,
+    "f0ErrorPercent": 7.9
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L01",
+    "L01",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L01": 0.5,
+    "L00": 0.5
+   },
+   "L01": {
+    "end": 0.5333,
+    "L01": 0.3333,
+    "L00": 0.1333
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.339,
+   "L00>L01": 0.379,
+   "L01>L00": 0.4,
+   "L01>L01": 0.048
+  },
+  "songTyping": {
+   "bouts": 9,
+   "short": 7,
+   "candidates": 2,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,177 @@
+{
+ "id": "cacicus_cela",
+ "common": "Yellow-rumped Cacique",
+ "scientific": "Cacicus cela",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2545 Hz \u00b7 53 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0533,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2579.9
+    ],
+    [
+     0.5,
+     2496.1
+    ],
+    [
+     0.625,
+     2592.2
+    ],
+    [
+     0.75,
+     2514.5
+    ],
+    [
+     1.0,
+     2541.2
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     5856.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 4.5,
+   "noise": 0.6,
+   "rough": 0.08,
+   "tractQ": 0.0,
+   "am": 80.0,
+   "amDepth": 0.15,
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.8527,
+    "rivalCosine": -0.317,
+    "nearestOwn": true,
+    "f0ErrorPercent": -6.57
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3102 Hz \u00b7 69 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0693,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3636.0
+    ],
+    [
+     0.375,
+     3671.8
+    ],
+    [
+     0.5,
+     2049.0
+    ],
+    [
+     0.75,
+     2116.7
+    ],
+    [
+     0.875,
+     3861.0
+    ],
+    [
+     1.0,
+     3984.4
+    ]
+   ],
+   "attack": 0.004,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.086
+   },
+   "formants": [
+    [
+     5856.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "noise": 0.25,
+   "rough": 0.65,
+   "two": true,
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.2085,
+    "rivalCosine": -0.4657,
+    "nearestOwn": true,
+    "f0ErrorPercent": 30.21
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.6,
+    "L00": 0.4
+   },
+   "L01": {
+    "L01": 0.8182,
+    "end": 0.1818
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.223,
+   "L01>L01": 0.075
+  },
+  "songTyping": {
+   "bouts": 14,
+   "short": 14,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

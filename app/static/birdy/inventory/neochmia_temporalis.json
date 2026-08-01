@@ -1,0 +1,246 @@
+{
+ "id": "neochmia_temporalis",
+ "common": "Red-browed Firetail",
+ "scientific": "Neochmia temporalis",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 38 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2343 Hz \u00b7 48 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.048,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     784.8
+    ],
+    [
+     0.125,
+     2464.9
+    ],
+    [
+     0.25,
+     4397.6
+    ],
+    [
+     0.375,
+     2257.5
+    ],
+    [
+     0.625,
+     2219.1
+    ],
+    [
+     0.75,
+     3889.7
+    ],
+    [
+     0.875,
+     2354.6
+    ],
+    [
+     1.0,
+     2330.6
+    ]
+   ],
+   "attack": 0.0027,
+   "hold": true,
+   "harmonic": 0.5,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "gammaScale": 3.0,
+   "fricative": true,
+   "formants": [
+    [
+     845.2861410183435,
+     8.0,
+     1.0
+    ],
+    [
+     7893.0853838443245,
+     8.0,
+     1.0
+    ]
+   ],
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.3027,
+    "rivalCosine": -0.0763,
+    "nearestOwn": true,
+    "f0ErrorPercent": -14.75
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4027 Hz \u00b7 51 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0507,
+   "level": 0.6,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4206.2
+    ],
+    [
+     0.125,
+     3886.1
+    ],
+    [
+     0.75,
+     4075.6
+    ],
+    [
+     1.0,
+     3947.6
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.18,
+   "gammaScale": 6.0,
+   "tractQ": 0.0,
+   "noise": 0.12,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.01
+   },
+   "two": true,
+   "fricative": true,
+   "formants": [
+    [
+     3741.776844777196,
+     2.0,
+     0.5
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     0.5
+    ]
+   ],
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.3526,
+    "rivalCosine": 0.4886,
+    "nearestOwn": false,
+    "f0ErrorPercent": -6.9
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 4132 Hz \u00b7 63 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0627,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4312.0
+    ],
+    [
+     0.75,
+     4145.5
+    ],
+    [
+     1.0,
+     3947.0
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "noise": 0.12,
+   "rough": 0.2,
+   "gammaScale": 0.5,
+   "fricative": true,
+   "formants": [
+    [
+     3741.776844777196,
+     2.0,
+     1.0
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     1.0
+    ]
+   ],
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.5142,
+    "rivalCosine": 0.2404,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.3
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6,
+    "end": 0.4
+   },
+   "L01": {
+    "L01": 0.6667,
+    "L02": 0.3333
+   },
+   "L02": {
+    "L02": 0.7368,
+    "L01": 0.2632
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.064,
+   "L01>L01": 0.069,
+   "L01>L02": 0.077,
+   "L02>L01": 0.133,
+   "L02>L02": 0.073
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 2,
+   "candidates": 2,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

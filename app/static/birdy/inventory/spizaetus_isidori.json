@@ -1,0 +1,168 @@
+{
+ "id": "spizaetus_isidori",
+ "common": "Black-and-chestnut Eagle",
+ "scientific": "Spizaetus isidori",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 676 Hz \u00b7 72 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.072,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     663.8
+    ],
+    [
+     0.125,
+     672.6
+    ],
+    [
+     0.25,
+     616.6
+    ],
+    [
+     0.375,
+     720.1
+    ],
+    [
+     1.0,
+     709.6
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 3.0,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "rough": 0.65,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.8114,
+    "rivalCosine": -0.039,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.76
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2902 Hz \u00b7 360 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.36,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2337.2
+    ],
+    [
+     0.125,
+     3367.2
+    ],
+    [
+     0.25,
+     3434.8
+    ],
+    [
+     0.5,
+     2784.8
+    ],
+    [
+     0.625,
+     3020.9
+    ],
+    [
+     0.75,
+     2710.7
+    ],
+    [
+     1.0,
+     2813.6
+    ]
+   ],
+   "attack": 0.12,
+   "hold": true,
+   "harmonic": 0.5,
+   "am": 45.0,
+   "amDepth": 0.15,
+   "vib": {
+    "rate": 6.7,
+    "depth": 0.05
+   },
+   "gammaScale": 6.0,
+   "noise": 0.05,
+   "rough": 0.4,
+   "tractQ": 6.0,
+   "two": true,
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.7815,
+    "rivalCosine": -0.4598,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.37
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7857,
+    "end": 0.2143
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.024,
+   "L01>L01": 0.109
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 4,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

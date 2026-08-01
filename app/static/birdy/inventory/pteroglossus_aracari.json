@@ -1,0 +1,167 @@
+{
+ "id": "pteroglossus_aracari",
+ "common": "Black-necked Aracari",
+ "scientific": "Pteroglossus aracari",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 24 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2829 Hz \u00b7 43 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0427,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2792.3
+    ],
+    [
+     1.0,
+     2866.1
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 28.85,
+   "amDepth": 0.606,
+   "formants": [
+    [
+     5856.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 20.0,
+   "noise": 0.4,
+   "two": true,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.025
+   },
+   "fricative": true,
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.7208,
+    "rivalCosine": 0.2758,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.68
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4831 Hz \u00b7 72 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.072,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5261.6
+    ],
+    [
+     0.125,
+     4720.2
+    ],
+    [
+     1.0,
+     4541.0
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 15.62,
+   "amDepth": 0.522,
+   "formants": [
+    [
+     5856.3,
+     8.0,
+     0.5
+    ],
+    [
+     2711.2989394619476,
+     8.0,
+     0.5
+    ],
+    [
+     5083.5393171114765,
+     8.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 20.0,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "fricative": true,
+   "learned": {
+    "members": 17,
+    "resynthesisCosine": 0.7165,
+    "rivalCosine": -0.0499,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.58
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L01": 1.0
+   },
+   "L01": {
+    "end": 0.7647,
+    "L01": 0.2353
+   }
+  },
+  "gaps": {
+   "L00>L01": 0.077,
+   "L01>L01": 0.039
+  },
+  "songTyping": {
+   "bouts": 13,
+   "short": 13,
+   "candidates": 0,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,137 @@
+{
+ "id": "myrmorchilus_strigilatus",
+ "common": "Stripe-backed Antbird",
+ "scientific": "Myrmorchilus strigilatus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2877 Hz \u00b7 228 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.228,
+   "level": 0.539,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2862.4
+    ],
+    [
+     0.375,
+     2854.7
+    ],
+    [
+     1.0,
+     2913.2
+    ]
+   ],
+   "attack": 0.108,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.05,
+   "amDepth": 0.3,
+   "gammaScale": 3.0,
+   "tractQ": 30.0,
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.7444,
+    "rivalCosine": -0.1001,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.55
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3635 Hz \u00b7 83 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0827,
+   "level": 0.9,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3565.1
+    ],
+    [
+     1.0,
+     3706.5
+    ]
+   ],
+   "attack": 0.0347,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 16.56,
+   "amDepth": 0.3,
+   "gammaScale": 2.0,
+   "tractQ": 30.0,
+   "two": true,
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.5551,
+    "rivalCosine": 0.4711,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.11
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7692,
+    "end": 0.2308
+   },
+   "L01": {
+    "L01": 0.7333,
+    "L00": 0.1333,
+    "end": 0.1333
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.144,
+   "L01>L00": 0.065,
+   "L01>L01": 0.125
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 4,
+   "candidates": 1,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

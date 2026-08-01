@@ -1,0 +1,280 @@
+{
+ "id": "pellorneum_malaccense",
+ "common": "Short-tailed Babbler",
+ "scientific": "Pellorneum malaccense",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 4 syllable types fitted from 55 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1803 Hz \u00b7 117 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1173,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2354.7
+    ],
+    [
+     0.375,
+     2903.9
+    ],
+    [
+     0.5,
+     3209.4
+    ],
+    [
+     0.625,
+     3310.7
+    ],
+    [
+     0.75,
+     515.9
+    ],
+    [
+     0.875,
+     514.5
+    ],
+    [
+     1.0,
+     3213.0
+    ]
+   ],
+   "attack": 0.0267,
+   "hold": false,
+   "harmonic": 0.7,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "gammaScale": 6.0,
+   "noise": 0.25,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.5718,
+    "rivalCosine": 0.4396,
+    "nearestOwn": true,
+    "f0ErrorPercent": -5.98
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2330 Hz \u00b7 36 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.036,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2340.5
+    ],
+    [
+     1.0,
+     2318.8
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 1.0,
+   "gammaScale": 1.5,
+   "noise": 0.6,
+   "rough": 0.65,
+   "amDepth": 0.15,
+   "am": 140.0,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.09
+   },
+   "fricative": true,
+   "formants": [
+    [
+     2289.5188831594724,
+     2.0,
+     1.0
+    ],
+    [
+     5899.517283512816,
+     2.0,
+     1.0
+    ]
+   ],
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.8982,
+    "rivalCosine": 0.5709,
+    "nearestOwn": true,
+    "f0ErrorPercent": 13.31
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2399 Hz \u00b7 415 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.4147,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2333.5
+    ],
+    [
+     0.125,
+     2463.4
+    ],
+    [
+     1.0,
+     2400.8
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.2,
+   "am": 140.0,
+   "amDepth": 0.45,
+   "gammaScale": 2.0,
+   "tractQ": 3.0,
+   "two": true,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.025
+   },
+   "noise": 0.6,
+   "fricative": true,
+   "formants": [
+    [
+     2289.5188831594724,
+     4.0,
+     2.0
+    ],
+    [
+     7893.0853838443245,
+     4.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.7385,
+    "rivalCosine": 0.5254,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.29
+   }
+  },
+  {
+   "id": "L03",
+   "label": "learned L03 \u00b7 4181 Hz \u00b7 193 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1933,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4083.8
+    ],
+    [
+     0.375,
+     4336.5
+    ],
+    [
+     1.0,
+     4127.6
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 39.77,
+   "amDepth": 0.0,
+   "gammaScale": 6.0,
+   "noise": 0.4,
+   "learned": {
+    "members": 22,
+    "resynthesisCosine": 0.8253,
+    "rivalCosine": 0.5935,
+    "nearestOwn": true,
+    "f0ErrorPercent": 27.14
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L03",
+    "L03",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L03",
+   "L01",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "end": 0.5556,
+    "L01": 0.4444
+   },
+   "L02": {
+    "L02": 0.8333,
+    "L00": 0.1667
+   },
+   "L03": {
+    "L03": 0.5909,
+    "end": 0.2727,
+    "L01": 0.1364
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.083,
+   "L01>L01": 0.059,
+   "L02>L00": 0.168,
+   "L02>L02": 0.048,
+   "L03>L01": 0.28,
+   "L03>L03": 0.107
+  },
+  "songTyping": {
+   "bouts": 12,
+   "short": 10,
+   "candidates": 2,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

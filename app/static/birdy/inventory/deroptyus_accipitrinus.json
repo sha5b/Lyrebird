@@ -1,0 +1,239 @@
+{
+ "id": "deroptyus_accipitrinus",
+ "common": "Red-fan Parrot",
+ "scientific": "Deroptyus accipitrinus",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 44 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1382 Hz \u00b7 45 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0453,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1326.0
+    ],
+    [
+     0.125,
+     1259.1
+    ],
+    [
+     0.5,
+     1256.7
+    ],
+    [
+     0.625,
+     1551.5
+    ],
+    [
+     1.0,
+     1549.4
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "rough": 0.4,
+   "two": true,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 25,
+    "resynthesisCosine": 0.2349,
+    "rivalCosine": 0.1166,
+    "nearestOwn": true,
+    "f0ErrorPercent": -8.08
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2183 Hz \u00b7 333 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.3333,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2503.8
+    ],
+    [
+     0.125,
+     2328.0
+    ],
+    [
+     0.25,
+     2466.6
+    ],
+    [
+     0.375,
+     1904.6
+    ],
+    [
+     0.5,
+     1812.9
+    ],
+    [
+     0.625,
+     1821.1
+    ],
+    [
+     0.875,
+     2555.3
+    ],
+    [
+     1.0,
+     2236.4
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 1.0,
+   "vib": {
+    "rate": 6.1,
+    "depth": 0.09
+   },
+   "gammaScale": 0.5,
+   "tractQ": 20.0,
+   "noise": 0.4,
+   "rough": 0.0,
+   "amDepth": 0.8,
+   "am": 12.0,
+   "two": true,
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.6621,
+    "rivalCosine": 0.5964,
+    "nearestOwn": true,
+    "f0ErrorPercent": -20.99
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2722 Hz \u00b7 416 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.416,
+   "level": 0.6,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2852.1
+    ],
+    [
+     0.25,
+     2862.5
+    ],
+    [
+     0.625,
+     2899.4
+    ],
+    [
+     0.75,
+     2628.8
+    ],
+    [
+     0.875,
+     2206.2
+    ],
+    [
+     1.0,
+     2961.8
+    ]
+   ],
+   "attack": 0.12,
+   "hold": true,
+   "harmonic": 0.0,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.137
+   },
+   "gammaScale": 0.5,
+   "tractQ": 20.0,
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.6076,
+    "rivalCosine": 0.5446,
+    "nearestOwn": true,
+    "f0ErrorPercent": -8.59
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L00",
+    "L00",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.75,
+    "end": 0.1667,
+    "L01": 0.0833
+   },
+   "L01": {
+    "end": 1.0
+   },
+   "L02": {
+    "end": 0.5455,
+    "L00": 0.2727,
+    "L01": 0.1818
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.06,
+   "L00>L01": 0.717,
+   "L02>L00": 0.368,
+   "L02>L01": 0.413
+  },
+  "songTyping": {
+   "bouts": 17,
+   "short": 15,
+   "candidates": 2,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

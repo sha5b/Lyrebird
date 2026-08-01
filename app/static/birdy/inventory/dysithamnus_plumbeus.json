@@ -1,0 +1,207 @@
+{
+ "id": "dysithamnus_plumbeus",
+ "common": "Plumbeous Antvireo",
+ "scientific": "Dysithamnus plumbeus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 35 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1438 Hz \u00b7 172 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.172,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1448.9
+    ],
+    [
+     1.0,
+     1426.5
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     1303.1,
+     6.0,
+     1.0
+    ],
+    [
+     3909.4,
+     6.0,
+     0.3333
+    ],
+    [
+     6515.7,
+     6.0,
+     0.2
+    ],
+    [
+     9122.0,
+     6.0,
+     0.1429
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "noise": 0.4,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.01
+   },
+   "rough": 0.65,
+   "fricative": true,
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.7822,
+    "rivalCosine": 0.0187,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.07
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2216 Hz \u00b7 168 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.168,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2426.9
+    ],
+    [
+     0.125,
+     2499.9
+    ],
+    [
+     0.375,
+     2465.0
+    ],
+    [
+     0.5,
+     2106.0
+    ],
+    [
+     0.625,
+     2438.6
+    ],
+    [
+     0.75,
+     2441.0
+    ],
+    [
+     0.875,
+     1589.1
+    ],
+    [
+     1.0,
+     1953.7
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 80.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     1303.1,
+     6.0,
+     1.0
+    ],
+    [
+     3909.4,
+     6.0,
+     0.3333
+    ],
+    [
+     6515.7,
+     6.0,
+     0.2
+    ],
+    [
+     9122.0,
+     6.0,
+     0.1429
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 30.0,
+   "noise": 0.05,
+   "two": true,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.6023,
+    "rivalCosine": -0.1415,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.95
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7857,
+    "end": 0.2143
+   },
+   "L01": {
+    "L01": 0.7619,
+    "end": 0.2381
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.096,
+   "L01>L01": 0.06
+  },
+  "songTyping": {
+   "bouts": 8,
+   "short": 8,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

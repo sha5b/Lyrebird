@@ -1,0 +1,131 @@
+{
+ "id": "crypturellus_variegatus",
+ "common": "Variegated Tinamou",
+ "scientific": "Crypturellus variegatus",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 4922 Hz \u00b7 29 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0293,
+   "level": 0.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4924.2
+    ],
+    [
+     1.0,
+     4919.0
+    ]
+   ],
+   "attack": 0.0053,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 3.0,
+   "tractQ": 30.0,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.7162,
+    "rivalCosine": 0.5352,
+    "nearestOwn": true,
+    "f0ErrorPercent": 24.73
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 6145 Hz \u00b7 60 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.06,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     6149.3
+    ],
+    [
+     1.0,
+     6141.2
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 12.0,
+   "amDepth": 0.15,
+   "gammaScale": 1.0,
+   "rough": 0.08,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.01
+   },
+   "tractQ": 6.0,
+   "learned": {
+    "members": 28,
+    "resynthesisCosine": 0.4666,
+    "rivalCosine": 0.3104,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.44
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 0.9259,
+    "end": 0.0741
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.155,
+   "L01>L01": 0.08
+  },
+  "songTyping": {
+   "bouts": 2,
+   "short": 1,
+   "candidates": 1,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,150 @@
+{
+ "id": "crex_crex",
+ "common": "Corn Crake",
+ "scientific": "Crex crex",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 5792 Hz \u00b7 179 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1787,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5859.2
+    ],
+    [
+     1.0,
+     5726.0
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.7,
+   "formants": [
+    [
+     5856.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 3.0,
+   "noise": 0.25,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.09
+   },
+   "rough": 0.65,
+   "amDepth": 0.3,
+   "am": 45.0,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.8106,
+    "rivalCosine": 0.6556,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.96
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 5988 Hz \u00b7 200 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2,
+   "level": 1.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     5969.2
+    ],
+    [
+     1.0,
+     6007.5
+    ]
+   ],
+   "attack": 0.0667,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 80.0,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     5856.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 4.5,
+   "noise": 0.25,
+   "two": true,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.025
+   },
+   "tractQ": 3.0,
+   "fricative": true,
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.8117,
+    "rivalCosine": 0.3551,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.35
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.349,
+   "L01>L01": 0.275
+  },
+  "songTyping": {
+   "bouts": 2,
+   "short": 2,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

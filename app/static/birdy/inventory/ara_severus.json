@@ -1,0 +1,186 @@
+{
+ "id": "ara_severus",
+ "common": "Chestnut-fronted Macaw",
+ "scientific": "Ara severus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 33 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1912 Hz \u00b7 85 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0854,
+   "level": 0.9,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3333.5
+    ],
+    [
+     0.125,
+     3142.2
+    ],
+    [
+     0.25,
+     2464.6
+    ],
+    [
+     0.375,
+     1458.2
+    ],
+    [
+     0.5,
+     1812.0
+    ],
+    [
+     0.625,
+     1587.6
+    ],
+    [
+     0.75,
+     2395.6
+    ],
+    [
+     0.875,
+     2206.5
+    ],
+    [
+     1.0,
+     595.3
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.35,
+   "vib": {
+    "rate": 7.68,
+    "depth": 0.09
+   },
+   "formants": [
+    [
+     3192.5863689730877,
+     2.0,
+     0.5
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "two": true,
+   "fricative": true,
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.639,
+    "rivalCosine": -0.026,
+    "nearestOwn": true,
+    "f0ErrorPercent": -8.13
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1995 Hz \u00b7 288 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.288,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1840.4
+    ],
+    [
+     0.125,
+     1988.2
+    ],
+    [
+     0.875,
+     1914.1
+    ],
+    [
+     1.0,
+     2263.7
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 6.0,
+   "noise": 0.6,
+   "rough": 0.65,
+   "two": true,
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.4486,
+    "rivalCosine": -0.0206,
+    "nearestOwn": true,
+    "f0ErrorPercent": 6.59
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 0.8462,
+    "end": 0.1538
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.043,
+   "L01>L01": 0.048
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 3,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

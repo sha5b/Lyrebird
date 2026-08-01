@@ -1,0 +1,179 @@
+{
+ "id": "copsychus_albospecularis",
+ "common": "Madagascar Magpie-Robin",
+ "scientific": "Copsychus albospecularis",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 3298 Hz \u00b7 99 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0987,
+   "level": 1.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3161.2
+    ],
+    [
+     0.375,
+     3308.0
+    ],
+    [
+     0.5,
+     3583.9
+    ],
+    [
+     0.625,
+     3190.9
+    ],
+    [
+     0.75,
+     3149.1
+    ],
+    [
+     0.875,
+     3550.2
+    ],
+    [
+     1.0,
+     3174.1
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     5856.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 6.0,
+   "noise": 0.12,
+   "am": 25.0,
+   "amDepth": 0.15,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.5661,
+    "rivalCosine": 0.0857,
+    "nearestOwn": true,
+    "f0ErrorPercent": -23.96
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 5070 Hz \u00b7 187 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1867,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5197.8
+    ],
+    [
+     1.0,
+     4946.3
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.1,
+   "am": 12.0,
+   "amDepth": 0.45,
+   "formants": [
+    [
+     5856.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 0.0,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.5355,
+    "rivalCosine": -0.3796,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.24
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6667,
+    "L01": 0.3333
+   },
+   "L01": {
+    "L01": 0.6923,
+    "L00": 0.1538,
+    "end": 0.1538
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.047,
+   "L00>L01": 0.347,
+   "L01>L00": 0.037,
+   "L01>L01": 0.043
+  },
+  "songTyping": {
+   "bouts": 2,
+   "short": 0,
+   "candidates": 2,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

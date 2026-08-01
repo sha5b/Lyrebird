@@ -1,0 +1,158 @@
+{
+ "id": "actitis_macularius",
+ "common": "Spotted Sandpiper",
+ "scientific": "Actitis macularius",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 434 Hz \u00b7 95 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0947,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     436.2
+    ],
+    [
+     1.0,
+     432.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 45.0,
+   "amDepth": 0.45,
+   "formants": [
+    [
+     3695.1,
+     6.0,
+     0.15
+    ],
+    [
+     11085.3,
+     6.0,
+     0.05
+    ]
+   ],
+   "tractQ": 30.0,
+   "rough": 0.08,
+   "two": true,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.6036,
+    "rivalCosine": -0.0636,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.34
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3154 Hz \u00b7 76 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.076,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2609.0
+    ],
+    [
+     0.125,
+     3112.8
+    ],
+    [
+     1.0,
+     3862.2
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 12.0,
+   "amDepth": 0.15,
+   "vib": {
+    "rate": 6.63,
+    "depth": 0.09
+   },
+   "formants": [
+    [
+     3695.1,
+     6.0,
+     0.15
+    ],
+    [
+     11085.3,
+     6.0,
+     0.05
+    ]
+   ],
+   "gammaScale": 1.5,
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.3277,
+    "rivalCosine": 0.0184,
+    "nearestOwn": true,
+    "f0ErrorPercent": 17.88
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6875,
+    "end": 0.3125
+   },
+   "L01": {
+    "L01": 0.7857,
+    "end": 0.2143
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.051,
+   "L01>L01": 0.125
+  },
+  "songTyping": {
+   "bouts": 8,
+   "short": 8,
+   "candidates": 0,
+   "repeatCandidates": 6,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

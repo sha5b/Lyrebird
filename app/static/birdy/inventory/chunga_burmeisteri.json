@@ -1,0 +1,192 @@
+{
+ "id": "chunga_burmeisteri",
+ "common": "Black-legged Seriema",
+ "scientific": "Chunga burmeisteri",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 26 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1169 Hz \u00b7 235 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2347,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1150.4
+    ],
+    [
+     1.0,
+     1188.9
+    ]
+   ],
+   "attack": 0.0907,
+   "hold": false,
+   "harmonic": 0.35,
+   "am": 8.82,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     1303.1,
+     6.0,
+     1.0
+    ],
+    [
+     3909.4,
+     6.0,
+     0.3333
+    ],
+    [
+     6515.7,
+     6.0,
+     0.2
+    ],
+    [
+     9122.0,
+     6.0,
+     0.1429
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 12.0,
+   "noise": 0.05,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.6207,
+    "rivalCosine": 0.2842,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.08
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1609 Hz \u00b7 216 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.216,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1616.4
+    ],
+    [
+     0.125,
+     1583.5
+    ],
+    [
+     0.25,
+     1700.2
+    ],
+    [
+     0.5,
+     1562.3
+    ],
+    [
+     0.875,
+     1543.7
+    ],
+    [
+     1.0,
+     1651.2
+    ]
+   ],
+   "attack": 0.06,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 45.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.09
+   },
+   "formants": [
+    [
+     1312.0828814882439,
+     8.0,
+     2.0
+    ],
+    [
+     3741.776844777196,
+     8.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "noise": 0.05,
+   "rough": 0.65,
+   "tractQ": 3.0,
+   "two": true,
+   "fricative": true,
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.6731,
+    "rivalCosine": 0.0968,
+    "nearestOwn": true,
+    "f0ErrorPercent": -8.62
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L01": 0.6,
+    "L00": 0.4
+   },
+   "L01": {
+    "L01": 0.8095,
+    "end": 0.1905
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.071,
+   "L00>L01": 0.147,
+   "L01>L01": 0.043
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 4,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

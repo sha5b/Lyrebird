@@ -1,0 +1,485 @@
+{
+ "id": "turdus_merula",
+ "common": "Common blackbird",
+ "scientific": "Turdus merula",
+ "bank": "west",
+ "summary": "Low, flute-like phrases followed by a high scratchy twitter; the pure tone comes from vocal-tract resonance tracking the fundamental.",
+ "syllables": [
+  {
+   "id": "flute1",
+   "label": "flute phrase",
+   "function": "song element",
+   "confidence": "inferred",
+   "refs": [
+    "beckers2003"
+   ],
+   "dur": 0.28,
+   "level": 0.9,
+   "timbre": "pure",
+   "two": true,
+   "contour": [
+    [
+     0.0,
+     1500
+    ],
+    [
+     0.2,
+     2100
+    ],
+    [
+     0.5,
+     1750
+    ],
+    [
+     0.8,
+     2300
+    ],
+    [
+     1.0,
+     1900
+    ]
+   ]
+  },
+  {
+   "id": "flute2",
+   "label": "flute phrase 2",
+   "function": "song element",
+   "confidence": "inferred",
+   "refs": [],
+   "dur": 0.3,
+   "level": 0.88,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2200
+    ],
+    [
+     0.3,
+     1600
+    ],
+    [
+     0.7,
+     2000
+    ],
+    [
+     1.0,
+     1400
+    ]
+   ]
+  },
+  {
+   "id": "twitter",
+   "label": "terminal twitter",
+   "function": "phrase ending",
+   "confidence": "inferred",
+   "refs": [],
+   "dur": 0.22,
+   "level": 0.6,
+   "timbre": "buzz",
+   "am": 45,
+   "amDepth": 0.5,
+   "harmonic": 0.4,
+   "contour": [
+    [
+     0.0,
+     4200
+    ],
+    [
+     0.4,
+     5600
+    ],
+    [
+     0.7,
+     4800
+    ],
+    [
+     1.0,
+     6200
+    ]
+   ]
+  },
+  {
+   "id": "L71",
+   "label": "learned L71 \u00b7 1977 Hz \u00b7 93 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0934,
+   "level": 0.391,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2080.7
+    ],
+    [
+     1.0,
+     1879.2
+    ]
+   ],
+   "attack": 0.032,
+   "hold": false,
+   "harmonic": 0.35,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     2116.0,
+     6.0,
+     1.0
+    ],
+    [
+     6348.1,
+     6.0,
+     0.3333
+    ],
+    [
+     10580.1,
+     6.0,
+     0.2
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 20.0,
+   "noise": 0.05,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.6962,
+    "rivalCosine": 0.5556,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.58
+   }
+  },
+  {
+   "id": "L30",
+   "label": "learned L30 \u00b7 2197 Hz \u00b7 136 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.136,
+   "level": 0.75,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2203.7
+    ],
+    [
+     1.0,
+     2190.0
+    ]
+   ],
+   "attack": 0.0374,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 15.01,
+   "amDepth": 0.221,
+   "formants": [
+    [
+     2116.0,
+     6.0,
+     1.0
+    ],
+    [
+     6348.1,
+     6.0,
+     0.3333
+    ],
+    [
+     10580.1,
+     6.0,
+     0.2
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 12.0,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.5811,
+    "rivalCosine": 0.6661,
+    "nearestOwn": false,
+    "f0ErrorPercent": -0.42
+   }
+  },
+  {
+   "id": "L05",
+   "label": "learned L05 \u00b7 2345 Hz \u00b7 147 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1467,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2226.4
+    ],
+    [
+     1.0,
+     2469.3
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.45,
+   "vib": {
+    "rate": 8.93,
+    "depth": 0.05
+   },
+   "formants": [
+    [
+     2116.0,
+     6.0,
+     1.0
+    ],
+    [
+     6348.1,
+     6.0,
+     0.3333
+    ],
+    [
+     10580.1,
+     6.0,
+     0.2
+    ]
+   ],
+   "tractQ": 6.0,
+   "noise": 0.0,
+   "rough": 0.65,
+   "two": true,
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.8113,
+    "rivalCosine": 0.6541,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.8
+   }
+  },
+  {
+   "id": "L73",
+   "label": "learned L73 \u00b7 3082 Hz \u00b7 95 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0946,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2912.8
+    ],
+    [
+     0.125,
+     3241.6
+    ],
+    [
+     0.25,
+     3246.7
+    ],
+    [
+     0.375,
+     2980.0
+    ],
+    [
+     0.5,
+     3185.1
+    ],
+    [
+     0.625,
+     3191.2
+    ],
+    [
+     0.75,
+     2975.7
+    ],
+    [
+     1.0,
+     2948.3
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     2116.0,
+     6.0,
+     1.0
+    ],
+    [
+     6348.1,
+     6.0,
+     0.3333
+    ],
+    [
+     10580.1,
+     6.0,
+     0.2
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 3.0,
+   "amDepth": 0.6,
+   "am": 12.0,
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.4984,
+    "rivalCosine": 0.4983,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.38
+   }
+  },
+  {
+   "id": "L06",
+   "label": "learned L06 \u00b7 3174 Hz \u00b7 69 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0693,
+   "level": 0.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2957.4
+    ],
+    [
+     0.25,
+     3383.3
+    ],
+    [
+     1.0,
+     3197.2
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 23.44,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 3.29,
+    "depth": 0.076
+   },
+   "formants": [
+    [
+     2116.0,
+     6.0,
+     1.0
+    ],
+    [
+     6348.1,
+     6.0,
+     0.3333
+    ],
+    [
+     10580.1,
+     6.0,
+     0.2
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 0.0,
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.606,
+    "rivalCosine": 0.3481,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.51
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "merula_song",
+   "label": "flute + twitter",
+   "gloss": "territorial song",
+   "function": "territory / mate attraction",
+   "confidence": "inferred",
+   "refs": [],
+   "sequence": [
+    "flute1",
+    "flute2",
+    "twitter"
+   ],
+   "gaps": [
+    0.08,
+    0.05
+   ]
+  },
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L30",
+    "L30",
+    "L73"
+   ],
+   "gaps": [
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L30",
+   "L71",
+   "L73",
+   "L05"
+  ],
+  "transitions": {
+   "L05": {
+    "L06": 0.7,
+    "L71": 0.3
+   },
+   "L06": {
+    "L06": 0.5385,
+    "end": 0.4615
+   },
+   "L30": {
+    "end": 0.5,
+    "L30": 0.25,
+    "L73": 0.25
+   },
+   "L71": {
+    "L71": 0.5333,
+    "L05": 0.4667
+   },
+   "L73": {
+    "end": 1.0
+   }
+  },
+  "gaps": {
+   "L05>L06": 0.179,
+   "L05>L71": 0.024,
+   "L06>L06": 0.077,
+   "L30>L30": 0.075,
+   "L30>L73": 0.069,
+   "L71>L05": 0.069,
+   "L71>L71": 0.063
+  },
+  "songTyping": {
+   "bouts": 16,
+   "short": 9,
+   "candidates": 7,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 7,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ },
+ "learnedFrom": "Learned from 2 field recordings: 5 syllable types fitted from 60 segmented syllables. No documented function is attached to any of them."
+}

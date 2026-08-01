@@ -1,0 +1,187 @@
+{
+ "id": "ninox_novaeseelandiae",
+ "common": "Morepork",
+ "scientific": "Ninox novaeseelandiae",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 34 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 770 Hz \u00b7 67 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0667,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     900.4
+    ],
+    [
+     0.25,
+     756.1
+    ],
+    [
+     0.5,
+     865.7
+    ],
+    [
+     0.625,
+     731.6
+    ],
+    [
+     0.75,
+     674.6
+    ],
+    [
+     1.0,
+     719.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.9,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.086
+   },
+   "gammaScale": 1.5,
+   "tractQ": 3.0,
+   "rough": 0.0,
+   "am": 80.0,
+   "amDepth": 0.15,
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.5468,
+    "rivalCosine": -0.1051,
+    "nearestOwn": true,
+    "f0ErrorPercent": 16.73
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2242 Hz \u00b7 359 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.3587,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1090.1
+    ],
+    [
+     0.25,
+     1137.3
+    ],
+    [
+     0.375,
+     2645.7
+    ],
+    [
+     0.5,
+     3516.1
+    ],
+    [
+     0.625,
+     2958.4
+    ],
+    [
+     0.75,
+     3023.1
+    ],
+    [
+     0.875,
+     1809.5
+    ],
+    [
+     1.0,
+     3419.9
+    ]
+   ],
+   "attack": 0.12,
+   "hold": true,
+   "harmonic": 1.0,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.214
+   },
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "rough": 0.0,
+   "gammaScale": 2.0,
+   "fricative": true,
+   "formants": [
+    [
+     1063.304792525682,
+     4.0,
+     2.0
+    ],
+    [
+     3741.776844777196,
+     4.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.4003,
+    "rivalCosine": -0.3469,
+    "nearestOwn": true,
+    "f0ErrorPercent": -12.49
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "end": 0.6667,
+    "L01": 0.3333
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.059,
+   "L01>L01": 0.067
+  },
+  "songTyping": {
+   "bouts": 11,
+   "short": 10,
+   "candidates": 1,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

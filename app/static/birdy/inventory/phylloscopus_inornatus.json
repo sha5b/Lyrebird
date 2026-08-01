@@ -1,0 +1,141 @@
+{
+ "id": "phylloscopus_inornatus",
+ "common": "Yellow-browed Warbler",
+ "scientific": "Phylloscopus inornatus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 714 Hz \u00b7 83 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0827,
+   "level": 0.6,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     799.7
+    ],
+    [
+     0.25,
+     687.1
+    ],
+    [
+     1.0,
+     663.3
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.45,
+   "tractQ": 3.0,
+   "rough": 0.65,
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.6949,
+    "rivalCosine": -0.1983,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.67
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1807 Hz \u00b7 297 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2974,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     519.6
+    ],
+    [
+     0.125,
+     2047.0
+    ],
+    [
+     0.375,
+     2843.4
+    ],
+    [
+     0.875,
+     2794.3
+    ],
+    [
+     1.0,
+     2278.8
+    ]
+   ],
+   "attack": 0.076,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 45.0,
+   "amDepth": 0.174,
+   "gammaScale": 0.5,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.05
+   },
+   "tractQ": 30.0,
+   "learned": {
+    "members": 26,
+    "resynthesisCosine": 0.3191,
+    "rivalCosine": 0.1136,
+    "nearestOwn": true,
+    "f0ErrorPercent": -26.03
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00"
+   ],
+   "gaps": []
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "L01": 0.9231,
+    "end": 0.0769
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.017
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 4,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

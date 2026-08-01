@@ -1,0 +1,173 @@
+{
+ "id": "psephotus_haematonotus",
+ "common": "Red-rumped Parrot",
+ "scientific": "Psephotus haematonotus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2175 Hz \u00b7 132 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.132,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1702.3
+    ],
+    [
+     0.125,
+     2451.2
+    ],
+    [
+     0.25,
+     2445.7
+    ],
+    [
+     0.375,
+     2742.2
+    ],
+    [
+     0.5,
+     2713.7
+    ],
+    [
+     0.625,
+     1295.6
+    ],
+    [
+     0.75,
+     2073.8
+    ],
+    [
+     0.875,
+     2702.6
+    ],
+    [
+     1.0,
+     1973.9
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.224
+   },
+   "tractQ": 30.0,
+   "rough": 0.0,
+   "learned": {
+    "members": 22,
+    "resynthesisCosine": 0.5166,
+    "rivalCosine": 0.6767,
+    "nearestOwn": false,
+    "f0ErrorPercent": -24.69
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4278 Hz \u00b7 119 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1186,
+   "level": 0.9,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     5216.5
+    ],
+    [
+     0.125,
+     4878.0
+    ],
+    [
+     0.375,
+     3696.5
+    ],
+    [
+     0.5,
+     3657.3
+    ],
+    [
+     1.0,
+     4163.1
+    ]
+   ],
+   "attack": 0.044,
+   "hold": false,
+   "harmonic": 0.35,
+   "am": 13.43,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 7.5,
+    "depth": 0.139
+   },
+   "gammaScale": 1.5,
+   "rough": 0.4,
+   "tractQ": 3.0,
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.883,
+    "rivalCosine": 0.2535,
+    "nearestOwn": true,
+    "f0ErrorPercent": -5.42
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7143,
+    "end": 0.2857
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.027,
+   "L01>L01": 0.416
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 5,
+   "candidates": 1,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

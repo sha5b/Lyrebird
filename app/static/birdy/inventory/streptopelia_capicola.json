@@ -1,0 +1,160 @@
+{
+ "id": "streptopelia_capicola",
+ "common": "Cape Turtle Dove",
+ "scientific": "Streptopelia capicola",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 617 Hz \u00b7 72 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.072,
+   "level": 0.369,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     524.5
+    ],
+    [
+     0.125,
+     564.2
+    ],
+    [
+     0.25,
+     565.9
+    ],
+    [
+     0.375,
+     700.9
+    ],
+    [
+     0.5,
+     728.5
+    ],
+    [
+     0.625,
+     610.0
+    ],
+    [
+     0.875,
+     708.6
+    ],
+    [
+     1.0,
+     564.6
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.462,
+   "am": 23.44,
+   "amDepth": 0.304,
+   "gammaScale": 1.5,
+   "learned": {
+    "members": 25,
+    "resynthesisCosine": 0.478,
+    "rivalCosine": 0.5143,
+    "nearestOwn": false,
+    "f0ErrorPercent": 18.22
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 869 Hz \u00b7 157 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1573,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     885.7
+    ],
+    [
+     0.125,
+     880.5
+    ],
+    [
+     0.25,
+     817.9
+    ],
+    [
+     0.5,
+     870.9
+    ],
+    [
+     1.0,
+     890.0
+    ]
+   ],
+   "attack": 0.0427,
+   "hold": true,
+   "harmonic": 0.0,
+   "tractQ": 6.0,
+   "rough": 0.65,
+   "amDepth": 0.3,
+   "am": 25.0,
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.4601,
+    "rivalCosine": 0.4351,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.64
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.88,
+    "end": 0.12
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.072,
+   "L01>L01": 0.035
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 4,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

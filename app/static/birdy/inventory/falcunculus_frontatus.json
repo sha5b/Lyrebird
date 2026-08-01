@@ -1,0 +1,171 @@
+{
+ "id": "falcunculus_frontatus",
+ "common": "Eastern Shrike-tit",
+ "scientific": "Falcunculus frontatus",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 856 Hz \u00b7 211 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2107,
+   "level": 1.2,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     829.8
+    ],
+    [
+     0.125,
+     884.5
+    ],
+    [
+     0.375,
+     826.5
+    ],
+    [
+     0.875,
+     854.4
+    ],
+    [
+     1.0,
+     887.5
+    ]
+   ],
+   "attack": 0.0427,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 23.44,
+   "amDepth": 0.0,
+   "gammaScale": 0.5,
+   "tractQ": 20.0,
+   "rough": 0.08,
+   "noise": 0.05,
+   "learned": {
+    "members": 25,
+    "resynthesisCosine": 0.1463,
+    "rivalCosine": -0.1467,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.36
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1904 Hz \u00b7 56 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.056,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2016.7
+    ],
+    [
+     0.25,
+     2033.4
+    ],
+    [
+     0.5,
+     1788.1
+    ],
+    [
+     0.75,
+     2016.5
+    ],
+    [
+     0.875,
+     1763.8
+    ],
+    [
+     1.0,
+     1827.3
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 25.0,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "two": true,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
+   },
+   "fricative": true,
+   "formants": [
+    [
+     1919.8885853658714,
+     2.0,
+     2.0
+    ],
+    [
+     6830.618534315889,
+     2.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.3986,
+    "rivalCosine": -0.3915,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.18
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.875,
+    "end": 0.125
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.051,
+   "L01>L01": 0.043
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 2,
+   "candidates": 1,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

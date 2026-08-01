@@ -1,0 +1,226 @@
+{
+ "id": "penelopina_nigra",
+ "common": "Highland Guan",
+ "scientific": "Penelopina nigra",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 46 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1462 Hz \u00b7 107 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1067,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1469.1
+    ],
+    [
+     1.0,
+     1454.9
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.2,
+   "am": 12.0,
+   "amDepth": 0.15,
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
+   "noise": 0.85,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.8047,
+    "rivalCosine": 0.588,
+    "nearestOwn": true,
+    "f0ErrorPercent": -8.67
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1670 Hz \u00b7 64 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.064,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1800.7
+    ],
+    [
+     0.25,
+     1460.2
+    ],
+    [
+     0.375,
+     1829.8
+    ],
+    [
+     0.625,
+     1877.8
+    ],
+    [
+     0.75,
+     1614.3
+    ],
+    [
+     0.875,
+     1508.5
+    ],
+    [
+     1.0,
+     1649.1
+    ]
+   ],
+   "attack": 0.0053,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "gammaScale": 2.0,
+   "noise": 0.6,
+   "rough": 0.08,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 23,
+    "resynthesisCosine": 0.847,
+    "rivalCosine": 0.7267,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.54
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2050 Hz \u00b7 53 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0533,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1978.8
+    ],
+    [
+     0.25,
+     2117.6
+    ],
+    [
+     0.375,
+     1959.8
+    ],
+    [
+     0.625,
+     1924.8
+    ],
+    [
+     0.875,
+     2203.1
+    ],
+    [
+     1.0,
+     2133.4
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.1,
+   "am": 45.0,
+   "amDepth": 0.3,
+   "noise": 0.85,
+   "rough": 0.65,
+   "gammaScale": 1.5,
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.7641,
+    "rivalCosine": 0.7967,
+    "nearestOwn": false,
+    "f0ErrorPercent": -17.62
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L02",
+    "L02",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L02",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6667,
+    "L01": 0.3333
+   },
+   "L01": {
+    "L01": 0.5,
+    "end": 0.3182,
+    "L02": 0.1818
+   },
+   "L02": {
+    "end": 0.3571,
+    "L02": 0.3571,
+    "L01": 0.2857
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.041,
+   "L00>L01": 0.051,
+   "L01>L01": 0.131,
+   "L01>L02": 0.135,
+   "L02>L01": 0.195,
+   "L02>L02": 0.085
+  },
+  "songTyping": {
+   "bouts": 12,
+   "short": 9,
+   "candidates": 3,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 3,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

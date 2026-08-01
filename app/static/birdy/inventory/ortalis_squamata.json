@@ -1,0 +1,227 @@
+{
+ "id": "ortalis_squamata",
+ "common": "Scaled Chachalaca",
+ "scientific": "Ortalis squamata",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 36 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2436 Hz \u00b7 29 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0293,
+   "level": 0.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2428.6
+    ],
+    [
+     1.0,
+     2444.0
+    ]
+   ],
+   "attack": 0.0053,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 45.0,
+   "amDepth": 0.151,
+   "formants": [
+    [
+     2696.4,
+     6.0,
+     1.0
+    ],
+    [
+     8089.2,
+     6.0,
+     0.3333
+    ]
+   ],
+   "gammaScale": 6.0,
+   "noise": 0.6,
+   "learned": {
+    "members": 1,
+    "resynthesisCosine": 0.8488,
+    "rivalCosine": 0.8094,
+    "nearestOwn": true,
+    "f0ErrorPercent": 8.48
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2516 Hz \u00b7 48 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.048,
+   "level": 0.9,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2572.0
+    ],
+    [
+     0.25,
+     2649.6
+    ],
+    [
+     1.0,
+     2338.4
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.35,
+   "am": 12.0,
+   "amDepth": 0.45,
+   "formants": [
+    [
+     2696.4,
+     6.0,
+     1.0
+    ],
+    [
+     8089.2,
+     6.0,
+     0.3333
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.8109,
+    "rivalCosine": 0.7949,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.48
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2580 Hz \u00b7 57 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0573,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2617.7
+    ],
+    [
+     0.125,
+     2474.9
+    ],
+    [
+     1.0,
+     2651.0
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 20.83,
+   "amDepth": 0.0,
+   "formants": [
+    [
+     2696.4,
+     6.0,
+     1.0
+    ],
+    [
+     8089.2,
+     6.0,
+     0.3333
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.05
+   },
+   "rough": 0.08,
+   "learned": {
+    "members": 22,
+    "resynthesisCosine": 0.7611,
+    "rivalCosine": 0.6536,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.51
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L02",
+    "L01",
+    "L01",
+    "L02",
+    "L02"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L01": 1.0
+   },
+   "L01": {
+    "L01": 0.5455,
+    "L02": 0.4545
+   },
+   "L02": {
+    "L02": 0.7273,
+    "L01": 0.2727
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.232,
+   "L01>L02": 0.288,
+   "L02>L01": 0.329,
+   "L02>L02": 0.248
+  },
+  "songTyping": {
+   "bouts": 1,
+   "short": 0,
+   "candidates": 1,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

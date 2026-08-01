@@ -1,0 +1,129 @@
+{
+ "id": "pterodroma_gouldi",
+ "common": "Grey-faced Petrel",
+ "scientific": "Pterodroma gouldi",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 720 Hz \u00b7 85 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0853,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     720.7
+    ],
+    [
+     1.0,
+     720.3
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 1.0,
+   "tractQ": 30.0,
+   "noise": 0.05,
+   "am": 25.0,
+   "amDepth": 0.3,
+   "rough": 0.08,
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.6616,
+    "rivalCosine": 0.3172,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.74
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 988 Hz \u00b7 64 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.064,
+   "level": 0.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     985.1
+    ],
+    [
+     1.0,
+     990.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 3.0,
+   "tractQ": 30.0,
+   "noise": 0.12,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.7938,
+    "rivalCosine": 0.2609,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.83
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8462,
+    "end": 0.1538
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.04,
+   "L01>L01": 0.117
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 3,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,182 @@
+{
+ "id": "saltator_striatipectus",
+ "common": "Streaked Saltator",
+ "scientific": "Saltator striatipectus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2160 Hz \u00b7 184 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.184,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2153.3
+    ],
+    [
+     1.0,
+     2165.8
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "gammaScale": 2.0,
+   "tractQ": 30.0,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.01
+   },
+   "fricative": true,
+   "formants": [
+    [
+     1919.8885853658714,
+     8.0,
+     0.5
+    ],
+    [
+     4368.450554124434,
+     8.0,
+     0.5
+    ]
+   ],
+   "learned": {
+    "members": 29,
+    "resynthesisCosine": 0.211,
+    "rivalCosine": -0.1662,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.03
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2259 Hz \u00b7 43 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0427,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2578.2
+    ],
+    [
+     0.125,
+     2270.0
+    ],
+    [
+     0.375,
+     3100.4
+    ],
+    [
+     0.5,
+     2895.4
+    ],
+    [
+     0.625,
+     2535.7
+    ],
+    [
+     0.75,
+     2420.4
+    ],
+    [
+     0.875,
+     1968.5
+    ],
+    [
+     1.0,
+     1066.9
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 80.0,
+   "amDepth": 0.0,
+   "gammaScale": 1.5,
+   "noise": 0.6,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.09
+   },
+   "fricative": true,
+   "formants": [
+    [
+     2711.2989394619476,
+     2.0,
+     1.0
+    ],
+    [
+     6830.618534315889,
+     2.0,
+     1.0
+    ]
+   ],
+   "learned": {
+    "members": 2,
+    "resynthesisCosine": 0.7679,
+    "rivalCosine": -0.0183,
+    "nearestOwn": true,
+    "f0ErrorPercent": 34.77
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8966,
+    "end": 0.1034
+   },
+   "L01": {
+    "end": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.021
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 5,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

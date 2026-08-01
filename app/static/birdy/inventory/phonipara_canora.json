@@ -1,0 +1,173 @@
+{
+ "id": "phonipara_canora",
+ "common": "Cuban Grassquit",
+ "scientific": "Phonipara canora",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 26 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 716 Hz \u00b7 56 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.056,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     467.0
+    ],
+    [
+     0.125,
+     506.9
+    ],
+    [
+     0.25,
+     1081.7
+    ],
+    [
+     0.375,
+     777.9
+    ],
+    [
+     0.5,
+     637.7
+    ],
+    [
+     0.625,
+     1045.1
+    ],
+    [
+     0.75,
+     1075.2
+    ],
+    [
+     0.875,
+     579.8
+    ],
+    [
+     1.0,
+     598.3
+    ]
+   ],
+   "attack": 0.004,
+   "hold": false,
+   "harmonic": 0.35,
+   "am": 12.0,
+   "amDepth": 0.45,
+   "gammaScale": 6.0,
+   "noise": 0.4,
+   "two": true,
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.8429,
+    "rivalCosine": -0.1173,
+    "nearestOwn": true,
+    "f0ErrorPercent": 15.35
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 756 Hz \u00b7 49 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0494,
+   "level": 0.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     560.1
+    ],
+    [
+     0.125,
+     679.0
+    ],
+    [
+     0.375,
+     661.5
+    ],
+    [
+     0.5,
+     789.4
+    ],
+    [
+     0.625,
+     808.0
+    ],
+    [
+     0.75,
+     895.8
+    ],
+    [
+     0.875,
+     839.3
+    ],
+    [
+     1.0,
+     885.5
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 1.0,
+   "am": 23.98,
+   "amDepth": 0.216,
+   "tractQ": 6.0,
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.2926,
+    "rivalCosine": 0.3152,
+    "nearestOwn": false,
+    "f0ErrorPercent": 0.45
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00"
+   ],
+   "gaps": []
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "L01": 0.65,
+    "end": 0.35
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.216
+  },
+  "songTyping": {
+   "bouts": 12,
+   "short": 12,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

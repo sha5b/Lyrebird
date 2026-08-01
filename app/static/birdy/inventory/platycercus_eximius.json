@@ -1,0 +1,256 @@
+{
+ "id": "platycercus_eximius",
+ "common": "Eastern Rosella",
+ "scientific": "Platycercus eximius",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 45 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1051 Hz \u00b7 45 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0453,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     885.5
+    ],
+    [
+     0.125,
+     926.3
+    ],
+    [
+     0.25,
+     2068.5
+    ],
+    [
+     0.375,
+     931.2
+    ],
+    [
+     0.625,
+     933.9
+    ],
+    [
+     0.75,
+     1049.2
+    ],
+    [
+     0.875,
+     945.3
+    ],
+    [
+     1.0,
+     1020.5
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 80.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     0.15
+    ],
+    [
+     9584.9,
+     6.0,
+     0.05
+    ]
+   ],
+   "gammaScale": 0.5,
+   "rough": 0.2,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.2607,
+    "rivalCosine": 0.0968,
+    "nearestOwn": true,
+    "f0ErrorPercent": -5.44
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2934 Hz \u00b7 88 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.088,
+   "level": 1.05,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2365.5
+    ],
+    [
+     0.125,
+     2904.9
+    ],
+    [
+     0.375,
+     2969.5
+    ],
+    [
+     0.5,
+     3185.2
+    ],
+    [
+     1.0,
+     3345.6
+    ]
+   ],
+   "attack": 0.032,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 12.93,
+   "amDepth": 0.405,
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     0.15
+    ],
+    [
+     9584.9,
+     6.0,
+     0.05
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 30.0,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 25,
+    "resynthesisCosine": 0.7656,
+    "rivalCosine": 0.1014,
+    "nearestOwn": true,
+    "f0ErrorPercent": 6.55
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2994 Hz \u00b7 59 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0587,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3079.2
+    ],
+    [
+     0.5,
+     2996.6
+    ],
+    [
+     0.625,
+     3116.2
+    ],
+    [
+     0.75,
+     2881.4
+    ],
+    [
+     1.0,
+     2903.8
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     0.15
+    ],
+    [
+     9584.9,
+     6.0,
+     0.05
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 30.0,
+   "noise": 0.05,
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.3233,
+    "rivalCosine": 0.175,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.69
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L02",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 1.0
+   },
+   "L02": {
+    "L02": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.035,
+   "L01>L01": 0.08,
+   "L02>L02": 0.131
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 2,
+   "candidates": 1,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

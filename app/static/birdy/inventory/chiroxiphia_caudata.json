@@ -1,0 +1,179 @@
+{
+ "id": "chiroxiphia_caudata",
+ "common": "Blue Manakin",
+ "scientific": "Chiroxiphia caudata",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2581 Hz \u00b7 128 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.128,
+   "level": 0.571,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3071.9
+    ],
+    [
+     0.125,
+     3347.0
+    ],
+    [
+     0.375,
+     3271.2
+    ],
+    [
+     0.5,
+     2495.4
+    ],
+    [
+     0.625,
+     2416.1
+    ],
+    [
+     0.75,
+     1780.5
+    ],
+    [
+     0.875,
+     2118.9
+    ],
+    [
+     1.0,
+     2571.1
+    ]
+   ],
+   "attack": 0.024,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 17.05,
+   "amDepth": 0.258,
+   "vib": {
+    "rate": 9.87,
+    "depth": 0.23
+   },
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.7145,
+    "rivalCosine": 0.6903,
+    "nearestOwn": true,
+    "f0ErrorPercent": 40.81
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3036 Hz \u00b7 192 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.192,
+   "level": 1.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4137.7
+    ],
+    [
+     0.125,
+     4174.1
+    ],
+    [
+     0.25,
+     3794.6
+    ],
+    [
+     0.375,
+     3791.4
+    ],
+    [
+     0.5,
+     2185.7
+    ],
+    [
+     0.75,
+     2056.9
+    ],
+    [
+     1.0,
+     2127.9
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.35,
+   "am": 10.87,
+   "amDepth": 0.0,
+   "vib": {
+    "rate": 5.68,
+    "depth": 0.281
+   },
+   "gammaScale": 6.0,
+   "noise": 0.12,
+   "tractQ": 20.0,
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.8922,
+    "rivalCosine": 0.6473,
+    "nearestOwn": true,
+    "f0ErrorPercent": 17.93
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6316,
+    "end": 0.3684
+   },
+   "L01": {
+    "L01": 0.7778,
+    "end": 0.2222
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.145,
+   "L01>L01": 0.747
+  },
+  "songTyping": {
+   "bouts": 9,
+   "short": 9,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

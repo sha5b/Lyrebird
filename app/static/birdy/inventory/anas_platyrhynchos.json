@@ -1,0 +1,180 @@
+{
+ "id": "anas_platyrhynchos",
+ "common": "Mallard",
+ "scientific": "Anas platyrhynchos",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 33 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 642 Hz \u00b7 151 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1507,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     616.2
+    ],
+    [
+     0.375,
+     698.5
+    ],
+    [
+     0.5,
+     640.9
+    ],
+    [
+     1.0,
+     614.8
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 1.0,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "tractQ": 3.0,
+   "rough": 0.65,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.025
+   },
+   "gammaScale": 0.5,
+   "fricative": true,
+   "formants": [
+    [
+     1919.8885853658714,
+     4.0,
+     2.0
+    ],
+    [
+     7893.0853838443245,
+     4.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 28,
+    "resynthesisCosine": -0.0503,
+    "rivalCosine": -0.0412,
+    "nearestOwn": false,
+    "f0ErrorPercent": -1.75
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2282 Hz \u00b7 235 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2347,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2762.8
+    ],
+    [
+     0.125,
+     1875.3
+    ],
+    [
+     0.25,
+     2037.0
+    ],
+    [
+     0.375,
+     2757.6
+    ],
+    [
+     0.625,
+     1989.3
+    ],
+    [
+     0.75,
+     2193.2
+    ],
+    [
+     0.875,
+     2631.2
+    ],
+    [
+     1.0,
+     2199.1
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "noise": 0.85,
+   "rough": 0.65,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.5758,
+    "rivalCosine": -0.5153,
+    "nearestOwn": true,
+    "f0ErrorPercent": 9.22
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.9286,
+    "end": 0.0714
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.025,
+   "L01>L01": 0.02
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 3,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

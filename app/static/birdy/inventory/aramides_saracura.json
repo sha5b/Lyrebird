@@ -1,0 +1,185 @@
+{
+ "id": "aramides_saracura",
+ "common": "Slaty-breasted Wood-Rail",
+ "scientific": "Aramides saracura",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 943 Hz \u00b7 341 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.3413,
+   "level": 0.75,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     977.7
+    ],
+    [
+     0.125,
+     914.0
+    ],
+    [
+     0.25,
+     679.4
+    ],
+    [
+     0.375,
+     1002.3
+    ],
+    [
+     0.5,
+     1110.6
+    ],
+    [
+     0.625,
+     1096.7
+    ],
+    [
+     0.75,
+     1214.9
+    ],
+    [
+     0.875,
+     846.4
+    ],
+    [
+     1.0,
+     774.8
+    ]
+   ],
+   "attack": 0.004,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "tractQ": 3.0,
+   "rough": 0.65,
+   "two": true,
+   "gammaScale": 2.0,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.2392,
+    "rivalCosine": -0.2432,
+    "nearestOwn": true,
+    "f0ErrorPercent": 15.72
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1378 Hz \u00b7 81 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0814,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1388.3
+    ],
+    [
+     0.125,
+     1332.1
+    ],
+    [
+     0.25,
+     1431.4
+    ],
+    [
+     0.375,
+     1441.6
+    ],
+    [
+     0.5,
+     1344.6
+    ],
+    [
+     0.625,
+     1443.0
+    ],
+    [
+     0.75,
+     1319.8
+    ],
+    [
+     0.875,
+     1399.1
+    ],
+    [
+     1.0,
+     1312.2
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "tractQ": 12.0,
+   "amDepth": 0.3,
+   "am": 80.0,
+   "noise": 0.85,
+   "gammaScale": 6.0,
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.4424,
+    "rivalCosine": -0.0383,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.57
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7,
+    "end": 0.3
+   },
+   "L01": {
+    "L01": 0.6111,
+    "end": 0.3889
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.016,
+   "L01>L01": 0.019
+  },
+  "songTyping": {
+   "bouts": 10,
+   "short": 10,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,165 @@
+{
+ "id": "microspingus_torquatus",
+ "common": "Ringed Warbling-Finch",
+ "scientific": "Microspingus torquatus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 24 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 451 Hz \u00b7 85 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0853,
+   "level": 1.05,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     442.7
+    ],
+    [
+     0.5,
+     441.7
+    ],
+    [
+     0.875,
+     479.7
+    ],
+    [
+     1.0,
+     440.7
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.8,
+   "gammaScale": 1.5,
+   "tractQ": 30.0,
+   "rough": 0.4,
+   "two": true,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.6852,
+    "rivalCosine": 0.3195,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.46
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 5184 Hz \u00b7 152 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.152,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     6762.5
+    ],
+    [
+     0.375,
+     6167.0
+    ],
+    [
+     0.5,
+     5616.5
+    ],
+    [
+     0.625,
+     5858.3
+    ],
+    [
+     0.75,
+     4719.7
+    ],
+    [
+     0.875,
+     4362.0
+    ],
+    [
+     1.0,
+     3562.1
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 12.1,
+   "amDepth": 0.46,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.224
+   },
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "noise": 0.12,
+   "rough": 0.08,
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.9292,
+    "rivalCosine": 0.1705,
+    "nearestOwn": true,
+    "f0ErrorPercent": 30.37
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6,
+    "end": 0.4
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.193,
+   "L01>L01": 0.099
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 4,
+   "candidates": 1,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

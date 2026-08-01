@@ -1,0 +1,224 @@
+{
+ "id": "anairetes_reguloides",
+ "common": "Pied-crested Tit-Tyrant",
+ "scientific": "Anairetes reguloides",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 46 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 540 Hz \u00b7 40 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.04,
+   "level": 1.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     536.1
+    ],
+    [
+     0.125,
+     508.5
+    ],
+    [
+     0.25,
+     526.8
+    ],
+    [
+     0.375,
+     513.5
+    ],
+    [
+     0.625,
+     570.4
+    ],
+    [
+     0.75,
+     555.9
+    ],
+    [
+     1.0,
+     571.3
+    ]
+   ],
+   "attack": 0.0053,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 80.0,
+   "amDepth": 0.15,
+   "gammaScale": 1.5,
+   "tractQ": 3.0,
+   "noise": 0.05,
+   "rough": 0.08,
+   "learned": {
+    "members": 26,
+    "resynthesisCosine": 0.6077,
+    "rivalCosine": 0.3997,
+    "nearestOwn": true,
+    "f0ErrorPercent": 38.93
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 569 Hz \u00b7 45 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0453,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     754.8
+    ],
+    [
+     0.125,
+     695.1
+    ],
+    [
+     0.25,
+     554.3
+    ],
+    [
+     0.625,
+     439.8
+    ],
+    [
+     1.0,
+     465.8
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 1.0,
+   "am": 140.0,
+   "amDepth": 0.45,
+   "tractQ": 20.0,
+   "rough": 0.65,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.5183,
+    "rivalCosine": 0.1633,
+    "nearestOwn": true,
+    "f0ErrorPercent": -12.61
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 647 Hz \u00b7 83 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0827,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     805.2
+    ],
+    [
+     0.125,
+     645.1
+    ],
+    [
+     0.5,
+     646.0
+    ],
+    [
+     0.625,
+     758.5
+    ],
+    [
+     0.875,
+     520.5
+    ],
+    [
+     1.0,
+     555.7
+    ]
+   ],
+   "attack": 0.024,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.09
+   },
+   "gammaScale": 1.5,
+   "tractQ": 3.0,
+   "rough": 0.4,
+   "learned": {
+    "members": 17,
+    "resynthesisCosine": 0.302,
+    "rivalCosine": 0.3675,
+    "nearestOwn": false,
+    "f0ErrorPercent": 12.06
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6,
+    "end": 0.4
+   },
+   "L01": {
+    "end": 0.3333,
+    "L00": 0.3333,
+    "L02": 0.3333
+   },
+   "L02": {
+    "L02": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.08,
+   "L02>L02": 0.037
+  },
+  "songTyping": {
+   "bouts": 11,
+   "short": 10,
+   "candidates": 1,
+   "repeatCandidates": 6,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,228 @@
+{
+ "id": "amazona_albifrons",
+ "common": "White-fronted Parrot",
+ "scientific": "Amazona albifrons",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 41 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 466 Hz \u00b7 75 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0747,
+   "level": 0.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     458.8
+    ],
+    [
+     1.0,
+     474.3
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.0,
+   "formants": [
+    [
+     4071.3,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 6.0,
+   "noise": 0.05,
+   "two": true,
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.8144,
+    "rivalCosine": 0.4164,
+    "nearestOwn": true,
+    "f0ErrorPercent": 7.56
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1905 Hz \u00b7 68 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.068,
+   "level": 0.9,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2178.6
+    ],
+    [
+     0.125,
+     1768.5
+    ],
+    [
+     0.25,
+     1764.1
+    ],
+    [
+     0.375,
+     1995.8
+    ],
+    [
+     0.5,
+     1860.3
+    ],
+    [
+     0.625,
+     1971.5
+    ],
+    [
+     1.0,
+     1831.5
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 45.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.025
+   },
+   "formants": [
+    [
+     4071.3,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 0.5,
+   "rough": 0.65,
+   "tractQ": 6.0,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.3825,
+    "rivalCosine": 0.3284,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.39
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2424 Hz \u00b7 193 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1933,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2483.4
+    ],
+    [
+     0.125,
+     2306.0
+    ],
+    [
+     1.0,
+     2486.2
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     2289.5188831594724,
+     2.0,
+     2.0
+    ],
+    [
+     5083.5393171114765,
+     2.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "noise": 0.85,
+   "rough": 0.4,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.05
+   },
+   "am": 45.0,
+   "amDepth": 0.3,
+   "fricative": true,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.5506,
+    "rivalCosine": 0.1036,
+    "nearestOwn": true,
+    "f0ErrorPercent": 20.88
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L02"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7778,
+    "end": 0.2222
+   },
+   "L01": {
+    "L01": 1.0
+   },
+   "L02": {
+    "L02": 0.8125,
+    "end": 0.1875
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.056,
+   "L01>L01": 0.101,
+   "L02>L02": 0.061
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 6,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

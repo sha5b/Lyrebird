@@ -1,0 +1,198 @@
+{
+ "id": "pyrrhura_amazonum",
+ "common": "Santar\u00e9m Parakeet",
+ "scientific": "Pyrrhura amazonum",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 3935 Hz \u00b7 61 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0613,
+   "level": 1.2,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4171.7
+    ],
+    [
+     0.875,
+     3885.8
+    ],
+    [
+     1.0,
+     3759.9
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 25.0,
+   "amDepth": 0.0,
+   "formants": [
+    [
+     4368.450554124434,
+     8.0,
+     0.5
+    ],
+    [
+     7893.0853838443245,
+     8.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 6.0,
+   "noise": 0.25,
+   "rough": 0.08,
+   "tractQ": 3.0,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
+   "fricative": true,
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.3769,
+    "rivalCosine": 0.3065,
+    "nearestOwn": true,
+    "f0ErrorPercent": 7.77
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4588 Hz \u00b7 96 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.096,
+   "level": 1.05,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4435.8
+    ],
+    [
+     0.125,
+     4258.2
+    ],
+    [
+     0.375,
+     4368.4
+    ],
+    [
+     0.625,
+     4704.9
+    ],
+    [
+     0.75,
+     5113.8
+    ],
+    [
+     0.875,
+     4649.9
+    ],
+    [
+     1.0,
+     4633.2
+    ]
+   ],
+   "attack": 0.0373,
+   "hold": false,
+   "harmonic": 0.5,
+   "am": 18.3,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.092
+   },
+   "formants": [
+    [
+     4368.450554124434,
+     4.0,
+     0.5
+    ],
+    [
+     6830.618534315889,
+     4.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "noise": 0.4,
+   "fricative": true,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.6358,
+    "rivalCosine": -0.015,
+    "nearestOwn": true,
+    "f0ErrorPercent": -7.46
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6111,
+    "end": 0.2778,
+    "L01": 0.1111
+   },
+   "L01": {
+    "L01": 0.6364,
+    "L00": 0.3636
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.131,
+   "L00>L01": 0.357,
+   "L01>L00": 0.579,
+   "L01>L01": 0.264
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 5,
+   "candidates": 1,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

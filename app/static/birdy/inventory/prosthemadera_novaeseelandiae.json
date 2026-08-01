@@ -1,0 +1,174 @@
+{
+ "id": "prosthemadera_novaeseelandiae",
+ "common": "Tu\u012b",
+ "scientific": "Prosthemadera novaeseelandiae",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 32 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1882 Hz \u00b7 91 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0907,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1942.5
+    ],
+    [
+     0.125,
+     1929.7
+    ],
+    [
+     0.25,
+     1770.7
+    ],
+    [
+     1.0,
+     1889.8
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 17.86,
+   "amDepth": 0.0,
+   "tractQ": 0.0,
+   "noise": 0.6,
+   "rough": 0.4,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.05
+   },
+   "gammaScale": 2.0,
+   "two": true,
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.445,
+    "rivalCosine": -0.3058,
+    "nearestOwn": true,
+    "f0ErrorPercent": 6.95
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1991 Hz \u00b7 67 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0667,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3083.4
+    ],
+    [
+     0.125,
+     2546.8
+    ],
+    [
+     0.25,
+     2847.5
+    ],
+    [
+     0.375,
+     1881.7
+    ],
+    [
+     0.5,
+     1240.3
+    ],
+    [
+     0.625,
+     922.1
+    ],
+    [
+     0.75,
+     1259.4
+    ],
+    [
+     0.875,
+     2446.0
+    ],
+    [
+     1.0,
+     3319.4
+    ]
+   ],
+   "attack": 0.06,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 12.0,
+   "amDepth": 0.15,
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "rough": 0.0,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.1955,
+    "rivalCosine": 0.2008,
+    "nearestOwn": false,
+    "f0ErrorPercent": -2.15
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.75,
+    "end": 0.25
+   },
+   "L01": {
+    "L01": 0.8182,
+    "end": 0.1818
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.213,
+   "L01>L01": 0.061
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 7,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

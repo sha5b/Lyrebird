@@ -1,0 +1,179 @@
+{
+ "id": "cinclosoma_ajax",
+ "common": "Painted Quail-thrush",
+ "scientific": "Cinclosoma ajax",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2103 Hz \u00b7 87 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0867,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1761.3
+    ],
+    [
+     0.125,
+     2095.9
+    ],
+    [
+     0.375,
+     2331.7
+    ],
+    [
+     0.5,
+     2264.0
+    ],
+    [
+     0.625,
+     2017.0
+    ],
+    [
+     0.75,
+     2040.2
+    ],
+    [
+     0.875,
+     2187.0
+    ],
+    [
+     1.0,
+     2185.2
+    ]
+   ],
+   "attack": 0.0133,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.183
+   },
+   "gammaScale": 6.0,
+   "tractQ": 6.0,
+   "two": false,
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.7832,
+    "rivalCosine": 0.8588,
+    "nearestOwn": false,
+    "f0ErrorPercent": -15.03
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2155 Hz \u00b7 125 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1253,
+   "level": 1.05,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1219.9
+    ],
+    [
+     0.375,
+     1654.4
+    ],
+    [
+     0.5,
+     2115.3
+    ],
+    [
+     0.625,
+     3158.6
+    ],
+    [
+     0.75,
+     2900.9
+    ],
+    [
+     0.875,
+     2347.7
+    ],
+    [
+     1.0,
+     2348.6
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 8.52,
+   "amDepth": 0.795,
+   "gammaScale": 6.0,
+   "tractQ": 30.0,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.09
+   },
+   "noise": 0.6,
+   "learned": {
+    "members": 25,
+    "resynthesisCosine": 0.9388,
+    "rivalCosine": 0.8084,
+    "nearestOwn": true,
+    "f0ErrorPercent": -21.27
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 0.92,
+    "end": 0.08
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.352,
+   "L01>L01": 0.339
+  },
+  "songTyping": {
+   "bouts": 2,
+   "short": 2,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

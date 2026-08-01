@@ -1,0 +1,222 @@
+{
+ "id": "myiophobus_fasciatus",
+ "common": "Bran-colored Flycatcher",
+ "scientific": "Myiophobus fasciatus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 37 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 562 Hz \u00b7 61 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0614,
+   "level": 1.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     465.4
+    ],
+    [
+     0.125,
+     535.3
+    ],
+    [
+     0.25,
+     516.2
+    ],
+    [
+     0.375,
+     541.2
+    ],
+    [
+     0.5,
+     649.9
+    ],
+    [
+     0.75,
+     674.1
+    ],
+    [
+     1.0,
+     583.1
+    ]
+   ],
+   "attack": 0.0134,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.344,
+   "gammaScale": 1.5,
+   "tractQ": 6.0,
+   "rough": 0.65,
+   "two": true,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 22,
+    "resynthesisCosine": 0.409,
+    "rivalCosine": 0.2208,
+    "nearestOwn": true,
+    "f0ErrorPercent": 23.18
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1434 Hz \u00b7 55 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0547,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1300.0
+    ],
+    [
+     0.125,
+     1368.5
+    ],
+    [
+     0.25,
+     1173.5
+    ],
+    [
+     0.375,
+     1485.5
+    ],
+    [
+     0.5,
+     2026.4
+    ],
+    [
+     0.625,
+     1668.4
+    ],
+    [
+     0.875,
+     1707.2
+    ],
+    [
+     1.0,
+     996.4
+    ]
+   ],
+   "attack": 0.004,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "gammaScale": 1.0,
+   "noise": 0.85,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.09
+   },
+   "rough": 0.4,
+   "two": true,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.7847,
+    "rivalCosine": -0.1171,
+    "nearestOwn": true,
+    "f0ErrorPercent": 27.43
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 3404 Hz \u00b7 35 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0347,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3342.3
+    ],
+    [
+     1.0,
+     3466.8
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.15,
+   "tractQ": 20.0,
+   "noise": 0.85,
+   "rough": 0.65,
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.6467,
+    "rivalCosine": 0.025,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.48
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7273,
+    "end": 0.2727
+   },
+   "L01": {
+    "L01": 0.8,
+    "end": 0.2
+   },
+   "L02": {
+    "L02": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.061,
+   "L01>L01": 0.321,
+   "L02>L02": 0.031
+  },
+  "songTyping": {
+   "bouts": 9,
+   "short": 9,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

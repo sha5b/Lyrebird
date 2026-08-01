@@ -1,0 +1,137 @@
+{
+ "id": "corythopis_delalandi",
+ "common": "Southern Antpipit",
+ "scientific": "Corythopis delalandi",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 633 Hz \u00b7 129 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1293,
+   "level": 0.75,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     683.4
+    ],
+    [
+     1.0,
+     587.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": false,
+   "harmonic": 0.943,
+   "am": 12.0,
+   "amDepth": 0.205,
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "rough": 0.08,
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.3611,
+    "rivalCosine": 0.0524,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.33
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3508 Hz \u00b7 148 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.148,
+   "level": 0.41,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3484.4
+    ],
+    [
+     1.0,
+     3531.2
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.1,
+   "am": 45.0,
+   "amDepth": 0.3,
+   "gammaScale": 1.5,
+   "tractQ": 30.0,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 22,
+    "resynthesisCosine": 0.5556,
+    "rivalCosine": -0.0145,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.78
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.625,
+    "end": 0.375
+   },
+   "L01": {
+    "L01": 0.7727,
+    "end": 0.1364,
+    "L00": 0.0909
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.04,
+   "L01>L00": 0.636,
+   "L01>L01": 0.147
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 6,
+   "candidates": 0,
+   "repeatCandidates": 6,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

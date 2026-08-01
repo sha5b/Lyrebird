@@ -1,0 +1,192 @@
+{
+ "id": "turdus_libonyana",
+ "common": "Kurrichane Thrush",
+ "scientific": "Turdus libonyana",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 26 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 947 Hz \u00b7 264 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.264,
+   "level": 0.75,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     606.3
+    ],
+    [
+     0.125,
+     420.4
+    ],
+    [
+     0.25,
+     4128.5
+    ],
+    [
+     0.375,
+     4128.7
+    ],
+    [
+     0.5,
+     1651.5
+    ],
+    [
+     0.625,
+     531.2
+    ],
+    [
+     0.75,
+     544.4
+    ],
+    [
+     0.875,
+     466.5
+    ],
+    [
+     1.0,
+     630.0
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "vib": {
+    "rate": 6.05,
+    "depth": 0.4
+   },
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     0.3
+    ],
+    [
+     9584.9,
+     6.0,
+     0.1
+    ]
+   ],
+   "tractQ": 3.0,
+   "two": true,
+   "learned": {
+    "members": 1,
+    "resynthesisCosine": 0.6707,
+    "rivalCosine": 0.3793,
+    "nearestOwn": true,
+    "f0ErrorPercent": -20.97
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3071 Hz \u00b7 155 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1547,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3269.6
+    ],
+    [
+     0.125,
+     3279.6
+    ],
+    [
+     0.25,
+     3066.7
+    ],
+    [
+     1.0,
+     2705.5
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 80.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.05
+   },
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     0.3
+    ],
+    [
+     9584.9,
+     6.0,
+     0.1
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "noise": 0.05,
+   "rough": 0.2,
+   "learned": {
+    "members": 25,
+    "resynthesisCosine": 0.7016,
+    "rivalCosine": 0.4494,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.05
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "L01": 0.72,
+    "end": 0.28
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.097
+  },
+  "songTyping": {
+   "bouts": 8,
+   "short": 8,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,235 @@
+{
+ "id": "otus_hartlaubi",
+ "common": "S\u00e3o Tom\u00e9 Scops-Owl",
+ "scientific": "Otus hartlaubi",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 36 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1580 Hz \u00b7 51 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0507,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1481.8
+    ],
+    [
+     0.125,
+     1733.4
+    ],
+    [
+     0.25,
+     1725.6
+    ],
+    [
+     0.375,
+     1510.7
+    ],
+    [
+     1.0,
+     1470.9
+    ]
+   ],
+   "attack": 0.0027,
+   "hold": true,
+   "harmonic": 0.1,
+   "am": 22.06,
+   "amDepth": 0.0,
+   "formants": [
+    [
+     1920.5,
+     6.0,
+     1.0
+    ],
+    [
+     5761.5,
+     6.0,
+     0.3333
+    ],
+    [
+     9602.5,
+     6.0,
+     0.2
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
+   "noise": 0.05,
+   "rough": 0.65,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.6702,
+    "rivalCosine": 0.4038,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.21
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1898 Hz \u00b7 91 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0907,
+   "level": 0.75,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1927.3
+    ],
+    [
+     1.0,
+     1869.4
+    ]
+   ],
+   "attack": 0.0467,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     1920.5,
+     6.0,
+     1.0
+    ],
+    [
+     5761.5,
+     6.0,
+     0.3333
+    ],
+    [
+     9602.5,
+     6.0,
+     0.2
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 20.0,
+   "learned": {
+    "members": 2,
+    "resynthesisCosine": 0.0551,
+    "rivalCosine": 0.224,
+    "nearestOwn": false,
+    "f0ErrorPercent": 1.68
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 1957 Hz \u00b7 35 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0347,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1928.3
+    ],
+    [
+     1.0,
+     1986.3
+    ]
+   ],
+   "attack": 0.0027,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     1920.5,
+     6.0,
+     1.0
+    ],
+    [
+     5761.5,
+     6.0,
+     0.3333
+    ],
+    [
+     9602.5,
+     6.0,
+     0.2
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 3.0,
+   "noise": 0.12,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 29,
+    "resynthesisCosine": 0.6895,
+    "rivalCosine": 0.4287,
+    "nearestOwn": true,
+    "f0ErrorPercent": 6.64
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 0.5,
+    "L02": 0.5
+   },
+   "L02": {
+    "L02": 0.8929,
+    "end": 0.1071
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.043,
+   "L02>L02": 0.176
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 3,
+   "candidates": 1,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

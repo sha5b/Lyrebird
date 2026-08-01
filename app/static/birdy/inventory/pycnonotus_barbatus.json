@@ -1,0 +1,153 @@
+{
+ "id": "pycnonotus_barbatus",
+ "common": "Common Bulbul",
+ "scientific": "Pycnonotus barbatus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 35 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2592 Hz \u00b7 103 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1026,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2459.5
+    ],
+    [
+     0.375,
+     2732.7
+    ],
+    [
+     0.625,
+     2413.7
+    ],
+    [
+     0.875,
+     2730.0
+    ],
+    [
+     1.0,
+     2642.1
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 13.79,
+   "amDepth": 0.0,
+   "tractQ": 20.0,
+   "rough": 0.65,
+   "noise": 0.6,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.4205,
+    "rivalCosine": 0.4874,
+    "nearestOwn": false,
+    "f0ErrorPercent": 1.52
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2615 Hz \u00b7 75 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0747,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2765.4
+    ],
+    [
+     0.125,
+     2762.5
+    ],
+    [
+     0.25,
+     2528.1
+    ],
+    [
+     0.625,
+     2586.5
+    ],
+    [
+     1.0,
+     2445.8
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.048,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "gammaScale": 0.5,
+   "tractQ": 20.0,
+   "noise": 0.25,
+   "rough": 0.65,
+   "learned": {
+    "members": 23,
+    "resynthesisCosine": 0.5653,
+    "rivalCosine": 0.3936,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.49
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6667,
+    "end": 0.3333
+   },
+   "L01": {
+    "L01": 0.6522,
+    "end": 0.3478
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.193,
+   "L01>L01": 0.224
+  },
+  "songTyping": {
+   "bouts": 12,
+   "short": 12,
+   "candidates": 0,
+   "repeatCandidates": 6,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

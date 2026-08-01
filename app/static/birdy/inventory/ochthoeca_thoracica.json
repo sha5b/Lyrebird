@@ -1,0 +1,244 @@
+{
+ "id": "ochthoeca_thoracica",
+ "common": "Maroon-belted Chat-Tyrant",
+ "scientific": "Ochthoeca thoracica",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 42 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 691 Hz \u00b7 48 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.048,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     685.0
+    ],
+    [
+     0.125,
+     759.9
+    ],
+    [
+     0.25,
+     714.9
+    ],
+    [
+     0.375,
+     525.1
+    ],
+    [
+     0.625,
+     605.6
+    ],
+    [
+     1.0,
+     920.5
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 80.0,
+   "amDepth": 0.3,
+   "gammaScale": 3.0,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.4514,
+    "rivalCosine": 0.5881,
+    "nearestOwn": false,
+    "f0ErrorPercent": -24.59
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 692 Hz \u00b7 275 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2747,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     660.2
+    ],
+    [
+     0.125,
+     640.3
+    ],
+    [
+     0.25,
+     781.3
+    ],
+    [
+     0.375,
+     662.8
+    ],
+    [
+     0.5,
+     656.0
+    ],
+    [
+     0.75,
+     721.8
+    ],
+    [
+     0.875,
+     701.7
+    ],
+    [
+     1.0,
+     722.1
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.5,
+   "am": 12.0,
+   "amDepth": 0.15,
+   "gammaScale": 2.0,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "rough": 0.0,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.3746,
+    "rivalCosine": 0.4166,
+    "nearestOwn": false,
+    "f0ErrorPercent": -1.36
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 696 Hz \u00b7 283 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2827,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     654.9
+    ],
+    [
+     0.125,
+     728.6
+    ],
+    [
+     0.25,
+     694.2
+    ],
+    [
+     0.375,
+     750.1
+    ],
+    [
+     0.5,
+     681.2
+    ],
+    [
+     0.625,
+     710.5
+    ],
+    [
+     0.875,
+     648.3
+    ],
+    [
+     1.0,
+     706.2
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "gammaScale": 1.5,
+   "rough": 0.0,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "learned": {
+    "members": 26,
+    "resynthesisCosine": 0.327,
+    "rivalCosine": 0.288,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.65
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L02",
+    "L01",
+    "L02",
+    "L02",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L02": 0.6667,
+    "L01": 0.3333
+   },
+   "L02": {
+    "L02": 0.5385,
+    "L01": 0.2692,
+    "end": 0.1923
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.096,
+   "L01>L01": 0.023,
+   "L01>L02": 0.019,
+   "L02>L01": 0.024,
+   "L02>L02": 0.024
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 3,
+   "candidates": 2,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

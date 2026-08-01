@@ -1,0 +1,192 @@
+{
+ "id": "notharchus_swainsoni",
+ "common": "Buff-bellied Puffbird",
+ "scientific": "Notharchus swainsoni",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 33 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2202 Hz \u00b7 56 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.056,
+   "level": 0.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2233.0
+    ],
+    [
+     1.0,
+     2172.3
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     2447.2,
+     4.0,
+     0.5
+    ],
+    [
+     7341.7,
+     4.0,
+     0.5
+    ],
+    [
+     845.2861410183435,
+     4.0,
+     0.5
+    ],
+    [
+     2289.5188831594724,
+     4.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "noise": 0.6,
+   "am": 80.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.025
+   },
+   "rough": 0.08,
+   "fricative": true,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.7416,
+    "rivalCosine": 0.406,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.69
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3058 Hz \u00b7 48 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.048,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3015.3
+    ],
+    [
+     1.0,
+     3101.2
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.5,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     2447.2,
+     8.0,
+     0.5
+    ],
+    [
+     7341.7,
+     8.0,
+     0.5
+    ],
+    [
+     845.2861410183435,
+     8.0,
+     0.5
+    ],
+    [
+     2711.2989394619476,
+     8.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 20.0,
+   "noise": 0.4,
+   "rough": 0.08,
+   "fricative": true,
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.6794,
+    "rivalCosine": 0.3742,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.55
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L01",
+    "L01",
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L01": 0.5,
+    "end": 0.25,
+    "L00": 0.25
+   },
+   "L01": {
+    "L01": 0.619,
+    "L00": 0.2381,
+    "end": 0.1429
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.267,
+   "L00>L01": 0.099,
+   "L01>L00": 0.163,
+   "L01>L01": 0.083
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 5,
+   "candidates": 1,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,224 @@
+{
+ "id": "charadrius_melodus",
+ "common": "Piping Plover",
+ "scientific": "Charadrius melodus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 45 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 462 Hz \u00b7 59 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0587,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     456.9
+    ],
+    [
+     0.125,
+     480.8
+    ],
+    [
+     1.0,
+     448.8
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     2447.2,
+     6.0,
+     0.15
+    ],
+    [
+     7341.7,
+     6.0,
+     0.05
+    ]
+   ],
+   "tractQ": 0.0,
+   "rough": 0.65,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 23,
+    "resynthesisCosine": 0.7022,
+    "rivalCosine": 0.7465,
+    "nearestOwn": false,
+    "f0ErrorPercent": 10.63
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 498 Hz \u00b7 67 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0667,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     534.5
+    ],
+    [
+     0.75,
+     512.6
+    ],
+    [
+     0.875,
+     474.4
+    ],
+    [
+     1.0,
+     473.8
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     2447.2,
+     6.0,
+     0.15
+    ],
+    [
+     7341.7,
+     6.0,
+     0.05
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 30.0,
+   "noise": 0.05,
+   "rough": 0.65,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.8123,
+    "rivalCosine": 0.6102,
+    "nearestOwn": true,
+    "f0ErrorPercent": 5.31
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2121 Hz \u00b7 68 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.068,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2144.6
+    ],
+    [
+     1.0,
+     2098.3
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 80.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     2447.2,
+     6.0,
+     0.15
+    ],
+    [
+     7341.7,
+     6.0,
+     0.05
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "rough": 0.65,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.5791,
+    "rivalCosine": 0.1123,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.03
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01"
+   ],
+   "gaps": []
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L02",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7727,
+    "end": 0.2273
+   },
+   "L01": {
+    "end": 1.0
+   },
+   "L02": {
+    "end": 0.5714,
+    "L02": 0.4286
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.163,
+   "L02>L02": 0.075
+  },
+  "songTyping": {
+   "bouts": 21,
+   "short": 21,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

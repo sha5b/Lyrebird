@@ -1,0 +1,209 @@
+{
+ "id": "phalaropus_lobatus",
+ "common": "Red-necked Phalarope",
+ "scientific": "Phalaropus lobatus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 38 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 450 Hz \u00b7 85 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0853,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     446.5
+    ],
+    [
+     0.875,
+     444.0
+    ],
+    [
+     1.0,
+     460.0
+    ]
+   ],
+   "attack": 0.024,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.6,
+   "formants": [
+    [
+     5187.9,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 0.5,
+   "rough": 0.2,
+   "two": true,
+   "learned": {
+    "members": 22,
+    "resynthesisCosine": 0.4637,
+    "rivalCosine": 0.3756,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.28
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 701 Hz \u00b7 37 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0373,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     698.8
+    ],
+    [
+     1.0,
+     703.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     5187.9,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 3.0,
+   "noise": 0.12,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "two": true,
+   "tractQ": 3.0,
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.8336,
+    "rivalCosine": 0.1879,
+    "nearestOwn": true,
+    "f0ErrorPercent": 5.21
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 4732 Hz \u00b7 77 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0773,
+   "level": 0.6,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     4741.3
+    ],
+    [
+     1.0,
+     4721.8
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 14.42,
+   "amDepth": 0.449,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.1
+   },
+   "formants": [
+    [
+     4368.450554124434,
+     8.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 30.0,
+   "noise": 0.6,
+   "fricative": true,
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.5269,
+    "rivalCosine": -0.1018,
+    "nearestOwn": true,
+    "f0ErrorPercent": -13.18
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L02",
+    "L01",
+    "L01",
+    "L02",
+    "L02"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 0.7143,
+    "L02": 0.2857
+   },
+   "L02": {
+    "end": 0.4444,
+    "L02": 0.3333,
+    "L01": 0.2222
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.139,
+   "L01>L01": 0.077,
+   "L01>L02": 0.371,
+   "L02>L01": 0.441,
+   "L02>L02": 0.76
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 4,
+   "candidates": 1,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

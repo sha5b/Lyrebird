@@ -1,0 +1,248 @@
+{
+ "id": "polioptila_plumbea",
+ "common": "Tropical Gnatcatcher",
+ "scientific": "Polioptila plumbea",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 43 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 547 Hz \u00b7 37 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0373,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     551.2
+    ],
+    [
+     0.125,
+     550.8
+    ],
+    [
+     0.25,
+     581.4
+    ],
+    [
+     0.375,
+     559.8
+    ],
+    [
+     0.5,
+     587.6
+    ],
+    [
+     0.625,
+     519.7
+    ],
+    [
+     1.0,
+     484.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "noise": 0.85,
+   "rough": 0.2,
+   "am": 45.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.09
+   },
+   "gammaScale": 0.5,
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.6805,
+    "rivalCosine": 0.5225,
+    "nearestOwn": true,
+    "f0ErrorPercent": 22.62
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2596 Hz \u00b7 125 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1253,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4796.8
+    ],
+    [
+     0.25,
+     4446.2
+    ],
+    [
+     0.375,
+     3632.3
+    ],
+    [
+     0.5,
+     3812.9
+    ],
+    [
+     0.625,
+     1389.5
+    ],
+    [
+     0.75,
+     1438.8
+    ],
+    [
+     0.875,
+     2463.0
+    ],
+    [
+     1.0,
+     1416.2
+    ]
+   ],
+   "attack": 0.06,
+   "hold": true,
+   "harmonic": 0.2,
+   "am": 12.0,
+   "amDepth": 0.45,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.4
+   },
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "noise": 0.6,
+   "rough": 0.08,
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.6958,
+    "rivalCosine": -0.4879,
+    "nearestOwn": true,
+    "f0ErrorPercent": -25.03
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 4235 Hz \u00b7 51 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0507,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4551.4
+    ],
+    [
+     1.0,
+     3941.2
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "gammaScale": 1.5,
+   "noise": 0.85,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.09
+   },
+   "fricative": true,
+   "formants": [
+    [
+     845.2861410183435,
+     2.0,
+     1.0
+    ],
+    [
+     4368.450554124434,
+     2.0,
+     1.0
+    ]
+   ],
+   "learned": {
+    "members": 17,
+    "resynthesisCosine": 0.6757,
+    "rivalCosine": 0.4563,
+    "nearestOwn": true,
+    "f0ErrorPercent": 11.82
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L02",
+    "L01",
+    "L01",
+    "L02",
+    "L02"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8333,
+    "end": 0.1667
+   },
+   "L01": {
+    "L01": 0.5,
+    "L02": 0.5
+   },
+   "L02": {
+    "L02": 0.75,
+    "L01": 0.125,
+    "L00": 0.125
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.189,
+   "L01>L01": 0.176,
+   "L01>L02": 0.115,
+   "L02>L00": 0.043,
+   "L02>L01": 0.073,
+   "L02>L02": 0.057
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 3,
+   "candidates": 1,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

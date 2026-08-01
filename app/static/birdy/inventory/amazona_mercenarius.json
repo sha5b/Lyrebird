@@ -1,0 +1,163 @@
+{
+ "id": "amazona_mercenarius",
+ "common": "Scaly-naped Parrot",
+ "scientific": "Amazona mercenarius",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 980 Hz \u00b7 93 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0933,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     765.3
+    ],
+    [
+     0.25,
+     1067.6
+    ],
+    [
+     0.375,
+     1154.1
+    ],
+    [
+     0.5,
+     1097.3
+    ],
+    [
+     0.625,
+     986.4
+    ],
+    [
+     0.875,
+     1008.2
+    ],
+    [
+     1.0,
+     846.2
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 1.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "rough": 0.0,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 17,
+    "resynthesisCosine": 0.4672,
+    "rivalCosine": -0.1759,
+    "nearestOwn": true,
+    "f0ErrorPercent": 9.34
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2038 Hz \u00b7 47 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0466,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2070.8
+    ],
+    [
+     1.0,
+     2005.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "rough": 0.65,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.4965,
+    "rivalCosine": 0.1728,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.13
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.4118,
+    "L00": 0.4118,
+    "L01": 0.1765
+   },
+   "L01": {
+    "L01": 0.5,
+    "end": 0.3,
+    "L00": 0.2
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.019,
+   "L00>L01": 0.747,
+   "L01>L00": 0.697,
+   "L01>L01": 0.147
+  },
+  "songTyping": {
+   "bouts": 10,
+   "short": 8,
+   "candidates": 2,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,164 @@
+{
+ "id": "poliocrania_exsul",
+ "common": "Chestnut-backed Antbird",
+ "scientific": "Poliocrania exsul",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 42 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2420 Hz \u00b7 195 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1947,
+   "level": 0.6,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2431.3
+    ],
+    [
+     1.0,
+     2408.6
+    ]
+   ],
+   "attack": 0.004,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.6,
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "learned": {
+    "members": 27,
+    "resynthesisCosine": 0.5827,
+    "rivalCosine": 0.6521,
+    "nearestOwn": false,
+    "f0ErrorPercent": -1.33
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2518 Hz \u00b7 219 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2187,
+   "level": 0.704,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2569.3
+    ],
+    [
+     1.0,
+     2466.9
+    ]
+   ],
+   "attack": 0.0693,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.36,
+   "amDepth": 0.6,
+   "gammaScale": 2.0,
+   "tractQ": 20.0,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.7362,
+    "rivalCosine": 0.5097,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.02
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 6597 Hz \u00b7 37 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0373,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     6552.4
+    ],
+    [
+     1.0,
+     6642.5
+    ]
+   ],
+   "attack": 0.002,
+   "hold": true,
+   "harmonic": 0.2,
+   "am": 140.0,
+   "amDepth": 0.211,
+   "tractQ": 30.0,
+   "rough": 0.08,
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.4621,
+    "rivalCosine": 0.0454,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.42
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5926,
+    "end": 0.4074
+   },
+   "L01": {
+    "L01": 0.5455,
+    "end": 0.4545
+   },
+   "L02": {
+    "end": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.629,
+   "L01>L01": 0.572
+  },
+  "songTyping": {
+   "bouts": 19,
+   "short": 19,
+   "candidates": 0,
+   "repeatCandidates": 6,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

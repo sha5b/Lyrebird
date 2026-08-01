@@ -1,0 +1,193 @@
+{
+ "id": "cincloramphus_cruralis",
+ "common": "Australian Songlark",
+ "scientific": "Cincloramphus cruralis",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 24 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 457 Hz \u00b7 104 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.104,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     472.6
+    ],
+    [
+     0.125,
+     454.2
+    ],
+    [
+     0.25,
+     483.9
+    ],
+    [
+     0.625,
+     459.6
+    ],
+    [
+     0.75,
+     470.8
+    ],
+    [
+     0.875,
+     436.0
+    ],
+    [
+     1.0,
+     427.4
+    ]
+   ],
+   "attack": 0.0333,
+   "hold": false,
+   "harmonic": 0.7,
+   "am": 18.02,
+   "amDepth": 0.374,
+   "formants": [
+    [
+     3785.7,
+     6.0,
+     0.3
+    ],
+    [
+     11357.2,
+     6.0,
+     0.1
+    ]
+   ],
+   "gammaScale": 0.5,
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.68,
+    "rivalCosine": 0.3884,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.16
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 473 Hz \u00b7 68 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.068,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     466.3
+    ],
+    [
+     0.125,
+     468.2
+    ],
+    [
+     0.25,
+     532.2
+    ],
+    [
+     0.375,
+     472.7
+    ],
+    [
+     0.625,
+     429.6
+    ],
+    [
+     1.0,
+     473.1
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.987,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     3785.7,
+     6.0,
+     0.3
+    ],
+    [
+     11357.2,
+     6.0,
+     0.1
+    ]
+   ],
+   "tractQ": 3.0,
+   "rough": 0.08,
+   "gammaScale": 0.5,
+   "two": true,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.5098,
+    "rivalCosine": 0.6201,
+    "nearestOwn": false,
+    "f0ErrorPercent": -6.64
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5,
+    "L01": 0.25,
+    "end": 0.25
+   },
+   "L01": {
+    "L01": 0.8,
+    "end": 0.2
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.117,
+   "L00>L01": 0.327,
+   "L01>L01": 0.059
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 4,
+   "candidates": 1,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

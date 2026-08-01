@@ -1,0 +1,215 @@
+{
+ "id": "plectorhyncha_lanceolata",
+ "common": "Striped Honeyeater",
+ "scientific": "Plectorhyncha lanceolata",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 24 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1125 Hz \u00b7 145 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1453,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1053.5
+    ],
+    [
+     0.125,
+     1036.3
+    ],
+    [
+     0.25,
+     903.3
+    ],
+    [
+     0.375,
+     857.7
+    ],
+    [
+     0.5,
+     856.5
+    ],
+    [
+     0.625,
+     1677.9
+    ],
+    [
+     0.75,
+     1674.5
+    ],
+    [
+     0.875,
+     847.1
+    ],
+    [
+     1.0,
+     1667.6
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 7.68,
+    "depth": 0.046
+   },
+   "formants": [
+    [
+     1743.0,
+     6.0,
+     0.15
+    ],
+    [
+     5229.1,
+     6.0,
+     0.05
+    ],
+    [
+     8715.2,
+     6.0,
+     0.03
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 12.0,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.3273,
+    "rivalCosine": 0.3553,
+    "nearestOwn": false,
+    "f0ErrorPercent": -23.48
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1676 Hz \u00b7 64 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.064,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1750.1
+    ],
+    [
+     0.375,
+     1674.8
+    ],
+    [
+     0.625,
+     1508.5
+    ],
+    [
+     0.75,
+     1750.5
+    ],
+    [
+     1.0,
+     1710.2
+    ]
+   ],
+   "attack": 0.0226,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 18.52,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     1743.0,
+     6.0,
+     0.15
+    ],
+    [
+     5229.1,
+     6.0,
+     0.05
+    ],
+    [
+     8715.2,
+     6.0,
+     0.03
+    ]
+   ],
+   "tractQ": 30.0,
+   "two": true,
+   "noise": 0.05,
+   "rough": 0.08,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.603,
+    "rivalCosine": 0.3952,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.47
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7273,
+    "L01": 0.2727
+   },
+   "L01": {
+    "L01": 0.6667,
+    "L00": 0.3333
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.065,
+   "L00>L01": 0.072,
+   "L01>L00": 0.053,
+   "L01>L01": 0.051
+  },
+  "songTyping": {
+   "bouts": 1,
+   "short": 0,
+   "candidates": 1,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

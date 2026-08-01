@@ -1,0 +1,228 @@
+{
+ "id": "buteo_rufofuscus",
+ "common": "Jackal Buzzard",
+ "scientific": "Buteo rufofuscus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 42 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 828 Hz \u00b7 41 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0413,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1000.2
+    ],
+    [
+     0.125,
+     751.1
+    ],
+    [
+     0.25,
+     672.2
+    ],
+    [
+     0.5,
+     831.3
+    ],
+    [
+     0.75,
+     827.7
+    ],
+    [
+     0.875,
+     782.0
+    ],
+    [
+     1.0,
+     981.9
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 26.93,
+   "amDepth": 0.0,
+   "two": true,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
+   "gammaScale": 1.5,
+   "tractQ": 20.0,
+   "rough": 0.08,
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.4031,
+    "rivalCosine": 0.3215,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.96
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1560 Hz \u00b7 56 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.056,
+   "level": 0.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1428.3
+    ],
+    [
+     0.125,
+     1761.2
+    ],
+    [
+     0.375,
+     1749.4
+    ],
+    [
+     0.5,
+     1452.3
+    ],
+    [
+     1.0,
+     1444.6
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "tractQ": 0.0,
+   "noise": 0.85,
+   "rough": 0.08,
+   "gammaScale": 3.0,
+   "am": 80.0,
+   "amDepth": 0.3,
+   "learned": {
+    "members": 17,
+    "resynthesisCosine": 0.8787,
+    "rivalCosine": 0.6952,
+    "nearestOwn": true,
+    "f0ErrorPercent": 5.92
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 1972 Hz \u00b7 131 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1307,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2106.6
+    ],
+    [
+     0.875,
+     1966.3
+    ],
+    [
+     1.0,
+     1850.3
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.2,
+   "am": 18.75,
+   "amDepth": 0.15,
+   "tractQ": 3.0,
+   "rough": 0.65,
+   "noise": 0.85,
+   "two": true,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 17,
+    "resynthesisCosine": 0.8382,
+    "rivalCosine": 0.5665,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.82
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L02",
+    "L01",
+    "L01",
+    "L02",
+    "L02"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.75,
+    "end": 0.25
+   },
+   "L01": {
+    "end": 0.4706,
+    "L01": 0.4118,
+    "L02": 0.1176
+   },
+   "L02": {
+    "L02": 0.5294,
+    "L01": 0.2353,
+    "end": 0.2353
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.528,
+   "L01>L01": 0.099,
+   "L01>L02": 0.528,
+   "L02>L01": 0.26,
+   "L02>L02": 0.483
+  },
+  "songTyping": {
+   "bouts": 14,
+   "short": 13,
+   "candidates": 1,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

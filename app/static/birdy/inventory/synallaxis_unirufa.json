@@ -1,0 +1,180 @@
+{
+ "id": "synallaxis_unirufa",
+ "common": "Rufous Spinetail",
+ "scientific": "Synallaxis unirufa",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 35 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 717 Hz \u00b7 40 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.04,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     624.8
+    ],
+    [
+     0.125,
+     662.6
+    ],
+    [
+     0.25,
+     639.6
+    ],
+    [
+     0.375,
+     651.0
+    ],
+    [
+     0.625,
+     786.4
+    ],
+    [
+     0.75,
+     807.6
+    ],
+    [
+     0.875,
+     785.7
+    ],
+    [
+     1.0,
+     808.3
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 2.0,
+   "noise": 0.05,
+   "rough": 0.65,
+   "amDepth": 0.8,
+   "am": 140.0,
+   "two": true,
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.7122,
+    "rivalCosine": 0.0344,
+    "nearestOwn": true,
+    "f0ErrorPercent": -12.78
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 6043 Hz \u00b7 77 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0773,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     6824.5
+    ],
+    [
+     0.5,
+     6807.5
+    ],
+    [
+     0.625,
+     5393.1
+    ],
+    [
+     1.0,
+     5321.3
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.7,
+   "am": 28.85,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     1919.8885853658714,
+     2.0,
+     0.5
+    ],
+    [
+     6830.618534315889,
+     2.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 2.0,
+   "noise": 0.85,
+   "fricative": true,
+   "learned": {
+    "members": 28,
+    "resynthesisCosine": 0.7425,
+    "rivalCosine": 0.0114,
+    "nearestOwn": true,
+    "f0ErrorPercent": 25.79
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5714,
+    "end": 0.4286
+   },
+   "L01": {
+    "end": 0.7143,
+    "L01": 0.2857
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.087,
+   "L01>L01": 0.852
+  },
+  "songTyping": {
+   "bouts": 23,
+   "short": 23,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

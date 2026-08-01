@@ -1,0 +1,180 @@
+{
+ "id": "platysteira_castanea",
+ "common": "Chestnut Wattle-eye",
+ "scientific": "Platysteira castanea",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 34 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1654 Hz \u00b7 76 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.076,
+   "level": 0.6,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1516.8
+    ],
+    [
+     0.25,
+     1540.7
+    ],
+    [
+     0.375,
+     1774.1
+    ],
+    [
+     1.0,
+     1804.2
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.5,
+   "am": 12.0,
+   "amDepth": 0.6,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 6.0,
+   "noise": 0.85,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 28,
+    "resynthesisCosine": 0.6858,
+    "rivalCosine": -0.0214,
+    "nearestOwn": true,
+    "f0ErrorPercent": 5.43
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4559 Hz \u00b7 72 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.072,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5787.1
+    ],
+    [
+     0.125,
+     3756.1
+    ],
+    [
+     0.25,
+     6090.7
+    ],
+    [
+     0.375,
+     6060.6
+    ],
+    [
+     0.5,
+     2097.5
+    ],
+    [
+     0.625,
+     2987.3
+    ],
+    [
+     0.75,
+     6091.6
+    ],
+    [
+     1.0,
+     6091.3
+    ]
+   ],
+   "attack": 0.004,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 3.0,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.01
+   },
+   "noise": 0.05,
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.3568,
+    "rivalCosine": -0.2013,
+    "nearestOwn": true,
+    "f0ErrorPercent": 30.19
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.164,
+   "L01>L01": 0.153
+  },
+  "songTyping": {
+   "bouts": 2,
+   "short": 1,
+   "candidates": 1,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

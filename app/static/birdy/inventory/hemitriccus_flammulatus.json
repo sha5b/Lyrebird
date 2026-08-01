@@ -1,0 +1,215 @@
+{
+ "id": "hemitriccus_flammulatus",
+ "common": "Flammulated Pygmy-Tyrant",
+ "scientific": "Hemitriccus flammulatus",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 39 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1706 Hz \u00b7 75 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0746,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1679.4
+    ],
+    [
+     1.0,
+     1733.7
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     0.6
+    ],
+    [
+     9584.9,
+     6.0,
+     0.2
+    ]
+   ],
+   "tractQ": 0.0,
+   "noise": 0.05,
+   "rough": 0.2,
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.6659,
+    "rivalCosine": 0.0716,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.15
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3177 Hz \u00b7 76 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.076,
+   "level": 0.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3197.0
+    ],
+    [
+     1.0,
+     3157.7
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.2,
+   "am": 80.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     0.6
+    ],
+    [
+     9584.9,
+     6.0,
+     0.2
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.6405,
+    "rivalCosine": 0.7359,
+    "nearestOwn": false,
+    "f0ErrorPercent": -1.63
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 3212 Hz \u00b7 157 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1573,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3216.2
+    ],
+    [
+     1.0,
+     3207.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 14.61,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     3195.0,
+     4.0,
+     2.0
+    ],
+    [
+     9584.9,
+     4.0,
+     2.0
+    ],
+    [
+     3192.5863689730877,
+     4.0,
+     2.0
+    ],
+    [
+     6830.618534315889,
+     4.0,
+     2.0
+    ]
+   ],
+   "noise": 0.85,
+   "rough": 0.65,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.01
+   },
+   "fricative": true,
+   "learned": {
+    "members": 17,
+    "resynthesisCosine": 0.7935,
+    "rivalCosine": 0.541,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.03
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 1.0
+   },
+   "L02": {
+    "L02": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.056,
+   "L01>L01": 0.105,
+   "L02>L02": 0.028
+  },
+  "songTyping": {
+   "bouts": 2,
+   "short": 1,
+   "candidates": 1,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

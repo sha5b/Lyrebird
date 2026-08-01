@@ -1,0 +1,187 @@
+{
+ "id": "platycercus_elegans",
+ "common": "Crimson Rosella",
+ "scientific": "Platycercus elegans",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 911 Hz \u00b7 59 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0587,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     699.1
+    ],
+    [
+     0.125,
+     925.0
+    ],
+    [
+     0.25,
+     689.0
+    ],
+    [
+     0.375,
+     907.6
+    ],
+    [
+     0.5,
+     1544.4
+    ],
+    [
+     0.625,
+     858.2
+    ],
+    [
+     0.75,
+     690.8
+    ],
+    [
+     0.875,
+     1138.5
+    ],
+    [
+     1.0,
+     1021.7
+    ]
+   ],
+   "attack": 0.0066,
+   "hold": true,
+   "harmonic": 0.7,
+   "formants": [
+    [
+     845.2861410183435,
+     2.0,
+     2.0
+    ],
+    [
+     4368.450554124434,
+     2.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "rough": 0.08,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "fricative": true,
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.8116,
+    "rivalCosine": 0.3063,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.06
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4484 Hz \u00b7 51 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0507,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4496.6
+    ],
+    [
+     1.0,
+     4470.8
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     845.2861410183435,
+     2.0,
+     0.5
+    ],
+    [
+     4368.450554124434,
+     2.0,
+     0.5
+    ]
+   ],
+   "noise": 0.4,
+   "rough": 0.2,
+   "amDepth": 0.45,
+   "am": 45.0,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.01
+   },
+   "gammaScale": 0.5,
+   "fricative": true,
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.5976,
+    "rivalCosine": 0.5175,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.22
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6,
+    "end": 0.4
+   },
+   "L01": {
+    "L01": 0.7222,
+    "end": 0.2778
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.019,
+   "L01>L01": 0.112
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 7,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

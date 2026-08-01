@@ -1,0 +1,190 @@
+{
+ "id": "accipiter_bicolor",
+ "common": "Bicolored Hawk",
+ "scientific": "Accipiter bicolor",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 760 Hz \u00b7 53 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0533,
+   "level": 0.363,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     688.1
+    ],
+    [
+     0.125,
+     883.1
+    ],
+    [
+     0.25,
+     736.8
+    ],
+    [
+     0.375,
+     757.3
+    ],
+    [
+     0.5,
+     732.7
+    ],
+    [
+     0.625,
+     871.1
+    ],
+    [
+     0.75,
+     696.6
+    ],
+    [
+     0.875,
+     803.9
+    ],
+    [
+     1.0,
+     695.8
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "gammaScale": 4.5,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "fricative": true,
+   "formants": [
+    [
+     1919.8885853658714,
+     2.0,
+     2.0
+    ],
+    [
+     6830.618534315889,
+     2.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 23,
+    "resynthesisCosine": 0.3455,
+    "rivalCosine": 0.6998,
+    "nearestOwn": false,
+    "f0ErrorPercent": 11.17
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3556 Hz \u00b7 71 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0707,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3334.9
+    ],
+    [
+     0.75,
+     3448.7
+    ],
+    [
+     0.875,
+     3708.4
+    ],
+    [
+     1.0,
+     3749.2
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.7,
+   "gammaScale": 3.0,
+   "noise": 0.4,
+   "amDepth": 0.0,
+   "am": 80.0,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.05
+   },
+   "fricative": true,
+   "formants": [
+    [
+     2711.2989394619476,
+     2.0,
+     2.0
+    ],
+    [
+     5899.517283512816,
+     2.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 2,
+    "resynthesisCosine": 0.6002,
+    "rivalCosine": 0.1574,
+    "nearestOwn": true,
+    "f0ErrorPercent": -15.12
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 0.5,
+    "L00": 0.5
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.053
+  },
+  "songTyping": {
+   "bouts": 1,
+   "short": 0,
+   "candidates": 1,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

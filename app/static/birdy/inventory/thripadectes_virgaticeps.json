@@ -1,0 +1,246 @@
+{
+ "id": "thripadectes_virgaticeps",
+ "common": "Streak-capped Treehunter",
+ "scientific": "Thripadectes virgaticeps",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 42 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 853 Hz \u00b7 48 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.048,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1572.3
+    ],
+    [
+     0.25,
+     1574.7
+    ],
+    [
+     0.375,
+     1351.9
+    ],
+    [
+     0.5,
+     854.5
+    ],
+    [
+     0.625,
+     540.0
+    ],
+    [
+     0.75,
+     462.3
+    ],
+    [
+     1.0,
+     459.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": false,
+   "harmonic": 0.35,
+   "am": 25.0,
+   "amDepth": 0.45,
+   "gammaScale": 4.5,
+   "noise": 0.4,
+   "learned": {
+    "members": 1,
+    "resynthesisCosine": 0.8235,
+    "rivalCosine": 0.2974,
+    "nearestOwn": true,
+    "f0ErrorPercent": 40.58
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3815 Hz \u00b7 80 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.08,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3630.8
+    ],
+    [
+     0.625,
+     3698.3
+    ],
+    [
+     0.75,
+     4265.1
+    ],
+    [
+     0.875,
+     3751.8
+    ],
+    [
+     1.0,
+     3760.9
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.5,
+   "am": 45.0,
+   "amDepth": 0.279,
+   "vib": {
+    "rate": 25.12,
+    "depth": 0.09
+   },
+   "gammaScale": 6.0,
+   "tractQ": 12.0,
+   "fricative": true,
+   "formants": [
+    [
+     3741.776844777196,
+     8.0,
+     0.5
+    ],
+    [
+     6830.618534315889,
+     8.0,
+     0.5
+    ]
+   ],
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.7343,
+    "rivalCosine": 0.717,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.93
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 3948 Hz \u00b7 123 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1227,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3818.9
+    ],
+    [
+     1.0,
+     4081.7
+    ]
+   ],
+   "attack": 0.0347,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 9.15,
+   "amDepth": 0.0,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.025
+   },
+   "gammaScale": 6.0,
+   "tractQ": 6.0,
+   "noise": 0.05,
+   "two": true,
+   "fricative": true,
+   "formants": [
+    [
+     3741.776844777196,
+     8.0,
+     1.0
+    ],
+    [
+     7893.0853838443245,
+     8.0,
+     1.0
+    ]
+   ],
+   "learned": {
+    "members": 33,
+    "resynthesisCosine": 0.7957,
+    "rivalCosine": 0.6436,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.43
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L02",
+    "L02"
+   ],
+   "gaps": [
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "L02": 0.75,
+    "L01": 0.25
+   },
+   "L02": {
+    "L02": 0.8182,
+    "end": 0.1818
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.227,
+   "L01>L02": 0.191,
+   "L02>L02": 0.128
+  },
+  "songTypes": [
+   {
+    "id": "S01",
+    "sequence": [
+     "L01",
+     "L02"
+    ],
+    "count": 6,
+    "share": 0.8571,
+    "kind": "repeat"
+   }
+  ],
+  "songTyping": {
+   "bouts": 7,
+   "short": 7,
+   "candidates": 0,
+   "repeatCandidates": 6,
+   "types": 1,
+   "repeatTypes": 1,
+   "inTypes": 6,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

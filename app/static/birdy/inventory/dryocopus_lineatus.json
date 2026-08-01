@@ -1,0 +1,167 @@
+{
+ "id": "dryocopus_lineatus",
+ "common": "Lineated Woodpecker",
+ "scientific": "Dryocopus lineatus",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 33 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 960 Hz \u00b7 64 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.064,
+   "level": 0.75,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     976.5
+    ],
+    [
+     0.125,
+     970.1
+    ],
+    [
+     0.25,
+     879.9
+    ],
+    [
+     0.5,
+     910.2
+    ],
+    [
+     0.625,
+     997.2
+    ],
+    [
+     0.875,
+     1041.8
+    ],
+    [
+     1.0,
+     950.2
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.7,
+   "am": 34.09,
+   "amDepth": 0.0,
+   "tractQ": 12.0,
+   "noise": 0.85,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.09
+   },
+   "rough": 0.4,
+   "learned": {
+    "members": 24,
+    "resynthesisCosine": 0.4635,
+    "rivalCosine": -0.07,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.76
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3185 Hz \u00b7 104 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.104,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3139.8
+    ],
+    [
+     1.0,
+     3230.2
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.7,
+   "am": 45.0,
+   "amDepth": 0.3,
+   "gammaScale": 6.0,
+   "tractQ": 0.0,
+   "noise": 0.85,
+   "fricative": true,
+   "formants": [
+    [
+     3192.5863689730877,
+     8.0,
+     2.0
+    ],
+    [
+     7893.0853838443245,
+     8.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.6793,
+    "rivalCosine": -0.2831,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.9
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8333,
+    "end": 0.1667
+   },
+   "L01": {
+    "end": 0.75,
+    "L00": 0.25
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.035,
+   "L01>L00": 0.351
+  },
+  "songTyping": {
+   "bouts": 10,
+   "short": 10,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

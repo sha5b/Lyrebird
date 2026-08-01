@@ -1,0 +1,247 @@
+{
+ "id": "empidonomus_varius",
+ "common": "Variegated Flycatcher",
+ "scientific": "Empidonomus varius",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 45 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 490 Hz \u00b7 61 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0613,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     472.0
+    ],
+    [
+     0.125,
+     452.0
+    ],
+    [
+     0.25,
+     462.7
+    ],
+    [
+     0.375,
+     531.3
+    ],
+    [
+     0.5,
+     473.2
+    ],
+    [
+     1.0,
+     557.5
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.6,
+   "gammaScale": 0.5,
+   "rough": 0.0,
+   "two": false,
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.6208,
+    "rivalCosine": -0.198,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.12
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 676 Hz \u00b7 111 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1107,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     675.7
+    ],
+    [
+     0.125,
+     666.3
+    ],
+    [
+     0.25,
+     762.0
+    ],
+    [
+     0.375,
+     695.4
+    ],
+    [
+     0.625,
+     641.3
+    ],
+    [
+     0.75,
+     688.5
+    ],
+    [
+     0.875,
+     644.7
+    ],
+    [
+     1.0,
+     644.7
+    ]
+   ],
+   "attack": 0.0027,
+   "hold": true,
+   "harmonic": 1.0,
+   "gammaScale": 6.0,
+   "noise": 0.85,
+   "rough": 0.08,
+   "amDepth": 0.0,
+   "am": 30.0,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.025
+   },
+   "fricative": true,
+   "formants": [
+    [
+     654.2237665009833,
+     2.0,
+     2.0
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 36,
+    "resynthesisCosine": 0.8651,
+    "rivalCosine": 0.5629,
+    "nearestOwn": true,
+    "f0ErrorPercent": 127.77
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 6868 Hz \u00b7 91 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0907,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     7592.4
+    ],
+    [
+     0.375,
+     7774.7
+    ],
+    [
+     1.0,
+     5489.1
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.0,
+   "vib": {
+    "rate": 5.21,
+    "depth": 0.096
+   },
+   "gammaScale": 4.5,
+   "noise": 0.05,
+   "am": 45.0,
+   "amDepth": 0.3,
+   "fricative": true,
+   "formants": [
+    [
+     654.2237665009833,
+     2.0,
+     2.0
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.7052,
+    "rivalCosine": 0.555,
+    "nearestOwn": true,
+    "f0ErrorPercent": 30.06
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6667,
+    "end": 0.3333
+   },
+   "L01": {
+    "L01": 0.8889,
+    "end": 0.0556,
+    "L02": 0.0556
+   },
+   "L02": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.433,
+   "L01>L01": 0.039,
+   "L01>L02": 0.64,
+   "L02>L01": 0.261
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 4,
+   "candidates": 1,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

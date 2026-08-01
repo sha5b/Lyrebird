@@ -1,0 +1,146 @@
+{
+ "id": "chiroxiphia_boliviana",
+ "common": "Yungas Manakin",
+ "scientific": "Chiroxiphia boliviana",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 26 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2347 Hz \u00b7 43 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0427,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2302.0
+    ],
+    [
+     1.0,
+     2391.9
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 45.0,
+   "amDepth": 0.3,
+   "tractQ": 20.0,
+   "noise": 0.25,
+   "rough": 0.0,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.6429,
+    "rivalCosine": -0.1348,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.28
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2635 Hz \u00b7 227 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2267,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3408.2
+    ],
+    [
+     0.125,
+     3396.2
+    ],
+    [
+     0.25,
+     2906.3
+    ],
+    [
+     0.625,
+     2095.7
+    ],
+    [
+     1.0,
+     1801.1
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 4.81,
+    "depth": 0.207
+   },
+   "gammaScale": 3.0,
+   "tractQ": 20.0,
+   "noise": 0.05,
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.8217,
+    "rivalCosine": -0.264,
+    "nearestOwn": true,
+    "f0ErrorPercent": -7.93
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.9048,
+    "L00": 0.0952
+   },
+   "L01": {
+    "end": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.229
+  },
+  "songTyping": {
+   "bouts": 24,
+   "short": 24,
+   "candidates": 0,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

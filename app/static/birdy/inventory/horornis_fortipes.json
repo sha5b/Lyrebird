@@ -1,0 +1,261 @@
+{
+ "id": "horornis_fortipes",
+ "common": "Brownish-flanked Bush-Warbler",
+ "scientific": "Horornis fortipes",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 4 syllable types fitted from 57 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 617 Hz \u00b7 80 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.08,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     600.9
+    ],
+    [
+     0.375,
+     610.7
+    ],
+    [
+     0.5,
+     658.9
+    ],
+    [
+     0.625,
+     611.5
+    ],
+    [
+     1.0,
+     605.3
+    ]
+   ],
+   "attack": 0.024,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 23.44,
+   "amDepth": 0.6,
+   "gammaScale": 0.5,
+   "noise": 0.05,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.01
+   },
+   "rough": 0.08,
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.69,
+    "rivalCosine": 0.2389,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.28
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2227 Hz \u00b7 56 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.056,
+   "level": 0.6,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2209.8
+    ],
+    [
+     1.0,
+     2243.8
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 80.0,
+   "amDepth": 0.45,
+   "gammaScale": 2.0,
+   "noise": 0.05,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "tractQ": 20.0,
+   "learned": {
+    "members": 17,
+    "resynthesisCosine": 0.7392,
+    "rivalCosine": 0.4589,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.27
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2615 Hz \u00b7 64 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.064,
+   "level": 0.9,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2563.7
+    ],
+    [
+     1.0,
+     2666.4
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.45,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.01
+   },
+   "tractQ": 12.0,
+   "noise": 0.05,
+   "rough": 0.08,
+   "two": true,
+   "learned": {
+    "members": 27,
+    "resynthesisCosine": 0.6582,
+    "rivalCosine": 0.3895,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.58
+   }
+  },
+  {
+   "id": "L03",
+   "label": "learned L03 \u00b7 4197 Hz \u00b7 255 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2547,
+   "level": 1.2,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     5008.0
+    ],
+    [
+     0.125,
+     4311.0
+    ],
+    [
+     0.375,
+     3661.7
+    ],
+    [
+     1.0,
+     3924.7
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 25.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 3.76,
+    "depth": 0.113
+   },
+   "gammaScale": 3.0,
+   "tractQ": 30.0,
+   "two": true,
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.9113,
+    "rivalCosine": 0.1896,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.6
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L02",
+    "L01",
+    "L02",
+    "L02",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L01",
+   "L00",
+   "L03"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.5,
+    "L00": 0.5
+   },
+   "L01": {
+    "L02": 0.375,
+    "L01": 0.375,
+    "end": 0.25
+   },
+   "L02": {
+    "L02": 0.5556,
+    "L01": 0.2222,
+    "L03": 0.1481,
+    "end": 0.0741
+   },
+   "L03": {
+    "end": 0.75,
+    "L03": 0.25
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.055,
+   "L01>L01": 0.261,
+   "L01>L02": 0.183,
+   "L02>L01": 0.299,
+   "L02>L02": 0.269,
+   "L02>L03": 0.069,
+   "L03>L03": 0.111
+  },
+  "songTyping": {
+   "bouts": 14,
+   "short": 10,
+   "candidates": 4,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 4,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

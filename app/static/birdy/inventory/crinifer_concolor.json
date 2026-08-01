@@ -1,0 +1,160 @@
+{
+ "id": "crinifer_concolor",
+ "common": "Grey Lourie",
+ "scientific": "Crinifer concolor",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1343 Hz \u00b7 109 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1093,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1387.8
+    ],
+    [
+     1.0,
+     1299.1
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.45,
+   "gammaScale": 1.0,
+   "tractQ": 30.0,
+   "noise": 0.12,
+   "rough": 0.65,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.7224,
+    "rivalCosine": 0.0863,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.89
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1784 Hz \u00b7 80 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.08,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1621.5
+    ],
+    [
+     0.125,
+     1908.4
+    ],
+    [
+     0.25,
+     1608.4
+    ],
+    [
+     0.375,
+     1797.7
+    ],
+    [
+     0.5,
+     1535.3
+    ],
+    [
+     0.625,
+     1659.1
+    ],
+    [
+     0.75,
+     2130.8
+    ],
+    [
+     0.875,
+     1705.2
+    ],
+    [
+     1.0,
+     2209.3
+    ]
+   ],
+   "attack": 0.024,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "rough": 0.4,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "tractQ": 6.0,
+   "learned": {
+    "members": 23,
+    "resynthesisCosine": 0.2358,
+    "rivalCosine": 0.4098,
+    "nearestOwn": false,
+    "f0ErrorPercent": -12.41
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00"
+   ],
+   "gaps": []
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "L01": 0.8261,
+    "end": 0.1739
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.101
+  },
+  "songTyping": {
+   "bouts": 12,
+   "short": 12,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

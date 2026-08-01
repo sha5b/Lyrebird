@@ -1,0 +1,195 @@
+{
+ "id": "chamaeza_ruficauda",
+ "common": "Rufous-tailed Antthrush",
+ "scientific": "Chamaeza ruficauda",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 42 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 658 Hz \u00b7 56 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.056,
+   "level": 0.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     593.5
+    ],
+    [
+     0.25,
+     739.8
+    ],
+    [
+     0.375,
+     678.9
+    ],
+    [
+     0.75,
+     689.5
+    ],
+    [
+     0.875,
+     621.3
+    ],
+    [
+     1.0,
+     635.2
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.35,
+   "am": 80.0,
+   "amDepth": 0.3,
+   "gammaScale": 3.0,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.6635,
+    "rivalCosine": 0.406,
+    "nearestOwn": true,
+    "f0ErrorPercent": 15.37
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1174 Hz \u00b7 35 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0347,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1178.1
+    ],
+    [
+     1.0,
+     1169.7
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.1,
+   "gammaScale": 2.0,
+   "tractQ": 0.0,
+   "noise": 0.12,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.05
+   },
+   "am": 12.0,
+   "amDepth": 0.3,
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.875,
+    "rivalCosine": 0.5451,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.22
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 1310 Hz \u00b7 48 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.048,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1310.8
+    ],
+    [
+     1.0,
+     1310.2
+    ]
+   ],
+   "attack": 0.0187,
+   "hold": false,
+   "harmonic": 0.35,
+   "am": 25.0,
+   "amDepth": 0.6,
+   "gammaScale": 0.5,
+   "tractQ": 12.0,
+   "noise": 0.12,
+   "rough": 0.08,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.8277,
+    "rivalCosine": 0.501,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.4
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8667,
+    "end": 0.1333
+   },
+   "L01": {
+    "L01": 1.0
+   },
+   "L02": {
+    "L02": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.043,
+   "L01>L01": 0.037,
+   "L02>L02": 0.021
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 3,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

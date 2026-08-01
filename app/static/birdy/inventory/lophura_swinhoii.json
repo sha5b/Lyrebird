@@ -1,0 +1,149 @@
+{
+ "id": "lophura_swinhoii",
+ "common": "Swinhoe's Pheasant",
+ "scientific": "Lophura swinhoii",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 861 Hz \u00b7 35 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0347,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     566.9
+    ],
+    [
+     0.125,
+     1277.5
+    ],
+    [
+     0.25,
+     1911.2
+    ],
+    [
+     0.5,
+     706.4
+    ],
+    [
+     0.75,
+     907.6
+    ],
+    [
+     0.875,
+     696.2
+    ],
+    [
+     1.0,
+     566.3
+    ]
+   ],
+   "attack": 0.0027,
+   "hold": true,
+   "harmonic": 0.7,
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.3079,
+    "rivalCosine": -0.2115,
+    "nearestOwn": true,
+    "f0ErrorPercent": 8.7
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 6359 Hz \u00b7 48 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.048,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     7690.1
+    ],
+    [
+     1.0,
+     5257.7
+    ]
+   ],
+   "attack": 0.0226,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 26.79,
+   "amDepth": 0.3,
+   "gammaScale": 4.5,
+   "tractQ": 20.0,
+   "rough": 0.08,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.7909,
+    "rivalCosine": -0.5512,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.91
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7857,
+    "end": 0.2143
+   },
+   "L01": {
+    "L01": 0.7273,
+    "end": 0.2727
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.091,
+   "L01>L01": 0.256
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 5,
+   "candidates": 1,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

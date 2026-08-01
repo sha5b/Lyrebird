@@ -1,0 +1,221 @@
+{
+ "id": "cercotrichas_signata",
+ "common": "Brown Scrub-Robin",
+ "scientific": "Cercotrichas signata",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 39 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 797 Hz \u00b7 48 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.048,
+   "level": 1.2,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     944.7
+    ],
+    [
+     0.125,
+     906.3
+    ],
+    [
+     0.375,
+     704.1
+    ],
+    [
+     0.625,
+     893.9
+    ],
+    [
+     0.75,
+     907.2
+    ],
+    [
+     0.875,
+     680.5
+    ],
+    [
+     1.0,
+     612.5
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 1.5,
+   "tractQ": 3.0,
+   "noise": 0.12,
+   "rough": 0.0,
+   "amDepth": 0.15,
+   "am": 80.0,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.5733,
+    "rivalCosine": -0.1553,
+    "nearestOwn": true,
+    "f0ErrorPercent": 37.37
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3333 Hz \u00b7 243 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2427,
+   "level": 0.62,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3270.9
+    ],
+    [
+     0.375,
+     3531.2
+    ],
+    [
+     0.5,
+     3292.5
+    ],
+    [
+     1.0,
+     3244.5
+    ]
+   ],
+   "attack": 0.12,
+   "hold": true,
+   "harmonic": 0.1,
+   "am": 25.0,
+   "amDepth": 0.6,
+   "gammaScale": 2.0,
+   "tractQ": 30.0,
+   "two": true,
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.6296,
+    "rivalCosine": 0.2343,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.7
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 3362 Hz \u00b7 288 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.288,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     7446.8
+    ],
+    [
+     0.625,
+     7395.0
+    ],
+    [
+     0.75,
+     3355.3
+    ],
+    [
+     0.875,
+     1522.4
+    ],
+    [
+     1.0,
+     1527.3
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.9,
+   "amDepth": 0.8,
+   "am": 80.0,
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.5695,
+    "rivalCosine": 0.3906,
+    "nearestOwn": true,
+    "f0ErrorPercent": 9.74
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L02",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7143,
+    "end": 0.1905,
+    "L01": 0.0952
+   },
+   "L01": {
+    "L01": 0.8571,
+    "L00": 0.1429
+   },
+   "L02": {
+    "L00": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.091,
+   "L00>L01": 0.064,
+   "L01>L00": 0.067,
+   "L01>L01": 0.031,
+   "L02>L00": 0.225
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 3,
+   "candidates": 1,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

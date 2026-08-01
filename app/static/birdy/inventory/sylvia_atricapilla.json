@@ -1,0 +1,191 @@
+{
+ "id": "sylvia_atricapilla",
+ "common": "Eurasian Blackcap",
+ "scientific": "Sylvia atricapilla",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L32",
+   "label": "learned L32 \u00b7 3194 Hz \u00b7 237 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2373,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3103.4
+    ],
+    [
+     0.125,
+     3409.2
+    ],
+    [
+     0.625,
+     3380.9
+    ],
+    [
+     0.875,
+     3011.3
+    ],
+    [
+     1.0,
+     3085.2
+    ]
+   ],
+   "attack": 0.0427,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 11.97,
+   "amDepth": 0.236,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
+   "formants": [
+    [
+     1063.304792525682,
+     8.0,
+     2.0
+    ],
+    [
+     3192.5863689730877,
+     8.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 12.0,
+   "fricative": true,
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.5383,
+    "rivalCosine": 0.0355,
+    "nearestOwn": true,
+    "f0ErrorPercent": 19.44
+   }
+  },
+  {
+   "id": "L19",
+   "label": "learned L19 \u00b7 4186 Hz \u00b7 91 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0907,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4640.7
+    ],
+    [
+     0.125,
+     4516.9
+    ],
+    [
+     0.25,
+     4162.1
+    ],
+    [
+     0.875,
+     4026.9
+    ],
+    [
+     1.0,
+     3660.1
+    ]
+   ],
+   "attack": 0.0267,
+   "hold": false,
+   "harmonic": 0.35,
+   "am": 15.62,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     1063.304792525682,
+     8.0,
+     2.0
+    ],
+    [
+     4368.450554124434,
+     8.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "noise": 0.85,
+   "rough": 0.65,
+   "fricative": true,
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.5881,
+    "rivalCosine": 0.2166,
+    "nearestOwn": true,
+    "f0ErrorPercent": 11.3
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L32",
+    "L32",
+    "L19",
+    "L19",
+    "L32",
+    "L32"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L32"
+  ],
+  "transitions": {
+   "L19": {
+    "L19": 0.7273,
+    "L32": 0.2727
+   },
+   "L32": {
+    "L32": 0.7368,
+    "L19": 0.1579,
+    "end": 0.1053
+   }
+  },
+  "gaps": {
+   "L19>L19": 0.101,
+   "L19>L32": 0.165,
+   "L32>L19": 0.173,
+   "L32>L32": 0.047
+  },
+  "songTyping": {
+   "bouts": 2,
+   "short": 0,
+   "candidates": 2,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

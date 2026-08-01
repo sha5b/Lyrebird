@@ -1,0 +1,216 @@
+{
+ "id": "motacilla_maderaspatensis",
+ "common": "White-browed Wagtail",
+ "scientific": "Motacilla maderaspatensis",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 36 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 478 Hz \u00b7 83 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0827,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     483.5
+    ],
+    [
+     1.0,
+     471.6
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 140.0,
+   "amDepth": 0.45,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.6
+    ]
+   ],
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.05
+   },
+   "tractQ": 6.0,
+   "two": true,
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.6212,
+    "rivalCosine": 0.3583,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.28
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 564 Hz \u00b7 72 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.072,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     619.0
+    ],
+    [
+     0.375,
+     596.1
+    ],
+    [
+     0.5,
+     547.9
+    ],
+    [
+     0.625,
+     536.1
+    ],
+    [
+     0.75,
+     559.5
+    ],
+    [
+     0.875,
+     527.8
+    ],
+    [
+     1.0,
+     570.6
+    ]
+   ],
+   "attack": 0.06,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 80.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.05
+   },
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "two": true,
+   "noise": 0.85,
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.4739,
+    "rivalCosine": 0.2254,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.62
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 4702 Hz \u00b7 52 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.052,
+   "level": 0.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4458.2
+    ],
+    [
+     1.0,
+     4958.5
+    ]
+   ],
+   "attack": 0.0066,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     4368.450554124434,
+     2.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 2.0,
+   "noise": 0.05,
+   "amDepth": 0.15,
+   "am": 30.0,
+   "fricative": true,
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.5905,
+    "rivalCosine": -0.2084,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.24
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.85,
+    "end": 0.15
+   },
+   "L01": {
+    "L01": 1.0
+   },
+   "L02": {
+    "L02": 0.6667,
+    "end": 0.3333
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.109,
+   "L01>L01": 0.076,
+   "L02>L02": 0.069
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 6,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

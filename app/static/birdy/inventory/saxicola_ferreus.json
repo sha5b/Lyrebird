@@ -1,0 +1,225 @@
+{
+ "id": "saxicola_ferreus",
+ "common": "Grey Bushchat",
+ "scientific": "Saxicola ferreus",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 37 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1228 Hz \u00b7 64 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.064,
+   "level": 1.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     908.5
+    ],
+    [
+     0.125,
+     1316.4
+    ],
+    [
+     0.25,
+     1268.5
+    ],
+    [
+     0.375,
+     821.3
+    ],
+    [
+     0.625,
+     2096.0
+    ],
+    [
+     0.75,
+     1298.0
+    ],
+    [
+     1.0,
+     1239.1
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.7,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "rough": 0.0,
+   "gammaScale": 6.0,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.4766,
+    "rivalCosine": 0.5528,
+    "nearestOwn": false,
+    "f0ErrorPercent": -4.55
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4319 Hz \u00b7 29 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0294,
+   "level": 1.05,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4280.8
+    ],
+    [
+     1.0,
+     4357.1
+    ]
+   ],
+   "attack": 0.0027,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 12.0,
+   "noise": 0.05,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "two": true,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
+   "fricative": true,
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.8067,
+    "rivalCosine": 0.6153,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.47
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 4526 Hz \u00b7 171 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1707,
+   "level": 0.6,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4727.5
+    ],
+    [
+     0.875,
+     4480.2
+    ],
+    [
+     1.0,
+     4378.4
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 20.0,
+   "rough": 0.08,
+   "two": false,
+   "learned": {
+    "members": 25,
+    "resynthesisCosine": 0.6929,
+    "rivalCosine": -0.2455,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.2
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.5,
+    "L00": 0.5
+   },
+   "L01": {
+    "L02": 1.0
+   },
+   "L02": {
+    "end": 0.88,
+    "L00": 0.12
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.067,
+   "L01>L02": 0.021,
+   "L02>L00": 0.032
+  },
+  "songTyping": {
+   "bouts": 25,
+   "short": 24,
+   "candidates": 1,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

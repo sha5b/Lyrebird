@@ -1,0 +1,184 @@
+{
+ "id": "aphelocephala_leucopsis",
+ "common": "Southern Whiteface",
+ "scientific": "Aphelocephala leucopsis",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1417 Hz \u00b7 32 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.032,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2518.7
+    ],
+    [
+     0.125,
+     2082.9
+    ],
+    [
+     0.25,
+     2008.4
+    ],
+    [
+     0.375,
+     1452.1
+    ],
+    [
+     0.5,
+     1320.3
+    ],
+    [
+     0.625,
+     1496.4
+    ],
+    [
+     0.75,
+     1018.1
+    ],
+    [
+     0.875,
+     894.1
+    ],
+    [
+     1.0,
+     834.8
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     5063.7,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "noise": 0.6,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.6358,
+    "rivalCosine": 0.7736,
+    "nearestOwn": false,
+    "f0ErrorPercent": -7.71
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 5633 Hz \u00b7 40 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.04,
+   "level": 1.05,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     5672.3
+    ],
+    [
+     1.0,
+     5593.2
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.0,
+   "formants": [
+    [
+     5063.7,
+     8.0,
+     1.0
+    ],
+    [
+     2289.5188831594724,
+     8.0,
+     1.0
+    ],
+    [
+     5083.5393171114765,
+     8.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 30.0,
+   "noise": 0.4,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.025
+   },
+   "fricative": true,
+   "learned": {
+    "members": 23,
+    "resynthesisCosine": 0.7602,
+    "rivalCosine": 0.4987,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.08
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00"
+   ],
+   "gaps": []
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "L01": 0.913,
+    "end": 0.087
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.037
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 5,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

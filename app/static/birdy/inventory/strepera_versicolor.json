@@ -1,0 +1,187 @@
+{
+ "id": "strepera_versicolor",
+ "common": "Grey Currawong",
+ "scientific": "Strepera versicolor",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 855 Hz \u00b7 96 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.096,
+   "level": 0.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     794.2
+    ],
+    [
+     0.125,
+     880.5
+    ],
+    [
+     0.5,
+     902.4
+    ],
+    [
+     0.625,
+     863.8
+    ],
+    [
+     0.75,
+     892.8
+    ],
+    [
+     1.0,
+     805.0
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.7,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 3.0,
+   "rough": 0.0,
+   "noise": 0.85,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 24,
+    "resynthesisCosine": 0.3919,
+    "rivalCosine": 0.0546,
+    "nearestOwn": true,
+    "f0ErrorPercent": 6.56
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2816 Hz \u00b7 141 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1413,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2421.2
+    ],
+    [
+     0.125,
+     2438.8
+    ],
+    [
+     0.25,
+     3017.8
+    ],
+    [
+     0.625,
+     3222.5
+    ],
+    [
+     0.75,
+     3161.9
+    ],
+    [
+     0.875,
+     2483.7
+    ],
+    [
+     1.0,
+     3114.9
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.1,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 6.0,
+   "noise": 0.6,
+   "rough": 0.65,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.6141,
+    "rivalCosine": -0.4641,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.29
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8333,
+    "end": 0.1667
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.111,
+   "L01>L01": 0.031
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 5,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

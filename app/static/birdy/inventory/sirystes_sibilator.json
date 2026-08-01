@@ -1,0 +1,148 @@
+{
+ "id": "sirystes_sibilator",
+ "common": "Sibilant Sirystes",
+ "scientific": "Sirystes sibilator",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2425 Hz \u00b7 395 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.3947,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2645.7
+    ],
+    [
+     0.375,
+     2306.4
+    ],
+    [
+     0.5,
+     2705.1
+    ],
+    [
+     0.625,
+     2348.1
+    ],
+    [
+     0.875,
+     2193.4
+    ],
+    [
+     1.0,
+     2393.2
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.35,
+   "gammaScale": 6.0,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.09
+   },
+   "am": 45.0,
+   "amDepth": 0.6,
+   "noise": 0.05,
+   "fricative": true,
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.7092,
+    "rivalCosine": -0.1054,
+    "nearestOwn": true,
+    "f0ErrorPercent": 21.96
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2995 Hz \u00b7 183 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1827,
+   "level": 1.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2936.0
+    ],
+    [
+     1.0,
+     3054.5
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.35,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "gammaScale": 0.5,
+   "tractQ": 12.0,
+   "noise": 0.05,
+   "rough": 0.2,
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.748,
+    "rivalCosine": -0.136,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.85
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 0.9,
+    "end": 0.1
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.083,
+   "L01>L01": 0.108
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 3,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,195 @@
+{
+ "id": "amaurornis_moluccana",
+ "common": "Rufous-tailed Bush-hen",
+ "scientific": "Amaurornis moluccana",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 674 Hz \u00b7 120 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.12,
+   "level": 0.6,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     666.8
+    ],
+    [
+     0.125,
+     599.4
+    ],
+    [
+     0.25,
+     694.7
+    ],
+    [
+     0.375,
+     666.2
+    ],
+    [
+     0.5,
+     724.1
+    ],
+    [
+     0.625,
+     675.2
+    ],
+    [
+     1.0,
+     701.5
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.0,
+   "tractQ": 3.0,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "rough": 0.0,
+   "noise": 0.85,
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.402,
+    "rivalCosine": 0.16,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.99
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 840 Hz \u00b7 261 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2613,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     537.9
+    ],
+    [
+     0.125,
+     506.7
+    ],
+    [
+     0.25,
+     834.6
+    ],
+    [
+     0.375,
+     933.9
+    ],
+    [
+     0.5,
+     1458.9
+    ],
+    [
+     0.625,
+     1019.9
+    ],
+    [
+     0.75,
+     1082.7
+    ],
+    [
+     0.875,
+     928.5
+    ],
+    [
+     1.0,
+     654.7
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "rough": 0.65,
+   "noise": 0.05,
+   "two": true,
+   "fricative": true,
+   "formants": [
+    [
+     1312.0828814882439,
+     8.0,
+     2.0
+    ],
+    [
+     6830.618534315889,
+     8.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": -0.0323,
+    "rivalCosine": -0.5178,
+    "nearestOwn": true,
+    "f0ErrorPercent": -26.53
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.85,
+    "end": 0.15
+   },
+   "L01": {
+    "L01": 0.5714,
+    "end": 0.4286
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.024,
+   "L01>L01": 0.029
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 6,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

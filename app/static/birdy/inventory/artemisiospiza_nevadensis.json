@@ -1,0 +1,179 @@
+{
+ "id": "artemisiospiza_nevadensis",
+ "common": "Sagebrush Sparrow",
+ "scientific": "Artemisiospiza nevadensis",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 508 Hz \u00b7 51 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0507,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     496.6
+    ],
+    [
+     0.125,
+     509.7
+    ],
+    [
+     0.25,
+     554.0
+    ],
+    [
+     0.875,
+     507.8
+    ],
+    [
+     1.0,
+     474.7
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 1.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     4273.5,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "rough": 0.4,
+   "two": true,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.5846,
+    "rivalCosine": 0.4702,
+    "nearestOwn": true,
+    "f0ErrorPercent": 6.84
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 546 Hz \u00b7 39 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0387,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     558.3
+    ],
+    [
+     0.375,
+     528.3
+    ],
+    [
+     0.625,
+     568.3
+    ],
+    [
+     0.75,
+     528.0
+    ],
+    [
+     0.875,
+     530.7
+    ],
+    [
+     1.0,
+     561.0
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 80.0,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     4273.5,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 3.0,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.5318,
+    "rivalCosine": 0.5524,
+    "nearestOwn": false,
+    "f0ErrorPercent": 6.59
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8571,
+    "end": 0.1429
+   },
+   "L01": {
+    "L01": 0.8571,
+    "L00": 0.1429
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.173,
+   "L01>L00": 0.065,
+   "L01>L01": 0.239
+  },
+  "songTyping": {
+   "bouts": 2,
+   "short": 1,
+   "candidates": 1,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

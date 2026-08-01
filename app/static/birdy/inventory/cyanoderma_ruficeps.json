@@ -1,0 +1,181 @@
+{
+ "id": "cyanoderma_ruficeps",
+ "common": "Rufous-capped Babbler",
+ "scientific": "Cyanoderma ruficeps",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 490 Hz \u00b7 75 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0747,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     574.4
+    ],
+    [
+     0.125,
+     497.9
+    ],
+    [
+     0.375,
+     456.3
+    ],
+    [
+     0.625,
+     470.5
+    ],
+    [
+     1.0,
+     458.1
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "rough": 0.65,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 27,
+    "resynthesisCosine": 0.4671,
+    "rivalCosine": 0.214,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.35
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 758 Hz \u00b7 381 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.3813,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     725.9
+    ],
+    [
+     0.25,
+     714.7
+    ],
+    [
+     0.375,
+     648.9
+    ],
+    [
+     0.5,
+     667.6
+    ],
+    [
+     0.625,
+     993.7
+    ],
+    [
+     0.75,
+     742.7
+    ],
+    [
+     0.875,
+     689.0
+    ],
+    [
+     1.0,
+     955.4
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "noise": 0.85,
+   "rough": 0.65,
+   "tractQ": 3.0,
+   "fricative": true,
+   "formants": [
+    [
+     1063.304792525682,
+     2.0,
+     2.0
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.0945,
+    "rivalCosine": -0.0727,
+    "nearestOwn": true,
+    "f0ErrorPercent": -12.66
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8148,
+    "end": 0.1852
+   },
+   "L01": {
+    "L01": 0.5,
+    "end": 0.5
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.049,
+   "L01>L01": 0.02
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 7,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

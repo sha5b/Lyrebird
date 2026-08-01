@@ -1,0 +1,172 @@
+{
+ "id": "pterorhinus_sannio",
+ "common": "White-browed Laughingthrush",
+ "scientific": "Pterorhinus sannio",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 24 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 995 Hz \u00b7 85 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0853,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     923.7
+    ],
+    [
+     0.125,
+     869.3
+    ],
+    [
+     0.25,
+     929.3
+    ],
+    [
+     0.375,
+     868.2
+    ],
+    [
+     0.625,
+     1020.3
+    ],
+    [
+     0.75,
+     1264.7
+    ],
+    [
+     0.875,
+     899.4
+    ],
+    [
+     1.0,
+     1279.1
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.5,
+   "am": 80.0,
+   "amDepth": 0.6,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
+   },
+   "tractQ": 30.0,
+   "rough": 0.4,
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.2087,
+    "rivalCosine": 0.201,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.13
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2759 Hz \u00b7 208 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.208,
+   "level": 0.75,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3436.2
+    ],
+    [
+     0.125,
+     3055.5
+    ],
+    [
+     0.25,
+     2930.2
+    ],
+    [
+     0.375,
+     2391.3
+    ],
+    [
+     1.0,
+     2171.1
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.112
+   },
+   "gammaScale": 1.5,
+   "tractQ": 12.0,
+   "noise": 0.25,
+   "rough": 0.65,
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.7064,
+    "rivalCosine": -0.4034,
+    "nearestOwn": true,
+    "f0ErrorPercent": -12.84
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8462,
+    "end": 0.1538
+   },
+   "L01": {
+    "end": 0.6364,
+    "L01": 0.3636
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.019,
+   "L01>L01": 0.147
+  },
+  "songTyping": {
+   "bouts": 9,
+   "short": 9,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

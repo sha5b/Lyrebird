@@ -1,0 +1,166 @@
+{
+ "id": "anser_caerulescens",
+ "common": "Snow Goose",
+ "scientific": "Anser caerulescens",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 705 Hz \u00b7 37 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0373,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     604.2
+    ],
+    [
+     1.0,
+     822.9
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.901,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     5063.7,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.668,
+    "rivalCosine": 0.3347,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.93
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1709 Hz \u00b7 129 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1293,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1662.9
+    ],
+    [
+     0.125,
+     1727.1
+    ],
+    [
+     0.25,
+     1678.8
+    ],
+    [
+     0.375,
+     1729.0
+    ],
+    [
+     0.875,
+     1749.8
+    ],
+    [
+     1.0,
+     1705.0
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     5063.7,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "noise": 0.05,
+   "rough": 0.65,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.05
+   },
+   "two": true,
+   "learned": {
+    "members": 22,
+    "resynthesisCosine": 0.5117,
+    "rivalCosine": 0.2975,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.83
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.6,
+    "L00": 0.4
+   },
+   "L01": {
+    "L01": 0.8182,
+    "end": 0.1818
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.068,
+   "L01>L01": 0.1
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 7,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

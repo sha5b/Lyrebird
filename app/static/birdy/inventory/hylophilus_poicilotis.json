@@ -1,0 +1,168 @@
+{
+ "id": "hylophilus_poicilotis",
+ "common": "Rufous-crowned Greenlet",
+ "scientific": "Hylophilus poicilotis",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1343 Hz \u00b7 56 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.056,
+   "level": 0.9,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     489.0
+    ],
+    [
+     0.125,
+     1043.8
+    ],
+    [
+     0.25,
+     1016.9
+    ],
+    [
+     0.5,
+     1935.0
+    ],
+    [
+     0.625,
+     2112.3
+    ],
+    [
+     0.75,
+     2109.7
+    ],
+    [
+     0.875,
+     1143.6
+    ],
+    [
+     1.0,
+     2066.4
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 80.0,
+   "amDepth": 0.207,
+   "tractQ": 30.0,
+   "two": true,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": -0.4447,
+    "rivalCosine": 0.4128,
+    "nearestOwn": false,
+    "f0ErrorPercent": -25.19
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4026 Hz \u00b7 255 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2547,
+   "level": 0.6,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3688.6
+    ],
+    [
+     0.125,
+     3955.8
+    ],
+    [
+     0.25,
+     3788.2
+    ],
+    [
+     1.0,
+     4753.3
+    ]
+   ],
+   "attack": 0.12,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 4.21,
+    "depth": 0.107
+   },
+   "gammaScale": 3.0,
+   "two": true,
+   "tractQ": 0.0,
+   "learned": {
+    "members": 24,
+    "resynthesisCosine": 0.791,
+    "rivalCosine": -0.738,
+    "nearestOwn": true,
+    "f0ErrorPercent": 9.94
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L01": 1.0
+   },
+   "L01": {
+    "L01": 0.7917,
+    "end": 0.2083
+   }
+  },
+  "gaps": {
+   "L00>L01": 0.375,
+   "L01>L01": 0.056
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 5,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

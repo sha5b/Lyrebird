@@ -1,0 +1,263 @@
+{
+ "id": "thraupis_ornata",
+ "common": "Golden-chevroned Tanager",
+ "scientific": "Thraupis ornata",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 43 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 616 Hz \u00b7 91 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0907,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     608.1
+    ],
+    [
+     0.125,
+     614.4
+    ],
+    [
+     0.25,
+     566.2
+    ],
+    [
+     0.375,
+     551.5
+    ],
+    [
+     0.75,
+     632.6
+    ],
+    [
+     0.875,
+     723.8
+    ],
+    [
+     1.0,
+     626.6
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.35,
+   "am": 140.0,
+   "amDepth": 0.15,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
+   },
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 0.0,
+   "noise": 0.85,
+   "rough": 0.08,
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.4979,
+    "rivalCosine": 0.7454,
+    "nearestOwn": false,
+    "f0ErrorPercent": 85.44
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4799 Hz \u00b7 59 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0587,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4428.1
+    ],
+    [
+     0.125,
+     4997.6
+    ],
+    [
+     0.25,
+     4335.7
+    ],
+    [
+     0.5,
+     5271.9
+    ],
+    [
+     0.625,
+     5240.9
+    ],
+    [
+     0.75,
+     4286.7
+    ],
+    [
+     1.0,
+     5156.2
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 80.0,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "noise": 0.25,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.9451,
+    "rivalCosine": 0.8533,
+    "nearestOwn": true,
+    "f0ErrorPercent": -24.56
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 5953 Hz \u00b7 75 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0746,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     6192.6
+    ],
+    [
+     0.25,
+     5685.8
+    ],
+    [
+     0.375,
+     5734.8
+    ],
+    [
+     0.5,
+     5284.3
+    ],
+    [
+     0.625,
+     6167.2
+    ],
+    [
+     0.75,
+     6407.5
+    ],
+    [
+     1.0,
+     6282.9
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 80.0,
+   "amDepth": 0.268,
+   "formants": [
+    [
+     2711.2989394619476,
+     4.0,
+     0.5
+    ],
+    [
+     6830.618534315889,
+     4.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 4.5,
+   "noise": 0.6,
+   "fricative": true,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.7565,
+    "rivalCosine": 0.7669,
+    "nearestOwn": false,
+    "f0ErrorPercent": 11.49
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L02",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.9048,
+    "end": 0.0952
+   },
+   "L01": {
+    "L02": 0.6,
+    "L01": 0.2,
+    "end": 0.2
+   },
+   "L02": {
+    "L01": 0.5833,
+    "L02": 0.4167
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.032,
+   "L01>L01": 0.031,
+   "L01>L02": 0.103,
+   "L02>L01": 0.107,
+   "L02>L02": 0.085
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 3,
+   "candidates": 1,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,227 @@
+{
+ "id": "lepidocolaptes_squamatus",
+ "common": "Scaled Woodcreeper",
+ "scientific": "Lepidocolaptes squamatus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 37 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 3098 Hz \u00b7 139 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1387,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3069.3
+    ],
+    [
+     1.0,
+     3126.4
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 21.63,
+   "amDepth": 0.0,
+   "gammaScale": 3.0,
+   "tractQ": 0.0,
+   "two": true,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.6234,
+    "rivalCosine": 0.3182,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.99
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3493 Hz \u00b7 173 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1733,
+   "level": 1.05,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3058.1
+    ],
+    [
+     0.125,
+     3521.1
+    ],
+    [
+     0.25,
+     3771.6
+    ],
+    [
+     0.375,
+     3359.3
+    ],
+    [
+     0.5,
+     3717.5
+    ],
+    [
+     1.0,
+     3581.2
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 22.06,
+   "amDepth": 0.3,
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "noise": 0.05,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.5684,
+    "rivalCosine": 0.3944,
+    "nearestOwn": true,
+    "f0ErrorPercent": -11.92
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 4907 Hz \u00b7 85 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0853,
+   "level": 0.9,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     6415.6
+    ],
+    [
+     0.125,
+     6325.2
+    ],
+    [
+     0.25,
+     5567.1
+    ],
+    [
+     0.375,
+     6502.9
+    ],
+    [
+     0.5,
+     6532.2
+    ],
+    [
+     0.625,
+     4548.8
+    ],
+    [
+     0.75,
+     3192.5
+    ],
+    [
+     0.875,
+     3199.7
+    ],
+    [
+     1.0,
+     3700.8
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 23.44,
+   "amDepth": 0.15,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.09
+   },
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "noise": 0.6,
+   "rough": 0.4,
+   "two": true,
+   "learned": {
+    "members": 17,
+    "resynthesisCosine": 0.7152,
+    "rivalCosine": 0.6351,
+    "nearestOwn": true,
+    "f0ErrorPercent": -28.89
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8,
+    "end": 0.2
+   },
+   "L01": {
+    "L01": 0.5,
+    "end": 0.5
+   },
+   "L02": {
+    "L02": 0.875,
+    "end": 0.125
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.043,
+   "L01>L01": 0.059,
+   "L02>L02": 0.097
+  },
+  "songTyping": {
+   "bouts": 8,
+   "short": 7,
+   "candidates": 1,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

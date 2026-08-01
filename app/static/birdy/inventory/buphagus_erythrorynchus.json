@@ -1,0 +1,192 @@
+{
+ "id": "buphagus_erythrorynchus",
+ "common": "Red-billed Oxpecker",
+ "scientific": "Buphagus erythrorynchus",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 5350 Hz \u00b7 344 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.344,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5614.6
+    ],
+    [
+     0.125,
+     4836.2
+    ],
+    [
+     0.25,
+     4538.3
+    ],
+    [
+     0.375,
+     5112.8
+    ],
+    [
+     0.5,
+     4407.6
+    ],
+    [
+     0.625,
+     5871.0
+    ],
+    [
+     0.75,
+     6667.4
+    ],
+    [
+     0.875,
+     4916.7
+    ],
+    [
+     1.0,
+     6717.3
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.2,
+   "formants": [
+    [
+     654.2237665009833,
+     2.0,
+     2.0
+    ],
+    [
+     6830.618534315889,
+     2.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "noise": 0.6,
+   "rough": 0.65,
+   "am": 45.0,
+   "amDepth": 0.0,
+   "fricative": true,
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.8297,
+    "rivalCosine": 0.8397,
+    "nearestOwn": false,
+    "f0ErrorPercent": -46.34
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 6782 Hz \u00b7 76 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.076,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     6783.7
+    ],
+    [
+     1.0,
+     6780.2
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     6000.0,
+     2.0,
+     0.5
+    ],
+    [
+     654.2237665009833,
+     2.0,
+     0.5
+    ],
+    [
+     6830.618534315889,
+     2.0,
+     0.5
+    ]
+   ],
+   "noise": 0.85,
+   "rough": 0.0,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.01
+   },
+   "fricative": true,
+   "learned": {
+    "members": 28,
+    "resynthesisCosine": 0.8682,
+    "rivalCosine": 0.8436,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.04
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.3333,
+    "L01": 0.3333,
+    "end": 0.3333
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.024
+  },
+  "songTyping": {
+   "bouts": 2,
+   "short": 2,
+   "candidates": 0,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

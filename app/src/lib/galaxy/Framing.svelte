@@ -113,17 +113,54 @@
 		// The centre is a per-axis median, not a mean. One cluster stranded on the far side
 		// of the galaxy drags a mean a long way toward itself and the camera then centres
 		// on empty space between the bird and its stray; a median ignores it entirely.
+		//
+		// A knot with no members has no position — its centroid is (0,0,0), the centre of
+		// the box, which `layouts.ts` documents as a lie and says every positional effect
+		// must check `counts` before using. This one did not, so on a build with memberless
+		// knots the camera aimed at a weighted average of the corpus and the origin.
 		axis[0].length = 0;
 		axis[1].length = 0;
 		axis[2].length = 0;
 		for (const c of frame) {
 			if (c < 0 || c * 3 + 2 >= view.centroids.length) continue;
+			if (!view.counts[c]) continue;
 			axis[0].push(view.centroids[c * 3]);
 			axis[1].push(view.centroids[c * 3 + 1]);
 			axis[2].push(view.centroids[c * 3 + 2]);
 		}
 		if (!axis[0].length) return;
-		wanted.set(median(axis[0]), median(axis[1]), median(axis[2]));
+		// `median` sorts in place, so the extremes are the ends afterwards.
+		const mx = median(axis[0]);
+		const my = median(axis[1]);
+		const mz = median(axis[2]);
+
+		/**
+		 * **Framing everything centres on the extent, not on the median.**
+		 *
+		 * The median is the right centre for a bird — that is what it was written for, and
+		 * it is why one stray call cannot drag the view off the repertoire. It is the wrong
+		 * centre for "the whole galaxy", because the median of the *knots* is not the middle
+		 * of the *cloud*: knot density is skewed, so half the knots sitting in one lobe puts
+		 * the median in that lobe. Measured on the built assets, the median lands **14 % of
+		 * the cloud's span off centre on the shipped build and 27 % off on the production
+		 * build** — the projection itself is centred on the origin to within 0.001, and the
+		 * camera was aiming a quarter of the way out from it. That is the "it does not centre
+		 * on the centre of the point cloud" the owner reported, and it shows up worst on
+		 * autoload because autoload is exactly the whole-galaxy case.
+		 *
+		 * `reachQuantile` below already excludes framing-everything by name for the *reach*,
+		 * for the same reason; the exception was simply never applied to the centre.
+		 */
+		const total = view.centroids.length / 3;
+		if (total > 0 && axis[0].length >= total * 0.9) {
+			wanted.set(
+				(axis[0][0] + axis[0][axis[0].length - 1]) / 2,
+				(axis[1][0] + axis[1][axis[1].length - 1]) / 2,
+				(axis[2][0] + axis[2][axis[2].length - 1]) / 2
+			);
+		} else {
+			wanted.set(mx, my, mz);
+		}
 
 		// How far the framed set reaches from its own centre, in the group's space. One
 		// cluster gives a small number and the whole galaxy a large one, which is what

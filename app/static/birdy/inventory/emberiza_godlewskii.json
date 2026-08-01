@@ -1,0 +1,253 @@
+{
+ "id": "emberiza_godlewskii",
+ "common": "Godlewski's Bunting",
+ "scientific": "Emberiza godlewskii",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 39 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 506 Hz \u00b7 84 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.084,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     475.3
+    ],
+    [
+     0.125,
+     476.4
+    ],
+    [
+     0.25,
+     534.6
+    ],
+    [
+     0.375,
+     549.4
+    ],
+    [
+     0.5,
+     519.6
+    ],
+    [
+     1.0,
+     483.8
+    ]
+   ],
+   "attack": 0.0347,
+   "hold": false,
+   "harmonic": 0.35,
+   "am": 80.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 2.31,
+    "depth": 0.049
+   },
+   "formants": [
+    [
+     4071.3,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 20.0,
+   "rough": 0.4,
+   "learned": {
+    "members": 24,
+    "resynthesisCosine": 0.2743,
+    "rivalCosine": 0.1001,
+    "nearestOwn": true,
+    "f0ErrorPercent": 11.81
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 648 Hz \u00b7 64 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.064,
+   "level": 0.9,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     628.6
+    ],
+    [
+     0.125,
+     770.6
+    ],
+    [
+     0.25,
+     524.6
+    ],
+    [
+     0.375,
+     639.8
+    ],
+    [
+     0.5,
+     573.4
+    ],
+    [
+     0.625,
+     665.1
+    ],
+    [
+     0.75,
+     661.6
+    ],
+    [
+     0.875,
+     700.9
+    ],
+    [
+     1.0,
+     697.4
+    ]
+   ],
+   "attack": 0.0066,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     4071.3,
+     6.0,
+     0.6
+    ]
+   ],
+   "tractQ": 3.0,
+   "noise": 0.25,
+   "rough": 0.65,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.2468,
+    "rivalCosine": 0.2754,
+    "nearestOwn": false,
+    "f0ErrorPercent": 2.52
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 666 Hz \u00b7 69 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0693,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     676.3
+    ],
+    [
+     0.125,
+     689.4
+    ],
+    [
+     0.5,
+     659.0
+    ],
+    [
+     0.625,
+     624.5
+    ],
+    [
+     0.75,
+     661.0
+    ],
+    [
+     1.0,
+     690.8
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 1.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     4071.3,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 1.5,
+   "rough": 0.4,
+   "tractQ": 12.0,
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.1958,
+    "rivalCosine": 0.326,
+    "nearestOwn": false,
+    "f0ErrorPercent": 2.81
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 1.0
+   },
+   "L02": {
+    "L02": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.049,
+   "L01>L01": 0.031,
+   "L02>L02": 0.053
+  },
+  "songTyping": {
+   "bouts": 1,
+   "short": 0,
+   "candidates": 1,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

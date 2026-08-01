@@ -1,0 +1,264 @@
+{
+ "id": "camaroptera_brachyura",
+ "common": "Green-backed Camaroptera",
+ "scientific": "Camaroptera brachyura",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 47 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 3648 Hz \u00b7 85 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0853,
+   "level": 0.583,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4449.7
+    ],
+    [
+     0.125,
+     4444.3
+    ],
+    [
+     0.25,
+     3921.5
+    ],
+    [
+     0.5,
+     3882.2
+    ],
+    [
+     0.625,
+     3180.6
+    ],
+    [
+     0.875,
+     2975.0
+    ],
+    [
+     1.0,
+     3018.5
+    ]
+   ],
+   "attack": 0.0213,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 11.03,
+    "depth": 0.2
+   },
+   "gammaScale": 4.5,
+   "tractQ": 30.0,
+   "learned": {
+    "members": 17,
+    "resynthesisCosine": 0.8128,
+    "rivalCosine": 0.5954,
+    "nearestOwn": true,
+    "f0ErrorPercent": 9.31
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3838 Hz \u00b7 152 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.152,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5291.8
+    ],
+    [
+     0.125,
+     4856.9
+    ],
+    [
+     0.25,
+     2845.5
+    ],
+    [
+     0.375,
+     3435.9
+    ],
+    [
+     0.75,
+     3662.5
+    ],
+    [
+     0.875,
+     3475.1
+    ],
+    [
+     1.0,
+     3834.0
+    ]
+   ],
+   "attack": 0.0453,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 80.0,
+   "amDepth": 0.339,
+   "vib": {
+    "rate": 8.34,
+    "depth": 0.152
+   },
+   "gammaScale": 6.0,
+   "tractQ": 6.0,
+   "learned": {
+    "members": 22,
+    "resynthesisCosine": 0.7261,
+    "rivalCosine": 0.6257,
+    "nearestOwn": true,
+    "f0ErrorPercent": -21.16
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 4226 Hz \u00b7 155 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1547,
+   "level": 1.05,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     5012.5
+    ],
+    [
+     0.125,
+     4408.1
+    ],
+    [
+     0.25,
+     4575.9
+    ],
+    [
+     0.375,
+     4092.7
+    ],
+    [
+     0.5,
+     3934.3
+    ],
+    [
+     0.625,
+     4020.2
+    ],
+    [
+     0.875,
+     3549.3
+    ],
+    [
+     1.0,
+     4380.5
+    ]
+   ],
+   "attack": 0.032,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 13.09,
+   "amDepth": 0.168,
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "noise": 0.05,
+   "fricative": true,
+   "formants": [
+    [
+     654.2237665009833,
+     8.0,
+     2.0
+    ],
+    [
+     5083.5393171114765,
+     8.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.5051,
+    "rivalCosine": 0.6924,
+    "nearestOwn": false,
+    "f0ErrorPercent": -23.54
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L02",
+    "L02",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5625,
+    "end": 0.3125,
+    "L02": 0.125
+   },
+   "L01": {
+    "L01": 0.8,
+    "L00": 0.2
+   },
+   "L02": {
+    "L02": 0.5,
+    "L01": 0.5
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.256,
+   "L00>L02": 0.737,
+   "L01>L00": 0.351,
+   "L01>L01": 0.203,
+   "L02>L01": 0.16,
+   "L02>L02": 0.155
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 4,
+   "candidates": 2,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

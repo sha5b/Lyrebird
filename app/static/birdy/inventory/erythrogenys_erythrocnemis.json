@@ -1,0 +1,216 @@
+{
+ "id": "erythrogenys_erythrocnemis",
+ "common": "Black-necklaced Scimitar-Babbler",
+ "scientific": "Erythrogenys erythrocnemis",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 38 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1103 Hz \u00b7 59 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0587,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     906.0
+    ],
+    [
+     0.25,
+     891.4
+    ],
+    [
+     0.375,
+     1365.2
+    ],
+    [
+     0.5,
+     1209.0
+    ],
+    [
+     0.625,
+     1297.1
+    ],
+    [
+     0.875,
+     998.4
+    ],
+    [
+     1.0,
+     1152.3
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 1.0,
+   "am": 25.0,
+   "amDepth": 0.0,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.09
+   },
+   "gammaScale": 1.5,
+   "noise": 0.85,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.4639,
+    "rivalCosine": 0.0554,
+    "nearestOwn": true,
+    "f0ErrorPercent": 35.12
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1317 Hz \u00b7 99 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0987,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1330.9
+    ],
+    [
+     1.0,
+     1302.5
+    ]
+   ],
+   "attack": 0.04,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "noise": 0.12,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.05
+   },
+   "rough": 0.08,
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.7908,
+    "rivalCosine": 0.3852,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.89
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 1690 Hz \u00b7 155 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1547,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1672.3
+    ],
+    [
+     1.0,
+     1707.0
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 13.39,
+   "amDepth": 0.45,
+   "tractQ": 30.0,
+   "noise": 0.12,
+   "two": true,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.01
+   },
+   "gammaScale": 0.5,
+   "rough": 0.08,
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.8362,
+    "rivalCosine": 0.5575,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.51
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L01",
+    "L02",
+    "L01",
+    "L02",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L02": 0.3333,
+    "end": 0.3333,
+    "L00": 0.3333
+   },
+   "L01": {
+    "end": 0.6364,
+    "L02": 0.1818,
+    "L00": 0.1818
+   },
+   "L02": {
+    "L01": 0.7333,
+    "end": 0.1333,
+    "L02": 0.1333
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.133,
+   "L00>L02": 0.161,
+   "L01>L00": 0.716,
+   "L01>L02": 0.276,
+   "L02>L01": 0.072,
+   "L02>L02": 0.013
+  },
+  "songTyping": {
+   "bouts": 13,
+   "short": 6,
+   "candidates": 7,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 7,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

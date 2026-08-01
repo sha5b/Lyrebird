@@ -1,0 +1,172 @@
+{
+ "id": "sclerurus_mexicanus",
+ "common": "Tawny-throated Leaftosser",
+ "scientific": "Sclerurus mexicanus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 683 Hz \u00b7 49 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0493,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     719.1
+    ],
+    [
+     0.125,
+     677.9
+    ],
+    [
+     0.25,
+     866.3
+    ],
+    [
+     0.375,
+     822.6
+    ],
+    [
+     0.5,
+     655.8
+    ],
+    [
+     0.625,
+     559.2
+    ],
+    [
+     0.75,
+     508.6
+    ],
+    [
+     0.875,
+     999.8
+    ],
+    [
+     1.0,
+     499.5
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 1.0,
+   "am": 27.82,
+   "amDepth": 0.182,
+   "formants": [
+    [
+     5063.7,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 2.0,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.1766,
+    "rivalCosine": -0.3688,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.89
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 5064 Hz \u00b7 203 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2027,
+   "level": 0.503,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4878.2
+    ],
+    [
+     1.0,
+     5256.3
+    ]
+   ],
+   "attack": 0.0533,
+   "hold": false,
+   "harmonic": 0.19,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     1063.304792525682,
+     4.0,
+     2.0
+    ],
+    [
+     5083.5393171114765,
+     4.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 3.0,
+   "fricative": true,
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.6309,
+    "rivalCosine": -0.4617,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.31
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01"
+   ],
+   "gaps": []
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7,
+    "end": 0.3
+   },
+   "L01": {
+    "end": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.053
+  },
+  "songTyping": {
+   "bouts": 17,
+   "short": 17,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

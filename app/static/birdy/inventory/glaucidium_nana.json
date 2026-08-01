@@ -1,0 +1,222 @@
+{
+ "id": "glaucidium_nana",
+ "common": "Austral Pygmy-Owl",
+ "scientific": "Glaucidium nana",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 36 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1042 Hz \u00b7 871 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.8706,
+   "level": 0.689,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1268.5
+    ],
+    [
+     0.125,
+     1267.8
+    ],
+    [
+     0.25,
+     773.8
+    ],
+    [
+     0.375,
+     948.6
+    ],
+    [
+     0.5,
+     899.1
+    ],
+    [
+     0.625,
+     1094.1
+    ],
+    [
+     0.75,
+     1142.6
+    ],
+    [
+     0.875,
+     889.1
+    ],
+    [
+     1.0,
+     1225.5
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.246,
+   "vib": {
+    "rate": 9.09,
+    "depth": 0.27
+   },
+   "gammaScale": 2.0,
+   "tractQ": 30.0,
+   "learned": {
+    "members": 2,
+    "resynthesisCosine": 0.2417,
+    "rivalCosine": 0.4467,
+    "nearestOwn": false,
+    "f0ErrorPercent": 15.76
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4299 Hz \u00b7 149 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1493,
+   "level": 0.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     4101.2
+    ],
+    [
+     0.25,
+     4498.5
+    ],
+    [
+     1.0,
+     4307.2
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.7,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "gammaScale": 6.0,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.05
+   },
+   "tractQ": 6.0,
+   "two": true,
+   "fricative": true,
+   "formants": [
+    [
+     1063.304792525682,
+     2.0,
+     0.5
+    ],
+    [
+     4368.450554124434,
+     2.0,
+     0.5
+    ]
+   ],
+   "learned": {
+    "members": 33,
+    "resynthesisCosine": 0.6825,
+    "rivalCosine": 0.3847,
+    "nearestOwn": true,
+    "f0ErrorPercent": 7.09
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 4324 Hz \u00b7 261 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2613,
+   "level": 1.05,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4189.8
+    ],
+    [
+     0.125,
+     4406.9
+    ],
+    [
+     1.0,
+     4377.6
+    ]
+   ],
+   "attack": 0.1067,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "gammaScale": 1.5,
+   "tractQ": 3.0,
+   "two": true,
+   "learned": {
+    "members": 1,
+    "resynthesisCosine": 0.7687,
+    "rivalCosine": 0.3606,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.68
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L02",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5,
+    "end": 0.5
+   },
+   "L01": {
+    "L01": 0.8182,
+    "end": 0.1818
+   },
+   "L02": {
+    "end": 1.0
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.163
+  },
+  "songTyping": {
+   "bouts": 8,
+   "short": 8,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

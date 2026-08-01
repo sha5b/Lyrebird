@@ -1,0 +1,220 @@
+{
+ "id": "archboldia_papuensis",
+ "common": "Archbold's Bowerbird",
+ "scientific": "Archboldia papuensis",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 37 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1405 Hz \u00b7 40 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.04,
+   "level": 0.6,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1409.6
+    ],
+    [
+     1.0,
+     1400.3
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 3.0,
+   "tractQ": 3.0,
+   "noise": 0.6,
+   "rough": 0.0,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.857,
+    "rivalCosine": 0.5129,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.36
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2253 Hz \u00b7 295 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2947,
+   "level": 1.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1955.5
+    ],
+    [
+     0.125,
+     1838.5
+    ],
+    [
+     0.25,
+     1973.3
+    ],
+    [
+     0.375,
+     2615.9
+    ],
+    [
+     0.5,
+     2309.8
+    ],
+    [
+     0.625,
+     2680.6
+    ],
+    [
+     1.0,
+     2562.5
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 39.52,
+   "amDepth": 0.0,
+   "gammaScale": 4.5,
+   "noise": 0.85,
+   "two": true,
+   "tractQ": 3.0,
+   "rough": 0.08,
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.6846,
+    "rivalCosine": 0.3399,
+    "nearestOwn": true,
+    "f0ErrorPercent": 8.81
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 3236 Hz \u00b7 80 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.08,
+   "level": 0.374,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2822.6
+    ],
+    [
+     0.5,
+     3175.8
+    ],
+    [
+     0.625,
+     3453.3
+    ],
+    [
+     1.0,
+     3542.5
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 13.89,
+   "amDepth": 0.45,
+   "vib": {
+    "rate": 15.62,
+    "depth": 0.05
+   },
+   "gammaScale": 6.0,
+   "tractQ": 0.0,
+   "fricative": true,
+   "formants": [
+    [
+     3192.5863689730877,
+     8.0,
+     1.0
+    ],
+    [
+     7893.0853838443245,
+     8.0,
+     1.0
+    ]
+   ],
+   "learned": {
+    "members": 24,
+    "resynthesisCosine": 0.5251,
+    "rivalCosine": 0.2135,
+    "nearestOwn": true,
+    "f0ErrorPercent": -8.26
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L02",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "L01": 0.5,
+    "end": 0.5
+   },
+   "L02": {
+    "L02": 0.8261,
+    "end": 0.087,
+    "L00": 0.087
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.251,
+   "L02>L00": 0.648,
+   "L02>L02": 0.059
+  },
+  "songTyping": {
+   "bouts": 10,
+   "short": 10,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

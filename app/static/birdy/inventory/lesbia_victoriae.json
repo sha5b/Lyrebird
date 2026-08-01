@@ -1,0 +1,260 @@
+{
+ "id": "lesbia_victoriae",
+ "common": "Black-tailed Trainbearer",
+ "scientific": "Lesbia victoriae",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 4 syllable types fitted from 51 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 6911 Hz \u00b7 160 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.16,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     6888.2
+    ],
+    [
+     1.0,
+     6934.1
+    ]
+   ],
+   "attack": 0.0534,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 10.95,
+   "amDepth": 0.15,
+   "tractQ": 3.0,
+   "rough": 0.65,
+   "two": true,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.7441,
+    "rivalCosine": 0.6383,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.3
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 6947 Hz \u00b7 163 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1627,
+   "level": 0.6,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     7118.7
+    ],
+    [
+     0.125,
+     6700.6
+    ],
+    [
+     1.0,
+     7028.0
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 25.0,
+   "amDepth": 0.6,
+   "tractQ": 12.0,
+   "rough": 0.65,
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.6338,
+    "rivalCosine": 0.724,
+    "nearestOwn": false,
+    "f0ErrorPercent": -1.57
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 6987 Hz \u00b7 37 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0373,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     7088.8
+    ],
+    [
+     0.125,
+     6667.9
+    ],
+    [
+     0.25,
+     6663.6
+    ],
+    [
+     1.0,
+     7566.7
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 45.0,
+   "amDepth": 0.8,
+   "gammaScale": 1.0,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.025
+   },
+   "noise": 0.85,
+   "rough": 0.0,
+   "fricative": true,
+   "formants": [
+    [
+     654.2237665009833,
+     2.0,
+     2.0
+    ],
+    [
+     6830.618534315889,
+     2.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.7952,
+    "rivalCosine": 0.8143,
+    "nearestOwn": false,
+    "f0ErrorPercent": -3.09
+   }
+  },
+  {
+   "id": "L03",
+   "label": "learned L03 \u00b7 7355 Hz \u00b7 37 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0373,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     7196.2
+    ],
+    [
+     1.0,
+     7517.8
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "gammaScale": 1.5,
+   "noise": 0.6,
+   "fricative": true,
+   "formants": [
+    [
+     1063.304792525682,
+     2.0,
+     2.0
+    ],
+    [
+     6830.618534315889,
+     2.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.896,
+    "rivalCosine": 0.8214,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.48
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L03",
+    "L03",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.75,
+    "L03": 0.25
+   },
+   "L01": {
+    "L01": 1.0
+   },
+   "L02": {
+    "L02": 1.0
+   },
+   "L03": {
+    "L03": 0.9,
+    "L00": 0.1
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.083,
+   "L00>L03": 0.013,
+   "L01>L01": 0.036,
+   "L02>L02": 0.056,
+   "L03>L00": 0.543,
+   "L03>L03": 0.041
+  },
+  "songTyping": {
+   "bouts": 2,
+   "short": 1,
+   "candidates": 1,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

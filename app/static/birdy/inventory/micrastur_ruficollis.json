@@ -1,0 +1,182 @@
+{
+ "id": "micrastur_ruficollis",
+ "common": "Barred Forest Falcon",
+ "scientific": "Micrastur ruficollis",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1938 Hz \u00b7 80 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.08,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2091.2
+    ],
+    [
+     0.125,
+     2134.7
+    ],
+    [
+     0.5,
+     1791.0
+    ],
+    [
+     0.875,
+     1674.0
+    ],
+    [
+     1.0,
+     2041.2
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.5,
+   "am": 15.65,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     1920.5,
+     6.0,
+     1.0
+    ],
+    [
+     5761.5,
+     6.0,
+     0.3333
+    ],
+    [
+     9602.5,
+     6.0,
+     0.2
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "noise": 0.12,
+   "rough": 0.65,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 26,
+    "resynthesisCosine": 0.5869,
+    "rivalCosine": -0.1792,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.21
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4245 Hz \u00b7 88 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.088,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4264.5
+    ],
+    [
+     0.75,
+     4233.5
+    ],
+    [
+     0.875,
+     4380.3
+    ],
+    [
+     1.0,
+     4106.4
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     2289.5188831594724,
+     2.0,
+     2.0
+    ],
+    [
+     4368.450554124434,
+     2.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 4.5,
+   "noise": 0.12,
+   "amDepth": 0.45,
+   "am": 140.0,
+   "fricative": true,
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.6939,
+    "rivalCosine": -0.0184,
+    "nearestOwn": true,
+    "f0ErrorPercent": 7.11
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5385,
+    "end": 0.4615
+   },
+   "L01": {
+    "L01": 0.6,
+    "end": 0.4
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.109,
+   "L01>L01": 0.037
+  },
+  "songTyping": {
+   "bouts": 14,
+   "short": 14,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

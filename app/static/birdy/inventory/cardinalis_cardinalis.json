@@ -1,0 +1,209 @@
+{
+ "id": "cardinalis_cardinalis",
+ "common": "Northern Cardinal",
+ "scientific": "Cardinalis cardinalis",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 43 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1038 Hz \u00b7 75 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0746,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1032.6
+    ],
+    [
+     0.125,
+     1045.2
+    ],
+    [
+     0.25,
+     988.4
+    ],
+    [
+     1.0,
+     1087.4
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "rough": 0.65,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.2034,
+    "rivalCosine": -0.2212,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.1
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2379 Hz \u00b7 109 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1093,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4050.2
+    ],
+    [
+     0.125,
+     2568.5
+    ],
+    [
+     0.375,
+     2331.6
+    ],
+    [
+     0.5,
+     2555.4
+    ],
+    [
+     0.75,
+     1999.8
+    ],
+    [
+     0.875,
+     1844.3
+    ],
+    [
+     1.0,
+     1888.4
+    ]
+   ],
+   "attack": 0.0267,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.45,
+   "vib": {
+    "rate": 11.03,
+    "depth": 0.104
+   },
+   "gammaScale": 4.5,
+   "tractQ": 12.0,
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.8304,
+    "rivalCosine": -0.0511,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.04
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 7256 Hz \u00b7 57 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0573,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     7152.3
+    ],
+    [
+     1.0,
+     7360.4
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 45.0,
+   "amDepth": 0.3,
+   "rough": 0.65,
+   "fricative": true,
+   "formants": [
+    [
+     2711.2989394619476,
+     4.0,
+     1.0
+    ],
+    [
+     6830.618534315889,
+     4.0,
+     1.0
+    ]
+   ],
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.7786,
+    "rivalCosine": -0.024,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.53
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02"
+   ],
+   "gaps": []
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 0.9048,
+    "end": 0.0952
+   },
+   "L02": {
+    "end": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.048,
+   "L01>L01": 0.088
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 7,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

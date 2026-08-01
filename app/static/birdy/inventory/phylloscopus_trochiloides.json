@@ -1,0 +1,186 @@
+{
+ "id": "phylloscopus_trochiloides",
+ "common": "Greenish Warbler",
+ "scientific": "Phylloscopus trochiloides",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 978 Hz \u00b7 112 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.112,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     993.2
+    ],
+    [
+     0.5,
+     963.0
+    ],
+    [
+     0.75,
+     1044.9
+    ],
+    [
+     0.875,
+     1000.7
+    ],
+    [
+     1.0,
+     893.0
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.7,
+   "formants": [
+    [
+     1063.304792525682,
+     2.0,
+     2.0
+    ],
+    [
+     4368.450554124434,
+     2.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 2.0,
+   "noise": 0.85,
+   "rough": 0.2,
+   "amDepth": 0.45,
+   "am": 30.0,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.05
+   },
+   "fricative": true,
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.6752,
+    "rivalCosine": 0.0018,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.99
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4825 Hz \u00b7 173 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1733,
+   "level": 1.2,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     5433.8
+    ],
+    [
+     0.125,
+     5374.5
+    ],
+    [
+     0.375,
+     4796.2
+    ],
+    [
+     0.5,
+     4321.1
+    ],
+    [
+     1.0,
+     4318.6
+    ]
+   ],
+   "attack": 0.048,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.77,
+   "amDepth": 0.239,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.09
+   },
+   "formants": [
+    [
+     654.2237665009833,
+     4.0,
+     1.0
+    ],
+    [
+     5083.5393171114765,
+     4.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 30.0,
+   "rough": 0.4,
+   "fricative": true,
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.7347,
+    "rivalCosine": -0.3527,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.96
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8667,
+    "end": 0.1333
+   },
+   "L01": {
+    "L01": 0.6923,
+    "end": 0.3077
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.019,
+   "L01>L01": 0.045
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 6,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

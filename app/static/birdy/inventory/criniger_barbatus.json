@@ -1,0 +1,162 @@
+{
+ "id": "criniger_barbatus",
+ "common": "Bearded Bulbul",
+ "scientific": "Criniger barbatus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1707 Hz \u00b7 79 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0786,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1722.6
+    ],
+    [
+     1.0,
+     1691.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.1,
+   "am": 140.0,
+   "amDepth": 0.45,
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "noise": 0.6,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.05
+   },
+   "rough": 0.65,
+   "fricative": true,
+   "formants": [
+    [
+     1919.8885853658714,
+     8.0,
+     2.0
+    ],
+    [
+     6830.618534315889,
+     8.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.7641,
+    "rivalCosine": -0.2276,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.44
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3763 Hz \u00b7 75 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0747,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4075.1
+    ],
+    [
+     0.5,
+     3535.5
+    ],
+    [
+     0.625,
+     3476.4
+    ],
+    [
+     0.875,
+     3861.9
+    ],
+    [
+     1.0,
+     3902.1
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 15.62,
+   "amDepth": 0.0,
+   "two": true,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.025
+   },
+   "noise": 0.05,
+   "gammaScale": 0.5,
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.6491,
+    "rivalCosine": -0.1464,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.89
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7333,
+    "end": 0.2667
+   },
+   "L01": {
+    "L01": 0.6429,
+    "end": 0.3571
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.115,
+   "L01>L01": 0.352
+  },
+  "songTyping": {
+   "bouts": 9,
+   "short": 8,
+   "candidates": 1,
+   "repeatCandidates": 6,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

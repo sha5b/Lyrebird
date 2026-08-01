@@ -1,0 +1,197 @@
+{
+ "id": "cacomantis_pallidus",
+ "common": "Pallid Cuckoo",
+ "scientific": "Cacomantis pallidus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 40 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 553 Hz \u00b7 51 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0507,
+   "level": 0.6,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     515.7
+    ],
+    [
+     0.25,
+     540.1
+    ],
+    [
+     0.375,
+     519.2
+    ],
+    [
+     0.5,
+     528.0
+    ],
+    [
+     0.75,
+     619.5
+    ],
+    [
+     1.0,
+     607.7
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.6,
+   "tractQ": 6.0,
+   "rough": 0.65,
+   "two": true,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.369,
+    "rivalCosine": 0.3019,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.95
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2044 Hz \u00b7 99 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0987,
+   "level": 0.75,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2074.2
+    ],
+    [
+     1.0,
+     2015.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.45,
+   "tractQ": 20.0,
+   "noise": 0.12,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.025
+   },
+   "gammaScale": 1.5,
+   "learned": {
+    "members": 23,
+    "resynthesisCosine": 0.8658,
+    "rivalCosine": 0.4717,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.36
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2055 Hz \u00b7 43 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0427,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2066.3
+    ],
+    [
+     1.0,
+     2043.0
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 27.82,
+   "amDepth": 0.45,
+   "gammaScale": 1.5,
+   "tractQ": 30.0,
+   "rough": 0.08,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.6092,
+    "rivalCosine": 0.7865,
+    "nearestOwn": false,
+    "f0ErrorPercent": 2.56
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.625,
+    "end": 0.375
+   },
+   "L01": {
+    "L01": 0.913,
+    "end": 0.087
+   },
+   "L02": {
+    "L02": 0.75,
+    "end": 0.25
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.125,
+   "L01>L01": 0.072,
+   "L02>L02": 0.239
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 7,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

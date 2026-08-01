@@ -1,0 +1,180 @@
+{
+ "id": "cecropis_striolata",
+ "common": "Striated Swallow",
+ "scientific": "Cecropis striolata",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 34 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 521 Hz \u00b7 85 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0854,
+   "level": 1.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     456.9
+    ],
+    [
+     0.25,
+     535.0
+    ],
+    [
+     0.375,
+     474.6
+    ],
+    [
+     0.5,
+     560.0
+    ],
+    [
+     0.625,
+     589.6
+    ],
+    [
+     0.75,
+     470.8
+    ],
+    [
+     0.875,
+     485.1
+    ],
+    [
+     1.0,
+     617.8
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.7,
+   "gammaScale": 2.0,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "amDepth": 0.15,
+   "am": 12.0,
+   "rough": 0.08,
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.8202,
+    "rivalCosine": 0.5867,
+    "nearestOwn": true,
+    "f0ErrorPercent": -10.07
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1048 Hz \u00b7 72 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.072,
+   "level": 0.6,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1008.0
+    ],
+    [
+     0.625,
+     1002.3
+    ],
+    [
+     0.75,
+     1101.8
+    ],
+    [
+     0.875,
+     1098.4
+    ],
+    [
+     1.0,
+     1035.4
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.2,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "gammaScale": 3.0,
+   "tractQ": 20.0,
+   "noise": 0.85,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 26,
+    "resynthesisCosine": 0.6477,
+    "rivalCosine": 0.5977,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.99
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L01",
+    "L01",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L01": 0.625,
+    "L00": 0.375
+   },
+   "L01": {
+    "L01": 0.7308,
+    "L00": 0.1538,
+    "end": 0.1154
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.093,
+   "L00>L01": 0.456,
+   "L01>L00": 0.349,
+   "L01>L01": 0.061
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 0,
+   "candidates": 3,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 3,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

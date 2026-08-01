@@ -1,0 +1,180 @@
+{
+ "id": "tyrannus_caudifasciatus",
+ "common": "Loggerhead Kingbird",
+ "scientific": "Tyrannus caudifasciatus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2452 Hz \u00b7 73 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0733,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2234.7
+    ],
+    [
+     0.125,
+     2518.2
+    ],
+    [
+     0.75,
+     2461.5
+    ],
+    [
+     1.0,
+     2610.1
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 18.21,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     2711.2989394619476,
+     8.0,
+     0.5
+    ],
+    [
+     7893.0853838443245,
+     8.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 30.0,
+   "noise": 0.6,
+   "fricative": true,
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.63,
+    "rivalCosine": 0.5392,
+    "nearestOwn": true,
+    "f0ErrorPercent": 11.3
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 8114 Hz \u00b7 52 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.052,
+   "level": 0.6,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     7978.8
+    ],
+    [
+     0.5,
+     8231.9
+    ],
+    [
+     0.625,
+     7923.3
+    ],
+    [
+     1.0,
+     8328.6
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 25.0,
+   "amDepth": 0.6,
+   "formants": [
+    [
+     2631.8,
+     2.0,
+     1.0
+    ],
+    [
+     7895.5,
+     2.0,
+     1.0
+    ],
+    [
+     1919.8885853658714,
+     2.0,
+     1.0
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     1.0
+    ]
+   ],
+   "tractQ": 3.0,
+   "rough": 0.2,
+   "noise": 0.85,
+   "fricative": true,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.7087,
+    "rivalCosine": 0.4254,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.26
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5882,
+    "end": 0.4118
+   },
+   "L01": {
+    "L01": 0.6364,
+    "end": 0.3636
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.045,
+   "L01>L01": 0.072
+  },
+  "songTyping": {
+   "bouts": 11,
+   "short": 10,
+   "candidates": 1,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

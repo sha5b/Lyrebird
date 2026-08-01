@@ -1,0 +1,212 @@
+{
+ "id": "empidonomus_aurantioatrocristatus",
+ "common": "Crowned Slaty Flycatcher",
+ "scientific": "Empidonomus aurantioatrocristatus",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 41 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 852 Hz \u00b7 40 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.04,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     848.8
+    ],
+    [
+     1.0,
+     855.7
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     5856.3,
+     6.0,
+     0.3
+    ]
+   ],
+   "tractQ": 3.0,
+   "noise": 0.6,
+   "rough": 0.0,
+   "gammaScale": 3.0,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.7789,
+    "rivalCosine": -0.0229,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.67
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4656 Hz \u00b7 55 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0547,
+   "level": 1.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4261.3
+    ],
+    [
+     1.0,
+     5086.9
+    ]
+   ],
+   "attack": 0.0187,
+   "hold": false,
+   "harmonic": 1.0,
+   "am": 25.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     1919.8885853658714,
+     8.0,
+     0.5
+    ],
+    [
+     4368.450554124434,
+     8.0,
+     0.5
+    ]
+   ],
+   "tractQ": 3.0,
+   "noise": 0.4,
+   "gammaScale": 2.0,
+   "fricative": true,
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.8284,
+    "rivalCosine": 0.049,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.87
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 5899 Hz \u00b7 133 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1333,
+   "level": 0.633,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5785.6
+    ],
+    [
+     1.0,
+     6013.9
+    ]
+   ],
+   "attack": 0.06,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     2711.2989394619476,
+     8.0,
+     0.5
+    ],
+    [
+     5899.517283512816,
+     8.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 1.5,
+   "two": true,
+   "fricative": true,
+   "learned": {
+    "members": 25,
+    "resynthesisCosine": 0.5864,
+    "rivalCosine": 0.1946,
+    "nearestOwn": true,
+    "f0ErrorPercent": 14.16
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L02",
+    "L01",
+    "L02",
+    "L02",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5833,
+    "L02": 0.25,
+    "end": 0.1667
+   },
+   "L01": {
+    "L02": 1.0
+   },
+   "L02": {
+    "L02": 0.6,
+    "L01": 0.16,
+    "end": 0.12,
+    "L00": 0.12
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.581,
+   "L00>L02": 0.245,
+   "L01>L02": 0.205,
+   "L02>L00": 0.379,
+   "L02>L01": 0.085,
+   "L02>L02": 0.096
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 1,
+   "candidates": 4,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 4,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

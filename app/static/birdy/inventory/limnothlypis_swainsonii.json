@@ -1,0 +1,154 @@
+{
+ "id": "limnothlypis_swainsonii",
+ "common": "Swainson's Warbler",
+ "scientific": "Limnothlypis swainsonii",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 24 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 4046 Hz \u00b7 177 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1774,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3807.9
+    ],
+    [
+     0.125,
+     4467.7
+    ],
+    [
+     0.25,
+     4777.3
+    ],
+    [
+     0.625,
+     3692.4
+    ],
+    [
+     0.875,
+     3663.5
+    ],
+    [
+     1.0,
+     3989.0
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.188
+   },
+   "gammaScale": 0.5,
+   "tractQ": 6.0,
+   "noise": 0.05,
+   "rough": 0.65,
+   "two": true,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.8813,
+    "rivalCosine": 0.3651,
+    "nearestOwn": true,
+    "f0ErrorPercent": 20.52
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 5119 Hz \u00b7 245 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2453,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5589.9
+    ],
+    [
+     1.0,
+     4688.0
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.35,
+   "am": 140.0,
+   "amDepth": 0.45,
+   "rough": 0.65,
+   "noise": 0.05,
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.7503,
+    "rivalCosine": 0.5297,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.76
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.6,
+    "L00": 0.4
+   },
+   "L01": {
+    "L01": 0.7143,
+    "L00": 0.2857
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.059,
+   "L01>L00": 0.025,
+   "L01>L01": 0.032
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 6,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

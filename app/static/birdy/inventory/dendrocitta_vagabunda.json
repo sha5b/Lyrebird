@@ -1,0 +1,231 @@
+{
+ "id": "dendrocitta_vagabunda",
+ "common": "Rufous Treepie",
+ "scientific": "Dendrocitta vagabunda",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 44 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1628 Hz \u00b7 80 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.08,
+   "level": 0.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1565.8
+    ],
+    [
+     0.125,
+     1651.2
+    ],
+    [
+     1.0,
+     1669.4
+    ]
+   ],
+   "attack": 0.0186,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 21.78,
+   "amDepth": 0.218,
+   "formants": [
+    [
+     1595.9601420802412,
+     4.0,
+     2.0
+    ],
+    [
+     7893.0853838443245,
+     4.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 3.0,
+   "fricative": true,
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.4319,
+    "rivalCosine": 0.0782,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.19
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2265 Hz \u00b7 121 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1213,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2291.0
+    ],
+    [
+     1.0,
+     2239.3
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 12.0,
+   "amDepth": 0.0,
+   "formants": [
+    [
+     2447.2,
+     6.0,
+     1.0
+    ],
+    [
+     7341.7,
+     6.0,
+     0.3333
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 20.0,
+   "noise": 0.6,
+   "two": true,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 28,
+    "resynthesisCosine": 0.6483,
+    "rivalCosine": 0.6249,
+    "nearestOwn": true,
+    "f0ErrorPercent": 6.46
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2541 Hz \u00b7 97 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0973,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2566.8
+    ],
+    [
+     0.5,
+     2481.0
+    ],
+    [
+     0.75,
+     2600.4
+    ],
+    [
+     0.875,
+     2465.9
+    ],
+    [
+     1.0,
+     2595.2
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.35,
+   "am": 12.0,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     2447.2,
+     6.0,
+     1.0
+    ],
+    [
+     7341.7,
+     6.0,
+     0.3333
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 30.0,
+   "noise": 0.85,
+   "two": true,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.8939,
+    "rivalCosine": 0.8533,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.95
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L02",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.75,
+    "L00": 0.25
+   },
+   "L01": {
+    "L01": 0.8519,
+    "end": 0.1481
+   },
+   "L02": {
+    "L02": 0.5714,
+    "end": 0.4286
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.121,
+   "L01>L01": 0.053,
+   "L02>L02": 0.027
+  },
+  "songTyping": {
+   "bouts": 13,
+   "short": 12,
+   "candidates": 1,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,203 @@
+{
+ "id": "platyrinchus_cancrominus",
+ "common": "Stub-tailed Spadebill",
+ "scientific": "Platyrinchus cancrominus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 735 Hz \u00b7 419 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.4186,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     618.2
+    ],
+    [
+     0.125,
+     531.7
+    ],
+    [
+     0.25,
+     550.8
+    ],
+    [
+     0.375,
+     1833.6
+    ],
+    [
+     0.5,
+     1202.8
+    ],
+    [
+     0.625,
+     988.2
+    ],
+    [
+     0.75,
+     468.0
+    ],
+    [
+     0.875,
+     603.7
+    ],
+    [
+     1.0,
+     561.3
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.35,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.354
+   },
+   "formants": [
+    [
+     5187.9,
+     6.0,
+     1.0
+    ]
+   ],
+   "rough": 0.2,
+   "two": true,
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.533,
+    "rivalCosine": -0.0822,
+    "nearestOwn": true,
+    "f0ErrorPercent": 26.75
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1689 Hz \u00b7 53 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0533,
+   "level": 1.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1685.4
+    ],
+    [
+     0.125,
+     1400.7
+    ],
+    [
+     0.25,
+     1683.0
+    ],
+    [
+     0.625,
+     1679.5
+    ],
+    [
+     0.75,
+     1865.9
+    ],
+    [
+     0.875,
+     1677.1
+    ],
+    [
+     1.0,
+     1874.4
+    ]
+   ],
+   "attack": 0.0107,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 45.0,
+   "amDepth": 0.45,
+   "formants": [
+    [
+     1919.8885853658714,
+     4.0,
+     2.0
+    ],
+    [
+     5083.5393171114765,
+     4.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.09
+   },
+   "two": true,
+   "fricative": true,
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.6938,
+    "rivalCosine": -0.4277,
+    "nearestOwn": true,
+    "f0ErrorPercent": 10.22
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 0.5714,
+    "end": 0.4286
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.02,
+   "L01>L01": 0.081
+  },
+  "songTyping": {
+   "bouts": 10,
+   "short": 10,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

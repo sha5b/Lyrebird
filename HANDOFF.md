@@ -94,6 +94,36 @@ copy** instead of a full-corpus scan, and the focused-bird branch reuses its mem
 scratch instead of allocating **348 kB of garbage per swap — produced exactly while the
 camera is moving**, which is the worst possible moment for a GC pause.
 
+**Two more owner-reported bugs, both found and both real**
+
+- **"A one-tone bird makes the cloud flash / dim while it is active."** The resting wash
+  gave up 40 % of its alpha in proportion to `uLevel`, the **raw live input level** —
+  loudness, not match. A pure tone matches almost no bird syllable, so it dimmed the entire
+  corpus by 40 % and lit nothing: the galaxy flinching at a sound it could not place. And
+  `uLevel` is per-frame and unsmoothed, so the whole picture flickered at audio rate. Now
+  driven by a new `uAnswer` = **loudness × `signal.strength`, eased** — the wash only steps
+  back when there is something behind it to see, and it comes back slower than it left
+  (~80 ms rise, ~250 ms fall, both delta-scaled so the half-life is the same at 60 and
+  144 Hz). `uLevel` still drives the pulse and the growth in the vertex stage, unchanged.
+- **"The camera does not centre on the centre of the point cloud, especially on autoload."**
+  Two causes, both in `Framing.svelte`. First, **it aimed at the per-axis median of the
+  knots, which is not the middle of the cloud.** The median is right for a bird — it is why
+  one stray call cannot drag the view off the repertoire — and wrong for "everything",
+  because knot density is skewed. Measured on the built assets: the projection is centred on
+  the origin to within 0.001, and the median lands **0.269 box units off on the shipped
+  build (14 % of the cloud's span) and 0.537 off on the production build (27 %)**. The
+  camera was aiming a quarter of the way out from the cloud, worst on autoload because
+  autoload *is* the whole-galaxy case. `reachQuantile` already excluded framing-everything
+  by name for the *reach*; the exception was simply never applied to the *centre*. It now
+  centres on the extent when framing ≥ 90 % of the knots and keeps the median otherwise.
+  Second, **it read centroids without checking `counts`** — `layouts.ts` documents a
+  memberless knot's (0,0,0) as a lie that every positional effect must check, and this one
+  did not, so on a build with memberless knots the aim was an average of the corpus and the
+  origin. Latent on both current builds (both have zero memberless knots) and now guarded.
+- **Same invariant still unguarded in `ContextPaths` and `Trajectory`** (thread endpoints)
+  and in `NodeProjector` (tag position). Latent for the same reason — zero memberless knots
+  on both builds — and worth closing before a build that has them.
+
 **Two LOD levers left deliberately untouched, both now visible in the readout**
 
 - **`LOD_NEAR = 1.6` cloud radii is where "every point" engages**, which at 348 461 points

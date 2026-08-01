@@ -1,0 +1,258 @@
+{
+ "id": "piranga_rubra",
+ "common": "Summer Tanager",
+ "scientific": "Piranga rubra",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 37 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 622 Hz \u00b7 67 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0667,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     620.7
+    ],
+    [
+     1.0,
+     622.5
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 19.74,
+   "amDepth": 0.6,
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     0.15
+    ],
+    [
+     9584.9,
+     6.0,
+     0.05
+    ]
+   ],
+   "rough": 0.2,
+   "learned": {
+    "members": 31,
+    "resynthesisCosine": 0.5859,
+    "rivalCosine": 0.5159,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.48
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 728 Hz \u00b7 75 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0747,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     732.3
+    ],
+    [
+     0.125,
+     715.6
+    ],
+    [
+     0.25,
+     1108.0
+    ],
+    [
+     0.375,
+     638.5
+    ],
+    [
+     0.5,
+     686.8
+    ],
+    [
+     0.625,
+     695.6
+    ],
+    [
+     0.875,
+     652.4
+    ],
+    [
+     1.0,
+     682.7
+    ]
+   ],
+   "attack": 0.06,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 80.0,
+   "amDepth": 0.342,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.328
+   },
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     0.15
+    ],
+    [
+     9584.9,
+     6.0,
+     0.05
+    ]
+   ],
+   "gammaScale": 0.5,
+   "noise": 0.85,
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.0703,
+    "rivalCosine": 0.196,
+    "nearestOwn": false,
+    "f0ErrorPercent": 14.87
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 1080 Hz \u00b7 37 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0373,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1321.0
+    ],
+    [
+     0.125,
+     1070.9
+    ],
+    [
+     0.25,
+     1009.7
+    ],
+    [
+     0.375,
+     1211.5
+    ],
+    [
+     0.5,
+     1256.4
+    ],
+    [
+     0.625,
+     1111.4
+    ],
+    [
+     0.75,
+     902.8
+    ],
+    [
+     0.875,
+     900.6
+    ],
+    [
+     1.0,
+     1019.8
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 45.0,
+   "amDepth": 0.177,
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     0.15
+    ],
+    [
+     9584.9,
+     6.0,
+     0.05
+    ]
+   ],
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.01
+   },
+   "tractQ": 6.0,
+   "rough": 0.08,
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.7474,
+    "rivalCosine": 0.4238,
+    "nearestOwn": true,
+    "f0ErrorPercent": 11.7
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L02",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7097,
+    "end": 0.2903
+   },
+   "L01": {
+    "L01": 1.0
+   },
+   "L02": {
+    "end": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.063,
+   "L01>L01": 0.084
+  },
+  "songTyping": {
+   "bouts": 12,
+   "short": 12,
+   "candidates": 0,
+   "repeatCandidates": 6,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

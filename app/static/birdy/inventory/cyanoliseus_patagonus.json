@@ -1,0 +1,142 @@
+{
+ "id": "cyanoliseus_patagonus",
+ "common": "Burrowing Parakeet",
+ "scientific": "Cyanoliseus patagonus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1958 Hz \u00b7 89 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0893,
+   "level": 1.2,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1943.0
+    ],
+    [
+     0.25,
+     2013.9
+    ],
+    [
+     0.375,
+     1931.9
+    ],
+    [
+     0.75,
+     1911.5
+    ],
+    [
+     1.0,
+     1989.1
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 1.0,
+   "tractQ": 12.0,
+   "noise": 0.85,
+   "rough": 0.65,
+   "amDepth": 0.15,
+   "am": 140.0,
+   "learned": {
+    "members": 26,
+    "resynthesisCosine": 0.5423,
+    "rivalCosine": 0.1127,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.09
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2329 Hz \u00b7 64 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.064,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2379.0
+    ],
+    [
+     1.0,
+     2280.2
+    ]
+   ],
+   "attack": 0.032,
+   "hold": false,
+   "harmonic": 0.7,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "gammaScale": 1.0,
+   "tractQ": 30.0,
+   "noise": 0.05,
+   "rough": 0.2,
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.4223,
+    "rivalCosine": 0.2286,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.61
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7692,
+    "end": 0.2308
+   },
+   "L01": {
+    "L01": 0.6,
+    "end": 0.4
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.135,
+   "L01>L01": 0.029
+  },
+  "songTyping": {
+   "bouts": 8,
+   "short": 8,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,148 @@
+{
+ "id": "alisterus_chloropterus",
+ "common": "Papuan King-Parrot",
+ "scientific": "Alisterus chloropterus",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 3108 Hz \u00b7 232 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.232,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3073.4
+    ],
+    [
+     1.0,
+     3142.2
+    ]
+   ],
+   "attack": 0.12,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 12.0,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     1.0
+    ],
+    [
+     9584.9,
+     6.0,
+     0.3333
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 12.0,
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.723,
+    "rivalCosine": 0.3678,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.15
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3587 Hz \u00b7 116 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.116,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3566.4
+    ],
+    [
+     1.0,
+     3608.2
+    ]
+   ],
+   "attack": 0.0667,
+   "hold": false,
+   "harmonic": 0.5,
+   "am": 140.0,
+   "amDepth": 0.225,
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     1.0
+    ],
+    [
+     9584.9,
+     6.0,
+     0.3333
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 3.0,
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.7601,
+    "rivalCosine": 0.5913,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.86
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.6316,
+    "L00": 0.3684
+   },
+   "L01": {
+    "end": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.957
+  },
+  "songTyping": {
+   "bouts": 17,
+   "short": 17,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

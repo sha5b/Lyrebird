@@ -1,0 +1,243 @@
+{
+ "id": "eugralla_paradoxa",
+ "common": "Ochre-flanked Tapaculo",
+ "scientific": "Eugralla paradoxa",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 4 syllable types fitted from 55 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2991 Hz \u00b7 33 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0333,
+   "level": 0.75,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3095.0
+    ],
+    [
+     1.0,
+     2890.9
+    ]
+   ],
+   "attack": 0.0053,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 45.0,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "rough": 0.0,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.09
+   },
+   "tractQ": 30.0,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.6348,
+    "rivalCosine": 0.2581,
+    "nearestOwn": true,
+    "f0ErrorPercent": 7.98
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3048 Hz \u00b7 56 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.056,
+   "level": 0.9,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3335.3
+    ],
+    [
+     1.0,
+     2786.0
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 20.83,
+   "amDepth": 0.791,
+   "gammaScale": 3.0,
+   "tractQ": 30.0,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 38,
+    "resynthesisCosine": 0.708,
+    "rivalCosine": 0.0672,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.79
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 8322 Hz \u00b7 27 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0267,
+   "level": 0.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     9237.1
+    ],
+    [
+     1.0,
+     7497.8
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 4.5,
+   "tractQ": 30.0,
+   "noise": 0.05,
+   "two": true,
+   "learned": {
+    "members": 1,
+    "resynthesisCosine": 0.5736,
+    "rivalCosine": 0.2463,
+    "nearestOwn": true,
+    "f0ErrorPercent": 28.17
+   }
+  },
+  {
+   "id": "L03",
+   "label": "learned L03 \u00b7 9103 Hz \u00b7 84 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.084,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     9302.8
+    ],
+    [
+     0.25,
+     8639.2
+    ],
+    [
+     0.375,
+     9104.4
+    ],
+    [
+     0.5,
+     8903.4
+    ],
+    [
+     1.0,
+     9594.7
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.2,
+   "am": 20.61,
+   "amDepth": 0.0,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.165
+   },
+   "gammaScale": 3.0,
+   "noise": 0.25,
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.8992,
+    "rivalCosine": -0.0615,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.93
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L02",
+   "L03"
+  ],
+  "transitions": {
+   "L00": {
+    "L01": 0.6667,
+    "L00": 0.3333
+   },
+   "L01": {
+    "L01": 0.7895,
+    "end": 0.2105
+   },
+   "L02": {
+    "L03": 1.0
+   },
+   "L03": {
+    "end": 0.5,
+    "L03": 0.5
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.083,
+   "L00>L01": 0.083,
+   "L01>L01": 0.072,
+   "L03>L03": 0.141
+  },
+  "songTypes": [
+   {
+    "id": "S01",
+    "sequence": [
+     "L00",
+     "L01"
+    ],
+    "count": 8,
+    "share": 0.8,
+    "kind": "repeat"
+   }
+  ],
+  "songTyping": {
+   "bouts": 10,
+   "short": 10,
+   "candidates": 0,
+   "repeatCandidates": 9,
+   "types": 1,
+   "repeatTypes": 1,
+   "inTypes": 8,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

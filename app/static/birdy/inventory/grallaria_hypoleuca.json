@@ -1,0 +1,141 @@
+{
+ "id": "grallaria_hypoleuca",
+ "common": "White-bellied Antpitta",
+ "scientific": "Grallaria hypoleuca",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2105 Hz \u00b7 173 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1734,
+   "level": 0.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2136.3
+    ],
+    [
+     1.0,
+     2074.2
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.45,
+   "gammaScale": 2.0,
+   "tractQ": 3.0,
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.7146,
+    "rivalCosine": 0.4158,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.02
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2173 Hz \u00b7 272 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.272,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2176.3
+    ],
+    [
+     1.0,
+     2168.9
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "gammaScale": 0.5,
+   "tractQ": 12.0,
+   "rough": 0.65,
+   "noise": 0.25,
+   "fricative": true,
+   "formants": [
+    [
+     2289.5188831594724,
+     8.0,
+     0.5
+    ],
+    [
+     7893.0853838443245,
+     8.0,
+     0.5
+    ]
+   ],
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.7034,
+    "rivalCosine": 0.5786,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.17
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6667,
+    "end": 0.3333
+   },
+   "L01": {
+    "L01": 0.5385,
+    "end": 0.4615
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.248,
+   "L01>L01": 0.197
+  },
+  "songTyping": {
+   "bouts": 12,
+   "short": 12,
+   "candidates": 0,
+   "repeatCandidates": 8,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

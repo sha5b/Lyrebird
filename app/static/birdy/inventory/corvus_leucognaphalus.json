@@ -1,0 +1,202 @@
+{
+ "id": "corvus_leucognaphalus",
+ "common": "White-necked Crow",
+ "scientific": "Corvus leucognaphalus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1538 Hz \u00b7 39 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0387,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1825.3
+    ],
+    [
+     0.375,
+     1592.1
+    ],
+    [
+     0.5,
+     1262.3
+    ],
+    [
+     0.625,
+     1366.8
+    ],
+    [
+     0.75,
+     1311.8
+    ],
+    [
+     0.875,
+     1713.7
+    ],
+    [
+     1.0,
+     1807.3
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.1,
+   "am": 12.0,
+   "amDepth": 0.6,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "rough": 0.2,
+   "two": true,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.2962,
+    "rivalCosine": -0.1242,
+    "nearestOwn": true,
+    "f0ErrorPercent": -16.0
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2796 Hz \u00b7 129 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1294,
+   "level": 1.2,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3880.3
+    ],
+    [
+     0.125,
+     3543.4
+    ],
+    [
+     0.25,
+     3877.8
+    ],
+    [
+     0.375,
+     2967.3
+    ],
+    [
+     0.5,
+     3358.7
+    ],
+    [
+     0.625,
+     1731.7
+    ],
+    [
+     0.75,
+     1749.6
+    ],
+    [
+     0.875,
+     2717.2
+    ],
+    [
+     1.0,
+     2388.6
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.99,
+   "am": 80.0,
+   "amDepth": 0.45,
+   "formants": [
+    [
+     1063.304792525682,
+     2.0,
+     0.5
+    ],
+    [
+     4368.450554124434,
+     2.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "noise": 0.25,
+   "rough": 0.08,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.09
+   },
+   "fricative": true,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.7818,
+    "rivalCosine": 0.0411,
+    "nearestOwn": true,
+    "f0ErrorPercent": -23.64
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5625,
+    "end": 0.4375
+   },
+   "L01": {
+    "end": 0.5833,
+    "L01": 0.4167
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.141,
+   "L01>L01": 0.477
+  },
+  "songTyping": {
+   "bouts": 14,
+   "short": 14,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

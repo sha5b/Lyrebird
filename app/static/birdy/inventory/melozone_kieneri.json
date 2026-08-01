@@ -1,0 +1,190 @@
+{
+ "id": "melozone_kieneri",
+ "common": "Rusty-crowned Ground-Sparrow",
+ "scientific": "Melozone kieneri",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 37 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 5531 Hz \u00b7 81 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0813,
+   "level": 0.379,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     6531.3
+    ],
+    [
+     1.0,
+     4684.7
+    ]
+   ],
+   "attack": 0.0226,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 12.5,
+    "depth": 0.128
+   },
+   "gammaScale": 4.5,
+   "tractQ": 30.0,
+   "two": true,
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.9162,
+    "rivalCosine": 0.4736,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.27
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 6403 Hz \u00b7 49 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0494,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     6414.8
+    ],
+    [
+     1.0,
+     6392.1
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.7,
+   "am": 25.0,
+   "amDepth": 0.0,
+   "noise": 0.12,
+   "rough": 0.65,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.09
+   },
+   "gammaScale": 0.5,
+   "two": true,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.88,
+    "rivalCosine": 0.4252,
+    "nearestOwn": true,
+    "f0ErrorPercent": 6.75
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 8128 Hz \u00b7 56 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.056,
+   "level": 0.6,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     8620.6
+    ],
+    [
+     1.0,
+     7662.9
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 25.0,
+   "amDepth": 0.6,
+   "gammaScale": 1.5,
+   "rough": 0.4,
+   "tractQ": 0.0,
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.8424,
+    "rivalCosine": 0.4898,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.66
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L00",
+    "L00",
+    "L02",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6667,
+    "L02": 0.1111,
+    "end": 0.1111,
+    "L01": 0.1111
+   },
+   "L01": {
+    "L01": 0.8,
+    "L02": 0.2
+   },
+   "L02": {
+    "end": 0.5,
+    "L00": 0.5
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.168,
+   "L00>L01": 0.163,
+   "L00>L02": 0.301,
+   "L01>L01": 0.056,
+   "L01>L02": 0.157,
+   "L02>L00": 0.272
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 4,
+   "candidates": 2,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

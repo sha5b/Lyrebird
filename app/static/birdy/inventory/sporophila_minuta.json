@@ -1,0 +1,255 @@
+{
+ "id": "sporophila_minuta",
+ "common": "Ruddy-breasted Seedeater",
+ "scientific": "Sporophila minuta",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 39 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 666 Hz \u00b7 52 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.052,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     612.3
+    ],
+    [
+     0.125,
+     679.4
+    ],
+    [
+     0.375,
+     638.2
+    ],
+    [
+     0.5,
+     670.4
+    ],
+    [
+     0.625,
+     667.5
+    ],
+    [
+     0.75,
+     628.7
+    ],
+    [
+     1.0,
+     775.6
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 19.91,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     2711.2989394619476,
+     2.0,
+     0.5
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     0.5
+    ]
+   ],
+   "rough": 0.08,
+   "two": false,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "gammaScale": 3.0,
+   "fricative": true,
+   "learned": {
+    "members": 22,
+    "resynthesisCosine": 0.24,
+    "rivalCosine": 0.2675,
+    "nearestOwn": false,
+    "f0ErrorPercent": -9.78
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3696 Hz \u00b7 153 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1533,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3851.6
+    ],
+    [
+     0.25,
+     3720.1
+    ],
+    [
+     0.5,
+     3903.5
+    ],
+    [
+     0.625,
+     3616.7
+    ],
+    [
+     1.0,
+     3410.9
+    ]
+   ],
+   "attack": 0.036,
+   "hold": false,
+   "harmonic": 0.7,
+   "am": 140.0,
+   "amDepth": 0.179,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 6.0,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.7269,
+    "rivalCosine": 0.0909,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.51
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 5111 Hz \u00b7 91 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0907,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5354.5
+    ],
+    [
+     0.5,
+     4991.9
+    ],
+    [
+     1.0,
+     4994.3
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     1919.8885853658714,
+     8.0,
+     1.0
+    ],
+    [
+     5083.5393171114765,
+     8.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "rough": 0.2,
+   "noise": 0.85,
+   "two": true,
+   "fricative": true,
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.6489,
+    "rivalCosine": 0.3174,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.34
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L02",
+    "L02",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.9048,
+    "L02": 0.0952
+   },
+   "L01": {
+    "L01": 0.5714,
+    "L02": 0.4286
+   },
+   "L02": {
+    "L02": 0.4444,
+    "L01": 0.3333,
+    "end": 0.2222
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.088,
+   "L00>L02": 0.711,
+   "L01>L01": 0.087,
+   "L01>L02": 0.043,
+   "L02>L01": 0.04,
+   "L02>L02": 0.145
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 3,
+   "candidates": 1,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

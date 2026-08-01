@@ -1,0 +1,167 @@
+{
+ "id": "chalcomitra_amethystina",
+ "common": "Amethyst Sunbird",
+ "scientific": "Chalcomitra amethystina",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 4031 Hz \u00b7 59 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0587,
+   "level": 0.9,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4030.1
+    ],
+    [
+     1.0,
+     4032.2
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     5063.7,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 4.5,
+   "rough": 0.65,
+   "amDepth": 0.0,
+   "am": 30.0,
+   "tractQ": 0.0,
+   "noise": 0.25,
+   "learned": {
+    "members": 1,
+    "resynthesisCosine": 0.7954,
+    "rivalCosine": 0.5622,
+    "nearestOwn": true,
+    "f0ErrorPercent": -5.97
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4735 Hz \u00b7 129 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1294,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4748.9
+    ],
+    [
+     1.0,
+     4722.1
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.35,
+   "am": 10.71,
+   "amDepth": 0.307,
+   "vib": {
+    "rate": 16.68,
+    "depth": 0.025
+   },
+   "formants": [
+    [
+     5063.7,
+     8.0,
+     0.5
+    ],
+    [
+     1063.304792525682,
+     8.0,
+     0.5
+    ],
+    [
+     5083.5393171114765,
+     8.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 6.0,
+   "noise": 0.85,
+   "two": true,
+   "fricative": true,
+   "learned": {
+    "members": 28,
+    "resynthesisCosine": 0.6007,
+    "rivalCosine": 0.2493,
+    "nearestOwn": true,
+    "f0ErrorPercent": 7.32
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L01": 1.0
+   },
+   "L01": {
+    "L01": 0.6071,
+    "end": 0.3929
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.059
+  },
+  "songTypes": [
+   {
+    "id": "S01",
+    "sequence": [
+     "L01"
+    ],
+    "count": 6,
+    "share": 0.5455,
+    "kind": "repeat"
+   }
+  ],
+  "songTyping": {
+   "bouts": 11,
+   "short": 11,
+   "candidates": 0,
+   "repeatCandidates": 6,
+   "types": 1,
+   "repeatTypes": 1,
+   "inTypes": 6,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,163 @@
+{
+ "id": "junco_phaeonotus",
+ "common": "Yellow-eyed Junco",
+ "scientific": "Junco phaeonotus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 32 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 612 Hz \u00b7 65 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0653,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     702.7
+    ],
+    [
+     0.125,
+     777.5
+    ],
+    [
+     0.5,
+     537.2
+    ],
+    [
+     0.625,
+     574.1
+    ],
+    [
+     0.75,
+     511.6
+    ],
+    [
+     0.875,
+     591.5
+    ],
+    [
+     1.0,
+     628.4
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 80.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     5063.7,
+     6.0,
+     1.0
+    ]
+   ],
+   "tractQ": 12.0,
+   "two": true,
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.183,
+    "rivalCosine": -0.2674,
+    "nearestOwn": true,
+    "f0ErrorPercent": -6.06
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4891 Hz \u00b7 27 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0267,
+   "level": 0.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     5008.6
+    ],
+    [
+     1.0,
+     4776.5
+    ]
+   ],
+   "attack": 0.0027,
+   "hold": false,
+   "harmonic": 0.1,
+   "formants": [
+    [
+     5063.7,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 12.0,
+   "noise": 0.25,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.7446,
+    "rivalCosine": -0.1985,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.44
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8235,
+    "end": 0.1765
+   },
+   "L01": {
+    "L01": 0.7857,
+    "end": 0.2143
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.079,
+   "L01>L01": 0.075
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 6,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

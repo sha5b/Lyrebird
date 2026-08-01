@@ -1,0 +1,178 @@
+{
+ "id": "nymphicus_hollandicus",
+ "common": "Cockatiel",
+ "scientific": "Nymphicus hollandicus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 34 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 468 Hz \u00b7 112 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.112,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     448.3
+    ],
+    [
+     0.125,
+     508.5
+    ],
+    [
+     0.25,
+     467.2
+    ],
+    [
+     0.375,
+     450.0
+    ],
+    [
+     1.0,
+     467.4
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
+   "rough": 0.0,
+   "two": true,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.6241,
+    "rivalCosine": 0.1533,
+    "nearestOwn": true,
+    "f0ErrorPercent": -9.36
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 765 Hz \u00b7 76 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.076,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     637.0
+    ],
+    [
+     0.125,
+     802.8
+    ],
+    [
+     0.5,
+     799.5
+    ],
+    [
+     0.75,
+     871.8
+    ],
+    [
+     0.875,
+     770.5
+    ],
+    [
+     1.0,
+     730.5
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.7,
+   "am": 25.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "noise": 0.05,
+   "rough": 0.65,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.01
+   },
+   "two": true,
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.4841,
+    "rivalCosine": -0.0058,
+    "nearestOwn": true,
+    "f0ErrorPercent": 7.5
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 0.85,
+    "end": 0.15
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.107,
+   "L01>L01": 0.155
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 4,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

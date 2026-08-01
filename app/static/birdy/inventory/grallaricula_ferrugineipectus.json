@@ -1,0 +1,246 @@
+{
+ "id": "grallaricula_ferrugineipectus",
+ "common": "Rusty-breasted Antpitta",
+ "scientific": "Grallaricula ferrugineipectus",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 4 syllable types fitted from 54 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1013 Hz \u00b7 65 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0653,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     869.1
+    ],
+    [
+     0.125,
+     718.0
+    ],
+    [
+     0.25,
+     1306.5
+    ],
+    [
+     0.375,
+     1190.3
+    ],
+    [
+     0.5,
+     1162.0
+    ],
+    [
+     0.625,
+     1244.9
+    ],
+    [
+     0.75,
+     1166.1
+    ],
+    [
+     0.875,
+     805.1
+    ],
+    [
+     1.0,
+     849.2
+    ]
+   ],
+   "attack": 0.0146,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.6,
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
+   "rough": 0.65,
+   "two": false,
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": -0.104,
+    "rivalCosine": -0.0004,
+    "nearestOwn": false,
+    "f0ErrorPercent": 17.28
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1830 Hz \u00b7 69 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0693,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1905.6
+    ],
+    [
+     1.0,
+     1757.2
+    ]
+   ],
+   "attack": 0.0293,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 16.3,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
+   "noise": 0.12,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 22,
+    "resynthesisCosine": 0.7484,
+    "rivalCosine": 0.5453,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.51
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 1855 Hz \u00b7 69 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0693,
+   "level": 0.75,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1930.8
+    ],
+    [
+     1.0,
+     1781.7
+    ]
+   ],
+   "attack": 0.024,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 21.34,
+   "amDepth": 0.6,
+   "tractQ": 20.0,
+   "noise": 0.85,
+   "rough": 0.65,
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.4977,
+    "rivalCosine": 0.6776,
+    "nearestOwn": false,
+    "f0ErrorPercent": 1.11
+   }
+  },
+  {
+   "id": "L03",
+   "label": "learned L03 \u00b7 1987 Hz \u00b7 107 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1067,
+   "level": 1.2,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1940.8
+    ],
+    [
+     1.0,
+     2034.8
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "gammaScale": 1.0,
+   "tractQ": 30.0,
+   "noise": 0.05,
+   "rough": 0.2,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 22,
+    "resynthesisCosine": 0.7229,
+    "rivalCosine": 0.5601,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.98
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00"
+   ],
+   "gaps": []
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L02",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "L01": 0.7619,
+    "L03": 0.1429,
+    "end": 0.0952
+   },
+   "L02": {
+    "L01": 0.6,
+    "L02": 0.4
+   },
+   "L03": {
+    "L03": 0.9048,
+    "L01": 0.0952
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.051,
+   "L01>L03": 0.035,
+   "L02>L01": 0.053,
+   "L02>L02": 0.051,
+   "L03>L01": 0.039,
+   "L03>L03": 0.032
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 4,
+   "candidates": 3,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 3,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

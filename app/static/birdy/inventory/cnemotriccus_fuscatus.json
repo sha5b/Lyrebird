@@ -1,0 +1,232 @@
+{
+ "id": "cnemotriccus_fuscatus",
+ "common": "Fuscous Flycatcher",
+ "scientific": "Cnemotriccus fuscatus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 42 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 495 Hz \u00b7 84 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.084,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     514.3
+    ],
+    [
+     0.25,
+     519.7
+    ],
+    [
+     0.375,
+     478.7
+    ],
+    [
+     0.875,
+     475.9
+    ],
+    [
+     1.0,
+     485.7
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.7,
+   "vib": {
+    "rate": 2.1,
+    "depth": 0.05
+   },
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 1.5,
+   "noise": 0.0,
+   "rough": 0.65,
+   "amDepth": 0.6,
+   "am": 12.0,
+   "two": false,
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.4835,
+    "rivalCosine": -0.2286,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.3
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3040 Hz \u00b7 131 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1307,
+   "level": 0.75,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2592.7
+    ],
+    [
+     0.75,
+     2553.2
+    ],
+    [
+     0.875,
+     2781.9
+    ],
+    [
+     1.0,
+     4636.1
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.45,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.05
+   },
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 12.0,
+   "noise": 0.12,
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.6706,
+    "rivalCosine": 0.2455,
+    "nearestOwn": true,
+    "f0ErrorPercent": 8.88
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 6589 Hz \u00b7 40 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.04,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     6593.7
+    ],
+    [
+     1.0,
+     6585.2
+    ]
+   ],
+   "attack": 0.002,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     2711.2989394619476,
+     2.0,
+     1.0
+    ],
+    [
+     6830.618534315889,
+     2.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "noise": 0.85,
+   "rough": 0.2,
+   "fricative": true,
+   "learned": {
+    "members": 25,
+    "resynthesisCosine": 0.7664,
+    "rivalCosine": 0.3594,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.54
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L02",
+    "L01",
+    "L02",
+    "L02",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L02": 0.5556,
+    "L01": 0.4444
+   },
+   "L02": {
+    "L02": 0.68,
+    "L01": 0.2,
+    "end": 0.12
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.061,
+   "L01>L01": 0.265,
+   "L01>L02": 0.173,
+   "L02>L01": 0.152,
+   "L02>L02": 0.312
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 2,
+   "candidates": 2,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

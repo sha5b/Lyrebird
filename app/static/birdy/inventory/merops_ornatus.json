@@ -1,0 +1,212 @@
+{
+ "id": "merops_ornatus",
+ "common": "Rainbow Bee-eater",
+ "scientific": "Merops ornatus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 33 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1043 Hz \u00b7 101 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1013,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     865.4
+    ],
+    [
+     0.25,
+     438.6
+    ],
+    [
+     0.375,
+     1116.1
+    ],
+    [
+     0.5,
+     2671.3
+    ],
+    [
+     0.625,
+     693.0
+    ],
+    [
+     0.75,
+     2715.9
+    ],
+    [
+     0.875,
+     1450.3
+    ],
+    [
+     1.0,
+     454.4
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.5,
+   "am": 80.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     2696.4,
+     6.0,
+     1.0
+    ],
+    [
+     8089.2,
+     6.0,
+     0.3333
+    ]
+   ],
+   "tractQ": 12.0,
+   "rough": 0.4,
+   "two": true,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.1911,
+    "rivalCosine": -0.0096,
+    "nearestOwn": true,
+    "f0ErrorPercent": -26.67
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1540 Hz \u00b7 184 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.184,
+   "level": 0.6,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2075.1
+    ],
+    [
+     0.125,
+     2394.0
+    ],
+    [
+     0.25,
+     2501.6
+    ],
+    [
+     0.375,
+     1880.0
+    ],
+    [
+     0.5,
+     2152.6
+    ],
+    [
+     0.625,
+     833.0
+    ],
+    [
+     0.75,
+     829.8
+    ],
+    [
+     0.875,
+     1125.3
+    ],
+    [
+     1.0,
+     1246.2
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.19
+   },
+   "formants": [
+    [
+     2696.4,
+     6.0,
+     1.0
+    ],
+    [
+     8089.2,
+     6.0,
+     0.3333
+    ]
+   ],
+   "tractQ": 30.0,
+   "two": false,
+   "rough": 0.4,
+   "noise": 0.4,
+   "learned": {
+    "members": 24,
+    "resynthesisCosine": 0.061,
+    "rivalCosine": 0.0507,
+    "nearestOwn": true,
+    "f0ErrorPercent": -23.69
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7778,
+    "end": 0.2222
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.035,
+   "L01>L01": 0.024
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 3,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

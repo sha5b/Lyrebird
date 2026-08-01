@@ -1,0 +1,241 @@
+{
+ "id": "nyctiphrynus_mcleodii",
+ "common": "Eared Poorwill",
+ "scientific": "Nyctiphrynus mcleodii",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 4 syllable types fitted from 58 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1304 Hz \u00b7 27 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0267,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1282.2
+    ],
+    [
+     1.0,
+     1325.7
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.9,
+   "gammaScale": 0.5,
+   "amDepth": 0.8,
+   "am": 140.0,
+   "two": true,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 1,
+    "resynthesisCosine": 0.7636,
+    "rivalCosine": 0.6685,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.47
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1627 Hz \u00b7 285 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2853,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1826.6
+    ],
+    [
+     0.125,
+     1820.5
+    ],
+    [
+     0.25,
+     1910.8
+    ],
+    [
+     0.375,
+     1580.2
+    ],
+    [
+     0.5,
+     1641.6
+    ],
+    [
+     1.0,
+     1127.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.025,
+   "am": 45.0,
+   "amDepth": 0.0,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.099
+   },
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "rough": 0.2,
+   "learned": {
+    "members": 51,
+    "resynthesisCosine": 0.8385,
+    "rivalCosine": -0.2378,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.47
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2299 Hz \u00b7 32 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.032,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2194.9
+    ],
+    [
+     0.5,
+     2497.8
+    ],
+    [
+     1.0,
+     2216.3
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "tractQ": 20.0,
+   "noise": 0.6,
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.7386,
+    "rivalCosine": 0.5568,
+    "nearestOwn": true,
+    "f0ErrorPercent": 8.64
+   }
+  },
+  {
+   "id": "L03",
+   "label": "learned L03 \u00b7 2563 Hz \u00b7 27 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0267,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2571.6
+    ],
+    [
+     1.0,
+     2554.2
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.0,
+   "noise": 0.25,
+   "rough": 0.2,
+   "amDepth": 0.8,
+   "am": 80.0,
+   "two": true,
+   "tractQ": 30.0,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 1,
+    "resynthesisCosine": 0.6567,
+    "rivalCosine": 0.7384,
+    "nearestOwn": false,
+    "f0ErrorPercent": 2.22
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L02",
+    "L01",
+    "L02",
+    "L01",
+    "L02"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L02",
+   "L03"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "end": 0.92,
+    "L02": 0.08
+   },
+   "L02": {
+    "L01": 1.0
+   },
+   "L03": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L01>L02": 0.692,
+   "L02>L01": 0.437
+  },
+  "songTyping": {
+   "bouts": 47,
+   "short": 45,
+   "candidates": 2,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

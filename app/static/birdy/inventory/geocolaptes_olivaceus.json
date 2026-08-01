@@ -1,0 +1,260 @@
+{
+ "id": "geocolaptes_olivaceus",
+ "common": "Ground Woodpecker",
+ "scientific": "Geocolaptes olivaceus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 38 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 468 Hz \u00b7 99 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0987,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     483.3
+    ],
+    [
+     0.125,
+     479.1
+    ],
+    [
+     0.25,
+     439.7
+    ],
+    [
+     0.5,
+     478.2
+    ],
+    [
+     0.625,
+     434.1
+    ],
+    [
+     0.875,
+     486.5
+    ],
+    [
+     1.0,
+     481.2
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.15
+    ]
+   ],
+   "gammaScale": 0.5,
+   "two": false,
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.6819,
+    "rivalCosine": 0.8471,
+    "nearestOwn": false,
+    "f0ErrorPercent": -2.66
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 471 Hz \u00b7 48 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.048,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     449.9
+    ],
+    [
+     0.125,
+     446.6
+    ],
+    [
+     0.25,
+     467.3
+    ],
+    [
+     0.375,
+     458.0
+    ],
+    [
+     0.75,
+     462.1
+    ],
+    [
+     0.875,
+     510.2
+    ],
+    [
+     1.0,
+     510.2
+    ]
+   ],
+   "attack": 0.004,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.15
+    ]
+   ],
+   "tractQ": 12.0,
+   "two": true,
+   "rough": 0.08,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.8409,
+    "rivalCosine": 0.7957,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.5
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 686 Hz \u00b7 48 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.048,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     601.2
+    ],
+    [
+     0.125,
+     665.9
+    ],
+    [
+     0.375,
+     636.7
+    ],
+    [
+     0.75,
+     663.6
+    ],
+    [
+     0.875,
+     764.1
+    ],
+    [
+     1.0,
+     804.4
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 45.0,
+   "amDepth": 0.6,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.15
+    ]
+   ],
+   "tractQ": 6.0,
+   "two": true,
+   "rough": 0.2,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.7585,
+    "rivalCosine": 0.6565,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.2
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L02",
+    "L02",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8667,
+    "end": 0.1333
+   },
+   "L01": {
+    "L01": 0.6667,
+    "L02": 0.3333
+   },
+   "L02": {
+    "L02": 0.4,
+    "end": 0.4,
+    "L01": 0.2
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.061,
+   "L01>L01": 0.121,
+   "L01>L02": 0.087,
+   "L02>L01": 0.54,
+   "L02>L02": 0.193
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 6,
+   "candidates": 1,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

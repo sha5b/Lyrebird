@@ -1,0 +1,232 @@
+{
+ "id": "oenanthe_oenanthe",
+ "common": "Northern Wheatear",
+ "scientific": "Oenanthe oenanthe",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 39 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 618 Hz \u00b7 65 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0653,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     596.7
+    ],
+    [
+     0.125,
+     609.6
+    ],
+    [
+     0.25,
+     768.0
+    ],
+    [
+     0.5,
+     618.4
+    ],
+    [
+     0.75,
+     614.7
+    ],
+    [
+     1.0,
+     523.6
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.6,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.01
+   },
+   "gammaScale": 0.5,
+   "rough": 0.4,
+   "two": true,
+   "learned": {
+    "members": 32,
+    "resynthesisCosine": 0.3816,
+    "rivalCosine": -0.1558,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.79
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1571 Hz \u00b7 171 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1707,
+   "level": 1.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1413.1
+    ],
+    [
+     0.5,
+     1721.7
+    ],
+    [
+     0.625,
+     1427.6
+    ],
+    [
+     0.75,
+     1422.6
+    ],
+    [
+     0.875,
+     1764.9
+    ],
+    [
+     1.0,
+     1725.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "rough": 0.2,
+   "amDepth": 0.15,
+   "am": 45.0,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "noise": 0.6,
+   "learned": {
+    "members": 1,
+    "resynthesisCosine": 0.6523,
+    "rivalCosine": -0.0431,
+    "nearestOwn": true,
+    "f0ErrorPercent": 5.35
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2119 Hz \u00b7 55 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0547,
+   "level": 0.75,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2201.8
+    ],
+    [
+     0.25,
+     2038.8
+    ],
+    [
+     0.375,
+     2156.3
+    ],
+    [
+     1.0,
+     2082.6
+    ]
+   ],
+   "attack": 0.0146,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "noise": 0.6,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.01
+   },
+   "tractQ": 20.0,
+   "rough": 0.2,
+   "fricative": true,
+   "formants": [
+    [
+     2289.5188831594724,
+     4.0,
+     0.5
+    ],
+    [
+     7893.0853838443245,
+     4.0,
+     0.5
+    ]
+   ],
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.3664,
+    "rivalCosine": 0.4358,
+    "nearestOwn": false,
+    "f0ErrorPercent": 1.3
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.9062,
+    "end": 0.0938
+   },
+   "L01": {
+    "end": 1.0
+   },
+   "L02": {
+    "L02": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.117,
+   "L02>L02": 0.037
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 5,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

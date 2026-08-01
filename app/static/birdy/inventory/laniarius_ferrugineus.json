@@ -1,0 +1,128 @@
+{
+ "id": "laniarius_ferrugineus",
+ "common": "Southern Boubou",
+ "scientific": "Laniarius ferrugineus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 24 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1886 Hz \u00b7 69 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0693,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1898.3
+    ],
+    [
+     1.0,
+     1874.6
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.45,
+   "gammaScale": 1.0,
+   "tractQ": 30.0,
+   "noise": 0.05,
+   "rough": 0.08,
+   "learned": {
+    "members": 17,
+    "resynthesisCosine": 0.2777,
+    "rivalCosine": 0.0879,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.32
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2619 Hz \u00b7 115 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1147,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2621.2
+    ],
+    [
+     1.0,
+     2617.7
+    ]
+   ],
+   "attack": 0.0453,
+   "hold": false,
+   "harmonic": 0.125,
+   "am": 12.0,
+   "amDepth": 0.45,
+   "gammaScale": 4.5,
+   "tractQ": 30.0,
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.6924,
+    "rivalCosine": -0.2448,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.51
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8235,
+    "end": 0.1765
+   },
+   "L01": {
+    "L01": 0.5714,
+    "end": 0.4286
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.087,
+   "L01>L01": 0.104
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 6,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

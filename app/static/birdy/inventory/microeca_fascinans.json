@@ -1,0 +1,176 @@
+{
+ "id": "microeca_fascinans",
+ "common": "Jacky Winter",
+ "scientific": "Microeca fascinans",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 35 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2083 Hz \u00b7 56 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.056,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1504.1
+    ],
+    [
+     0.125,
+     1356.2
+    ],
+    [
+     0.25,
+     2594.8
+    ],
+    [
+     0.375,
+     1858.6
+    ],
+    [
+     0.5,
+     2597.7
+    ],
+    [
+     0.625,
+     2534.8
+    ],
+    [
+     1.0,
+     2625.9
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 45.0,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "rough": 0.65,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 25,
+    "resynthesisCosine": 0.2129,
+    "rivalCosine": 0.2465,
+    "nearestOwn": false,
+    "f0ErrorPercent": 32.91
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3202 Hz \u00b7 57 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0573,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2971.9
+    ],
+    [
+     0.125,
+     3171.4
+    ],
+    [
+     0.25,
+     2993.6
+    ],
+    [
+     0.5,
+     3452.5
+    ],
+    [
+     0.625,
+     3433.5
+    ],
+    [
+     0.75,
+     3119.4
+    ],
+    [
+     0.875,
+     3343.2
+    ],
+    [
+     1.0,
+     3167.4
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 24.42,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "tractQ": 20.0,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.4785,
+    "rivalCosine": 0.3629,
+    "nearestOwn": true,
+    "f0ErrorPercent": 5.03
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.875,
+    "end": 0.125
+   },
+   "L01": {
+    "L01": 0.8,
+    "L00": 0.2
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.091,
+   "L01>L00": 0.105,
+   "L01>L01": 0.033
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 2,
+   "candidates": 1,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

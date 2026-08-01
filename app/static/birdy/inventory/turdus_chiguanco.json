@@ -1,0 +1,163 @@
+{
+ "id": "turdus_chiguanco",
+ "common": "Chiguanco Thrush",
+ "scientific": "Turdus chiguanco",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 448 Hz \u00b7 87 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0867,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     444.3
+    ],
+    [
+     0.5,
+     459.1
+    ],
+    [
+     0.875,
+     459.2
+    ],
+    [
+     1.0,
+     431.7
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     5063.7,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
+   "rough": 0.08,
+   "two": true,
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.7176,
+    "rivalCosine": 0.0113,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.86
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3286 Hz \u00b7 171 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1707,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2928.5
+    ],
+    [
+     0.375,
+     2846.8
+    ],
+    [
+     0.625,
+     3595.6
+    ],
+    [
+     1.0,
+     3891.4
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 22.39,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     5063.7,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 30.0,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.05
+   },
+   "noise": 0.05,
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.6086,
+    "rivalCosine": -0.116,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.13
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6667,
+    "end": 0.3333
+   },
+   "L01": {
+    "end": 0.6364,
+    "L01": 0.3636
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.228,
+   "L01>L01": 0.392
+  },
+  "songTyping": {
+   "bouts": 13,
+   "short": 13,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

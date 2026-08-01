@@ -1,0 +1,228 @@
+{
+ "id": "calidris_alpina",
+ "common": "Dunlin",
+ "scientific": "Calidris alpina",
+ "bank": "learned",
+ "summary": "Learned from 4 field recordings: 4 syllable types fitted from 48 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1228 Hz \u00b7 117 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1173,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1223.1
+    ],
+    [
+     0.5,
+     1266.7
+    ],
+    [
+     0.625,
+     1187.3
+    ],
+    [
+     1.0,
+     1238.1
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "tractQ": 0.0,
+   "noise": 0.6,
+   "rough": 0.65,
+   "gammaScale": 3.0,
+   "amDepth": 0.15,
+   "am": 30.0,
+   "learned": {
+    "members": 26,
+    "resynthesisCosine": 0.8914,
+    "rivalCosine": 0.1536,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.53
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2841 Hz \u00b7 651 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.6506,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2812.3
+    ],
+    [
+     1.0,
+     2869.1
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.043,
+   "am": 12.0,
+   "amDepth": 0.6,
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "two": true,
+   "learned": {
+    "members": 2,
+    "resynthesisCosine": 0.7922,
+    "rivalCosine": 0.4668,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.85
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 3416 Hz \u00b7 89 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0893,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3157.2
+    ],
+    [
+     1.0,
+     3696.9
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.45,
+   "gammaScale": 1.0,
+   "tractQ": 6.0,
+   "noise": 0.05,
+   "rough": 0.0,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.7537,
+    "rivalCosine": 0.575,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.77
+   }
+  },
+  {
+   "id": "L03",
+   "label": "learned L03 \u00b7 3454 Hz \u00b7 244 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.244,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3589.9
+    ],
+    [
+     0.5,
+     3497.2
+    ],
+    [
+     0.625,
+     3561.0
+    ],
+    [
+     1.0,
+     3185.4
+    ]
+   ],
+   "attack": 0.0693,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 31.61,
+   "amDepth": 0.0,
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "rough": 0.2,
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.8352,
+    "rivalCosine": 0.4544,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.84
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L03",
+   "L02",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8077,
+    "end": 0.1923
+   },
+   "L01": {
+    "end": 1.0
+   },
+   "L02": {
+    "L02": 0.8125,
+    "end": 0.1875
+   },
+   "L03": {
+    "end": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.019,
+   "L02>L02": 0.128
+  },
+  "songTyping": {
+   "bouts": 13,
+   "short": 13,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

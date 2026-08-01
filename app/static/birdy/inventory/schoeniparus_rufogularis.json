@@ -1,0 +1,197 @@
+{
+ "id": "schoeniparus_rufogularis",
+ "common": "Rufous-throated Fulvetta",
+ "scientific": "Schoeniparus rufogularis",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 949 Hz \u00b7 75 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0747,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1014.7
+    ],
+    [
+     0.25,
+     899.5
+    ],
+    [
+     0.375,
+     1132.9
+    ],
+    [
+     0.5,
+     914.8
+    ],
+    [
+     0.625,
+     950.9
+    ],
+    [
+     0.75,
+     759.0
+    ],
+    [
+     0.875,
+     1062.9
+    ],
+    [
+     1.0,
+     908.6
+    ]
+   ],
+   "attack": 0.002,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "amDepth": 0.15,
+   "am": 80.0,
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.6822,
+    "rivalCosine": 0.6263,
+    "nearestOwn": true,
+    "f0ErrorPercent": -24.24
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2396 Hz \u00b7 107 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1066,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2791.4
+    ],
+    [
+     0.125,
+     1603.7
+    ],
+    [
+     0.25,
+     2017.3
+    ],
+    [
+     0.375,
+     2000.1
+    ],
+    [
+     0.5,
+     1348.1
+    ],
+    [
+     0.625,
+     3132.0
+    ],
+    [
+     0.75,
+     3739.9
+    ],
+    [
+     1.0,
+     3803.9
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.154
+   },
+   "formants": [
+    [
+     3192.5863689730877,
+     4.0,
+     1.0
+    ],
+    [
+     6830.618534315889,
+     4.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "fricative": true,
+   "learned": {
+    "members": 22,
+    "resynthesisCosine": 0.6463,
+    "rivalCosine": 0.66,
+    "nearestOwn": false,
+    "f0ErrorPercent": 2.5
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 0.9048,
+    "end": 0.0952
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.013,
+   "L01>L01": 0.04
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 2,
+   "candidates": 1,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

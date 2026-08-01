@@ -1,0 +1,230 @@
+{
+ "id": "passerina_cyanea",
+ "common": "Indigo Bunting",
+ "scientific": "Passerina cyanea",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 43 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 721 Hz \u00b7 57 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0573,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     741.3
+    ],
+    [
+     0.125,
+     801.3
+    ],
+    [
+     0.25,
+     707.7
+    ],
+    [
+     0.625,
+     662.0
+    ],
+    [
+     1.0,
+     699.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.1,
+   "vib": {
+    "rate": 6.36,
+    "depth": 0.09
+   },
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 2.0,
+   "noise": 0.4,
+   "rough": 0.65,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.6292,
+    "rivalCosine": 0.1653,
+    "nearestOwn": true,
+    "f0ErrorPercent": 27.25
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4519 Hz \u00b7 120 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.12,
+   "level": 1.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4972.8
+    ],
+    [
+     0.125,
+     4186.2
+    ],
+    [
+     0.5,
+     4326.0
+    ],
+    [
+     0.625,
+     4033.2
+    ],
+    [
+     0.875,
+     4876.9
+    ],
+    [
+     1.0,
+     4805.6
+    ]
+   ],
+   "attack": 0.0427,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 16.86,
+   "amDepth": 0.45,
+   "vib": {
+    "rate": 7.54,
+    "depth": 0.118
+   },
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 6.0,
+   "learned": {
+    "members": 26,
+    "resynthesisCosine": 0.8021,
+    "rivalCosine": -0.1679,
+    "nearestOwn": true,
+    "f0ErrorPercent": -18.2
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 6341 Hz \u00b7 72 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.072,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     6736.6
+    ],
+    [
+     1.0,
+     5969.0
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 16.3,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     2711.2989394619476,
+     2.0,
+     0.5
+    ],
+    [
+     6830.618534315889,
+     2.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 0.5,
+   "noise": 0.85,
+   "rough": 0.65,
+   "fricative": true,
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.7172,
+    "rivalCosine": 0.0297,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.39
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 0.8077,
+    "end": 0.1923
+   },
+   "L02": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.029,
+   "L01>L01": 0.093,
+   "L02>L01": 0.112
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 6,
+   "candidates": 0,
+   "repeatCandidates": 6,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

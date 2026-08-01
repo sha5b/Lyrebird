@@ -1,0 +1,676 @@
+{
+ "id": "poecile_atricapillus",
+ "common": "Black-capped chickadee",
+ "scientific": "Poecile atricapillus",
+ "bank": "west",
+ "summary": "chick-a-dee call: four note types in strict A-B-C-D order; the number of D notes scales with threat, and note composition changes receiver behaviour.",
+ "syllables": [
+  {
+   "id": "chickA",
+   "label": "A note",
+   "function": "call-opening note; carries flock identity",
+   "confidence": "documented",
+   "refs": [
+    "freeberg2003"
+   ],
+   "dur": 0.07,
+   "level": 0.8,
+   "timbre": "pure",
+   "attack": 0.004,
+   "contour": [
+    [
+     0.0,
+     3400
+    ],
+    [
+     0.4,
+     3900
+    ],
+    [
+     1.0,
+     3200
+    ]
+   ]
+  },
+  {
+   "id": "chickB",
+   "label": "B note",
+   "function": "transition note",
+   "confidence": "documented",
+   "refs": [
+    "freeberg2003"
+   ],
+   "dur": 0.06,
+   "level": 0.75,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3100
+    ],
+    [
+     1.0,
+     2700
+    ]
+   ]
+  },
+  {
+   "id": "chickC",
+   "label": "C note",
+   "function": "transition note",
+   "confidence": "documented",
+   "refs": [
+    "freeberg2003"
+   ],
+   "dur": 0.08,
+   "level": 0.8,
+   "timbre": "reed",
+   "harmonic": 0.3,
+   "contour": [
+    [
+     0.0,
+     2600
+    ],
+    [
+     0.5,
+     2900
+    ],
+    [
+     1.0,
+     2400
+    ]
+   ]
+  },
+  {
+   "id": "chickD",
+   "label": "D note",
+   "function": "harmonically rich terminal note; count scales with predator threat",
+   "confidence": "documented",
+   "refs": [
+    "freeberg2003"
+   ],
+   "dur": 0.12,
+   "level": 0.95,
+   "timbre": "buzz",
+   "am": 55,
+   "amDepth": 0.6,
+   "harmonic": 0.6,
+   "contour": [
+    [
+     0.0,
+     2000
+    ],
+    [
+     0.5,
+     2100
+    ],
+    [
+     1.0,
+     1900
+    ]
+   ]
+  },
+  {
+   "id": "feebee",
+   "label": "fee-bee",
+   "function": "male territorial song, two pure whistles a tone apart",
+   "confidence": "documented",
+   "refs": [
+    "freeberg2003"
+   ],
+   "dur": 0.5,
+   "level": 0.9,
+   "timbre": "pure",
+   "two": true,
+   "contour": [
+    [
+     0.0,
+     4200
+    ],
+    [
+     0.34,
+     4150
+    ],
+    [
+     0.4,
+     3450
+    ],
+    [
+     1.0,
+     3400
+    ]
+   ]
+  },
+  {
+   "id": "L19",
+   "label": "learned L19 \u00b7 489 Hz \u00b7 427 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.4267,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     476.3
+    ],
+    [
+     0.625,
+     481.5
+    ],
+    [
+     0.75,
+     576.4
+    ],
+    [
+     0.875,
+     449.2
+    ],
+    [
+     1.0,
+     471.4
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.1,
+   "am": 25.0,
+   "amDepth": 0.0,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "tractQ": 12.0,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.1787,
+    "rivalCosine": 0.3864,
+    "nearestOwn": false,
+    "f0ErrorPercent": -0.58
+   }
+  },
+  {
+   "id": "L12",
+   "label": "learned L12 \u00b7 651 Hz \u00b7 53 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0533,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     651.2
+    ],
+    [
+     0.875,
+     642.8
+    ],
+    [
+     1.0,
+     659.5
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.985,
+   "am": 140.0,
+   "amDepth": 0.45,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "noise": 0.05,
+   "two": true,
+   "gammaScale": 1.5,
+   "rough": 0.65,
+   "learned": {
+    "members": 49,
+    "resynthesisCosine": 0.507,
+    "rivalCosine": 0.3919,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.88
+   }
+  },
+  {
+   "id": "L15",
+   "label": "learned L15 \u00b7 3549 Hz \u00b7 87 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0867,
+   "level": 0.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3579.9
+    ],
+    [
+     1.0,
+     3518.0
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "rough": 0.65,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.8535,
+    "rivalCosine": 0.6895,
+    "nearestOwn": true,
+    "f0ErrorPercent": 5.61
+   }
+  },
+  {
+   "id": "L20",
+   "label": "learned L20 \u00b7 5406 Hz \u00b7 36 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.036,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5298.2
+    ],
+    [
+     1.0,
+     5516.2
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.1,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 6.0,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.05
+   },
+   "rough": 0.2,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.8967,
+    "rivalCosine": 0.7612,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.79
+   }
+  },
+  {
+   "id": "L17",
+   "label": "learned L17 \u00b7 6463 Hz \u00b7 49 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0494,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     6237.4
+    ],
+    [
+     1.0,
+     6697.7
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.2,
+   "am": 12.0,
+   "amDepth": 0.6,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 0.5,
+   "noise": 0.12,
+   "rough": 0.2,
+   "two": true,
+   "learned": {
+    "members": 26,
+    "resynthesisCosine": 0.876,
+    "rivalCosine": 0.7392,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.27
+   }
+  },
+  {
+   "id": "L07",
+   "label": "learned L07 \u00b7 6965 Hz \u00b7 61 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0614,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     6788.1
+    ],
+    [
+     1.0,
+     7147.2
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 0.5,
+   "rough": 0.08,
+   "tractQ": 6.0,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.8509,
+    "rivalCosine": 0.5657,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.03
+   }
+  },
+  {
+   "id": "L10",
+   "label": "learned L10 \u00b7 7313 Hz \u00b7 49 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0494,
+   "level": 0.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     7159.6
+    ],
+    [
+     1.0,
+     7470.6
+    ]
+   ],
+   "attack": 0.0107,
+   "hold": true,
+   "harmonic": 0.1,
+   "am": 140.0,
+   "amDepth": 0.21,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 4.5,
+   "noise": 0.12,
+   "rough": 0.0,
+   "tractQ": 0.0,
+   "fricative": true,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.8663,
+    "rivalCosine": 0.8046,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.07
+   }
+  },
+  {
+   "id": "L21",
+   "label": "learned L21 \u00b7 7636 Hz \u00b7 40 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.04,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     7550.9
+    ],
+    [
+     1.0,
+     7722.7
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.5,
+   "am": 45.0,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "tractQ": 20.0,
+   "noise": 0.05,
+   "rough": 0.2,
+   "two": true,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.9029,
+    "rivalCosine": 0.6142,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.49
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "chick_a_dee",
+   "label": "chick-a-dee",
+   "gloss": "flock contact",
+   "function": "cohesion call, mild alarm",
+   "confidence": "documented",
+   "refs": [
+    "freeberg2003"
+   ],
+   "sequence": [
+    "chickA",
+    "chickB",
+    "chickD",
+    "chickD"
+   ],
+   "gaps": [
+    0.04,
+    0.05,
+    0.06
+   ]
+  },
+  {
+   "id": "chick_a_dee_alarm",
+   "label": "chick-a-dee-dee-dee-dee",
+   "gloss": "high threat",
+   "function": "extra D notes signal a more dangerous predator",
+   "confidence": "documented",
+   "refs": [
+    "freeberg2003"
+   ],
+   "sequence": [
+    "chickA",
+    "chickB",
+    "chickC",
+    "chickD",
+    "chickD",
+    "chickD",
+    "chickD"
+   ],
+   "gaps": [
+    0.04,
+    0.04,
+    0.05,
+    0.06,
+    0.06,
+    0.06
+   ]
+  },
+  {
+   "id": "feebee_song",
+   "label": "fee-bee",
+   "gloss": "territory / mate attraction",
+   "function": "advertising song",
+   "confidence": "documented",
+   "refs": [
+    "freeberg2003"
+   ],
+   "sequence": [
+    "feebee"
+   ],
+   "gaps": []
+  },
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L17",
+    "L20",
+    "L20",
+    "L17",
+    "L20",
+    "L20"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L17",
+   "L10",
+   "L12",
+   "L07"
+  ],
+  "transitions": {
+   "L07": {
+    "L07": 0.75,
+    "end": 0.25
+   },
+   "L10": {
+    "L17": 0.7778,
+    "end": 0.2222
+   },
+   "L12": {
+    "L12": 0.8571,
+    "end": 0.102,
+    "L19": 0.0408
+   },
+   "L15": {
+    "L15": 1.0
+   },
+   "L17": {
+    "L20": 0.44,
+    "L17": 0.4,
+    "end": 0.08,
+    "L10": 0.08
+   },
+   "L19": {
+    "L19": 0.5556,
+    "end": 0.2222,
+    "L12": 0.2222
+   },
+   "L20": {
+    "end": 0.5625,
+    "L20": 0.3125,
+    "L17": 0.125
+   },
+   "L21": {
+    "L21": 0.5,
+    "end": 0.5
+   }
+  },
+  "gaps": {
+   "L07>L07": 0.028,
+   "L10>L17": 0.037,
+   "L12>L12": 0.049,
+   "L12>L19": 0.055,
+   "L15>L15": 0.024,
+   "L17>L10": 0.588,
+   "L17>L17": 0.043,
+   "L17>L20": 0.051,
+   "L19>L12": 0.064,
+   "L19>L19": 0.016,
+   "L20>L17": 0.468,
+   "L20>L20": 0.064,
+   "L21>L21": 0.124
+  },
+  "songTyping": {
+   "bouts": 27,
+   "short": 20,
+   "candidates": 7,
+   "repeatCandidates": 10,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 7,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ },
+ "learnedFrom": "Learned from 4 field recordings: 8 syllable types fitted from 134 segmented syllables. No documented function is attached to any of them."
+}

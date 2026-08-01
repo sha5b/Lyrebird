@@ -1,0 +1,268 @@
+{
+ "id": "aeronautes_saxatalis",
+ "common": "White-throated Swift",
+ "scientific": "Aeronautes saxatalis",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 4 syllable types fitted from 56 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 492 Hz \u00b7 140 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.14,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     532.3
+    ],
+    [
+     0.125,
+     498.8
+    ],
+    [
+     0.25,
+     520.0
+    ],
+    [
+     0.375,
+     475.9
+    ],
+    [
+     0.5,
+     467.0
+    ],
+    [
+     0.75,
+     521.2
+    ],
+    [
+     0.875,
+     466.6
+    ],
+    [
+     1.0,
+     457.6
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 25.0,
+   "amDepth": 0.15,
+   "tractQ": 20.0,
+   "rough": 0.2,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.3468,
+    "rivalCosine": 0.0302,
+    "nearestOwn": true,
+    "f0ErrorPercent": -5.57
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 547 Hz \u00b7 32 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.032,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     565.1
+    ],
+    [
+     1.0,
+     528.9
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 2.0,
+   "noise": 0.85,
+   "tractQ": 30.0,
+   "amDepth": 0.3,
+   "am": 80.0,
+   "learned": {
+    "members": 1,
+    "resynthesisCosine": 0.7429,
+    "rivalCosine": 0.3718,
+    "nearestOwn": true,
+    "f0ErrorPercent": 14.21
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 839 Hz \u00b7 48 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.048,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     969.8
+    ],
+    [
+     0.125,
+     667.8
+    ],
+    [
+     0.5,
+     1032.5
+    ],
+    [
+     0.75,
+     774.0
+    ],
+    [
+     1.0,
+     801.1
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 1.0,
+   "am": 25.86,
+   "amDepth": 0.6,
+   "gammaScale": 1.5,
+   "tractQ": 3.0,
+   "rough": 0.0,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.05
+   },
+   "noise": 0.12,
+   "fricative": true,
+   "formants": [
+    [
+     3741.776844777196,
+     8.0,
+     0.5
+    ],
+    [
+     7893.0853838443245,
+     8.0,
+     0.5
+    ]
+   ],
+   "learned": {
+    "members": 25,
+    "resynthesisCosine": 0.2142,
+    "rivalCosine": 0.2466,
+    "nearestOwn": false,
+    "f0ErrorPercent": 11.87
+   }
+  },
+  {
+   "id": "L03",
+   "label": "learned L03 \u00b7 4877 Hz \u00b7 40 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.04,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4910.4
+    ],
+    [
+     1.0,
+     4843.7
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.15,
+   "gammaScale": 4.5,
+   "noise": 0.12,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.05
+   },
+   "two": true,
+   "learned": {
+    "members": 24,
+    "resynthesisCosine": 0.8191,
+    "rivalCosine": 0.3659,
+    "nearestOwn": true,
+    "f0ErrorPercent": -10.29
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L02"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L03",
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "end": 1.0
+   },
+   "L02": {
+    "L02": 0.76,
+    "end": 0.24
+   },
+   "L03": {
+    "L03": 0.9167,
+    "end": 0.0833
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.219,
+   "L02>L02": 0.067,
+   "L03>L03": 0.052
+  },
+  "songTyping": {
+   "bouts": 10,
+   "short": 10,
+   "candidates": 0,
+   "repeatCandidates": 7,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

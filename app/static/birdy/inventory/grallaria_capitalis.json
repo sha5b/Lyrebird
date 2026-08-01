@@ -1,0 +1,180 @@
+{
+ "id": "grallaria_capitalis",
+ "common": "Bay Antpitta",
+ "scientific": "Grallaria capitalis",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1565 Hz \u00b7 120 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.12,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1547.8
+    ],
+    [
+     1.0,
+     1582.4
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.6,
+   "formants": [
+    [
+     1582.0,
+     6.0,
+     1.0
+    ],
+    [
+     4746.0,
+     6.0,
+     0.3333
+    ],
+    [
+     7910.0,
+     6.0,
+     0.2
+    ],
+    [
+     11073.9,
+     6.0,
+     0.1429
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 6.0,
+   "two": false,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.7967,
+    "rivalCosine": 0.6482,
+    "nearestOwn": true,
+    "f0ErrorPercent": 7.87
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1752 Hz \u00b7 103 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1026,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1738.6
+    ],
+    [
+     1.0,
+     1765.7
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     1582.0,
+     6.0,
+     1.0
+    ],
+    [
+     4746.0,
+     6.0,
+     0.3333
+    ],
+    [
+     7910.0,
+     6.0,
+     0.2
+    ],
+    [
+     11073.9,
+     6.0,
+     0.1429
+    ]
+   ],
+   "gammaScale": 0.5,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.025
+   },
+   "tractQ": 20.0,
+   "noise": 0.05,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.7236,
+    "rivalCosine": 0.7359,
+    "nearestOwn": false,
+    "f0ErrorPercent": 0.13
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7368,
+    "end": 0.2632
+   },
+   "L01": {
+    "L01": 0.6667,
+    "end": 0.3333
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.092,
+   "L01>L01": 0.085
+  },
+  "songTyping": {
+   "bouts": 9,
+   "short": 9,
+   "candidates": 0,
+   "repeatCandidates": 7,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,256 @@
+{
+ "id": "thamnophilus_nigriceps",
+ "common": "Black Antshrike",
+ "scientific": "Thamnophilus nigriceps",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 41 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 934 Hz \u00b7 67 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0667,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     904.7
+    ],
+    [
+     0.125,
+     882.8
+    ],
+    [
+     0.375,
+     962.0
+    ],
+    [
+     0.5,
+     901.9
+    ],
+    [
+     0.625,
+     889.6
+    ],
+    [
+     0.75,
+     1163.9
+    ],
+    [
+     1.0,
+     863.2
+    ]
+   ],
+   "attack": 0.0267,
+   "hold": false,
+   "harmonic": 0.35,
+   "am": 18.75,
+   "amDepth": 0.6,
+   "formants": [
+    [
+     654.2237665009833,
+     8.0,
+     2.0
+    ],
+    [
+     6830.618534315889,
+     8.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "noise": 0.85,
+   "two": true,
+   "fricative": true,
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.5887,
+    "rivalCosine": 0.474,
+    "nearestOwn": true,
+    "f0ErrorPercent": 44.45
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1280 Hz \u00b7 109 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1093,
+   "level": 0.75,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1309.3
+    ],
+    [
+     0.75,
+     1169.9
+    ],
+    [
+     0.875,
+     1319.1
+    ],
+    [
+     1.0,
+     1328.0
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.2,
+   "am": 12.0,
+   "amDepth": 0.15,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
+   },
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "tractQ": 3.0,
+   "noise": 0.12,
+   "two": true,
+   "gammaScale": 2.0,
+   "learned": {
+    "members": 17,
+    "resynthesisCosine": 0.8107,
+    "rivalCosine": 0.3046,
+    "nearestOwn": true,
+    "f0ErrorPercent": 17.93
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 6352 Hz \u00b7 37 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0373,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     6729.9
+    ],
+    [
+     0.25,
+     6454.1
+    ],
+    [
+     0.375,
+     5248.6
+    ],
+    [
+     0.5,
+     6610.8
+    ],
+    [
+     1.0,
+     6859.2
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.35,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 20.0,
+   "noise": 0.12,
+   "amDepth": 0.45,
+   "am": 30.0,
+   "two": true,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 17,
+    "resynthesisCosine": 0.9116,
+    "rivalCosine": 0.5656,
+    "nearestOwn": true,
+    "f0ErrorPercent": -6.06
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L02",
+    "L01",
+    "L01",
+    "L02",
+    "L02"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 0.8667,
+    "L02": 0.1333
+   },
+   "L02": {
+    "L02": 0.4375,
+    "end": 0.4375,
+    "L01": 0.125
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.179,
+   "L01>L01": 0.131,
+   "L01>L02": 0.08,
+   "L02>L01": 0.137,
+   "L02>L02": 0.429
+  },
+  "songTyping": {
+   "bouts": 9,
+   "short": 6,
+   "candidates": 3,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 3,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

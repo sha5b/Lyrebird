@@ -1,0 +1,151 @@
+{
+ "id": "herpsilochmus_atricapillus",
+ "common": "Black-capped Antwren",
+ "scientific": "Herpsilochmus atricapillus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 583 Hz \u00b7 224 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.224,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     796.1
+    ],
+    [
+     0.125,
+     622.2
+    ],
+    [
+     0.25,
+     608.7
+    ],
+    [
+     0.375,
+     486.0
+    ],
+    [
+     0.5,
+     431.0
+    ],
+    [
+     0.75,
+     442.0
+    ],
+    [
+     0.875,
+     569.9
+    ],
+    [
+     1.0,
+     836.4
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.9,
+   "gammaScale": 4.5,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "rough": 0.0,
+   "am": 25.0,
+   "amDepth": 0.0,
+   "learned": {
+    "members": 1,
+    "resynthesisCosine": 0.7549,
+    "rivalCosine": 0.0078,
+    "nearestOwn": true,
+    "f0ErrorPercent": -25.32
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2296 Hz \u00b7 35 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0347,
+   "level": 0.75,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2299.7
+    ],
+    [
+     1.0,
+     2292.1
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 28.85,
+   "amDepth": 0.3,
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "rough": 0.2,
+   "learned": {
+    "members": 30,
+    "resynthesisCosine": 0.7732,
+    "rivalCosine": -0.3156,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.3
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "L01": 0.9333,
+    "end": 0.0667
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.021
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 3,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

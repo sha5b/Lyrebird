@@ -1,0 +1,175 @@
+{
+ "id": "tyrannus_tyrannus",
+ "common": "Eastern Kingbird",
+ "scientific": "Tyrannus tyrannus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 35 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1031 Hz \u00b7 192 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.192,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     768.0
+    ],
+    [
+     0.125,
+     923.4
+    ],
+    [
+     0.25,
+     910.9
+    ],
+    [
+     0.375,
+     3355.2
+    ],
+    [
+     0.5,
+     875.7
+    ],
+    [
+     0.75,
+     1022.4
+    ],
+    [
+     0.875,
+     846.8
+    ],
+    [
+     1.0,
+     777.1
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 1.0,
+   "am": 25.0,
+   "amDepth": 0.45,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
+   "noise": 0.6,
+   "rough": 0.65,
+   "two": false,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.5764,
+    "rivalCosine": 0.449,
+    "nearestOwn": true,
+    "f0ErrorPercent": -12.87
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 6781 Hz \u00b7 45 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0454,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     6859.2
+    ],
+    [
+     1.0,
+     6703.9
+    ]
+   ],
+   "attack": 0.0107,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 12.0,
+   "rough": 0.65,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 24,
+    "resynthesisCosine": 0.861,
+    "rivalCosine": -0.0507,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.47
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 0.625,
+    "end": 0.375
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.023,
+   "L01>L01": 0.027
+  },
+  "songTyping": {
+   "bouts": 10,
+   "short": 10,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

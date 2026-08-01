@@ -1,0 +1,263 @@
+{
+ "id": "leucophaeus_atricilla",
+ "common": "Laughing Gull",
+ "scientific": "Leucophaeus atricilla",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 47 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 591 Hz \u00b7 53 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0533,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     570.9
+    ],
+    [
+     0.125,
+     557.6
+    ],
+    [
+     0.625,
+     614.4
+    ],
+    [
+     0.75,
+     592.5
+    ],
+    [
+     0.875,
+     613.0
+    ],
+    [
+     1.0,
+     598.6
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 36.76,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "rough": 0.65,
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.6817,
+    "rivalCosine": 0.2005,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.25
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1678 Hz \u00b7 207 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2067,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1590.5
+    ],
+    [
+     0.375,
+     1687.2
+    ],
+    [
+     0.5,
+     1627.6
+    ],
+    [
+     0.625,
+     1675.7
+    ],
+    [
+     0.75,
+     1616.5
+    ],
+    [
+     0.875,
+     1927.7
+    ],
+    [
+     1.0,
+     1640.2
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.2,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.126
+   },
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "noise": 0.12,
+   "rough": 0.65,
+   "am": 12.0,
+   "amDepth": 0.6,
+   "two": false,
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.4718,
+    "rivalCosine": -0.0029,
+    "nearestOwn": true,
+    "f0ErrorPercent": -13.5
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 5419 Hz \u00b7 56 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.056,
+   "level": 1.2,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4829.8
+    ],
+    [
+     0.125,
+     4833.5
+    ],
+    [
+     0.25,
+     3580.6
+    ],
+    [
+     0.375,
+     5436.6
+    ],
+    [
+     0.5,
+     6319.5
+    ],
+    [
+     0.625,
+     6293.6
+    ],
+    [
+     0.75,
+     5569.4
+    ],
+    [
+     0.875,
+     6328.3
+    ],
+    [
+     1.0,
+     6322.8
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.35,
+   "am": 45.0,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 30.0,
+   "noise": 0.85,
+   "two": false,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": -0.0343,
+    "rivalCosine": 0.1834,
+    "nearestOwn": false,
+    "f0ErrorPercent": 12.89
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L02",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6,
+    "end": 0.4
+   },
+   "L01": {
+    "L01": 0.9,
+    "end": 0.1
+   },
+   "L02": {
+    "L02": 0.75,
+    "end": 0.25
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.205,
+   "L01>L01": 0.079,
+   "L02>L02": 0.133
+  },
+  "songTyping": {
+   "bouts": 11,
+   "short": 11,
+   "candidates": 0,
+   "repeatCandidates": 7,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

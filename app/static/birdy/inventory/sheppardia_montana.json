@@ -1,0 +1,186 @@
+{
+ "id": "sheppardia_montana",
+ "common": "Usambara Akalat",
+ "scientific": "Sheppardia montana",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 816 Hz \u00b7 133 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1333,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     739.3
+    ],
+    [
+     0.125,
+     903.1
+    ],
+    [
+     0.25,
+     699.9
+    ],
+    [
+     0.375,
+     840.6
+    ],
+    [
+     0.5,
+     726.4
+    ],
+    [
+     0.625,
+     900.4
+    ],
+    [
+     0.75,
+     818.3
+    ],
+    [
+     0.875,
+     814.2
+    ],
+    [
+     1.0,
+     940.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.3
+    ]
+   ],
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "rough": 0.08,
+   "gammaScale": 3.0,
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.756,
+    "rivalCosine": 0.689,
+    "nearestOwn": true,
+    "f0ErrorPercent": -18.42
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 950 Hz \u00b7 160 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.16,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     871.7
+    ],
+    [
+     0.125,
+     1088.0
+    ],
+    [
+     0.25,
+     1196.3
+    ],
+    [
+     0.625,
+     891.6
+    ],
+    [
+     0.75,
+     926.6
+    ],
+    [
+     0.875,
+     820.0
+    ],
+    [
+     1.0,
+     911.6
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.2,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "rough": 0.65,
+   "learned": {
+    "members": 27,
+    "resynthesisCosine": 0.8147,
+    "rivalCosine": 0.7398,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.65
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "L01": 0.8519,
+    "end": 0.1481
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.027
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 6,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

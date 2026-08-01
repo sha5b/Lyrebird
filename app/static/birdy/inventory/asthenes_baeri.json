@@ -1,0 +1,241 @@
+{
+ "id": "asthenes_baeri",
+ "common": "Short-billed Canastero",
+ "scientific": "Asthenes baeri",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 38 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 435 Hz \u00b7 89 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0893,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     448.1
+    ],
+    [
+     1.0,
+     422.8
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "tractQ": 12.0,
+   "learned": {
+    "members": 24,
+    "resynthesisCosine": 0.8646,
+    "rivalCosine": 0.7012,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.88
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1460 Hz \u00b7 111 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1106,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1483.8
+    ],
+    [
+     0.125,
+     1597.7
+    ],
+    [
+     0.25,
+     646.0
+    ],
+    [
+     0.375,
+     760.7
+    ],
+    [
+     0.5,
+     1384.7
+    ],
+    [
+     0.625,
+     2237.7
+    ],
+    [
+     0.75,
+     1434.9
+    ],
+    [
+     0.875,
+     1355.9
+    ],
+    [
+     1.0,
+     4283.1
+    ]
+   ],
+   "attack": 0.036,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 15.31,
+   "amDepth": 0.45,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.6497,
+    "rivalCosine": 0.6035,
+    "nearestOwn": true,
+    "f0ErrorPercent": -19.49
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 3579 Hz \u00b7 81 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0813,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4011.3
+    ],
+    [
+     0.25,
+     4026.1
+    ],
+    [
+     0.375,
+     2934.9
+    ],
+    [
+     0.5,
+     3475.5
+    ],
+    [
+     1.0,
+     3563.9
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 13.68,
+   "amDepth": 0.45,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.09
+   },
+   "formants": [
+    [
+     3741.776844777196,
+     8.0,
+     0.5
+    ],
+    [
+     7893.0853838443245,
+     8.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 6.0,
+   "two": true,
+   "noise": 0.05,
+   "fricative": true,
+   "learned": {
+    "members": 2,
+    "resynthesisCosine": 0.6125,
+    "rivalCosine": 0.4183,
+    "nearestOwn": true,
+    "f0ErrorPercent": 12.56
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7917,
+    "end": 0.2083
+   },
+   "L01": {
+    "L01": 0.7273,
+    "L00": 0.2727
+   },
+   "L02": {
+    "L02": 0.5,
+    "end": 0.5
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.112,
+   "L01>L00": 0.267,
+   "L01>L01": 0.119
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 7,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

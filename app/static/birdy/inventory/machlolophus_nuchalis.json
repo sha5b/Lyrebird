@@ -1,0 +1,190 @@
+{
+ "id": "machlolophus_nuchalis",
+ "common": "White-winged Tit",
+ "scientific": "Machlolophus nuchalis",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 434 Hz \u00b7 187 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1867,
+   "level": 0.364,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     429.2
+    ],
+    [
+     0.125,
+     427.3
+    ],
+    [
+     0.625,
+     422.2
+    ],
+    [
+     0.75,
+     453.6
+    ],
+    [
+     0.875,
+     427.7
+    ],
+    [
+     1.0,
+     444.0
+    ]
+   ],
+   "attack": 0.072,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 12.0,
+   "amDepth": 0.45,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.11
+   },
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 20.0,
+   "noise": 0.12,
+   "two": true,
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.8037,
+    "rivalCosine": 0.4407,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.25
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2172 Hz \u00b7 93 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0933,
+   "level": 0.9,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1023.0
+    ],
+    [
+     0.125,
+     1557.3
+    ],
+    [
+     0.25,
+     2286.1
+    ],
+    [
+     0.375,
+     2563.7
+    ],
+    [
+     0.5,
+     2506.0
+    ],
+    [
+     0.625,
+     3389.9
+    ],
+    [
+     0.75,
+     2341.0
+    ],
+    [
+     0.875,
+     2476.7
+    ],
+    [
+     1.0,
+     2342.8
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 6.0,
+   "noise": 0.25,
+   "two": true,
+   "tractQ": 3.0,
+   "learned": {
+    "members": 22,
+    "resynthesisCosine": 0.6349,
+    "rivalCosine": 0.479,
+    "nearestOwn": true,
+    "f0ErrorPercent": 14.74
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.08,
+   "L01>L01": 0.059
+  },
+  "songTyping": {
+   "bouts": 2,
+   "short": 2,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,277 @@
+{
+ "id": "saxicola_rubicola",
+ "common": "European Stonechat",
+ "scientific": "Saxicola rubicola",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 4 syllable types fitted from 55 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 450 Hz \u00b7 91 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0907,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     440.7
+    ],
+    [
+     0.75,
+     460.8
+    ],
+    [
+     0.875,
+     441.2
+    ],
+    [
+     1.0,
+     456.7
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.5,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.15
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 12.0,
+   "two": true,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 39,
+    "resynthesisCosine": 0.6539,
+    "rivalCosine": 0.15,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.92
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4267 Hz \u00b7 68 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.068,
+   "level": 0.412,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     4151.5
+    ],
+    [
+     1.0,
+     4385.0
+    ]
+   ],
+   "attack": 0.0226,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 25.89,
+   "amDepth": 0.344,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.15
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 30.0,
+   "two": true,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.8072,
+    "rivalCosine": 0.5203,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.45
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 4940 Hz \u00b7 75 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0747,
+   "level": 0.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4868.2
+    ],
+    [
+     1.0,
+     5013.7
+    ]
+   ],
+   "attack": 0.0187,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 15.22,
+   "amDepth": 0.274,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.15
+    ]
+   ],
+   "gammaScale": 2.0,
+   "two": true,
+   "tractQ": 6.0,
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.8337,
+    "rivalCosine": 0.7162,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.5
+   }
+  },
+  {
+   "id": "L03",
+   "label": "learned L03 \u00b7 5327 Hz \u00b7 109 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1094,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     5028.9
+    ],
+    [
+     0.375,
+     5517.8
+    ],
+    [
+     0.5,
+     5180.7
+    ],
+    [
+     0.625,
+     5229.1
+    ],
+    [
+     0.75,
+     5632.7
+    ],
+    [
+     0.875,
+     5330.6
+    ],
+    [
+     1.0,
+     5391.1
+    ]
+   ],
+   "attack": 0.0547,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 23.96,
+   "amDepth": 0.45,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.15
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 20.0,
+   "two": true,
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.7743,
+    "rivalCosine": 0.7393,
+    "nearestOwn": true,
+    "f0ErrorPercent": -6.88
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L02",
+    "L03",
+    "L01",
+    "L02",
+    "L03"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L02": 0.6667,
+    "end": 0.3333
+   },
+   "L02": {
+    "L03": 1.0
+   },
+   "L03": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.059,
+   "L01>L02": 0.104,
+   "L02>L03": 0.064,
+   "L03>L01": 0.04
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 1,
+   "candidates": 3,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 3,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

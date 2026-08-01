@@ -1,0 +1,178 @@
+{
+ "id": "gavia_immer",
+ "common": "Common Loon",
+ "scientific": "Gavia immer",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 34 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 787 Hz \u00b7 57 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0573,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     733.5
+    ],
+    [
+     0.125,
+     733.5
+    ],
+    [
+     0.25,
+     848.0
+    ],
+    [
+     0.375,
+     725.2
+    ],
+    [
+     0.5,
+     848.0
+    ],
+    [
+     1.0,
+     848.0
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 22.06,
+   "amDepth": 0.0,
+   "tractQ": 20.0,
+   "rough": 0.4,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.09
+   },
+   "gammaScale": 0.5,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.5616,
+    "rivalCosine": 0.3213,
+    "nearestOwn": true,
+    "f0ErrorPercent": 10.97
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 927 Hz \u00b7 404 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.404,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     817.5
+    ],
+    [
+     0.125,
+     959.7
+    ],
+    [
+     0.25,
+     956.7
+    ],
+    [
+     0.375,
+     1033.4
+    ],
+    [
+     1.0,
+     880.2
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.0,
+   "gammaScale": 0.5,
+   "tractQ": 6.0,
+   "rough": 0.0,
+   "noise": 0.6,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.05
+   },
+   "fricative": true,
+   "formants": [
+    [
+     845.2861410183435,
+     8.0,
+     0.5
+    ],
+    [
+     1312.0828814882439,
+     8.0,
+     0.5
+    ]
+   ],
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.8734,
+    "rivalCosine": 0.0095,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.19
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.625,
+    "end": 0.375
+   },
+   "L01": {
+    "L01": 0.7222,
+    "end": 0.2778
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.225,
+   "L01>L01": 0.24
+  },
+  "songTyping": {
+   "bouts": 11,
+   "short": 11,
+   "candidates": 0,
+   "repeatCandidates": 6,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

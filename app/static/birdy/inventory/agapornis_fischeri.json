@@ -1,0 +1,191 @@
+{
+ "id": "agapornis_fischeri",
+ "common": "Fischer's Lovebird",
+ "scientific": "Agapornis fischeri",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 432 Hz \u00b7 101 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1013,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     423.9
+    ],
+    [
+     0.625,
+     422.4
+    ],
+    [
+     0.75,
+     454.9
+    ],
+    [
+     0.875,
+     423.5
+    ],
+    [
+     1.0,
+     434.1
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 20.83,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     5063.7,
+     6.0,
+     0.6
+    ]
+   ],
+   "tractQ": 20.0,
+   "rough": 0.08,
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.5552,
+    "rivalCosine": 0.4036,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.79
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1049 Hz \u00b7 53 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0533,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     689.9
+    ],
+    [
+     0.125,
+     1760.1
+    ],
+    [
+     0.25,
+     921.1
+    ],
+    [
+     0.375,
+     503.8
+    ],
+    [
+     0.5,
+     770.6
+    ],
+    [
+     0.625,
+     3024.6
+    ],
+    [
+     0.75,
+     1767.1
+    ],
+    [
+     0.875,
+     1441.4
+    ],
+    [
+     1.0,
+     460.8
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 22.06,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     5063.7,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 0.5,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.2215,
+    "rivalCosine": 0.248,
+    "nearestOwn": false,
+    "f0ErrorPercent": 25.21
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6154,
+    "L01": 0.2308,
+    "end": 0.1538
+   },
+   "L01": {
+    "L01": 0.6667,
+    "end": 0.1667,
+    "L00": 0.1667
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.045,
+   "L00>L01": 0.024,
+   "L01>L00": 0.336,
+   "L01>L01": 0.141
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 3,
+   "candidates": 1,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

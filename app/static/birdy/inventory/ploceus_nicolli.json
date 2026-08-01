@@ -1,0 +1,171 @@
+{
+ "id": "ploceus_nicolli",
+ "common": "Usambara Weaver",
+ "scientific": "Ploceus nicolli",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 5741 Hz \u00b7 116 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.116,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     5619.8
+    ],
+    [
+     0.25,
+     5609.3
+    ],
+    [
+     0.375,
+     6093.8
+    ],
+    [
+     0.625,
+     6101.9
+    ],
+    [
+     0.75,
+     5790.7
+    ],
+    [
+     0.875,
+     5992.5
+    ],
+    [
+     1.0,
+     5051.6
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.7,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "gammaScale": 4.5,
+   "tractQ": 3.0,
+   "noise": 0.12,
+   "rough": 0.08,
+   "two": false,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.09
+   },
+   "fricative": true,
+   "formants": [
+    [
+     3192.5863689730877,
+     4.0,
+     2.0
+    ],
+    [
+     6830.618534315889,
+     4.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 22,
+    "resynthesisCosine": 0.7354,
+    "rivalCosine": 0.5657,
+    "nearestOwn": true,
+    "f0ErrorPercent": 24.65
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 7372 Hz \u00b7 93 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0933,
+   "level": 1.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     7619.1
+    ],
+    [
+     1.0,
+     7132.6
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 80.0,
+   "amDepth": 0.45,
+   "gammaScale": 1.0,
+   "noise": 0.05,
+   "rough": 0.65,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.7988,
+    "rivalCosine": 0.5957,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.84
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8571,
+    "end": 0.1429
+   },
+   "L01": {
+    "L01": 0.7143,
+    "end": 0.2857
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.064,
+   "L01>L01": 0.429
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 5,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

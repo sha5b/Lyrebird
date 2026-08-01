@@ -1,0 +1,245 @@
+{
+ "id": "larus_canus",
+ "common": "Common Gull",
+ "scientific": "Larus canus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 43 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 473 Hz \u00b7 51 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0507,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     457.5
+    ],
+    [
+     1.0,
+     489.1
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.7,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "rough": 0.65,
+   "gammaScale": 1.5,
+   "tractQ": 6.0,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.4701,
+    "rivalCosine": -0.173,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.29
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2572 Hz \u00b7 92 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.092,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1928.5
+    ],
+    [
+     0.25,
+     2963.6
+    ],
+    [
+     0.375,
+     2883.0
+    ],
+    [
+     0.5,
+     2984.4
+    ],
+    [
+     0.625,
+     2847.4
+    ],
+    [
+     0.75,
+     2073.3
+    ],
+    [
+     0.875,
+     2038.4
+    ],
+    [
+     1.0,
+     3234.9
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.6,
+   "vib": {
+    "rate": 5.52,
+    "depth": 0.09
+   },
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 3.0,
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.297,
+    "rivalCosine": -0.2569,
+    "nearestOwn": true,
+    "f0ErrorPercent": 32.03
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 3001 Hz \u00b7 77 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0773,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2640.5
+    ],
+    [
+     0.25,
+     3086.2
+    ],
+    [
+     0.5,
+     3273.4
+    ],
+    [
+     1.0,
+     3039.0
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.35,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 6.0,
+   "noise": 0.05,
+   "rough": 0.08,
+   "amDepth": 0.3,
+   "am": 30.0,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.025
+   },
+   "two": true,
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.6533,
+    "rivalCosine": -0.3435,
+    "nearestOwn": true,
+    "f0ErrorPercent": 35.82
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L00",
+    "L00",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.75,
+    "end": 0.125,
+    "L01": 0.125
+   },
+   "L01": {
+    "L00": 0.6667,
+    "L01": 0.3333
+   },
+   "L02": {
+    "L02": 0.9048,
+    "end": 0.0952
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.127,
+   "L00>L01": 0.167,
+   "L01>L00": 0.36,
+   "L01>L01": 0.061,
+   "L02>L02": 0.176
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 3,
+   "candidates": 1,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

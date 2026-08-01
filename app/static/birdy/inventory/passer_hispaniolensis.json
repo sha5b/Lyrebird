@@ -1,0 +1,214 @@
+{
+ "id": "passer_hispaniolensis",
+ "common": "Spanish Sparrow",
+ "scientific": "Passer hispaniolensis",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 43 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2291 Hz \u00b7 187 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1867,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     436.0
+    ],
+    [
+     0.25,
+     415.1
+    ],
+    [
+     0.375,
+     3216.6
+    ],
+    [
+     0.5,
+     5709.3
+    ],
+    [
+     0.625,
+     5633.8
+    ],
+    [
+     0.75,
+     5206.5
+    ],
+    [
+     0.875,
+     2805.4
+    ],
+    [
+     1.0,
+     2775.7
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 140.0,
+   "amDepth": 0.645,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.025
+   },
+   "gammaScale": 0.5,
+   "learned": {
+    "members": 1,
+    "resynthesisCosine": 0.8499,
+    "rivalCosine": 0.3402,
+    "nearestOwn": true,
+    "f0ErrorPercent": -5.62
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3999 Hz \u00b7 35 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0347,
+   "level": 0.9,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     4269.7
+    ],
+    [
+     1.0,
+     3745.8
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.6,
+   "tractQ": 20.0,
+   "learned": {
+    "members": 1,
+    "resynthesisCosine": 0.5149,
+    "rivalCosine": 0.155,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.77
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 4515 Hz \u00b7 179 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1787,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5297.2
+    ],
+    [
+     0.125,
+     5203.5
+    ],
+    [
+     0.25,
+     4834.4
+    ],
+    [
+     0.375,
+     4733.4
+    ],
+    [
+     0.5,
+     4013.2
+    ],
+    [
+     0.75,
+     4215.4
+    ],
+    [
+     0.875,
+     3990.7
+    ],
+    [
+     1.0,
+     4054.5
+    ]
+   ],
+   "attack": 0.0373,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.124
+   },
+   "gammaScale": 6.0,
+   "noise": 0.05,
+   "two": true,
+   "tractQ": 0.0,
+   "learned": {
+    "members": 41,
+    "resynthesisCosine": 0.6262,
+    "rivalCosine": 0.4255,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.15
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00"
+   ],
+   "gaps": []
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "end": 1.0
+   },
+   "L02": {
+    "L02": 1.0
+   }
+  },
+  "gaps": {
+   "L02>L02": 0.121
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 3,
+   "candidates": 0,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

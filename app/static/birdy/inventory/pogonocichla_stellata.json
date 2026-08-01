@@ -1,0 +1,201 @@
+{
+ "id": "pogonocichla_stellata",
+ "common": "White-starred Robin",
+ "scientific": "Pogonocichla stellata",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 842 Hz \u00b7 59 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0587,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1027.8
+    ],
+    [
+     0.125,
+     893.2
+    ],
+    [
+     0.25,
+     806.7
+    ],
+    [
+     0.375,
+     855.6
+    ],
+    [
+     0.5,
+     843.7
+    ],
+    [
+     0.625,
+     765.2
+    ],
+    [
+     0.75,
+     791.9
+    ],
+    [
+     1.0,
+     779.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "vib": {
+    "rate": 4.26,
+    "depth": 0.042
+   },
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     1.0
+    ],
+    [
+     9584.9,
+     6.0,
+     0.3333
+    ]
+   ],
+   "tractQ": 6.0,
+   "amDepth": 0.15,
+   "am": 12.0,
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.5248,
+    "rivalCosine": -0.0793,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.18
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2069 Hz \u00b7 51 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0507,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2299.5
+    ],
+    [
+     0.25,
+     2808.0
+    ],
+    [
+     0.875,
+     2799.8
+    ],
+    [
+     1.0,
+     1012.9
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 80.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     3195.0,
+     4.0,
+     1.0
+    ],
+    [
+     9584.9,
+     4.0,
+     1.0
+    ],
+    [
+     3192.5863689730877,
+     4.0,
+     1.0
+    ],
+    [
+     6830.618534315889,
+     4.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 2.0,
+   "noise": 0.85,
+   "rough": 0.65,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.025
+   },
+   "fricative": true,
+   "learned": {
+    "members": 17,
+    "resynthesisCosine": 0.2932,
+    "rivalCosine": -0.1761,
+    "nearestOwn": true,
+    "f0ErrorPercent": -24.88
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7273,
+    "end": 0.2727
+   },
+   "L01": {
+    "L01": 0.6471,
+    "end": 0.3529
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.077,
+   "L01>L01": 0.115
+  },
+  "songTyping": {
+   "bouts": 9,
+   "short": 9,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

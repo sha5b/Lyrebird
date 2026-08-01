@@ -1,0 +1,155 @@
+{
+ "id": "pelargopsis_capensis",
+ "common": "Stork-billed Kingfisher",
+ "scientific": "Pelargopsis capensis",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 588 Hz \u00b7 56 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.056,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     571.4
+    ],
+    [
+     0.125,
+     518.2
+    ],
+    [
+     0.25,
+     589.0
+    ],
+    [
+     0.375,
+     489.8
+    ],
+    [
+     0.5,
+     603.6
+    ],
+    [
+     0.625,
+     567.3
+    ],
+    [
+     0.75,
+     690.1
+    ],
+    [
+     1.0,
+     707.1
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 1.0,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.09
+   },
+   "gammaScale": 0.5,
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.4824,
+    "rivalCosine": 0.5169,
+    "nearestOwn": false,
+    "f0ErrorPercent": -1.27
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2234 Hz \u00b7 79 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0786,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2360.0
+    ],
+    [
+     1.0,
+     2115.3
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 15.46,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "learned": {
+    "members": 24,
+    "resynthesisCosine": 0.6461,
+    "rivalCosine": 0.283,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.83
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.6,
+    "L00": 0.4
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.244,
+   "L01>L01": 0.12
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 4,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

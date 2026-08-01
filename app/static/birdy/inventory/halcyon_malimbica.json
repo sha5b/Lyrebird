@@ -1,0 +1,162 @@
+{
+ "id": "halcyon_malimbica",
+ "common": "Blue-breasted Kingfisher",
+ "scientific": "Halcyon malimbica",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2615 Hz \u00b7 141 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1413,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2684.7
+    ],
+    [
+     1.0,
+     2547.2
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     2289.5188831594724,
+     8.0,
+     0.5
+    ],
+    [
+     5899.517283512816,
+     8.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 3.0,
+   "fricative": true,
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.698,
+    "rivalCosine": 0.6448,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.22
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2630 Hz \u00b7 72 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.072,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2683.6
+    ],
+    [
+     1.0,
+     2577.0
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 80.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     2447.2,
+     8.0,
+     1.0
+    ],
+    [
+     7341.7,
+     8.0,
+     1.0
+    ],
+    [
+     2711.2989394619476,
+     8.0,
+     1.0
+    ],
+    [
+     6830.618534315889,
+     8.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 3.0,
+   "fricative": true,
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.6429,
+    "rivalCosine": 0.6099,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.02
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8462,
+    "end": 0.1538
+   },
+   "L01": {
+    "L01": 0.6667,
+    "end": 0.3333
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.155,
+   "L01>L01": 0.247
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 7,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,168 @@
+{
+ "id": "thamnolaea_cinnamomeiventris",
+ "common": "Mocking Cliff Chat",
+ "scientific": "Thamnolaea cinnamomeiventris",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2691 Hz \u00b7 187 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1867,
+   "level": 0.926,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2858.1
+    ],
+    [
+     0.125,
+     3000.2
+    ],
+    [
+     0.375,
+     2501.7
+    ],
+    [
+     1.0,
+     2446.2
+    ]
+   ],
+   "attack": 0.06,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 45.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 5.86,
+    "depth": 0.09
+   },
+   "gammaScale": 3.0,
+   "tractQ": 20.0,
+   "noise": 0.25,
+   "rough": 0.65,
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.8345,
+    "rivalCosine": 0.1799,
+    "nearestOwn": true,
+    "f0ErrorPercent": -9.96
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3936 Hz \u00b7 96 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.096,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3763.2
+    ],
+    [
+     0.375,
+     3592.8
+    ],
+    [
+     0.5,
+     4269.1
+    ],
+    [
+     0.75,
+     3814.8
+    ],
+    [
+     0.875,
+     4166.6
+    ],
+    [
+     1.0,
+     4049.8
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 4.5,
+   "noise": 0.12,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "fricative": true,
+   "formants": [
+    [
+     654.2237665009833,
+     4.0,
+     2.0
+    ],
+    [
+     6830.618534315889,
+     4.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.8139,
+    "rivalCosine": -0.0096,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.21
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 0.7222,
+    "end": 0.2778
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.153,
+   "L01>L01": 0.123
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 6,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

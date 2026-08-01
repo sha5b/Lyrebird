@@ -1,0 +1,168 @@
+{
+ "id": "nucifraga_columbiana",
+ "common": "Clark's Nutcracker",
+ "scientific": "Nucifraga columbiana",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 24 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 558 Hz \u00b7 101 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1013,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     525.2
+    ],
+    [
+     0.125,
+     552.9
+    ],
+    [
+     0.25,
+     524.0
+    ],
+    [
+     0.375,
+     580.9
+    ],
+    [
+     0.625,
+     558.6
+    ],
+    [
+     0.75,
+     587.1
+    ],
+    [
+     0.875,
+     517.7
+    ],
+    [
+     1.0,
+     627.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.8,
+   "tractQ": 30.0,
+   "rough": 0.4,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.2326,
+    "rivalCosine": -0.2044,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.71
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2075 Hz \u00b7 60 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.06,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2047.1
+    ],
+    [
+     0.25,
+     2140.5
+    ],
+    [
+     0.75,
+     2098.6
+    ],
+    [
+     1.0,
+     2017.6
+    ]
+   ],
+   "attack": 0.028,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 80.0,
+   "amDepth": 0.45,
+   "gammaScale": 2.0,
+   "tractQ": 20.0,
+   "noise": 0.4,
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.3323,
+    "rivalCosine": 0.0876,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.48
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.85,
+    "end": 0.15
+   },
+   "L01": {
+    "L01": 0.5,
+    "L00": 0.5
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.085,
+   "L01>L00": 0.372,
+   "L01>L01": 0.176
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 3,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

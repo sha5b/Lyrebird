@@ -1,0 +1,211 @@
+{
+ "id": "synallaxis_gujanensis",
+ "common": "Plain-crowned Spinetail",
+ "scientific": "Synallaxis gujanensis",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 36 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2835 Hz \u00b7 101 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1013,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2764.6
+    ],
+    [
+     0.125,
+     3017.1
+    ],
+    [
+     0.875,
+     2727.9
+    ],
+    [
+     1.0,
+     2840.2
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.6,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
+   "gammaScale": 4.5,
+   "tractQ": 12.0,
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.4793,
+    "rivalCosine": 0.3891,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.84
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2956 Hz \u00b7 229 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2293,
+   "level": 0.6,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2918.8
+    ],
+    [
+     0.125,
+     2968.0
+    ],
+    [
+     0.25,
+     2687.4
+    ],
+    [
+     0.375,
+     2973.5
+    ],
+    [
+     0.625,
+     3182.7
+    ],
+    [
+     0.75,
+     2946.7
+    ],
+    [
+     1.0,
+     3039.4
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 9.96,
+   "amDepth": 0.6,
+   "gammaScale": 3.0,
+   "tractQ": 12.0,
+   "rough": 0.08,
+   "noise": 0.05,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.7646,
+    "rivalCosine": 0.2691,
+    "nearestOwn": true,
+    "f0ErrorPercent": 8.42
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 4065 Hz \u00b7 45 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0453,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     4061.4
+    ],
+    [
+     1.0,
+     4069.6
+    ]
+   ],
+   "attack": 0.0053,
+   "hold": true,
+   "harmonic": 0.2,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "gammaScale": 1.0,
+   "noise": 0.6,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.025
+   },
+   "tractQ": 6.0,
+   "rough": 0.4,
+   "learned": {
+    "members": 23,
+    "resynthesisCosine": 0.5313,
+    "rivalCosine": -0.1686,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.82
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5714,
+    "end": 0.4286
+   },
+   "L01": {
+    "L02": 0.6667,
+    "L01": 0.3333
+   },
+   "L02": {
+    "L02": 0.8636,
+    "L01": 0.1364
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.683,
+   "L01>L01": 0.093,
+   "L01>L02": 0.091,
+   "L02>L01": 0.392,
+   "L02>L02": 0.075
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 3,
+   "candidates": 1,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

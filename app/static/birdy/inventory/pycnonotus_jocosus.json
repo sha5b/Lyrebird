@@ -1,0 +1,178 @@
+{
+ "id": "pycnonotus_jocosus",
+ "common": "Red-whiskered Bulbul",
+ "scientific": "Pycnonotus jocosus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2285 Hz \u00b7 179 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1787,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2489.3
+    ],
+    [
+     0.25,
+     2486.9
+    ],
+    [
+     0.875,
+     2162.3
+    ],
+    [
+     1.0,
+     2034.9
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.05
+   },
+   "formants": [
+    [
+     2696.4,
+     6.0,
+     0.15
+    ],
+    [
+     8089.2,
+     6.0,
+     0.05
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
+   "rough": 0.65,
+   "two": true,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.568,
+    "rivalCosine": 0.418,
+    "nearestOwn": true,
+    "f0ErrorPercent": 5.94
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2773 Hz \u00b7 72 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.072,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2758.5
+    ],
+    [
+     0.25,
+     2568.7
+    ],
+    [
+     0.625,
+     2929.7
+    ],
+    [
+     1.0,
+     2849.1
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.1,
+   "am": 20.83,
+   "amDepth": 0.45,
+   "formants": [
+    [
+     2696.4,
+     6.0,
+     0.15
+    ],
+    [
+     8089.2,
+     6.0,
+     0.05
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "noise": 0.4,
+   "rough": 0.65,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.7512,
+    "rivalCosine": 0.5924,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.37
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.6,
+    "L00": 0.4
+   },
+   "L01": {
+    "L01": 0.8095,
+    "end": 0.1905
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.059,
+   "L01>L01": 0.061
+  },
+  "songTyping": {
+   "bouts": 10,
+   "short": 10,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

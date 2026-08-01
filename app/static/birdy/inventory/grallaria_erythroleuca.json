@@ -1,0 +1,147 @@
+{
+ "id": "grallaria_erythroleuca",
+ "common": "Red-and-white Antpitta",
+ "scientific": "Grallaria erythroleuca",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1665 Hz \u00b7 136 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.136,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1692.9
+    ],
+    [
+     1.0,
+     1638.2
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.6,
+   "gammaScale": 3.0,
+   "tractQ": 20.0,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.7668,
+    "rivalCosine": 0.6977,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.56
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1774 Hz \u00b7 173 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1733,
+   "level": 0.378,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1791.2
+    ],
+    [
+     1.0,
+     1757.1
+    ]
+   ],
+   "attack": 0.0613,
+   "hold": false,
+   "harmonic": 0.0,
+   "gammaScale": 3.0,
+   "tractQ": 30.0,
+   "two": true,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.01
+   },
+   "am": 45.0,
+   "amDepth": 0.3,
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.7017,
+    "rivalCosine": 0.7213,
+    "nearestOwn": false,
+    "f0ErrorPercent": -2.41
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.5263,
+    "L00": 0.4737
+   },
+   "L01": {
+    "L00": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.301,
+   "L01>L00": 0.369
+  },
+  "songTypes": [
+   {
+    "id": "S01",
+    "sequence": [
+     "L01",
+     "L00"
+    ],
+    "count": 10,
+    "share": 1.0,
+    "kind": "repeat"
+   }
+  ],
+  "songTyping": {
+   "bouts": 10,
+   "short": 10,
+   "candidates": 0,
+   "repeatCandidates": 10,
+   "types": 1,
+   "repeatTypes": 1,
+   "inTypes": 10,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

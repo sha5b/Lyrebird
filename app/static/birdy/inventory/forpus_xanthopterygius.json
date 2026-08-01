@@ -1,0 +1,175 @@
+{
+ "id": "forpus_xanthopterygius",
+ "common": "Blue-winged Parrotlet",
+ "scientific": "Forpus xanthopterygius",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1993 Hz \u00b7 61 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0614,
+   "level": 1.05,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3353.0
+    ],
+    [
+     0.125,
+     1662.4
+    ],
+    [
+     0.25,
+     1639.5
+    ],
+    [
+     1.0,
+     1728.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 45.0,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 3.0,
+   "noise": 0.05,
+   "two": true,
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.5419,
+    "rivalCosine": 0.3373,
+    "nearestOwn": true,
+    "f0ErrorPercent": 17.53
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4766 Hz \u00b7 611 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.6107,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4699.7
+    ],
+    [
+     0.125,
+     4878.5
+    ],
+    [
+     0.25,
+     4790.0
+    ],
+    [
+     0.375,
+     5011.0
+    ],
+    [
+     0.5,
+     4703.6
+    ],
+    [
+     1.0,
+     4528.4
+    ]
+   ],
+   "attack": 0.12,
+   "hold": true,
+   "harmonic": 0.1,
+   "am": 9.49,
+   "amDepth": 0.0,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.025
+   },
+   "formants": [
+    [
+     845.2861410183435,
+     8.0,
+     2.0
+    ],
+    [
+     5083.5393171114765,
+     8.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 2.0,
+   "fricative": true,
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.4729,
+    "rivalCosine": 0.1116,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.25
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8,
+    "end": 0.2
+   },
+   "L01": {
+    "L01": 0.6667,
+    "end": 0.3333
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.135,
+   "L01>L01": 0.023
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 7,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

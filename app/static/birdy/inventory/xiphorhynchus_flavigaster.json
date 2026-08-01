@@ -1,0 +1,156 @@
+{
+ "id": "xiphorhynchus_flavigaster",
+ "common": "Ivory-billed Woodcreeper",
+ "scientific": "Xiphorhynchus flavigaster",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2125 Hz \u00b7 56 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.056,
+   "level": 0.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2171.6
+    ],
+    [
+     0.125,
+     2036.0
+    ],
+    [
+     0.875,
+     2208.1
+    ],
+    [
+     1.0,
+     2088.9
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 20.83,
+   "amDepth": 0.32,
+   "gammaScale": 4.5,
+   "tractQ": 30.0,
+   "noise": 0.05,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.6731,
+    "rivalCosine": 0.0116,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.96
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4403 Hz \u00b7 64 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.064,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4460.6
+    ],
+    [
+     1.0,
+     4347.1
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "gammaScale": 6.0,
+   "noise": 0.12,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.05
+   },
+   "fricative": true,
+   "formants": [
+    [
+     845.2861410183435,
+     2.0,
+     2.0
+    ],
+    [
+     5083.5393171114765,
+     2.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.6841,
+    "rivalCosine": -0.2504,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.11
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8947,
+    "end": 0.1053
+   },
+   "L01": {
+    "end": 0.7273,
+    "L01": 0.2727
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.075,
+   "L01>L01": 0.267
+  },
+  "songTyping": {
+   "bouts": 10,
+   "short": 10,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

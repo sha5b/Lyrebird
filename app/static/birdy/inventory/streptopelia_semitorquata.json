@@ -1,0 +1,254 @@
+{
+ "id": "streptopelia_semitorquata",
+ "common": "Red-eyed Dove",
+ "scientific": "Streptopelia semitorquata",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 40 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 464 Hz \u00b7 108 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.108,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     431.2
+    ],
+    [
+     0.75,
+     504.2
+    ],
+    [
+     0.875,
+     462.6
+    ],
+    [
+     1.0,
+     459.1
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "noise": 0.05,
+   "tractQ": 20.0,
+   "rough": 0.2,
+   "two": true,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.7208,
+    "rivalCosine": 0.6996,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.1
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 503 Hz \u00b7 176 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.176,
+   "level": 0.75,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     488.0
+    ],
+    [
+     0.125,
+     528.8
+    ],
+    [
+     1.0,
+     493.3
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 13.77,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 3.0,
+   "noise": 0.12,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.09
+   },
+   "tractQ": 12.0,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.7107,
+    "rivalCosine": 0.5595,
+    "nearestOwn": true,
+    "f0ErrorPercent": 15.78
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 3837 Hz \u00b7 79 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0786,
+   "level": 0.471,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2930.7
+    ],
+    [
+     0.125,
+     3090.1
+    ],
+    [
+     0.25,
+     3485.0
+    ],
+    [
+     0.625,
+     3544.5
+    ],
+    [
+     0.75,
+     4432.3
+    ],
+    [
+     0.875,
+     5010.0
+    ],
+    [
+     1.0,
+     4933.2
+    ]
+   ],
+   "attack": 0.0347,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 34.09,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     6000.0,
+     8.0,
+     1.0
+    ],
+    [
+     3192.5863689730877,
+     8.0,
+     1.0
+    ],
+    [
+     6830.618534315889,
+     8.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.01
+   },
+   "fricative": true,
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.6854,
+    "rivalCosine": 0.4473,
+    "nearestOwn": true,
+    "f0ErrorPercent": -10.12
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6667,
+    "L01": 0.2222,
+    "L02": 0.1111
+   },
+   "L01": {
+    "L01": 0.7333,
+    "L00": 0.2667
+   },
+   "L02": {
+    "L02": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.047,
+   "L00>L01": 0.091,
+   "L00>L02": 0.384,
+   "L01>L00": 0.057,
+   "L01>L01": 0.048,
+   "L02>L02": 0.293
+  },
+  "songTyping": {
+   "bouts": 1,
+   "short": 0,
+   "candidates": 1,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

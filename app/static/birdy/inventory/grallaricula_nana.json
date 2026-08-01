@@ -1,0 +1,208 @@
+{
+ "id": "grallaricula_nana",
+ "common": "Slate-crowned Antpitta",
+ "scientific": "Grallaricula nana",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 43 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 523 Hz \u00b7 36 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.036,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     580.7
+    ],
+    [
+     1.0,
+     471.0
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 45.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     0.3
+    ],
+    [
+     9584.9,
+     6.0,
+     0.1
+    ]
+   ],
+   "gammaScale": 1.5,
+   "noise": 0.05,
+   "rough": 0.2,
+   "two": true,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.4712,
+    "rivalCosine": 0.0879,
+    "nearestOwn": true,
+    "f0ErrorPercent": 6.26
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3342 Hz \u00b7 57 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0573,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3357.9
+    ],
+    [
+     1.0,
+     3325.9
+    ]
+   ],
+   "attack": 0.0186,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 25.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     0.3
+    ],
+    [
+     9584.9,
+     6.0,
+     0.1
+    ]
+   ],
+   "gammaScale": 0.5,
+   "noise": 0.05,
+   "rough": 0.0,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.6925,
+    "rivalCosine": 0.7222,
+    "nearestOwn": false,
+    "f0ErrorPercent": 7.17
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 3495 Hz \u00b7 91 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0907,
+   "level": 0.485,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3478.9
+    ],
+    [
+     1.0,
+     3510.5
+    ]
+   ],
+   "attack": 0.024,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 12.1,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     0.3
+    ],
+    [
+     9584.9,
+     6.0,
+     0.1
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 30.0,
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.6752,
+    "rivalCosine": 0.5642,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.96
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00"
+   ],
+   "gaps": []
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L02",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "L01": 0.85,
+    "end": 0.15
+   },
+   "L02": {
+    "L02": 0.8421,
+    "end": 0.1579
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.027,
+   "L02>L02": 0.035
+  },
+  "songTyping": {
+   "bouts": 8,
+   "short": 8,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

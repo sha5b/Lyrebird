@@ -1,0 +1,237 @@
+{
+ "id": "bostrychia_hagedash",
+ "common": "Hadada",
+ "scientific": "Bostrychia hagedash",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 24 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1071 Hz \u00b7 64 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.064,
+   "level": 1.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1135.1
+    ],
+    [
+     0.125,
+     903.3
+    ],
+    [
+     0.25,
+     1671.4
+    ],
+    [
+     0.375,
+     1124.3
+    ],
+    [
+     0.5,
+     1032.4
+    ],
+    [
+     0.625,
+     1157.3
+    ],
+    [
+     0.75,
+     904.1
+    ],
+    [
+     0.875,
+     829.9
+    ],
+    [
+     1.0,
+     1073.5
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     1241.5,
+     6.0,
+     1.0
+    ],
+    [
+     3724.4,
+     6.0,
+     0.3333
+    ],
+    [
+     6207.4,
+     6.0,
+     0.2
+    ],
+    [
+     8690.4,
+     6.0,
+     0.1429
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "rough": 0.65,
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": -0.0184,
+    "rivalCosine": 0.3374,
+    "nearestOwn": false,
+    "f0ErrorPercent": -1.54
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1412 Hz \u00b7 499 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.4987,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1466.0
+    ],
+    [
+     0.125,
+     1583.8
+    ],
+    [
+     0.25,
+     1444.0
+    ],
+    [
+     0.375,
+     1387.0
+    ],
+    [
+     0.5,
+     1446.3
+    ],
+    [
+     0.75,
+     1426.4
+    ],
+    [
+     0.875,
+     1275.9
+    ],
+    [
+     1.0,
+     1289.9
+    ]
+   ],
+   "attack": 0.1173,
+   "hold": true,
+   "harmonic": 0.1,
+   "formants": [
+    [
+     1241.5,
+     8.0,
+     1.0
+    ],
+    [
+     3724.4,
+     8.0,
+     1.0
+    ],
+    [
+     6207.4,
+     8.0,
+     1.0
+    ],
+    [
+     8690.4,
+     8.0,
+     1.0
+    ],
+    [
+     1312.0828814882439,
+     8.0,
+     1.0
+    ],
+    [
+     3741.776844777196,
+     8.0,
+     1.0
+    ]
+   ],
+   "noise": 0.85,
+   "rough": 0.65,
+   "tractQ": 3.0,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.025
+   },
+   "fricative": true,
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.6504,
+    "rivalCosine": -0.2454,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.26
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6923,
+    "end": 0.3077
+   },
+   "L01": {
+    "L01": 0.8,
+    "end": 0.2
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.16,
+   "L01>L01": 0.073
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 6,
+   "candidates": 0,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

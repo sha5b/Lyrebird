@@ -1,0 +1,219 @@
+{
+ "id": "megascops_asio",
+ "common": "Eastern Screech-Owl",
+ "scientific": "Megascops asio",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 47 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 611 Hz \u00b7 59 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0587,
+   "level": 0.9,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     612.2
+    ],
+    [
+     1.0,
+     609.6
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "gammaScale": 0.5,
+   "rough": 0.65,
+   "two": true,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.01
+   },
+   "tractQ": 3.0,
+   "learned": {
+    "members": 27,
+    "resynthesisCosine": 0.3201,
+    "rivalCosine": 0.1945,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.39
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 813 Hz \u00b7 37 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0373,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1092.0
+    ],
+    [
+     0.125,
+     5208.9
+    ],
+    [
+     0.25,
+     491.6
+    ],
+    [
+     0.375,
+     450.9
+    ],
+    [
+     0.5,
+     452.0
+    ],
+    [
+     0.625,
+     824.1
+    ],
+    [
+     0.875,
+     856.5
+    ],
+    [
+     1.0,
+     473.5
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 1.0,
+   "am": 34.09,
+   "amDepth": 0.6,
+   "gammaScale": 1.5,
+   "tractQ": 12.0,
+   "noise": 0.25,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.5463,
+    "rivalCosine": -0.0455,
+    "nearestOwn": true,
+    "f0ErrorPercent": 31.97
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 1178 Hz \u00b7 83 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0827,
+   "level": 0.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1178.0
+    ],
+    [
+     1.0,
+     1178.6
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.6,
+   "gammaScale": 3.0,
+   "tractQ": 12.0,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.05
+   },
+   "noise": 0.25,
+   "fricative": true,
+   "formants": [
+    [
+     1063.304792525682,
+     4.0,
+     0.5
+    ],
+    [
+     3192.5863689730877,
+     4.0,
+     0.5
+    ]
+   ],
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.6853,
+    "rivalCosine": -0.0285,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.61
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L02",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.9259,
+    "end": 0.0741
+   },
+   "L01": {
+    "end": 0.5,
+    "L01": 0.5
+   },
+   "L02": {
+    "L02": 0.8571,
+    "end": 0.1429
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.04,
+   "L01>L01": 0.313,
+   "L02>L02": 0.019
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 6,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

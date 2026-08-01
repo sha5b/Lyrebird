@@ -1,0 +1,169 @@
+{
+ "id": "chaetura_pelagica",
+ "common": "Chimney Swift",
+ "scientific": "Chaetura pelagica",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 609 Hz \u00b7 48 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.048,
+   "level": 0.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     564.3
+    ],
+    [
+     0.125,
+     606.7
+    ],
+    [
+     0.375,
+     595.4
+    ],
+    [
+     0.5,
+     654.6
+    ],
+    [
+     0.625,
+     592.1
+    ],
+    [
+     0.75,
+     661.7
+    ],
+    [
+     0.875,
+     604.0
+    ],
+    [
+     1.0,
+     600.3
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.7,
+   "am": 25.0,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     5856.3,
+     6.0,
+     0.6
+    ]
+   ],
+   "tractQ": 3.0,
+   "learned": {
+    "members": 25,
+    "resynthesisCosine": 0.3738,
+    "rivalCosine": 0.4234,
+    "nearestOwn": false,
+    "f0ErrorPercent": 2.67
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 995 Hz \u00b7 37 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0373,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1206.9
+    ],
+    [
+     0.875,
+     861.1
+    ],
+    [
+     1.0,
+     946.5
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 25.0,
+   "amDepth": 0.6,
+   "formants": [
+    [
+     5856.3,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 1.5,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.5048,
+    "rivalCosine": 0.4354,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.11
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.75,
+    "end": 0.25
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.144,
+   "L01>L01": 0.384
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 6,
+   "candidates": 1,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

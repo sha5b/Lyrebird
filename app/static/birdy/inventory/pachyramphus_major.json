@@ -1,0 +1,202 @@
+{
+ "id": "pachyramphus_major",
+ "common": "Gray-collared Becard",
+ "scientific": "Pachyramphus major",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 46 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 823 Hz \u00b7 69 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0693,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     993.3
+    ],
+    [
+     0.125,
+     786.1
+    ],
+    [
+     0.25,
+     786.2
+    ],
+    [
+     0.375,
+     738.6
+    ],
+    [
+     0.5,
+     786.2
+    ],
+    [
+     0.625,
+     992.9
+    ],
+    [
+     0.75,
+     798.2
+    ],
+    [
+     1.0,
+     745.3
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "tractQ": 30.0,
+   "two": false,
+   "rough": 0.2,
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.6004,
+    "rivalCosine": -0.1622,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.6
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2447 Hz \u00b7 53 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0533,
+   "level": 0.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2461.3
+    ],
+    [
+     1.0,
+     2432.2
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 31.25,
+   "amDepth": 0.0,
+   "gammaScale": 6.0,
+   "noise": 0.85,
+   "rough": 0.4,
+   "tractQ": 12.0,
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.6884,
+    "rivalCosine": 0.5213,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.64
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2947 Hz \u00b7 44 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.044,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2702.8
+    ],
+    [
+     0.375,
+     2924.0
+    ],
+    [
+     0.5,
+     3158.4
+    ],
+    [
+     1.0,
+     3020.2
+    ]
+   ],
+   "attack": 0.0053,
+   "hold": true,
+   "harmonic": 0.5,
+   "am": 12.0,
+   "amDepth": 0.6,
+   "gammaScale": 3.0,
+   "tractQ": 3.0,
+   "noise": 0.25,
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.5846,
+    "rivalCosine": 0.2728,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.17
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L02",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8333,
+    "end": 0.1667
+   },
+   "L01": {
+    "L01": 0.6429,
+    "end": 0.3571
+   },
+   "L02": {
+    "L02": 0.7222,
+    "end": 0.2778
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.036,
+   "L01>L01": 0.211,
+   "L02>L02": 0.181
+  },
+  "songTyping": {
+   "bouts": 12,
+   "short": 11,
+   "candidates": 1,
+   "repeatCandidates": 6,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

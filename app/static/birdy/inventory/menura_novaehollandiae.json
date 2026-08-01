@@ -1,0 +1,155 @@
+{
+ "id": "menura_novaehollandiae",
+ "common": "Superb Lyrebird",
+ "scientific": "Menura novaehollandiae",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1936 Hz \u00b7 112 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.112,
+   "level": 1.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1994.9
+    ],
+    [
+     0.5,
+     1877.2
+    ],
+    [
+     1.0,
+     1936.4
+    ]
+   ],
+   "attack": 0.032,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 11.72,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.076
+   },
+   "tractQ": 20.0,
+   "noise": 0.85,
+   "rough": 0.65,
+   "fricative": true,
+   "formants": [
+    [
+     1919.8885853658714,
+     2.0,
+     1.0
+    ],
+    [
+     6830.618534315889,
+     2.0,
+     1.0
+    ]
+   ],
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.4162,
+    "rivalCosine": 0.2932,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.76
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2126 Hz \u00b7 101 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1013,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2438.6
+    ],
+    [
+     1.0,
+     1853.6
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.45,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.025
+   },
+   "gammaScale": 0.5,
+   "tractQ": 20.0,
+   "noise": 0.25,
+   "rough": 0.0,
+   "two": true,
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.7607,
+    "rivalCosine": 0.4499,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.15
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.75,
+    "end": 0.25
+   },
+   "L01": {
+    "L01": 0.8182,
+    "end": 0.1818
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.211,
+   "L01>L01": 0.147
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 7,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

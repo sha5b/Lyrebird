@@ -1,0 +1,198 @@
+{
+ "id": "aramides_albiventris",
+ "common": "Russet-naped Wood-Rail",
+ "scientific": "Aramides albiventris",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1007 Hz \u00b7 53 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0533,
+   "level": 1.05,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     967.5
+    ],
+    [
+     1.0,
+     1048.3
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 25.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     1073.5,
+     6.0,
+     1.0
+    ],
+    [
+     3220.4,
+     6.0,
+     0.3333
+    ],
+    [
+     5367.3,
+     6.0,
+     0.2
+    ],
+    [
+     7514.2,
+     6.0,
+     0.1429
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 12.0,
+   "two": true,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.09
+   },
+   "noise": 0.4,
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.487,
+    "rivalCosine": 0.3104,
+    "nearestOwn": true,
+    "f0ErrorPercent": -6.82
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2088 Hz \u00b7 155 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1547,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1054.0
+    ],
+    [
+     0.125,
+     1218.4
+    ],
+    [
+     0.5,
+     1291.1
+    ],
+    [
+     0.75,
+     3612.0
+    ],
+    [
+     0.875,
+     3780.4
+    ],
+    [
+     1.0,
+     3658.3
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.2,
+   "am": 140.0,
+   "amDepth": 0.0,
+   "formants": [
+    [
+     1073.5,
+     6.0,
+     1.0
+    ],
+    [
+     3220.4,
+     6.0,
+     0.3333
+    ],
+    [
+     5367.3,
+     6.0,
+     0.2
+    ],
+    [
+     7514.2,
+     6.0,
+     0.1429
+    ]
+   ],
+   "tractQ": 3.0,
+   "noise": 0.4,
+   "rough": 0.65,
+   "two": false,
+   "gammaScale": 0.5,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.8122,
+    "rivalCosine": 0.2265,
+    "nearestOwn": true,
+    "f0ErrorPercent": 22.27
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5556,
+    "end": 0.4444
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.527,
+   "L01>L01": 0.121
+  },
+  "songTyping": {
+   "bouts": 8,
+   "short": 8,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

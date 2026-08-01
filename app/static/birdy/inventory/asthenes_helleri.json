@@ -1,0 +1,209 @@
+{
+ "id": "asthenes_helleri",
+ "common": "Puna Thistletail",
+ "scientific": "Asthenes helleri",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 35 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 539 Hz \u00b7 43 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0427,
+   "level": 0.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     494.1
+    ],
+    [
+     0.125,
+     567.1
+    ],
+    [
+     0.25,
+     568.6
+    ],
+    [
+     0.625,
+     464.6
+    ],
+    [
+     0.75,
+     574.9
+    ],
+    [
+     1.0,
+     578.1
+    ]
+   ],
+   "attack": 0.0027,
+   "hold": false,
+   "harmonic": 0.992,
+   "am": 34.09,
+   "amDepth": 0.45,
+   "formants": [
+    [
+     842.4,
+     6.0,
+     0.6
+    ],
+    [
+     2527.2,
+     6.0,
+     0.2
+    ],
+    [
+     4212.0,
+     6.0,
+     0.12
+    ],
+    [
+     5896.8,
+     6.0,
+     0.0857
+    ]
+   ],
+   "tractQ": 30.0,
+   "two": true,
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.7189,
+    "rivalCosine": 0.101,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.31
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1033 Hz \u00b7 55 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0547,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1147.0
+    ],
+    [
+     0.125,
+     924.1
+    ],
+    [
+     0.375,
+     1011.5
+    ],
+    [
+     0.5,
+     1101.5
+    ],
+    [
+     0.625,
+     982.7
+    ],
+    [
+     0.75,
+     1034.4
+    ],
+    [
+     0.875,
+     991.5
+    ],
+    [
+     1.0,
+     1090.7
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 1.0,
+   "am": 25.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     842.4,
+     6.0,
+     0.6
+    ],
+    [
+     2527.2,
+     6.0,
+     0.2
+    ],
+    [
+     4212.0,
+     6.0,
+     0.12
+    ],
+    [
+     5896.8,
+     6.0,
+     0.0857
+    ]
+   ],
+   "tractQ": 30.0,
+   "rough": 0.0,
+   "learned": {
+    "members": 30,
+    "resynthesisCosine": 0.4019,
+    "rivalCosine": 0.5144,
+    "nearestOwn": false,
+    "f0ErrorPercent": 1.67
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 0.8333,
+    "end": 0.1667
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.04,
+   "L01>L01": 0.157
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 6,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

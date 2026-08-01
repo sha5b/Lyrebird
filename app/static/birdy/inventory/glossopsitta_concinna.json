@@ -1,0 +1,209 @@
+{
+ "id": "glossopsitta_concinna",
+ "common": "Musk Lorikeet",
+ "scientific": "Glossopsitta concinna",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 4946 Hz \u00b7 240 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.24,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4424.7
+    ],
+    [
+     0.5,
+     4572.5
+    ],
+    [
+     0.75,
+     5499.0
+    ],
+    [
+     0.875,
+     5444.7
+    ],
+    [
+     1.0,
+     4888.2
+    ]
+   ],
+   "attack": 0.12,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     4378.3,
+     8.0,
+     0.5
+    ],
+    [
+     845.2861410183435,
+     8.0,
+     0.5
+    ],
+    [
+     4368.450554124434,
+     8.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 6.0,
+   "noise": 0.4,
+   "amDepth": 0.6,
+   "am": 30.0,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.01
+   },
+   "fricative": true,
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.6946,
+    "rivalCosine": 0.6182,
+    "nearestOwn": true,
+    "f0ErrorPercent": -9.64
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 5023 Hz \u00b7 313 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.3134,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     4750.8
+    ],
+    [
+     0.125,
+     4730.6
+    ],
+    [
+     0.25,
+     5079.8
+    ],
+    [
+     0.375,
+     5135.6
+    ],
+    [
+     0.5,
+     5573.2
+    ],
+    [
+     0.625,
+     5089.2
+    ],
+    [
+     0.75,
+     5284.4
+    ],
+    [
+     0.875,
+     4812.6
+    ],
+    [
+     1.0,
+     4814.3
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.1,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     4378.3,
+     4.0,
+     0.5
+    ],
+    [
+     845.2861410183435,
+     4.0,
+     0.5
+    ],
+    [
+     4368.450554124434,
+     4.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 30.0,
+   "noise": 0.25,
+   "two": true,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "fricative": true,
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.6764,
+    "rivalCosine": 0.7505,
+    "nearestOwn": false,
+    "f0ErrorPercent": 4.64
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.065,
+   "L01>L01": 0.035
+  },
+  "songTyping": {
+   "bouts": 1,
+   "short": 1,
+   "candidates": 0,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

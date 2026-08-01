@@ -1,0 +1,169 @@
+{
+ "id": "acropternis_orthonyx",
+ "common": "Ocellated Tapaculo",
+ "scientific": "Acropternis orthonyx",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 35 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2147 Hz \u00b7 381 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.3813,
+   "level": 0.977,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2416.8
+    ],
+    [
+     0.125,
+     2699.2
+    ],
+    [
+     0.875,
+     1964.2
+    ],
+    [
+     1.0,
+     1659.2
+    ]
+   ],
+   "attack": 0.12,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 10.94,
+   "amDepth": 0.211,
+   "vib": {
+    "rate": 4.44,
+    "depth": 0.054
+   },
+   "formants": [
+    [
+     2447.2,
+     6.0,
+     1.0
+    ],
+    [
+     7341.7,
+     6.0,
+     0.3333
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 30.0,
+   "learned": {
+    "members": 24,
+    "resynthesisCosine": 0.8896,
+    "rivalCosine": 0.6598,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.07
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2599 Hz \u00b7 179 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1787,
+   "level": 0.499,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2596.7
+    ],
+    [
+     0.125,
+     2762.8
+    ],
+    [
+     1.0,
+     2447.5
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.35,
+   "am": 22.22,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     2447.2,
+     6.0,
+     1.0
+    ],
+    [
+     7341.7,
+     6.0,
+     0.3333
+    ]
+   ],
+   "gammaScale": 3.0,
+   "two": true,
+   "tractQ": 30.0,
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.8228,
+    "rivalCosine": 0.7585,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.65
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.5417,
+    "L00": 0.4583
+   },
+   "L01": {
+    "end": 0.5455,
+    "L01": 0.2727,
+    "L00": 0.1818
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.405,
+   "L01>L00": 0.015,
+   "L01>L01": 0.013
+  },
+  "songTyping": {
+   "bouts": 19,
+   "short": 19,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

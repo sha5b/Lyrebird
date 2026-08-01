@@ -1,0 +1,172 @@
+{
+ "id": "falco_berigora",
+ "common": "Brown Falcon",
+ "scientific": "Falco berigora",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 450 Hz \u00b7 128 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.128,
+   "level": 0.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     441.7
+    ],
+    [
+     0.375,
+     461.7
+    ],
+    [
+     0.5,
+     434.1
+    ],
+    [
+     0.875,
+     446.1
+    ],
+    [
+     1.0,
+     466.0
+    ]
+   ],
+   "attack": 0.0347,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.287,
+   "tractQ": 6.0,
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.6636,
+    "rivalCosine": 0.8143,
+    "nearestOwn": false,
+    "f0ErrorPercent": -0.1
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 463 Hz \u00b7 328 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.328,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     450.5
+    ],
+    [
+     0.125,
+     427.2
+    ],
+    [
+     0.25,
+     465.0
+    ],
+    [
+     0.375,
+     451.0
+    ],
+    [
+     0.625,
+     458.4
+    ],
+    [
+     0.875,
+     504.4
+    ],
+    [
+     1.0,
+     488.2
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "two": true,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.8897,
+    "rivalCosine": 0.7144,
+    "nearestOwn": true,
+    "f0ErrorPercent": -6.14
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7778,
+    "L01": 0.1111,
+    "end": 0.1111
+   },
+   "L01": {
+    "L01": 0.7778,
+    "L00": 0.2222
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.101,
+   "L00>L01": 0.031,
+   "L01>L00": 0.187,
+   "L01>L01": 0.093
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 2,
+   "candidates": 1,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

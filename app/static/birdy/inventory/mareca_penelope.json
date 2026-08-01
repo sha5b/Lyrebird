@@ -1,0 +1,167 @@
+{
+ "id": "mareca_penelope",
+ "common": "Eurasian Wigeon",
+ "scientific": "Mareca penelope",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 26 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 507 Hz \u00b7 315 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.3147,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     490.3
+    ],
+    [
+     0.125,
+     479.7
+    ],
+    [
+     0.25,
+     510.8
+    ],
+    [
+     0.75,
+     571.7
+    ],
+    [
+     1.0,
+     487.3
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 1.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "learned": {
+    "members": 23,
+    "resynthesisCosine": 0.6411,
+    "rivalCosine": 0.2042,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.99
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2200 Hz \u00b7 99 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0987,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1909.5
+    ],
+    [
+     0.125,
+     1901.4
+    ],
+    [
+     0.25,
+     2429.7
+    ],
+    [
+     0.375,
+     2569.1
+    ],
+    [
+     0.5,
+     2253.9
+    ],
+    [
+     0.625,
+     2067.3
+    ],
+    [
+     0.75,
+     2417.4
+    ],
+    [
+     0.875,
+     1981.0
+    ],
+    [
+     1.0,
+     2389.7
+    ]
+   ],
+   "attack": 0.048,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.104
+   },
+   "gammaScale": 0.5,
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.8295,
+    "rivalCosine": 0.1876,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.76
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7826,
+    "end": 0.2174
+   },
+   "L01": {
+    "end": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.016
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 7,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

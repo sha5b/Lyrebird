@@ -1,0 +1,174 @@
+{
+ "id": "passerina_amoena",
+ "common": "Lazuli Bunting",
+ "scientific": "Passerina amoena",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 471 Hz \u00b7 95 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0946,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     430.0
+    ],
+    [
+     0.375,
+     430.2
+    ],
+    [
+     0.5,
+     471.3
+    ],
+    [
+     0.75,
+     484.0
+    ],
+    [
+     0.875,
+     578.8
+    ],
+    [
+     1.0,
+     447.3
+    ]
+   ],
+   "attack": 0.06,
+   "hold": true,
+   "harmonic": 0.7,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     5063.7,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "two": false,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.5809,
+    "rivalCosine": -0.2452,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.61
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4729 Hz \u00b7 56 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.056,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4838.2
+    ],
+    [
+     0.875,
+     4830.2
+    ],
+    [
+     1.0,
+     4524.9
+    ]
+   ],
+   "attack": 0.0213,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 23.44,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     845.2861410183435,
+     2.0,
+     0.5
+    ],
+    [
+     5083.5393171114765,
+     2.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 0.0,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
+   "fricative": true,
+   "learned": {
+    "members": 17,
+    "resynthesisCosine": 0.6981,
+    "rivalCosine": -0.2949,
+    "nearestOwn": true,
+    "f0ErrorPercent": 5.75
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5,
+    "end": 0.5
+   },
+   "L01": {
+    "L01": 0.8235,
+    "end": 0.1765
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.077,
+   "L01>L01": 0.067
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 7,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

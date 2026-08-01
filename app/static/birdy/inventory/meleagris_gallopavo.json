@@ -1,0 +1,238 @@
+{
+ "id": "meleagris_gallopavo",
+ "common": "Wild Turkey",
+ "scientific": "Meleagris gallopavo",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 36 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 611 Hz \u00b7 32 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.032,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     566.8
+    ],
+    [
+     0.375,
+     591.0
+    ],
+    [
+     0.5,
+     663.8
+    ],
+    [
+     0.625,
+     606.9
+    ],
+    [
+     1.0,
+     631.6
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 1.0,
+   "am": 140.0,
+   "amDepth": 0.259,
+   "tractQ": 3.0,
+   "rough": 0.0,
+   "two": true,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.4775,
+    "rivalCosine": 0.2794,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.17
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1336 Hz \u00b7 133 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1333,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1058.5
+    ],
+    [
+     0.125,
+     1488.5
+    ],
+    [
+     0.25,
+     1566.4
+    ],
+    [
+     0.375,
+     1462.0
+    ],
+    [
+     0.5,
+     1544.5
+    ],
+    [
+     0.625,
+     1323.4
+    ],
+    [
+     0.875,
+     1264.7
+    ],
+    [
+     1.0,
+     1089.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.2,
+   "gammaScale": 1.5,
+   "noise": 0.6,
+   "rough": 0.08,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.05
+   },
+   "two": true,
+   "fricative": true,
+   "formants": [
+    [
+     845.2861410183435,
+     4.0,
+     2.0
+    ],
+    [
+     1595.9601420802412,
+     4.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.6973,
+    "rivalCosine": 0.6583,
+    "nearestOwn": true,
+    "f0ErrorPercent": -29.11
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 1639 Hz \u00b7 112 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.112,
+   "level": 1.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2070.2
+    ],
+    [
+     0.25,
+     1470.2
+    ],
+    [
+     1.0,
+     1447.5
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.6,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.025
+   },
+   "gammaScale": 1.5,
+   "tractQ": 0.0,
+   "noise": 0.4,
+   "rough": 0.08,
+   "two": true,
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.7107,
+    "rivalCosine": 0.2316,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.35
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 0.7333,
+    "L00": 0.1333,
+    "end": 0.1333
+   },
+   "L02": {
+    "L02": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.285,
+   "L01>L00": 0.168,
+   "L01>L01": 0.171,
+   "L02>L02": 0.181
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 3,
+   "candidates": 1,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,150 @@
+{
+ "id": "spiza_americana",
+ "common": "Dickcissel",
+ "scientific": "Spiza americana",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 33 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 438 Hz \u00b7 125 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1253,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     430.8
+    ],
+    [
+     1.0,
+     446.3
+    ]
+   ],
+   "attack": 0.0267,
+   "hold": false,
+   "harmonic": 0.7,
+   "am": 80.0,
+   "amDepth": 0.311,
+   "gammaScale": 0.5,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.8606,
+    "rivalCosine": 0.1392,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.41
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 5903 Hz \u00b7 96 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.096,
+   "level": 0.6,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     7495.0
+    ],
+    [
+     0.25,
+     7216.5
+    ],
+    [
+     0.375,
+     6522.5
+    ],
+    [
+     0.625,
+     6421.5
+    ],
+    [
+     0.75,
+     4804.8
+    ],
+    [
+     1.0,
+     3886.1
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.1,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.19
+   },
+   "gammaScale": 4.5,
+   "tractQ": 12.0,
+   "noise": 0.12,
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.8754,
+    "rivalCosine": -0.0124,
+    "nearestOwn": true,
+    "f0ErrorPercent": -5.14
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8,
+    "end": 0.2
+   },
+   "L01": {
+    "L01": 0.8462,
+    "end": 0.1538
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.167,
+   "L01>L01": 0.029
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 6,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

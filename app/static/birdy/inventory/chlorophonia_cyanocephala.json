@@ -1,0 +1,268 @@
+{
+ "id": "chlorophonia_cyanocephala",
+ "common": "Golden-rumped Euphonia",
+ "scientific": "Chlorophonia cyanocephala",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 40 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 648 Hz \u00b7 48 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.048,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     603.0
+    ],
+    [
+     0.125,
+     645.3
+    ],
+    [
+     0.5,
+     649.2
+    ],
+    [
+     0.625,
+     694.5
+    ],
+    [
+     1.0,
+     648.8
+    ]
+   ],
+   "attack": 0.0107,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "tractQ": 12.0,
+   "rough": 0.2,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.025
+   },
+   "two": true,
+   "learned": {
+    "members": 23,
+    "resynthesisCosine": 0.402,
+    "rivalCosine": 0.1584,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.63
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 711 Hz \u00b7 56 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.056,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     753.4
+    ],
+    [
+     0.125,
+     622.9
+    ],
+    [
+     0.25,
+     639.1
+    ],
+    [
+     0.5,
+     754.6
+    ],
+    [
+     0.75,
+     664.6
+    ],
+    [
+     0.875,
+     941.9
+    ],
+    [
+     1.0,
+     651.3
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "tractQ": 0.0,
+   "noise": 0.25,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.09
+   },
+   "gammaScale": 1.5,
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.444,
+    "rivalCosine": 0.4452,
+    "nearestOwn": false,
+    "f0ErrorPercent": 38.07
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2750 Hz \u00b7 40 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.04,
+   "level": 1.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4838.5
+    ],
+    [
+     0.125,
+     2786.6
+    ],
+    [
+     0.25,
+     1229.4
+    ],
+    [
+     0.375,
+     663.9
+    ],
+    [
+     0.5,
+     1126.5
+    ],
+    [
+     0.625,
+     3471.3
+    ],
+    [
+     0.75,
+     5184.9
+    ],
+    [
+     0.875,
+     6373.5
+    ],
+    [
+     1.0,
+     6323.4
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     6000.0,
+     8.0,
+     0.5
+    ],
+    [
+     3192.5863689730877,
+     8.0,
+     0.5
+    ],
+    [
+     6830.618534315889,
+     8.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 6.0,
+   "fricative": true,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.6063,
+    "rivalCosine": 0.2625,
+    "nearestOwn": true,
+    "f0ErrorPercent": 7.96
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L02",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7391,
+    "end": 0.2609
+   },
+   "L01": {
+    "L01": 0.7143,
+    "end": 0.2857
+   },
+   "L02": {
+    "L02": 0.8,
+    "end": 0.2
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.093,
+   "L01>L01": 0.187,
+   "L02>L02": 0.115
+  },
+  "songTyping": {
+   "bouts": 10,
+   "short": 10,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

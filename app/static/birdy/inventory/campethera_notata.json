@@ -1,0 +1,199 @@
+{
+ "id": "campethera_notata",
+ "common": "Knysna Woodpecker",
+ "scientific": "Campethera notata",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 36 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1131 Hz \u00b7 157 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1573,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1113.8
+    ],
+    [
+     0.125,
+     1106.2
+    ],
+    [
+     0.625,
+     1128.4
+    ],
+    [
+     0.75,
+     1182.0
+    ],
+    [
+     0.875,
+     1116.3
+    ],
+    [
+     1.0,
+     1142.5
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.0,
+   "tractQ": 20.0,
+   "rough": 0.65,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.05
+   },
+   "noise": 0.12,
+   "learned": {
+    "members": 31,
+    "resynthesisCosine": 0.294,
+    "rivalCosine": 0.0895,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.06
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1671 Hz \u00b7 27 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0267,
+   "level": 0.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1671.2
+    ],
+    [
+     1.0,
+     1671.7
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.12,
+   "gammaScale": 0.5,
+   "noise": 0.05,
+   "amDepth": 0.8,
+   "am": 80.0,
+   "two": true,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.025
+   },
+   "tractQ": 0.0,
+   "learned": {
+    "members": 1,
+    "resynthesisCosine": 0.8773,
+    "rivalCosine": 0.1506,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.76
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 4127 Hz \u00b7 180 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.18,
+   "level": 0.416,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3853.7
+    ],
+    [
+     0.125,
+     3934.6
+    ],
+    [
+     0.25,
+     4280.8
+    ],
+    [
+     1.0,
+     4468.1
+    ]
+   ],
+   "attack": 0.0533,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 19.94,
+   "amDepth": 0.256,
+   "vib": {
+    "rate": 10.11,
+    "depth": 0.05
+   },
+   "gammaScale": 3.0,
+   "tractQ": 12.0,
+   "noise": 0.05,
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.6122,
+    "rivalCosine": -0.496,
+    "nearestOwn": true,
+    "f0ErrorPercent": 10.73
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02"
+   ],
+   "gaps": []
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.9355,
+    "end": 0.0645
+   },
+   "L01": {
+    "L02": 1.0
+   },
+   "L02": {
+    "end": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.019
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 5,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

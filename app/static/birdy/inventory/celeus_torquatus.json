@@ -1,0 +1,239 @@
+{
+ "id": "celeus_torquatus",
+ "common": "Ringed Woodpecker",
+ "scientific": "Celeus torquatus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 45 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2087 Hz \u00b7 197 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1973,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2083.7
+    ],
+    [
+     1.0,
+     2090.9
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     1919.8885853658714,
+     4.0,
+     1.0
+    ],
+    [
+     5083.5393171114765,
+     4.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 3.0,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.025
+   },
+   "noise": 0.85,
+   "fricative": true,
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.7077,
+    "rivalCosine": 0.4875,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.08
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2140 Hz \u00b7 93 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0934,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2526.3
+    ],
+    [
+     0.125,
+     1854.1
+    ],
+    [
+     0.25,
+     1925.2
+    ],
+    [
+     0.5,
+     1796.8
+    ],
+    [
+     0.625,
+     2100.9
+    ],
+    [
+     0.75,
+     2214.8
+    ],
+    [
+     0.875,
+     1979.1
+    ],
+    [
+     1.0,
+     2946.1
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     5187.9,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 4.5,
+   "noise": 0.12,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "am": 140.0,
+   "amDepth": 0.3,
+   "learned": {
+    "members": 26,
+    "resynthesisCosine": 0.802,
+    "rivalCosine": 0.6907,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.66
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2458 Hz \u00b7 139 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1386,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2285.6
+    ],
+    [
+     0.25,
+     2627.1
+    ],
+    [
+     1.0,
+     2472.6
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.35,
+   "am": 17.72,
+   "amDepth": 0.227,
+   "vib": {
+    "rate": 12.85,
+    "depth": 0.09
+   },
+   "formants": [
+    [
+     2289.5188831594724,
+     4.0,
+     1.0
+    ],
+    [
+     5083.5393171114765,
+     4.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "noise": 0.4,
+   "two": true,
+   "fricative": true,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.3674,
+    "rivalCosine": 0.0891,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.44
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 1.0
+   },
+   "L02": {
+    "L02": 0.8,
+    "end": 0.2
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.051,
+   "L01>L01": 0.053,
+   "L02>L02": 0.16
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 4,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

@@ -1,0 +1,176 @@
+{
+ "id": "acrocephalus_scirpaceus",
+ "common": "Eurasian Reed Warbler",
+ "scientific": "Acrocephalus scirpaceus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L64",
+   "label": "learned L64 \u00b7 1365 Hz \u00b7 173 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1734,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1439.3
+    ],
+    [
+     0.125,
+     1364.6
+    ],
+    [
+     0.25,
+     1443.5
+    ],
+    [
+     0.625,
+     1480.1
+    ],
+    [
+     0.75,
+     1138.4
+    ],
+    [
+     0.875,
+     1439.9
+    ],
+    [
+     1.0,
+     1286.1
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.882,
+   "am": 12.0,
+   "amDepth": 0.205,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 20.0,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.3956,
+    "rivalCosine": -0.3823,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.82
+   }
+  },
+  {
+   "id": "L53",
+   "label": "learned L53 \u00b7 3939 Hz \u00b7 41 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0413,
+   "level": 0.75,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3910.1
+    ],
+    [
+     1.0,
+     3968.5
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     1919.8885853658714,
+     4.0,
+     1.0
+    ],
+    [
+     4368.450554124434,
+     4.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 12.0,
+   "noise": 0.85,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.09
+   },
+   "rough": 0.2,
+   "fricative": true,
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.5665,
+    "rivalCosine": 0.0313,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.49
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L64",
+    "L64"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L64",
+   "L53"
+  ],
+  "transitions": {
+   "L53": {
+    "L53": 0.7857,
+    "end": 0.2143
+   },
+   "L64": {
+    "L64": 0.8125,
+    "end": 0.1875
+   }
+  },
+  "gaps": {
+   "L53>L53": 0.211,
+   "L64>L64": 0.027
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 6,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

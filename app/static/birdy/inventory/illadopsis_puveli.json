@@ -1,0 +1,243 @@
+{
+ "id": "illadopsis_puveli",
+ "common": "Puvel's Illadopsis",
+ "scientific": "Illadopsis puveli",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 38 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2250 Hz \u00b7 67 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0667,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2255.9
+    ],
+    [
+     1.0,
+     2243.7
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.45,
+   "formants": [
+    [
+     2447.2,
+     6.0,
+     1.0
+    ],
+    [
+     7341.7,
+     6.0,
+     0.3333
+    ]
+   ],
+   "gammaScale": 1.0,
+   "noise": 0.05,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.01
+   },
+   "tractQ": 30.0,
+   "learned": {
+    "members": 23,
+    "resynthesisCosine": 0.8199,
+    "rivalCosine": 0.3233,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.6
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2519 Hz \u00b7 59 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0587,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2634.8
+    ],
+    [
+     0.375,
+     2471.0
+    ],
+    [
+     1.0,
+     2454.7
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.7,
+   "am": 25.0,
+   "amDepth": 0.6,
+   "formants": [
+    [
+     2447.2,
+     8.0,
+     0.5
+    ],
+    [
+     7341.7,
+     8.0,
+     0.5
+    ],
+    [
+     845.2861410183435,
+     8.0,
+     0.5
+    ],
+    [
+     2711.2989394619476,
+     8.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 30.0,
+   "two": true,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.01
+   },
+   "fricative": true,
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.7021,
+    "rivalCosine": 0.3427,
+    "nearestOwn": true,
+    "f0ErrorPercent": -7.0
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2719 Hz \u00b7 67 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0667,
+   "level": 1.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3028.5
+    ],
+    [
+     1.0,
+     2440.9
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 17.05,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     2447.2,
+     6.0,
+     1.0
+    ],
+    [
+     7341.7,
+     6.0,
+     0.3333
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 30.0,
+   "noise": 0.05,
+   "rough": 0.2,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.8224,
+    "rivalCosine": 0.4342,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.98
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L02",
+    "L00",
+    "L00",
+    "L02"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5652,
+    "end": 0.2609,
+    "L02": 0.1739
+   },
+   "L01": {
+    "L01": 1.0
+   },
+   "L02": {
+    "L00": 0.5455,
+    "L02": 0.4545
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.101,
+   "L00>L02": 0.241,
+   "L01>L01": 0.135,
+   "L02>L00": 0.141,
+   "L02>L02": 0.195
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 3,
+   "candidates": 4,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 4,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

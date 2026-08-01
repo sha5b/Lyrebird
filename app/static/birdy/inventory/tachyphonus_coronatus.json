@@ -1,0 +1,149 @@
+{
+ "id": "tachyphonus_coronatus",
+ "common": "Ruby-crowned Tanager",
+ "scientific": "Tachyphonus coronatus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 32 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 896 Hz \u00b7 29 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0294,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     874.8
+    ],
+    [
+     1.0,
+     918.4
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "gammaScale": 2.0,
+   "tractQ": 3.0,
+   "two": true,
+   "learned": {
+    "members": 2,
+    "resynthesisCosine": 0.5792,
+    "rivalCosine": -0.2674,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.44
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2826 Hz \u00b7 83 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0827,
+   "level": 0.75,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3221.8
+    ],
+    [
+     0.125,
+     2708.5
+    ],
+    [
+     0.25,
+     2556.1
+    ],
+    [
+     0.375,
+     2732.1
+    ],
+    [
+     0.625,
+     2812.1
+    ],
+    [
+     0.75,
+     2770.6
+    ],
+    [
+     0.875,
+     2930.4
+    ],
+    [
+     1.0,
+     2922.1
+    ]
+   ],
+   "attack": 0.0146,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 13.89,
+   "amDepth": 0.398,
+   "vib": {
+    "rate": 13.91,
+    "depth": 0.05
+   },
+   "gammaScale": 3.0,
+   "tractQ": 20.0,
+   "learned": {
+    "members": 30,
+    "resynthesisCosine": 0.5875,
+    "rivalCosine": -0.4902,
+    "nearestOwn": true,
+    "f0ErrorPercent": -8.01
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00"
+   ],
+   "gaps": []
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.368
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 3,
+   "candidates": 0,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

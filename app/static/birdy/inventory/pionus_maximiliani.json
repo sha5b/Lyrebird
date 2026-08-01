@@ -1,0 +1,186 @@
+{
+ "id": "pionus_maximiliani",
+ "common": "Scaly-headed Parrot",
+ "scientific": "Pionus maximiliani",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 32 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2534 Hz \u00b7 115 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1147,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2578.6
+    ],
+    [
+     0.125,
+     3140.6
+    ],
+    [
+     0.75,
+     2050.2
+    ],
+    [
+     0.875,
+     2157.3
+    ],
+    [
+     1.0,
+     2916.9
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.2,
+   "gammaScale": 6.0,
+   "tractQ": 0.0,
+   "rough": 0.65,
+   "amDepth": 0.0,
+   "am": 30.0,
+   "noise": 0.25,
+   "two": true,
+   "fricative": true,
+   "formants": [
+    [
+     1919.8885853658714,
+     8.0,
+     2.0
+    ],
+    [
+     3741.776844777196,
+     8.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.3063,
+    "rivalCosine": 0.5022,
+    "nearestOwn": false,
+    "f0ErrorPercent": -4.13
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3868 Hz \u00b7 133 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1333,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4085.9
+    ],
+    [
+     0.25,
+     3995.9
+    ],
+    [
+     0.375,
+     3513.2
+    ],
+    [
+     0.5,
+     3940.3
+    ],
+    [
+     0.875,
+     3612.1
+    ],
+    [
+     1.0,
+     4105.3
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "gammaScale": 4.5,
+   "noise": 0.4,
+   "rough": 0.65,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.025
+   },
+   "fricative": true,
+   "formants": [
+    [
+     4368.450554124434,
+     2.0,
+     2.0
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.9088,
+    "rivalCosine": 0.203,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.25
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8462,
+    "end": 0.1538
+   },
+   "L01": {
+    "L01": 0.8421,
+    "end": 0.1579
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.069,
+   "L01>L01": 0.02
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 5,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

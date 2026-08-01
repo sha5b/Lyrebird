@@ -1,0 +1,159 @@
+{
+ "id": "hemitriccus_cinnamomeipectus",
+ "common": "Cinnamon-breasted Tody-Tyrant",
+ "scientific": "Hemitriccus cinnamomeipectus",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 819 Hz \u00b7 43 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0427,
+   "level": 0.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     783.4
+    ],
+    [
+     0.75,
+     841.5
+    ],
+    [
+     0.875,
+     797.8
+    ],
+    [
+     1.0,
+     854.2
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.45,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.3
+    ]
+   ],
+   "tractQ": 3.0,
+   "noise": 0.05,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "rough": 0.08,
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.4613,
+    "rivalCosine": 0.1759,
+    "nearestOwn": true,
+    "f0ErrorPercent": 7.25
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2914 Hz \u00b7 28 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.028,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2803.5
+    ],
+    [
+     1.0,
+     3028.7
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 0.0,
+   "noise": 0.6,
+   "amDepth": 0.45,
+   "am": 140.0,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.025
+   },
+   "two": true,
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.8498,
+    "rivalCosine": 0.3495,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.23
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5789,
+    "end": 0.4211
+   },
+   "L01": {
+    "L01": 0.6667,
+    "end": 0.3333
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.229,
+   "L01>L01": 0.024
+  },
+  "songTyping": {
+   "bouts": 10,
+   "short": 10,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

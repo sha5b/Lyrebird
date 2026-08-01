@@ -3,11 +3,91 @@
  "common": "Japanese bush warbler (uguisu)",
  "scientific": "Horornis diphone",
  "bank": "jp",
- "summary": "Learned from 8 field recordings: 8 syllable types fitted from 212 segmented syllables. No documented function is attached to any of them.",
+ "summary": "A long drawn whistle followed by an explosive flourish - the classic ho-hoke-kyo of Japanese spring.",
  "syllables": [
   {
-   "id": "L00",
-   "label": "learned L00 \u00b7 942 Hz \u00b7 51 ms",
+   "id": "ho",
+   "label": "ho (long whistle)",
+   "function": "song introduction",
+   "confidence": "inferred",
+   "refs": [],
+   "dur": 0.9,
+   "level": 0.8,
+   "timbre": "pure",
+   "attack": 0.09,
+   "hold": true,
+   "contour": [
+    [
+     0.0,
+     2050
+    ],
+    [
+     0.6,
+     2120
+    ],
+    [
+     1.0,
+     2080
+    ]
+   ]
+  },
+  {
+   "id": "ho2",
+   "label": "hoke",
+   "function": "song flourish, part 1",
+   "confidence": "inferred",
+   "refs": [],
+   "dur": 0.12,
+   "level": 0.95,
+   "timbre": "pure",
+   "two": true,
+   "contour": [
+    [
+     0.0,
+     2400
+    ],
+    [
+     0.3,
+     4200
+    ],
+    [
+     1.0,
+     3200
+    ]
+   ]
+  },
+  {
+   "id": "kyo",
+   "label": "kyo",
+   "function": "song flourish, part 2",
+   "confidence": "inferred",
+   "refs": [],
+   "dur": 0.2,
+   "level": 1.0,
+   "timbre": "reed",
+   "harmonic": 0.3,
+   "contour": [
+    [
+     0.0,
+     3600
+    ],
+    [
+     0.25,
+     2600
+    ],
+    [
+     0.6,
+     3400
+    ],
+    [
+     1.0,
+     2200
+    ]
+   ]
+  },
+  {
+   "id": "L09",
+   "label": "learned L09 \u00b7 942 Hz \u00b7 51 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
@@ -52,15 +132,15 @@
    "tractQ": 6.0,
    "learned": {
     "members": 14,
-    "resynthesisCosine": 0.2077,
-    "rivalCosine": 0.7002,
+    "resynthesisCosine": 0.0796,
+    "rivalCosine": 0.7004,
     "nearestOwn": false,
     "f0ErrorPercent": 30.87
    }
   },
   {
-   "id": "L01",
-   "label": "learned L01 \u00b7 1037 Hz \u00b7 135 ms",
+   "id": "L10",
+   "label": "learned L10 \u00b7 1037 Hz \u00b7 135 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
@@ -82,19 +162,19 @@
    "harmonic": 0.0,
    "gammaScale": 4.5,
    "tractQ": 30.0,
-   "am": 80.0,
+   "am": 45.0,
    "amDepth": 0.3,
    "learned": {
     "members": 6,
-    "resynthesisCosine": 0.563,
-    "rivalCosine": 0.17,
+    "resynthesisCosine": 0.6468,
+    "rivalCosine": 0.2072,
     "nearestOwn": true,
     "f0ErrorPercent": 0.31
    }
   },
   {
-   "id": "L02",
-   "label": "learned L02 \u00b7 1494 Hz \u00b7 123 ms",
+   "id": "L01",
+   "label": "learned L01 \u00b7 1494 Hz \u00b7 123 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
@@ -121,29 +201,32 @@
    ],
    "attack": 0.016,
    "hold": false,
-   "harmonic": 0.1,
-   "am": 25.0,
+   "harmonic": 0.0,
+   "am": 80.0,
    "amDepth": 0.8,
    "gammaScale": 0.5,
-   "two": true,
-   "rough": 0.08,
+   "rough": 0.65,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.09
+   },
    "tractQ": 20.0,
    "learned": {
     "members": 11,
-    "resynthesisCosine": 0.7455,
-    "rivalCosine": 0.4457,
+    "resynthesisCosine": 0.7994,
+    "rivalCosine": 0.5614,
     "nearestOwn": true,
-    "f0ErrorPercent": 0.89
+    "f0ErrorPercent": -8.65
    }
   },
   {
-   "id": "L03",
-   "label": "learned L03 \u00b7 1756 Hz \u00b7 85 ms",
+   "id": "L08",
+   "label": "learned L08 \u00b7 1756 Hz \u00b7 85 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0853,
-   "level": 1.05,
+   "level": 0.45,
    "timbre": "buzz",
    "contour": [
     [
@@ -155,31 +238,29 @@
      1778.8
     ]
    ],
-   "attack": 0.03,
+   "attack": 0.0253,
    "hold": false,
    "harmonic": 0.0,
    "am": 15.02,
-   "amDepth": 0.8,
+   "amDepth": 0.6,
    "vib": {
     "rate": 11.03,
     "depth": 0.09
    },
-   "tractQ": 0.0,
+   "gammaScale": 6.0,
+   "tractQ": 20.0,
    "noise": 0.05,
-   "rough": 0.65,
-   "two": false,
-   "gammaScale": 0.5,
    "learned": {
     "members": 14,
-    "resynthesisCosine": 0.7001,
-    "rivalCosine": 0.7724,
-    "nearestOwn": false,
-    "f0ErrorPercent": -1.47
+    "resynthesisCosine": 0.7675,
+    "rivalCosine": 0.6941,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.2
    }
   },
   {
-   "id": "L04",
-   "label": "learned L04 \u00b7 1834 Hz \u00b7 75 ms",
+   "id": "L02",
+   "label": "learned L02 \u00b7 1834 Hz \u00b7 75 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
@@ -213,8 +294,8 @@
    "tractQ": 30.0,
    "learned": {
     "members": 15,
-    "resynthesisCosine": 0.7515,
-    "rivalCosine": 0.6722,
+    "resynthesisCosine": 0.7842,
+    "rivalCosine": 0.7225,
     "nearestOwn": true,
     "f0ErrorPercent": 5.79
    }
@@ -226,7 +307,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0973,
-   "level": 0.45,
+   "level": 1.35,
    "timbre": "pure",
    "contour": [
     [
@@ -258,25 +339,25 @@
      2361.3
     ]
    ],
-   "attack": 0.03,
-   "hold": false,
-   "harmonic": 0.1,
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
    "am": 12.0,
    "amDepth": 0.8,
    "vib": {
-    "rate": 11.07,
+    "rate": 14.0,
     "depth": 0.05
    },
    "gammaScale": 0.5,
-   "tractQ": 6.0,
+   "tractQ": 30.0,
    "noise": 0.05,
    "rough": 0.65,
    "learned": {
     "members": 12,
-    "resynthesisCosine": 0.8512,
-    "rivalCosine": 0.6344,
+    "resynthesisCosine": 0.8765,
+    "rivalCosine": 0.6851,
     "nearestOwn": true,
-    "f0ErrorPercent": -5.48
+    "f0ErrorPercent": -11.51
    }
   },
   {
@@ -302,15 +383,17 @@
    "hold": true,
    "harmonic": 0.9,
    "gammaScale": 0.5,
-   "rough": 0.08,
+   "rough": 0.2,
    "vib": {
     "rate": 8.0,
     "depth": 0.025
    },
+   "am": 80.0,
+   "amDepth": 0.3,
    "learned": {
     "members": 58,
-    "resynthesisCosine": 0.2203,
-    "rivalCosine": 0.4581,
+    "resynthesisCosine": 0.371,
+    "rivalCosine": 0.52,
     "nearestOwn": false,
     "f0ErrorPercent": -2.77
    }
@@ -348,14 +431,31 @@
    "two": true,
    "learned": {
     "members": 82,
-    "resynthesisCosine": 0.328,
-    "rivalCosine": 0.3731,
+    "resynthesisCosine": 0.3323,
+    "rivalCosine": 0.4042,
     "nearestOwn": false,
     "f0ErrorPercent": -0.26
    }
   }
  ],
  "songs": [
+  {
+   "id": "hokekyo",
+   "label": "ho-hoke-kyo",
+   "gloss": "spring territorial song",
+   "function": "territory advertisement",
+   "confidence": "inferred",
+   "refs": [],
+   "sequence": [
+    "ho",
+    "ho2",
+    "kyo"
+   ],
+   "gaps": [
+    0.16,
+    0.03
+   ]
+  },
   {
    "id": "learned_bout",
    "label": "learned bout",
@@ -384,31 +484,19 @@
   "start": [
    "L06",
    "L07",
-   "L04",
-   "L03"
+   "L02",
+   "L08"
   ],
   "transitions": {
-   "L00": {
-    "L00": 0.8571,
-    "end": 0.1429
-   },
    "L01": {
-    "L01": 0.6667,
-    "L02": 0.3333
-   },
-   "L02": {
-    "L04": 0.2727,
-    "L05": 0.2727,
     "L02": 0.2727,
+    "L05": 0.2727,
+    "L01": 0.2727,
     "end": 0.1818
    },
-   "L03": {
-    "L03": 0.6429,
-    "end": 0.3571
-   },
-   "L04": {
+   "L02": {
     "end": 0.6154,
-    "L04": 0.3846
+    "L02": 0.3846
    },
    "L05": {
     "end": 0.5,
@@ -423,50 +511,35 @@
     "L07": 0.8537,
     "end": 0.122,
     "L06": 0.0244
+   },
+   "L08": {
+    "L08": 0.6429,
+    "end": 0.3571
+   },
+   "L09": {
+    "L09": 0.8571,
+    "end": 0.1429
+   },
+   "L10": {
+    "L10": 0.6667,
+    "L01": 0.3333
    }
   },
   "gaps": {
-   "L00>L00": 0.088,
-   "L01>L01": 0.029,
-   "L01>L02": 0.192,
-   "L02>L02": 0.024,
-   "L02>L04": 0.056,
-   "L02>L05": 0.04,
-   "L03>L03": 0.035,
-   "L04>L04": 0.021,
+   "L01>L01": 0.024,
+   "L01>L02": 0.056,
+   "L01>L05": 0.04,
+   "L02>L02": 0.021,
    "L05>L05": 0.055,
    "L06>L06": 0.645,
    "L06>L07": 0.392,
    "L07>L06": 0.496,
-   "L07>L07": 0.157
+   "L07>L07": 0.157,
+   "L08>L08": 0.035,
+   "L09>L09": 0.088,
+   "L10>L01": 0.192,
+   "L10>L10": 0.029
   },
-  "chunks": [
-   {
-    "sequence": [
-     "L07",
-     "L06",
-     "L07"
-    ],
-    "count": 68,
-    "species": [
-     "colibri_thalassinus",
-     "delichon_urbicum",
-     "diuca_diuca",
-     "gallinago_gallinago",
-     "horornis_diphone",
-     "hydrocoloeus_minutus",
-     "ixobrychus_exilis",
-     "lanius_cristatus",
-     "ortalis_canicollis",
-     "psilopogon_asiaticus",
-     "serinus_canicollis",
-     "synallaxis_cabanisi",
-     "tringa_brevipes",
-     "zosterops_erythropleurus"
-    ],
-    "pmi": 1.564
-   }
-  ],
   "songTypes": [
    {
     "id": "S01",
@@ -490,5 +563,6 @@
    "minClusterSize": 6,
    "controlPlaced": 0
   }
- }
+ },
+ "learnedFrom": "Learned from 8 field recordings: 8 syllable types fitted from 212 segmented syllables. No documented function is attached to any of them."
 }

@@ -1,0 +1,195 @@
+{
+ "id": "treron_sieboldii",
+ "common": "White-bellied Green-Pigeon",
+ "scientific": "Treron sieboldii",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 33 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 730 Hz \u00b7 117 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1174,
+   "level": 0.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     956.4
+    ],
+    [
+     0.125,
+     829.7
+    ],
+    [
+     0.25,
+     950.1
+    ],
+    [
+     0.375,
+     787.9
+    ],
+    [
+     0.5,
+     826.1
+    ],
+    [
+     0.625,
+     816.6
+    ],
+    [
+     0.75,
+     749.2
+    ],
+    [
+     0.875,
+     433.2
+    ],
+    [
+     1.0,
+     450.3
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.7,
+   "am": 25.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 10.51,
+    "depth": 0.073
+   },
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     1.0
+    ],
+    [
+     9584.9,
+     6.0,
+     0.3333
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.4346,
+    "rivalCosine": -0.3334,
+    "nearestOwn": true,
+    "f0ErrorPercent": 5.08
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2754 Hz \u00b7 53 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0533,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2637.9
+    ],
+    [
+     0.125,
+     2905.3
+    ],
+    [
+     0.25,
+     2746.1
+    ],
+    [
+     1.0,
+     2733.7
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 80.0,
+   "amDepth": 0.45,
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     1.0
+    ],
+    [
+     9584.9,
+     6.0,
+     0.3333
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 30.0,
+   "noise": 0.6,
+   "rough": 0.08,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 23,
+    "resynthesisCosine": 0.5397,
+    "rivalCosine": -0.3484,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.22
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 0.8261,
+    "end": 0.1739
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.053,
+   "L01>L01": 0.128
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 5,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}

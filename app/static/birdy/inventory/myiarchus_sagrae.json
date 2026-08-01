@@ -1,0 +1,199 @@
+{
+ "id": "myiarchus_sagrae",
+ "common": "La Sagra's Flycatcher",
+ "scientific": "Myiarchus sagrae",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 32 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 648 Hz \u00b7 52 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.052,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     607.4
+    ],
+    [
+     0.125,
+     521.1
+    ],
+    [
+     0.25,
+     643.3
+    ],
+    [
+     0.375,
+     643.7
+    ],
+    [
+     0.5,
+     707.7
+    ],
+    [
+     0.625,
+     656.7
+    ],
+    [
+     0.75,
+     722.2
+    ],
+    [
+     0.875,
+     641.4
+    ],
+    [
+     1.0,
+     714.3
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.2,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 6.0,
+   "noise": 0.85,
+   "learned": {
+    "members": 24,
+    "resynthesisCosine": 0.5413,
+    "rivalCosine": -0.5354,
+    "nearestOwn": true,
+    "f0ErrorPercent": 21.6
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 898 Hz \u00b7 73 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0733,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     688.2
+    ],
+    [
+     0.125,
+     719.1
+    ],
+    [
+     0.25,
+     846.6
+    ],
+    [
+     0.375,
+     633.0
+    ],
+    [
+     0.5,
+     820.1
+    ],
+    [
+     0.625,
+     744.7
+    ],
+    [
+     0.75,
+     1318.7
+    ],
+    [
+     0.875,
+     1354.3
+    ],
+    [
+     1.0,
+     1316.1
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.5,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 5.1,
+    "depth": 0.09
+   },
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
+   "rough": 0.0,
+   "two": true,
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.5347,
+    "rivalCosine": -0.2355,
+    "nearestOwn": true,
+    "f0ErrorPercent": -5.05
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "end": 0.5,
+    "L01": 0.5
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.053,
+   "L01>L01": 0.381
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 5,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6,
+   "controlPlaced": 0
+  }
+ }
+}
