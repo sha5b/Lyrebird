@@ -16,13 +16,15 @@ model, where a Hopf line is tangent to a saddle-node curve (Laje, Gardner & Mind
 89:288102; the book-length account is Mindlin & Laje 2005, *The Physics of
 Birdsong*, Springer). It is deliberately **not** the two-mass / mucosa-wave model
 (Titze's lineage, implemented for birds by Elemans et al. 2009 — docs/15 §2 keeps
-that for doves), and not a kinematic synthesizer. The normal form is the point of
-the lineage. Gardner, Cecchi, Magnasco, Laje & Mindlin 2001 (*Phys. Rev. Lett.*
-87:208101) showed that two scalar gesture curves suffice to reproduce canary song:
-air-sac pressure and labial tension. Amador, Perl, Mindlin & Margoliash
-2013 (*Nature* 495:59–64) showed the bird's own premotor neurons encode exactly
-those gestures. Fee, Shraiman, Pesaran & Mitra 1998 (*Nature* 395:67–71) is the
-measurement the whole class stands on: nonlinear labial dynamics, not a whistle.
+that for doves), and not a kinematic synthesizer.
+
+The normal form is the point of the lineage. Gardner, Cecchi, Magnasco, Laje &
+Mindlin 2001 (*Phys. Rev. Lett.* 87:208101) showed that two scalar gesture curves
+suffice to reproduce canary song: air-sac pressure and labial tension. Amador, Perl,
+Mindlin & Margoliash 2013 (*Nature* 495:59–64) showed the bird's own premotor
+neurons encode exactly those gestures. Fee, Shraiman, Pesaran & Mitra 1998 (*Nature*
+395:67–71) is the measurement the whole class stands on: nonlinear labial dynamics,
+not a whistle.
 
 ### Which equations match
 
@@ -40,8 +42,10 @@ literature states the onset threshold as `alpha < 0`, while ours lives at
 The parameter reading is the literature's. `alpha` is air-sac pressure, and `beta`
 is labial tension (≈ fundamental frequency). `gamma` is a pure time-scale fitted
 per syllable (docs/08 §8.1, "gamma is per syllable, not a constant"). The literature
-fits it per bird. The bifurcation structure that carries the timbre physics is Sitt
-et al. 2008 (*Phys. Rev. E* 78:011905). Hopf-born oscillations are tonal.
+fits it per bird.
+
+The bifurcation structure that carries the timbre physics is Sitt et al. 2008
+(*Phys. Rev. E* 78:011905). Hopf-born oscillations are tonal.
 Saddle-node-on-a-limit-cycle-born ones are pulse-like and harmonically dense. The
 spectral content index is a function of `beta` alone. This is what §8.1a's
 `gammaScale` exploits.
@@ -50,16 +54,17 @@ Forward Euler at 16–64× oversampling is validated against RK4 to within 2 % o
 (docs/08 §8.1). The calibration table reproduces the §8.6 reference measurements to
 0.1 % on F0 and 2 % on ampPP (`calibrate.check_reference`). Python↔JS parity is a
 project invariant and stands at 18/18 fixtures (HANDOFF 2026-07-30), with the
-two-voice fixtures' worst diff at 2.8e-08 (docs/15 §5). The two-voice coupling
-kernel implements Laje & Mindlin 2005 (*Phys. Rev. E* 72:036218, eqs. 62–67) in its
-own weak-coupling approximation (Table I: β of 1.5e3 against 1/τ of 1e4). Its
-measured strong-coupling boundary is exactly where the paper says the approximation
-dies (docs/15 §5): `betaInj` 0.25 collapses the fundamental into period doubling.
-The respiratory oscillator is Fainstein, Goller & Mindlin 2025 (arXiv:2509.11019,
-eqs. 1–4, Table S2 ranges) as written (docs/15 §1). It includes the correction that
-the tract input is **velocity times root pressure**. That is Laje & Mindlin 2005's
-low-frequency inertive limit, not the "every reference injects ẏ" of docs/09 §9.6,
-corrected in place.
+two-voice fixtures' worst diff at 2.8e-08 (docs/15 §5).
+
+The two-voice coupling kernel implements Laje & Mindlin 2005 (*Phys. Rev. E*
+72:036218, eqs. 62–67) in its own weak-coupling approximation (Table I: β of 1.5e3
+against 1/τ of 1e4). Its measured strong-coupling boundary is exactly where the
+paper says the approximation dies (docs/15 §5): `betaInj` 0.25 collapses the
+fundamental into period doubling. The respiratory oscillator is Fainstein, Goller &
+Mindlin 2025 (arXiv:2509.11019, eqs. 1–4, Table S2 ranges) as written (docs/15 §1).
+It includes the correction that the tract input is **velocity times root pressure**.
+That is Laje & Mindlin 2005's low-frequency inertive limit, not the "every reference
+injects ẏ" of docs/09 §9.6, corrected in place.
 
 ### The deviations the project itself has measured and recorded
 
@@ -121,7 +126,9 @@ in two years points at the ODE.
 cannot hold what real notes carry (§21.2). (ii) The *gesture sources* are
 designed (envelope-as-pressure) or hand-set (B1/B2 defaults), and hand-set
 physics loses bake-offs — the per-species fit is the only path that has ever won
-(§21.3). (iii) The *objective* is unproven as a fidelity ranking. The 28-d
+(§21.3).
+
+(iii) The *objective* is unproven as a fidelity ranking. The 28-d
 cosine carries essentially no information about spectral distance to the
 original: Pearson/Spearman ≈ 0.1 against both MCD and multi-res STFT, n = 200,
 two independent distances agreeing at 0.925 (docs/19 §19.2). The honest state
@@ -151,8 +158,10 @@ to a metronomic sine (not random enough). The ear classifies both as artificial,
 because real syringes live between the regimes. The model *contains* that
 middle: period-doubled and chaotic solutions (Sitt et al. 2008; Amador & Mindlin
 2008, *Chaos* 18:043123). The fit simply cannot find its way there under the
-current objective and defaults. Second, none of the six rows is an ODE fault.
-That is §21.1's verdict wearing its consequences.
+current objective and defaults.
+
+Second, none of the six rows is an ODE fault. That is §21.1's verdict wearing its
+consequences.
 
 ## 21.3 The extension roadmap, ranked
 
@@ -169,18 +178,23 @@ exists.
 Basis: Fainstein, Goller & Mindlin 2025 (arXiv:2509.11019), the 2-state air-sac
 dynamics with the Heaviside inflow/outflow asymmetry. Also the
 mini-breath/pulsatile regimes of Hartley & Suthers 1989 (*J. Comp. Physiol. A*
-165:15–26). Equations already shipped (`respiration.py`, docs/15 §1):
+165:15–26).
+
+Equations already shipped (`respiration.py`, docs/15 §1):
 `τx ẋ = −(1+x²)x − p + F0 f(t)`,
 `τp ṗ = −(1+x²)x − (1+α(p))p + F0 f(t)`, `ps(t) = scale·p(t)`, tract drive
 `√ps·y`. Fixes the "no loudness life" row and the onset-shape losses the
-hand-set default took in sub-50 ms notes. **Fit (pre-registered, docs/15 §1):
-one 5-parameter set per species**, coordinate search over the Table S2 ranges
-seeded from the default set, with the forcing as the type's *measured* gesture
-(attack/duration/AM from the observations), not the median envelope, which is
-what short-note species need. Evidence the path works: the respfit pass already
-won 445 of 12 680 types with the gate holding everywhere, and median cosine
-moved 0.650 → 0.6623 across both extension fits (docs/16 §16.4). What the
-bake-off missed is now measurable on the bench instead of argued about.
+hand-set default took in sub-50 ms notes.
+
+**Fit (pre-registered, docs/15 §1): one 5-parameter set per species**, coordinate
+search over the Table S2 ranges seeded from the default set. The forcing is the
+type's *measured* gesture (attack/duration/AM from the observations), not the
+median envelope, which is what short-note species need. Evidence the path works:
+the respfit pass already won 445 of 12 680 types with the gate holding
+everywhere, and median cosine moved 0.650 → 0.6623 across both extension fits
+(docs/16 §16.4). What the bake-off missed is now measurable on the bench instead
+of argued about.
+
 *Pre-registration sketch — metric:* median ΔMCD (and multi-res STFT) against
 the medoid member's cached audio per fitted type, cosine as clustering
 guardrail. *Gate:* MCD win share ≥ 60 %, median ΔMCD > +1 dB better, median
@@ -197,12 +211,15 @@ al. 2013, cited above). Syringeal muscles can modulate up to 250 Hz, so the
 headroom for real tremor is measured, not assumed (Elemans et al. 2008,
 *PLoS ONE* 3:e2581; review: Riede & Goller 2010, *Brain Lang.* 115:69–80). And
 the neural-evidence requirement that tension carry noise (Amador & Mindlin
-2021, cited above). Equation: extend the existing `rough` mechanism from one
+2021, cited above).
+
+Equation: extend the existing `rough` mechanism from one
 static depth to a two-band measured gesture. The low band is respiratory, tens
 of Hz, on `alpha`, sharing the `am` machinery's discipline. The high band is the
 existing 140 Hz-lowpassed band on `beta`. Band powers are measured per type,
 with a rendition-level seed (the xorshift stream discipline already gives
 independent realizations per voice). Fixes the "metronomic" row directly.
+
 **Fit, not hand-set:** measure the modulation spectrum of f0 and amplitude per
 type from the harvest (`features.mel_path` + the f0 track), match band powers
 by the same coordinate search, judge on the bench plus a distribution match (KS
@@ -212,6 +229,7 @@ list, and the ear is exquisitely sensitive to exactly this cue. Risk: the clamp
 discipline of `rough` (Amador & Mindlin's intermediate-optimum) must be
 re-derived per band, and rendition-level variation must not leak into the
 descriptor used for typing (the fit corpus renders are deterministic by design).
+
 *Pre-registration sketch — metric:* KS distance between rendered and harvested
 cycle-to-cycle Δf0 and Δamp distributions per type + MCD non-inferiority on the
 bench. *Gate:* median KS halved against the unmodulated render, zero types with
@@ -222,7 +240,9 @@ which is the first corpus with the rendition count to measure the target.
 **3. Waveform-regime fit: getting the pulse regime reached, not just reachable.**
 Basis: Fee et al. 1998 (measured skewed, pulse-like labial waveforms). Sitt et
 al. 2008 (SCI is a function of `beta` alone). Amador et al. 2013 (gesture-space
-elemental dynamics). Nothing new to add to the model — the SNILC regime is in
+elemental dynamics).
+
+Nothing new to add to the model — the SNILC regime is in
 the equations and `gammaScale` + the 0.002 table opened the road (docs/08
 §8.1a). The extension is fit-side: an SCI/waveform-skew target in the
 inversion, so the rich tail is *fitted to*, per type, with the §19 bench as
@@ -237,6 +257,7 @@ physics is uncertain.
 Basis: gape as high-shelf, `A = −5 + 32·log(B)` over 4–7.5 kHz (Nelson et al.
 2005). Gape–frequency coupling in song (Ohms et al. 2010; Podos et al. 2004).
 The OEC's f0-tracking already justifies the moving band (Riede et al. 2006).
+
 Equation: one scalar shelf gain `s(t) = clip(a·ps(t) + b·f0(t)/f0_ref + c)` on
 a 4 kHz-high shelving filter — two fitted constants and a fixed corner, fully
 interpretable. Fixes "loud notes don't brighten". Fit from measurements:
@@ -253,13 +274,15 @@ Basis: two independently controlled sides measured in the intact syrinx
 Neurophysiol.* 75:867–876, 76:287–300). Also two-voice complexity even from a
 single side (Zollinger, Riede & Suthers 2008, *J. Exp. Biol.* 211:1978–1991).
 Plus the coupling mathematics of Laje & Mindlin 2005, already shipped
-(`twovoice.py`, docs/15 §5). Fit (pre-registered, docs/15 §5): one second-voice
+(`twovoice.py`, docs/15 §5).
+
+Fit (pre-registered, docs/15 §5): one second-voice
 contour per fitted type searched against the type's **measured second-source
 evidence** — inter-harmonic sidebands in the observation spectra, the
 observable the hand-set default cannot see. Evidence the path works: 2 027 of
-5 922 screened types won (docs/16 §16.4), and the hand-set bake-off already
-showed the coupling adding real structure exactly where the single voice was
-furthest from the audio (docs/15 §5). Ranked below 1–4 because its win is
+5 922 screened types won (docs/16 §16.4). The hand-set bake-off already showed
+the coupling adding real structure exactly where the single voice was furthest
+from the audio (docs/15 §5). Ranked below 1–4 because its win is
 concentrated in the biphonation minority of species — for
 one-dominant-fundamental species the phantom voice is a cost, which is what the
 screen is for.
@@ -270,12 +293,13 @@ The three pieces of docs/16 §16.7 are all in. Formant-filtered noise shipped
 respiratory drive on the respiration path and the output envelope on the
 envelope path (`syrinx.py`'s fricative docstring). The noise-first start for
 flatness-heavy types (median member flatness ≥ 0.14, the harvest's p90) ships
-where the resynthesis cosine beats the tonal fit (AGENTS.md). What remains open
-is honest: most sub-0.3-cosine types are a *different*, unfixed gap (HANDOFF
-2026-07-30). The docs/19 caveat applies retroactively: every fricative ship was
-cosine-gated, so a bench re-judgment of the shipped set is owed. The
-expectation is that part of that floor is the objective, not the renderer. The
-bench is how we find out which.
+where the resynthesis cosine beats the tonal fit (AGENTS.md).
+
+What remains open is honest: most sub-0.3-cosine types are a *different*,
+unfixed gap (HANDOFF 2026-07-30). The docs/19 caveat applies retroactively:
+every fricative ship was cosine-gated, so a bench re-judgment of the shipped
+set is owed. The expectation is that part of that floor is the objective, not
+the renderer. The bench is how we find out which.
 
 **7. Tracheal comb per-species measurement and slow modulation.**
 The comb is the main carrier of species identity (docs/04 §4.1) and already
@@ -302,8 +326,10 @@ The project's own evidence discipline makes the same point from the other side.
 Hand-set *physical* extensions, with five interpretable parameters and the
 literature's own equations, still had to lose two bake-offs in public before
 earning a fit pass (docs/15 §1/§5). A generator that cannot even state its loss
-in physical terms could never be judged that way. And the one measurement that
-matters here is already in: the failure mode this report documents is fit and
-periphery, not model class, so the fix is more physics, fitted better, not a
-bigger function approximator. Learned components analyze and score (the critic,
-Perch, the bench). They never generate audio. That line holds.
+in physical terms could never be judged that way.
+
+And the one measurement that matters here is already in. The failure mode this
+report documents is fit and periphery, not model class. The fix is more physics,
+fitted better, not a bigger function approximator. Learned components analyze
+and score (the critic, Perch, the bench). They never generate audio. That line
+holds.

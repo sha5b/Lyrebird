@@ -135,8 +135,8 @@ are judged against.
 ## P2 result (2026-07-31): the song-level kernel baseline does not hold
 
 `songspace.py` + `birdy-pipeline songspace`: bouts as (type, gap) sequences, with a
-weighted edit-distance kernel. Substitution/indel costs 1, and the match cost
-|Δlog gap| is priced inside the DP, so the edit path *is* the rhythm alignment.
+weighted edit-distance kernel. Substitution/indel costs 1, and the match
+cost |Δlog gap| is priced inside the DP, so the edit path *is* the rhythm alignment.
 The pre-registered rule judges it: species kNN lift must beat bag-of-types over the
 same bouts AND recordist lift must stay < 0.05. **It fails both gates on both debug
 stores:**

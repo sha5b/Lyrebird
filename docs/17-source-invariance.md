@@ -109,7 +109,7 @@ elsewhere in the patch.
 
 The literature's answer held. Three arms on the **12** species present in BOTH
 debug stores: iNat soundscape against xeno-canto focal. The overlap is 12, not
-13, because `horornis_diphone` has zero observations in the xeno store. Same
+13: `horornis_diphone` has zero observations in the xeno store. Same
 seed, same fake side. The measure is cross-domain species retrieval (chance
 0.083):
 
