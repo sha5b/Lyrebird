@@ -131,7 +131,9 @@ render corpus. The build's frame mixes renders in, so absolute cosines run
 
 The store-only regime caveat was right. The end-to-end debug build uses
 `harvest-b100` + the production learned inventory, embed space, 331 439
-points, 1 024 knots, verified green. On it, §20.1's structure reproduces *exactly*:
+points, 1 024 knots, verified green — **at the old `K_CAP` of 1 024, which is now
+8 192**; docs/22 §22.8 re-measured the live path under label assignment and reports
+centroid agreement 0.6316, species agreement 0.6831, tie-adjusted 0.8136. On it, §20.1's structure reproduces *exactly*:
 median cosine 0.9708, knot agreement 0.6025, **8 bad sessions, all xeno-canto,
 zero iNat**, top-5 sessions 35 % of the flip loss, the bad eight holding
 **22.9 %** of it (§20.1 said 24 %). The "iNat maps badly too" of the proxies

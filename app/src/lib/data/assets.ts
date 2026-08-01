@@ -126,7 +126,8 @@ async function getJson<T>(path: string, fetcher: typeof fetch, bust = ''): Promi
  * come back, and it happened inside a `try/catch` written for a missing file, so the
  * failure mode was a hang rather than an error.
  *
- * 32 MB is far past any relations file anyone intends (debug-100 ships 1.5 MB) and far
+ * 32 MB is far past any relations file anyone intends (debug-100 ships 1.5 MB, the
+ * production build 5.6 MB after `relations.shipped_relations` trims it) and far
  * short of one that cannot be parsed. An asset over the budget is treated exactly like
  * an absent one, which every reader of an optional asset already handles — and it says
  * so, because a silently dropped asset and a corpus that genuinely has no relations look
@@ -509,7 +510,8 @@ export function buildClusterLookup(centroids: Centroids): ClusterLookup {
  * **It used to fall back to "any cluster of the same species", and that was a placement
  * claim the corpus could not support.** Clustering is fitted over the whole point cloud
  * and a syllable only wins a cluster if enough of its renders land together; on the
- * shipped build 83 of the inventory's 176 syllables do not, so nearly half of them were
+ * 176-cluster build of 2026-07, 83 of the inventory's 176 syllables did not, so nearly
+ * half of them were
  * being resolved by that fallback. It returned `bySpecies`, which is the *first* cluster
  * of that bird in file order — an arbitrary knot, the same one for every unplaced
  * syllable the bird has. A phrase with three unplaced syllables therefore drew a

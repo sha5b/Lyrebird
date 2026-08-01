@@ -1,6 +1,6 @@
 # 8 — The implementation contract (v1)
 
-This document is the interface between the two halves of Birdy:
+This document is the interface between the two halves of Lyrebird:
 
 - `pipeline/` — offline Python (uv-managed): renders a corpus, calibrates the syrinx
   model, computes features, builds the galaxy.
@@ -58,7 +58,7 @@ f0     = g * PHI(alpha, beta)          PHI(0.1, 1) = 0.17061   (measured)
 ampPP  = A(alpha, beta)                independent of g
 ```
 
-This is why the literature fits `g` per bird, and Birdy must do the same. With `g`
+This is why the literature fits `g` per bird, and Lyrebird must do the same. With `g`
 pinned at 24000 the oscillator cannot go below roughly 1.4 kHz. Every owl,
 dove and cuckoo in the inventory then lands one to three octaves sharp, because the
 `beta` floor binds instead. So each syllable gets its own time-scale. The fit picks
@@ -562,9 +562,31 @@ app/static/birdy/
   points.json              parallel metadata arrays, length N
   centroids.json           K labelled clusters with 3D position (vectors: sidecar below)
   centroid-vectors.f32     Float32Array, K rows of the per-cluster vectors
-  relations.json           cross-species shared types + species similarity (doc 10 §10.4)
-  novel-pool.json          grow's pending novel embeddings awaiting quorum (doc 10 §10.3)
+  point-features.f32       Float32Array, 8*N, unit rows: the per-point response space
+  space-map.f32            the live-audio map into the projection
+  projection-basis.json    the projection's own basis, for that map
+  inventory/<id>.json      per-species shards of inventory.json
+  inventory/index.json     the shard index the pickers read
+  relations.json           cross-species shared types + species similarity (doc 10 §10.4),
+                           TRIMMED for shipping — see below
+  novel-pool.json          grow's pending novel embeddings awaiting quorum (doc 10 §10.3);
+                           written only once grow has a pending pool, so normally absent
 ```
+
+**`relations.json` ships a trim, and the trim is declared in the file.**
+`compute_relations` returns every unordered species pair, which is quadratic: **2 929 410
+pairs = 760 MB** at the production build's 2 423 species. `relations.shipped_relations`
+writes the browser's copy — **each species' eight nearest partners, deduplicated** — and
+`write_relations` applies it by default: **14 425 pairs, 5.6 MB, 135x smaller**, carrying
+9 513 of the 26 859 shared-type candidates. It is lossless for every question the app
+asks (`relationsOf` wants three nearest; checked across all 2 421 species at the app's
+limit of 3 with zero mismatches). A `retention` block in the file carries the rule and
+both totals, and states that `sharedTypesKept` is **not** the corpus's shared-type count —
+`sharedTypesComputed` is. `RelationsDoc.retention` is declared in `types.ts`. The
+standalone `relations` verb passes `per_species=None` and still writes the complete
+document, because there the file *is* the analysis rather than a shipped asset. The app
+additionally **refuses an optional JSON asset over 32 MB** on its `Content-Length` and
+treats it as absent, with a console warning.
 
 Since doc 10, a point is **one syllable**, not one 0.6 s window. Field rows come
 from `HarvestStore.syllable_point_set`. Each row is the observation's own
@@ -612,7 +634,8 @@ the learned space without torch. The pipeline measures `mapQuality` on held-out
 **The per-cluster float arrays live in `centroid-vectors.f32`, not in the JSON.**
 `vector32`, `vector` and `featuresLo` were 64 % of centroids.json's bytes (744 of 1 159
 per cluster, measured), and the file is fetched and parsed whole before the first frame —
-at the production corpus's 27 862 clusters that is a 44 MB parse. The sidecar is
+at the pre-W5 production corpus's 27 862 clusters that would have been a 44 MB parse. **On
+the shipped build it is 7.69 MB of JSON beside 3.81 MB of float at k = 14 003.** The sidecar is
 little-endian float32, row-major, one row per cluster, `rowFloats` wide, with the blocks
 in the order `vectors.order` names; an embed build's order is
 `["vector32", "vector", "featuresLo"]`. Values keep the 6-decimal rounding they had when

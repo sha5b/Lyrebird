@@ -1,12 +1,21 @@
 """Stream real recordings through the extractor and keep only what fits in a budget.
 
 The point of this module is what it *throws away*. A field corpus is far larger than
-anything Birdy can hold, ship or embed: xeno-canto alone carries hundreds of thousands
+anything Lyrebird can hold, ship or embed: xeno-canto alone carries hundreds of thousands
 of recordings, and one 4-minute mp3 becomes ~800 descriptors. So nothing is
-accumulated. Each recording is fetched, decoded, sliced, reduced to the 28-d
+accumulated in the store. Each recording is fetched, decoded, sliced, reduced to the 28-d
 descriptors of contract 8.2, folded into the store, and then deleted — audio, temporary
 file and all — before the next one starts. Peak memory is one recording, not one
 corpus.
+
+**Deleting the audio is the default, and since 2026-08-01 it is only the default**
+(owner decision). `--keep-audio DIR` copies each analysed recording into `DIR` before the
+temporary directory is torn down, but only where the recording's licence permits it —
+`audio_may_be_cached` below, which **refuses NoDerivatives** and **refuses an unrecorded
+licence**, because absence of a licence is not permission. Peak memory is unchanged
+either way; what changes is whether the file survives the loop. Nothing audio ever
+reaches the browser or an asset set: retention is not redistribution, and that is the
+line that keeps it so. See the repository's `NOTICE.md` §3.4.
 
 What survives is a **bounded, species-stratified reservoir** of descriptors:
 
@@ -53,6 +62,9 @@ from .syrinx import SAMPLE_RATE, peak_normalise
 
 XC_API = "https://xeno-canto.org/api/3/recordings"
 XC_PAGE_PAUSE = 1.0
+# The repo URL is the live one. The product is now called Lyrebird, but the GitHub repo is
+# still `Birdy` — the owner renames it separately, and until then this URL must resolve,
+# because xeno-canto's terms ask a bulk client to be identifiable.
 USER_AGENT = "birdy-pipeline/0.1 (research; https://github.com/sha5b/Birdy)"
 DOWNLOAD_TIMEOUT = 60
 # Searching is slower than downloading, and by a lot.
@@ -499,8 +511,11 @@ class HarvestStore:
             "# Harvested recordings",
             "",
             "Every recording below contributed descriptors to this store. The audio itself",
-            "was discarded after analysis; these are the sources whose acoustics are in the",
-            "galaxy, and their licences travel with them.",
+            "was discarded after analysis unless `harvest --keep-audio` kept a",
+            "licence-permitting copy on this machine; either way none of it is shipped.",
+            "These are the sources whose acoustics are in the galaxy. Their per-recording",
+            "licences are not ours to change, and both the licence and the recordist below",
+            "must travel with the recording and with anything derived from it.",
             "",
             "| id | species | recordist | licence | source |",
             "|---|---|---|---|---|",

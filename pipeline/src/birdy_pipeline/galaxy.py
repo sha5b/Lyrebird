@@ -41,8 +41,12 @@ TEMPERATURE = 0.12
 # per species on top of the authored ones), and capping there is not a cheaper galaxy but
 # a wrong one: types get merged, and the documented calls lose the clusters that carry
 # their function and citation. On the merged inventory the cap cost 13 % purity against
-# 176 requested types. Nothing downstream is quadratic in it — the shader holds one float
-# per cluster and the labels cull by collision.
+# 176 requested types. Nothing downstream is quadratic in it. (That used to be justified
+# by "the shader holds one float per cluster and the labels cull by collision", and both
+# halves are now out of date and in the right direction: the per-cluster channels live in
+# an RGBA `DataTexture` (`uClusterState`) rather than in vertex uniforms, which is what let
+# this cap rise at all, and the label layer is a fixed 28-slot pool rather than one tag per
+# knot, so neither its DOM cost nor its per-frame cost moves when k grows.)
 #
 # **Raised from 256 after it bound a second time, silently, and cost the cuckoo both of
 # its calls.** A 264-type learned inventory asks for 308 clusters plus room for the field
@@ -807,11 +811,13 @@ def label_assign(
     96 % of a production corpus's points carry a `(species, syllable)` by construction —
     rendered points because we rendered them from that type, field points because
     `typing.json` assigned them. Three costs of throwing that away were measured on the
-    2026-08-01 production build (docs/22 §22.5): every documented call lost the vote to
-    the field points of unrelated species sharing its cluster (24 points against 2 017,
-    so the build named zero documented knots); 12 879 types exceeded `K_CAP` and lost
-    their only knot; and Lloyd's iteration is O(n k d) per pass, which at k = 27 862 over
-    694 936 points is the wrong instrument for a partition that is already known.
+    pre-W5 2026-08-01 production build (docs/22 §22.5): every documented call lost the vote
+    to the field points of unrelated species sharing its cluster (24 points against 2 017,
+    so the build named zero documented knots); 12 879 types exceeded the `K_CAP` of the time
+    (1 024; it is 8 192 now) and lost their only knot; and Lloyd's iteration is O(n k d) per
+    pass, which at k = 27 862 over 694 936 points is the wrong instrument for a partition
+    that is already known. With this function and W5 both in force, the shipped production
+    build is 348 461 points at k = 14 003 with type coverage 13 903/13 903 = 100 %.
 
     So: every labelled point goes to its own type's blob — `_type_blobs`, the same
     partition the seeding uses, source split included, because a type whose two source
@@ -1359,8 +1365,10 @@ def build_galaxy(
             )
             if k_final > K_CAP:
                 # Not a pipeline limit any more — but the assets are, and silence about
-                # a 48 MB centroids.json is exactly the kind of surprise the cap warning
-                # existed to prevent.
+                # an oversized centroids.json is exactly the kind of surprise the cap
+                # warning existed to prevent. (The "48 MB" this line used to quote was a
+                # pre-sidecar figure; the shipped production build measures 7.69 MB of JSON
+                # beside 3.81 MB of float at k = 14 003.)
                 # Measured per-cluster costs, post-sidecar: 548 bytes of JSON and 272 of
                 # float (debug-100, 2 155 clusters). The first version of this line quoted
                 # the pre-sidecar 1 716 and overstated a production build by 3x, which is
@@ -1512,9 +1520,10 @@ def build_galaxy(
         # the space it understands. In the descriptor space `vector` is the KMeans centroid,
         # as it always was.
         # These three arrays used to live in centroids.json and were **64 % of its bytes**
-        # (measured: 744 of 1 159 per cluster), which at production's k = 27 862 is the
-        # difference between a 44 MB file the browser parses whole and a 6 MB one beside a
-        # 4 MB binary. They go to a sidecar the way the per-point features already do —
+        # (measured: 744 of 1 159 per cluster), which at the pre-W5 production k of 27 862
+        # was the difference between a 44 MB file the browser parses whole and a 6 MB one
+        # beside a 4 MB binary. Measured on the shipped build at k = 14 003: 7.69 MB of JSON
+        # beside 3.81 MB of float. They go to a sidecar the way the per-point features do —
         # same little-endian float32, same row-major order — and they keep the JSON's
         # 6-decimal rounding, so no matcher number moves because of the move.
         row: list[float] = []
@@ -1606,8 +1615,9 @@ def build_galaxy(
             # what lit, the match the reading panel reports. A corpus of field audio alone
             # has none, so the app sings, the picture drifts, and nothing else happens — which
             # is indistinguishable from the app being broken and was reported as exactly that.
-            # `--source harvest` is a legitimate thing to build; it is not a legitimate thing
-            # to build *silently*.
+            # A harvest-only corpus (`--harvest-store` with no rendered inventory; the old
+            # `--source harvest` shim was removed) is a legitimate thing to build; it is not
+            # a legitimate thing to build *silently*.
             print(
                 "  WARNING: not one cluster carries a syllable name, so nothing this app "
                 "sings can light a knot, draw a trajectory or be labelled. That is what a "
@@ -1719,8 +1729,10 @@ def build_galaxy(
         "rowFloats": row_floats,
         "bytes": k_final * row_floats * 4,
         "note": (
-            "these three arrays were 64 % of this file's bytes; at k = 27 862 that is a "
-            "44 MB parse on every cold load. Values are rounded to 6 decimals exactly as "
+            "these three arrays were 64 % of this file's bytes; inline, the shipped "
+            "k = 14 003 build would parse about 11.5 MB of JSON on every cold load "
+            "instead of 7.69 MB plus a 3.81 MB binary, and a pre-W5 k = 27 862 build "
+            "would have parsed about 44 MB. Values are rounded to 6 decimals exactly as "
             "they were when they lived here, so no match changes. An empty cluster's 28-d "
             "block is zeros"
         ),

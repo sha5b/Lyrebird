@@ -296,6 +296,22 @@ as a function — §8.5 is not relaxed for this.
 
 ## 23.5 W5 — Stop contaminating the analysis space
 
+> **RUN AND ADOPTED, 2026-08-01. Both halves shipped, and the proposal below is kept as
+> the pre-registration.** The first half — render nothing for a type that has real members
+> — **is now the default**: `measured_corpus(anchor=False)`, with `--member-anchor` buying
+> the rendered voice back and `--no-member-anchor` gone. The second half — assign labelled
+> points to their own type and cluster only the remainder — shipped as
+> `build --clustering label` (docs/22 §22.8). Scored on the field points every arm holds,
+> W5 is worth **+0.02 points of retrieval, i.e. nothing**; label assignment is worth
+> **+4.3**. The case for W5 was size and the owner took it on that basis. **The gate below
+> was answerable after all**: docs/22 §22.8 asked the documented-knot question on the
+> fast-loop store built against the authored inventory, and **both arms reach 44/44
+> authored syllables with a knot**. The shipped production build is 348 461 points,
+> k = 14 003, type coverage 13 903/13 903 = 100 %. Two things in the proposal are now
+> stale as constraints: the cap is **8 192**, not 1 024, so "12 879 types lose their only
+> knot" describes the morning's build and not the machinery; and the k-means cost the
+> raised cap re-introduced is what label assignment removed (0.2 s against 65 s).
+
 **The failure, measured 2026-08-01** (docs/22 §22.6). The critic is trained with realism
 as its leading term. The galaxy is then built in that space out of both real and
 synthetic points, so the map's geometry depends on how good our synthesiser is. Every
@@ -429,7 +445,11 @@ machine holds, and no selection rule can produce one.
 
 That is worth stating as a constraint on the whole workstream rather than as a footnote to
 one run: **any test in W6 that needs several recordings of one species needs audio to be
-re-fetched first**, which is an owner-called network step. What the cache does support is
+re-fetched first**, which is an owner-called network step. *(2026-08-01: the mechanism for
+that now exists —* `harvest --keep-audio DIR` *keeps the waveform where the licence
+permits, which is 90.3 % of the production store's 10 184 recordings. The re-fetch is still
+a deliberate network step and still the owner's, but "the xeno-canto audio is deleted by
+design" is no longer the reason it cannot be done.)* What the cache does support is
 the pair test — with `min_group=2`, is a recording's nearest neighbour from its own species?
 — and `geometry.measure` allows exactly that, keeping `min_group` for callers testing a
 small population deliberately, where the permutation null rather than the group size is
@@ -604,6 +624,7 @@ behavioural equivalence.
 2. **W1**, because it is hours and it attacks the most-recorded failure in the project
    with a method the project has never tried.
 3. **W5**, because the measurement is already done and what remains is a decision.
+   *(Taken 2026-08-01: adopted as the default, on size. §23.5.)*
 4. **W6**, straight after W1: it runs on the same fixed store through the same battery,
    and its T1 either explains W1's result or replaces it.
 5. **W4**, because it is the only route to function this corpus can support.

@@ -17,6 +17,10 @@ constants changed and nothing else.
 | `w5_field_retrieval.py` | the same four arms on one query population | label assignment +4.3 pts; W5 itself +0.02 | docs/22 §22.8 |
 | `w6_t1_perch_recordist.py` | does an external 100x-scale space escape the recordist confound? | no — recordist lift 0.0891 -> 0.0744, gate wanted -30 % | docs/23 §23.6.1 |
 | `w6_t3_perch_species.py` | does it retrieve species better? | yes, 8x (0.0074 -> 0.0588), and recordist still outranks species | docs/23 §23.6.2 |
+| `w6_birdnet_arms.py` (+ `.json`) | BirdNET as the second external opinion | it *raises* the recordist lift 24 % — worse than our own critic, and it disagrees with Perch | docs/23 §23.6.1-3 |
+| `inverse_gate.md` | the amortised inverse's pre-registered gate, and its result | **fails all three conditions**: +0.0135 median cosine (wanted +0.02), 52.8 % of types improved (wanted 60 %), worst species -0.0816 (wanted -0.05). `--inverse` default off | docs/09 §9.3 Part 2 |
+| `inverse_compare.py` | scores the baseline fit against the encoder-start fit | the table in `inverse_gate.md` | docs/09 §9.3 |
+| `score_two_start.py` | the pre-registered follow-up: keep the better of median-start and encoder-start | unrun; bar is +0.02 median with **no** species worse at all | `inverse_gate.md` |
 
 `w5_field_retrieval.py` and `w6_t3_perch_species.py` import helpers from their siblings, so
 run them from this directory (or with it on `sys.path`; the W6 pair does that itself).

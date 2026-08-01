@@ -105,8 +105,10 @@ have their two source means more than cos 0.9 apart. The gap touches nearly ever
 Shipped: `_type_seed_means` in galaxy.py. A type with both sources gets a seed per blob
 when their two means are more than cos 0.9 apart. `cluster_plan` counts the same seeds (k = 986).
 
-**Production build: 94.6 % coverage (27 orphans), 56.7 % purity**, map and relations as
-above, verify green. Both blobs of a split type may win a cluster name: two knots, one
+**Production build of the time: 94.6 % coverage (27 orphans), 56.7 % purity**, map and
+relations as above, verify green. *(Superseded 2026-08-01: the shipped production build is
+`--clustering label` at **100 % type coverage, 0 orphans**, and its 94.5 % purity is an
+identity rather than a measurement — a type is a cluster there. docs/22 §22.8.)* Both blobs of a split type may win a cluster name: two knots, one
 type. That is the honest picture of a space where recorded and synthesised do not
 coincide.
 
@@ -114,7 +116,7 @@ coincide.
 
 `sources.py` adds `birdy-pipeline sources list/fetch` (subagent-built, live-probed
 2026-07-29). Every adapter stages audio and ingests it through the *same* decode →
-describe → delete machinery as xeno-canto. When its key or package is missing, an adapter
+describe → delete-by-default machinery as xeno-canto. When its key or package is missing, an adapter
 skips with a reason, never an error. `pipeline/.env.example` documents `XC_API_KEY`,
 `KAGGLE_USERNAME`, `KAGGLE_KEY`, `HF_TOKEN`, and `ZENODO_TOKEN`. Verified probes into
 `/tmp` stores:
@@ -151,8 +153,9 @@ precisely because that is what shifts. Widening the sources is the direct attack
   an honest answer to "what does *not our kind of sound* look like". The novelty threshold
   is calibrated against exactly that.
 
-The discipline does not change. No audio is retained: decode → describe → delete in every
-adapter. Every claim gets a confidence label. Any large ingest must face the same
+The discipline does not change. Decode → describe → delete is the default in every adapter,
+and no audio is ever shipped. *(2026-08-01: `--keep-audio` may keep a licence-permitting
+copy on the machine — NoDerivatives and unrecorded licences refused. See `NOTICE.md` §3.4.)* Every claim gets a confidence label. Any large ingest must face the same
 pre-registered numbers on the fixed store: critic report, map gate, novelty ROC, type
 coverage. The judgement happens after a full re-derivation, with novelty recalibrated per
 §10.3.

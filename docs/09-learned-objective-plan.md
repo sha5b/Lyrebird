@@ -14,7 +14,7 @@ work. §9.3 Part 1 falls out of it for free, and it happens to fix a second prob
 measurement showed that our *objective* limits realism, not the synthesizer. The objective is
 how we score closeness to a real bird.
 
-Note on what exists today: **there is no neural network anywhere in Birdy.** Analysis is
+Note on what exists today: **there is no neural network anywhere in Lyrebird.** Analysis is
 hand-written numpy (`features.py`, `learn.py`). The only machine learning is KMeans/HDBSCAN
 for clusters and UMAP/PCA for the 3D projection. This would be the first learned component.
 It belongs in *representation and scoring*, never in generation.
@@ -136,13 +136,18 @@ confusion. This replaces the *metric*, not the synthesizer. The physics, the par
 the galaxy and the grammar are all untouched.
 
 **The data problem, and its solution.** A discriminator needs real spectrograms. The harvest
-deletes audio by design (`harvest.py` decodes → describes → deletes. Peak memory is one
-recording). Do **not** change that. Instead, keep a **log-mel patch** per syllable. A patch is
+deletes audio by default (`harvest.py` decodes → describes → deletes. Peak memory is one
+recording). Do **not** change that default. *(2026-08-01: `--keep-audio` can now keep a
+licence-permitting copy beside the store — see §9.4 — but the patch remains what the store
+holds and what the critic reads, and nothing below changes.)* Keep a **log-mel patch** per
+syllable. A patch is
 a fixed `32 × 26` grid of log-mel energies, resampled onto the syllable's own duration and
 mean-centered.
 
 - This is a measurement, not a recording. 832 numbers, log-magnitude only, no phase. You cannot
-  reconstruct recognizable audio from it, so the licensing and "keeps no audio" properties hold.
+  reconstruct recognizable audio from it, so the licensing and "the store keeps no audio"
+  properties hold — and they hold independently of the 2026-08-01 retention change, because
+  a kept file lives beside the store and never ships.
 - Cost at `float16`: ~1.6 KB per syllable, ~65 MB for a 40 k store. Acceptable. Quantize to
   `int8` over a fixed dB range if it needs to be smaller.
 - `features.mel_path` (§8.1a, already written) is exactly this at `knots=4`. **Reuse it with
@@ -232,15 +237,24 @@ proposals; its gate is stated in the same file.
 
 ## 9.4 Hard constraints — do not break these
 
-- **No audio is retained.** Log-mel patches only. `harvest.py`'s decode → describe → delete
-  loop is load-bearing for licensing (xeno-canto is largely CC-BY-NC-SA) and for peak memory.
+- **No audio is retained *in the store*, and none is shipped.** Log-mel patches only.
+  `harvest.py`'s decode → describe → delete loop is the **default** and is load-bearing for
+  peak memory. *Amended 2026-08-01 (owner decision):* audio may now be **retained beside
+  the store**, on this machine only, where the recording's licence permits —
+  `harvest --keep-audio DIR`, gated by `harvest.audio_may_be_cached`, which **refuses
+  NoDerivatives** and **refuses an unrecorded licence**. 90.3 % of the production store's
+  10 184 recordings pass; all 10 184 carry a recordist. **Nothing audio ships to the
+  browser** — the owner declined that half the same day, so the licensing property this
+  constraint exists to protect is unchanged: retention is not redistribution. See
+  `NOTICE.md` §3.4 and AGENTS.md's hard constraints.
 - **No weights ship to the browser.** All training and inference is offline in `pipeline/`. What
   reaches the app is still a few dozen floats per syllable. The app must keep working with no
   Python process at all — see `PipelineClient`, where everything degrades to "not running".
 - **The synthesizer stays physical.** The critic scores. It never generates. The galaxy, the
   grammar and every honesty label depend on a syllable being an interpretable parameter vector.
-- **The two-sided contract stays verified.** `app/scripts/verify-parity.mjs` must stay at 12/12
-  and `render-syllable.mjs` at 44/44. If you add a new synthesis parameter, add a parity case
+- **The two-sided contract stays verified.** `app/scripts/verify-parity.mjs` must stay at
+  **18/18** (it read 12/12 here and 14/14 in AGENTS.md; both were stale — the script itself
+  reports 18 cases) and `render-syllable.mjs` at 44/44. If you add a new synthesis parameter, add a parity case
   *and* check the ~20 ms tail. A real click hid there once.
 - **Never delete `pipeline/out/harvest`.**
 

@@ -71,7 +71,7 @@ export class Listener {
 	/**
 	 * The docs/20 session gate, or null when the assets predate it (or ship it
 	 * malformed — present-but-inconsistent is treated as absent, never trusted).
-	 * Fed only while the microphone is open: Birdy's own chorus crosses the same
+	 * Fed only while the microphone is open: Lyrebird's own chorus crosses the same
 	 * analysis bus, and a session made of corpus audio is not the thing the gate
 	 * is about.
 	 */
@@ -352,7 +352,7 @@ export class Listener {
 			if (descriptor) {
 				const z = standardise(descriptor, this.assets.featureSpace);
 				// The session gate sees the same z the tracker does, but only from the
-				// microphone: the analysis bus also carries Birdy's own output, and a
+				// microphone: the analysis bus also carries Lyrebird's own output, and a
 				// "session" of our own renders is not the thing the gate is about.
 				//
 				// **This guard is load-bearing, not belt-and-braces.** It used to say corpus
@@ -362,7 +362,7 @@ export class Listener {
 				// shipped anchors on the production build, synthesized-only knots reach a
 				// median 5-NN of 11.02 against a 3.92 threshold while field knots sit at
 				// 3.17 (verify-features.mjs states the whole table). So without this `if`,
-				// playing Birdy's own voice near an open mic would light the Reading panel's
+				// playing Lyrebird's own voice near an open mic would light the Reading panel's
 				// first branch — "off the map, positions are guesses" — about our own corpus.
 				if (this.engine.micActive) this.gate?.push(z);
 				// Flatness is the last element of the 28-d descriptor, and it has to be
@@ -391,7 +391,7 @@ export class Listener {
 		// lands here; a confident match claims its knot and never lands here either.
 		this.signal.unmatched = unmatchedCluster(this.signal, active);
 
-		// While Birdy sings, it knows the score, so the trajectories are driven by the
+		// While Lyrebird sings, it knows the score, so the trajectories are driven by the
 		// schedule rather than by matching — a cluster lights exactly on the note instead
 		// of a feature-window later. Listening still relies on the tracker above.
 		const singing = this.advancePaths();
@@ -402,7 +402,7 @@ export class Listener {
 		this.signal.sung.fill(0);
 
 		if (singing) {
-			// **While Birdy sings, only what it is singing lights up.**
+			// **While Lyrebird sings, only what it is singing lights up.**
 			//
 			// Two different claims were being drawn in the same channel: the scheduled node,
 			// which we know, and whatever the matcher thought the output resembled, which we

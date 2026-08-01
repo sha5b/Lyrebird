@@ -1,5 +1,5 @@
 /**
- * Birdy syrinx AudioWorklet.
+ * Lyrebird syrinx AudioWorklet.
  *
  * Realtime integration of the Mindlin-Laje low-dimensional syrinx model followed by a
  * vocal tract that tracks the fundamental. The model, the parameter mapping and the
@@ -15,7 +15,7 @@
 /**
  * gamma is a pure time-scale: rescaling t by gamma leaves the equations unchanged, so
  * f0 = gamma * PHI(alpha, beta) and the peak-to-peak swing of y/gamma depends only on
- * (alpha, beta). That is why the literature fits gamma per bird, and why Birdy picks it
+ * (alpha, beta). That is why the literature fits gamma per bird, and why Lyrebird picks it
  * per syllable — with gamma pinned at 24000 the oscillator cannot go below ~1.4 kHz, so
  * owls, doves and cuckoos would be unreachable. Verified numerically: see §8.6.
  */

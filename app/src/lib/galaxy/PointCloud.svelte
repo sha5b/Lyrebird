@@ -252,7 +252,7 @@
 	 * The three per-cluster channels as one RGB texture (see `uClusterState` in
 	 * shaders.ts for why it is not three uniform arrays). Width is capped at 1024 so
 	 * the texture stays within every implementation's 2D limit whatever the corpus
-	 * asks for: 1 024 knots is one row, 13 903 is fourteen.
+	 * asks for: 1 024 knots is one row, the shipped build's 14 003 is fourteen.
 	 */
 	const clusterTexWidth = Math.min(1024, Math.max(1, clusterCount));
 	const clusterTexHeight = Math.max(1, Math.ceil(Math.max(1, clusterCount) / clusterTexWidth));
@@ -342,7 +342,7 @@
 			uWaveAge: { value: new Float32Array(WAVE_SOURCES) },
 			uWaveAmp: { value: new Float32Array(WAVE_SOURCES) },
 			// Rewritten from the loaded corpus's own knot spacing (see below); the initial
-			// value is the shipped build's number, sane for the first frame.
+			// value is the 149-cluster build's number, sane for the first frame.
 			uWaveLocal: { value: 0.27 },
 			uSurface: { value: new THREE.Color('#fafbfc') }
 		},
@@ -428,7 +428,7 @@
 	 * nearest-neighbour centroid distance of the loaded build, so it adapts when a
 	 * rebuild packs the knots tighter or looser instead of being tuned per build.
 	 *
-	 * The number on the shipped 1024-cluster build: median nearest-neighbour centroid
+	 * The number measured on the 1024-cluster build: median nearest-neighbour centroid
 	 * distance 0.057 box units, so the falloff scale is 0.11. A gaussian at that scale
 	 * weighs 1.0 at the source knot's centre, ~0.78 at the rim of the nearest
 	 * neighbouring knot, ~0.37 two knot-spacings out, and under 2 % at twice the
@@ -476,7 +476,7 @@
 
 		// The per-point bloom budget, from the knot's own radius: 45 % of it, floored
 		// so a tiny knot still separates visibly, capped at 0.045 (≈ 0.8 × the median
-		// knot spacing on the shipped build) so the bloom stays inside the knot's
+		// knot spacing on the 1024-cluster build) so the bloom stays inside the knot's
 		// neighbourhood. See aBloom in shaders.ts for the measured numbers.
 		const bloom = new Float32Array(n);
 		for (let i = 0; i < n; i++) {

@@ -17,7 +17,7 @@ type → documented behavioral function, species, individual identity, urgency �
 confidence labels. "Word-for-word translation" is marketing, not science. The app
 should say so.
 
-## 3.2 Studied vocabularies — the basis of Birdy's language set
+## 3.2 Studied vocabularies — the basis of Lyrebird's language set
 
 | Species | What's documented | Key refs |
 |---|---|---|

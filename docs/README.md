@@ -1,14 +1,20 @@
-# Birdy — the research record
+# Lyrebird — the research record
 
-Birdy is an instrument in three parts: a physical model of the bird syrinx that
+Lyrebird is an instrument in three parts: a physical model of the bird syrinx that
 sings, a corpus of 340 079 measured syllables that contains no audio, and a 3-D
 map with one point per measured syllable. The app records real birds and
 translates them functionally — call type to documented behavioural function,
 with a confidence label on every phrase. It generates synthetic bird voices from
 fitted physiological parameters rather than from recordings, because the harvest
-decodes each file, describes it as numbers, and deletes it.
+decodes each file, describes it as numbers, and — by default — deletes it.
 
-These 21 notes are the evidence behind that. They are written as a record rather
+*Since 2026-08-01, deleting is the default rather than the whole policy:
+`harvest --keep-audio` may keep a recording on the machine where its licence
+permits (NoDerivatives refused, an unrecorded licence refused). The **store**
+still contains no audio and **nothing audio ships to the browser**, so the
+sentence above holds for everything anybody receives. See `NOTICE.md` §3.4.*
+
+These 23 notes are the evidence behind that. They are written as a record rather
 than as a pitch: every claim names the fixed corpus it was measured on, and
 every refuted idea stays in place with its numbers, so nobody tries it twice.
 
@@ -99,3 +105,13 @@ is evidence, plan, or literature.
     failure is fit or parameterisation.** A taxonomy pins six "it sounds like a
     machine" symptoms to their causes, and the extension roadmap is ranked by
     realism per unit of interpretability.
+22. `22-song-funnel-and-knots.md` — the data audited against the code that
+    produces it. Repeat classes ship (species with a song 48 → 98). Both cheap
+    knot fixes fail and the measurement says why. **§22.8 is `--clustering label`
+    and W5** — the two flags the shipped production build is made of, each with
+    the gate it passed or failed.
+23. `23-what-we-have-not-tried.md` — five workstreams written from the failures,
+    each with the gate stated before the run. W1 (batch effect) **no adoption**,
+    W2 order-2 **no structure** though order 1 buys 0.98 bits/token held out, W5
+    **adopted**, W6 T1 **fails** with Perch and T3 **passes**. The negatives are
+    the point.

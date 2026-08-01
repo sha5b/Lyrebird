@@ -12,7 +12,10 @@ Kaggle key. The critic's measured weaknesses are coverage weaknesses (docs/11
 
 - 259 recordings ingested, 5 failed (download errors), 0 already known.
 - 291.9 min of audio decoded → 21 325 syllables segmented → 3.4 GB discarded,
-  nothing retained but patches and descriptors, as always.
+  nothing retained but patches and descriptors, which was the blanket rule on
+  2026-07-30. *(Amended 2026-08-01: retention is now permitted where the licence
+  permits — `--keep-audio`, NoDerivatives and unrecorded licences refused. The
+  store still holds only patches and descriptors, and nothing audio ships.)*
 - Store: 1 280 → 1 539 recordings, **36 → 121 species**, syllables 39 999 → 39 874
   (the 40 000 syllable cap binds: the stratified reservoir traded volume in
   over-represented species for 85 new ones — the intended behavior. Stream drift
@@ -91,7 +94,8 @@ incremental chain.
 
 - We rebuilt and verified the production assets: 75 743 points, 1 024 clusters,
   RFF map accepted (0.9531/0.5921), `relations.json` with 915 shared-type
-  candidates.
+  candidates. *(Superseded: that build ran under the old `K_CAP` of 1 024. The cap
+  is now 8 192 and the shipped production build is 348 461 points at k = 14 003.)*
 - We restarted `serve` on current code with `--store out/harvest-gan` (the
   pre-existing process ran the morning's code against the old `out/harvest`
   store — again). The same restart fixed the Learn-tab hand-harvest `NameError`

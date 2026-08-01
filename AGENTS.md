@@ -1,4 +1,4 @@
-# AGENTS.md — Birdy
+# AGENTS.md — Lyrebird
 
 Operational conventions for agents working in this repo. Read this first.
 
@@ -41,8 +41,19 @@ Operational conventions for agents working in this repo. Read this first.
   the current training phase, so re-training doesn't re-download archives. The cache
   is local-only (`out/` is gitignored), feeds `harvest_directory` on re-runs, is
   never read by the app or copied into assets, and is **deleted when the training
-  phase ends**. iNatSounds' own terms (no redistribution) are compatible with this;
-  xeno-canto harvests still delete immediately.
+  phase ends**. iNatSounds' own terms (no redistribution) are compatible with this.
+  *(That 2026-07-30 exception was folded into the general policy above on 2026-08-01:
+  xeno-canto harvests now take `harvest --keep-audio` under the same per-licence gate. An
+  earlier version of this bullet ended "xeno-canto harvests still delete immediately",
+  which the entry above contradicts.)*
+- **Licensing (`LICENSE`, `NOTICE.md`).** The project is **non-commercial**: its own code
+  and prose are CC BY-NC-SA 4.0. That licence covers only what is ours. **The harvested
+  recordings are not ours to relicense** — each carries a per-recording Creative Commons
+  licence from its own recordist, and that licence plus the recordist's name must travel
+  with the recording and with anything derived from it (`CREDITS.md` in each store).
+  Third-party dependencies keep their own licences; note that `harmonypy` (the optional
+  `analysis` extra) is **GPL-3.0-or-later** and BirdNET is itself CC BY-NC-SA. Adding a
+  dependency or an archive means adding a row to `NOTICE.md`.
 - **Never delete `pipeline/out/harvest*` stores.** They are the only copies, gathered
   under xeno-canto rate limits.
 - **No torch weights ship to the browser.** Assets are plain JSON/f32; the app must work
@@ -51,7 +62,8 @@ Operational conventions for agents working in this repo. Read this first.
   score, they never generate audio.
 - **Honesty rule (docs/08 §8.5):** every claim in the UI carries a confidence label;
   novel sounds are "unlabelled: real acoustics, no documented function".
-- **Parity:** `app/scripts/verify-parity.mjs` must stay 14/14 and `render-syllable.mjs`
+- **Parity:** `app/scripts/verify-parity.mjs` must stay **18/18** (this read 14/14 and
+  docs/09 §9.4 read 12/12; the script reports 18 cases) and `render-syllable.mjs`
   44/44 after any synth-adjacent change.
 - Evidence discipline: changes to fitting/objectives/spaces are judged by **pre-registered
   metrics** on a fixed store, and negative results are documented, not deleted (see
@@ -76,14 +88,17 @@ uv run birdy-pipeline serve           # Learn-tab control surface, loopback :878
 uv run birdy-pipeline sources list    # which audio sources are usable, and why not
 uv run birdy-pipeline sources fetch --source internet-archive --limit 5 --store /tmp/...
 uv run birdy-pipeline critic label-novel --store out/harvest-gan  # Perch 2.0 second opinions
+uv run birdy-pipeline inverse         # train the amortised inverse (failed its gate; off)
 ```
 
 Notes:
 
 - `--inventory` paths are relative to CWD — use the absolute repo-root path for `data/`.
 - `learn`/`build` run module self-tests at start; a failure there stops everything.
-- A full `learn` on the 40 k/121-species store takes ~2–15 min (GPU); a full `build` ~7–9 min
-  (~400 s of rendering). Run them as background tasks, never block on them.
+- A full `learn` on the 40 k/121-species store takes ~2–15 min (GPU); a `build` on that
+  store ~7–9 min (~400 s of rendering). Both timings are pre-W5, which removed most of the
+  render; the **production build is ~19 minutes** (1 136.8 s) at 348 461 points. Run them
+  as background tasks, never block on them.
 - `learn` writes `<store>/typing.json` + `<store>/song-typing.json` (song-level types,
   docs/12) + `data/learned-inventory.json`;
   `critic embed` writes `<store>/embeddings.f32`; `build` writes `app/static/birdy/`.
@@ -113,6 +128,16 @@ Notes:
   the resynthesis cosine beats the tonal fit. `fricative` routes turbulence around
   the f0-tracking band into the syllable's own formant set; syllables without it
   render bit-identically (parity fixtures `fricative`, `fricative+respiration`).
+- `learn --inverse PT` re-initialises each type's gesture axes from an amortised encoder
+  (`inverse.py`, trained by `birdy-pipeline inverse`) before the same coordinate descent
+  runs. **Built, wired, measured, and it FAILED its pre-registered gate on all three
+  conditions** (+0.0135 median resynthesis cosine against +0.02; 877/1 661 = 52.8 % of
+  types improved against 60 %; worst species −0.0816 against −0.05). Default off, opt-in,
+  and deliberately **not** in the UI, which was conditional on the gate. The finding worth
+  carrying: the starting point is not the binding constraint — the descent from the cluster
+  median already reaches a comparable basin about half the time. Gate and result:
+  `pipeline/analysis/inverse_gate.md`; status note: docs/09 §9.3 Part 2. One follow-up is
+  pre-registered there, `--inverse-two-start`, which cannot regress by construction.
 - **`serve` holds the pipeline in memory: restart it after every pipeline code change**,
   or its Learn-tab learn/build jobs run the code it started with (docs/11 §11.1 — this
   cost a galaxy once). It still defaults to the *old* `out/harvest` store, but a
@@ -139,18 +164,26 @@ Notes:
   `galaxy.centroid_vectors` or `app/src/lib/data/centroid-vectors.ts`; never re-derive the
   layout, both accept the pre-2026-08-01 inline form. Contract: docs/08 §8.3.
 - `build --clustering label` gives every typed point the knot of the type it already
-  carries and fits kmeans only over the untyped remainder (docs/22 §22.8). It is the
-  answer where `K_CAP` binds — production wants 27 862 clusters and keeps 8 192 — and
-  worth +14 to +18 points of type retrieval there against +2.5 where the cap does not
-  bind, so it is not the default. It also makes cluster purity and type coverage
-  identities rather than measurements; read type retrieval instead.
+  carries and fits kmeans only over the untyped remainder (docs/22 §22.8). It was the
+  answer where `K_CAP` bound — the pre-W5 production corpus wanted 27 862 clusters and kept
+  8 192 — and it is worth +14 to +18 points of type retrieval in that condition against
+  +2.5 where the cap does not bind, which is why it **stays a flag rather than the
+  default**. It is nevertheless what the **shipped production build uses**: 348 461 points,
+  k = 14 003 (13 903 type blobs with zero source splits + 100 kmeans clusters for the
+  20 241 unlabelled points), **type coverage 13 903/13 903 = 100 %**. With W5 also on,
+  nothing is shed and the cap no longer binds anywhere. It makes cluster purity and type
+  coverage identities rather than measurements — the manifest says so in
+  `clusterPurityNote` — so read **type retrieval** instead, whose honest ceiling is 0.602:
+  for 40 % of points the nearest centroid belongs to another type, and that is the
+  embedding's confusion rather than the clustering's.
 - `build --clustering both` renders the corpus once and writes the kmeans map to
   `<out>/known` + the hdbscan map to `<out>/unknown` (each a complete, verifiable
   asset set) — the debug cycle's default, so the named and the discovery views of the
   same corpus are always comparable side by side.
 - `sources` (sources.py) fetches from Zenodo, the Internet Archive, Kaggle (BirdCLEF)
-  and Hugging Face (BirdSet) through the same decode → describe → delete loop as
-  `harvest`. Keys live in `pipeline/.env` (template: `.env.example`: `XC_API_KEY`,
+  and Hugging Face (BirdSet) through the same decode → describe → delete-by-default loop as
+  `harvest` (`sources fetch --keep-audio <dir>` caches instead; the `inat-sounds` adapter
+  additionally refuses NoDerivatives *at ingest*, `sources.LICENCES_OK`). Keys live in `pipeline/.env` (template: `.env.example`: `XC_API_KEY`,
   `KAGGLE_USERNAME`/`KAGGLE_KEY`, `HF_TOKEN`, `ZENODO_TOKEN`); an unfilled key or a
   missing package is a logged skip with exit 0, never an error. The source SDKs are the
   optional `sources` extra in `pyproject.toml` (lazy imports, like the critic's torch) —
@@ -167,7 +200,11 @@ App checks run from `app/`: `npm run check` (4 pre-existing errors in
   `/tmp/birdy-debug/harvest-100`), and production runs happen only when the owner
   explicitly calls for one, singularly, with the log read. This was restated after
   a production build OOM'd the machine; it overrides any earlier "production cycle"
-  phrasing in HANDOFF.md.
+  phrasing in HANDOFF.md. **The escape clause was exercised on 2026-08-01**: the owner
+  called for a production build, it ran singularly, it verified green, and it is what
+  `app/static/birdy/` now holds (348 461 points, k = 14 003, `clustering: label`, 176 MB,
+  committed in `409b4d3`). The rule is unchanged — that build happened because it was
+  asked for.
 - Verification runs go to `/tmp` (stores, assets, inventories). Never point a test
   `learn`/`build` at the real stores or `app/static/birdy/` — production runs are
   deliberate, singular, and their logs are read.

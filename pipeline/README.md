@@ -1,6 +1,6 @@
 # birdy-pipeline
 
-Offline half of Birdy. It calibrates the syrinx model, renders a corpus, computes the
+Offline half of Lyrebird. It calibrates the syrinx model, renders a corpus, computes the
 28-d descriptors and builds the 3D galaxy into `app/static/birdy/`.
 
 The contract is `docs/08-implementation.md`. The browser implements the same model and
@@ -27,21 +27,27 @@ uv run birdy-pipeline verify           # re-check an existing asset directory
 ```
 
 A synthetic-only build takes about 27 s on a laptop: 4287 clips, 882 s of synthesised
-audio, 5974 calibration cells. The shipped build is larger — the learned inventory and
-the harvested store together — at 31,328 points and a few minutes. The ODE kernels are `numba`-compiled (numba arrives with
+audio, 5974 calibration cells. The shipped build is far larger — the learned inventory
+and the harvested store together — at **348,461 points in 14,003 knots, about 19 minutes**
+(`--space embed --clustering label`). The ODE kernels are `numba`-compiled (numba arrives with
 `umap-learn`; there is a pure-Python fallback, which is ~100x slower).
 
 ### build options
 
 | flag | default | meaning |
 |---|---|---|
-| `--source synthetic\|local\|harvest` | `synthetic` | render the inventory, read real audio, or embed a harvested store |
+| `--source synthetic\|local` | `synthetic` | render the inventory, or read real audio. The `harvest` shim was removed — use `--harvest-store` |
 | `--audio-dir DIR` | - | corpus root, required by `--source local` |
 | `--harvest-store DIR` | - | also embed a harvested store alongside `--source` |
-| `--variants N` | 96 | jittered renders per syllable |
+| `--variants N` | 24 | jittered renders per syllable |
 | `--song-variants N` | 3 | renders per whole song |
 | `--seed N` | 0 | seeds the jitter, UMAP and KMeans; a build is byte-reproducible |
-| `--k N` | number of syllable types, cap 256 | KMeans clusters |
+| `--k N` | number of syllable types, cap `K_CAP` = 8192 | KMeans clusters |
+| `--clustering kmeans\|label` | `kmeans` | `label` gives every labelled point its own type's knot and fits kmeans only over the unlabelled remainder. **What the shipped production build uses** |
+| `--member-anchor` | off | render a synthetic copy of a type that already has field members. Off by default since 2026-08-01 (W5); the old `--no-member-anchor` is gone |
+| `--member-variants N` | - | jittered renders per member observation |
+| `--no-relations` | off | skip the cross-species relations battery (not the shipped `relations.json`) |
+| `--dump-points` | off | write the point matrix for offline arms |
 | `--out DIR` | `app/static/birdy` | where the assets go |
 | `--wav-out DIR` | - | also write every corpus clip as a wav |
 | `--projection umap\|pca\|cmds` | `cmds` | 3D layout; see "Galaxy shape" below |
@@ -66,23 +72,28 @@ Into `--out` (all of it is fetched at runtime by the app; contract 8.3):
 | `positions.f32` | little-endian float32, `3*n`, xyz per point, `max abs coord == 1` (layout per `manifest.json` `projection`) |
 | `point-features.f32` | little-endian float32, `8*n`, unit rows: the per-point render response space |
 | `points.json` | parallel metadata arrays of length `n` |
-| `centroids.json` | `k` labelled clusters: 3D position, 28-d standardised vector, 8-d `featuresLo`, `count`, and per-cluster summary figures |
+| `centroids.json` | `k` labelled clusters: 3D position, `count`, and per-cluster summary figures. **Since 2026-08-01 the two float arrays per cluster (the 28-d standardised vector and the 8-d `featuresLo`) live in the sidecar below** — they were 64 % of this file's bytes. The layout is declared in centroids.json's own `vectors` block |
+| `centroid-vectors.f32` | little-endian float32, row-major: the per-cluster `vector` and `featuresLo` arrays moved out of `centroids.json`. Debug-100 measured 6.86 MB -> 1.18 MB + 0.59 MB; the production build is **7.69 MB JSON + 3.81 MB sidecar** |
+| `relations.json` | cross-species shared-type candidates and species similarity. The shipped copy is **trimmed to each species' eight nearest partners** (`relations.shipped_relations`, applied by `write_relations` by default): 2,929,410 pairs -> 14,425, **760 MB -> 5.6 MB**, lossless for every question the app asks. A `retention` block in the file declares the rule and both totals, and says in as many words that `sharedTypesKept` is not the corpus's shared-type count — `sharedTypesComputed` is |
+| `space-map.f32`, `projection-basis.json` | the live-audio map into the projection |
+| `inventory/<id>.json` + `inventory/index.json` | the app's lazy shards of `inventory.json` |
 
 ### `point-features.f32`: why each point reacts on its own
 
 The browser matches live audio to the 28-d **cluster centroids**, as contract 8.2 says,
 and that match is what the reading panel reports. It is not enough to draw with. A
-cluster holds up to 195 points; lighting all of them equally makes an active knot a flat
+cluster can hold hundreds of points; lighting all of them equally makes an active knot a flat
 disc and throws away the thing the galaxy exists to show, which is that a repertoire is
 a continuum and a live sound sits somewhere particular inside it.
 
 So the build also writes the top-8 principal components of the standardised descriptors,
 one unit row per point, plus the same projection of each centroid as `featuresLo`. The
 client reconstructs the live query in that space from the centroids it matched and takes
-a cosine against every point — 31,328 × 8 multiply-adds a frame, less work than the FFT
-that produced the descriptor. A cluster then lights from the inside out.
+a cosine against every point — 348,461 × 8 multiply-adds a frame on the shipped build,
+less work than the FFT that produced the descriptor. A cluster then lights from the inside
+out.
 
-On the shipped corpus the 8 components keep **76.1 %** of the 28-d variance, and each
+On the 176-cluster corpus of 2026-07 the 8 components keep **76.1 %** of the 28-d variance, and each
 point's mean cosine to its own centroid is **0.922** against **-0.004** to all centroids.
 (On a synthetic-only build, where every point is a render of one of 44 types rather than
 a second of a windy field, the same figures are 82.3 % and 0.984 against 0.005.)
@@ -101,8 +112,12 @@ information. `--projection` picks it, and every build measures the answer instea
 asserting it: 200k seeded random point pairs, 28-d cosine distance against 3D Euclidean
 distance, Pearson and Spearman.
 
-Measured on the shipped corpus (31,328 points — 11,328 rendered, 20,000 harvested —
-176 clusters, seed 0):
+Measured on the 176-cluster corpus of 2026-07 (31,328 points — 11,328 rendered, 20,000
+harvested — seed 0). **Superseded as a description of the shipped build**: the production
+build reports Pearson **0.691** / Spearman **0.689** over 200,000 pairs with `cmds`, and
+purity 94.5 % there is an identity rather than a measurement, because under
+`--clustering label` a type *is* a cluster. The comparison between projections is what
+this table is for, and that verdict has not changed:
 
 | projection | Pearson | Spearman | purity | 3D kNN | **torn clusters** | notes |
 |---|---|---|---|---|---|---|
@@ -143,9 +158,24 @@ whose call type nobody has labelled, so they land wherever they sound like they 
 
 ### The loudest thing in this space is the microphone
 
+> **Status, 2026-08-01: this section's measurement stands and its top recommendation was
+> acted on.** Every number below was taken on the 176-cluster corpus of 2026-07 and is
+> kept as the record of *why* the corpus changed shape. Two things have happened since.
+> **(1) W5 was adopted as the default** (docs/22 §22.6/§22.8): a type that has real member
+> observations no longer renders a synthetic copy of itself, so most of the duplication
+> this section measures is simply gone, and with it most of the source splitting. **(2) The
+> build moved to the learned critic's 32-d embedding** (`--space embed`), which is the
+> "representation with the invariance this one lacks" the section asks for at the end. The
+> source-purity re-count in the new space, which the section names as the test, was run:
+> docs/22 §22.6 measures a source mean gap of **7.233** along an axis holding **42 % of the
+> space's energy**, so the gap narrowed but did not close — and deflating that axis to zero
+> **still split every type**, which means recorded-vs-synthesised is not one direction.
+> The honest reading is that the section's diagnosis was right and its proposed cure was
+> only partial.
+
 Of the 176 clusters, **82 hold nothing but field audio, 86 hold nothing but synthetic
 renders, and exactly one is a genuine mixture.** The two populations' centres of mass sit
-0.28 apart in a box of ±1. A bird's real call and Birdy's resynthesis of that same call
+0.28 apart in a box of ±1. A bird's real call and Lyrebird's resynthesis of that same call
 essentially never land in the same cluster.
 
 So the dominant axis of the 28-d descriptor space is not *what does this sound like*, it
@@ -263,7 +293,7 @@ files with a message rather than failing the build; `harvest` falls back to ffmp
 transcoding to a wav at the file's own rate so the mono mix and the resampler stay the
 ones documented above.
 
-## Harvesting: learn from a lot of audio, keep almost none of it
+## Harvesting: learn from a lot of audio, keep almost none of it by default
 
 ```bash
 cp .env.example .env             # then paste your key into it
@@ -276,7 +306,12 @@ uv run birdy-pipeline build --harvest-store ../pipeline/out/harvest
 The point of `harvest` is what it throws away. One recording is fetched, decoded,
 analysed and deleted before the next one starts, so peak memory is one recording rather
 than one corpus, and a session that streams several gigabytes of audio leaves a store of
-a few megabytes. What survives is a **species-stratified reservoir** of 28-d
+a few megabytes.
+
+**That is the default, and since 2026-08-01 it is only the default.** `--keep-audio DIR`
+keeps each analysed recording where its licence permits it — see "Licensing" below. Peak
+memory is unchanged either way; what changes is whether the file survives the loop. What
+survives regardless is a **species-stratified reservoir** of 28-d
 descriptors: Algorithm R against a persisted counter, so a store built over ten sessions
 is the same uniform sample as one built in a single pass, and a species with 900
 recordings on xeno-canto cannot bury one with 12.
@@ -316,14 +351,42 @@ harvesting is entirely an offline step, so the key is only ever seen by Python.
 | `--from-dir DIR` | - | ingest files already on disk; no network, no key |
 | `--dry-run` | off | list what would be fetched |
 | `--stats` | off | describe an existing store and exit |
+| `--keep-audio DIR` | off | keep each analysed recording here when its licence permits |
 
-**Licensing.** Every retained recording's id, recordist and licence is written to
-`CREDITS.md` in the store, because xeno-canto recordings are individually licensed and
-CC-BY-NC-SA is common — which matters if Birdy is ever commercial (see
-`docs/06-architecture.md` §6.2). Check the licences before shipping a harvested galaxy.
+**Licensing.** Every recording that contributes so much as one descriptor has its id,
+recordist and licence written to `CREDITS.md` in the store, because xeno-canto recordings
+are individually licensed and CC-BY-NC-SA is common. **Those licences are not ours to
+change**, and the recordist's name and the licence must travel with the recording and with
+anything derived from it. The repository's root [`NOTICE.md`](../NOTICE.md) §3 is the full
+statement; the short version is that this project is non-commercial (CC BY-NC-SA 4.0, see
+[`LICENSE`](../LICENSE)), which for most of the corpus is what the recordists chose anyway.
+Check the licences before shipping a harvested galaxy.
+
 An earlier version of this README argued no downloader should exist at all; the position
 now is that one should exist and should carry the attribution with it, since the
 alternative in practice was people scraping without recording the licence.
+
+**Audio retention (owner decision, 2026-08-01).** `--keep-audio DIR` copies each analysed
+recording into `DIR` when `harvest.audio_may_be_cached` allows it. The gate is conservative
+by construction — an unknown or unparseable licence string returns `False` — and it makes
+two refusals:
+
+- **NoDerivatives is refused.** Retention alone is arguably fine, but everything this
+  pipeline does next produces derived measurements, and ND is the one clause where that is
+  not clearly covered. 9.7 % of the production corpus, declined.
+- **An unrecorded licence is refused.** Absence of a licence is not permission.
+
+Measured on the production store when this shipped: **90.3 % of 10 184 recordings pass,
+and all 10 184 carry a recordist**, so attribution exists for every kept file. Both
+directions of the gate, and both refusals *as* refusals, are pinned by
+`harvest.self_test` — a wrong answer there is a licence violation rather than a bug.
+
+**Nothing audio ships to the browser.** The owner declined that half on the same day, so
+kept audio stays under `pipeline/out/` (gitignored) and out of every asset set. Retention
+is not redistribution, and that is the line that keeps it so. The reason to keep audio at
+all is measured rather than convenient: an external model (Perch, BirdNET) and any
+per-syllable re-measurement need the waveform, and docs/23 §23.6 could only run on the
+6 453 of 10 184 recordings whose audio still existed.
 
 **Honesty.** Harvested points are real audio of a known species and nothing more. A
 cluster the inventory cannot name gets `confidence: "unlabelled"` — a fifth label
@@ -333,7 +396,7 @@ is a different claim from `invented`, and both are different from having a citat
 ## Other sources: `sources` (no rate-limited API required)
 
 xeno-canto is one API key and one rate limit; the open-dataset world is not. `sources.py`
-puts four more services behind the same decode -> describe -> delete loop:
+puts four more services behind the same decode -> describe -> (by default) delete loop:
 
 ```bash
 uv run birdy-pipeline sources list        # what this machine can use, and why not
@@ -356,8 +419,12 @@ services on 2026-07-29:
 
 The packages for the keyed sources are an optional extra — `uv sync --extra sources` —
 imported lazily, exactly like the critic's torch. Staged audio lives in a temporary
-directory that is gone when the fetch returns; the store keeps descriptors, syllables
-and a CREDITS.md row, indistinguishable from a xeno-canto harvest.
+directory that is gone when the fetch returns unless `sources fetch --keep-audio <dir>`
+caches it; the store keeps descriptors, syllables and a CREDITS.md row, indistinguishable
+from a xeno-canto harvest. The `inat-sounds` adapter is the one that filters licences *at
+ingest* rather than only at retention: it keeps Aves only and **excludes NoDerivatives**
+(`sources.LICENCES_OK`), so 531 of 111 029 files are skipped and every ingested
+recording's exact licence lands in the store.
 
 ## Learning: fit the model to what was heard
 
@@ -433,7 +500,7 @@ repertoire on its own, which is the old behaviour and throws every citation away
 Because the observations keep their order within their recording, typing them also turns
 each recording into a string of type ids, and counting the transitions gives a
 first-order grammar in exactly the shape `app/src/lib/lang/grammar.ts` already
-improvises from. That is the sense in which Birdy can produce **new phrases**: sequences
+improvises from. That is the sense in which Lyrebird can produce **new phrases**: sequences
 no bird sang, generated in a syntax measured from birds that did. They are labelled
 `invented`, and their syllables stay `unlabelled`. Neither label is a claim about
 meaning.

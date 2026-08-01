@@ -1,8 +1,13 @@
 [project]
 name = "birdy-pipeline"
 version = "0.1.0"
-description = "Offline Birdy pipeline: syrinx calibration, synthetic corpus, 28-d features, UMAP galaxy."
+description = "Offline Lyrebird pipeline: syrinx calibration, synthetic corpus, 28-d features, UMAP galaxy."
 readme = "README.md"
+# Non-commercial. The distribution name stays `birdy-pipeline` (an identifier, not the
+# product name); the licence covers this project's own code and prose only. The harvested
+# recordings carry their own per-recording Creative Commons licences and are not ours to
+# relicense — see the repository's NOTICE.md §3.
+license = "CC-BY-NC-SA-4.0"
 requires-python = ">=3.11,<3.13"
 dependencies = [
     "numpy>=1.26",

@@ -163,3 +163,61 @@ be trusted with the new one.
 **Cost, measured while running:** roughly 61 minutes against arm B's ~11, i.e. rather more
 than the predicted doubling — the encoder start explores a different basin, so its descent
 does not terminate as early as the median's.
+
+### The result: arm C FAILED and found a bug; arm D, with the bug fixed, PASSES
+
+**Arm C**, the first two-start run, cleared gate 1 at **+0.0320** (median 0.7410 → 0.7730,
+more than double the single start's +0.0140) and **failed gate 2**: 48 of 1 661 types came
+out worse than the baseline, by up to **0.049**, across 3 species. Since the pre-registration
+above says a regression here "is a bug in the selection rather than a trade", that is what
+was looked for.
+
+Four hypotheses were tested and three were killed by measurement rather than argument:
+
+| hypothesis | test | verdict |
+|---|---|---|
+| the search objective differs from the reported metric | read both paths | dead — `_score` and `render_and_measure` are the same computation, both unit-normalised |
+| `fricative_seed` is not monotone | read its gate | dead — line 1602 ships only on `best > before + 1e-4` |
+| the arms fitted different type inventories | compare members/dur/f0 per type | dead — **identical on all 1 661** |
+| the render is stochastic, so a fixed syllable scores differently | render one 5× at `noise=0.6 rough=0.65` | dead — **cosine 1.000000, bit-identical** |
+
+**The actual bug, and it was mine.** Only **19.3 %** of types ship `fricative: true`, but
+**100 % of the 48 regressions did** — and 100 % of the 32 larger than 0.005 (p ≈ 10⁻³⁵).
+The two-start selected on the **pre-fricative** descent score and then ran `fricative_seed`
+on the winner. `fricative_seed` is a *second* refinement whose benefit depends on the basin,
+so the better pre-fricative candidate can land on the worse **post-fricative** fit — and
+post-fricative is what ships and what this gate reads. The selection was optimising a proxy
+for the shipped quantity. In 14 of the 48, the encoder start moved the type out of the
+fricative class's reach entirely.
+
+**Fixed:** a candidate is now the descent **and** the fricative seed, scored as it will ship.
+The candidate's final score is re-measured under the full objective rather than reusing
+`fricative_seed`'s return, because that function scores without the realism term and its
+number is only comparable when there is no critic in the objective. The single-start path is
+untouched and stays bit-identical.
+
+**Arm D** — identical to arm C but for that fix:
+
+| | baseline (arm A) | arm C (proxy selection) | **arm D (fixed)** | gate |
+|---|---|---|---|---|
+| median resynthesis cosine | 0.7410 | 0.7730 (+0.0320) | **0.7740 (+0.0330)** | +0.02 |
+| types improved | | 829/1 661 = 49.9 % | **858/1 661 = 51.7 %** | — |
+| **types worse** | | **48 = 2.9 %** | **0 = 0.0 %** | — |
+| **worst species** | | **−0.0050** | **+0.0000** | no species worse |
+| | | **FAIL** | **PASS — adopt** | |
+
+**Both gates pass.** "Cannot regress by construction" is now true in fact and not only in
+argument: 0 of 1 661 types and 0 of 100 species move down. 87 species up, 13 unmoved.
+
+**What this does and does not license.** It licenses the two-start as a *fit option that is
+never worse*: the gate as written is met. It does **not** say the renders sound better —
+docs/19 measured the cosine's correlation with audible distortion at ≈ 0.1, and this gate
+reads the cosine, so an MCD/STFT bench run is still what would support an audible claim. And
+the cost is real and larger than the predicted doubling: **~61 min against arm A's ~11**,
+because the encoder start explores a basin whose descent does not terminate as early.
+Whether that buys a default is the owner's call; the flag exists and passes.
+
+**One correction to the record above.** The single-start arm B's reported "worst species
+−0.0816" was scored through the same proxy, so some part of that figure is this artefact
+rather than the encoder's fault. It does not rescue arm B, which failed gate 1 at +0.0140
+against a +0.02 bar on the median alone — but the per-species figure deserves the asterisk.

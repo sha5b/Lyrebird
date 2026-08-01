@@ -39,9 +39,16 @@ syllable inventory                         │   voice engine, see doc 02)
 
 ## 6.2 Risk register
 
-1. **Licensing**: BirdNET + BirdCLEF are CC BY-NC-SA (non-commercial). Xeno-canto
-   carries per-file CC flags. If Birdy is ever commercial, use Perch (Apache 2.0) and
-   license-checked audio only.
+1. **Licensing**: **resolved, 2026-08-01 — the project is non-commercial.** Its own code
+   and prose are CC BY-NC-SA 4.0 (root `LICENSE`), which is compatible with BirdNET and
+   BirdCLEF being CC BY-NC-SA, and with the majority of the xeno-canto corpus being
+   CC BY-NC-SA too. What remains a live obligation rather than a risk: xeno-canto and
+   iNaturalist carry **per-recording** CC licences that are **not ours to relicense**, and
+   each recording's licence and recordist must travel with it and with anything derived
+   from it (root `NOTICE.md` §3). Also live: `harmonypy`, the optional `analysis` extra, is
+   GPL-3.0-or-later. Were the project ever to go commercial, that is a re-clearance of the
+   whole corpus and not a licence swap — and it would need Perch (Apache 2.0) and
+   licence-checked audio only.
 2. **Perch SavedModel → web conversion**: avoid by keeping Perch
    offline/server-side.
 3. **Bloom at >200k points**: shader-driven animation, lower-res bloom targets.
@@ -53,7 +60,7 @@ syllable inventory                         │   voice engine, see doc 02)
 ## 6.3 Suggested build order
 
 1. Port the existing procedural voice engine (data model + synth, see doc 02) into
-   Birdy. Wire a live galaxy that lights up when the *synthetic* bird sings (closed
+   Lyrebird. Wire a live galaxy that lights up when the *synthetic* bird sings (closed
    loop, no ML yet).
 2. Add mic → Meyda/pitchy → nearest-centroid activation (live reactivity).
 3. Precomputed Perch+UMAP galaxy from a curated xeno-canto subset.

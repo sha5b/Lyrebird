@@ -15,7 +15,7 @@ export default defineConfig({
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
 
-			// Birdy v1 is fully client-side: precomputed galaxy assets, client-side features,
+			// Lyrebird v1 is fully client-side: precomputed galaxy assets, client-side features,
 			// client-side synthesis. Switch to adapter-node when the WebSocket "bird rooms" or a
 			// server-side Perch endpoint arrive (docs/06-architecture.md §6.1).
 			adapter: adapter({ fallback: '404.html' })

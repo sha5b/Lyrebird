@@ -10,7 +10,7 @@
   amplitude at zero frequency. The result is pulse-like and harmonically dense (Sitt et
   al., Phys Rev E 78:011905, 2008). The spectral content index — spectral centroid ÷ f0 —
   is a function of tension alone. Treating the threshold as "just a Hopf" is what led
-  Birdy to synthesize every species as a pure tone. See `08-implementation.md` §8.1a.
+  Lyrebird to synthesize every species as a pure tone. See `08-implementation.md` §8.1a.
 - **Two independent voices** (left/right sides): two simultaneous independently
   frequency-modulated tones, or mid-syllable side switching.
 - Two control parameters explain nearly everything: **air-sac pressure** (≈
@@ -26,7 +26,7 @@
   cardinals has since confirmed the mechanism directly (Riede et al., PNAS 103:5543,
   2006). The oropharyngeal-esophageal cavity shrinks from 2.0 to 0.6 ml, which carries
   its resonance from 1.5 to 5 kHz *within* a syllable.
-- **But a tracking formant alone is not sufficient, and this was Birdy's largest error.**
+- **But a tracking formant alone is not sufficient, and this was Lyrebird's largest error.**
   If every resonance follows f0, the spectral envelope is pitch-invariant. Transposing
   a syllable transposes its whole spectrum, so two species at the same pitch are the
   same instrument. The trachea does **not** move. It is a tube closed at the syrinx. It

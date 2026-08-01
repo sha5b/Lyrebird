@@ -2,7 +2,7 @@
 
 A SvelteKit codebase already exists on this machine, a sibling project whose main
 feature is unrelated 3D rendering. It contains a **fully procedural, sample-free,
-ML-free birdsong synthesizer**. The synthesizer is the ideal seed for Birdy's voice
+ML-free birdsong synthesizer**. The synthesizer is the ideal seed for Lyrebird's voice
 engine. This document analyzes that engine generically, as a reusable component.
 
 ## 2.1 Design
@@ -54,7 +54,7 @@ interface Syllable {
   (dawn 22 songs/min, midday 5, night owls). Occasional answering-bird duets (25%
   chance of a second bird answering 0.4–1.3 s later).
 
-## 2.2 What's missing for Birdy
+## 2.2 What's missing for Lyrebird
 
 - **No audio analysis** of any kind (no FFT, pitch tracking, spectrograms) — it is
   synthesis-only.
@@ -68,7 +68,7 @@ interface Syllable {
 ## 2.3 Verdict
 
 Reuse the `Syllable`/`Song` contour data model and the syrinx-ish synth voice as
-Birdy's **rendering layer**. The transfer cost is low: the code is compact,
+Lyrebird's **rendering layer**. The transfer cost is low: the code is compact,
 dependency-free, and already Svelte/Web-Audio native. The scientifically stronger
 move is to evolve the oscillator core toward the Mindlin–Laje syrinx ODE (see
 `04-synthetic-bird-voices.md`). Keep the same data model and scheduling patterns.

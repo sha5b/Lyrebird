@@ -158,9 +158,9 @@
 	 *
 	 * This is here because the renderer's cost has twice scaled with the corpus in a way
 	 * nobody could see from inside the app — most recently the label layer, which built a
-	 * DOM tag for every one of 4 298 knots and moved all of them every frame to draw at
-	 * most 26. "It feels slow" does not name a cause; `points 4 298 / 214 154 · tags 3 ·
-	 * 58 fps` does, and so does the GPU line, because on a laptop with two of them the
+	 * DOM tag for every one of the debug build's 4 298 knots and moved all of them every
+	 * frame to draw at most 26 — the shipped production build has 14 003. "It feels slow"
+	 * does not name a cause; `points 4 298 / 214 154 · tags 3 · 58 fps` does, and so does the GPU line, because on a laptop with two of them the
 	 * browser routinely picks the integrated one and then the whole fill-rate budget is a
 	 * fraction of the machine's.
 	 *
@@ -1611,7 +1611,7 @@
 </script>
 
 <svelte:head>
-	<title>Birdy — what birds have been saying all along</title>
+	<title>Lyrebird — what birds have been saying all along</title>
 	<meta
 		name="description"
 		content="Record real birds, match their calls to documented functions, and sing back scientifically grounded synthetic birdsong inside an audio-reactive embedding galaxy."
@@ -1621,7 +1621,7 @@
 {#if loadError}
 	<div class="centred">
 		<div class="card">
-			<h1>Birdy needs its galaxy built</h1>
+			<h1>Lyrebird needs its galaxy built</h1>
 			<p>{loadError}</p>
 			<p>
 				The 3D map, the cluster centroids and the syrinx calibration table are generated offline by
@@ -1639,7 +1639,7 @@ uv run birdy-pipeline build</pre>
 	<div class="bench">
 		<header class="hud">
 			<div class="brand">
-				<h1>Birdy</h1>
+				<h1>Lyrebird</h1>
 				<p class="strap">syrinx model · documented call functions · no samples</p>
 			</div>
 			<dl class="readings mono">
@@ -2236,7 +2236,7 @@ uv run birdy-pipeline build</pre>
 				{/if}
 				<p class="caveat note">
 					{reading?.caveat ??
-						'Birdy reports documented call functions with a confidence label. Machine learning can characterise repertoires and link calls to behaviour. It cannot translate them into sentences.'}
+						'Lyrebird reports documented call functions with a confidence label. Machine learning can characterise repertoires and link calls to behaviour. It cannot translate them into sentences.'}
 				</p>
 				</div>
 			{/if}
@@ -3063,7 +3063,7 @@ uv run birdy-pipeline serve</pre>
 								<button
 									class="primary"
 									disabled={jobRunning || pipelineBusy}
-									title="Fetched, analysed and deleted one at a time. Only the measurements are kept."
+									title="Fetched and analysed one at a time, then deleted unless its licence allows keeping it. Only the measurements go into the store, and no audio is ever shipped."
 									onclick={() =>
 										runPipeline(() =>
 											pipeline.harvest({
@@ -3157,7 +3157,7 @@ uv run birdy-pipeline serve</pre>
 								<button
 									class:on={buildClustering === 'label'}
 									onclick={() => (buildClustering = 'label')}
-									title="Skip the clustering for every sound that already carries a type and give each type its own knot; k-means runs only over the sounds with no label. Every type gets a knot, so nothing sings without lighting — but the knots are then the labels rather than a second, independent finding, and this view still cannot report an unidentified sound. This is the answer at full-corpus scale, where asking k-means for 27 862 groups is the wrong instrument (docs/22 §22.5)."
+									title="Skip the clustering for every sound that already carries a type and give each type its own knot; k-means runs only over the sounds with no label. Every type gets a knot, so nothing sings without lighting — but the knots are then the labels rather than a second, independent finding, and this view still cannot report an unidentified sound. This is the answer at full-corpus scale and it is what the shipped build uses: 348 461 sounds in 14 003 knots, every type covered. Asking k-means for tens of thousands of groups is the wrong instrument (docs/22 §22.5)."
 									>Use the labels</button
 								>
 							</div>

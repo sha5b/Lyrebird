@@ -249,8 +249,9 @@ def mel_patch(
 
     This is a **measurement, not a recording**: log magnitudes only, no phase, mean-centred,
     resampled off the syllable's own duration. You cannot reconstruct recognisable audio from
-    it, so `harvest.py`'s decode -> describe -> delete loop and its licensing consequences
-    are untouched (docs/09 §9.4).
+    it, so `harvest.py`'s decode -> describe -> delete-by-default loop and its licensing
+    consequences are untouched (docs/09 §9.4) — and they stay untouched by the 2026-08-01
+    retention change, because a `--keep-audio` copy lives beside the store and never ships.
 
     Real syllables and resyntheses must both come through *this* function. Measuring the two
     sides differently is the one bug that would invalidate the whole exercise, which is why

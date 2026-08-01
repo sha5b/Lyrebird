@@ -134,7 +134,7 @@ export function vertexShader(): string {
 		attribute vec3 aRadDir;
 		/**
 		 * How far this point may bloom as the front passes: 45 % of its knot's own
-		 * radius (median knot on the shipped 1024-cluster build: radius 0.185 → 0.083),
+		 * radius (median knot measured on the 1024-cluster build: radius 0.185 → 0.083),
 		 * capped at 0.045 — about 0.8 × the median knot spacing (0.057) — so a dense
 		 * knot's members clearly separate as the ring crosses, yet a blooming member
 		 * still lands inside its own knot's neighbourhood rather than the next knot's.
@@ -763,7 +763,7 @@ export interface VisualSignal {
 	 * merely responding to it.
 	 *
 	 * These are two different claims and the picture used to make them identically. When
-	 * Birdy sings a Bengalese finch syllable, the scheduled node lights because we know
+	 * Lyrebird sings a Bengalese finch syllable, the scheduled node lights because we know
 	 * it is that note, and a handful of clusters belonging to other birds light because
 	 * they sound like it. Drawn the same way, in their own species hues, the galaxy
 	 * appeared to say that a finch and a chickadee were both singing.

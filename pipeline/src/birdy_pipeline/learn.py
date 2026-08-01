@@ -2957,33 +2957,62 @@ def learn_species(
                 # trial and touches nothing else on `t`, and `inverse.apply_prediction`
                 # returns `dict(syllable)`. So the encoder start is a distinct dict and the
                 # median descent's result survives being set aside.
-                before, after = invert_gestures(
-                    t, real[i], calibration, frame, realism=realism, mel=mels[i]
-                )
-                from_median = t.syllable
+                # **A candidate is the descent AND the fricative seed, scored as it will
+                # ship.** The first version of this selected on the descent's score alone
+                # and then ran the fricative seed on the winner, which lost 48 of 1 661
+                # types against the baseline — by up to 0.049 — and **100 % of those 48
+                # were types that ship `fricative: true`**, against 19.3 % of the corpus.
+                # The mechanism: `fricative_seed` is a second refinement whose benefit
+                # depends on the basin, so the better *pre*-fricative candidate can land on
+                # the worse *post*-fricative fit, and post-fricative is what ships and what
+                # the gate reads. Selecting on a proxy for the shipped quantity is the bug
+                # the pre-registration predicted when it said any regression here "is a bug
+                # in the selection rather than a trade".
+                def candidate() -> tuple[float, float, bool]:
+                    b, a = invert_gestures(
+                        t, real[i], calibration, frame, realism=realism, mel=mels[i]
+                    )
+                    seeded_ = fricative_seed(
+                        t, real[i], calibration, frame, mel=mels[i]
+                    )
+                    if seeded_ is not None:
+                        # Re-scored under the FULL objective rather than reusing
+                        # `fricative_seed`'s return: that function scores without the
+                        # realism term, so its number is only comparable to the descent's
+                        # when there is no critic in the objective. One extra render on the
+                        # fricative class buys a comparison that is right either way.
+                        a = _score(
+                            t.syllable, real[i], calibration, frame,
+                            features.SAMPLE_RATE, realism, mels[i],
+                        )
+                    return b, a, seeded_ is not None and bool(t.syllable.get("fricative"))
+
+                before, after, fricative = candidate()
+                from_median = (t.syllable, after, fricative)
                 t.syllable = encoder_start
-                _, after_e = invert_gestures(
-                    t, real[i], calibration, frame, realism=realism, mel=mels[i]
-                )
+                _, after_e, fricative_e = candidate()
                 if after_e > after:
                     two_start_encoder_wins += 1
                     # `before` stays the *median* start's score, so the reported gain keeps
                     # meaning "how far the inversion moved from where the fit would have
                     # started without any of this" — what `gains` means everywhere else.
-                    after = after_e
+                    after, fricative = after_e, fricative_e
                 else:
-                    t.syllable = from_median
+                    t.syllable, after, fricative = from_median
+                gains.append(after - before)
+                if fricative:
+                    fricative_shipped += 1
             else:
                 before, after = invert_gestures(
                     t, real[i], calibration, frame, realism=realism, mel=mels[i]
                 )
-            gains.append(after - before)
-            # docs/16 §16.7 piece 3: the fricative class gets its noise-first start
-            # after the tonal search has settled — and keeps it only where the fit's
-            # own number prefers it, so a good tonal fit is never rerouted.
-            seeded = fricative_seed(t, real[i], calibration, frame, mel=mels[i])
-            if seeded is not None and t.syllable.get("fricative"):
-                fricative_shipped += 1
+                gains.append(after - before)
+                # docs/16 §16.7 piece 3: the fricative class gets its noise-first start
+                # after the tonal search has settled — and keeps it only where the fit's
+                # own number prefers it, so a good tonal fit is never rerouted.
+                seeded = fricative_seed(t, real[i], calibration, frame, mel=mels[i])
+                if seeded is not None and t.syllable.get("fricative"):
+                    fricative_shipped += 1
         # **Measured with the pure cosine, always — never with the blend.** This is the other
         # half of the guardrail: the search may optimise a blended objective, but the number
         # that ships next to every learned syllable, and the number docs/09's results table

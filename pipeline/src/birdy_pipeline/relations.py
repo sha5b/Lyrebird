@@ -259,6 +259,12 @@ def shipped_relations(
     back. The app-side loader now refuses an optional asset over 32 MB, which stops the
     hang; it does not make the feature work. This does.
 
+    **Measured on that production document**: 2 929 410 pairs -> **14 425 (5.6 MB, 135x
+    smaller)**, carrying 9 513 of the 26 859 shared-type candidates, and checked lossless
+    across all 2 421 species at the app's limit of 3 with zero mismatches. That trim is
+    what `app/static/birdy/relations.json` holds — so read the 760 MB above as the motive,
+    not as the current size of anything shipped.
+
     **What is kept is what is read.** Each species keeps its `per_species` nearest
     partners, so every question the UI asks is answered identically to the full document.
     The union is deduplicated — a pair near the top of both its species' lists is one pair.

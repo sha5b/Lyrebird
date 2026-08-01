@@ -1,6 +1,6 @@
 """A small local control surface for harvest / learn / build.
 
-Birdy's whole point is that the *running app* needs no backend: `adapter-static`,
+Lyrebird's whole point is that the *running app* needs no backend: `adapter-static`,
 precomputed assets, client-side features, client-side synthesis. That does not change.
 This is a separate, optional, developer-facing process for driving the offline pipeline
 from the interface instead of from a terminal — the app's Learn tab talks to it when it
@@ -1408,7 +1408,7 @@ def serve(pipeline: Pipeline, port: int = DEFAULT_PORT) -> None:
         harvest.log(diagnose_port(port))
         raise SystemExit(2) from None
 
-    harvest.log(f"birdy pipeline control on http://{BIND_HOST}:{port} (loopback only)")
+    harvest.log(f"birdy-pipeline control on http://{BIND_HOST}:{port} (loopback only)")
     harvest.log("the app's Learn tab will pick this up automatically; ctrl-c to stop")
     try:
         server.serve_forever()
@@ -1504,7 +1504,7 @@ def diagnose_port(port: int) -> str:
 
     if state == "healthy":
         return (
-            f"a birdy pipeline server is already running on {BIND_HOST}:{port}, so this one "
+            f"a birdy-pipeline server is already running on {BIND_HOST}:{port}, so this one "
             f"is not needed.{where}\n"
             f"  The app's Learn tab is already talking to it. Use `--port` to run a second "
             f"one on purpose."
@@ -1522,7 +1522,7 @@ def diagnose_port(port: int) -> str:
         )
     if state == "foreign":
         return (
-            f"{BIND_HOST}:{port} is held by something that is not a birdy pipeline "
+            f"{BIND_HOST}:{port} is held by something that is not a birdy-pipeline "
             f"server.{where}\n"
             f"  Use `--port` to pick another, or stop that process."
         )

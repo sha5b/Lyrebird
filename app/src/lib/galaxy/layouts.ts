@@ -145,8 +145,8 @@ export function buildLayout(assets: BirdyAssets): Layout {
  * knot-spacings rather than in box units — the wavefront's reach is the one that does.
  *
  * **Why this is a grid and not two nested loops.** It used to be the obvious `k²` scan,
- * which is 18 million distance tests at the shipped 4 298-knot build (about a second of
- * a frozen tab at load) and **196 million at the production build's ~14 000**, where it
+ * which is 18 million distance tests at the debug-100 4 298-knot build (about a second of
+ * a frozen tab at load) and **196 million at the shipped production build's 14 003**, where it
  * becomes a load-time stall long enough to read as a hang. A uniform grid sized to one
  * cell per knot answers the same question exactly in roughly linear time: bucket the
  * knots, then for each one walk outward a ring of cells at a time and stop as soon as the

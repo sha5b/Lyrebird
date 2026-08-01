@@ -1,4 +1,4 @@
-# Birdy
+# Lyrebird
 
 Record real birds, match their calls against documented call functions, and sing back
 synthetic birdsong from a physical model of the syrinx — inside an audio-reactive 3D
@@ -13,7 +13,7 @@ syringeal tension.
 It does not translate birdsong into sentences, and it says so in the interface. Machine
 learning today can characterise a repertoire and link calls to behaviour; it cannot
 recover propositional language, and for most species no playback experiment exists to
-anchor meaning at all (Rutz et al., *Science* 2023). So every phrase Birdy shows carries
+anchor meaning at all (Rutz et al., *Science* 2023). So every phrase Lyrebird shows carries
 a confidence label:
 
 | label | meaning |
@@ -53,11 +53,17 @@ region in the acoustic layout — two of its calls sound like some other bird's 
 across the cloud — and fitting to the maximum would frame those two strays and show you
 the whole galaxy again.
 
-The shipped galaxy is **31,328 points in 176 clusters**: 11,328 clips rendered from the
-inventory, and 20,000 descriptors of real xeno-canto audio from 434 recordings across
-twelve species. One cluster per syllable type — the 44 authored ones and the 132 fitted
-to field recordings — because a cluster is what carries a name, a function and a
-citation, and merging two types into one loses all three.
+The shipped galaxy is **348,461 points in 14,003 knots**, built with `--clustering label`
+over the production store's 2,423 species: one knot per syllable type for the 13,903 types
+that carry a label, plus 100 k-means clusters for the 20,241 points that carry none. Type
+coverage is **13,903/13,903 = 100 %**, because a cluster is what carries a name, a
+function and a citation, and a type with no cluster carries none of the three.
+
+> *Superseded measurement, kept on the record.* This read **31,328 points in 176
+> clusters** — 11,328 clips rendered from the inventory plus 20,000 descriptors of real
+> xeno-canto audio from 434 recordings across twelve species, one cluster per syllable
+> type over the 44 authored and 132 fitted ones. Most of the corpus statistics quoted
+> further down this file were measured on that build and are marked where they appear.
 
 Points are individual clips; clusters are call types. Selecting a bird dims the other
 species and narrows the floating node labels to that repertoire, so the picture changes
@@ -68,8 +74,12 @@ its cluster responds.
 
 At most twenty-six tags are drawn at once, and they are spent in a fixed order:
 whatever is responding, then whatever has a documented function, then whatever is
-nearest. Collision culling alone was written for 44 clusters and does not scale to 176 —
-the exclusion boxes tile the middle of the view and you get a wall of text that happens
+nearest. The budget is now a **fixed pool of 28 tag elements** bound to knots by slot, so
+both the DOM cost and the per-frame cost are the pool's and neither moves when the corpus
+grows — the earlier layer built one tag per knot and wrote to every one of them every
+frame, which at 14,003 knots would have been ~250,000 elements and ~98,000 style writes a
+frame to draw at most 26 tags. Collision culling alone was never going to scale: the
+exclusion boxes tile the middle of the view and you get a wall of text that happens
 not to overlap. The middle term matters most now that most clusters are field audio: a
 named cluster carries a function and a citation, and "unlabelled field cluster" repeated
 forty times carries neither, so it should not be what crowds the named ones out.
@@ -107,7 +117,7 @@ is the control for the rotation.
 panels: newest against the reading card and older ones extending left until they clip. A
 chorus goes past faster than anyone can read; clicking an entry draws that phrase's path
 back onto the galaxy, selects its bird, and **flies the camera to it** — the knot it
-lives in is one of a hundred and seventy in a cloud you may have orbited away from, and
+lives in is one of fourteen thousand in a cloud you may have orbited away from, and
 "it is highlighted somewhere behind you" is not a way to find anything.
 
 The flight ends the moment you touch the controls. The *lock* on the phrase does not:
@@ -143,7 +153,9 @@ node while nothing was playing.
 
 The activation is scaled by an absolute measure of how well the best centroid actually
 matches, and the thresholds come from the corpus rather than from taste. Re-measured by
-`birdy-pipeline thresholds` against the shipped assets:
+`birdy-pipeline thresholds` against the assets of the time — **the 176-cluster build, not
+the shipped production one**; the thresholds have not been re-measured since, and the
+numbers below should be read as that build's:
 
 | input | best-centroid cosine | spectral flatness |
 |---|---|---|
@@ -175,7 +187,7 @@ quietly stop holding.
 The **match** meter in the header shows the resulting number, so a stuck reading is
 visible rather than mysterious. Below about 25 % the reading panel reports nothing.
 
-If your input device is a system-audio loopback rather than a microphone, Birdy will
+If your input device is a system-audio loopback rather than a microphone, Lyrebird will
 hear its own output — the match meter is the way to tell.
 
 ### Listening
@@ -249,8 +261,17 @@ cp .env.example .env && $EDITOR .env                   # your xeno-canto v3 key
 uv run birdy-pipeline harvest --per-species 40         # stream in, keep a bounded sample
 uv run birdy-pipeline learn                            # fit syllables + syntax, verify them
 uv run birdy-pipeline build --inventory ../data/learned-inventory.json \
-                            --harvest-store out/harvest
+                            --harvest-store out/harvest \
+                            --clustering label
 ```
+
+`--clustering label` is what the shipped production build uses: a point that already
+carries a type goes to its own type's knot, and k-means fits only the unlabelled
+remainder. It is a flag rather than the default because it **failed its own
+pre-registered gate** on a corpus small enough that the cluster cap does not bind
+(+2.5 points of type retrieval against a +10 bar) and passes by +14.2 where the cap
+binds, which is production's condition. Add `--keep-audio DIR` to `harvest` if you want
+the audio kept where its licence permits.
 
 Two further commands learn *what a syllable is* from the ones already harvested, rather
 than deciding it by hand. They need `uv sync --extra critic` (PyTorch; the wheels are CUDA
@@ -290,17 +311,23 @@ starts, keeping a species-stratified reservoir of 28-d descriptors capped at a s
 choose. It also tracks statistics over every descriptor it discards, so it can tell you
 how far the sample it kept has drifted from the stream it came from.
 
+Deleting is the default, not an invariant. Since **2026-08-01** `harvest --keep-audio DIR`
+may keep a recording on the machine where its licence permits, gated per recording:
+**NoDerivatives is refused** and **an unrecorded licence is refused**, because absence of
+a licence is not permission. Nothing audio ever ships to the browser. See
+[`NOTICE.md`](NOTICE.md) §3.4 for the policy and its measurements.
+
 `learn` fits syllable parameters to the segmented audio, then renders each fitted
 syllable through the same syrinx oscillator the app uses and records how close it lands
 — descriptor cosine and F0 error, written next to every learned syllable. Syllable order
-within a recording gives a first-order grammar, which is what lets Birdy compose phrases
+within a recording gives a first-order grammar, which is what lets Lyrebird compose phrases
 no bird sang in a syntax measured from birds that did. Those phrases are labelled
 *invented*; their syllables are labelled *field recording*.
 
 Still nothing is sampled. The recordings are the *measurement*, not the material: what
 survives one is a few dozen numbers per syllable — duration, level, attack, an F0
 contour, modulation depths, a timbre class — and the note you hear afterwards is
-integrated from the oscillator, as every note in Birdy is. That is the route the
+integrated from the oscillator, as every note in Lyrebird is. That is the route the
 research names for "record a real bird, then re-sing it synthetically"
 ([`docs/04-synthetic-bird-voices.md`](docs/04-synthetic-bird-voices.md) §4.2, Boari
 et al. 2015), and the resynthesis cosine printed next to each fitted syllable is how
@@ -313,8 +340,10 @@ repertoire on its own.
 
 ### What the fitted voices actually achieve
 
-On the shipped harvest — 434 recordings, 31,653 segmented syllables, 12 fitted types per
-species:
+Measured on the 434-recording harvest of 2026-07 — 31,653 segmented syllables, 12 fitted
+types per species. **These numbers have not been re-taken on the production store**
+(10,184 recordings, 13,903 types), and the closest current figure is the production `learn`
+run's median resynthesis cosine of **0.648**:
 
 | measure | before inversion | after inversion |
 |---|---|---|
@@ -338,15 +367,27 @@ still objects to is spectral. A field recording carries wind, distance, a second
 a room; a two-parameter oscillator carries none of that, and 26 MFCC dimensions notice.
 
 How much they notice is worth stating as its own number, because it turns out to be the
-largest single effect in the whole system. Of the 176 clusters in the shipped galaxy,
+largest single effect in the whole system. Of the 176 clusters in the galaxy of the time,
 **82 hold nothing but field audio, 86 hold nothing but synthetic renders, and exactly one
-is a mixture.** A real call and Birdy's resynthesis of that same call do not merely score
+is a mixture.** A real call and Lyrebird's resynthesis of that same call do not merely score
 poorly against each other — they are never even grouped together. The dominant axis of
 this feature space is *was this recorded or synthesised*, not *what does it sound like*,
 and that is why one sound can light two knots on opposite sides of the galaxy: the note
 being sung is the synthetic cluster, and the field cluster of the same call is somewhere
 else. See the pipeline README, "The loudest thing in this space is the microphone", for
 what it costs and what would fix it.
+
+**That measurement is what W5 acted on, and W5 is now the default** (docs/22 §22.6,
+docs/23 §23.5). A type that has real member observations no longer renders a synthetic
+copy of itself — it already exists in the map as the field syllables assigned to it — so
+the recorded-vs-synthesised axis has far less to sort. `--member-anchor` buys the rendered
+voice back for anyone who wants it; the old `--no-member-anchor` is gone. On the field
+points every arm holds, this is worth **+0.02 points of retrieval, i.e. nothing**; what it
+buys is the map, at half the knots and a quarter fewer points, and the owner took it on
+that basis. The cost is stated rather than hidden: **the rendered voice loses its own
+place on the map**, and 3D distance faithfulness fell 0.903 → 0.747 on debug-100 because
+removing the rendered copies removed structure the projection found easy. Nothing about
+knots or matching uses those 3D positions.
 
 The numbers only say this because of how they are taken, and that is worth stating,
 because the previous version of this check said nothing at all. It compared a fitted
@@ -362,27 +403,39 @@ measurably different numbers.
 It would sound better — it would sound perfect, because it would be the bird. Two things
 stop it, and only one of them is philosophy.
 
-The first is the licence, and it is measured rather than assumed. Of the 435 recordings
-in the current harvest: 344 are CC BY-NC-SA, 68 are CC BY-NC-**ND**, 18 are CC BY-NC,
-three are CC BY-SA, one is CC0. So **four** of them could be redistributed in a product
-that might one day be commercial, and the 68 ND ones cannot legally be pitch-shifted or
-time-stretched at all, because that makes a derivative. A shipped sample bank means
-accepting non-commercial for the whole app, excluding the ND clips, and carrying
-per-clip attribution into the interface.
+The first is the licence, and it is measured rather than assumed. On the production store
+of **10 184 recordings, 90.3 % carry a licence under which the audio may be kept, and all
+10 184 carry a recordist** — so attribution is available for every file. The 9.7 % that
+fail are NoDerivatives clips plus recordings whose licence the archive never recorded. ND
+audio cannot legally be pitch-shifted or time-stretched at all, because that makes a
+derivative. A *shipped* sample bank would additionally mean carrying per-clip attribution
+into the interface, and the majority of the corpus is CC BY-NC-SA, which is
+non-commercial in its own right.
+
+> *Superseded measurement, kept on the record.* An earlier draft of this section counted
+> the 435-recording harvest of 2026-07: 344 CC BY-NC-SA, 68 CC BY-NC-**ND**, 18 CC BY-NC,
+> three CC BY-SA, one CC0 — so four could be redistributed commercially. That corpus is
+> 24x smaller than the production store and the conclusion it was used for ("accepting
+> non-commercial for the whole app") is no longer hypothetical: **the project is
+> non-commercial**, see [`LICENSE`](LICENSE) and [`NOTICE.md`](NOTICE.md).
 
 The second is the claim. "Nothing is sampled; every note is integrated from the syrinx
 model" is what makes the galaxy's response mean anything — the app is showing you what a
 physical model of a bird does, and a played-back sample is a recording of a bird rather
 than a claim about one.
 
-There is a version that costs neither: a **local** sample bank, never shipped, that
-plays the real syllable next to its resynthesis. Nothing is redistributed, so the licence
-question does not arise, and it is the strongest possible demonstration of the science —
-you can hear exactly how far 0.61 cosine is from the real thing.
+There is a version that costs neither, and since **2026-08-01 it exists**: a **local**
+sample bank, never shipped. `harvest --keep-audio DIR` keeps each analysed recording where
+its licence permits (`harvest.audio_may_be_cached`: no NoDerivatives, no unrecorded
+licence). Nothing is redistributed, so the licence question does not arise, and it is the
+strongest possible demonstration of the science — you can hear exactly how far 0.547
+cosine is from the real thing. The owner declined the other half on the same day:
+**no audio ships to the browser**, so the local bank is not wired into the app.
 
 Every harvested recording's recordist and licence is written to `CREDITS.md` in the
 store. xeno-canto recordings are individually licensed and CC-BY-NC-SA is common.
-See [`pipeline/README.md`](pipeline/README.md) for the details.
+See [`NOTICE.md`](NOTICE.md) §3 for what that obliges, and
+[`pipeline/README.md`](pipeline/README.md) for the mechanics.
 
 ### Driving it from the interface instead
 
@@ -446,7 +499,7 @@ npm install
 npm run dev
 ```
 
-Birdy v1 needs no backend: `adapter-static`, precomputed assets, client-side features and
+Lyrebird v1 needs no backend: `adapter-static`, precomputed assets, client-side features and
 client-side synthesis. Audio never leaves the browser and no model runs on a server.
 
 ## Verifying it
@@ -458,14 +511,24 @@ under stubbed worklet globals:
 cd app
 npm run verify:synth      # renders all 44 syllables, checks measured F0 vs the contour
 npm run verify:features   # renders each syllable, then asks which galaxy cluster it lands in
+npm run verify:layout     # the knot-spacing grid against the brute-force loop it replaced
 npm run demo:wav          # writes listenable wavs to app/out/wav
 ```
 
 `verify:features` is the one that matters most: it crosses the language boundary. A high
 hit rate means the two ODE implementations, the two MFCC implementations and the
 standardisation statistics all agree. Drift shows up here rather than as a galaxy that
-quietly lights the wrong clusters. Current: **35/44 exact, 36/44 same species** on a
-384-cluster build carrying 284 types.
+quietly lights the wrong clusters. Current, on the production assets: **37/44 = 84.1 %
+exact** against a 50 % floor. It failed on the shipped debug-100 build, and that was the
+corpus rather than the code — debug-100 is the deepest hundred species and holds none of
+the 44 authored syllables.
+
+`verify:layout` is the repo's first renderer test: it checks the uniform grid that
+computes the median nearest-neighbour knot distance against the brute-force `k²` loop it
+replaced, on six shapes at six knot counts, and agrees exactly on all 36 cases.
+
+> *Superseded measurement, kept on the record.* This section previously read **35/44
+> exact, 36/44 same species** on a 384-cluster build carrying 284 types.
 
 **An earlier version of this section read 25/44 and blamed the learned inventory, and that
 diagnosis was wrong.** The cost was not competition between a rendered `cuck` and some
@@ -483,9 +546,19 @@ for one per named type **plus** `sqrt(n/2)` for the points that have no type, an
 seeded with each type's own centre rather than by kmeans++ — which spends its seeds on the
 "recorded or synthesised" axis and lets two similar calls of one bird start life sharing a
 seed. Every build now prints `type coverage` and writes it to `manifest.json` with the
-offenders named, so this failure can never again be silent. On the current corpus coverage
-is **282/284**, cluster purity went **41.3 % → 59.7 %**, and cross-species confusions
-halved.
+offenders named, so this failure can never again be silent. On the corpus of the time
+coverage was **282/284**, cluster purity went **41.3 % → 59.7 %**, and cross-species
+confusions halved.
+
+The cap itself is gone. `K_CAP` was an app-side WebGL limit wearing a pipeline constant's
+name — three `uniform float[clusterCount]` arrays in the vertex shader — and moving those
+channels to a `DataTexture` raised it **1 024 → 8 192**. Then `build --clustering label`
+made it moot for coverage: a point that already carries a type goes to its own type's
+knot, and k-means fits only the unlabelled remainder. **The shipped production build is
+348 461 points in 14 003 knots at 100 % type coverage** (13 903/13 903). Cluster purity
+reads 94.5 % there and the manifest says in as many words that this is *not* a
+measurement — a type is a cluster under label assignment, so purity is 1.0 by
+construction on the labelled ones.
 
 `uv run birdy-pipeline verify` checks the generated assets, including that the per-point
 feature rows are unit vectors and still separate their own cluster from the rest — a
@@ -498,3 +571,26 @@ function in `data/inventory.json` carries its reference. The syrinx model is Min
 Laje's; the compositional-syntax result is Suzuki, Wheatcroft and Griesser (2016); the
 pure-tone-by-resonance-filtering result that makes the tracking formant mandatory rather
 than cosmetic is Beckers, Suthers and ten Cate (2003).
+
+## Licence
+
+**This project is non-commercial.**
+
+Lyrebird's own code and prose are **CC BY-NC-SA 4.0** — see [`LICENSE`](LICENSE) for the
+grant and the full legal code.
+
+[`NOTICE.md`](NOTICE.md) is the part worth reading before you reuse anything, because the
+licence covers less than the repository contains. It separates three things:
+
+1. **our own work** — the pipeline, the app, the docs, the hand-authored inventory;
+2. **third-party dependencies and models**, which keep their own licences. Mostly
+   MIT/BSD/Apache-2.0; one optional research dependency is GPL-3.0-or-later
+   (`harmonypy`) and one model compared against is itself CC BY-NC-SA (BirdNET);
+3. **the harvested recordings, which are not ours to relicense.** Every field recording
+   carries a per-recording Creative Commons licence granted by its own recordist through
+   xeno-canto or iNaturalist. Nothing in `LICENSE` reaches any of it, and each
+   recording's licence and recordist must travel with it and with anything derived from
+   it. `CREDITS.md` in the harvest store is the attribution record.
+
+For most of the corpus, non-commercial is not only our preference — it is what the
+recordists chose.

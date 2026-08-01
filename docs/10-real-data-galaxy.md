@@ -34,7 +34,7 @@ Three moves, all in the pipeline:
    auto).
 3. **Synthetic points are renders of measured realisations.** For a learned type,
    `corpus.measured_corpus` renders the unjittered median once. This is the anchor, the
-   sound that Birdy sings. It also makes up to `--variants` (now default 24, was 96)
+   sound that Lyrebird sings. It also makes up to `--variants` (now default 24, was 96)
    renders of *actual member observations'* measured parameter sets. Hand-authored species
    keep the jitter path. This is honest, because no measurements exist for them.
 
@@ -58,8 +58,9 @@ seed, only the space changed): purity **70.9 % → 90.9 %**, type coverage **12/
 14/14**, 3-D knn10 agreement **64.5 % → 83.2 %**, distance faithfulness (pearson)
 **0.874 → 0.940**.
 
-**The production build** has 47 185 field syllables + measured renders, 56 500 points, 375
-clusters, 32-d. The embedding's own structure analysis puts species kNN at **0.426**
+**The production build of the time** (2026-07; *"the production build" now means the
+2026-08-01 one — 348 461 points, k = 14 003, `--clustering label`*) has 47 185 field
+syllables + measured renders, 56 500 points, 375 clusters, 32-d. The embedding's own structure analysis puts species kNN at **0.426**
 (chance 0.072) and syllable-type kNN at **0.310** (chance 0.006). The same groupings
 measured in the 3-D projection give 0.269 / 0.147 for comparison. The map's geometry is now the geometry
 that measurably decides "same syllable".
@@ -156,6 +157,13 @@ structure with counts, never glossed as meaning.
 candidates: pairs nearer than the median within-species nearest-type distance. It also
 holds a species similarity matrix (centroid-of-centroids cosine + symmetrised 1-NN).
 Symmetric KL is degenerate here, because type ids are species-local, and the code says so.
+
+**The shipped copy is a trim, and it says so in the file.** Every unordered species pair is
+quadratic — 2 929 410 pairs and 760 MB at production's 2 423 species — so
+`relations.shipped_relations` keeps each species' eight nearest partners, deduplicated:
+**14 425 pairs, 5.6 MB**, lossless for the three-nearest question the app asks. The file's
+`retention` block carries the rule and both totals. Analysis wants the whole document and
+the standalone `relations` verb still writes it. See docs/08 §8.3.
 
 The build finds 117 shared-type candidates. Congeners rank high
 (`cuculus_clamosus/cuculus_solitarius` #1, `zosterops` pair #2, `parus` pair #11), with

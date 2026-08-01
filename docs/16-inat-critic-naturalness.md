@@ -22,9 +22,18 @@ store back.
 **Audio cache.** The owner overrode the delete loop for the training phase
 (AGENTS.md records it, 2026-07-30). `--keep-audio` cached 6 453 WAVs (6.3 GB)
 to `pipeline/out/audio-cache/`. The cache is local only, gitignored, feeds
-`harvest_directory`, and is deleted at phase end. Xeno-canto harvests still
-delete immediately. The cache makes Perch labelling and fit iteration possible
-without re-downloading.
+`harvest_directory`, and was to be deleted at phase end. The cache makes Perch
+labelling and fit iteration possible without re-downloading.
+
+*Superseded 2026-08-01: that temporary exception became the standing policy, and
+xeno-canto harvests are no longer excluded from it.* `harvest --keep-audio DIR`
+now applies the same per-licence gate to xeno-canto
+(`harvest.audio_may_be_cached`: **NoDerivatives refused, an unrecorded licence
+refused**). 90.3 % of the production store's 10 184 recordings pass and all
+10 184 carry a recordist. Retention is still local only and **nothing audio
+ships to the browser**. The value of having done it is measured: docs/23 §23.6
+could only run on the 6 453 of 10 184 recordings whose audio still existed. See
+`NOTICE.md` §3.4.
 
 ## 16.2 The critic, retrained on variety
 

@@ -19,7 +19,7 @@ against 1/tau = 1e4) the implicit acceleration terms drop out, which is what kee
 integration here plain explicit Euler — no solve, no iteration, and therefore parity-
 testable against the browser worklet sample by sample.
 
-**How the paper's form lands in Birdy's nondimensionalised model.** The labial
+**How the paper's form lands in Lyrebird's nondimensionalised model.** The labial
 restitution constant IS the air-sac pressure (docs/15 §1's lineage: `alpha = 0.05 +
 0.40*ps`), so a tracheal back-pressure moves each source's alpha, not its output gain:
 
@@ -59,14 +59,14 @@ import math
 from dataclasses import dataclass
 from typing import Any
 
-# --- Table I of Laje & Mindlin 2005, translated to Birdy's units --------------------
+# --- Table I of Laje & Mindlin 2005, translated to Lyrebird's units --------------------
 # L = 2.0 cm one-way (the paper's trachea length) and gamma_refl = 0.9 are the paper's
 # own numbers. The 0.8 cm floor keeps the round trip above two samples at 48 kHz, so
 # the fractional delay line never reads a slot that has not been written; 20 cm is the
 # tube bound of syrinx.py's waveguide (an 8x longer trachea than any bird here).
 TRACHEA_CM_MIN, TRACHEA_CM_MAX = 0.8, 20.0
 REFL_MIN, REFL_MAX = 0.0, 0.95
-# betaInj is Birdy's nondimensional injection strength, not the paper's dimensional
+# betaInj is Lyrebird's nondimensional injection strength, not the paper's dimensional
 # beta (1.5e3 s^-1): the small-coupling condition beta << 1/tau is about the *ratio*,
 # and the measured strength that puts the coupling in the paper's regime is what
 # DEFAULT_BETA_INJ records below. The ceiling is a stability guard, not a fit bound.

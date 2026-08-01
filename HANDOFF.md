@@ -188,10 +188,83 @@ provenance, so it was not done.
   voice near an open mic would light the Reading panel's *first* branch — "off the map,
   positions are guesses" — about our own corpus.
 
+**THE PRODUCTION BUILD'S MAP AGREEMENT IS 12-14 POINTS WORSE THAN THE DEBUG BUILD, AND THIS
+IS THE RE-MEASUREMENT docs/20 ASKED FOR BEFORE ANY PRODUCTION DECISION** (it shipped without
+it; the figures were in the build all along, in `feature-space.json`'s
+`embedding.mapQuality`, and nobody read them)
+
+| build | k | region agreement | tie-adjusted | species agreement |
+|---|---|---|---|---|
+| debug, label | 4 298 | 0.6316 | 0.8136 | 0.6831 |
+| debug, label + W5 | 2 155 | 0.6439 | 0.7847 | 0.6982 |
+| production v4, kmeans | 1 024 | 0.6081 | 0.8410 | 0.6300 |
+| **production v5, label (SHIPPED)** | **14 003** | **0.4909** | **0.7056** | **0.5619** |
+
+- **What it means for the central gesture.** Agreement is the nearest-centroid lookup the live
+  path performs: sing, map the 28-d descriptor into the 32-d space, take the nearest knot. On
+  the build now in `app/static/birdy`, that lookup lands on the same region the embedding
+  itself would choose **less than half the time** (0.4909), and the same species just over
+  half (0.5619). The tie-adjusted 0.7056 says most of the disagreement is a near-miss between
+  *adjacent* knots rather than an unrelated region — a blurred answer rather than a wrong one —
+  but it does not make the raw number bigger.
+- **The direction is explicable, not mysterious.** 14 003 knots against the debug build's
+  4 298 means roughly three times as many near neighbours available to be confused with the
+  right one. Nothing regressed; the task got harder because the map got finer. **This is the
+  cost side of the 100 % type coverage that label assignment bought**, and the two numbers
+  belong in the same sentence from now on.
+- Taken with §22.8's type-retrieval ceiling of **0.602**, the honest bound on "sing and the
+  right knot lights" at production scale is **lower than any debug figure in the record**.
+- Now stated in the whitepaper's Limitations section rather than left as a gap.
+
+**THE TWO-START DESCENT PASSES ITS PRE-REGISTERED GATE — the first gate the amortised
+inverse has ever cleared** (`pipeline/analysis/inverse_gate.md`, full run record there;
+`learn --inverse PT --inverse-two-start`)
+
+Per type, `invert_gestures` runs from the cluster median **and** from the encoder's
+proposal, and the better candidate wins. Against arm A on debug-100, 1 661 shared types:
+
+| | baseline | single-start (arm B) | **two-start (arm D)** | gate |
+|---|---|---|---|---|
+| median resynthesis cosine | 0.7410 | 0.7550 (+0.0140) | **0.7740 (+0.0330)** | +0.02 |
+| types improved | | 51.7 % | **51.7 %** | — |
+| **types worse** | | 45.0 % | **0.0 %** | — |
+| **worst species** | | **−0.0815** | **+0.0000** | none worse |
+| | | FAIL both | **PASS both — adopt** | |
+
+- **The gate caught a real bug, which is what it was written for.** The first two-start run
+  (arm C) cleared gate 1 at +0.0320 and **failed gate 2 with 48 of 1 661 types worse, by up
+  to 0.049**. The pre-registration says a regression here "is a bug in the selection rather
+  than a trade", so it was hunted rather than excused. Three hypotheses died on measurements
+  — the objective and the reported metric are the same computation; `fricative_seed` is
+  monotone; the arms fitted **identical** inventories (members/dur/f0 equal on all 1 661) —
+  and a fourth died on a direct test: **the render is bit-identical for fixed parameters**
+  (cosine 1.000000 over 5 renders at `noise=0.6 rough=0.65`), so it is not stochastic.
+  **The cause: 19.3 % of types ship `fricative: true`, but 100 % of the 48 regressions did**
+  (p ≈ 10⁻³⁵). The selection read the **pre-fricative** score while the shipped and gated
+  number is **post-fricative**, and `fricative_seed`'s benefit depends on the basin — so the
+  better proxy could land on the worse product. Fixed by making a candidate *the descent
+  plus the fricative seed, scored as it ships*; regressions went 48 -> **0**.
+- **What it licenses.** A fit option that is *never worse* — the gate as written is met. It
+  does **not** say the renders sound better: docs/19 put the cosine's correlation with
+  audible distortion at ≈ 0.1, and this gate reads the cosine, so the MCD/STFT bench is
+  still what an audible claim needs. **Cost is 5.5x**: ~61 min against arm A's ~11, more
+  than the predicted doubling. Default unchanged; the flag exists and passes.
+- **Correction carried into the record:** arm B's published "worst species −0.0816" was
+  scored through the same proxy, so part of it is this artefact rather than the encoder's
+  fault. Arm B still fails, on gate 1's median alone.
+- `analysis/score_two_start.py` reads the fit's own `FIT` log lines and was **validated
+  against a known answer before use** — on arm A vs arm B it reproduces the published
+  failure (+0.0140, worst `gampsonyx_swainsonii` −0.0815 against the recorded −0.0816).
+
 **`relations.json` fixed in the pipeline, and the feature is back: 760 MB -> 5.6 MB**
 
 `compute_relations` returns every unordered pair of species, which is what the analysis
-wants and is quadratic in the corpus: **2 929 410 pairs** at 2 423 species. The new
+wants and is quadratic in the corpus: **2 929 410 pairs**, which is C(2 421, 2) exactly —
+**2 421 species, not the inventory's 2 423**. The two knots that differ are real: relations
+is computed over species that have type centroids in the critic space, and the unlabelled
+pool is excluded by design. Quoting the inventory's 2 423 against this pair count, as an
+earlier draft of this entry did, is off by two species and does not reproduce the
+arithmetic. The new
 `relations.shipped_relations` writes the browser's copy — **each species' eight nearest
 partners, deduplicated** — and `write_relations` applies it by default. The standalone
 `relations` verb passes `per_species=None` and still writes the complete document, because

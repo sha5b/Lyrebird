@@ -10,9 +10,9 @@
 	 *
 	 * **The per-frame work is bounded by the pool, not by the corpus.** This used to
 	 * project every centroid, sort every centroid, and write seven style properties to a
-	 * DOM element for every centroid, every frame. At the 4 298-knot build that is
+	 * DOM element for every centroid, every frame. At the debug-100 4 298-knot build that is
 	 * ~30 000 style mutations a frame to draw at most 26 tags, and it is what took the
-	 * browser to about one frame a second; at the production build's ~14 000 knots it
+	 * browser to about one frame a second; at the shipped production build's 14 003 knots it
 	 * would be ~98 000. See labels.ts. Now a cheap scalar pass over the activations picks
 	 * the handful of knots that could carry a tag at all, and only those are projected,
 	 * sorted, culled and written. On a silent galaxy with nothing selected that set is

@@ -142,8 +142,8 @@
 		 * centre for "the whole galaxy", because the median of the *knots* is not the middle
 		 * of the *cloud*: knot density is skewed, so half the knots sitting in one lobe puts
 		 * the median in that lobe. Measured on the built assets, the median lands **14 % of
-		 * the cloud's span off centre on the shipped build and 27 % off on the production
-		 * build** — the projection itself is centred on the origin to within 0.001, and the
+		 * the cloud's span off centre on the debug-100 build and 27 % off on the production
+		 * build (now the shipped one)** — the projection itself is centred on the origin to within 0.001, and the
 		 * camera was aiming a quarter of the way out from it. That is the "it does not centre
 		 * on the centre of the point cloud" the owner reported, and it shows up worst on
 		 * autoload because autoload is exactly the whole-galaxy case.

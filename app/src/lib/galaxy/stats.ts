@@ -3,9 +3,10 @@
  *
  * This exists because a renderer whose cost scales with the corpus was shipped twice
  * without anyone being able to see which part scaled. The point cloud has a level of
- * detail; the label layer had none, and at 4 298 knots that was the whole frame budget
- * spent on DOM nobody could read. A number on screen is what would have caught it in
- * the first minute instead of the first production build.
+ * detail; the label layer had none, and at the debug build's 4 298 knots that was the
+ * whole frame budget spent on DOM nobody could read — the shipped production build has
+ * 14 003. A number on screen is what would have caught it in the first minute instead of
+ * the first production build.
  *
  * A plain mutable object, deliberately not reactive: it is written inside the render
  * loop, and a reactive write per frame per field is exactly the kind of cost this is

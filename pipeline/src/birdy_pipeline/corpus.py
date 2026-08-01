@@ -236,9 +236,11 @@ def measured_corpus(
             # both sides and now there is only one side; k falls 4 298 -> 2 155 and the
             # corpus by a quarter. But scored on a query population that does not move
             # with the arm — the field points, which every arm holds — this buys *no*
-            # retrieval accuracy at all (+0.02 points). So the case is the map's size,
-            # which at production scale is the difference between a 44 MB centroids file
-            # and a 22 MB one, and not a claim that the map got better.
+            # retrieval accuracy at all (+0.02 points). So the case is the map's size, and
+            # not a claim that the map got better. (This line read "the difference between
+            # a 44 MB centroids file and a 22 MB one", which was superseded the same day by
+            # moving the per-cluster float arrays to `centroid-vectors.f32`: the shipped
+            # k = 14 003 build measures 7.69 MB of JSON beside 3.81 MB of float.)
             #
             # `anchor=True` (`--member-anchor`) restores the fitted median as one
             # unjittered point plus `variants` measured realisations. What that buys back

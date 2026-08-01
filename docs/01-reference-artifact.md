@@ -39,9 +39,9 @@ composites three real things:
 - **Thin lines** = temporal trajectories connecting consecutive syllables of one song —
   a "path" through the vocal repertoire.
 - When a bird sings, the active region lights up. That is the "it jumps when the tone
-  and melody works" effect Birdy recreates (see `05-embedding-galaxy.md`).
+  and melody works" effect Lyrebird recreates (see `05-embedding-galaxy.md`).
 
-## 1.3 Implication for Birdy
+## 1.3 Implication for Lyrebird
 
 The reel is a composite, but everything it implies is buildable. The embedding
 galaxy has open-source prior art. The vocabulary framing comes from

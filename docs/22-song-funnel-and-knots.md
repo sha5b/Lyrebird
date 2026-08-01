@@ -4,11 +4,14 @@
 A per-species recurrence bar and a per-species bout rule both fail their controls and
 ship off. Fewer rendered variants and deflating the source axis both fail to move the
 seed demand — the split is binary and it is not one direction. What halves the seed
-demand is rendering nothing for a type that has real members, which is the owner's call
-because it changes what the map contains. Assigning typed points to their own type
+demand is rendering nothing for a type that has real members — **the owner took that call
+on 2026-08-01 and it is now the default** (W5; `--member-anchor` buys the rendered voice
+back, `--no-member-anchor` is gone), on size rather than accuracy, because it changes what
+the map contains. Assigning typed points to their own type
 instead of clustering them (§22.8) is worth +14 to +18 points of type retrieval where the
 cap binds, +2.5 where it does not, and it ships as `--clustering label`, not as the
-default. The Learn tab was fixed separately (§22.7).
+default — **though it is what the shipped production build uses**: 348 461 points,
+k = 14 003, type coverage 13 903/13 903 = 100 %. The Learn tab was fixed separately (§22.7).
 
 Two questions, asked of the data rather than of the code: why does a corpus of 2 423
 species hold only 96 measured songs, and why did the first production build ship zero
@@ -134,9 +137,23 @@ every caller takes, so the four cannot drift onto different strings. A self-test
 
 ## 22.5 The knot budget
 
-The 2026-08-01 production build verified green with 694 936 points and 1 024 clusters,
-and named **zero** documented calls. The chain has four links and the last one is not in
-this pipeline.
+> **Status: every link in this chain has since been cut, and the section is kept because
+> it is the diagnosis the cuts were made from.** All four numbered links below were
+> measured on the pre-W5, k = 1 024 production build of the morning of 2026-08-01. What
+> happened by the end of that day: **link one** was cut by adopting W5 as the default (a
+> type with real members renders nothing — §22.6, §22.8); **link two** stopped mattering
+> because with no rendered copy there is nothing for the source split to split (zero source
+> splits on the shipped build); **link three** was cut by `--clustering label`, which does
+> not hold a vote over points that already carry a label (§22.8); **link four** was cut
+> twice over — `K_CAP` is **8 192**, not 1 024, because the three per-cluster channels moved
+> to a `DataTexture`, and the `centroids.json` size wall was removed by moving the
+> per-cluster float arrays to the `centroid-vectors.f32` sidecar. **The shipped production
+> build is 348 461 points, k = 14 003, type coverage 13 903/13 903 = 100 %, and 44/44
+> authored calls own a knot.** Read the four links as the reason, not as the state.
+
+The 2026-08-01 morning production build verified green with 694 936 points and 1 024
+clusters, and named **zero** documented calls. The chain has four links and the last one is
+not in this pipeline.
 
 **One. Half the galaxy is a rendered copy of the other half.** `measured_corpus` renders
 one anchor plus 24 measured realisations per type. Those realisations are re-syntheses
@@ -158,14 +175,20 @@ name on would mislabel thousands of unrelated field points, which the honesty ru
 carry a type by construction, so the build discards a known label and then tries to
 recover it by majority vote over a partition.
 
-**Four. `K_CAP = 1024` is an app constraint, not a pipeline one.** The pipeline's comment
-says nothing downstream is quadratic in it, and that is true. The renderer declares three
-`uniform float[clusterCount]` arrays in its **vertex** shader
+**Four. `K_CAP = 1024` was an app constraint, not a pipeline one — and it is now 8 192.**
+The pipeline's comment says nothing downstream is quadratic in it, and that is true. The
+renderer declared three `uniform float[clusterCount]` arrays in its **vertex** shader
 (`app/src/lib/galaxy/shaders.ts`). 1 024 clusters is 3 072 vertex uniform floats, which
-already sits past the WebGL2 guaranteed minimum and works because the development GPU is
-generous. Raising the cap needs those three channels moved to a data texture first. The
-second constraint after that is `centroids.json`, at 1.7 kB per cluster — 23 MB at 13 903
-— which is the problem `inventory.json` already solved by sharding.
+already sits past the WebGL2 guaranteed minimum and worked because the development GPU is
+generous. Raising the cap needed those three channels moved to a data texture first, **and
+that was done**: they live in `uClusterState` (RGB = activation/sung/learning,
+nearest-filtered, width capped at 1 024), and `K_CAP` went **1 024 → 8 192**. The second
+constraint after that was `centroids.json`, quoted here at 1.7 kB per cluster — 23 MB at
+13 903 — the problem `inventory.json` had already solved by sharding. **That was solved
+differently and better**: the two per-cluster float arrays moved to a binary sidecar,
+`centroid-vectors.f32`, since they were 64 % of the file's bytes. Measured on the shipped
+production build at k = 14 003: **7.69 MB of JSON + 3.81 MB of float**, against the ≈ 44 MB
+that once blocked it.
 
 Links one and two looked like the cheap fixes. §22.6 measures them, and they are not.
 Links three and four are design decisions, not defects to fix quietly, and they are
@@ -235,12 +258,15 @@ rose 20.7 % → 28.0 %). Removing 53 575 rendered points removes structure the p
 found easy, so *distance on screen means less than it did*; the knots and the matching are
 unaffected, because neither ever used the 3D positions.
 
-Two honest limits on that row. It gives up the rendered voice's own place on the map,
-which is a claim about our synthesiser rather than about a bird — a design decision, so
-it ships as `--member-variants 0 --no-member-anchor` and not as a default. And the cap
-still binds on this corpus (2 155 wanted against k = 1 024), so 1 119 types still lose
+Two honest limits on that row, **both as they were written before the arm was adopted and
+before the cap was raised**. It gives up the rendered voice's own place on the map,
+which is a claim about our synthesiser rather than about a bird — a design decision, which
+is why it shipped as a flag first. *(It is now the default; the flag inverted to
+`--member-anchor`, and `--no-member-anchor` no longer exists.)* And the cap
+bound on this corpus at the time (2 155 wanted against k = 1 024), so 1 119 types lost
 their only knot in every arm: **halving the seed demand does not undo the cap**, it
-halves what the cap has to shed. The documented-knot column reads zero in all four arms
+halves what the cap has to shed. *(Superseded: `K_CAP` is 8 192, so 2 155 is taken whole
+and nothing is shed on this corpus at all.)* The documented-knot column reads zero in all four arms
 because the debug-100 subset is the deepest 100 species and holds no authored calls —
 that question needs a subset chosen to contain them.
 
@@ -348,9 +374,12 @@ kmeans — which is a more honest account of it than the all-points number, wher
 arm reads +18 points purely because it deleted its own hard queries. What W5 *is* worth is
 the map: the same field retrieval on **half the knots** (2 155 against 4 298) and a quarter
 fewer points, because with no synthetic copy there is nothing for the source split to
-split. On production that is k 27 862 → about 14 003 and centroids ≈ 44 MB → ≈ 22 MB. The
-case for W5 is size, not accuracy, and it is still the owner's call for the reason §22.6
-gave: the rendered voice loses its own place on the map.
+split. On production that is k 27 862 → about 14 003 and centroids ≈ 44 MB → ≈ 22 MB
+*(superseded the same day: the sidecar took it to a measured 7.69 MB + 3.81 MB, so the
+size argument landed harder than this paragraph predicted)*. The
+case for W5 is size, not accuracy. **The owner took it on that basis on 2026-08-01 and it
+is the default**, with the cost §22.6 named accepted rather than denied: the rendered voice
+loses its own place on the map.
 
 **And it exposes a ceiling the cap was hiding.** Even with every type owning its own knot,
 type retrieval is **0.602** — for 40 % of points the nearest centroid belongs to another
@@ -424,7 +453,8 @@ it whole, at a measured 1 596 bytes per cluster — about **44 MB**. Two decisio
 
 Measured together on the debug-100 build: **centroids.json 6.86 MB → 1.18 MB** plus 0.59 MB
 of binary, so 548 bytes of JSON and 272 of float per cluster. At production's 14 003 that
-projects to about **7.7 MB + 3.8 MB against the original 44 MB**. The build still warns with
+was projected at about 7.7 MB + 3.8 MB against the original 44 MB, and **the shipped build
+measured 7.69 MB + 3.81 MB — the prediction held to a rounding error**. The build still warns with
 the projected size whenever k passes `K_CAP`. The renderer is not the limit any more
 (the cluster-state `DataTexture` is 1 024 wide, so 27 862 knots is 28 rows), and the
 clustering itself stops being a cost at all — 0.2 s against 65 s here, and against a

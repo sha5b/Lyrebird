@@ -8,7 +8,7 @@
 	/**
 	 * Evict any service worker left on this origin by another project.
 	 *
-	 * **Birdy has no service worker**, so every registration on its origin belongs to
+	 * **Lyrebird has no service worker**, so every registration on its origin belongs to
 	 * something else. On `localhost` that happens constantly: a sibling app registers one at
 	 * scope `/` on port 5173, and from then on every app that ever uses 5173 is served
 	 * through a worker written for a different site. The visible symptom was Vite refusing a
@@ -24,7 +24,7 @@
 	 * fixed. So this is cleanup, not cosmetics.
 	 *
 	 * Their caches go too: an unregistered worker leaves its Cache Storage behind, and since
-	 * Birdy owns none of it, anything there can only serve a stale response to somebody.
+	 * Lyrebird owns none of it, anything there can only serve a stale response to somebody.
 	 *
 	 * One reload finishes the job, because a worker keeps controlling the page it is already
 	 * attached to until navigation. The `sessionStorage` flag is what stops that from becoming
@@ -47,8 +47,8 @@
 					await Promise.all(keys.map((k) => caches.delete(k)));
 				}
 				console.warn(
-					`Birdy: removed ${registrations.length} service worker(s) left on this origin ` +
-						`by another app, and their caches. Birdy registers none of its own — a foreign ` +
+					`Lyrebird: removed ${registrations.length} service worker(s) left on this origin ` +
+						`by another app, and their caches. Lyrebird registers none of its own — a foreign ` +
 						`worker can serve a stale manifest.json and quietly disable galaxy hot-reload. ` +
 						`Evicted: ${scripts.join(', ')}`
 				);
@@ -61,7 +61,7 @@
 			} catch (err) {
 				// Never fatal: a browser that refuses this is a browser with a bit of extra noise
 				// in its console, not a broken app.
-				console.warn('Birdy: could not evict a foreign service worker', err);
+				console.warn('Lyrebird: could not evict a foreign service worker', err);
 			}
 		})();
 	});

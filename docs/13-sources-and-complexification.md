@@ -21,11 +21,14 @@ per-observation CC licences inherited from iNaturalist. Filter to CC0/BY/BY-NC l
 everywhere else.
 
 Single-species presence labels (weak, no time-freq boxes). This is the same source Perch
-2.0 trains on. Variety: thousands of species Birdy has never seen, and a completely
+2.0 trains on. Variety: thousands of species Lyrebird has never seen, and a completely
 different recording-condition regime (phone mics, opportunistic). These are precisely
 the two axes docs/11 §11.5 says the critic is blind on.
-- *Plugs into Birdy:* new adapter in `sources.py` (name `inat-sounds`): stream the
-  archive, licence-filter, decode→describe→delete via `ingest_file`, CREDITS.md row.
+- *Plugs into Lyrebird:* new adapter in `sources.py` (name `inat-sounds`): stream the
+  archive, licence-filter, decode→describe→delete-by-default via `ingest_file`, CREDITS.md
+  row. **Shipped, and it is the strictest adapter on licences**: Aves only, and
+  NoDerivatives excluded *at ingest* rather than only at retention (`sources.LICENCES_OK`
+  refuses ids 2 and 5 — 531 of 111 029 files).
   Direct attack on the 14.8 % novelty TPR: retrain the critic, recalibrate novelty per
   §10.3, re-run the pre-registered numbers.
 
@@ -38,7 +41,7 @@ keyless, and each record carries media URLs with **per-record CC licences**.
 Variety: European, historic, and captive recordings. This is a third archive with a
 different provenance and era. It is exactly the "new microphone, new country" confounder
 that the novelty detector currently fails on.
-- *Plugs into Birdy:* `sources.py` adapter `gbif-soundarchives`: GBIF download →
+- *Plugs into Lyrebird:* `sources.py` adapter `gbif-soundarchives`: GBIF download →
   multimedia extension → stage+ingest. The same code path generalises to Borror and
   BioAcoustica (below). Build this as a *generic GBIF-multimedia adapter* with a dataset
   key, not one adapter per archive.
@@ -59,9 +62,9 @@ that the novelty detector currently fails on.
 **13,359 time-frequency-boxed vocalizations from 117 Western-Palaearctic species**. Two
 wins in one. (a) It adds a genuinely new sound *form*: short nocturnal flight calls, not
 song. This widens what "a syllable" is in the embedding. (b) Its human time-freq
-annotations give free ground truth for evaluating Birdy's hand-written segmenter.
+annotations give free ground truth for evaluating Lyrebird's hand-written segmenter.
 Nothing in the current stores provides that.
-- *Plugs into Birdy:* a `sources.py` adapter (the Zenodo pattern already exists). The
+- *Plugs into Lyrebird:* a `sources.py` adapter (the Zenodo pattern already exists). The
   boxes let `ingest_file` cut labelled syllables directly. The novelty and typing stores
   gain a calls-vs-song axis. The honesty label stays "unlabelled: real acoustics, no
   documented function" for anything the fit cannot match.
@@ -73,20 +76,20 @@ carry what no wild archive does: **syllable-level human annotations of complete 
 bouts from known individuals**. This is ground truth for the just-shipped song-level
 type discovery (commit c03bdda) and for grammar measurement. The cost is trivial (the
 Zenodo adapter exists).
-- *Plugs into Birdy:* validation stores in `/tmp`, not the production galaxy. Check that
+- *Plugs into Lyrebird:* validation stores in `/tmp`, not the production galaxy. Check that
   `song-typing.json` clusters recover human annotation structure. This is a
   *measurement* source, not a coverage source.
 
 ### Second tier — real value, higher cost or narrower
 
-| source | licence / access | size & labels | variety vs cost | plugs into Birdy |
+| source | licence / access | size & labels | variety vs cost | plugs into Lyrebird |
 |---|---|---|---|---|
 | **A2O — Australian Acoustic Observatory** ([portal](https://acousticobservatory.org/), [MEE paper](https://besjournals.onlinelibrary.wiley.com/doi/10.1111/2041-210X.13660)) | CC-BY, open Ecosounds portal+API, keyless | ~2 PB target, hundreds of sensors, presence-level labels only | Australian endemics + true long-duration soundscapes — a second, far larger XCDC. Cost: high; must pull targeted windows via the Ecosounds API, not bulk | `sources.py` `ecosounds` adapter; feeds novelty controls + soundscape work, **not** typing (same honest scope as XCDC in §11.5) |
 | **Borror Lab of Bioacoustics via GBIF** ([dataset](https://www.gbif.org/dataset/f11db245-3f9f-4fc6-a0cc-12b4124d081b), DOI `10.15468/wyz5x9`) | per-record, GBIF download | 40k+ recordings, historic, North-America heavy | 1948–2001 era tape recordings — a fourth provenance regime. Same adapter as Tierstimmenarchiv, so near-zero marginal cost | `gbif-soundarchives` adapter with dataset key |
 | **BirdVox family** ([Zenodo 1205569](https://zenodo.org/records/1205569), [5856260](https://zenodo.org/records/5856260); indexed in [open-bioacoustic-benchmarks](https://github.com/jackgle/open-bioacoustic-benchmarks)) | CC-BY, keyless | 60–296 h, NYC rooftop mics, flight calls; species labels partial | Overlaps NBM's role but adds urban-noise conditions and US species. Take NBM first; BirdVox if more call-form data is wanted | Zenodo-pattern adapter; calls-axis for the embedding |
 | **NIPS4Bplus** ([PeerJ CS](https://peerj.com/articles/cs-223/)) and **Chronister et al. 2021** ([E&Ecology DOI](https://doi.org/10.1002/ecy.3329)) | CC-BY, keyless | small (hours), **rich time-freq annotations** | not coverage — segmentation/feature *validation* ground truth, same role as item 4 | `/tmp` eval stores; measure segmenter boundary accuracy before touching `extract_syllables` |
 | **Individual-ID datasets** ([Zenodo 15054394](https://zenodo.org/records/15054394) — verified) | CC, keyless | ~880 MB; cockatoo, penguin audio + BirdNET/Perch embeddings for 5 species × 10–16 individuals | enables the "which individual" axis (see Deliverable 2a.5). Niche but unique | eval store for an individual-ID probe; honesty label "individual match (statistical, validated on 10–16 birds)" |
-| **iNaturalist API live** ([API practices](https://www.inaturalist.org/pages/api+recommended+practices)) | keyless, ~60 req/min, 10k-result cap per query; per-observation CC | ongoing stream vs iNatSounds' Feb-2024 snapshot | targeted top-ups for `expand` (specific missing species), not bulk | `expand` route beside xccoverbl; same decode→describe→delete |
+| **iNaturalist API live** ([API practices](https://www.inaturalist.org/pages/api+recommended+practices)) | keyless, ~60 req/min, 10k-result cap per query; per-observation CC | ongoing stream vs iNatSounds' Feb-2024 snapshot | targeted top-ups for `expand` (specific missing species), not bulk | `expand` route beside xccoverbl; same decode→describe→delete-by-default |
 | **freesound.org bird tags** | CC per-file, **OAuth key required**, tag labels not species | large | mostly duplicates the warblr/ff1010 "not our kind of sound" control role. Low priority | skip unless control-set diversity is measured as a bottleneck |
 
 ### Dead ends (checked, candidly)
@@ -155,7 +158,7 @@ it is the right one. It is state of the art on BirdSet/BEANS, and the licence is
 Prefer it over BirdNET ([CC BY-NC-SA
 licence](https://github.com/birdnet-team/BirdNET-Analyzer) and weaker transfer scores)
 for anything that touches shipped assets.
-- *Plugs into Birdy:* offline only, as a new `critic label-novel` command. Perch's
+- *Plugs into Lyrebird:* offline only, as a new `critic label-novel` command. Perch's
   logit+embedding for a flagged syllable lands in the store as *metadata*, never as
   typing ground truth. UI honesty label: "closest documented species (Perch 2.0
   inference, unverified)". The discipline: a Perch label must never become a type's
@@ -173,8 +176,8 @@ on birdsong. A 2026 bioRxiv crow paper uses it off-the-shelf for denoising focal
 vocalizations. This upgrades XCDC (and eventually A2O) from "novelty controls only" to
 *usable syllable candidates*. The chain: separate → run the existing syllable extractor
 on stems → type what separates cleanly, and keep the rest as controls.
-- *Plugs into Birdy:* an optional pre-stage inside the Zenodo/Ecosounds adapters (audio
-  still never retained). The same store metrics measure success: does typing coverage on
+- *Plugs into Lyrebird:* an optional pre-stage inside the Zenodo/Ecosounds adapters (audio
+  still never retained *in the store*, and never shipped). The same store metrics measure success: does typing coverage on
   soundscape-derived syllables beat the controls baseline?
 
 **A3. Self-supervised segmentation (TweetyBERT lineage) — promising, but validate on
@@ -188,14 +191,14 @@ design. Neither transfers off the shelf to 35+ wild species. The honest sequence
 *measure* the current hand-written segmenter against NBM's boxes and bfsongrepo's
 annotations (cheap, items 1.3/1.4). Retrain a TweetyBERT-style model only if the
 measured boundary error is the actual bottleneck.
-- *Plugs into Birdy:* a `features.py`/`extract_syllables` replacement candidate. The
+- *Plugs into Lyrebird:* a `features.py`/`extract_syllables` replacement candidate. The
   §9.7 ablation numbers on the fixed store re-judge any change.
 
 **A4. Individual/singer ID.** The [Monash datasets](https://zenodo.org/records/15054394)
 (verified) exist precisely because BirdNET/Perch embeddings separate individuals of 5
-species (10–16 birds each). For Birdy this is the difference between "a bird sang X" and
+species (10–16 birds each). For Lyrebird this is the difference between "a bird sang X" and
 "the *same* bird sang X again". Users will immediately ask for this translator claim.
-- *Plugs into Birdy:* critic-space nearest-neighbour over a session's syllables. The
+- *Plugs into Lyrebird:* critic-space nearest-neighbour over a session's syllables. The
   claim carries "individual match (statistical, small-N validation)" and nothing
   stronger. Do this only after A1's embedding exists.
 
@@ -224,7 +227,7 @@ implementation aligns cleanly with the codebase. It uses two instances of the ex
 synth with independent (α, β) gesture streams, summed, plus an optional weak
 shared-trachea coupling term. This is the only structurally honest way to render the
 biphonation class the fit currently must approximate with one source.
-- *Plugs into Birdy:* `syrinx` gets a `voices=2` parameter set. Parity tests + tail
+- *Plugs into Lyrebird:* `syrinx` gets a `voices=2` parameter set. Parity tests + tail
   check per AGENTS.md. The new fit axis is "second voice present (fitted, not assumed)",
   per the Zollinger per-syllable rule already in docs/07.
 
@@ -256,7 +259,7 @@ biphonation class the fit currently must approximate with one source.
   [WaveSongs](https://github.com/wavesongs) (verified, GPL-3.0) — Aguilera's maintained
   Python packaging of the Mindlin physical model with gesture inversion. GPL means
   read-for-understanding only.
-- *Plugs into Birdy:* each taxon is a new renderer module beside `syrinx`, selected per
+- *Plugs into Lyrebird:* each taxon is a new renderer module beside `syrinx`, selected per
   species at fit time (never per syllable). The honesty label names the model class
   ("dove membrane model", "three-source tracheophone model"), so the UI claim stays
   interpretable. Pre-registered judgement: the same §9.7 ablation on the fixed store,
@@ -266,10 +269,10 @@ biphonation class the fit currently must approximate with one source.
 just shipped, the next step is a sequence model over type-id strings. FinchGPT
 ([arXiv:2502.00344], already cited) is the template: a small transformer over syllable
 tokens reproducing zebra-finch syntax. The renderer chains fitted syllables with B1's
-respiratory gaps. The Birdy-specific point, and the one that decides whether it ships: the *generator stays a grammar over
+respiratory gaps. The Lyrebird-specific point, and the one that decides whether it ships: the *generator stays a grammar over
 physical syllables*. Every rendered song remains a list of interpretable parameter
 vectors, so the hard constraint holds.
-- *Plugs into Birdy:* `grammar.chunks` + `song-typing.json` → `song-gen` module →
+- *Plugs into Lyrebird:* `grammar.chunks` + `song-typing.json` → `song-gen` module →
   parity-tested renderer. UI label: "simulated sequence from measured transition
   statistics".
 

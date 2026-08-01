@@ -12,8 +12,20 @@ diversity over architecture, AVEX arXiv 2508.11845). It is also unambiguous
 that no post-hoc fix exists.
 
 **What we cannot do:** convolve with microphone impulse responses. That needs
-waveforms, and harvest deletes audio by design. What we have is the (32, 23)
-log-mel patch. A recorder chain's response on a log-mel is *additive, smooth in
+waveforms, and harvest deletes audio by default. What we have is the (32, 23)
+log-mel patch.
+
+> **Amended 2026-08-01: this constraint has been lifted, and the recipe below was
+> designed around it.** `harvest --keep-audio` may now keep the waveform where the
+> licence permits — 90.3 % of the production store's 10 184 recordings — so IR
+> convolution on real audio is available to whoever wants to try it. What has *not*
+> changed is the verdict: §17.3 and §17.5 closed this road during training, docs/23
+> §23.1.1 closed it post-hoc, and docs/23 §23.6.1 closed it from outside our own loss
+> entirely (Perch, 100× the scale and no realism term, still carries five sixths of the
+> recordist structure). §17.4's "invariance is a data action" stands, and the action is
+> **more recordists per species**, not a better augmentation. The patch-domain
+> simulation below remains the cheap arm; audio is no longer the reason it is the only
+> one. A recorder chain's response on a log-mel is *additive, smooth in
 frequency, constant within a recording*. We can simulate it exactly in the
 patch domain.
 
