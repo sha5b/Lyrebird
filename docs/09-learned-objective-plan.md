@@ -1,4 +1,4 @@
-# 9. Plan: learn the syllables, recognise new ones, and get a better objective for free
+# 9 — Learn the syllables, recognise new ones, and get a better objective for free
 
 **Status: built and measured. §9.7 has the results. They are not the results this document
 expected, so read that section before you act on anything below it.** In one line: the learned

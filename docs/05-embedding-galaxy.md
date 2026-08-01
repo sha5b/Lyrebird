@@ -1,4 +1,4 @@
-# 5. The 3D Embedding Galaxy — the "it jumps" visualization
+# 5 — The 3-D embedding galaxy: the part that jumps
 
 ## 5.1 Prior art
 

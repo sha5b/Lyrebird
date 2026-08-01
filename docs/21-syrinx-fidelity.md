@@ -1,10 +1,10 @@
-# 21 — Syrinx fidelity: did we implement the model correctly, and why does it still sound like a machine
+# 21 — Syrinx fidelity: the model is right, the fit is what fails
 
 Three questions, answered against the project's own measurements and the canonical
 literature. Nothing here is re-derived. Every internal number is cited to the doc or
 session that measured it. Every external claim carries its paper.
 
-## 21.1 The correctness verdict: the model is right; the failures are elsewhere
+## 21.1 The correctness verdict: the model is right, and the failures are elsewhere
 
 ### Which model class ours is
 
@@ -148,7 +148,7 @@ Every row is pinned by a number the project already owns.
 | **Flute/organ purity** — a whistle too clean to be an animal | The tonal-regime pin: every syllable at `beta ≈ 1`, SCI tail amputated (1.4 % vs 15.6 % above 1.5; 0 % vs 5.3 % above 3), spectral flatness three orders low (0.0005 vs 0.044). Real labial motion at low tension is a skewed, pulse-like waveform with rich harmonics (Fee et al. 1998, *Nature* 395:67–71); the SNILC regime that produces it was unreachable until `gammaScale` + the 0.002 table | docs/08 §8.1a |
 | **"A sine with an organ envelope"** — authored one-tone calls | Authored inventory carried `noise=0, rough=0, timbre=pure` while the same bird's learned types measure noise 0.05–0.25 and rough up to 0.65. docrefit shipped a measured texture to 14/15 (owl `hooLong` noise 0.05 / rough 0.65, +0.052; median +0.148) — and the honest caveat is that median cosine after is 0.270: texture is a real but modest move | docs/16 §16.4 |
 | **Metronomic** — the same note, identical, every time | No physiological micro-variation: the ODE is deterministic, the envelope a fixed 8 ms attack + exponential + 6 ms release, and variation exists only per *variant* (`jitter_syllable`, corpus-level). Real birdsong has measured rendition-to-rendition fundamental-frequency CV of ~1 % even in crystallised adult song (Tumer & Brainard 2007, *Nature* 450:1240–1244, Bengalese finch) and slow within-day drift (Wood et al. 2013, *PLoS ONE* 8:e82327); and noise on the *tension* parameter is required for the model's own output to drive the bird's song-selective neurons — intermediate noise optimal, zero noise failing (Amador & Mindlin 2021, *Front. Neurosci.* 15:647978). Birdy's `rough` implements exactly that mechanism but only as one fitted constant depth per type — a static dose, not a living gesture | docs/08 §8.1a (fields); `syrinx.py` `rough` docstring |
-| **No loudness life** — loud notes don't brighten, onsets arrive pre-shaped | The tract is static per syllable: formant coefficients computed once, nothing couples pressure to filter. Real birds articulate per note — beak gape acts as a high-shelf on 4–7.5 kHz, `A = −5 + 32·log(B)` (Nelson et al. 2005, cited above), gape correlates with fundamental frequency in zebra finch song (Ohms et al. 2010, *PLoS ONE* 5:e11923) and tracks trill rate/frequency trade-offs in Darwin's finches (Podos, Southall & Rossi-Santos 2004, *J. Exp. Biol.* 207:607–619). And the envelope is an output *gain*: dividing by ampPP removes level from the ODE by design, so pressure shapes timbre only through `alpha` — the √ps multiplicative tract drive that makes the tract genuinely driven harder exists only on the default-off respiration path | docs/08 §8.1 (the deliberate double envelope), §8.1a; docs/15 §1 |
+| **No loudness life** — loud notes do not brighten, onsets arrive pre-shaped | The tract is static per syllable: formant coefficients computed once, nothing couples pressure to filter. Real birds articulate per note — beak gape acts as a high-shelf on 4–7.5 kHz, `A = −5 + 32·log(B)` (Nelson et al. 2005, cited above), gape correlates with fundamental frequency in zebra finch song (Ohms et al. 2010, *PLoS ONE* 5:e11923) and tracks trill rate/frequency trade-offs in Darwin's finches (Podos, Southall & Rossi-Santos 2004, *J. Exp. Biol.* 207:607–619). And the envelope is an output *gain*: dividing by ampPP removes level from the ODE by design, so pressure shapes timbre only through `alpha` — the √ps multiplicative tract drive that makes the tract genuinely driven harder exists only on the default-off respiration path | docs/08 §8.1 (the deliberate double envelope), §8.1a; docs/15 §1 |
 | **Learned (machine-fitted) types sound worse than their cosine says** | The objective is the suspect: the cosine does not rank audible fit (r ≈ 0.1, docs/19 §19.2), so a type can climb the proxy into a spectrally wrong corner. Median resynthesis cosine across the 200 k learn is 0.650 with thin 2-recording species pulling it down (docs/16 §16.3); sub-0.3-cosine types are the audible floor, and most of them are an *unfixed* gap — the fricative shaped-noise win does not reach them (HANDOFF 2026-07-30: "most sub-0.3 types are a different, unfixed gap") | docs/19 §19.2/§19.5; docs/16 §16.3/§16.7 |
 
 Two reading notes. First, "noise" and "machine" are *opposite* failure modes of
@@ -260,7 +260,7 @@ The OEC's f0-tracking already justifies the moving band (Riede et al. 2006).
 
 Equation: one scalar shelf gain `s(t) = clip(a·ps(t) + b·f0(t)/f0_ref + c)` on
 a 4 kHz-high shelving filter — two fitted constants and a fixed corner, fully
-interpretable. Fixes "loud notes don't brighten". Fit from measurements:
+interpretable. Fixes "loud notes do not brighten". Fit from measurements:
 per-type regression of 4–7.5 kHz band energy against pressure/f0 in the
 harvest, shipped only where the measured coupling is significant and the bench
 wins. Risk: the static-formant chain is delicate (cascade order is

@@ -1,4 +1,4 @@
-# Birdy synth extensions — extracted mathematics, parameters, and integration notes
+# 15 — Synth extensions: the mathematics, the parameters, the integration notes
 
 ## 0. Baseline this extends (so the deltas are precise)
 
@@ -58,7 +58,7 @@ So "every reference implementation injects ẏ" is **only half true**: birdsongs
 
 ### Effect on syllable envelopes/attack (measured)
 
-The model reproduces not just syllabic rhythm but the **morphology of individual pressure gestures** from measured EMG (Fig. 2, all 5 birds, Fig. S1). Attack shape, sub-syllable pressure microstructure, and cross-syllable memory all emerge from the 2-state dynamics. Cross-syllable memory means that air left in the sacs after the previous syllable shapes the next onset. The Heaviside makes inspiration (mini-breath) fast and expiration shaped. Integration cost is trivial: τ ≥ 5 ms means no oversampling. Update the states once per output sample, in the same numba kernel / worklet loop. The forcing `f(t)` is the new creative gesture: expiratory pulses + half-sine mini-breaths. These are exactly the two Hartley & Suthers (1989) regimes: mini-breaths below ~30 Hz syllable rate, pulsatile expiration above.
+The model reproduces syllabic rhythm and, past that, the **morphology of individual pressure gestures** from measured EMG (Fig. 2, all 5 birds, Fig. S1). Attack shape, sub-syllable pressure microstructure, and cross-syllable memory all emerge from the 2-state dynamics. Cross-syllable memory means that air left in the sacs after the previous syllable shapes the next onset. The Heaviside makes inspiration (mini-breath) fast and expiration shaped. Integration cost is trivial: τ ≥ 5 ms means no oversampling. Update the states once per output sample, in the same numba kernel / worklet loop. The forcing `f(t)` is the new creative gesture: expiratory pulses + half-sine mini-breaths. These are exactly the two Hartley & Suthers (1989) regimes: mini-breaths below ~30 Hz syllable rate, pulsatile expiration above.
 
 **Integration note:** a new module `respiration.py` (2 ODE states, 5 params per species + forcing gesture) replaces `envelope()` in `render_plan`, with `ps(t) = clamp(k * p(t))`. It pairs with injecting the `ps`-scaled source at the tract input (one multiply, parity-tested). This is docs/13 B1, top priority. It also unblocks song-level rendering (cross-syllable timing lives here).
 

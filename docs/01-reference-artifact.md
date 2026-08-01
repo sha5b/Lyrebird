@@ -1,4 +1,4 @@
-# 1. The Reference Artifact — what the viral image actually depicts
+# 1 — The reference artifact: what the viral image actually depicts
 
 The image shows a dark 3D scatter plot floating above a photo of a nightingale.
 Colored clusters (magenta, blue, red, green) connect through thin trajectory

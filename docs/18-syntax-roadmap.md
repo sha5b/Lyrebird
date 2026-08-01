@@ -1,4 +1,4 @@
-# 18 — Syntax & pattern roadmap: from syllables to what they're saying
+# 18 — Syntax and pattern roadmap: from syllables toward meaning
 
 The translator roadmap's pattern half, made explicit. The rule throughout: **structure
 first, meaning only from playback** (CETI's lesson, and our §8.5 honesty rule). Every

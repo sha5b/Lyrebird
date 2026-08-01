@@ -1,4 +1,9 @@
-# 6. Proposed Architecture (SvelteKit), Risks, Build Order
+# 6 — Architecture, risks, build order
+
+Two halves and one direction. Python runs offline, measures a corpus and writes
+static assets. The SvelteKit app reads those assets and never calls back. The
+line between them is the 28-d descriptor of docs/08 §8.2, which both sides
+compute sample for sample alike.
 
 ## 6.1 Architecture
 

@@ -1,4 +1,4 @@
-# 8. Implementation Contract (v1)
+# 8 — The implementation contract (v1)
 
 This document is the interface between the two halves of Birdy:
 

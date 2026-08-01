@@ -1,4 +1,4 @@
-# 3. The Science of "Translating" Birds — what is actually possible
+# 3 — Translating birds: what is actually possible
 
 ## 3.1 The honest framing
 

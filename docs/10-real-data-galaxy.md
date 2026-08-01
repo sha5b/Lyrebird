@@ -1,4 +1,4 @@
-# 10. The galaxy becomes a measurement — real clouds, the learned space, live novelty, and label-free discovery
+# 10 — The galaxy becomes a measurement
 
 **Status: built and measured.** This document is the evidence record for the change that
 moved the galaxy off hand-set jitter and off the hand-designed descriptor. It follows the

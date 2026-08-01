@@ -1,4 +1,4 @@
-# 2. Procedural Bird Voice Engine — existing foundation we can reuse
+# 2 — The procedural voice engine we already have
 
 A SvelteKit codebase already exists on this machine, a sibling project whose main
 feature is unrelated 3D rendering. It contains a **fully procedural, sample-free,

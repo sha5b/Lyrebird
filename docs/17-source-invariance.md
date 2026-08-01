@@ -178,7 +178,7 @@ AUC/accuracy from the training report:
 Adopt the best passing weight iff all four hold. We document a wash or
 regression here, and the knob stays at zero.
 
-### 17.5.1 The numbers: NO ADOPTION — the factorization works, the target doesn't reach
+### 17.5.1 The numbers: NO ADOPTION — the factorization works, the target stays out of reach
 
 The sweep ran 2026-07-31 (driver `/tmp/birdy-inv/sweep.sh`, store a /tmp copy
 of `out/harvest`, seed 0, 236 recording classes over 22 species for the head).

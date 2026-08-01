@@ -75,7 +75,7 @@ The rest of the battery:
 ## 14.4 The warning the geometry section printed
 
 > source — a recording condition, not a bird — is the strongest relation in this
-> space; every other result is suspect until the representation is invariant to it.
+> space. Every other result is suspect until the representation is invariant to it.
 
 In the 32-d embedding, `source` kNN lift is **+0.488**, species +0.196 (species
 was +0.444 on the 36-species store). The variety ingest did what it was supposed

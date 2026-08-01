@@ -1,4 +1,4 @@
-# 7. Key References
+# 7 — Key references
 
 ## Decoding
 
@@ -49,7 +49,7 @@ Spectral richness comes from `beta`, not from the filter:
 
 - **Sitt, Amador, Goller & Mindlin, Phys Rev E 78:011905 (2008)** — *Dynamical origin of
   spectrally rich vocalizations in birdsong.* Oscillations born in a saddle-node-on-a-limit-
-  cycle are pulse-like and harmonically dense; those born in a Hopf are tonal. The spectral
+  cycle are pulse-like and harmonically dense. Those born in a Hopf are tonal. The spectral
   content index (SCI = spectral centroid ÷ f0) is a function of `beta` alone and is invariant
   to `gamma`. This is the finding §8.1a's `gammaScale` acts on.
 - Sitt et al., Phys Rev E 81:031927 (2010) — *Physiologically driven avian vocal
@@ -66,7 +66,7 @@ Spectral richness comes from `beta`, not from the filter:
 Noise belongs on tension, and is required:
 
 - **Amador & Mindlin, Front Neurosci 15:647978 (2021)** — matching the fundamental and the
-  filters "was not enough" to drive selective HVC neurons; noise on `beta` (labial tension)
+  filters "was not enough" to drive selective HVC neurons. Noise on `beta` (labial tension)
   had to be added, and an *intermediate* magnitude scored best. Directly why §8.1a's `rough`
   perturbs tension rather than pressure or the output.
 - Riede & Goller — *Peripheral mechanisms for vocal production in birds*: modulation below

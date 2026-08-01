@@ -1,4 +1,4 @@
-# 4. Synthetic Bird Voices — as scientific as possible
+# 4 — Synthetic bird voices, as scientific as possible
 
 ## 4.1 The biology that must drive the model
 
