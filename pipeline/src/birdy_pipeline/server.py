@@ -35,6 +35,22 @@ from typing import Any, Callable
 from . import harvest, learn
 from .corpus import load_inventory
 
+#: Ceiling on the fit's fork pool. The pool is measured bit-identical to the serial
+#: loop, so the only cost of more workers is memory — and memory is what took this
+#: machine down twice (AGENTS.md, the serial-execution rule). Eight is what the
+#: production fits have actually been run at.
+MAX_FIT_JOBS = 8
+
+
+def default_jobs() -> int:
+    """Workers for a fit started from the Learn tab.
+
+    Two cores are left for the server thread that is streaming the job log and answering
+    `/api/status` while the pool runs — a fit that starves its own progress reporting
+    reads, from the tab, as a hang.
+    """
+    return max(1, min(MAX_FIT_JOBS, (os.cpu_count() or 2) - 2))
+
 BIND_HOST = "127.0.0.1"  # not configurable, see the module docstring
 DEFAULT_PORT = 8781
 LOG_LINES = 400
@@ -424,8 +440,23 @@ class Pipeline:
         label = f"from {from_dir}" if from_dir else f"{species or 'all species'} x{per_species}"
         return self.start("harvest", label + (" (dry run)" if dry_run else ""), run)
 
-    def _fit(self, job: Job, types: int, learned_only: bool = False, invert: bool = True) -> None:
-        """Fit syllable types and syntax from the store. Shared by `learn` and `loop`."""
+    def _fit(
+        self,
+        job: Job,
+        types: int,
+        learned_only: bool = False,
+        invert: bool = True,
+        jobs: int | None = None,
+    ) -> None:
+        """Fit syllable types and syntax from the store. Shared by `learn` and `loop`.
+
+        `jobs` is the fork pool of `learn._fit_species_parallel` — the same pool the CLI
+        runs with, and the reason this defaults to it rather than to one: a fit is
+        thousands of small independent per-species fits, the pool is measured
+        bit-identical to the serial loop, and it turned ~3 h into ~15 min on the
+        production store (docs/16). The Learn tab ran serial until 2026-08-01, so the
+        button that is meant to keep learning was the slowest way to do it.
+        """
         store = harvest.HarvestStore(self.store_path)
         if not store.syllables:
             raise RuntimeError("no syllable observations yet — harvest first")
@@ -503,6 +534,7 @@ class Pipeline:
             discovered=discovered,
             typing=typing,
             on_species=_on_species,
+            jobs=default_jobs() if jobs is None else max(1, int(jobs)),
         )
         # The label-free tail, identical to `cmd_learn`'s — this is the fit the ingested
         # (unlabelled) audio actually arrives through, so it must not drift from the
@@ -545,15 +577,46 @@ class Pipeline:
                 json.dumps({"version": 1, "entries": song_rows}, indent=1) + "\n",
                 encoding="utf-8",
             )
+        self._refresh_embeddings(trained)
+
+    def _refresh_embeddings(self, trained: Any) -> None:
+        """Rewrite `embeddings.f32` for the store the fit just re-keyed.
+
+        **A fit that leaves stale embeddings behind decides the next build's space for
+        it.** `build --space auto` takes the critic's 32-d embedding only when the
+        store's sidecar exists and matches, and the descriptor space otherwise — so a
+        Learn tab that never wrote the sidecar silently shipped a 28-d galaxy where the
+        command-line cycle ships the measurably better 32-d one (docs/09 §9.7: typing in
+        it moved species placement 38.4 % -> 51.7 %). Writing it here also means the
+        build does not re-run the network the fit has just run. Failure is logged, never
+        fatal: the embeddings are an optimisation of the next step, not part of this one.
+        """
+        if trained is None or self.critic_path is None or not self.critic_path.exists():
+            return
+        try:
+            from .cli import write_store_embeddings
+
+            store = harvest.HarvestStore(self.store_path)
+            write_store_embeddings(store, trained, self.critic_path, log=harvest.log)
+        except Exception as exc:  # noqa: BLE001 - a stale sidecar must not fail a good fit
+            harvest.log(
+                f"could not refresh the store's embeddings ({exc}) — the next build "
+                "will embed on the spot, or fall back to the descriptor space"
+            )
 
     def learn(self, body: dict[str, Any]) -> dict[str, Any]:
         types = int(body.get("types", learn.DEFAULT_TYPES))
         learned_only = bool(body.get("learnedOnly"))
+        jobs = body.get("jobs")
+        jobs = default_jobs() if jobs is None else max(1, int(jobs))
 
         def run(job: Job) -> None:
-            self._fit(job, types, learned_only, invert=not bool(body.get("noInvert")))
+            self._fit(
+                job, types, learned_only,
+                invert=not bool(body.get("noInvert")), jobs=jobs,
+            )
 
-        detail = f"{types} types per species"
+        detail = f"{types} types per species, {jobs} jobs"
         return self.start("learn", detail + (" (learned only)" if learned_only else ""), run)
 
     def ingest(self, audio: bytes, species_id: str, name: str) -> dict[str, Any]:
@@ -1117,10 +1180,18 @@ class Pipeline:
         def run(job: Job) -> None:
             from .cli import build_parser, cmd_build
 
+            # `--no-relations` skips the geometry battery, not the shipped asset:
+            # relations.json is written from the store's embeddings either way
+            # (cmd_build). The battery is the phase that made a debug build run 33
+            # minutes at full CPU, and a tab build ran it every time — so the button
+            # that is meant to keep learning paid for an analysis nobody reads from
+            # here. `critic groupings` runs it deliberately, when it is the question.
             argv = ["build", "--source", source, "--out", str(self.out_path),
                     "--no-compare-projections",
                     "--clustering", clustering,
                     "--min-cluster-size", str(min_cluster_size)]
+            if not bool(body.get("relations")):
+                argv += ["--no-relations"]
             if use_learned:
                 argv += ["--inventory", str(self.learned_path)]
             else:
@@ -1138,6 +1209,18 @@ class Pipeline:
                 return
             if code != 0:
                 raise RuntimeError(f"build exited {code}")
+            # The command-line cycle ends in `verify`; until 2026-08-01 the tab ended in
+            # "wrote the assets" and shipped them unchecked. `verify` reads what was just
+            # written — manifest against files, points against positions, centroids
+            # against clusters — and its failure is the job's failure, because assets
+            # that do not verify are what the app loads next.
+            from .cli import verify
+
+            if verify(self.out_path) != 0:
+                raise RuntimeError(
+                    f"the build wrote {self.out_path} but it does not verify — "
+                    "the assets on disk are not safe to load"
+                )
 
         parts = [source]
         if use_learned:

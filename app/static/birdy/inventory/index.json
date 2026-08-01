@@ -1,6 +1,6 @@
 {
  "version": 1,
- "note": "Canonical Birdy inventory. Single source of truth for the offline Python pipeline (corpus rendering, galaxy) and the browser syrinx engine. Contours are [timeFraction, Hz]. Functions marked confidence=experimental are backed by playback experiments; documented = described in the literature; inferred = plausible but not experimentally established.  Extended with syllable types fitted to field recordings: their ids start with `L`, they carry the cosine between their resynthesis and the audio they came from, and none of them has a documented function.",
+ "note": "Learned inventory. Syllable parameters are fitted to real recordings and carry the cosine between their resynthesis and the audio they came from; no syllable here has a documented function, and every sequence is our composition in a measured syntax.",
  "refs": {
   "suzuki2016": "Suzuki TN, Wheatcroft D, Griesser M (2016) Experimental evidence for compositional syntax in bird calls. Nature Communications 7:10986.",
   "suzuki2014": "Suzuki TN (2014) Communication about predator type by a bird using discrete, graded and combinatorial variation in alarm calls. Animal Behaviour 87:59-65.",
@@ -24,185 +24,87 @@
  },
  "species": [
   {
-   "id": "parus_minor",
-   "common": "Japanese great tit",
-   "bank": "jp",
-   "types": 6,
-   "songs": 5
-  },
-  {
-   "id": "poecile_atricapillus",
-   "common": "Black-capped chickadee",
-   "bank": "west",
-   "types": 5,
-   "songs": 3
-  },
-  {
-   "id": "perisoreus_infaustus",
-   "common": "Siberian jay",
-   "bank": "east",
-   "types": 3,
-   "songs": 2
-  },
-  {
-   "id": "lonchura_striata",
-   "common": "Bengalese finch",
-   "bank": "lab",
-   "types": 6,
-   "songs": 1
-  },
-  {
-   "id": "taeniopygia_guttata",
-   "common": "Zebra finch",
-   "bank": "lab",
-   "types": 5,
-   "songs": 2
-  },
-  {
-   "id": "horornis_diphone",
-   "common": "Japanese bush warbler (uguisu)",
-   "bank": "jp",
-   "types": 11,
-   "songs": 2
-  },
-  {
-   "id": "turdus_merula",
-   "common": "Common blackbird",
-   "bank": "west",
-   "types": 3,
-   "songs": 1
-  },
-  {
-   "id": "luscinia_megarhynchos",
-   "common": "Common nightingale",
-   "bank": "west",
-   "types": 4,
-   "songs": 2
-  },
-  {
-   "id": "troglodytes_troglodytes",
-   "common": "Eurasian wren",
-   "bank": "west",
-   "types": 2,
-   "songs": 1
-  },
-  {
-   "id": "cuculus_canorus",
-   "common": "Common cuckoo",
-   "bank": "east",
-   "types": 2,
-   "songs": 1
-  },
-  {
-   "id": "strix_aluco",
-   "common": "Tawny owl",
-   "bank": "east",
-   "types": 10,
-   "songs": 2
-  },
-  {
-   "id": "zosterops_japonicus",
-   "common": "Japanese white-eye (mejiro)",
-   "bank": "jp",
-   "types": 3,
-   "songs": 1
-  },
-  {
-   "id": "diglossa_brunneiventris",
-   "common": "Black-throated Flowerpiercer",
+   "id": "hirundo_rustica",
+   "common": "Barn Swallow",
    "bank": "learned",
    "types": 8,
    "songs": 1
   },
   {
-   "id": "psarocolius_bifasciatus",
-   "common": "Olive Oropendola",
+   "id": "sclateria_naevia",
+   "common": "Silvered Antbird",
    "bank": "learned",
-   "types": 8,
+   "types": 24,
    "songs": 1
   },
   {
-   "id": "dacelo_leachii",
-   "common": "Blue-winged Kookaburra",
+   "id": "colibri_thalassinus",
+   "common": "Mexican Violetear",
    "bank": "learned",
-   "types": 8,
+   "types": 64,
    "songs": 1
   },
   {
-   "id": "conirostrum_sitticolor",
-   "common": "Blue-backed Conebill",
+   "id": "jynx_torquilla",
+   "common": "Eurasian Wryneck",
+   "bank": "learned",
+   "types": 41,
+   "songs": 1
+  },
+  {
+   "id": "curruca_nisoria",
+   "common": "Barred Warbler",
    "bank": "learned",
    "types": 14,
    "songs": 1
   },
   {
-   "id": "celeus_flavescens",
-   "common": "Blond-crested Woodpecker",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "cyanomitra_olivacea",
-   "common": "Olive Sunbird",
+   "id": "scytalopus_vicinior",
+   "common": "Nari\u00f1o Tapaculo",
    "bank": "learned",
    "types": 14,
    "songs": 1
   },
   {
-   "id": "poecile_rufescens",
-   "common": "Chestnut-backed Chickadee",
+   "id": "serinus_canicollis",
+   "common": "Cape Canary",
    "bank": "learned",
    "types": 8,
    "songs": 1
   },
   {
-   "id": "prunella_modularis",
-   "common": "Dunnock",
-   "bank": "learned",
-   "types": 17,
-   "songs": 1
-  },
-  {
-   "id": "mimus_saturninus",
-   "common": "Chalk-browed Mockingbird",
+   "id": "larvivora_sibilans",
+   "common": "Rufous-tailed Robin",
    "bank": "learned",
    "types": 8,
    "songs": 1
   },
   {
-   "id": "phyllastrephus_terrestris",
-   "common": "Terrestrial Brownbul",
+   "id": "lanius_cristatus",
+   "common": "Brown Shrike",
    "bank": "learned",
-   "types": 8,
+   "types": 14,
+   "songs": 1
+  },
+  {
+   "id": "semnornis_ramphastinus",
+   "common": "Toucan Barbet",
+   "bank": "learned",
+   "types": 24,
+   "songs": 1
+  },
+  {
+   "id": "psarocolius_wagleri",
+   "common": "Chestnut-headed Oropendola",
+   "bank": "learned",
+   "types": 14,
    "songs": 1
   },
   {
    "id": "luscinia_svecica",
    "common": "Bluethroat",
    "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "grallaria_blakei",
-   "common": "Chestnut Antpitta",
-   "bank": "learned",
-   "types": 14,
-   "songs": 1
-  },
-  {
-   "id": "myrmothera_campanisona",
-   "common": "Thrush-like Antpitta",
-   "bank": "learned",
-   "types": 17,
-   "songs": 1
-  },
-  {
-   "id": "odontophorus_hyperythrus",
-   "common": "Chestnut Wood Quail",
-   "bank": "learned",
-   "types": 14,
+   "types": 64,
    "songs": 1
   },
   {
@@ -213,45 +115,66 @@
    "songs": 1
   },
   {
-   "id": "micrastur_mirandollei",
-   "common": "Slaty-backed Forest Falcon",
+   "id": "phyllastrephus_terrestris",
+   "common": "Terrestrial Brownbul",
    "bank": "learned",
-   "types": 8,
+   "types": 41,
    "songs": 1
   },
   {
-   "id": "turdus_litsitsirupa",
-   "common": "Groundscraper Thrush",
+   "id": "grallaria_blakei",
+   "common": "Chestnut Antpitta",
    "bank": "learned",
    "types": 14,
    "songs": 1
   },
   {
-   "id": "clytoctantes_alixii",
-   "common": "Recurve-billed Bushbird",
+   "id": "thamnophilus_punctatus",
+   "common": "Northern Slaty-Antshrike",
+   "bank": "learned",
+   "types": 41,
+   "songs": 1
+  },
+  {
+   "id": "pardirallus_sanguinolentus",
+   "common": "Plumbeous Rail",
+   "bank": "learned",
+   "types": 14,
+   "songs": 1
+  },
+  {
+   "id": "passer_montanus",
+   "common": "Eurasian Tree Sparrow",
+   "bank": "learned",
+   "types": 24,
+   "songs": 1
+  },
+  {
+   "id": "micrastur_semitorquatus",
+   "common": "Collared Forest Falcon",
    "bank": "learned",
    "types": 8,
    "songs": 1
   },
   {
-   "id": "perdix_perdix",
-   "common": "Grey Partridge",
+   "id": "calamospiza_melanocorys",
+   "common": "Lark Bunting",
    "bank": "learned",
-   "types": 8,
+   "types": 64,
    "songs": 1
   },
   {
-   "id": "vanellus_vanellus",
-   "common": "Northern Lapwing",
+   "id": "cercomacroides_serva",
+   "common": "Black Antbird",
    "bank": "learned",
-   "types": 8,
+   "types": 41,
    "songs": 1
   },
   {
-   "id": "crypturellus_cinereus",
-   "common": "Cinereous Tinamou",
+   "id": "dacelo_leachii",
+   "common": "Blue-winged Kookaburra",
    "bank": "learned",
-   "types": 8,
+   "types": 41,
    "songs": 1
   },
   {
@@ -265,154 +188,7 @@
    "id": "megascops_choliba",
    "common": "Tropical Screech-Owl",
    "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "patagona_gigas",
-   "common": "Giant Hummingbird",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "anhima_cornuta",
-   "common": "Horned Screamer",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "larvivora_sibilans",
-   "common": "Rufous-tailed Robin",
-   "bank": "learned",
-   "types": 14,
-   "songs": 1
-  },
-  {
-   "id": "amazilia_tzacatl",
-   "common": "Rufous-tailed Hummingbird",
-   "bank": "learned",
-   "types": 17,
-   "songs": 1
-  },
-  {
-   "id": "poecile_cinctus",
-   "common": "Grey-headed Chickadee",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "oriolus_oriolus",
-   "common": "Eurasian Golden Oriole",
-   "bank": "learned",
-   "types": 14,
-   "songs": 1
-  },
-  {
-   "id": "tringa_brevipes",
-   "common": "Grey-tailed Tattler",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "galerida_malabarica",
-   "common": "Malabar Lark",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "calamospiza_melanocorys",
-   "common": "Lark Bunting",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "curruca_nisoria",
-   "common": "Barred Warbler",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "micrastur_semitorquatus",
-   "common": "Collared Forest Falcon",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "odontophorus_gujanensis",
-   "common": "Marbled Wood Quail",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "pitta_maxima",
-   "common": "Ivory-breasted Pitta",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "nicator_chloris",
-   "common": "Western Nicator",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "sclateria_naevia",
-   "common": "Silvered Antbird",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "larus_argentatus",
-   "common": "European Herring Gull",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "ixobrychus_exilis",
-   "common": "Least Bittern",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "myrmothera_berlepschi",
-   "common": "Amazonian Antpitta",
-   "bank": "learned",
-   "types": 14,
-   "songs": 1
-  },
-  {
-   "id": "chiroxiphia_pareola",
-   "common": "Blue-backed Manakin",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "zosterops_erythropleurus",
-   "common": "Chestnut-flanked White-eye",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "zosterops_flavilateralis",
-   "common": "Pale White-eye",
-   "bank": "learned",
-   "types": 16,
+   "types": 24,
    "songs": 1
   },
   {
@@ -423,43 +199,197 @@
    "songs": 1
   },
   {
+   "id": "conirostrum_sitticolor",
+   "common": "Blue-backed Conebill",
+   "bank": "learned",
+   "types": 64,
+   "songs": 1
+  },
+  {
+   "id": "poecile_palustris",
+   "common": "Marsh Tit",
+   "bank": "learned",
+   "types": 41,
+   "songs": 1
+  },
+  {
+   "id": "ortalis_canicollis",
+   "common": "Chaco Chachalaca",
+   "bank": "learned",
+   "types": 24,
+   "songs": 1
+  },
+  {
+   "id": "sylvietta_rufescens",
+   "common": "Cape Crombec",
+   "bank": "learned",
+   "types": 24,
+   "songs": 1
+  },
+  {
+   "id": "myrmothera_campanisona",
+   "common": "Thrush-like Antpitta",
+   "bank": "learned",
+   "types": 14,
+   "songs": 1
+  },
+  {
+   "id": "cyanomitra_olivacea",
+   "common": "Olive Sunbird",
+   "bank": "learned",
+   "types": 14,
+   "songs": 1
+  },
+  {
+   "id": "odontophorus_gujanensis",
+   "common": "Marbled Wood Quail",
+   "bank": "learned",
+   "types": 14,
+   "songs": 1
+  },
+  {
+   "id": "chlorophonia_elegantissima",
+   "common": "Elegant Euphonia",
+   "bank": "learned",
+   "types": 24,
+   "songs": 1
+  },
+  {
+   "id": "nicator_chloris",
+   "common": "Western Nicator",
+   "bank": "learned",
+   "types": 41,
+   "songs": 1
+  },
+  {
+   "id": "mimus_saturninus",
+   "common": "Chalk-browed Mockingbird",
+   "bank": "learned",
+   "types": 41,
+   "songs": 1
+  },
+  {
+   "id": "prunella_modularis",
+   "common": "Dunnock",
+   "bank": "learned",
+   "types": 64,
+   "songs": 1
+  },
+  {
+   "id": "larus_argentatus",
+   "common": "European Herring Gull",
+   "bank": "learned",
+   "types": 24,
+   "songs": 1
+  },
+  {
+   "id": "gampsonyx_swainsonii",
+   "common": "Pearl Kite",
+   "bank": "learned",
+   "types": 8,
+   "songs": 1
+  },
+  {
+   "id": "anhima_cornuta",
+   "common": "Horned Screamer",
+   "bank": "learned",
+   "types": 14,
+   "songs": 1
+  },
+  {
+   "id": "syndactyla_subalaris",
+   "common": "Lineated Foliage-gleaner",
+   "bank": "learned",
+   "types": 24,
+   "songs": 1
+  },
+  {
+   "id": "delichon_urbicum",
+   "common": "Common House Martin",
+   "bank": "learned",
+   "types": 24,
+   "songs": 1
+  },
+  {
+   "id": "arremon_virenticeps",
+   "common": "Green-striped Brushfinch",
+   "bank": "learned",
+   "types": 8,
+   "songs": 1
+  },
+  {
+   "id": "odontophorus_hyperythrus",
+   "common": "Chestnut Wood Quail",
+   "bank": "learned",
+   "types": 14,
+   "songs": 1
+  },
+  {
+   "id": "psilopogon_asiaticus",
+   "common": "Blue-throated Barbet",
+   "bank": "learned",
+   "types": 8,
+   "songs": 1
+  },
+  {
+   "id": "pitta_maxima",
+   "common": "Ivory-breasted Pitta",
+   "bank": "learned",
+   "types": 14,
+   "songs": 1
+  },
+  {
    "id": "catharus_fuscater",
    "common": "Slaty-backed Nightingale-Thrush",
    "bank": "learned",
-   "types": 8,
+   "types": 41,
    "songs": 1
   },
   {
-   "id": "cuculus_solitarius",
-   "common": "Red-chested Cuckoo",
+   "id": "malacopteron_affine",
+   "common": "Sooty-capped Babbler",
    "bank": "learned",
-   "types": 16,
+   "types": 64,
    "songs": 1
   },
   {
-   "id": "pyrrhula_pyrrhula",
-   "common": "Eurasian Bullfinch",
-   "bank": "learned",
-   "types": 14,
-   "songs": 1
-  },
-  {
-   "id": "diuca_diuca",
-   "common": "Common Diuca-Finch",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "serinus_canicollis",
-   "common": "Cape Canary",
+   "id": "dichrozona_cincta",
+   "common": "Banded Antbird",
    "bank": "learned",
    "types": 14,
    "songs": 1
   },
   {
-   "id": "strix_leptogrammica",
-   "common": "Brown Wood Owl",
+   "id": "clytoctantes_alixii",
+   "common": "Recurve-billed Bushbird",
+   "bank": "learned",
+   "types": 8,
+   "songs": 1
+  },
+  {
+   "id": "oriolus_oriolus",
+   "common": "Eurasian Golden Oriole",
+   "bank": "learned",
+   "types": 41,
+   "songs": 1
+  },
+  {
+   "id": "euphonia_violacea",
+   "common": "Violaceous Euphonia",
+   "bank": "learned",
+   "types": 41,
+   "songs": 1
+  },
+  {
+   "id": "synallaxis_azarae",
+   "common": "Azara's Spinetail",
+   "bank": "learned",
+   "types": 24,
+   "songs": 1
+  },
+  {
+   "id": "gallinago_gallinago",
+   "common": "Common Snipe",
    "bank": "learned",
    "types": 8,
    "songs": 1
@@ -468,26 +398,194 @@
    "id": "cnipodectes_subbrunneus",
    "common": "Brownish Flycatcher",
    "bank": "learned",
+   "types": 14,
+   "songs": 1
+  },
+  {
+   "id": "anisognathus_somptuosus",
+   "common": "Blue-winged Mountain-Tanager",
+   "bank": "learned",
+   "types": 41,
+   "songs": 1
+  },
+  {
+   "id": "amazilia_tzacatl",
+   "common": "Rufous-tailed Hummingbird",
+   "bank": "learned",
+   "types": 41,
+   "songs": 1
+  },
+  {
+   "id": "micrastur_mirandollei",
+   "common": "Slaty-backed Forest Falcon",
+   "bank": "learned",
    "types": 8,
+   "songs": 1
+  },
+  {
+   "id": "psarocolius_bifasciatus",
+   "common": "Olive Oropendola",
+   "bank": "learned",
+   "types": 24,
+   "songs": 1
+  },
+  {
+   "id": "chiroxiphia_pareola",
+   "common": "Blue-backed Manakin",
+   "bank": "learned",
+   "types": 41,
+   "songs": 1
+  },
+  {
+   "id": "myiothlypis_chrysogaster",
+   "common": "Golden-bellied Warbler",
+   "bank": "learned",
+   "types": 8,
+   "songs": 1
+  },
+  {
+   "id": "crypturellus_cinereus",
+   "common": "Cinereous Tinamou",
+   "bank": "learned",
+   "types": 14,
+   "songs": 1
+  },
+  {
+   "id": "ixobrychus_exilis",
+   "common": "Least Bittern",
+   "bank": "learned",
+   "types": 14,
+   "songs": 1
+  },
+  {
+   "id": "atlapetes_albinucha",
+   "common": "White-naped Brush-Finch",
+   "bank": "learned",
+   "types": 24,
+   "songs": 1
+  },
+  {
+   "id": "celeus_flavescens",
+   "common": "Blond-crested Woodpecker",
+   "bank": "learned",
+   "types": 24,
+   "songs": 1
+  },
+  {
+   "id": "niltava_vivida",
+   "common": "Vivid Niltava",
+   "bank": "learned",
+   "types": 14,
+   "songs": 1
+  },
+  {
+   "id": "strix_aluco",
+   "common": "Tawny owl",
+   "bank": "east",
+   "types": 14,
+   "songs": 1
+  },
+  {
+   "id": "diuca_diuca",
+   "common": "Common Diuca-Finch",
+   "bank": "learned",
+   "types": 64,
+   "songs": 1
+  },
+  {
+   "id": "pyrrhula_pyrrhula",
+   "common": "Eurasian Bullfinch",
+   "bank": "learned",
+   "types": 41,
+   "songs": 1
+  },
+  {
+   "id": "picumnus_rufiventris",
+   "common": "Rufous-breasted Piculet",
+   "bank": "learned",
+   "types": 14,
+   "songs": 1
+  },
+  {
+   "id": "sitta_ledanti",
+   "common": "Algerian Nuthatch",
+   "bank": "learned",
+   "types": 14,
    "songs": 1
   },
   {
    "id": "numenius_americanus",
    "common": "Long-billed Curlew",
    "bank": "learned",
-   "types": 8,
+   "types": 14,
    "songs": 1
   },
   {
-   "id": "dichrozona_cincta",
-   "common": "Banded Antbird",
+   "id": "perdix_perdix",
+   "common": "Grey Partridge",
    "bank": "learned",
    "types": 8,
    "songs": 1
   },
   {
-   "id": "hesperoburhinus_bistriatus",
-   "common": "Double-striped Thick-knee",
+   "id": "morococcyx_erythropygus",
+   "common": "Lesser Ground-Cuckoo",
+   "bank": "learned",
+   "types": 24,
+   "songs": 1
+  },
+  {
+   "id": "tringa_brevipes",
+   "common": "Grey-tailed Tattler",
+   "bank": "learned",
+   "types": 8,
+   "songs": 1
+  },
+  {
+   "id": "vanellus_vanellus",
+   "common": "Northern Lapwing",
+   "bank": "learned",
+   "types": 24,
+   "songs": 1
+  },
+  {
+   "id": "diglossa_brunneiventris",
+   "common": "Black-throated Flowerpiercer",
+   "bank": "learned",
+   "types": 24,
+   "songs": 1
+  },
+  {
+   "id": "synallaxis_cabanisi",
+   "common": "Cabanis's Spinetail",
+   "bank": "learned",
+   "types": 8,
+   "songs": 1
+  },
+  {
+   "id": "fulica_atra",
+   "common": "Eurasian Coot",
+   "bank": "learned",
+   "types": 24,
+   "songs": 1
+  },
+  {
+   "id": "galerida_malabarica",
+   "common": "Malabar Lark",
+   "bank": "learned",
+   "types": 8,
+   "songs": 1
+  },
+  {
+   "id": "leucopternis_melanops",
+   "common": "Black-faced Hawk",
+   "bank": "learned",
+   "types": 8,
+   "songs": 1
+  },
+  {
+   "id": "turdus_mupinensis",
+   "common": "Chinese Thrush",
    "bank": "learned",
    "types": 8,
    "songs": 1
@@ -500,78 +598,22 @@
    "songs": 1
   },
   {
-   "id": "psarocolius_wagleri",
-   "common": "Chestnut-headed Oropendola",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "synallaxis_cabanisi",
-   "common": "Cabanis's Spinetail",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "scytalopus_vicinior",
-   "common": "Nari\u00f1o Tapaculo",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "euphonia_violacea",
-   "common": "Violaceous Euphonia",
+   "id": "platalea_ajaja",
+   "common": "Roseate Spoonbill",
    "bank": "learned",
    "types": 14,
    "songs": 1
   },
   {
-   "id": "myiothlypis_chrysogaster",
-   "common": "Golden-bellied Warbler",
+   "id": "xenotriccus_callizonus",
+   "common": "Belted Flycatcher",
    "bank": "learned",
    "types": 8,
    "songs": 1
   },
   {
-   "id": "turdus_mupinensis",
-   "common": "Chinese Thrush",
-   "bank": "learned",
-   "types": 14,
-   "songs": 1
-  },
-  {
-   "id": "passer_montanus",
-   "common": "Eurasian Tree Sparrow",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "sylvia_communis",
-   "common": "Common Whitethroat",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "morococcyx_erythropygus",
-   "common": "Lesser Ground-Cuckoo",
-   "bank": "learned",
-   "types": 14,
-   "songs": 1
-  },
-  {
-   "id": "arremon_virenticeps",
-   "common": "Green-striped Brushfinch",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "malacopteron_affine",
-   "common": "Sooty-capped Babbler",
+   "id": "patagona_gigas",
+   "common": "Giant Hummingbird",
    "bank": "learned",
    "types": 8,
    "songs": 1
@@ -584,15 +626,85 @@
    "songs": 1
   },
   {
-   "id": "gampsonyx_swainsonii",
-   "common": "Pearl Kite",
+   "id": "turdus_litsitsirupa",
+   "common": "Groundscraper Thrush",
+   "bank": "learned",
+   "types": 24,
+   "songs": 1
+  },
+  {
+   "id": "ramphocelus_sanguinolentus",
+   "common": "Crimson-collared Tanager",
    "bank": "learned",
    "types": 8,
    "songs": 1
   },
   {
-   "id": "sylvietta_rufescens",
-   "common": "Cape Crombec",
+   "id": "zosterops_flavilateralis",
+   "common": "Pale White-eye",
+   "bank": "learned",
+   "types": 8,
+   "songs": 1
+  },
+  {
+   "id": "poecile_rufescens",
+   "common": "Chestnut-backed Chickadee",
+   "bank": "learned",
+   "types": 8,
+   "songs": 1
+  },
+  {
+   "id": "horornis_diphone",
+   "common": "Japanese bush warbler (uguisu)",
+   "bank": "jp",
+   "types": 8,
+   "songs": 1
+  },
+  {
+   "id": "poecile_cinctus",
+   "common": "Grey-headed Chickadee",
+   "bank": "learned",
+   "types": 8,
+   "songs": 1
+  },
+  {
+   "id": "myrmothera_berlepschi",
+   "common": "Amazonian Antpitta",
+   "bank": "learned",
+   "types": 14,
+   "songs": 1
+  },
+  {
+   "id": "zosterops_erythropleurus",
+   "common": "Chestnut-flanked White-eye",
+   "bank": "learned",
+   "types": 8,
+   "songs": 1
+  },
+  {
+   "id": "cuculus_solitarius",
+   "common": "Red-chested Cuckoo",
+   "bank": "learned",
+   "types": 16,
+   "songs": 1
+  },
+  {
+   "id": "strix_leptogrammica",
+   "common": "Brown Wood Owl",
+   "bank": "learned",
+   "types": 8,
+   "songs": 1
+  },
+  {
+   "id": "hesperoburhinus_bistriatus",
+   "common": "Double-striped Thick-knee",
+   "bank": "learned",
+   "types": 8,
+   "songs": 1
+  },
+  {
+   "id": "sylvia_communis",
+   "common": "Common Whitethroat",
    "bank": "learned",
    "types": 8,
    "songs": 1
@@ -609,188 +721,6 @@
    "common": "Sri Lanka White-eye",
    "bank": "learned",
    "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "fulica_atra",
-   "common": "Eurasian Coot",
-   "bank": "learned",
-   "types": 14,
-   "songs": 1
-  },
-  {
-   "id": "cercomacroides_serva",
-   "common": "Black Antbird",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "chlorophonia_elegantissima",
-   "common": "Elegant Euphonia",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "synallaxis_azarae",
-   "common": "Azara's Spinetail",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "anisognathus_somptuosus",
-   "common": "Blue-winged Mountain-Tanager",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "delichon_urbicum",
-   "common": "Common House Martin",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "sitta_ledanti",
-   "common": "Algerian Nuthatch",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "jynx_torquilla",
-   "common": "Eurasian Wryneck",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "niltava_vivida",
-   "common": "Vivid Niltava",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "ortalis_canicollis",
-   "common": "Chaco Chachalaca",
-   "bank": "learned",
-   "types": 14,
-   "songs": 1
-  },
-  {
-   "id": "hirundo_rustica",
-   "common": "Barn Swallow",
-   "bank": "learned",
-   "types": 15,
-   "songs": 1
-  },
-  {
-   "id": "poecile_palustris",
-   "common": "Marsh Tit",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "atlapetes_albinucha",
-   "common": "White-naped Brush-Finch",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "semnornis_ramphastinus",
-   "common": "Toucan Barbet",
-   "bank": "learned",
-   "types": 14,
-   "songs": 1
-  },
-  {
-   "id": "xenotriccus_callizonus",
-   "common": "Belted Flycatcher",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "leucopternis_melanops",
-   "common": "Black-faced Hawk",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "lanius_cristatus",
-   "common": "Brown Shrike",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "syndactyla_subalaris",
-   "common": "Lineated Foliage-gleaner",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "platalea_ajaja",
-   "common": "Roseate Spoonbill",
-   "bank": "learned",
-   "types": 14,
-   "songs": 1
-  },
-  {
-   "id": "colibri_thalassinus",
-   "common": "Mexican Violetear",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "ramphocelus_sanguinolentus",
-   "common": "Crimson-collared Tanager",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "psilopogon_asiaticus",
-   "common": "Blue-throated Barbet",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "thamnophilus_punctatus",
-   "common": "Northern Slaty-Antshrike",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "gallinago_gallinago",
-   "common": "Common Snipe",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "pardirallus_sanguinolentus",
-   "common": "Plumbeous Rail",
-   "bank": "learned",
-   "types": 8,
-   "songs": 1
-  },
-  {
-   "id": "picumnus_rufiventris",
-   "common": "Rufous-breasted Piculet",
-   "bank": "learned",
-   "types": 14,
    "songs": 1
   }
  ]

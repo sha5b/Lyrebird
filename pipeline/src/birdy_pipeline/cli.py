@@ -394,6 +394,7 @@ def cmd_build(
                         if args.member_variants is None
                         else args.member_variants
                     ),
+                    anchor=not args.no_member_anchor,
                     song_variants=args.song_variants,
                     seed=args.seed,
                     should_stop=should_stop,
@@ -643,6 +644,7 @@ def cmd_build(
                 "audioDir": str(args.audio_dir) if args.audio_dir else None,
                 "variantsPerSyllable": args.variants if args.source == "synthetic" else None,
                 "memberVariants": args.member_variants,
+                "memberAnchor": not args.no_member_anchor,
                 "variantsPerSong": args.song_variants if args.source == "synthetic" else None,
                 "harvest": harvest_info,
                 "betaClamp": [syrinx.BETA_MIN, syrinx.BETA_MAX],
@@ -1831,7 +1833,10 @@ def cmd_critic_embed(args: argparse.Namespace) -> int:
     never silently mix embeddings from two critics.
     """
     try:
-        from . import critic as critic_mod
+        # The probe, not the use: `write_store_embeddings` imports the module
+        # itself. It runs here so a machine without torch reads the install line
+        # instead of a traceback thrown halfway through loading the store.
+        from . import critic  # noqa: F401
     except ImportError as exc:
         log(f"torch is not installed ({exc}). `uv sync --extra critic` and try again.")
         return 2
@@ -1844,13 +1849,35 @@ def cmd_critic_embed(args: argparse.Namespace) -> int:
     if trained is None:
         return 2
 
-    t0 = time.time()
-    embeddings = critic_mod.embed_store(store, trained, batch=args.batch, log=log)
+    write_store_embeddings(
+        store, trained, Path(args.critic), out=args.out, batch=args.batch, log=log
+    )
+    log("next: uv run birdy-pipeline build --harvest-store " + str(store.root) +
+        " --space embed")
+    return 0
 
-    out = Path(args.out) if args.out else Path(args.store) / EMBEDDINGS_NAME
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_bytes(embeddings.astype("<f4", copy=False).ravel(order="C").tobytes())
-    critic_path = Path(args.critic)
+
+def write_store_embeddings(
+    store: harvest.HarvestStore,
+    trained: Any,
+    critic_path: Path,
+    out: str | Path | None = None,
+    batch: int = 256,
+    log: Any = log,
+) -> Path:
+    """Run the critic over a store and write `embeddings.f32` + its sidecar.
+
+    Split out of `cmd_critic_embed` so the Learn tab writes the same bytes by the same
+    code (`server._fit`): a fit that leaves no embeddings behind is a fit whose next
+    build silently drops to the descriptor space, or re-runs the network it just ran.
+    """
+    from . import critic as critic_mod
+
+    t0 = time.time()
+    embeddings = critic_mod.embed_store(store, trained, batch=batch, log=log)
+    path = Path(out) if out else Path(store.root) / EMBEDDINGS_NAME
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(embeddings.astype("<f4", copy=False).ravel(order="C").tobytes())
     sidecar = {
         "n": int(embeddings.shape[0]),
         "dim": int(embeddings.shape[1]),
@@ -1866,13 +1893,11 @@ def cmd_critic_embed(args: argparse.Namespace) -> int:
         "countNaN": int(np.isnan(embeddings[:, 0]).sum()),
         "writtenAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
-    out.with_suffix(".json").write_text(json.dumps(sidecar, indent=1), encoding="utf-8")
-    log(f"wrote {out} ({embeddings.shape[0]} x {embeddings.shape[1]} float32, "
-        f"{sidecar['countNaN']} NaN rows) + {out.with_suffix('.json')} "
+    path.with_suffix(".json").write_text(json.dumps(sidecar, indent=1), encoding="utf-8")
+    log(f"wrote {path} ({embeddings.shape[0]} x {embeddings.shape[1]} float32, "
+        f"{sidecar['countNaN']} NaN rows) + {path.with_suffix('.json')} "
         f"in {time.time() - t0:.1f}s")
-    log("next: uv run birdy-pipeline build --harvest-store " + str(store.root) +
-        " --space embed")
-    return 0
+    return path
 
 
 def cmd_critic_groupings(args: argparse.Namespace) -> int:
@@ -3037,6 +3062,14 @@ def build_parser() -> argparse.ArgumentParser:
                         "against 340 079 field) and every type splits into two seeds. "
                         "0 keeps the fitted anchor alone — the point the cluster gets "
                         "its name from — and leaves the extent to the real members")
+    b.add_argument("--no-member-anchor", action="store_true",
+                   help="render NOTHING for a learned type that has member "
+                        "observations — the type lives in the galaxy as the real "
+                        "syllables typing.json already assigned to it. With "
+                        "--member-variants 0 this is the arm measured in docs/22 "
+                        "§22.6: seed demand 2.00 -> 1.00 per type (a source split "
+                        "needs a point on both sides), cluster purity 0.423 -> 0.577. "
+                        "It gives up the rendered voice's own place on the map")
     b.add_argument("--deflate-source", action="store_true",
                    help="project the recorded-vs-synthesised axis out of the feature "
                         "space before clustering (galaxy.deflate_direction). It is the "

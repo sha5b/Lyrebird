@@ -1,5 +1,12 @@
 # 22 — The song funnel and the knot budget
 
+**One line each.** Repeat classes ship and double the corpus's songs (48 species to 98).
+A per-species recurrence bar and a per-species bout rule both fail their controls and
+ship off. Fewer rendered variants and deflating the source axis both fail to move the
+seed demand — the split is binary and it is not one direction. What halves the seed
+demand is rendering nothing for a type that has real members, which is the owner's call
+because it changes what the map contains. The Learn tab was fixed separately (§22.7).
+
 Two questions, asked of the data rather than of the code: why does a corpus of 2 423
 species hold only 96 measured songs, and why did the first production build ship zero
 documented knots. Both answers are accounting, not machinery. The measurements below
@@ -151,6 +158,88 @@ generous. Raising the cap needs those three channels moved to a data texture fir
 second constraint after that is `centroids.json`, at 1.7 kB per cluster — 23 MB at 13 903
 — which is the problem `inventory.json` already solved by sharding.
 
-Links one and two are addressed by `build --member-variants` and `build --deflate-source`,
-measured in §22.6. Links three and four are design decisions, not defects to fix quietly,
-and they are recorded here for the owner.
+Links one and two looked like the cheap fixes. §22.6 measures them, and they are not.
+Links three and four are design decisions, not defects to fix quietly, and they are
+recorded here for the owner.
+
+## 22.6 What actually halves the seed demand
+
+One debug-100 build wrote its clustering matrix with `--dump-points` (214 154 points,
+2 143 types, 160 279 of the points field). Every arm below runs on that one matrix,
+through the shipped functions — `cluster_plan`, `type_seeds`, `_purity`, `label_cluster`
+— so no arm is a re-implementation of the build, and no arm re-rendered anything.
+Dropping renders is modelled exactly by dropping rows, because renders are deterministic
+and independent per `(seed, species, syllable, variant)`.
+
+Pre-registered before the run: seeds per type toward 1.0, with cluster purity and type
+coverage no worse.
+
+| arm | points | seeds/type | purity | type coverage |
+|---|---|---|---|---|
+| base, as built | 214 154 | 2.000 | 0.4232 | 0.4260 |
+| member variants -> anchor only | 162 722 | 1.993 | 0.5677 | 0.4316 |
+| source axis deflated | 214 154 | 1.999 | 0.4119 | 0.4228 |
+| **no synthetic point for a type with members** | 160 579 | **1.000** | **0.5768** | **0.4316** |
+
+**Fewer member variants does not touch the seed demand** (2.000 to 1.993). The
+prediction behind §22.5's first link was wrong, and the reason is worth keeping: the
+source split is *binary*. `_type_seed_means` splits a type whenever it holds points on
+both sides, and it gates on the cosine between the two means. Twenty-four renders and
+one render split a type equally well. What the arm does buy is real and large — cluster
+purity 0.423 to 0.568, on 24 % fewer points and a build that renders 24 times less.
+
+**Deflating the source axis fails on all three numbers.** The deflation works exactly as
+specified: it removes 42.0 % of the space's energy and drives the gap between the two
+source means from 7.233 to **0.0**. Every type still splits (1.999 seeds per type), and
+purity falls 1.1 points, which is what throwing away 42 % of a space costs. So the
+recorded-versus-synthesised difference is **not one direction**. The global offset is one
+direction, and removing it leaves each type's own two clouds pointing as differently as
+before. The critic's realism head names a hyperplane for the corpus, not the per-type
+geometry the seeding gates on. `--deflate-source` ships off, with this as its refutation.
+
+**What works is not rendering the type at all.** A learned type with member observations
+*is* those observations — `typing.json` says so, and that is a label the build already
+holds. Give the type no synthetic point and there is nothing for a source split to split:
+seeds per type falls to exactly 1.000, `wanted` falls 4 298 to 2 155, purity rises to
+0.577 (the best of the four) and type coverage to 0.432 (tied best), on 25 % fewer
+points. Types with no observations keep their renders, because renders are all the
+evidence they have.
+
+Two honest limits on that row. It gives up the rendered voice's own place on the map,
+which is a claim about our synthesiser rather than about a bird — a design decision, so
+it ships as `--member-variants 0 --no-member-anchor` and not as a default. And the cap
+still binds on this corpus (2 155 wanted against k = 1 024), so 1 119 types still lose
+their only knot in every arm: **halving the seed demand does not undo the cap**, it
+halves what the cap has to shed. The documented-knot column reads zero in all four arms
+because the debug-100 subset is the deepest 100 species and holds no authored calls —
+that question needs a subset chosen to contain them.
+
+## 22.7 The Learn tab was not running the cycle
+
+The Learn tab is the product surface: it adds data, fits, builds, and is meant to keep
+going. It ran a configuration the command line abandoned. Four gaps, all in `server.py`,
+all fixed on 2026-08-01:
+
+- **The fit was serial.** `_fit` called `build_learned_inventory` without `jobs`, so it
+  took the default of 1. The fork pool is measured bit-identical to the serial loop and
+  turned about 3 h into about 15 min on the production store (docs/16). The tab now
+  defaults to `default_jobs()` — cores minus two, capped at 8, the two left for the
+  thread that streams the job log.
+- **The fit left stale embeddings.** `build --space auto` takes the critic's 32-d
+  embedding only when the store's sidecar exists and matches. A tab fit re-keyed the
+  store and never rewrote `embeddings.f32`, so the next tab build quietly used the 28-d
+  descriptor space, where the command-line cycle uses the space measured better for
+  typing (docs/09 §9.7: species placement 38.4 % to 51.7 %). `_refresh_embeddings` now
+  writes it through the same `write_store_embeddings` the CLI uses. Failure is logged,
+  never fatal.
+- **The build ran the expensive analysis every time.** The tab passed
+  `--no-compare-projections` but not `--no-relations`, so every build ran the geometry
+  permutation battery — the phase behind a 33-minute debug build. `--no-relations` skips
+  the battery and not the shipped asset: `relations.json` is written from the store's
+  embeddings either way. `critic groupings` runs the battery when it is the question.
+- **The build shipped unverified assets.** The command-line cycle ends in `verify`. The
+  tab ended at "wrote the assets". It now verifies what it just wrote, and a failure
+  fails the job.
+
+`serve` holds the pipeline in memory, so these reach a running control surface only
+after a restart (AGENTS.md).

@@ -1,3 +1,77 @@
+# Birdy — Session Handoff (2026-08-01, data audit)
+
+**The day's second half in one paragraph:** the data was audited against the code that
+produces it, and four of the six proposals died on their own pre-registered gates. Songs:
+repeat classes ship and take the corpus from 48 species with a real song to 98, with the
+shuffle control unmoved. Knots: neither cheap fix works, and the arm that does work is
+the one that was flagged as the owner's call. The Learn tab was found running a
+configuration the command line abandoned, and was fixed. Evidence: docs/22.
+
+- **Repeat classes: ADOPTED, default on** (docs/22 §22.2, `learn.SONG_MIN_REPEATS`).
+  `_collapse_runs` reads a trill as one token, which then falls under `SONG_MIN_MOTIF` —
+  so a bird whose song IS a trill could never have a song type. 19 738 of 34 696 bouts
+  (57 %) collapse to one token and **6 940 of those are 3+ syllables**. A repeat class is
+  one collapsed string heard 6+ times in bouts of 3+ syllables, matched by equality
+  (equality cannot chain, which is the noise mode the motif gate exists for), carrying
+  `kind: motif | repeat` so nothing downstream has to infer the claim. Measured on the
+  production store: **species with a song 48 -> 98, song types 96 -> 356, placed bouts
+  1 052 -> 3 741, shuffle control unchanged at 0.170 %** (bar 0.2 %). The control finds
+  no repeat classes at all — shuffling destroys runs — which is the sharpest evidence
+  available that the ones found are real. **Needs a `learn` run to reach the inventory.**
+- **Per-species recurrence bar: REFUTED** (docs/22 §22.3, `floor=`, off). Letting each
+  species set its own bar on its own shuffled tokens let 2 398 of 2 421 species take the
+  loosest one — a species with 8 candidate bouts has a control too small to ever place a
+  bout, so "the control found nothing" meant "the control had nothing to work with"
+  (control 0.170 % -> 0.442 %). Adding a power requirement fixes the mechanism but not
+  the verdict: **no candidate requirement in {10, 15, 20, 30, 50} returns the control to
+  0.2 %** (0.399 / 0.378 / 0.378 / 0.356 / 0.266 %), and the rows that come closest gain
+  nothing over the 98 species repeat classes already reach. Machinery kept, refutation
+  recorded in the constant.
+- **Per-species bout rule: REFUTED** (docs/22 §22.4, `--adaptive-bouts`, off). 5x the
+  species' own median gap reaches 105 species against 98, at **0.628 % control yield**.
+  Splitting a fast singer's bouts finer makes more short strings, and short strings are
+  what chance chains. Shipped off with the number. **What did ship: the bout rule was
+  three separate literal `1.0`s** (`learn_grammar`, `bout_sequences`, `syntax`) for one
+  rule the grammar, the chunk miner, the P1 bake-off and the song types must share. Now
+  `learn.GAP_BOUT_SECONDS` plus one argument every caller takes, pinned by a self-test.
+- **Knots — both cheap fixes FAIL, and the measurement says why** (docs/22 §22.6, one
+  debug-100 `--dump-points` matrix, 214 154 points, every arm scored through the shipped
+  `cluster_plan`/`type_seeds`/`_purity`/`label_cluster`). Pre-registered: seeds per type
+  toward 1.0, purity and coverage no worse.
+  - `--member-variants 0` (anchor only): seeds/type **2.000 -> 1.993**, i.e. no effect.
+    **The source split is binary** — `_type_seed_means` splits whenever a type holds
+    points on both sides, so 24 renders and 1 render split it equally. It does buy
+    purity 0.423 -> 0.568 on 24 % fewer points, which is real but is not the mechanism
+    that was predicted.
+  - `--deflate-source`: removes 42.0 % of the space's energy and drives the source mean
+    gap **7.233 -> 0.0**, and **still every type splits** (1.999), with purity down 1.1
+    points. So recorded-vs-synthesised is **not one direction**: the global offset is,
+    the per-type geometry the seeding gates on is not. Ships off.
+  - **What works** (`--member-variants 0 --no-member-anchor`): render nothing for a type
+    that has member observations — it already exists in the map as the real syllables
+    `typing.json` assigned to it. Seeds/type **exactly 1.000**, wanted 4 298 -> 2 155,
+    purity **0.577** (best), coverage 0.432 (best), 25 % fewer points. **Owner's call,
+    not a default**: it gives up the rendered voice's own place on the map. And it does
+    not undo the cap — 2 155 still exceeds k=1 024, so 1 119 types lose their only knot
+    in every arm. The documented-knot column reads 0 in all arms because debug-100 is
+    the deepest 100 species and holds no authored calls.
+- **`K_CAP = 1024` is an app constraint, not a pipeline one.** The renderer declares
+  three `uniform float[clusterCount]` arrays in its VERTEX shader — 3 072 vertex uniform
+  floats, already past the WebGL2 guaranteed minimum. Raising the cap needs those three
+  channels moved to a data texture first; `centroids.json` at 1.7 kB/cluster (23 MB at
+  13 903) is the next constraint, and sharding already solved that for `inventory.json`.
+- **Learn tab was not running the cycle — fixed** (docs/22 §22.7, server.py). It fitted
+  **serially** (`_fit` never passed `jobs`; the pool is bit-identical and ~12x faster),
+  left **stale embeddings** so the next tab build silently used the 28-d descriptor space
+  instead of the 32-d one, ran the **relations battery every build** (the 33-minute
+  phase; `--no-relations` skips the battery, not the shipped `relations.json`), and
+  **shipped assets unverified**. Now: `default_jobs()` (cores-2, capped 8),
+  `_refresh_embeddings` through the CLI's own `write_store_embeddings`, `--no-relations`
+  by default with a `relations` opt-in, and `verify` as part of the job. Restart `serve`.
+- **Still not on the tab:** `subset` (so the tab structurally cannot obey the debug-100
+  rule — every tab build is a production build), `respfit`/`docrefit`, and the new build
+  flags. Flagged, not done.
+
 # Birdy — Session Handoff (2026-07-31)
 
 **Landed today (uncommitted at this writing — user commits):**

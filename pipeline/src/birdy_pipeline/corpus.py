@@ -177,6 +177,7 @@ def measured_corpus(
     sample_rate: int = SAMPLE_RATE,
     verbose: bool = True,
     should_stop: Callable[[], bool] | None = None,
+    anchor: bool = True,
 ) -> list[Clip]:
     """The anchor render plus `variants` measured realisations per learned type.
 
@@ -218,6 +219,17 @@ def measured_corpus(
                 continue
             n_types += 1
             # The anchor: the fitted median exactly as fitted, jitter off.
+            #
+            # `anchor=False` renders nothing at all for a type that has members, so the
+            # type exists in the galaxy only as the real observations `typing.json`
+            # already assigned to it. Measured on the debug-100 dump (docs/22 §22.6):
+            # the seed demand falls from 2.00 to exactly 1.00 seeds per type — every
+            # source split disappears, because a split needs a point on both sides —
+            # and cluster purity rises 0.423 -> 0.577. What it gives up is the rendered
+            # voice's own place on the map, which is a claim about our synthesiser
+            # rather than about the bird, so it is the owner's call and not a default.
+            if not anchor:
+                continue
             audio = render_syllable(
                 fitted,
                 sample_rate=sample_rate,
