@@ -245,6 +245,80 @@ class FirstOrder:
         return ll, len(seq), unseen
 
 
+class MarkovOrder:
+    """P(next | previous k) for any k, backing off k -> k-1 -> ... -> unigram -> uniform.
+
+    The generalisation of `FirstOrder` to a whole family, and it exists for one question:
+    *is there structure beyond first order at all* (docs/23 §23.2). The plug-in
+    conditional-entropy curve cannot answer that — on shuffled tokens every long context
+    is near-unique, so the estimator reports "determined" and the control's curve falls
+    below the real one (docs/23 §23.2.1, the retracted arm). Held-out cross-entropy has
+    no such failure: a model that carves its training bouts into unique contexts is
+    punished on bouts it has not seen, so the sparsity that fools the plug-in estimator
+    shows up here as a *worse* number, which is the honest direction.
+
+    Every order scores every token — token `i` under a context of `min(i, k)` — so the
+    per-token means are comparable across k, the same discipline the bake-off uses for
+    M1/M2/M3. `unseen` counts tokens whose full-length context never occurred in train,
+    which is what the backoff paid for.
+
+    k = 1 is not identical to `FirstOrder`: M1 scores the bout-first token under the
+    unigram and this scores it the same way, but M1's `row` falls back to the unigram or
+    the continuation row while this falls back through the shorter contexts. At k = 1 the
+    two coincide (the only shorter context is the unigram).
+    """
+
+    def __init__(self, vocab: int, order: int, alpha: float = ALPHA):
+        if order < 0:
+            raise ValueError(f"order must be >= 0, got {order}")
+        self.vocab = vocab
+        self.order = order
+        self.alpha = alpha
+        self.name = f"k{order}"
+        self.levels: list[dict[tuple[int, ...], np.ndarray]] = []
+
+    def fit(self, bouts: Sequence[Sequence[int]]) -> "MarkovOrder":
+        uniform = np.full(self.vocab, 1.0 / self.vocab)
+        tokens: Counter[int] = Counter(t for seq in bouts for t in seq)
+        self.levels = [{(): _backoff_row(tokens, uniform, self.alpha)}]
+        for j in range(1, self.order + 1):
+            contexts: dict[tuple[int, ...], Counter[int]] = defaultdict(Counter)
+            for seq in bouts:
+                for i in range(j, len(seq)):
+                    contexts[tuple(seq[i - j : i])][seq[i]] += 1
+            self.levels.append(
+                {
+                    ctx: _backoff_row(counts, self._lower(j - 1, ctx[1:]), self.alpha)
+                    for ctx, counts in contexts.items()
+                }
+            )
+        return self
+
+    def _lower(self, order: int, ctx: tuple[int, ...]) -> np.ndarray:
+        """The longest row at or below `order` whose context was seen in training."""
+        while order > 0:
+            row = self.levels[order].get(ctx)
+            if row is not None:
+                return row
+            order -= 1
+            ctx = ctx[1:]
+        return self.levels[0][()]
+
+    def score(self, seq: Sequence[int]) -> tuple[float, int, int]:
+        """(log-likelihood, tokens scored, tokens whose full context was unseen)."""
+        ll = 0.0
+        unseen = 0
+        for i, token in enumerate(seq):
+            j = min(i, self.order)
+            ctx = tuple(seq[i - j : i])
+            row = self.levels[j].get(ctx) if j else self.levels[0][()]
+            if row is None:
+                unseen += 1
+                row = self._lower(j - 1, ctx[1:])
+            ll += math.log(row[token])
+        return ll, len(seq), unseen
+
+
 class RepeatCount:
     """M2: P(next | current, r), r = consecutive repeats of `current` so far, capped.
 

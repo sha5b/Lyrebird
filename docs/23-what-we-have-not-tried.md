@@ -176,7 +176,69 @@ that estimator rather than with this one.
 
 **Consequence for the roadmap.** The premise of P2 and P3 survives: the tokens carry
 real sequence structure. What does not survive is the hope that a model-free statistic
-would settle the depth question cheaply.
+would settle the depth question cheaply. The re-run with the unbiased estimator is
+§23.2.2, and it answers the question in the negative.
+
+### 23.2.2 The second-order arm, re-run with the unbiased estimator — NO STRUCTURE FOUND
+
+§23.2.1 retracted its own second-order test and named the instrument that could answer
+it. This is that re-run. `seqstats.held_out_scaling` + `syntax.MarkovOrder`: per species,
+the docs/18 bake-off's own 80/20 **bout** split, a k-order backoff model fitted on the
+train half for k = 0…3, every held-out token scored, cross-entropy in bits per token.
+Same corpus as §23.2.1 to the token (34 696 bouts, 327 164 tokens, 2 421 species — the
+loader is pinned against `learn.bout_sequences` and fails if the bout rule drifts), same
+docs/12 control. 217 species clear the bake-off's 20-bout bar.
+
+**Pre-registered before the run** (`HELD_OUT_GAIN_BITS`, `HELD_OUT_SHARE_POINTS`): the
+median species must gain ≥ 0.05 bits/token from order 1 to order 2, gain ≥ 0.05 more than
+its own shuffle, **and** the share of species gaining at all must beat the control's share
+by ≥ 20 points. All three, or the arm returns false.
+
+| | real | control |
+|---|---|---|
+| held-out CE, k = 0 (unigram) | 3.284 | 2.879 |
+| k = 1 | **2.301** | 3.634 |
+| k = 2 | 2.546 | 4.868 |
+| k = 3 | 2.866 | 5.313 |
+| median gain, order 1 → 2 | **−0.091** | −0.912 |
+| species gaining at 1 → 2 | **25.3 %** | 4.1 % |
+| median gain, order 2 → 3 | −0.108 | −0.187 |
+
+**The gate fails, at three seeds.** The magnitude criterion fails and the share criterion
+passes, at every split drawn (real gain −0.091 / −0.116 / −0.142, share 25.3 / 24.9 /
+24.4 %; control share 4.1 / 3.7 / 3.7 %). For the median species a second-order model is
+**worse on bouts it has not seen** — the corpus cannot estimate the contexts it asks for.
+Read as one sentence: *there is no second-order structure this corpus can support, and a
+quarter of species hint at one.* 25.3 % against a shuffle's 4.1 % is a six-fold rate and
+clears the pre-registered 20-point margin, so the hint is not nothing; it is also not what
+the gate asked for, and the gate was written first.
+
+**The first-order result is now much stronger than §23.2.1 could state.** Order 1 buys
+**0.98 bits/token** on held-out bouts (3.284 → 2.301) while on the shuffle it *costs*
+0.75 (2.879 → 3.634). An unbiased estimator paying for parameters it cannot use is the
+clean form of "these tokens are units": the model can only win if the transitions are
+real, and it wins by a bit per token.
+
+**Two properties of this estimator that the plug-in one lacked**, both visible in the
+control column: the control's curve *rises* with k instead of collapsing below the real
+one, because sparsity is now punished rather than rewarded; and the same behaviour is
+pinned in `seqstats.self_test`, where a planted second-order process must be found, a
+first-order process must not show depth, and the shuffle of the planted process must not
+gain from a longer context.
+
+**One artefact worth naming.** The control's k = 0 sits *below* the real corpus (2.879
+against 3.284). The shuffle spreads each species' tokens evenly across its bouts, so train
+and test marginals nearly coincide; real bouts are clumped — a bout tends to repeat one
+type — so a held-out bout can be mostly a type the train half barely saw. That clumping is
+itself structure, and it is why the gate reads *within-corpus* deltas rather than the two
+absolute curves against each other.
+
+**What this settles for the roadmap.** P1's verdict stands and is reinforced: first order
+is what this corpus supports. P2/P3's premise — that the tokens carry real sequence
+structure — is confirmed by the 0.98-bit gain. What is now measured rather than assumed is
+that **the depth question is data-limited, not method-limited**: 217 of 2 421 species have
+enough bouts to ask it at all, and the 25 % that hint at second order are the argument for
+P0-style depth on *more* species rather than for a cleverer sequence model.
 
 ## 23.3 W3 — Fitting the syrinx by inference, not by search
 

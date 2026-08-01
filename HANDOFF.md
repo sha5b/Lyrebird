@@ -1,4 +1,4 @@
-# Birdy — Session Handoff (2026-08-01, label assignment)
+# Birdy — Session Handoff (2026-08-01, label assignment + W2 re-run)
 
 **In one paragraph:** the production knot problem now has its instrument.
 `build --clustering label` (docs/22 §22.8) stops clustering the 96 % of points that
@@ -45,6 +45,14 @@ are why it ships as a flag rather than as the default.
   because a type with no knot cannot be retrieved at all. It is the honest bound on "sing
   and the right knot lights", it is now measurable at every k, and raising it is docs/23
   W1/W6 work, not clustering work.
+- **The documented-knot question, finally asked on a corpus that has them.** §22.6 could
+  not ask it. The fast-loop store built against the authored inventory can, and **both
+  arms reach 44/44 authored syllables with a knot** — at k = 130 for 125 types nothing is
+  shed, so kmeans needs no help. Coverage still moves 84.0 % → 100 % on the learned types.
+  One behaviour found there: kmeans named a cluster after a documented *song*, and label
+  assignment does not — a song-level point carries no type, so it goes to the kmeans
+  remainder (300 points, 12 clusters on debug-100). Whether a song should own a knot is a
+  separate claim and was not made.
 - **The live-path cost, measured on the built assets.** Against the kmeans build of the
   same corpus: centroid agreement **0.6572 → 0.6316**, species agreement **0.7421 →
   0.6831**, tie-adjusted **0.8032 → 0.8136**. More near-ties, not worse decisions —
@@ -64,6 +72,64 @@ are why it ships as a flag rather than as the default.
   The fix is the one `inventory.json` already had — shard it, or move the two float
   vectors to an `.f32` sidecar beside `point-features.f32`. The build prints the projected
   size whenever k passes `K_CAP` rather than shipping the surprise.
+- **W5 measured against a query population that does not move — and it buys nothing in
+  accuracy** (docs/22 §22.8's square; this is the evidence decision 1 below was waiting
+  for, and it is not the evidence that was expected). Retrieval over *all* points is not
+  comparable between arms holding different points: W5 deletes the synthetic copies, which
+  are the *hard* queries, so it flatters itself by 18 points. Scored on the 160 279 field
+  points every arm holds:
+
+  | arm | points | k | field-point retrieval |
+  |---|---|---|---|
+  | kmeans, as shipped | 214 154 | 4 298 | 0.7176 |
+  | label assignment | 214 154 | 4 298 | **0.7604** |
+  | label + W5 | 160 579 | 2 155 | **0.7606** |
+  | kmeans + W5 | 160 579 | 2 155 | 0.7156 |
+
+  Label assignment is worth **+4.3 points**, the same in both W5 conditions, so the effect
+  is the clustering's. **W5 is worth +0.02.** What W5 *is* worth is the map: identical field
+  retrieval on **half the knots** (2 155 against 4 298) and a quarter fewer points, because
+  with no synthetic copy there is nothing for the source split to split. Together with
+  label assignment that takes production from 27 862 clusters to about **14 003**, and
+  centroids.json from ≈ 44 MB to ≈ 22 MB — which is the difference between "needs a new
+  asset format" and "ships". **Recommendation: adopt W5 with label assignment, on size.**
+  It remains the owner's call and the default is unchanged, because the reason it was
+  flagged has not moved: the rendered voice loses its own place on the map.
+- **W2's second-order arm, re-run properly: NO STRUCTURE FOUND** (closes item 6 of the
+  entry below; docs/23 §23.2.2,
+  `seqstats.held_out_scaling` + `syntax.MarkovOrder` + self-test). The retracted plug-in
+  arm is replaced by the docs/18 bake-off's own instrument: per species, its 80/20 **bout**
+  split, a k-order backoff model fitted on the train half for k = 0…3, every held-out token
+  scored, bits per token. Same corpus as §23.2.1 to the token — the new `seqstats.load_bouts`
+  is pinned against `learn.bout_sequences` and refuses to run if the bout rule has drifted
+  (34 696 bouts, 327 164 tokens, 2 421 species; 217 clear the 20-bout bar).
+  **Pre-registered:** median gain ≥ 0.05 bits/token at order 1 → 2, ≥ 0.05 more than its own
+  shuffle, and share of species gaining ≥ control + 20 points — all three.
+
+  | | real | control |
+  |---|---|---|
+  | held-out CE k = 0 / 1 / 2 / 3 (bits/token) | 3.284 / **2.301** / 2.546 / 2.866 | 2.879 / 3.634 / 4.868 / 5.313 |
+  | median gain, order 1 → 2 | **−0.091** | −0.912 |
+  | species gaining at 1 → 2 | **25.3 %** | 4.1 % |
+
+  **The gate fails at three seeds** (real gain −0.091 / −0.116 / −0.142). For the median
+  species a second-order model is *worse on bouts it has not seen*. The share criterion
+  passes at all three (25.3 / 24.9 / 24.4 % against 4.1 / 3.7 / 3.7 %), so a quarter of
+  species hint at a second order at six times the shuffle's rate — a hint, not the gate.
+  **And the first-order result is far stronger than §23.2.1 could state**: order 1 buys
+  **0.98 bits/token** held out, while on the shuffle it *costs* 0.75. A model that can only
+  win when the transitions are real, winning by a bit per token, is the clean form of
+  "these tokens are units". P1 stands, P2/P3's premise is confirmed, and the depth question
+  is now measured as **data-limited, not method-limited** — 217 of 2 421 species can be
+  asked at all.
+- **W6: NOT STARTED, but its practical check is done and it is cheaper than §23.6
+  assumed.** The repo already has the exact shape BirdNET needs: `perch.py` runs Perch 2.0
+  from a community **ONNX** port under `onnxruntime` alone (~50 ms per 5 s window, CPU),
+  imported in that one module and declared as the optional `perch` extra. So W6's T1 needs
+  no TensorFlow and no `tflite-runtime` — it needs a BirdNET ONNX export and a second
+  module shaped like `perch.py`. Note the current tree has **none of onnxruntime,
+  tflite_runtime, tensorflow or ai_edge_litert installed**: `uv sync --extra perch` first,
+  and the model download is a deliberate, owner-called network step.
 - **Correction to the entry below:** the shipped debug-100 assets are purity **0.5797**,
   not 0.423 — 0.423 is the k = 1 024 figure from §22.6's table, carried into the paragraph
   about the 4 298-cluster build by mistake. The manifest has said 0.5797 since it was built.

@@ -217,6 +217,13 @@ seeds per type falls to exactly 1.000, `wanted` falls 4 298 to 2 155, purity ris
 points. Types with no observations keep their renders, because renders are all the
 evidence they have.
 
+**Followed up in §22.8, and the follow-up changes what this arm is for.** Scored on a query
+population that does not move with the arm — the field points, which every arm holds — this
+row buys **nothing** in retrieval (+0.02 points under label assignment, −0.2 under kmeans).
+The purity gain above is real but it is measured over a set this arm shrank. What survives
+is size: the same field-point retrieval on **half the knots and a quarter fewer points**.
+Argue for it on the map's size, not on its accuracy.
+
 Two honest limits on that row. It gives up the rendered voice's own place on the map,
 which is a claim about our synthesiser rather than about a bird — a design decision, so
 it ships as `--member-variants 0 --no-member-anchor` and not as a default. And the cap
@@ -309,6 +316,31 @@ coverage is 1.0000 because a type *is* a cluster here — by construction, not b
 report that keeps quoting those two as evidence of a good map is quoting an identity. Type
 retrieval is the statistic that survives, because nothing forces it.
 
+**The square, on one query population — and it corrects a reading.** Type retrieval over
+*all* points is not comparable between arms that hold different points: W5 drops the
+synthetic copies, which are the hard queries (a render sits in its own source blob and
+often matches the wrong knot), so dropping them flatters the arm that drops them. Scored
+instead on the 160 279 **field** points, which every arm holds unchanged and which are the
+population the question is about — a recorded syllable must light its own knot:
+
+| arm | points | k | field-point type retrieval | clustering s |
+|---|---|---|---|---|
+| kmeans, as shipped | 214 154 | 4 298 | 0.7176 | 54.8 |
+| label assignment | 214 154 | 4 298 | **0.7604** | 0.2 |
+| label + W5 (§22.6's kept arm) | 160 579 | 2 155 | **0.7606** | 0.1 |
+| kmeans + W5 | 160 579 | 2 155 | 0.7156 | 15.2 |
+
+Two clean readings. **Label assignment is worth +4.3 points of field retrieval**, and the
+same +4.3 in both W5 conditions, so the effect is the clustering's and not the corpus's.
+**W5 is worth nothing on this statistic** — +0.02 under label assignment, −0.2 under
+kmeans — which is a more honest account of it than the all-points number, where the same
+arm reads +18 points purely because it deleted its own hard queries. What W5 *is* worth is
+the map: the same field retrieval on **half the knots** (2 155 against 4 298) and a quarter
+fewer points, because with no synthetic copy there is nothing for the source split to
+split. On production that is k 27 862 → about 14 003 and centroids ≈ 44 MB → ≈ 22 MB. The
+case for W5 is size, not accuracy, and it is still the owner's call for the reason §22.6
+gave: the rendered voice loses its own place on the map.
+
 **And it exposes a ceiling the cap was hiding.** Even with every type owning its own knot,
 type retrieval is **0.602** — for 40 % of points the nearest centroid belongs to another
 type. That is not the clustering's failure; it is the embedding's own confusion between
@@ -323,6 +355,21 @@ off the labels — 2 143 types, all 2 143 source-split, plus 12 kmeans clusters 
 song-level points that carry no syllable — **type coverage 2 143/2 143 (100.0 %)**, every
 `verify` check green. Against the kmeans build of the same corpus
 (`/tmp/birdy-debug/assets-8192`), where coverage is 1 984/2 143.
+
+**The documented-knot question, on a corpus that has documented calls.** §22.6 could not
+ask it — debug-100 is the deepest hundred species and holds none. The fast-loop store
+(`out/harvest-mp`, 5 species, 2 681 points) built against the *authored* inventory can, and
+both arms reach **44 of 44 authored syllables with a knot**: at k = 130 for 125 types the
+cap does not bind, so kmeans does not need help. Type coverage still moves, 84.0 % → 100 %,
+on the learned types around them. The honest reading is the same as the table's — this arm
+buys what the cap costs, and where nothing is shed it buys little.
+
+That build did surface one behaviour worth knowing: kmeans named one cluster after a
+documented *song* (`poecile_atricapillus`, majority-voted from points that carry a song id
+and no syllable), and label assignment does not, because a song-level point carries no
+type and goes to the kmeans remainder. Songs are not part of the partition. On debug-100
+that is 300 points in 12 clusters. Whether a song should own a knot of its own is a
+separate claim from this one and was not made here.
 
 **One measured cost, and it is in the live path.** The browser reaches the galaxy through
 the 28-d → 32-d bridge, and docs/20's agreement numbers move against this arm:

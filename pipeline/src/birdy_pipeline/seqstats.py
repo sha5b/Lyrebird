@@ -189,6 +189,110 @@ def entropy_curves(
     return {"speciesMeasured": len(curves), "medianCurve": median, "perSpecies": rows[:20]}
 
 
+# --- held-out cross-entropy: the second-order question, re-asked ----------------------
+
+#: Context lengths the held-out curve is taken over. It stops at 3 because the estimator
+#: is honest about sparsity rather than blind to it — an order the corpus cannot support
+#: simply scores worse, and three is already past where that happens.
+HELD_OUT_ORDERS = (0, 1, 2, 3)
+#: Fewest bouts a species needs to be split 80/20 and still have a test set worth
+#: reading. The bake-off's own bar (`syntax.MIN_BOUTS_PER_SPECIES`), for the same reason.
+HELD_OUT_MIN_BOUTS = 20
+#: Pre-registered before the production run (docs/23 §23.2.2). The median species must
+#: gain at least this much, in bits per token, going from order 1 to order 2 — and must
+#: gain at least this much *more than its own shuffle*. 0.05 bits/token is the smallest
+#: gain worth calling structure on a corpus whose first-order entropy is around 1 bit.
+HELD_OUT_GAIN_BITS = 0.05
+#: ... and the share of species that gain at all must beat the control's share by this
+#: many points, so one deep species cannot carry the verdict.
+HELD_OUT_SHARE_POINTS = 20.0
+
+
+def held_out_scaling(
+    bouts: Sequence[tuple[str, list[str], list[float]]],
+    seed: int = 0,
+    orders: Sequence[int] = HELD_OUT_ORDERS,
+    min_bouts: int = HELD_OUT_MIN_BOUTS,
+) -> dict[str, Any]:
+    """Held-out cross-entropy per token, in bits, at each context order.
+
+    The replacement for the retracted plug-in arm (docs/23 §23.2.1). Per species: bouts
+    split 80/20 by `syntax._split` — bouts, never tokens, so no phrase straddles the line
+    — a `syntax.MarkovOrder` fitted per order on the train half, every held-out token
+    scored. The number is unbiased in the direction that matters: an order the data
+    cannot support scores *worse*, where the plug-in estimator scored it better.
+
+    Real corpus and control take the same split for the same species index, so the two
+    curves are paired rather than merely parallel.
+    """
+    from . import syntax
+
+    by_species: dict[str, list[list[str]]] = defaultdict(list)
+    for species_id, tokens, _ in bouts:
+        by_species[species_id].append(tokens)
+
+    curves: list[list[float]] = []
+    rows: list[dict[str, Any]] = []
+    for index, species_id in enumerate(sorted(by_species)):
+        seqs = by_species[species_id]
+        if len(seqs) < min_bouts:
+            continue
+        ids: dict[str, int] = {}
+        coded = [[ids.setdefault(t, len(ids)) for t in s] for s in seqs]
+        vocab = max(1, len(ids))
+        # At seed 0 this is the bake-off's own split for this species, bit for bit
+        # (`syntax.bake_off` passes the species index); a non-zero seed moves every
+        # species onto a different stream, so the arm can be re-run against a different
+        # 80/20 draw rather than only against a different shuffle.
+        train, test = syntax._split(coded, seed=index + 1_000_003 * seed)
+        curve: list[float] = []
+        unseen_share: list[float] = []
+        for k in orders:
+            model = syntax.MarkovOrder(vocab, k).fit(train)
+            ll = tokens = unseen = 0.0
+            for s in test:
+                s_ll, s_n, s_u = model.score(s)
+                ll += s_ll
+                tokens += s_n
+                unseen += s_u
+            if tokens <= 0:
+                break
+            curve.append(-ll / tokens / math.log(2))
+            unseen_share.append(unseen / tokens)
+        if len(curve) < len(orders):
+            continue
+        curves.append(curve)
+        rows.append({
+            "species": species_id,
+            "bouts": len(seqs),
+            "vocab": vocab,
+            "curve": [round(v, 4) for v in curve],
+            "unseenShare": [round(v, 4) for v in unseen_share],
+            "d12": round(curve[1] - curve[2], 4) if len(curve) > 2 else None,
+            "d23": round(curve[2] - curve[3], 4) if len(curve) > 3 else None,
+        })
+
+    def share_positive(key: str) -> float | None:
+        vals = [r[key] for r in rows if r[key] is not None]
+        return round(100.0 * sum(v > 0 for v in vals) / len(vals), 1) if vals else None
+
+    median = (
+        [round(float(v), 4) for v in np.median(np.array(curves), axis=0)]
+        if curves
+        else []
+    )
+    return {
+        "orders": list(orders),
+        "speciesMeasured": len(curves),
+        "medianCurve": median,
+        "medianD12": round(float(np.median([r["d12"] for r in rows])), 4) if rows else None,
+        "medianD23": round(float(np.median([r["d23"] for r in rows])), 4) if rows else None,
+        "sharePositiveD12": share_positive("d12"),
+        "sharePositiveD23": share_positive("d23"),
+        "perSpecies": sorted(rows, key=lambda r: -(r["d12"] or 0))[:20],
+    }
+
+
 # --- normalised compression distance -------------------------------------------------
 
 
@@ -283,6 +387,55 @@ def shuffled(
     return out
 
 
+def load_bouts(store: Any) -> list[tuple[str, list[str], list[float]]]:
+    """A store's typed bouts as `(species, tokens, durations)`, the shape everything here
+    takes.
+
+    `learn.bout_sequences` is the shipped bout rule and it returns type ids only, while
+    Menzerath needs each token's own duration. Rebuilt under the same two rules rather
+    than wrapped — the same trade `songspace.bouts_with_gaps` makes for the same reason —
+    and pinned the same way: the token strings this produces are asserted equal to
+    `learn.bout_sequences`'s on the very corpus being measured, so a drift in the upstream
+    rule fails here loudly instead of quietly redefining what a bout is.
+    """
+    from . import learn, syntax
+
+    typing = syntax.load_typing(store.root)
+    if not typing:
+        raise ValueError(f"{store.root} has no {learn.TYPING_NAME} — run `learn` first")
+    type_of = {
+        (e["speciesId"], e["recordingId"], int(e["order"])): str(e["typeId"])
+        for e in typing
+    }
+    by_recording: dict[tuple[str, str], list[Any]] = defaultdict(list)
+    for o in store.syllables:
+        by_recording[(o.species_id, o.recording_id)].append(o)
+    out: list[tuple[str, list[str], list[float]]] = []
+    for (species_id, recording_id), items in sorted(by_recording.items()):
+        items.sort(key=lambda o: o.order)
+        tokens: list[str] = []
+        durations: list[float] = []
+        for o in items:
+            if o.gap_before > learn.GAP_BOUT_SECONDS and tokens:
+                out.append((species_id, tokens, durations))
+                tokens, durations = [], []
+            tid = type_of.get((o.species_id, o.recording_id, o.order))
+            if tid is not None:
+                tokens.append(tid)
+                durations.append(float(o.dur))
+        if tokens:
+            out.append((species_id, tokens, durations))
+
+    shipped = [seq for _sp, _key, seq in learn.bout_sequences(store.syllables, typing)]
+    mine = [t for _sp, t, _d in out]
+    if sorted(map(tuple, mine)) != sorted(map(tuple, shipped)):
+        raise RuntimeError(
+            "the bout rule here has drifted from learn.bout_sequences: "
+            f"{len(mine)} bouts against {len(shipped)}"
+        )
+    return out
+
+
 def evaluate(
     bouts: Sequence[tuple[str, list[str], list[float]]], seed: int = 0
 ) -> dict[str, Any]:
@@ -305,6 +458,7 @@ def evaluate(
         report[name] = {
             "menzerath": menzerath(data),
             "entropy": entropy_curves(data),
+            "heldOut": held_out_scaling(data, seed=seed),
             "ncd": ncd_recovery(data, seed=seed),
         }
     report["seconds"] = round(time.time() - t0, 2)
@@ -347,7 +501,40 @@ def _verdict(report: dict[str, Any]) -> dict[str, Any]:
         and abs(e_real[1] - e_ctl[1]) < 0.5
     )
     readable = (collapsed_at is None or collapsed_at > 2) and comparable
+
+    # The same question, asked with the estimator that can answer it. Pre-registered
+    # (docs/23 §23.2.2): the median species must gain HELD_OUT_GAIN_BITS bits/token going
+    # from order 1 to order 2, gain that much more than its own shuffle does, and the
+    # share of species gaining at all must beat the control's share by
+    # HELD_OUT_SHARE_POINTS. All three, or the arm returns false.
+    h_real, h_ctl = real.get("heldOut", {}), control.get("heldOut", {})
+    d12_real, d12_ctl = h_real.get("medianD12"), h_ctl.get("medianD12")
+    sh_real, sh_ctl = h_real.get("sharePositiveD12"), h_ctl.get("sharePositiveD12")
+    have = None not in (d12_real, d12_ctl, sh_real, sh_ctl)
+    held_out = {
+        "gainBits": {"real": d12_real, "control": d12_ctl},
+        "sharePositive": {"real": sh_real, "control": sh_ctl},
+        "thirdOrderGainBits": {
+            "real": h_real.get("medianD23"),
+            "control": h_ctl.get("medianD23"),
+        },
+        "speciesMeasured": h_real.get("speciesMeasured"),
+        "gate": (
+            f"median d(1->2) >= {HELD_OUT_GAIN_BITS} bits/token, >= control + "
+            f"{HELD_OUT_GAIN_BITS}, and share positive >= control + "
+            f"{HELD_OUT_SHARE_POINTS} points"
+        ),
+        "passes": bool(
+            have
+            and d12_real >= HELD_OUT_GAIN_BITS
+            and d12_real >= d12_ctl + HELD_OUT_GAIN_BITS
+            and sh_real >= sh_ctl + HELD_OUT_SHARE_POINTS
+        )
+        if have
+        else None,
+    }
     return {
+        "beyondFirstOrderHeldOut": held_out,
         "rule": (
             "each statistic must separate the real corpus from its own permutation "
             "control (tokens redealt within species, bout lengths and marginals kept); "
@@ -385,7 +572,8 @@ def _verdict(report: dict[str, Any]) -> dict[str, Any]:
                     if not comparable
                     else ""
                 )
-                + "Use the held-out cross-entropy of docs/18, which is unbiased."
+                + "Read `beyondFirstOrderHeldOut` instead: the same question through the "
+                "held-out cross-entropy of docs/18, which is unbiased by construction."
             )
         ),
         "ncdSeparation": {"real": n_real, "control": n_ctl},
@@ -507,6 +695,23 @@ def self_test(verbose: bool = True) -> None:
         first.append(seq)
     flat = conditional_entropies(first)
     assert flat[1] - flat[2] < 0.05, f"first-order fixture shows false depth: {flat}"
+
+    # 3b. The same two fixtures through the held-out estimator, which is the arm that
+    #     replaces the retracted one. It must find the planted second order, must not
+    #     invent one in the first-order fixture, and — the property the plug-in estimator
+    #     lacked — must not reward the shuffle for being sparse.
+    def as_bouts(seqs: list[list[str]]) -> list[tuple[str, list[str], list[float]]]:
+        return [("sp", s, [0.1] * len(s)) for s in seqs]
+
+    deep = held_out_scaling(as_bouts(second), min_bouts=1)
+    flat_ho = held_out_scaling(as_bouts(first), min_bouts=1)
+    deep_ctl = held_out_scaling(shuffled(as_bouts(second)), min_bouts=1)
+    assert deep["medianD12"] > 0.1, f"held-out estimator missed the plant: {deep}"
+    assert flat_ho["medianD12"] < 0.05, f"held-out estimator invented depth: {flat_ho}"
+    assert deep_ctl["medianD12"] <= 0.0, (
+        "the shuffle must not gain from a longer context under a held-out estimator: "
+        f"{deep_ctl['medianD12']}"
+    )
 
     # 4. NCD: a repeated motif compresses against itself, noise does not.
     motif = bytes(b"ABCABCABCABC")
