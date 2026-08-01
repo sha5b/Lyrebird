@@ -736,61 +736,6 @@ def _type_seed_means(
     return seeds, n_split, owners
 
 
-def deflate_direction(
-    z: np.ndarray, source: Sequence[str], verbose: bool = True
-) -> dict[str, Any] | None:
-    """Project the recorded-vs-synthesised axis out of the space, in place.
-
-    **The measured problem.** The critic's leading loss term is realism — real against
-    our own resynthesis, `w_real 1.0` — so the strongest relation in its embedding is
-    `source` (kNN 0.990 against species' 0.513), which is the axis it was trained to
-    encode. The galaxy is then built in that space out of both kinds of point, so every
-    type lives in two blobs and needs two seeds: on the 2026-08-01 production build,
-    `typeSeeds 27 762` for `types 13 903` — **13 859 of 13 859 learned types split**.
-    The cap therefore binds at twice the type count, and the triage in `type_seeds`
-    sheds 12 879 types' only knot. Half of that demand is one direction in a 32-d space.
-
-    **What this removes, and what it does not.** The direction is the difference of the
-    two source means in the standardised space — the axis the split is measured along,
-    computed from the points themselves rather than from the critic's realism weights,
-    so it works in the descriptor space too and stays honest if the critic is retrained.
-    One unit vector is projected out of every row; the other 31 directions are
-    untouched. What is lost is the galaxy's ability to place a point by how synthetic it
-    sounds, which is not a claim about birds and is not what a knot is for; the fit's
-    realism objective is unaffected, because that reads the critic's head, not this
-    matrix. Returns the receipt (variance share removed, the gap before and after) for
-    the manifest, or None when the corpus has only one source and there is nothing to
-    remove.
-    """
-    src = np.asarray(source)
-    field = src == FIELD_SOURCE
-    if not field.any() or field.all():
-        return None
-    before = float(np.linalg.norm(z[field].mean(axis=0) - z[~field].mean(axis=0)))
-    direction = z[field].mean(axis=0) - z[~field].mean(axis=0)
-    norm = float(np.linalg.norm(direction))
-    if norm < 1.0e-9:
-        return None
-    unit = direction / norm
-    total = float((z**2).sum())
-    projection = z @ unit
-    removed = float((projection**2).sum())
-    z -= np.outer(projection, unit)
-    after = float(np.linalg.norm(z[field].mean(axis=0) - z[~field].mean(axis=0)))
-    report = {
-        "definition": "the recorded-minus-synthesised mean difference, projected out of "
-                      "the standardised space before clustering",
-        "varianceShareRemoved": round(removed / max(total, 1.0e-12), 4),
-        "sourceMeanGap": [round(before, 4), round(after, 4)],
-        "dims": int(z.shape[1]),
-    }
-    if verbose:
-        print(
-            f"deflated the source axis: {report['varianceShareRemoved']:.1%} of the "
-            f"space's energy, source mean gap {before:.3f} -> {after:.3f}",
-            file=sys.stderr,
-        )
-    return report
 
 
 def default_k(points: PointSet) -> int:
@@ -1097,7 +1042,6 @@ def build_galaxy(
     embedding: dict[str, Any] | None = None,
     dump_points: Path | None = None,
     dump_spacemap_eval: Path | None = None,
-    deflate_source: bool = False,
 ) -> GalaxyStats:
     # The projection (and `min_dist` within UMAP) is purely about the picture: KMeans
     # and the activation vectors live in the standardised feature space, never in
@@ -1196,10 +1140,6 @@ def build_galaxy(
                 f"feature space: critic embedding, {len(kept)} points x {space_dims}-d",
                 file=sys.stderr,
             )
-
-    deflation: dict[str, Any] | None = None
-    if deflate_source:
-        deflation = deflate_direction(z, kept.source, verbose=verbose)
 
     if dump_points is not None:
         # The clustering/placement iteration set: the exact matrix and labels KMeans
@@ -1790,9 +1730,6 @@ def build_galaxy(
         # microphones.
         "relations": relation_summary,
         "clusterPlan": plan_report,
-        # Absent unless `--deflate-source` ran: what the space had removed from it before
-        # anything was clustered in it (`deflate_direction`).
-        **({"deflation": deflation} if deflation else {}),
         "points": stats.n_points,
         "pointsDropped": stats.n_dropped,
         "clusters": stats.k,

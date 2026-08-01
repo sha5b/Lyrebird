@@ -27,10 +27,13 @@ configuration the command line abandoned, and was fixed. Evidence: docs/22.
   0.2 %** (0.399 / 0.378 / 0.378 / 0.356 / 0.266 %), and the rows that come closest gain
   nothing over the 98 species repeat classes already reach. Machinery kept, refutation
   recorded in the constant.
-- **Per-species bout rule: REFUTED** (docs/22 §22.4, `--adaptive-bouts`, off). 5x the
+- **Per-species bout rule: REFUTED** (docs/22 §22.4, removed with its flag). 5x the
   species' own median gap reaches 105 species against 98, at **0.628 % control yield**.
   Splitting a fast singer's bouts finer makes more short strings, and short strings are
-  what chance chains. Shipped off with the number. **What did ship: the bout rule was
+  what chance chains. **The three refuted flags of this day were then removed** —
+  `--adaptive-bouts`, `--song-floor`, `--deflate-source`, plus the dead `--source
+  harvest` shim and the code behind each. The measurements survive as docs/22's tables;
+  a refuted policy nobody can reach is surface, not machinery. **What did ship: the bout rule was
   three separate literal `1.0`s** (`learn_grammar`, `bout_sequences`, `syntax`) for one
   rule the grammar, the chunk miner, the P1 bake-off and the song types must share. Now
   `learn.GAP_BOUT_SECONDS` plus one argument every caller takes, pinned by a self-test.
@@ -43,11 +46,11 @@ configuration the command line abandoned, and was fixed. Evidence: docs/22.
     points on both sides, so 24 renders and 1 render split it equally. It does buy
     purity 0.423 -> 0.568 on 24 % fewer points, which is real but is not the mechanism
     that was predicted.
-  - `--deflate-source`: removes 42.0 % of the space's energy and drives the source mean
+  - source-axis deflation: removes 42.0 % of the space's energy and drives the source mean
     gap **7.233 -> 0.0**, and **still every type splits** (1.999), with purity down 1.1
     points. So recorded-vs-synthesised is **not one direction**: the global offset is,
     the per-type geometry the seeding gates on is not. Ships off.
-  - **What works** (`--member-variants 0 --no-member-anchor`): render nothing for a type
+  - **What works** (`--member-variants 0 --no-member-anchor`, kept): render nothing for a type
     that has member observations — it already exists in the map as the real syllables
     `typing.json` assigned to it. Seeds/type **exactly 1.000**, wanted 4 298 -> 2 155,
     purity **0.577** (best), coverage 0.432 (best), 25 % fewer points. **Owner's call,
@@ -71,6 +74,23 @@ configuration the command line abandoned, and was fixed. Evidence: docs/22.
 - **Still not on the tab:** `subset` (so the tab structurally cannot obey the debug-100
   rule — every tab build is a production build), `respfit`/`docrefit`, and the new build
   flags. Flagged, not done.
+
+- **New plan written from the failures: docs/23.** Five workstreams, each naming the
+  measured failure it attacks, the method, the gate stated before the run, and what a
+  negative result would mean — with the methods taken from fields that solved the same
+  problem on other data. W1 the recorder confound as a **batch effect** (Harmony/PLDA
+  post-hoc on `embeddings.f32`, hours, no retraining — the genomics toolkit the project
+  has never tried, against a failure it has recorded twice). W2 **model-free sequence
+  statistics** (Menzerath–Altmann, predictive-information scaling, NCD) — an afternoon
+  on the existing 34 696 bouts, and the first test of whether the type inventory is a
+  real unit system rather than a convenient clustering. W3 the syrinx fit by
+  **simulation-based inference / differentiable DSP** instead of coordinate search, the
+  direct answer to docs/21's "the model is right, the fit is what fails". W4 **function
+  without playback** — weak labels from the store's own xeno-canto behavioural
+  annotations, and the cross-species convergence test `relations.json` already has the
+  data for. W5 stop contaminating the analysis space with our own renderer (docs/22
+  §22.6's measured arm). Order: W2, W1, W5, W4, W3 — cheapest and most refutative first.
+
 
 # Birdy — Session Handoff (2026-07-31)
 

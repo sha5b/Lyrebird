@@ -96,7 +96,10 @@ was, at the value returning the control to 0.2 %:
 over the 98 species repeat classes already reach. Read together the table says one
 thing: a looser bar finds chance strings faster than it finds songs, however the licence
 to loosen it is earned. The machinery stays in `cluster_song_types` as `floor`, off by
-default, with this table as its refutation — the pattern of docs/17 §17.5.
+default — and then removed with its flag, because a per-species bar that no candidate
+requirement can license is not machinery anyone should be able to switch on by accident.
+This table is what survives of it, and `cluster_song_types` still takes
+`min_cluster_size`, so re-running the arm is a parameter and a loop.
 
 ## 22.4 A per-species bout rule: refuted
 
@@ -115,7 +118,10 @@ At five times the species median, clamped to [0.3, 10] s, and judged against the
 
 Seven more species, at nearly four times the chance yield. Splitting a fast singer's
 bouts finer produces more short strings, and short strings are what chance can chain.
-The rule ships as `--adaptive-bouts`, off, with the number recorded.
+The rule was removed with its flag on the same day it was measured: a refuted policy
+that nothing can reach is surface, not machinery, and this table is what survives of it.
+`bout_sequences`, `type_sequences`, `learn_grammar` and `attach_song_types` still take
+the bout rule as an argument, so re-running this arm is a one-line change.
 
 One repair from this work does ship unconditionally: the bout rule was **three separate
 literal `1.0`s** — in `learn_grammar`, in `bout_sequences` and in `syntax` — for a rule
@@ -195,7 +201,10 @@ purity falls 1.1 points, which is what throwing away 42 % of a space costs. So t
 recorded-versus-synthesised difference is **not one direction**. The global offset is one
 direction, and removing it leaves each type's own two clouds pointing as differently as
 before. The critic's realism head names a hyperplane for the corpus, not the per-type
-geometry the seeding gates on. `--deflate-source` ships off, with this as its refutation.
+geometry the seeding gates on. `deflate_direction` was removed with its flag: 42 % of a space's energy for no change
+in the split is not a knob worth keeping reachable. What survives is the finding — the
+recorded-versus-synthesised difference is per-type geometry, not one direction — and it
+is the reason the arm below is the one that works.
 
 **What works is not rendering the type at all.** A learned type with member observations
 *is* those observations — `typing.json` says so, and that is a label the build already

@@ -499,12 +499,125 @@
 	const prevAct = new Float32Array(clusterCount);
 
 	/**
+	 * **Level of detail, by knot.**
+	 *
+	 * Measured, not guessed: the per-frame CPU work of this component is 1.9 ms of a
+	 * 16.7 ms budget at 214 154 points, and almost all of that is the active-index scan
+	 * below. The frame is spent on the GPU instead, rasterising a quarter of a million
+	 * blended sprites — so the only thing that buys frames is drawing fewer of them,
+	 * and no amount of tightening the JS would have helped.
+	 *
+	 * The subsample is by knot rather than by stride, because a knot is the thing that
+	 * has a name, a function and a citation: at galaxy distance the cloud is drawn as
+	 * one representative per cluster — the member nearest its own centroid, an observed
+	 * point and never an average — and the members fade in as the camera comes down.
+	 * A random stride would thin the same picture; this one thins toward the structure
+	 * the galaxy is *about*, and it is exactly what the reader can act on at that
+	 * distance, since a knot is all a label can point at from there.
+	 *
+	 * Three levels, all built once at load, swapped by camera distance with a hysteresis
+	 * band so a slow drift across a threshold cannot flicker. A focused species always
+	 * draws in full: choosing a bird is asking to see its marks.
+	 */
+	const LOD_FAR = 3.2;
+	const LOD_NEAR = 1.6;
+	const LOD_HYSTERESIS = 0.15;
+
+	const lodLevels = untrack(() => {
+		const n = assets.points.n;
+		const cluster = geometry.attributes.aCluster.array as Float32Array;
+		const pos = layout.positions;
+		const centroids = view.centroids;
+		// The representative of each knot: the member closest to the knot's centroid.
+		const bestFor = new Map<number, { i: number; d: number }>();
+        for (let i = 0; i < n; i++) {
+			const c = cluster[i];
+			if (c < 0) continue;
+			const dx = pos[i * 3] - centroids[c * 3];
+			const dy = pos[i * 3 + 1] - centroids[c * 3 + 1];
+			const dz = pos[i * 3 + 2] - centroids[c * 3 + 2];
+			const d = dx * dx + dy * dy + dz * dz;
+			const held = bestFor.get(c);
+			if (!held || d < held.d) bestFor.set(c, { i, d });
+		}
+		// A point in no cluster has no knot to stand in for it, and it is the one point
+		// the discovery map exists to show — so it draws at every level, always.
+		const far: number[] = [];
+		for (let i = 0; i < n; i++) if (cluster[i] < 0) far.push(i);
+		for (const { i } of bestFor.values()) far.push(i);
+		far.sort((a, b) => a - b);
+		const mid: number[] = [];
+		for (let i = 0; i < n; i++) if (cluster[i] < 0 || i % 4 === 0) mid.push(i);
+		return [new Uint32Array(far), new Uint32Array(mid), null] as const;
+	});
+
+	const restIndex = untrack(() => new Uint32Array(Math.max(1, assets.points.n)));
+	const restIndexAttribute = untrack(() =>
+		new THREE.BufferAttribute(restIndex, 1).setUsage(THREE.DynamicDrawUsage)
+	);
+	const restGeometry = untrack(() => {
+		const g = new THREE.BufferGeometry();
+		for (const [name, attribute] of Object.entries(geometry.attributes)) {
+			g.setAttribute(name, attribute as THREE.BufferAttribute);
+		}
+		g.setIndex(restIndexAttribute);
+		g.boundingSphere = geometry.boundingSphere;
+		g.setDrawRange(0, 0);
+		return g;
+	});
+	let lodLevel = -1;
+	let lodFocus = -2;
+
+	function updateLod() {
+		const focus = material.uniforms.uFocus.value as number;
+		// Hysteresis: a level only changes once the camera is clearly past the band it
+		// would move into, so drifting along a threshold cannot toggle every frame.
+		let wanted = lodLevel;
+		const far = viewRadii > LOD_FAR + (lodLevel === 0 ? -LOD_HYSTERESIS : LOD_HYSTERESIS);
+		const near = viewRadii < LOD_NEAR - (lodLevel === 2 ? -LOD_HYSTERESIS : LOD_HYSTERESIS);
+		if (far) wanted = 0;
+		else if (near) wanted = 2;
+		else if (lodLevel !== 1 && !far && !near) wanted = 1;
+		if (wanted === lodLevel && focus === lodFocus) return;
+		lodLevel = wanted < 0 ? 1 : wanted;
+		lodFocus = focus;
+
+		const base = lodLevels[lodLevel];
+		if (base === null && focus < 0) {
+			// Everything: no index needed, and the identity index is what the full cloud is.
+			for (let i = 0; i < restIndex.length; i++) restIndex[i] = i;
+			restGeometry.setDrawRange(0, restIndex.length);
+		} else {
+			let n = 0;
+			if (base === null) {
+				for (let i = 0; i < restIndex.length; i++) restIndex[n++] = i;
+			} else {
+				const species = geometry.attributes.aSpecies.array as Float32Array;
+				const inBase = new Uint8Array(restIndex.length);
+				for (let k = 0; k < base.length; k++) inBase[base[k]] = 1;
+				for (let i = 0; i < restIndex.length; i++) {
+					// A chosen bird draws whole, whatever the distance: selecting it is
+					// the request to see its marks, not a summary of them.
+					if (inBase[i] || (focus >= 0 && Math.abs(species[i] - focus) < 0.5)) {
+						restIndex[n++] = i;
+					}
+				}
+			}
+			restGeometry.setDrawRange(0, n);
+		}
+		restIndexAttribute.needsUpdate = true;
+	}
+
+	/**
 	 * Each point's cluster, read straight off the attribute the shader reads, so the
 	 * CPU-side active test and the GPU-side one can never disagree about membership.
 	 */
 	const clusterOfPoint = untrack(
 		() => geometry.attributes.aCluster.array as Float32Array
 	);
+
+	/** Set by `updateFronts`: is any wavefront still travelling this frame. */
+	let waveActive = false;
 
 	/** Scratch for the learning channel, so the texture write allocates nothing. */
 	const learnPerCluster = untrack(() => new Float32Array(Math.max(1, clusterCount)));
@@ -548,6 +661,16 @@
 	function updateActiveIndex() {
 		const pointAct = signal.pointActivation;
 		const acts = signal.activations;
+		// The scan is the most expensive thing this component does per frame — measured
+		// at 1.84 ms of a 16.7 ms budget at 214 154 points — and on a quiet frame its
+		// answer is always "nothing". `signal.level` is the live input, `best` the
+		// current match, `waveActive` whether a front is still travelling; with none of
+		// them and no learning breath, no point can clear the shader's bar, so the whole
+		// pass is skipped and an idle galaxy costs nothing to explore.
+		if (!signal.level && signal.best < 0 && !waveActive && !learning.length) {
+			if (activeGeometry.drawRange.count !== 0) activeGeometry.setDrawRange(0, 0);
+			return;
+		}
 		let n = 0;
 		for (let i = 0; i < clusterOfPoint.length; i++) {
 			const c = clusterOfPoint[i];
@@ -590,11 +713,15 @@
 			prevAct[c] = a;
 		}
 		front.fill(0);
+		// Whether any ring is still travelling this frame. Read by `updateActiveIndex`,
+		// which can skip its whole pass when nothing at all is responding.
+		waveActive = false;
 		for (let c = 0; c < clusterCount; c++) {
 			const age = frontAge[c];
 			if (!(age < FRONT_LIFE)) continue;
 			const mem = graph.members[c];
 			if (!mem.length) continue;
+			waveActive = true;
 			let w = 0;
 			let ox = 0;
 			let oy = 0;
@@ -657,7 +784,11 @@
 		const distance = cam.position.distanceTo(worldCentre);
 		const range = material.uniforms.uFogRange.value as THREE.Vector2;
 		range.set(Math.max(0.01, distance - radius * 0.55), distance + radius * 1.15);
+		// In cloud radii, so the level of detail below reads the same on any corpus,
+		// whatever the projection scaled the galaxy to.
+		viewRadii = distance / radius;
 	}
+	let viewRadii = 3;
 
 	let points = $state<THREE.Points | undefined>();
 
@@ -832,6 +963,7 @@
 		orphanAttribute.needsUpdate = true;
 		updateFronts(delta * speed);
 		updateActiveIndex();
+		updateLod();
 
 		// "Heard, but nothing claimed": ease the regional breath toward the nearest
 		// knot the listener reports, or back to silence. Eased rather than switched,
@@ -851,6 +983,7 @@
 
 	$effect(() => () => {
 		geometry.dispose();
+		restGeometry.dispose();
 		// Disposes its own index; the attributes it shares with `geometry` are that
 		// geometry's to free, and freeing them twice would drop live GPU buffers.
 		activeGeometry.dispose();
@@ -860,7 +993,7 @@
 	});
 </script>
 
-<T.Points bind:ref={points} {geometry} {material} frustumCulled={false} />
+<T.Points bind:ref={points} geometry={restGeometry} {material} frustumCulled={false} />
 <T.Points
 	geometry={activeGeometry}
 	material={materialActive}
