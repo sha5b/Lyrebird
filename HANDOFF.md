@@ -8,9 +8,14 @@ machine with the Display panel's cost readout open.
 - **The LOD pop and the fps tank.** `PointCloud.svelte`'s discrete 3-level LOD is gone.
   The index is now **one fixed priority order** (knot representatives + unclustered
   points first, then stride tiers), uploaded once at load and re-uploaded only when the
-  focused bird changes. A **continuous frontier** replaces the thresholds: smoothstep
-  from one-point-per-knot at 3.2 cloud radii to everything at 1.6, applied per frame as
-  integer `setDrawRange` calls — no buffer traffic, no hysteresis, no pop. A new `aRank`
+  focused bird changes. A **continuous frontier** replaces the thresholds: a **cubed**
+  smoothstep from one-point-per-knot at 3.2 cloud radii to everything at 1.6, applied
+  per frame as integer `setDrawRange` calls — no buffer traffic, no hysteresis, no pop.
+  (The cube was the first tuning correction, same day, on the owner's report: a plain
+  smoothstep drew ~55 % of the corpus at the window's midpoint, where the whole cloud
+  is still in the frustum and no cell is culled yet — the frame-rate floor just moved
+  to mid-zoom. The cube holds the midpoint to ~21 % and pays density out late, when
+  culling has teeth. `shownFraction` in `PointCloud.svelte` carries the full comment.) A new `aRank`
   attribute + `uLod` uniform fade the ~2 % of points at the frontier in, same idiom as
   the arrival ramp. **The resting pass is now 64 chunked geometries** (4×4×4 grid over
   the bbox, shared attributes, per-cell exact bounding spheres padded 0.12 box units,

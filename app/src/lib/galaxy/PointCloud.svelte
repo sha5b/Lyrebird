@@ -520,8 +520,9 @@
 	 * from there.
 	 *
 	 * What replaced the three discrete levels is a continuous frontier: the resting
-	 * pass draws the first `shownFraction(viewRadii)` of the order, smoothstepped from
-	 * the representatives' share at LOD_FAR to everything at LOD_NEAR, and the shader
+	 * pass draws the first `shownFraction(viewRadii)` of the order, a cubed smoothstep
+	 * from the representatives' share at LOD_FAR to everything at LOD_NEAR (the cube
+	 * keeps the mid-window cheap — see the function's own comment), and the shader
 	 * dissolves the band just behind the frontier in (aRank/uLod, see shaders.ts). The
 	 * levels used to jump from a quarter of the corpus to all of it in one frame at
 	 * LOD_NEAR — up to ~260 k sprites appearing at once, with a full 348 k index
@@ -720,13 +721,24 @@
 	});
 
 	/**
-	 * The share of the priority order in front of the frontier, smoothstepped from the
+	 * The share of the priority order in front of the frontier, from the
 	 * representatives' share at LOD_FAR to the whole corpus at LOD_NEAR.
+	 *
+	 * The smoothstep is **cubed**, and the reason is measured, not aesthetic: a plain
+	 * smoothstep puts ~55 % of the corpus in front of the frontier at the window's
+	 * midpoint, which is exactly where the whole cloud is still inside the frustum —
+	 * no cell is culled yet, and ~190 k sprites rasterise at their 3 px floor, blended,
+	 * on top of each other. That midpoint was the frame-rate floor the owner hit.
+	 * Density there is also worthless: at that distance the extra marks overlap into
+	 * mush. The cube keeps the curve C1-smooth at both ends but holds the midpoint to
+	 * ~21 % (the old mid level's quarter, which was comfortable at that distance) and
+	 * pays the density out late, when a close camera has already culled most of the
+	 * 64 cells and each surviving mark is big enough to read.
 	 */
 	function shownFraction(radii: number): number {
 		const t = Math.min(1, Math.max(0, (LOD_FAR - radii) / (LOD_FAR - LOD_NEAR)));
 		const s = t * t * (3 - 2 * t);
-		return lod.repFraction + (1 - lod.repFraction) * s;
+		return lod.repFraction + (1 - lod.repFraction) * s * s * s;
 	}
 
 	/**
