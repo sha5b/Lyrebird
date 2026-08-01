@@ -577,5 +577,25 @@ export interface RelationsDoc {
 	sharedTypeThreshold?: number;
 	sharedTypeDefinition?: string;
 	speciesPairs: SpeciesRelation[];
+	/**
+	 * Present when this file is the browser's trimmed copy rather than the whole finding
+	 * (`relations.shipped_relations`, since 2026-08-01). The complete document is every
+	 * unordered pair of species, which is quadratic: 2 929 410 pairs and **760 MB** at the
+	 * production build's 2 423 species, fetched before the first frame. The shipped copy
+	 * keeps each species' eight nearest partners — 14 425 pairs, 5.6 MB, and byte-identical
+	 * answers to every query `relationsOf` makes — and records here what it dropped.
+	 *
+	 * **`sharedTypesKept` is not this corpus's shared-type total**; `sharedTypesComputed`
+	 * is. Nothing in the UI reads either, and this exists so that a reader of the file
+	 * cannot mistake the subset for the measurement.
+	 */
+	retention?: {
+		rule: string;
+		pairsKept: number;
+		pairsComputed: number;
+		sharedTypesKept: number;
+		sharedTypesComputed: number;
+		note?: string;
+	};
 	generatedAt?: string;
 }

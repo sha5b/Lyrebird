@@ -353,7 +353,17 @@ export class Listener {
 				const z = standardise(descriptor, this.assets.featureSpace);
 				// The session gate sees the same z the tracker does, but only from the
 				// microphone: the analysis bus also carries Birdy's own output, and a
-				// "session" of corpus audio would never — and should never — flag.
+				// "session" of our own renders is not the thing the gate is about.
+				//
+				// **This guard is load-bearing, not belt-and-braces.** It used to say corpus
+				// audio "would never — and should never — flag", and the first half is
+				// measurably false: the anchors come from the fit sessions, which are field
+				// recordings, and our renders are the synthesized class. Scored against the
+				// shipped anchors on the production build, synthesized-only knots reach a
+				// median 5-NN of 11.02 against a 3.92 threshold while field knots sit at
+				// 3.17 (verify-features.mjs states the whole table). So without this `if`,
+				// playing Birdy's own voice near an open mic would light the Reading panel's
+				// first branch — "off the map, positions are guesses" — about our own corpus.
 				if (this.engine.micActive) this.gate?.push(z);
 				// Flatness is the last element of the 28-d descriptor, and it has to be
 				// handed over raw: standardising turns "this is broadband noise" into a

@@ -238,9 +238,97 @@ def compute_relations(
     }
 
 
-def write_relations(path: Path, document: dict[str, Any]) -> None:
+# How many nearest partners each species keeps in the SHIPPED asset.
+#
+# The reader (`relationsOf` in app/src/routes/+page.svelte) asks for a species' three
+# nearest partners. Eight leaves headroom, so the shipped file answers any request up to
+# eight *exactly* — the same partners, in the same order, as the whole document would.
+SHIPPED_PAIRS_PER_SPECIES = 8
+
+
+def shipped_relations(
+    document: dict[str, Any], per_species: int = SHIPPED_PAIRS_PER_SPECIES
+) -> dict[str, Any]:
+    """The part of `document` a browser needs, with the cut declared inside it.
+
+    **Why this exists.** `compute_relations` returns every unordered pair of species,
+    which is what the analysis wants and is quadratic in the corpus: at the 2 423 species
+    of the 2026-08-01 production build that is **2 929 410 pairs and a 760 MB JSON file**,
+    written beside a galaxy whose whole point-cloud is 4 MB. The app fetched it before the
+    first frame, and `JSON.parse` at that size is not slow, it is a tab that does not come
+    back. The app-side loader now refuses an optional asset over 32 MB, which stops the
+    hang; it does not make the feature work. This does.
+
+    **What is kept is what is read.** Each species keeps its `per_species` nearest
+    partners, so every question the UI asks is answered identically to the full document.
+    The union is deduplicated — a pair near the top of both its species' lists is one pair.
+
+    **What is dropped is stated, in the file.** The `retention` block records the totals,
+    so the shipped asset can never be mistaken for the whole finding: in particular the
+    shared-type count it carries is the count *among kept pairs*, and reading it as the
+    corpus's would understate it. The complete document is still what `compute_relations`
+    returns and what the build logs its statistics from, so nothing about the measurement
+    moves — only the size of the copy the browser is handed.
+    """
+    pairs = document["speciesPairs"]
+    if per_species <= 0:
+        return document
+
+    # Nearest-first per species. `pairs` arrives sorted by distance, so the first
+    # `per_species` hits for a species are its nearest — no re-sorting needed.
+    seen_for: dict[str, int] = {}
+    keep: list[dict[str, Any]] = []
+    kept_ids: set[int] = set()
+    for pair in pairs:
+        a, b = pair["a"], pair["b"]
+        wanted = (
+            seen_for.get(a, 0) < per_species or seen_for.get(b, 0) < per_species
+        )
+        if not wanted:
+            continue
+        seen_for[a] = seen_for.get(a, 0) + 1
+        seen_for[b] = seen_for.get(b, 0) + 1
+        if id(pair) not in kept_ids:
+            kept_ids.add(id(pair))
+            keep.append(pair)
+
+    shared_kept = sum(len(p["sharedTypes"]) for p in keep)
+    shared_total = sum(len(p["sharedTypes"]) for p in pairs)
+    out = dict(document)
+    out["speciesPairs"] = keep
+    out["retention"] = {
+        "rule": (
+            f"each species keeps its {per_species} nearest partners; the union, "
+            "deduplicated. Every query the app makes (a species' three nearest) is "
+            "answered exactly as the complete document would answer it."
+        ),
+        "pairsKept": len(keep),
+        "pairsComputed": len(pairs),
+        "sharedTypesKept": shared_kept,
+        "sharedTypesComputed": shared_total,
+        "note": (
+            "sharedTypesKept counts only the kept pairs and is NOT this corpus's "
+            "shared-type total — sharedTypesComputed is. The complete document is what "
+            "compute_relations returns and what the build reports its statistics from; "
+            "this file is the browser's copy of the part it reads."
+        ),
+    }
+    return out
+
+
+def write_relations(
+    path: Path,
+    document: dict[str, Any],
+    per_species: int | None = SHIPPED_PAIRS_PER_SPECIES,
+) -> None:
+    """Write `document`, trimmed to what a browser reads unless `per_species` is None.
+
+    `None` writes the complete document — for the standalone `relations` verb, where the
+    file is the analysis output rather than a shipped asset.
+    """
     Path(path).parent.mkdir(parents=True, exist_ok=True)
-    Path(path).write_text(json.dumps(document, indent=1), encoding="utf-8")
+    payload = document if per_species is None else shipped_relations(document, per_species)
+    Path(path).write_text(json.dumps(payload, indent=1), encoding="utf-8")
 
 
 def self_test(verbose: bool = True) -> None:
@@ -297,6 +385,81 @@ def self_test(verbose: bool = True) -> None:
         print(
             f"relations self-test ok: planted shared type found at "
             f"{top['distance']:.4f} (threshold {doc['sharedTypeThreshold']:.4f})"
+        )
+
+    _shipped_self_test(verbose=verbose)
+
+
+def _shipped_self_test(verbose: bool = True) -> None:
+    """The trim must answer every question the app asks exactly as the whole document does.
+
+    That is the whole claim `shipped_relations` makes, and it is the one worth pinning: a
+    trim that quietly drops a species' nearest partner would show the wrong bird in the
+    Reading panel and nothing would ever say so. Built on a synthetic ring of species so
+    the expected answer is known without running a corpus.
+    """
+    n = 40
+    per_species = 8
+    names = [f"s{i:02d}" for i in range(n)]
+    # Distance from the index gap: species i's nearest partners are its neighbours in the
+    # ring, so who *should* survive the trim is known by construction.
+    pairs = []
+    for i in range(n):
+        for j in range(i + 1, n):
+            gap = min(j - i, n - (j - i))
+            pairs.append(
+                {
+                    "a": names[i],
+                    "b": names[j],
+                    "aCommon": "",
+                    "bCommon": "",
+                    "distance": float(gap),
+                    "centroidDistance": float(gap),
+                    "nearestNeighbourDistance": None,
+                    # Give a couple of pairs shared types, so the retention counts are
+                    # exercised rather than asserted against zero.
+                    "sharedTypes": [{"a": {}, "b": {}, "distance": 0.0}] if gap == 1 else [],
+                }
+            )
+    pairs.sort(key=lambda p: p["distance"])
+    whole = {"version": 1, "speciesPairs": pairs, "sharedTypeThreshold": 0.5}
+    trimmed = shipped_relations(whole, per_species=per_species)
+
+    def nearest(doc: dict[str, Any], sid: str, limit: int) -> list[tuple[str, float]]:
+        """Exactly what `relationsOf` does in the app, in Python."""
+        mine = [p for p in doc["speciesPairs"] if p["a"] == sid or p["b"] == sid]
+        mine.sort(key=lambda p: p["distance"])
+        return [
+            (p["b"] if p["a"] == sid else p["a"], p["distance"]) for p in mine[:limit]
+        ]
+
+    # The app asks for three. Assert across every species, and at the full headroom too.
+    for limit in (3, per_species):
+        for sid in names:
+            want = nearest(whole, sid, limit)
+            got = nearest(trimmed, sid, limit)
+            # Compare distances, not partner identity: ties at equal gap are ordered by
+            # whatever the sort was stable on, and the claim is about what is *shown*.
+            assert [d for _, d in want] == [d for _, d in got], (
+                f"{sid} at limit {limit}: {want} != {got}"
+            )
+            assert len(got) == limit, f"{sid} lost partners at limit {limit}: {got}"
+
+    r = trimmed["retention"]
+    assert r["pairsComputed"] == len(pairs)
+    assert r["pairsKept"] < r["pairsComputed"], "the trim kept everything"
+    assert r["sharedTypesComputed"] == n, r["sharedTypesComputed"]
+    # No duplicates, and nothing invented.
+    keys = [(p["a"], p["b"]) for p in trimmed["speciesPairs"]]
+    assert len(keys) == len(set(keys)), "the trim duplicated a pair"
+    assert set(keys) <= {(p["a"], p["b"]) for p in pairs}
+    # per_species=0 is the escape hatch: the whole document, untouched.
+    assert shipped_relations(whole, per_species=0) is whole
+
+    if verbose:
+        print(
+            f"shipped-relations self-test ok: {r['pairsKept']} of {r['pairsComputed']} "
+            f"pairs kept, every species' nearest {per_species} answered identically"
         )
 
 

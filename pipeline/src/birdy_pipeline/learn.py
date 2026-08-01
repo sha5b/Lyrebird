@@ -2703,6 +2703,7 @@ def learn_species(
     mel_weight: float = 0.0,
     gap_seconds: float = GAP_BOUT_SECONDS,
     inverse: "Any | None" = None,
+    inverse_two_start: bool = False,
 ) -> dict[str, Any] | None:
     """Fitted syllables + a measured grammar for one species, or None if too little data.
 
@@ -2902,6 +2903,11 @@ def learn_species(
 
     gains: list[float] = []
     fricative_shipped = 0
+    # How often the encoder's basin beat the median's under `--inverse-two-start`. Reported
+    # per species: a two-start whose encoder never wins is paying double for nothing, and
+    # that is a thing the run should say out loud rather than leave to be inferred from an
+    # unmoved median.
+    two_start_encoder_wins = 0
     # One mel target per type (docs/19 §19.3), built from the same members the 28-d
     # reference is built from; all None at the default weight, so `_score` keeps its
     # old code path exactly.
@@ -2920,16 +2926,57 @@ def learn_species(
         # Nothing is forced: the search re-scores from wherever this lands, against the
         # same objective, and a worse start simply costs a few renders. `inverse=None` is
         # the shipped path and is bit-identical to the fit before this existed.
+        #
+        # **Two-start descent** (`--inverse-two-start`, pre-registered in
+        # `pipeline/analysis/inverse_gate.md`). The single-start encoder failed its gate on
+        # consistency, not on direction: the median rose (+0.0135) while only 52.8 % of
+        # types improved — barely more than a coin. The standard answer to inconsistency is
+        # not a better encoder but to descend from *both* starts and keep the winner, which
+        # **cannot regress by construction** because the median start is always one of the
+        # two candidates. The cost is the honest objection: two descents per type.
+        #
+        # The selection reads `invert_gestures`'s own returned objective, not the pure
+        # cosine measured further down. That is deliberate and is what the
+        # pre-registration says: the objective that already decides the descent is the one
+        # that decides between descents, or the comparison would be judged on a number the
+        # search never optimised.
+        encoder_start = None
         if inverse is not None and real[i] is not None:
             patches = [o.mel_patch for o in t.members if o.mel_patch is not None]
             if patches:
-                t.syllable = inverse.init_syllable(
+                encoder_start = inverse.init_syllable(
                     t.syllable, np.mean(np.asarray(patches, dtype=np.float64), axis=0)
                 )
+        two_start = inverse_two_start and encoder_start is not None and invert
+        if encoder_start is not None and not two_start:
+            t.syllable = encoder_start
         if invert and real[i] is not None:
-            before, after = invert_gestures(
-                t, real[i], calibration, frame, realism=realism, mel=mels[i]
-            )
+            if two_start:
+                # No copying needed, and this was checked rather than assumed:
+                # `invert_gestures` only ever *reassigns* `t.syllable` to a fresh `_with`
+                # trial and touches nothing else on `t`, and `inverse.apply_prediction`
+                # returns `dict(syllable)`. So the encoder start is a distinct dict and the
+                # median descent's result survives being set aside.
+                before, after = invert_gestures(
+                    t, real[i], calibration, frame, realism=realism, mel=mels[i]
+                )
+                from_median = t.syllable
+                t.syllable = encoder_start
+                _, after_e = invert_gestures(
+                    t, real[i], calibration, frame, realism=realism, mel=mels[i]
+                )
+                if after_e > after:
+                    two_start_encoder_wins += 1
+                    # `before` stays the *median* start's score, so the reported gain keeps
+                    # meaning "how far the inversion moved from where the fit would have
+                    # started without any of this" — what `gains` means everywhere else.
+                    after = after_e
+                else:
+                    t.syllable = from_median
+            else:
+                before, after = invert_gestures(
+                    t, real[i], calibration, frame, realism=realism, mel=mels[i]
+                )
             gains.append(after - before)
             # docs/16 §16.7 piece 3: the fricative class gets its noise-first start
             # after the tonal search has settled — and keeps it only where the fit's
@@ -2986,6 +3033,14 @@ def learn_species(
             + (
                 f", fricative start shipped on {fricative_shipped}"
                 if invert and fricative_shipped
+                else ""
+            )
+            # Printed even at zero, unlike the fricative count: "the encoder's basin never
+            # won" is the single most useful thing a two-start run can tell you, and it is
+            # exactly the case an `if` on truthiness would hide.
+            + (
+                f", encoder basin won {two_start_encoder_wins}/{len(fitted)}"
+                if inverse_two_start and inverse is not None
                 else ""
             )
         )
@@ -3215,6 +3270,7 @@ def build_learned_inventory(
     jobs: int = 1,
     gap_seconds: float = GAP_BOUT_SECONDS,
     inverse: "Any | None" = None,
+    inverse_two_start: bool = False,
 ) -> dict[str, Any]:
     """A full inventory document in the schema of `data/inventory.json`.
 
@@ -3329,6 +3385,7 @@ def build_learned_inventory(
                 mel_weight=mel_weight,
                 gap_seconds=gap_seconds,
                 inverse=inverse,
+                inverse_two_start=inverse_two_start,
             )
         if learned is None:
             continue

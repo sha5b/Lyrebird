@@ -160,8 +160,31 @@ for (const [name, signal] of Object.entries(probes)) {
 /**
  * The docs/20 session gate, when these assets ship one (builds before 2026-07-31 do
  * not — absence must be a no-op, which is what the rest of this script then proves).
- * The corpus's own renders are in-manifold by construction, so they must not flag;
- * broadband noise is the negative control, and it must.
+ *
+ * **What "in-manifold" means here was wrong until 2026-08-01, and it is why this check
+ * failed on every build that shipped it.** The assertion used to be that *this script's
+ * own synth renders* must not flag, on the stated grounds that "the corpus's own renders
+ * are in-manifold by construction". They are not. The gate's anchors are drawn from the
+ * fit *sessions*, which are field recordings; our renders are the synthesized class,
+ * which docs/22 §22.6 measures as sitting a source-mean-gap of 7.233 away along an axis
+ * carrying 42 % of the space's energy. Measured against the shipped anchors on the
+ * production build (348 461 points, k = 14 003):
+ *
+ *   field-evidence knots      n=13 928  median 5-NN 3.17, 74.7 % under the 3.92 threshold
+ *   synthesized-only knots    n=    75  median 5-NN 11.02, 0 % under
+ *   this script's 44 renders            13.09
+ *
+ * So the old assertion demanded that synth output land on the field manifold — a thing
+ * the corpus itself does not do, and a property of this embedding rather than a fault.
+ * It is replaced by the claim that is true and worth pinning: **real field audio is
+ * in-manifold**, asserted on the per-knot 28-d means the sidecar already loads, which are
+ * in the same standardised space as the anchors (both measured at per-dim |mean| ≈ 0.4,
+ * std ≈ 0.97 — this was checked, because feeding the gate the wrong space would inflate
+ * every distance ≈ 4x and look exactly like a miscalibrated threshold).
+ *
+ * The render score is still printed: its distance from the field cloud is a real property
+ * of this corpus and a change in it is worth seeing. It is reported, not asserted.
+ * Broadband noise stays the negative control, and it must flag.
  */
 // Declared before the session-gate block, which was the first writer of it: `let` is
 // hoisted but not initialised, so the gate's own `failed = true` threw a TDZ
@@ -173,14 +196,48 @@ const gateSpec = rawSpace.embedding?.sessionGate;
 if (!gateSpec?.anchors?.length) {
 	console.log('  no sessionGate in these assets — nothing to assert (build predates it)');
 } else {
-	const corpus = new SessionGate(gateSpec, spec.dims);
-	for (const z of zRows) corpus.push(z);
+	// Reported, not asserted — the synthesized class sits off the field manifold by
+	// measurement, so this number is a property of the corpus, not a pass/fail.
+	const renders = new SessionGate(gateSpec, spec.dims);
+	for (const z of zRows) renders.push(z);
 	console.log(
-		`  in-corpus renders: score ${corpus.score.toFixed(2)} vs threshold ${gateSpec.threshold.toFixed(2)}`
+		`  our own renders:   score ${renders.score.toFixed(2)} vs threshold ` +
+			`${gateSpec.threshold.toFixed(2)} — reported, not asserted (synthesized class)`
 	);
-	if (corpus.flagged) {
-		console.error("\nFAIL: the corpus's own renders flag as off-manifold");
-		failed = true;
+
+	// The assertion: real field audio must be in-manifold. One knot is one session's worth
+	// of rows aggregated the same way the gate aggregates, and a knot with any field
+	// evidence at all is audio a bird actually made in a room someone actually recorded.
+	// The median is the statistic, so a minority of genuinely odd knots cannot fail this
+	// while the coverage claim still holds.
+	const fieldScores = [];
+	for (const item of centroids.items) {
+		const v = item.vector;
+		if (!v || v.length !== spec.dims) continue;
+		if (!((item.sources?.field ?? 0) > 0)) continue;
+		const one = new SessionGate(gateSpec, spec.dims);
+		one.push(v);
+		fieldScores.push(one.score);
+	}
+	if (!fieldScores.length) {
+		console.log('  field knots:       none in this build — nothing to assert');
+	} else {
+		fieldScores.sort((a, b) => a - b);
+		const median = fieldScores[fieldScores.length >> 1];
+		const under = fieldScores.filter((s) => s <= gateSpec.threshold).length;
+		console.log(
+			`  field knots:       median ${median.toFixed(2)}, ` +
+				`${((100 * under) / fieldScores.length).toFixed(1)} % under threshold ` +
+				`(n=${fieldScores.length}, must be in-manifold)`
+		);
+		if (median > gateSpec.threshold) {
+			console.error(
+				`\nFAIL: real field audio flags as off-manifold (median ${median.toFixed(2)} > ` +
+					`${gateSpec.threshold.toFixed(2)}) — the gate would call the corpus's own ` +
+					`recordings uncharted`
+			);
+			failed = true;
+		}
 	}
 	if (whiteNoiseZ) {
 		const noiseGate = new SessionGate(gateSpec, spec.dims);

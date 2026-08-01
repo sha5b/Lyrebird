@@ -125,3 +125,41 @@ than baseline at all** (not −0.05: with the baseline start always available, a
 is a bug in the selection rather than a trade). If it cannot clear +0.02 even while taking
 the better of two starts, then the encoder's proposals are not adding reachable basins and
 this road closes with a measurement rather than a shrug.
+
+## The two-start run: conditions, written before the result was readable (2026-08-01)
+
+The implementation is `learn --inverse PT --inverse-two-start`. Per type, `invert_gestures`
+runs from the cluster median **and** from the encoder's proposal, and the higher of the two
+returned objectives wins. Two details that decide whether the comparison means anything:
+
+- **The selection reads the descent's own objective**, not the pure 28-d cosine reported
+  afterwards. That is what the pre-registration above says — the objective that decides the
+  descent decides between descents — and the alternative would judge the choice on a number
+  the search never optimised.
+- **`before` stays the median start's score**, so the logged `inversion +…` gain keeps
+  meaning "how far the inversion moved from where the fit would have started with none of
+  this", the same thing it means in every other arm.
+
+Checked rather than assumed, because the two-start sets a descended syllable aside and comes
+back to it: `inverse.apply_prediction` returns `dict(syllable)` (a copy), and
+`invert_gestures` only ever *reassigns* `t.syllable` to a fresh `_with` trial and touches
+nothing else on the type. So no deep copy is needed and the median result survives.
+
+**Arms.** Baseline is the existing **arm A** (`learn --store /tmp/birdy-debug/harvest-100`,
+1 661 types, median cosine 0.7410 by the log). Candidate is **arm C**, identical plus
+`--inverse /tmp/birdy-debug/inverse-100.pt --inverse-two-start`. `app/static/birdy/syrinx-calibration.json`
+is the file both read for calibration and it was confirmed **byte-identical** (md5
+`7b8f631a…`) to what arm A read, despite the production assets having been installed over
+that directory in between — otherwise the arms would not be comparable.
+
+**Scoring harness, validated against a known answer before being pointed at the new arm.**
+`analysis/score_two_start.py` reads the per-type `FIT` lines the fit already logs, so it
+scores the syllables that actually shipped. Run on arm A vs **arm B** it reproduces the
+published single-start failure: median gain **+0.0140** (recorded +0.0135) and worst species
+`gampsonyx_swainsonii` **−0.0815** (recorded −0.0816), the differences being the log's
+three-decimal `cos=` rounding. A harness that could not reproduce the old result would not
+be trusted with the new one.
+
+**Cost, measured while running:** roughly 61 minutes against arm B's ~11, i.e. rather more
+than the predicted doubling — the encoder start explores a different basin, so its descent
+does not terminate as early as the median's.

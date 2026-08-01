@@ -136,12 +136,87 @@ camera is moving**, which is the worst possible moment for a GC pause.
   is the content — but it is the reason a quiet galaxy and a singing one can be different
   frame rates at the same camera distance. The readout's "responding" count says so.
 
+**The production assets are INSTALLED, and `verify:features` went green for the first time**
+
+`app/static/birdy` now holds the v5 build (176 MB, `clustering: label`, 348 461 points,
+k = 14 003, coverage 100 %), committed in `409b4d3`. **`relations.json` is deliberately
+absent** — see the 760 MB note above; the app treats it as an absent optional asset and
+the "shares call shapes with" line simply does not appear. Regenerating a small one is a
+pipeline fix, and hand-trimming the 760 MB file would have faked the pipeline's
+provenance, so it was not done.
+
+- `verify-inventory-shards`: **all assertions passed**, 2 423 shards + index.
+- `check-provenance-buffers`: **OK**, and the number worth reading — **0 orphan syllables,
+  0 that own no points at all**. The debug build's "sound plays, nothing reacts" class is
+  gone by construction, which is what 100 % type coverage buys.
+- **`verify:features` PASSES.** Exact syllable match **37/44 = 84.1 %** against a 50 %
+  floor, where the shipped debug build failed it — **known-broken item 8 was the corpus,
+  exactly as predicted**: debug-100 is the deepest hundred species and holds none of the 44
+  authored syllables, and production holds them.
+- **The session-gate failure was a false assertion in the test, and it is now the right
+  assertion.** The check demanded that *this script's own synth renders* not flag, on the
+  grounds that "the corpus's own renders are in-manifold by construction". They are not:
+  the gate's anchors come from the fit *sessions*, which are field recordings, and our
+  renders are the synthesized class — docs/22 §22.6 measures that class at a source mean
+  gap of 7.233 along an axis holding 42 % of the space's energy. Scored against the shipped
+  anchors:
+
+  | rows | n | median 5-NN | under the 3.92 threshold |
+  |---|---|---|---|
+  | field-evidence knots | 13 928 | **3.17** | **74.7 %** |
+  | synthesized-only knots | 75 | 11.02 | 0 % |
+  | the script's 44 renders | 44 | 13.09 | fails |
+
+  So the gate is calibrated correctly and holds on field audio; the old check was asking
+  synth output to land on the field manifold. It now asserts the claim that is true and
+  worth pinning — **real field audio is in-manifold**, over all 13 928 field knots' own 28-d
+  means from the sidecar — keeps broadband noise as the negative control (5.48, flags), and
+  **reports the 13.09 render score without asserting it**, because its distance from the
+  field cloud is a real property of the corpus and a change in it is worth seeing.
+- **One thing checked and found NOT to be a bug, recorded so nobody re-hunts it.** The
+  obvious suspicion was a space mismatch — anchors in raw descriptor units, rows pushed
+  standardised, which would inflate every distance about 4x and look exactly like a
+  miscalibrated threshold. It is not that: **both the anchors and `centroids.json`'s 28-d
+  `vector` are already standardised** (per-dim |mean| ≈ 0.4, std ≈ 0.97 for both, against a
+  feature-space mean of [24.9, 25.7, …] and std of [57.3, 27.8, …]), so `listener.ts`'s
+  `standardise()` push matches the anchors. `SessionGate` strides the flat anchor array by
+  a *passed-in* `dims`, which is a real desync hazard, but both call sites pass the
+  top-level 28 and the anchors are 28 wide.
+- **`listener.ts`'s mic-only guard on the gate is load-bearing, and its comment now says
+  so.** It used to claim corpus audio "would never — and should never — flag"; the first
+  half is false at 11.02 against 3.92. Without the `if (micActive)`, playing Birdy's own
+  voice near an open mic would light the Reading panel's *first* branch — "off the map,
+  positions are guesses" — about our own corpus.
+
+**`relations.json` fixed in the pipeline, and the feature is back: 760 MB -> 5.6 MB**
+
+`compute_relations` returns every unordered pair of species, which is what the analysis
+wants and is quadratic in the corpus: **2 929 410 pairs** at 2 423 species. The new
+`relations.shipped_relations` writes the browser's copy — **each species' eight nearest
+partners, deduplicated** — and `write_relations` applies it by default. The standalone
+`relations` verb passes `per_species=None` and still writes the complete document, because
+there the file *is* the analysis rather than a shipped asset.
+
+- **Lossless for every question the app asks.** `relationsOf` wants a species' three
+  nearest; eight leaves headroom. Checked against the real 760 MB document across **all
+  2 421 species at the app's limit of 3: zero mismatches**, and a self-test pins the same
+  property on a synthetic ring at limits 3 and 8.
+- **Measured on the production document**: 2 929 410 pairs -> **14 425** (5.6 MB, **135x
+  smaller**), carrying 9 513 of the 26 859 shared-type candidates.
+- **The cut is declared in the file, not silent.** A `retention` block carries the rule and
+  both totals, and says in as many words that `sharedTypesKept` is **not** the corpus's
+  shared-type count — `sharedTypesComputed` is. The build logs the trim too, and its
+  headline statistics are still taken from the *complete* document, so the finding is
+  reported whole even though the asset is not. `RelationsDoc.retention` is declared in
+  `types.ts` so a reader of the schema knows the field exists.
+- Installed at `app/static/birdy/relations.json`, produced by running the pipeline's own
+  `shipped_relations` over the build's own output — not hand-edited, which was the reason
+  it was left absent in the first place.
+
 **Open, for whoever is next**
 
-1. **The production assets are built but not installed.** `app/static/birdy` still holds
-   the debug-100 build (214 154 points, k = 4 298, `clustering: kmeans`). Copying v5 in is
-   the real test of everything above, and the cost readout is the thing to watch while
-   doing it — **do not copy `relations.json`**.
+1. ~~The production assets are built but not installed.~~ **Done**, `409b4d3`.
+   ~~The pipeline-side `relations.json` fix.~~ **Done**, above.
 2. **The point cloud itself is still unmeasured at 348 461 points.** The LOD's galaxy
    level draws one representative per knot, which is now 14 003 sprites rather than
    1 024 — 14x the level that existed to make the galaxy view cheap. Inside a bird it

@@ -689,18 +689,28 @@ def cmd_build(
             relations_doc = relations_mod.compute_relations(
                 store, store_embeddings, typing, inventory
             )
+            # The shipped copy is trimmed to the part the browser reads. The full document
+            # is what the statistics below are taken from, so the finding is reported whole
+            # even though the asset is not — and the trim is printed, never silent.
+            shipped = relations_mod.shipped_relations(relations_doc)
             for _, mode_out in modes:
                 relations_mod.write_relations(
-                    mode_out / relations_mod.RELATIONS_NAME, relations_doc
+                    mode_out / relations_mod.RELATIONS_NAME, shipped, per_species=None
                 )
             n_shared = sum(
                 len(p["sharedTypes"]) for p in relations_doc["speciesPairs"]
             )
             log(f"wrote {relations_mod.RELATIONS_NAME} "
                 f"({'both maps' if len(modes) > 1 else str(modes[0][1])}): "
-                f"{len(relations_doc['speciesPairs'])} species pairs, "
+                f"{len(relations_doc['speciesPairs'])} species pairs computed, "
                 f"{n_shared} shared-type candidate(s) under threshold "
                 f"{relations_doc['sharedTypeThreshold']}")
+            kept = shipped["retention"]
+            log(f"  shipped {kept['pairsKept']} of {kept['pairsComputed']} pairs "
+                f"({relations_mod.SHIPPED_PAIRS_PER_SPECIES} nearest partners per "
+                f"species, which is every query the app makes) carrying "
+                f"{kept['sharedTypesKept']} of {kept['sharedTypesComputed']} "
+                f"shared-type candidates")
         except Exception as exc:  # analysis, not output: a build must not fail on it
             log(f"relations skipped: {exc}")
     else:
@@ -1239,8 +1249,14 @@ def cmd_learn(args: argparse.Namespace) -> int:
         from . import inverse as inverse_mod
 
         inverse_encoder = inverse_mod.Inverse.load(Path(args.inverse), prefer_gpu=not args.cpu)
-        log(f"inverse encoder: {args.inverse} on {inverse_encoder.device} — the gesture "
-            "axes start from each type's own patch, and the descent still decides")
+        if getattr(args, "inverse_two_start", False):
+            log(f"inverse encoder: {args.inverse} on {inverse_encoder.device} — TWO-START: "
+                "the descent runs from the cluster median AND from the encoder's proposal "
+                "and the better objective wins, so this cannot fit worse than the shipped "
+                "path by construction, and it costs two descents per type")
+        else:
+            log(f"inverse encoder: {args.inverse} on {inverse_encoder.device} — the gesture "
+                "axes start from each type's own patch, and the descent still decides")
     # Cheap, and it checks the one property that would otherwise fail silently: that a fit
     # with no critic is bit-identical to the one that shipped before the critic existed.
     features.self_test(verbose=False)
@@ -1335,6 +1351,7 @@ def cmd_learn(args: argparse.Namespace) -> int:
         use_respiration=args.respiration,
         use_two_voice=args.two_voice,
         inverse=inverse_encoder,
+        inverse_two_start=getattr(args, "inverse_two_start", False),
         mel_weight=args.mel_weight,
         jobs=args.jobs,
         prior=prior,
@@ -2516,8 +2533,11 @@ def cmd_relations(args: argparse.Namespace) -> int:
             f"{p['nearestNeighbourDistance'] if p['nearestNeighbourDistance'] is not None else 'n/a'}"
             f") shared {len(p['sharedTypes'])}")
     if args.out:
-        relations_mod.write_relations(Path(args.out), document)
-        log(f"wrote {args.out}")
+        # The complete document: this verb's output is the analysis, not a shipped asset,
+        # so it is not trimmed to what a browser reads (see `shipped_relations`).
+        relations_mod.write_relations(Path(args.out), document, per_species=None)
+        log(f"wrote {args.out} (complete document, {len(pairs)} pairs — the build ships a "
+            f"trimmed copy, see relations.shipped_relations)")
     return 0
 
 
@@ -3379,6 +3399,17 @@ def build_parser() -> argparse.ArgumentParser:
                           "gesture axes the cluster median has no value for are taken "
                           "from the encoder. Off = bit-identical to the shipped fit. "
                           "Holds a torch model, so it fits serially, like --critic")
+    lrn.add_argument("--inverse-two-start", action="store_true",
+                     help="with --inverse, run the coordinate descent from BOTH the "
+                          "cluster median and the encoder's proposal and keep whichever "
+                          "scores better on the objective that already decides "
+                          "(pre-registered in pipeline/analysis/inverse_gate.md). The "
+                          "single-start encoder failed its gate on consistency, not "
+                          "direction — the median rose but only 52.8 %% of types improved "
+                          "— and taking the better of two starts cannot regress by "
+                          "construction, because the median start is always one of the "
+                          "candidates. Costs two descents per type. No effect without "
+                          "--inverse")
     lrn.add_argument("--mel-weight", type=float, default=0.0, metavar="W",
                      help="give each type's mean member mel-path a share W of the "
                           "inversion's objective (docs/19 §19.4: the spectral target "
