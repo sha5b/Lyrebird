@@ -11,11 +11,13 @@
 	import NodeLabels from './NodeLabels.svelte';
 	import NodeProjector from './NodeProjector.svelte';
 	import PointCloud from './PointCloud.svelte';
+	import RelationThreads from './RelationThreads.svelte';
 	import Spinner from './Spinner.svelte';
 	import Stats from './Stats.svelte';
 	import Trajectory from './Trajectory.svelte';
 	import { LABEL_SLOTS } from './labels';
 	import { createLayoutView } from './layouts';
+	import { relationPartners, buildPlaceNames, type PlaceName } from '$lib/data/assets';
 	import { type VisualSignal } from './shaders';
 	import type { GalaxyStats } from './stats';
 
@@ -63,6 +65,12 @@
 		 * The Display panel's "adaptive detail" switch; default on.
 		 */
 		adaptive?: boolean;
+		/**
+		 * The selected species' id ('' for none): draws the relation threads to the
+		 * species relations.json says share call shapes with it, and lets the partners'
+		 * knots into the label pool while the selection stands.
+		 */
+		selectedSpecies?: string;
 		onpick?: (cluster: number) => void;
 		/** Fired on a click that hit no node, so the page can clear its selection. */
 		onbackground?: () => void;
@@ -88,6 +96,7 @@
 		plain = true,
 		provShown = [true, true, true, true, true],
 		adaptive = true,
+		selectedSpecies = '',
 		onpick,
 		onbackground,
 		stats
@@ -108,6 +117,34 @@
 	let labelSlots = $state<number[]>(Array.from({ length: LABEL_SLOTS }, () => -1));
 	// The corpus does not change while this is mounted, so the view is sized once.
 	const view = untrack(() => createLayoutView(assets));
+
+	/** The place-name DOM pool, written by NodeLabels, positioned by NodeProjector. */
+	let placeElements = $state<(HTMLElement | null)[]>([]);
+	/**
+	 * The region place-names, computed once the layout is seeded. An effect rather
+	 * than an untrack: PointCloud seeds `view` during child initialisation, so by
+	 * the time effects run the centroids are the drawn ones (knot gap included),
+	 * which is exactly what a name on the map must be quoted against.
+	 */
+	let places = $state<PlaceName[]>([]);
+	$effect(() => {
+		places = buildPlaceNames(assets, view.centroids, view.counts);
+	});
+
+	/**
+	 * The partner knots the label pool may consider while a species is selected:
+	 * every knot a relation thread ends at, resolved once per selection from the
+	 * cached relations graph. The threads themselves are RelationThreads' business;
+	 * this is the same set as knot indices, so a lit partner knot can also be named.
+	 */
+	const relatedKnots = $derived.by(() => {
+		if (!selectedSpecies) return [];
+		const knots = new Set<number>();
+		for (const partner of relationPartners(assets).get(selectedSpecies) ?? []) {
+			for (const t of partner.threads) knots.add(t.to);
+		}
+		return [...knots];
+	});
 
 	/**
 	 * A click on empty space clears the selection — but only a *click*. Orbiting is a
@@ -188,16 +225,17 @@
 		<Spinner {spin} scale={spread} bind:group={cloud}>
 			<GridBurst {assets} {signal} {view} prov={!plain} />
 			<ContextPaths {assets} {signal} {view} prov={!plain} />
+			<RelationThreads {assets} {view} speciesId={selectedSpecies} />
 			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} {provShown} {adaptive} {stats} />
 			<Trajectory {assets} {signal} {view} {spread} {pointSize} prov={!plain} />
 			{#if labels}
-				<NodeProjector {assets} {signal} elements={labelElements} bind:slots={labelSlots} {focus} {pinned} {view} prov={!plain} {stats} />
+				<NodeProjector {assets} {signal} elements={labelElements} bind:slots={labelSlots} {focus} {pinned} {view} prov={!plain} related={relatedKnots} {places} {placeElements} {stats} />
 			{/if}
 		</Spinner>
 	</Canvas>
 
 	{#if labels}
-		<NodeLabels {assets} slots={labelSlots} bind:elements={labelElements} prov={!plain} {onpick} />
+		<NodeLabels {assets} slots={labelSlots} bind:elements={labelElements} prov={!plain} {places} bind:placeElements {onpick} />
 	{/if}
 </div>
 

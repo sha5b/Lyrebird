@@ -271,6 +271,34 @@
 	/** Enough to overflow any window; the strip clips the rest at the far end. */
 	const HISTORY_CAP = 24;
 
+	/**
+	 * Who is singing *right now*: species id → the last time a note of theirs was
+	 * scheduled. The roster strip reads it; a species leaves the roster 10 s after
+	 * its last note, pruned on a slow interval rather than per frame — the map only
+	 * changes when a song is scheduled or a prune fires, never at 60 Hz.
+	 */
+	let heardAt = $state(new Map<string, number>());
+	const ROSTER_SECONDS = 10;
+	$effect(() => {
+		const id = setInterval(() => {
+			const cutoff = Date.now() - ROSTER_SECONDS * 1000;
+			let changed = false;
+			const next = new Map(heardAt);
+			for (const [species, t] of next) {
+				if (t < cutoff) {
+					next.delete(species);
+					changed = true;
+				}
+			}
+			if (changed) heardAt = next;
+		}, 2000);
+		return () => clearInterval(id);
+	});
+	/** The roster, most recently heard first. */
+	const roster = $derived(
+		[...heardAt.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => id)
+	);
+
 	const clusters = $derived<ClusterLookup | null>(assets ? buildClusterLookup(assets.centroids) : null);
 	const speciesIndex = $derived(assets ? buildSpeciesIndex(assets) : null);
 	// The pickers' species list: id + common + counts from the inventory index, complete
@@ -709,6 +737,7 @@
 			// than the menus: whatever sings next draws its own trajectory.
 			created.onScheduled = ({ speciesId: singing, songId, scheduled, voice }) => {
 				singer = voice?.label ?? null;
+				heardAt = new Map(heardAt).set(singing, Date.now());
 				addLive(singing, scheduled, voice?.label ?? '');
 				recordSung(singing, songId, scheduled, voice?.label ?? '');
 				if (chorus !== 'global' && singing !== contextSpecies) {
@@ -1744,6 +1773,7 @@ uv run birdy-pipeline build</pre>
 				labels={showLabels}
 				plain={!provColours}
 				adaptive={adaptiveDetail}
+				selectedSpecies={focus >= 0 ? (currentSpecies?.id ?? '') : ''}
 				{provShown}
 				pinned={pinnedCluster}
 				frame={frameNodes}
@@ -1813,42 +1843,59 @@ uv run birdy-pipeline build</pre>
 									</label>
 								</div>
 								<!--
-									One colour language at a time on the points, chosen as a mode:
-									neutral ink (hue lives where it can be read — the tags, and the
-									response itself, which lights in the singing bird's hue), or the
-									provenance classes ("what kind of thing", which moves the tags and
-									threads too, so the stage never speaks two hue languages at once).
+									The provenance mode switch, demoted to a rollup. Measured on the
+									shipped build: 93.9 % of points are field recordings and 99 % of
+									knots carry a field plurality, so the classes say nearly one thing
+									everywhere, and the spatial colouring carries about 3 points of
+									information over the base rates (91.5 % same-class nearest
+									neighbour against 88.2 % from the rates). The mode stays — the
+									arrivals isolate below needs it — it just is not a top-level
+									switch any more.
 								-->
-								<div class="checks" role="radiogroup" aria-label="Point colour">
-									<label class="check" title="Neutral ink points; hue on the tags says which bird, and what sounds lights in that bird's hue.">
-										<input type="radio" bind:group={pointColour} value="ink" /> Ink
-									</label>
-									<label class="check" title="Colour everything by where each sound comes from, not by which bird it is.">
-										<input type="radio" bind:group={pointColour} value="prov" /> Provenance
-									</label>
-								</div>
-								{#if provColours}
-									<ul class="legend">
-										{#each provLegend as row (row.cls)}
-											<li class:absent={row.share === 0}>
-												<i style:background={row.colour}></i>
-												<b>{row.name}</b>
-												<span class="mono"
-													>{row.share === 0 ? 'none' : `${Math.round(row.share * 100)}%`}</span
-												>
-											</li>
-										{/each}
-									</ul>
+								<details class="rollup">
+									<summary class="mono faint">provenance colours</summary>
 									<p class="note faint">
-										Hue says what kind of thing a sound is; the tag beside it names the
-										bird. The big split is whether a bird made the sound or we did.
+										On this build 99% of knots are field recordings — the classes
+										answer "what is this" per tag, not "where is it" on the map.
 									</p>
-								{:else}
-									<p class="note faint">
-										Points are neutral ink. Hue on the tags says which bird, and what
-										sounds lights in that bird's hue.
-									</p>
-								{/if}
+									<!--
+										One colour language at a time on the points, chosen as a mode:
+										neutral ink (hue lives where it can be read — the tags, and the
+										response itself, which lights in the singing bird's hue), or the
+										provenance classes ("what kind of thing", which moves the tags and
+										threads too, so the stage never speaks two hue languages at once).
+									-->
+									<div class="checks" role="radiogroup" aria-label="Point colour">
+										<label class="check" title="Neutral ink points; hue on the tags says which bird, and what sounds lights in that bird's hue.">
+											<input type="radio" bind:group={pointColour} value="ink" /> Ink
+										</label>
+										<label class="check" title="Colour everything by where each sound comes from, not by which bird it is.">
+											<input type="radio" bind:group={pointColour} value="prov" /> Provenance
+										</label>
+									</div>
+									{#if provColours}
+										<ul class="legend">
+											{#each provLegend as row (row.cls)}
+												<li class:absent={row.share === 0}>
+													<i style:background={row.colour}></i>
+													<b>{row.name}</b>
+													<span class="mono"
+														>{row.share === 0 ? 'none' : `${Math.round(row.share * 100)}%`}</span
+													>
+												</li>
+											{/each}
+										</ul>
+										<p class="note faint">
+											Hue says what kind of thing a sound is; the tag beside it names the
+											bird. The big split is whether a bird made the sound or we did.
+										</p>
+									{:else}
+										<p class="note faint">
+											Points are neutral ink. Hue on the tags says which bird, and what
+											sounds lights in that bird's hue.
+										</p>
+									{/if}
+								</details>
 							</section>
 							<section class="block">
 								<!--
@@ -2037,6 +2084,27 @@ uv run birdy-pipeline build</pre>
 					</div>
 				{/if}
 			</div>
+
+			{#if roster.length}
+				<!--
+					Who is singing, as it happens: one chip per species heard in the
+					last ten seconds, in its own hue, newest loudest-first. Clicking
+					selects the bird — the same path the picker takes, fly-to included.
+				-->
+				<div class="roster" aria-label="Now singing">
+					{#each roster as id (id)}
+						<button
+							class="sung"
+							style:--accent={speciesColourOf(id)}
+							onclick={() => (speciesId = id)}
+							title="Now singing — select {assets?.speciesCommon(id)}"
+						>
+							<span class="swatch"></span>
+							<span class="sung-name">{assets?.speciesCommon(id)}</span>
+						</button>
+					{/each}
+				</div>
+			{/if}
 
 			{#if history.length}
 				<!--
@@ -2375,6 +2443,34 @@ uv run birdy-pipeline build</pre>
 						-->
 						{#if currentSpecies}
 							<p class="note">{currentSpecies.summary}</p>
+							{#if assets.relations}
+								{@const rels = relationsOf(currentSpecies.id, 6)}
+								{#if rels.length}
+									<!--
+										The relations graph as a chooser: each partner is one
+										click away, in its own hue (the same hash the tags and
+										threads use), and the honesty line rides underneath —
+										a shared call shape is a distance, never a claim of
+										borrowing or kinship (§8.5).
+									-->
+									<p class="note faint sounds-like">
+										Sounds like:
+										{#each rels as p (p.a + '/' + p.b)}
+											{@const partner = p.a === currentSpecies.id ? p.b : p.a}
+											<button
+												class="chip"
+												style:color={speciesColourOf(partner)}
+												title="Select {relationPartner(p, currentSpecies.id)}"
+												onclick={() => (speciesId = partner)}
+											>{relationPartner(p, currentSpecies.id)}</button>
+										{/each}
+									</p>
+									<p class="note faint">
+										Nearer than two types of one bird usually are — a distance,
+										not a claim of borrowing or kinship.
+									</p>
+								{/if}
+							{/if}
 							<label class="field">
 								<span class="lbl">
 										Call or song
@@ -4305,6 +4401,14 @@ uv run birdy-pipeline serve</pre>
 		cursor: pointer;
 	}
 
+	/* The "sounds like" partners: chips inline in a note, not a strip of their own. */
+	.sounds-like {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
 	/* A text word boundary on the strip: the one place a gap is not the flat placeholder. */
 	.chip.wordbreak {
 		border-left: 2px solid var(--ink-dim);
@@ -4385,6 +4489,26 @@ uv run birdy-pipeline serve</pre>
 	}
 
 	/* --- what has been sung --- */
+
+	/* The roster is the history strip's live twin: same lane, same chip shape, pinned
+	   to the top of the stage so "who is singing" and "what was sung" never share a
+	   row and can never be mistaken for each other. */
+	.roster {
+		position: absolute;
+		top: 1rem;
+		left: calc(20rem + 2rem);
+		right: calc(21rem + 2rem);
+		z-index: 2;
+		display: flex;
+		justify-content: center;
+		gap: 0.3rem;
+		overflow: hidden;
+		pointer-events: none;
+	}
+
+	.roster .sung {
+		pointer-events: auto;
+	}
 
 	.history {
 		position: absolute;

@@ -753,3 +753,173 @@ export function syllableCoverage(
 	}
 	return { placed, total: syllableIds.length };
 }
+
+/**
+ * One partner species in the relations graph, with the knot↔knot pairs resolved.
+ *
+ * relations.json quotes type pairs (`species/typeId`); the scene needs cluster
+ * indices. Resolving happens here, once per loaded asset set, because the build is
+ * `clustering: label` with 100 % type coverage — every typeId maps to exactly one
+ * knot — so the resolution is a plain dictionary lookup and a pair that resolves to
+ * -1 on either end means the asset set predates that guarantee and the thread is
+ * dropped rather than drawn to nowhere.
+ */
+export interface RelationPartner {
+	/** The other species' id. */
+	partner: string;
+	/** Species-pair embedding distance from relations.json: smallest is strongest. */
+	distance: number;
+	/** Knot of the queried species → knot of the partner, per shared type pair. */
+	threads: { from: number; to: number; distance: number }[];
+}
+
+const relationPartnerCache = new WeakMap<BirdyAssets, Map<string, RelationPartner[]>>();
+
+/**
+ * The relations graph keyed by species id: each species' partners, each partner's
+ * shared-type pairs as resolved knot indices. Built once per asset set (14 425
+ * pairs, one pass) and cached on the assets object, so the scene component and the
+ * label projector share one build. Empty when the build predates relations.json.
+ */
+export function relationPartners(assets: BirdyAssets): Map<string, RelationPartner[]> {
+	const held = relationPartnerCache.get(assets);
+	if (held) return held;
+	const out = new Map<string, RelationPartner[]>();
+	if (assets.relations) {
+		const lookup = buildClusterLookup(assets.centroids);
+		for (const pair of assets.relations.speciesPairs) {
+			for (const [self, other] of [
+				['a', 'b'],
+				['b', 'a']
+			] as const) {
+				const entry = { partner: pair[other], distance: pair.distance, threads: [] as RelationPartner['threads'] };
+				for (const shared of pair.sharedTypes) {
+					const from = clusterIndexFor(lookup, shared[self].species, shared[self].typeId);
+					const to = clusterIndexFor(lookup, shared[other].species, shared[other].typeId);
+					if (from < 0 || to < 0) continue;
+					entry.threads.push({ from, to, distance: shared.distance });
+				}
+				if (!entry.threads.length) continue;
+				const list = out.get(pair[self]);
+				if (list) list.push(entry);
+				else out.set(pair[self], [entry]);
+			}
+		}
+	}
+	relationPartnerCache.set(assets, out);
+	return out;
+}
+
+/**
+ * One region place-name: the plurality species of a coarse grid cell, anchored at
+ * the cell's mass centre. A map name, not a specimen tag — it answers "whose
+ * neighbourhood is this" at whole-galaxy zoom, where no tag is on screen.
+ */
+export interface PlaceName {
+	/** Mass-weighted mean of the cell's knot positions. */
+	position: [number, number, number];
+	/** The plurality species' display name. */
+	name: string;
+	speciesId: string;
+	/** The cell's point count; the biggest regions name first when the cap bites. */
+	mass: number;
+}
+
+/** The most place-names on screen at once: a map key, not a directory. */
+export const PLACE_NAME_MAX = 12;
+
+/**
+ * Name the regions of the galaxy, lazily, in one pass over the knots.
+ *
+ * The knots are partitioned into a 6×6×6 grid over their own bounds (216 cells is
+ * coarse enough that a cell is a *region*, fine enough that two regions rarely
+ * share a screen corner). A cell earns a name only on two gates: it holds at least
+ * 1 % of the corpus's points — anything smaller is a hamlet, and naming it would
+ * pretend the map has more structure than it does — and one species holds at least
+ * 40 % of the cell's points. Below 40 % the cell is genuinely mixed, and a name
+ * would be a claim the corpus refuses; it stays nameless, which is the honest
+ * reading. Mass is quoted in points (counts per knot), not knots, so a region of
+ * one dense species outweighs a region of sparse ones exactly as the cloud draws
+ * them.
+ *
+ * Takes the *drawn* centroids (the layout's, knot gap included), not the manifest's
+ * raw positions: a name must sit where its region is drawn. Callers pass
+ * `view.centroids` after PointCloud has seeded it.
+ */
+export function buildPlaceNames(
+	assets: BirdyAssets,
+	centroids: Float32Array,
+	counts: Uint32Array
+): PlaceName[] {
+	const k = assets.centroids.k;
+	const items = assets.centroids.items;
+	if (!k || !items.length) return [];
+	const DIV = 6;
+	let minX = Infinity,
+		minY = Infinity,
+		minZ = Infinity,
+		maxX = -Infinity,
+		maxY = -Infinity,
+		maxZ = -Infinity;
+	for (let c = 0; c < k; c++) {
+		if (!(counts[c] ?? 0)) continue;
+		const x = centroids[c * 3],
+			y = centroids[c * 3 + 1],
+			z = centroids[c * 3 + 2];
+		if (x < minX) minX = x;
+		if (x > maxX) maxX = x;
+		if (y < minY) minY = y;
+		if (y > maxY) maxY = y;
+		if (z < minZ) minZ = z;
+		if (z > maxZ) maxZ = z;
+	}
+	const longest = Math.max(maxX - minX, maxY - minY, maxZ - minZ);
+	if (!(longest > 0)) return [];
+	const cell = longest / DIV;
+	interface Cell {
+		total: number;
+		bySpecies: Map<string, number>;
+		x: number;
+		y: number;
+		z: number;
+	}
+	const cells = new Map<number, Cell>();
+	for (let c = 0; c < k; c++) {
+		const n = counts[c] ?? 0;
+		if (!n) continue;
+		const ix = Math.min(DIV - 1, Math.max(0, Math.floor((centroids[c * 3] - minX) / cell)));
+		const iy = Math.min(DIV - 1, Math.max(0, Math.floor((centroids[c * 3 + 1] - minY) / cell)));
+		const iz = Math.min(DIV - 1, Math.max(0, Math.floor((centroids[c * 3 + 2] - minZ) / cell)));
+		const key = ix + DIV * (iy + DIV * iz);
+		let bucket = cells.get(key);
+		if (!bucket) cells.set(key, (bucket = { total: 0, bySpecies: new Map(), x: 0, y: 0, z: 0 }));
+		bucket.total += n;
+		bucket.x += centroids[c * 3] * n;
+		bucket.y += centroids[c * 3 + 1] * n;
+		bucket.z += centroids[c * 3 + 2] * n;
+		const sp = items[c]?.speciesId ?? '';
+		bucket.bySpecies.set(sp, (bucket.bySpecies.get(sp) ?? 0) + n);
+	}
+	const total = assets.points.n || 1;
+	const out: PlaceName[] = [];
+	for (const bucket of cells.values()) {
+		if (bucket.total < total * 0.01) continue;
+		let best = '';
+		let bestN = 0;
+		for (const [sp, n] of bucket.bySpecies) {
+			if (n > bestN) {
+				best = sp;
+				bestN = n;
+			}
+		}
+		if (bestN < bucket.total * 0.4) continue;
+		out.push({
+			position: [bucket.x / bucket.total, bucket.y / bucket.total, bucket.z / bucket.total],
+			name: assets.speciesCommon(best),
+			speciesId: best,
+			mass: bucket.total
+		});
+	}
+	out.sort((a, b) => b.mass - a.mass);
+	return out.slice(0, PLACE_NAME_MAX);
+}

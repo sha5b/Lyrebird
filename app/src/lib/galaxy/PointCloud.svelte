@@ -1069,8 +1069,11 @@
 		const range = material.uniforms.uFogRange.value as THREE.Vector2;
 		range.set(Math.max(0.01, distance - radius * 0.55), distance + radius * 1.15);
 		// In cloud radii, so the level of detail below reads the same on any corpus,
-		// whatever the projection scaled the galaxy to.
+		// whatever the projection scaled the galaxy to. Reported on stats as well:
+		// anything that gates on distance (the place-names) reads it there instead of
+		// re-deriving the camera's geometry.
 		viewRadii = distance / radius;
+		if (stats) stats.viewRadii = viewRadii;
 	}
 	let viewRadii = 3;
 

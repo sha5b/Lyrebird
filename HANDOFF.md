@@ -1,3 +1,46 @@
+# Birdy — Session Handoff (2026-08-01, late 4: relations, roster, place-names; spaces research)
+
+**Four sense-making features shipped, plus the owner's "how do we find new songs"
+research answered.** Checks green throughout (4 baseline errors, 0 warnings, parity
+18/18, layout, build). Owner visual pass owed.
+
+- **Provenance verdict, measured on the shipped corpus:** points 93.9 % field / 3.7 %
+  candidate / 2.4 % documented / 0 % learned / 0 % unlabelled; knots 99.0 % field
+  plurality; NN same-class 91.5 % vs 88.2 % from base rates — the spatial colouring
+  carries ~3 points of information. The ink/provenance switch is now demoted into a
+  "provenance colours" rollup with that honesty line; the discovery isolate keeps the
+  classes top-level.
+- **Relation threads + "Sounds like" chips.** `assets.relationPartners()` resolves
+  relations.json's 9 513 shared-type pairs to knot↔knot pairs (1:1 on the label
+  build). `RelationThreads.svelte` draws up to 64 hairlines from the selected bird's
+  knots to partner knots (neutral → partner hue), rebuilt on selection only; partner
+  knots join the label pool at low priority via a new `related` prop on NodeProjector.
+  Sing tab shows ≤ 6 partner chips in species hues with the honest definition
+  ("nearer than two types of one bird usually are — a distance, not kinship").
+- **"Now singing" roster.** Chips of the species heard in the last 10 s
+  (`engine.onScheduled` → `heardAt` map, 2 s prune tick), newest first, click to fly
+  to the bird. Above the history lane.
+- **Region place-names.** 6×6×6 grid over the knots; a cell ≥ 1 % of points with a
+  ≥ 40 % plurality species gets its bird's name as a quiet map-style label
+  (`buildPlaceNames`, cap 12), projected at ≤ 0.25 s cadence only when nothing is
+  selected and viewRadii ≥ 2.2 (new `stats.viewRadii`). Separate pool from the tags.
+- **Research answer (for the next round, nothing built):** novelty today is geometry
+  in ONE space — cosine distance in the critic's 32-d embedding to per-type centroids
+  (5 % FPR threshold; species-level AUC only 0.596, "a research problem, not a tuning
+  one"). Idle spaces/information: Perch's 1536-d (extraction already in
+  `perch.label_novel(keep_embeddings=True)`; docs/13 §A1 pre-registered "does Perch
+  agree this is novel?"; W6: external models disagree with each other more than
+  either differs from ours → cross-space disagreement is itself signal), the 1 726
+  singleton bouts (song-level novelty pool, docs/12 §12.4, unconsumed), the 28-d vs
+  32-d disagreement (~0.49 centroid agreement, docs/20), and never-used store
+  metadata: recordist call-`type` labels (harvest.py:1170 calls them the cheapest
+  route to functional labels), `also`, country, date, sex, stage. **lat/lng is not
+  collected** — a one-field harvest change opens the dialect axis (docs/18 P4).
+  Caveat for any new space: recorder confound (docs/23 W1/W6). Songs are already
+  connected three ways (measured grammar, song types, shared types across species);
+  a visible "what comes next" ghost-thread from the sounding knot along the measured
+  transitions is the natural next build.
+
 # Birdy — Session Handoff (2026-08-01, late 3: adaptive density, knot spacing, bird mode out)
 
 **Owner round 3 on the galaxy: mid-zoom fps still tanked, knots too tight, bird

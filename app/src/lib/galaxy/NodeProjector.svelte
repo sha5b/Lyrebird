@@ -21,7 +21,7 @@
 	import { T, useTask, useThrelte } from '@threlte/core';
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
-	import { buildSpeciesIndex, clusterProvenance, knotHeat } from '$lib/data/assets';
+	import { buildSpeciesIndex, clusterProvenance, knotHeat, PLACE_NAME_MAX, type PlaceName } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
 	import { provenanceColourScaled, speciesColourScaled } from './palette';
 	import { LABEL_SLOTS, MAX_LABELS } from './labels';
@@ -45,6 +45,21 @@
 		view: LayoutView;
 		/** Provenance language for the tag accent, matching the points and threads. */
 		prov?: boolean;
+		/**
+		 * Knots the selection's relations end at (RelationThreads' set), allowed a tag
+		 * while the selection stands even though the focus dimms their species. Low
+		 * priority by construction: they are never hot, so the sort and the collision
+		 * pass decide them exactly like any resting knot.
+		 */
+		related?: number[];
+		/**
+		 * The region place-names and their DOM pool (NodeLabels fills it): quiet map
+		 * names for the whole-galaxy view, drawn only far out with nothing selected.
+		 * A separate pool from the tags — a place-name never takes a tag's slot, and
+		 * a tag never takes a place-name's.
+		 */
+		places?: PlaceName[];
+		placeElements?: (HTMLElement | null)[];
 		/** Written, never read: what the stage cost this frame. */
 		stats?: GalaxyStats;
 	}
@@ -58,10 +73,16 @@
 		pinned = -1,
 		view,
 		prov = false,
+		related = [],
+		places = [],
+		placeElements = [],
 		stats
 	}: Props = $props();
 
 	const { camera, size } = useThrelte();
+
+	/** The related knots as a Set, rebuilt only when the selection changes them. */
+	const relatedSet = $derived(new Set(related));
 
 	const centroids = untrack(() => assets.centroids.items);
 	const speciesOf = untrack(() => {
@@ -187,6 +208,9 @@
 	const GAP_X = 168;
 	const GAP_Y = 26;
 	const HOT = 0.12;
+	/** Seconds between place-name reprojections: cartography, not instrumentation. */
+	const PLACE_SECONDS = 0.25;
+	let placeClock = 0;
 
 	useTask((delta) => {
 		const cam = camera.current;
@@ -228,6 +252,14 @@
 		if (focus >= 0) {
 			for (const i of knotsBySpecies.get(focus) ?? []) {
 				if (linger[i] <= 0 && i !== pinned) candidates.push(i);
+			}
+		}
+		// The selection's relations join at the same rule: a knot a thread ends at may
+		// be named while the selection stands. The related set changes only with the
+		// selection, so the Set is rebuilt by the derivation above, never per frame.
+		if (relatedSet.size) {
+			for (const i of relatedSet) {
+				if (i < shown.length && (linger[i] ?? 0) <= 0 && i !== pinned) candidates.push(i);
 			}
 		}
 		if (pinned >= 0 && pinned < shown.length && linger[pinned] <= 0) candidates.push(pinned);
@@ -274,8 +306,7 @@
 			// `hot` is what keeps a tag on screen, so it reads the lingering envelope; the
 			// figures inside the tag still read the live activation.
 			const hot = linger[i] > HOT;
-			const dimmed = focus >= 0 && speciesOf[i] !== focus;
-			const behind = p.z > 1 || p.z < -1;
+			const dimmed = focus >= 0 && speciesOf[i] !== focus;			const behind = p.z > 1 || p.z < -1;
 			const x = (p.x * 0.5 + 0.5) * width;
 			const y = (-p.y * 0.5 + 0.5) * height;
 
@@ -298,7 +329,10 @@
 				x < width + 80 &&
 				y > -40 &&
 				y < height + 40 &&
-				!(dimmed && !hot) &&
+				// A related knot is exempt from the focus dim: it is on screen because
+				// the selection's relations point at it, so dimming it away would name
+				// the thread's far end invisible at exactly the moment it matters.
+				!(dimmed && !hot && !relatedSet.has(i)) &&
 				(budget > 0 || i === pinned || hot);
 			if (visible && i !== pinned) {
 				// An open tag is several lines tall, so it needs a taller exclusion box than a
@@ -410,6 +444,62 @@
 		}
 
 		if (stats) stats.tagsDrawn = chosen.length;
+
+		// **Pass six: the place-names.** Quiet region cartography for the
+		// whole-galaxy view, reprojected four times a second rather than per frame —
+		// a name that trails the camera by a quarter second reads as printed, and the
+		// projection is the whole per-frame cost this pass would have had. Shown only
+		// far out (viewRadii ≥ 2.2, where no tag is asking to be read anyway) and
+		// only with nothing selected: a chosen bird narrows the map to one
+		// repertoire, and naming regions then would argue with it. Collision is a
+		// coarse box test against the tags already placed and the names placed this
+		// pass — the pool is twelve, so the test is free.
+		placeClock += delta;
+		if (placeClock >= PLACE_SECONDS) {
+			placeClock = 0;
+			const show = focus < 0 && (stats?.viewRadii ?? -1) >= 2.2;
+			const named: { x: number; y: number }[] = [];
+			for (let i = 0; i < PLACE_NAME_MAX; i++) {
+				const node = placeElements[i];
+				if (!node) continue;
+				const place = places[i];
+				let x = 0;
+				let y = 0;
+				let ok = Boolean(show && place);
+				if (ok && place) {
+					world
+						.set(place.position[0], place.position[1], place.position[2])
+						.applyMatrix4(matrix)
+						.project(cam);
+					ok = world.z <= 1 && world.z >= -1;
+					x = (world.x * 0.5 + 0.5) * width;
+					y = (-world.y * 0.5 + 0.5) * height;
+					if (ok) {
+						for (const ch of chosen) {
+							if (Math.abs(ch.x - x) < 130 && Math.abs(ch.y - y) < 30) {
+								ok = false;
+								break;
+							}
+						}
+					}
+					if (ok) {
+						for (const q of named) {
+							if (Math.abs(q.x - x) < 130 && Math.abs(q.y - y) < 24) {
+								ok = false;
+								break;
+							}
+						}
+					}
+				}
+				if (ok && place) {
+					named.push({ x, y });
+					node.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) translate(-50%, -50%)`;
+					node.style.opacity = '0.85';
+				} else if (node.style.opacity !== '0') {
+					node.style.opacity = '0';
+				}
+			}
+		}
 	});
 </script>
 

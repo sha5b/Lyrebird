@@ -35,6 +35,13 @@ export interface GalaxyStats {
 	 * got it. Written every frame; see the governor in PointCloud.
 	 */
 	densityCap: number;
+	/**
+	 * Camera distance in cloud radii, written every frame by PointCloud's fog fit —
+	 * the same number the LOD frontier is quoted against, so anything that gates on
+	 * "far out" vs "close up" reads it here instead of re-deriving it. -1 until the
+	 * first frame reports.
+	 */
+	viewRadii: number;
 	/** Name tags positioned last frame. Bounded by the pool, never by the corpus. */
 	tagsDrawn: number;
 	/** Knots the build holds. */
@@ -58,6 +65,7 @@ export function createStats(pointsTotal: number, clusters: number): GalaxyStats 
 		pointsResponding: 0,
 		lod: -1,
 		densityCap: 1,
+		viewRadii: -1,
 		tagsDrawn: 0,
 		clusters,
 		renderer: ''
