@@ -75,6 +75,14 @@
 		 * the write happens here: the texture is created at init and never replaced.
 		 */
 		texture?: THREE.DataTexture;
+		/**
+		 * The corpus's own length unit, handed back out: the median nearest-neighbour
+		 * distance between knot centres, in layout box units. Measured here because the
+		 * wave's reach is already quoted against it, and read by the stage ruler, which
+		 * has no other honest unit to tick in — the projection's axes are arbitrary, but
+		 * "how far apart two neighbouring call types sit" is a fact about this build.
+		 */
+		knotSpacing?: number;
 		/** Written, never read: how many points each pass actually drew. See stats.ts. */
 		stats?: GalaxyStats;
 	}
@@ -92,6 +100,7 @@
 		provShown = [true, true, true, true, true],
 		adaptive = true,
 		texture = $bindable(),
+		knotSpacing = $bindable(),
 		stats
 	}: Props = $props();
 
@@ -478,6 +487,7 @@
 		// a high enough empty share, past its end entirely.
 		medianKnotSpacing = nn[nn.length >> 1] ?? 0.135;
 		material.uniforms.uWaveLocal.value = 4 * medianKnotSpacing;
+		knotSpacing = medianKnotSpacing;
 	});
 
 	// Registered after construction rather than in the geometry block above, because

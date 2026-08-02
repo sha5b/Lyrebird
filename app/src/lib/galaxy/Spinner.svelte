@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { T, useTask } from '@threlte/core';
 	import type * as THREE from 'three';
 	import type { Snippet } from 'svelte';
@@ -20,7 +21,28 @@
 	}
 
 	let { spin = true, scale = 1, group = $bindable(), children }: Props = $props();
-	let current = 1;
+	/**
+	 * **Starts at the requested scale, not at 1.**
+	 *
+	 * The ease exists for the distance slider, and it used to run on the first frame
+	 * too — from 1 up to the opening 6.2 over about a second. That was not a cosmetic
+	 * warm-up: `Framing` fits the camera on the first frame it sees a frame set, reads
+	 * this group's scale to convert the reach into world units, and then marks itself
+	 * `snapped` and never refits. Its task is also registered *before* this one, so on
+	 * that frame the scale it read was the initial 1 — the camera landed about six
+	 * times too close and the opening "whole galaxy" view showed roughly **40 % of the
+	 * corpus's width**, with the rest off-screen and no margin anywhere to suggest
+	 * anything was missing. Measured with the stage ruler: 33 knot-spacings across a
+	 * corpus about 80 wide.
+	 *
+	 * `untrack` because only the *initial* value belongs here; every later change is
+	 * the slider's and is still eased.
+	 */
+	let current = untrack(() => scale);
+	$effect(() => {
+		// Before any task runs, so Framing's first-frame fit sees the real scale.
+		if (group) group.scale.setScalar(current);
+	});
 
 	/**
 	 * Slow drift, so the cloud reads as a volume rather than a flat picture.

@@ -502,6 +502,35 @@ export interface Manifest {
 			verdict: string;
 		}[];
 	};
+	/**
+	 * How much of the measured distance structure survived the projection to three
+	 * dimensions: the correlation between 32-d cosine distance and drawn euclidean
+	 * distance over `pairs` random point pairs. **The build has always written it and
+	 * nothing read it**, so the interface asserted "closer is more alike" flatly while
+	 * the number sat in the manifest saying "roughly" (0.667 on the shipped v6 build).
+	 */
+	faithfulness?: { pearson: number; spearman: number; pairs: number; definition?: string };
+	/**
+	 * The same question locally and much harsher: the share of a point's `k` nearest
+	 * neighbours *on screen* that carry its own type. 0.0849 on the shipped build —
+	 * far above the 1-in-13 748 a shuffle would give, and still nine neighbours in ten
+	 * belonging to some other call.
+	 */
+	knnAgreement?: { k: number; value: number; definition?: string };
+	/**
+	 * Knots this projection draws in two places at once, so their centroid — where the
+	 * label, the thread and the wave all go — lands between two blobs instead of on
+	 * the points. `median` ~2 is the null (splitting one blob scores about 2); `torn`
+	 * counts above 5. This is the measured form of "the line goes to air".
+	 */
+	tearing?: {
+		measured: number;
+		torn: number;
+		severe: number;
+		median: number;
+		worstGap: number;
+		definition?: string;
+	};
 	files?: Record<string, string>;
 	[key: string]: unknown;
 }

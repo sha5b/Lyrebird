@@ -106,7 +106,18 @@
 	// Empty on purpose: the app opens on the whole corpus rather than on one bird, and
 	// the camera frames all of it. Choosing a bird is what narrows the view.
 	let speciesId = $state('');
-	let songId = $state('abc_d');
+	/**
+	 * Which call the Sing tab is on, or `''` for **all songs** — the first row of the
+	 * dropdown and what every bird opens on.
+	 *
+	 * One control, two states, and everything follows from which one it is in. All
+	 * songs: the chorus draws from the whole repertoire and the camera frames all of
+	 * it. One song: the chorus sings only that, and the camera frames only its knots.
+	 * There is nothing else to set — the pair of toggles that used to sit under this
+	 * dropdown ("Frame this call", "Only this call") said the same thing twice more
+	 * and could contradict it.
+	 */
+	let songId = $state('');
 	/**
 	 * **The word the whole syntax layer is defined over, said once in the interface.**
 	 * `bout` is unexplained jargon everywhere it appears — the key, the Compose tab, a
@@ -118,22 +129,6 @@
 	 */
 	const BOUT_GLOSS =
 		'A bout is one burst of singing: syllables separated by less than a second of silence. It is the unit everything measured here is counted within — transitions, motifs and song types are all within-bout.';
-	/**
-	 * The song the *view* is about, as distinct from the one merely selected.
-	 *
-	 * Choosing a call from the dropdown now flies the camera to the knots that call
-	 * passes through, which is the only way to see that a one-token repeat class and a
-	 * three-syllable song are different objects. It is a separate piece of state from
-	 * `songId` on purpose: `songId` is also written by the effect that keeps the
-	 * selection valid when the bird changes, and an *automatic* song change must not
-	 * yank the camera off the bird's repertoire — only a deliberate one does.
-	 */
-	let songFocus = $state('');
-	/**
-	 * Chorus draws from this one song and nothing else. Off is the historical pool
-	 * (every song of the selected bird, filtered by the confidence checkboxes).
-	 */
-	let songSolo = $state(false);
 	let text = $state('danger — come here');
 	// The composer (Compose tab): one chip strip, three ways to fill it. `tokens` is the
 	// sequence being edited; `provenance` is why it holds what it holds, which is what
@@ -168,19 +163,23 @@
 	let pointSize = $state(3);
 	let spin = $state(true);
 	let showLabels = $state(true);
-	// Off means every point is neutral grey; on tints each point by where its sound
-	// comes from (the provenance classes the note below names). Default off: the
-	// corpus is one cloud first, and the class tint is a layer you ask for.
 	/**
-	 * The points' colour language: neutral ink, or the provenance classes ("what kind
-	 * of thing"). There used to be a third — every point in its species' hue — and it
-	 * read as confetti: a hundred hues on a dense scatter cannot be told apart, so
-	 * "who" moved to where hue can be read: the tags, and the response itself, which
-	 * lights in the singing bird's hue. The tags and threads follow the same two
-	 * languages, because two hue readings of one stage invite confusion.
+	 * The points' colour language: off is neutral ink, on tints every point by where
+	 * its sound came from (the provenance classes). Default off — the corpus is one
+	 * cloud first, and the class tint is a layer you ask for.
+	 *
+	 * There used to be a third language — every point in its species' hue — and it read
+	 * as confetti: a hundred hues on a dense scatter cannot be told apart, so "who"
+	 * moved to where hue can be read (the tags, and the response itself, which lights
+	 * in the singing bird's hue). The tags and threads follow this switch too, because
+	 * two hue readings of one stage invite the idea that they are related.
+	 *
+	 * **One checkbox, not a two-row radio group inside a rollup.** It is a binary, and
+	 * it was dressed as a mode chooser folded behind a disclosure — three clicks and a
+	 * paragraph to flip one bit, with the class colours listed underneath whether or
+	 * not the points were wearing them.
 	 */
-	let pointColour = $state<'ink' | 'prov'>('ink');
-	const provColours = $derived(pointColour === 'prov');
+	let provColours = $state(false);
 	/**
 	 * Per-class point visibility in PROVENANCE order (documented, learned, field,
 	 * unlabelled, candidate). The arrivals live view is the two-class isolate —
@@ -349,7 +348,8 @@
 		currentSpecies ? createIndividual(currentSpecies.id, 0, currentSpecies.common) : null
 	);
 	const songs = $derived(currentSpecies?.songs ?? []);
-	const currentSong = $derived(songs.find((s) => s.id === songId) ?? songs[0]);
+	/** Undefined on "all songs", which is a state and not a missing selection. */
+	const currentSong = $derived(songId ? songs.find((s) => s.id === songId) : undefined);
 
 	/**
 	 * How many *distinct knots* each of this bird's songs passes through.
@@ -381,6 +381,10 @@
 		}
 		return map;
 	});
+	/** The first row: the bird as a whole. One line, because `<option>` cannot wrap. */
+	const allSongsOption = $derived(
+		`all songs · ${songs.length === 1 ? '1 call' : `${songs.length} calls`} — the whole repertoire`
+	);
 	/** The dropdown row: what it is called, how much of the galaxy it touches, what it is. */
 	function songOption(song: { id: string; label: string; gloss: string }): string {
 		const knots = songKnots.get(song.id)?.length ?? 0;
@@ -592,8 +596,8 @@
 		}
 		if (pinnedCluster >= 0) return [pinnedCluster];
 		if (currentSpecies) {
-			if (songFocus) {
-				const knots = songKnots.get(songFocus);
+			if (songId) {
+				const knots = songKnots.get(songId);
 				if (knots?.length) return knots;
 			}
 			return clustersOfSpecies.get(currentSpecies.id) ?? allClusters;
@@ -1085,8 +1089,14 @@
 	}
 
 	function sing() {
-		if (!engine || !currentSpecies || !currentSong) return;
-		nowSinging = engine.playSong(currentSpecies.id, currentSong.id, {
+		if (!engine || !currentSpecies) return;
+		// On "all songs" the button means what the row means: one of them, drawn the same
+		// way the chorus draws — the alternative is a disabled button in the state every
+		// bird opens in.
+		const song =
+			currentSong ?? songs[Math.floor(Math.random() * songs.length)];
+		if (!song) return;
+		nowSinging = engine.playSong(currentSpecies.id, song.id, {
 			voice: soloVoice ?? undefined,
 			distance
 		});
@@ -1096,14 +1106,14 @@
 		// improvising drew a trajectory and playing a documented call drew nothing.
 		singer = soloVoice?.label ?? null;
 		addLive(currentSpecies.id, nowSinging, singer ?? '');
-		recordSung(currentSpecies.id, currentSong.id, nowSinging, singer ?? '');
+		recordSung(currentSpecies.id, song.id, nowSinging, singer ?? '');
 		lastPhrase = {
 			speciesId: currentSpecies.id,
-			label: currentSong.label,
-			gloss: currentSong.gloss,
-			function: currentSong.function,
-			confidence: currentSong.confidence,
-			refs: currentSong.refs,
+			label: song.label,
+			gloss: song.gloss,
+			function: song.function,
+			confidence: song.confidence,
+			refs: song.refs,
 			syllables: [],
 			gaps: [],
 			source: 'documented',
@@ -1328,8 +1338,15 @@
 			.filter(([, v]) => v)
 			.flatMap(([k]) => CHORUS_CLASS_CONFIDENCE[k] ?? [])
 	);
-	/** The one call the chorus is pinned to, or nothing — see `songSolo`. */
-	const soloSongIds = $derived(songSolo && songId ? [songId] : undefined);
+	/**
+	 * The one call the chorus may draw, or nothing at all on "all songs".
+	 *
+	 * A named call is a stronger statement than the confidence checkboxes, so it
+	 * replaces them rather than being filtered by them (see `startAmbient`): asking for
+	 * exactly this call and then having a class veto it would be one control silently
+	 * overruling a more specific one.
+	 */
+	const soloSongIds = $derived(songId ? [songId] : undefined);
 	/** Every start of a one-bird chorus, so the two filters cannot diverge between them. */
 	function startSoloChorus(birdId: string) {
 		engine?.startAmbient([birdId], 12 * tempo, 3, chorusConfidence, soloSongIds);
@@ -1384,23 +1401,9 @@
 	}
 
 	/**
-	 * Pin the chorus to the selected call, or release it back to the bird's whole
-	 * repertoire.
-	 *
-	 * Turning it *on* starts the chorus if nothing is running: "only this call" over
-	 * silence is a filter with nothing to filter, and the control would look broken.
-	 * Turning it off changes nothing but the pool — the chorus effect below reads
-	 * `soloSongIds` and restarts the scheduler, which is how every other pool change
-	 * already lands.
-	 */
-	function toggleSongSolo() {
-		songSolo = !songSolo;
-		if (songSolo && chorus !== 'solo' && engine && speciesId) void setChorus('solo');
-	}
-
-	/**
-	 * A call chosen by hand, which is a different act from the selection being repaired
-	 * when the bird changes: this one is what moves the camera.
+	 * Choosing a row of the dropdown, which is the whole of this control: the camera
+	 * goes to the call's knots (or back to the repertoire on "all songs") and the
+	 * chorus pool follows through `soloSongIds`.
 	 *
 	 * The pin and the history phrase both outrank a call in `frameNodes`, so leaving
 	 * either in place would make choosing a call do visibly nothing. Both are cleared —
@@ -1410,7 +1413,6 @@
 	function chooseSong(id: string) {
 		const hadPin = pinnedCluster >= 0;
 		songId = id;
-		songFocus = id;
 		selectedSung = null;
 		pinnedCluster = -1;
 		// Releasing the pin has to redraw the backdrop by hand: `showContext` narrows to
@@ -1447,7 +1449,18 @@
 		// Pinned to a local: the shard effect reassigns currentSpecies, so the guard's
 		// narrowing does not reach inside the closures below.
 		const bird = currentSpecies;
-		if (!assets || !bird || !currentSong || !listener || chorus === 'global') return;
+		if (!assets || !bird || !listener || chorus === 'global') return;
+		// "All songs" has no one thread to preview, and the last call's thread must not
+		// outlive the choice that drew it: the backdrop below already shows the whole
+		// repertoire, which is what the row means.
+		if (!currentSong) {
+			listener.clearPreview();
+			if (contextSpecies !== bird.id) {
+				contextSpecies = bird.id;
+				showContext(bird.id);
+			}
+			return;
+		}
 		const resolved = songSyllables(bird, currentSong.id);
 		if (resolved) {
 			listener.setPreview(
@@ -1520,6 +1533,58 @@
 	const learnedTypeCount = $derived(
 		(pipelineStatus?.learned?.species ?? []).reduce((n, s) => n + (s.types ?? 0), 0)
 	);
+	/**
+	 * What the projection is worth, from the loaded build's own manifest.
+	 *
+	 * Every one of these numbers has been written by `build` since the projection
+	 * existed and **none of them had ever been read by the app**, which is why the key
+	 * could say "distance is acoustic similarity" as a flat fact while the build's own
+	 * measurement of that claim was 0.667. The key quotes the loaded build now, so a
+	 * rebuild that projects better or worse says so on screen.
+	 */
+	const projQuality = $derived.by(() => {
+		const m = assets?.manifest;
+		if (!m) return null;
+		return {
+			pearson: m.faithfulness?.pearson ?? null,
+			knnK: m.knnAgreement?.k ?? 10,
+			knn: m.knnAgreement?.value ?? null,
+			torn: m.tearing?.torn ?? null,
+			tornOf: m.tearing?.measured ?? null
+		};
+	});
+	/**
+	 * The corpus's own length unit, measured by the renderer and handed back: the
+	 * median nearest-neighbour distance between knot centres. Everything the key says
+	 * about how wide a knot is has to be quoted against it, because a distance in
+	 * projection units is a number about nothing.
+	 */
+	let knotSpacing = $state(0.135);
+	/**
+	 * **How wide the average knot is, in units of the gap to its neighbour.**
+	 *
+	 * This is the measured answer to "I cannot see the structure of the knots", and
+	 * nothing in the interface had ever said it. On the shipped v6 build the median
+	 * knot's mean member distance is 0.129 against a median knot spacing of 0.040 —
+	 * so an average knot is over three times wider than the distance to the next one,
+	 * and the knots interpenetrate everywhere. That is not a rendering fault and no
+	 * amount of point styling fixes it: with `label` clustering a knot is every sound
+	 * carrying one type's name, and a type's sounds are under no obligation to land
+	 * together in the projection.
+	 *
+	 * `radius` is the pipeline's own per-knot mean member distance, so this cannot
+	 * drift from what the build measured.
+	 */
+	const knotOverlap = $derived.by(() => {
+		const items = assets?.centroids.items ?? [];
+		if (!items.length || !(knotSpacing > 0)) return null;
+		const radii = items
+			.map((it) => (it as { radius?: number }).radius ?? 0)
+			.filter((r) => r > 0)
+			.sort((a, b) => a - b);
+		if (!radii.length) return null;
+		return { radius: radii[radii.length >> 1], ratio: radii[radii.length >> 1] / knotSpacing };
+	});
 	/** From the loaded manifest, so both describe the galaxy currently on screen. */
 	const coverage = $derived(assets?.manifest?.typeCoverage ?? null);
 	const relationHeadline = $derived(assets?.manifest?.relations?.headline ?? '');
@@ -1673,29 +1738,23 @@
 	$effect(() => {
 		engine?.setVolume(volume);
 	});
-	/** The bird the call controls are currently about; a plain let, so writing it is not a change. */
+	/** The bird the call selection is currently about; a plain let, so writing it is not a change. */
 	let songSpecies = '';
 	$effect(() => {
 		const bird = currentSpecies;
-		if (!bird) {
-			// Releasing the bird releases the call with it, so choosing that same bird
-			// again opens on its repertoire rather than jumping back to a call the user
-			// last framed several selections ago.
-			songSpecies = '';
+		// Every change of bird opens on all songs — the repertoire framed, the chorus
+		// drawing from all of it. Unconditional, and not merely a validity repair,
+		// because `learned_bout` is a universal id: every fitted bird has one, so a
+		// selection often stays *valid* across a change of bird and the camera would
+		// keep framing one call of a repertoire the user just asked to see whole.
+		if (bird?.id !== songSpecies) {
+			songSpecies = bird?.id ?? '';
+			songId = '';
 			return;
 		}
-		// A new bird releases both claims a call can make on the view. Not folded into the
-		// validity check below, because `learned_bout` is a universal id: every fitted
-		// bird has one, so the selection often stays *valid* across a change of bird and
-		// the camera would keep framing one bout of a repertoire the user just asked to
-		// see whole.
-		if (bird.id !== songSpecies) {
-			songSpecies = bird.id;
-			songFocus = '';
-			songSolo = false;
-		}
-		// keep the song selection valid when the species changes
-		if (!bird.songs.some((s) => s.id === songId)) songId = bird.songs[0]?.id ?? '';
+		// A call this bird does not sing (a rebuild under the selection) falls back the
+		// same way.
+		if (bird && songId && !bird.songs.some((s) => s.id === songId)) songId = '';
 	});
 	$effect(() => {
 		// The scheduler reads this per gap it draws, so no restart: the next pause
@@ -1929,6 +1988,7 @@ uv run birdy-pipeline build</pre>
 				stats={galaxyStats ?? undefined}
 				onpick={pickCluster}
 				onbackground={backgroundClicked}
+				bind:knotSpacing
 			/>
 			{/key}
 
@@ -1989,58 +2049,25 @@ uv run birdy-pipeline build</pre>
 									<label class="check" title="Name tags on the knots a syllable can be sung into.">
 										<input type="checkbox" bind:checked={showLabels} /> Labels
 									</label>
-								</div>
-								<!--
-									The provenance mode switch, demoted to a rollup. Measured on the
-									shipped build: 93.9 % of points are field recordings and 99 % of
-									knots carry a field plurality, so the classes say nearly one thing
-									everywhere, and the spatial colouring carries about 3 points of
-									information over the base rates (91.5 % same-class nearest
-									neighbour against 88.2 % from the rates). The mode stays — the
-									arrivals isolate below needs it — it just is not a top-level
-									switch any more.
-								-->
-								<details class="rollup">
-									<summary class="mono faint">provenance colours</summary>
-									<p class="note faint">
-										On this build 99% of knots are field recordings — the classes
-										answer "what is this" per tag, not "where is it" on the map.
-									</p>
 									<!--
-										One colour language at a time on the points, chosen as a mode:
-										neutral ink (hue lives where it can be read — the tags, and the
-										response itself, which lights in the singing bird's hue), or the
-										provenance classes ("what kind of thing", which moves the tags and
-										threads too, so the stage never speaks two hue languages at once).
+										One bit, one checkbox, sitting with the other two display bits — it was
+										a two-row radio group folded inside a disclosure, which is three clicks
+										and a paragraph to flip a boolean.
+
+										Why it is off by default, measured on the shipped build: 93.9 % of points
+										are field recordings and 99 % of knots carry a field plurality, so the
+										classes say nearly one thing everywhere. The colouring carries about 3
+										points of information over the base rates (91.5 % same-class nearest
+										neighbour against 88.2 % from the rates alone) — it answers "what is this"
+										per point, not "where is it" on the map.
 									-->
-									<div class="checks" role="radiogroup" aria-label="Point colour">
-										<label class="check" title="Neutral ink points; hue on the tags says which bird, and what sounds lights in that bird's hue.">
-											<input type="radio" bind:group={pointColour} value="ink" /> Ink
-										</label>
-										<label class="check" title="Colour everything by where each sound comes from, not by which bird it is.">
-											<input type="radio" bind:group={pointColour} value="prov" /> Provenance
-										</label>
-									</div>
-									{#if provColours}
-										<!--
-											The class list used to be repeated here as a read-only legend AND
-											below as the visibility filter — the same five classes with the
-											same shares, stacked, which read as the panel contradicting
-											itself. The filter below carries swatch, name and share already,
-											so it IS the legend; this only says what the hue means.
-										-->
-										<p class="note faint">
-											Hue says what kind of thing a sound is; the tag beside it names the
-											bird. The big split is whether a bird made the sound or we did.
-											The classes and their shares are the filter below.
-										</p>
-									{:else}
-										<p class="note faint">
-											Points are neutral ink. Hue on the tags says which bird, and what
-											sounds lights in that bird's hue.
-										</p>
-									{/if}
-								</details>
+									<label
+										class="check"
+										title="Colour every point, tag and thread by where its sound came from. Off, the points are neutral ink and hue is left to say which bird. On this build 94 % of the points are field recordings, so expect one class to dominate."
+									>
+										<input type="checkbox" bind:checked={provColours} /> Provenance colours
+									</label>
+								</div>
 							</section>
 							<section class="block">
 								<!--
@@ -2051,6 +2078,11 @@ uv run birdy-pipeline build</pre>
 									removes its points from the picture, never from the corpus.
 								-->
 								<p class="axis mono">where the sound came from</p>
+								<p class="note faint">
+									{provColours
+										? 'These colours are the ones on the points: the list is the key as well as the filter.'
+										: 'A filter, not a key — the points are neutral ink until Provenance colours is on.'}
+								</p>
 								<div class="checks">
 									{#each [PROVENANCE.documented, PROVENANCE.learned, PROVENANCE.field, PROVENANCE.unlabelled, PROVENANCE.candidate] as cls (cls)}
 										{@const share = provShare[cls] ?? 0}
@@ -2067,7 +2099,19 @@ uv run birdy-pipeline build</pre>
 												bind:checked={provShown[cls]}
 												disabled={share === 0}
 											/>
-											<i class="swatch" style:background={provenanceColour(cls)}></i>
+											<!--
+												**The swatch is only a colour when the points are wearing it.**
+												This list is two things at once — the visibility filter, and the
+												legend for the provenance colouring — and in ink mode the legend
+												half was a lie: five class colours printed beside a cloud drawn
+												entirely in neutral grey. Off, the mark goes hollow and says
+												only "a class you can hide"; on, it is the key to the picture.
+											-->
+											<i
+												class="swatch"
+												class:hollow={!provColours}
+												style:background={provColours ? provenanceColour(cls) : 'transparent'}
+											></i>
 											{PROV_NAMES[cls]}
 											<span class="mono faint"
 												>{share === 0 ? 'none' : `${(share * 100).toFixed(share < 0.01 ? 2 : 0)}%`}</span
@@ -2185,58 +2229,167 @@ uv run birdy-pipeline build</pre>
 						<h2>Reading the galaxy</h2>
 						<div class="cardbody">
 							<section class="block">
+								<!--
+									**The key is where the picture explains itself, so every line in it has to be
+									a claim the build can support.** Three could not. "Distance is acoustic
+									similarity" was stated flatly while the manifest's own faithfulness for this
+									build is 0.667; nothing said what SIZE means, so a mark that grew read as a
+									value when it is an event; and nothing said why the points MOVE, which left a
+									permanent slow drift looking like it was reporting something. All three are
+									answered here, and the numbers are read from the loaded build rather than
+									written into the prose.
+								-->
 								<ul class="legend key">
 									<li>
 										<i style:background="var(--ink-dim)"></i>
-										<span>A point is one sound: a recorded syllable, or one synthesized from a fitted type.</span>
+										<span>
+											<b>A point is one sound</b> — a recorded syllable, or one synthesized from a
+											fitted type.
+										</span>
 									</li>
 									<li>
 										<i class="hollow"></i>
-										<span>A knot is a cluster of similar sounds. A named knot is a call type; a documented one carries its function and source.</span>
+										<!--
+											**This line was wrong for the build that is loaded.** It said a knot is
+											"a cluster of similar sounds", which is what a knot is under `kmeans` or
+											`hdbscan` — and the shipped build is `label`, where every sound goes to
+											the knot of the type it already carries and the clustering never runs on
+											it. There the knots ARE the labels (docs/22 §22.8), and a type's sounds
+											are under no obligation to land together, so "cluster" promised a
+											spatial finding the build does not make. The mode decides which sentence
+											is true, so the key reads it instead of asserting one.
+										-->
+										<span>
+											{#if assets?.manifest?.clustering === 'label'}
+												<b>A knot is one call type</b> — every sound the pipeline gave that type's
+												name. On this build the knots are the labels, not a second, independent
+												finding.
+											{:else}
+												<b>A knot is a group of sounds too alike to separate</b>, found by clustering
+												the space rather than by reading the labels.
+											{/if}
+											A documented one also carries its function and its source. The small pin at its
+											centre is where its tag and its threads attach — a waypoint, not a measurement.
+										</span>
 									</li>
+									{#if knotOverlap}
+										<li>
+											<i class="wide"></i>
+											<!--
+												The measured answer to "I cannot see the structure of the knots", which
+												nothing in this interface had ever said. It is a property of the build,
+												not of the renderer, and it is the first thing anyone hunting for beads
+												in this cloud needs to know.
+											-->
+											<span>
+												<b>Knots overlap, heavily.</b> The average knot is {knotOverlap.ratio.toFixed(1)}×
+												wider than the gap to its nearest neighbour on this build, so the cloud reads as
+												one mass rather than as separated beads. The ruler's unit is that gap.
+											</span>
+										</li>
+									{/if}
 									<li>
 										<i class="pair"></i>
-										<span>Distance is acoustic similarity: closer is more alike.</span>
+										<span>
+											<b>Closer is more alike — roughly.</b>
+											{#if projQuality?.pearson != null}
+												Drawn distance follows measured distance at r&nbsp;=&nbsp;{projQuality.pearson.toFixed(2)}
+												over {(assets?.manifest?.faithfulness?.pairs ?? 0).toLocaleString()} random pairs{#if projQuality.knn != null}, and
+												{(projQuality.knn * 100).toFixed(0)}&nbsp;% of a point's {projQuality.knnK} nearest
+												neighbours on screen share its call type — far above chance among {(assets?.manifest?.clusters ?? 0).toLocaleString()}
+												knots, and still most neighbours belong to something else{/if}.
+											{/if}
+											Read the arrangement, not the exact gap.
+										</span>
 									</li>
 									<li>
-										<i class="hue"></i>
-										<span>Two colour languages (Display): Ink — everything neutral; what sounds lights in its bird's hue, and the tags carry the same hue. Provenance — everything takes the class colour.</span>
+										<i class="grow"></i>
+										<span>
+											<b>Size is an event, not a value.</b> At rest every mark is the same size —
+											except a sound in no knot, drawn smaller, because it is a measurement and not
+											structure. A mark grows only while something is happening to it: its knot
+											answering, a front passing through it, the pipeline working on it, or its bird
+											being the one you selected.
+										</span>
 									</li>
 									<li>
 										<i class="ring"></i>
-										<span>When a sound plays or is heard, the best-matching knot answers first and the response ripples outward.</span>
+										<span>
+											<b>Movement, when a sound lands.</b> The knot it matched swells from the inside
+											out — each member moves as the front reaches its own true distance from the
+											landing point, so what you see is the knot's internal geometry, not an
+											animation. A wave then travels out from that knot across about four
+											knot-spacings; two waves crossing add and cancel like real ones, which is the
+											only mark on screen of two calls arriving in the same region.
+										</span>
+									</li>
+									<li>
+										<i class="drift"></i>
+										<span>
+											<b>The slow drift in silence carries nothing.</b> It keeps the depth readable on
+											a still frame and fades out as soon as a wave comes up. Rotation (Display) is
+											the same kind of thing: a way of seeing the volume, not a reading of it.
+										</span>
+									</li>
+									<li>
+										<i class="hue"></i>
+										<span>
+											<b>Colour says one thing at a time.</b> Off — the points are neutral, and hue is
+											left to the tags and to whatever is sounding, in its bird's hue. On (Provenance
+											colours, in Display) — every point, tag and thread takes its class colour
+											instead, and the class list below becomes the key to it.
+										</span>
 									</li>
 									<li>
 										<i class="line"></i>
 										<!--
-											Where the word is defined. `bout` is the unit the whole syntax
-											layer is counted within, and it appeared a dozen times in this
-											interface without once being said — which makes every sentence
-											carrying it unreadable to anyone who has not read the pipeline.
-											It is glossed here, in the key, on its first appearance; every
-											later use carries the same string as a tooltip.
+											Where the word is defined. `bout` is the unit the whole syntax layer is
+											counted within, and it appeared a dozen times in this interface without
+											once being said — which makes every sentence carrying it unreadable to
+											anyone who has not read the pipeline. It is glossed here, on its first
+											appearance; every later use carries the same string as a tooltip.
 										-->
 										<span>
-											A thread links the knots of one
-											<b class="term" title={BOUT_GLOSS}>bout</b> — one burst of singing,
-											syllables less than a second apart — in the order they were sung.
+											<b>A thread is one <b class="term" title={BOUT_GLOSS}>bout</b></b> — one burst of
+											singing, syllables less than a second apart — drawn through its knots in the
+											order they were sung.
 										</span>
 									</li>
 									<li>
 										<i class="breath"></i>
-										<span>Heard, but nothing claimed: the nearest region breathes grey — below the match floor, and the panel says so instead of naming a call.</span>
+										<span>
+											<b>Heard, but nothing claimed.</b> The nearest region breathes grey: the sound
+											was under the match floor, and the panel says so rather than naming a call.
+										</span>
 									</li>
 									<li>
 										<i style:background="var(--signal)"></i>
-										<span>The one loud colour marks what you asked for: the note singing now — in its bird's hue, violet when nothing names a who — or the selected bird's points.</span>
+										<span>
+											<b>One loud colour marks what you asked for</b> — the note sounding now, in its
+											bird's hue (violet when nothing names a who), or the points of the bird you
+											selected.
+										</span>
 									</li>
 								</ul>
 								<p class="note faint">
-									Close up, a knot's marks spread to fill its measured extent — display
-									jitter like a scatterplot's. Knots are also drawn 30 % farther apart
-									than the projection puts them. Both are display transforms; the corpus
-									positions are unchanged.
+									Two display transforms, both disclosed: close up — and always for the selected bird —
+									a knot's marks spread out to fill its measured extent, like the jitter in a
+									scatterplot; and knots are drawn 30&nbsp;% farther apart than the projection puts
+									them. Neither moves the corpus positions.
 								</p>
+								{#if projQuality?.torn}
+									<!--
+										The build measures this and the app had never shown it, so the one thing a
+										viewer is most likely to read as a rendering fault — a thread that ends in
+										empty space — had a measured explanation nobody could see.
+									-->
+									<p class="note faint">
+										{projQuality.torn} of {(projQuality.tornOf ?? 0).toLocaleString()} measured knots are
+										drawn by this projection in two places at once. Their centre — where the tag, the
+										thread and the wave all go — then falls between the two. That is the flattening, not
+										the sound.
+									</p>
+								{/if}
 							</section>
 						</div>
 					</div>
@@ -2625,49 +2778,30 @@ uv run birdy-pipeline build</pre>
 										{/if}
 									</span>
 								<!--
-									`value` + `onchange` rather than `bind:value`: choosing a call by hand
-									is an act with consequences — it flies the camera — and the effect that
-									repairs an invalid selection when the bird changes writes the same
-									variable without meaning any of them. The binding could not tell the
-									two apart. Each row carries how many knots the call touches, because a
-									one-token repeat class and a three-syllable song are otherwise the
+									One control for the whole question. The first row is the bird as a
+									whole — every song in the chorus, the repertoire framed — and every
+									row under it is one call: the chorus sings only that, the camera goes
+									only there. Each row carries how many knots the call touches, because
+									a one-token repeat class and a three-syllable song are otherwise the
 									same line of text.
+
+									`value` + `onchange` rather than `bind:value`: choosing a call by hand
+									is an act with consequences, and the effect that resets the selection
+									when the bird changes writes the same variable meaning none of them.
+									The binding could not tell the two apart.
 								-->
 								<select value={songId} onchange={(e) => chooseSong(e.currentTarget.value)}>
+									<option value="">{allSongsOption}</option>
 									{#each songs as s (s.id)}
 										<option value={s.id}>{songOption(s)}</option>
 									{/each}
 								</select>
 							</label>
-							<!--
-								What a chosen call may claim: the camera, and the chorus. Both are
-								toggles with fixed labels, like the Chorus button beneath them — a
-								button whose *label* flips to the opposite action while its
-								highlight says "on" is two conventions contradicting each other.
-							-->
-							{@const focusKnots = currentSong ? (songKnots.get(currentSong.id) ?? []) : []}
-							{@const focused = Boolean(currentSong && songFocus === currentSong.id)}
-							<div class="row">
-								<button
-									class:on={focused}
-									disabled={!focusKnots.length}
-									onclick={() =>
-										(songFocus = focused ? '' : (currentSong?.id ?? ''))}
-									title={focusKnots.length
-										? focused
-											? `The camera is holding this call's ${focusKnots.length === 1 ? 'one knot' : `${focusKnots.length} knots`}. Turn it off to frame the whole repertoire again.`
-											: `Fly to the ${focusKnots.length === 1 ? 'one knot' : `${focusKnots.length} knots`} this call passes through. Choosing a call from the list above does the same thing.`
-										: 'None of this call’s syllables won a knot, so there is nowhere to fly to. The tally beside the label says how many.'}
-									>Frame this call</button
-								>
-								<button
-									class:on={songSolo}
-									disabled={!engine}
-									onclick={toggleSongSolo}
-									title="The chorus draws from this one call instead of everything this bird sings — three individuals answering each other with the same phrase. It overrides the class filter below: naming a call is the more specific instruction. Turning it on starts the chorus if nothing is singing."
-									>Only this call</button
-								>
-							</div>
+							<p class="note faint">
+								{currentSong
+									? 'This call only: the chorus sings nothing else and the view is on its knots.'
+									: 'Every call this bird has, and the whole repertoire in frame. Choose one to hear and see it alone.'}
+							</p>
 							<!--
 								Two rows, not four buttons across. Four never fitted the panel and the
 								last of them was pushed past its right edge, which is why the chorus
@@ -2680,9 +2814,11 @@ uv run birdy-pipeline build</pre>
 							<div class="row">
 								<button
 									class="primary"
-									disabled={!engine || !currentSong}
+									disabled={!engine || !songs.length}
 									onclick={sing}
-									title="Play the chosen call once."
+									title={currentSong
+										? 'Play the chosen call once.'
+										: 'Play one of this bird’s calls once — drawn at random, the way the chorus draws. Choose a call above to fix which.'}
 									>Sing it</button
 								>
 								<button
@@ -4149,6 +4285,12 @@ uv run birdy-pipeline serve</pre>
 		border-radius: 50%;
 	}
 
+	/* Ink mode: the class has no colour on screen, so it has none here either. An
+	   outline still marks the row as a class you can hide. */
+	.check .swatch.hollow {
+		box-shadow: inset 0 0 0 1px var(--rule);
+	}
+
 	/* The provenance key. A swatch, the class, and its share of the corpus — the share
 	   is the point: it is what turns a flat list of five names into "these two are the
 	   galaxy and these three are edge cases", which three paragraphs of prose were
@@ -4288,6 +4430,34 @@ uv run birdy-pipeline serve</pre>
 		margin-top: 0.42rem;
 		border-radius: 1px;
 		background: var(--ink-dim);
+	}
+
+	/* Size as an event: a small mark and a large one, the difference the channel
+	   actually carries. */
+	.legend.key i.grow {
+		background:
+			radial-gradient(circle at 28% 50%, var(--ink-dim) 1px, transparent 1.1px),
+			radial-gradient(circle at 72% 50%, var(--ink-dim) 3px, transparent 3.1px);
+	}
+
+	/* Two knots wider than the gap between them: the overlap, as a mark. */
+	.legend.key i.wide {
+		background:
+			radial-gradient(circle at 38% 50%, color-mix(in srgb, var(--ink-dim) 45%, transparent) 3.4px, transparent 3.5px),
+			radial-gradient(circle at 62% 50%, color-mix(in srgb, var(--ink-dim) 45%, transparent) 3.4px, transparent 3.5px);
+	}
+
+	/* The one motion that means nothing, so the mark says "adrift" and nothing else. */
+	.legend.key i.drift {
+		background: radial-gradient(circle, var(--ink-dim) 1.6px, transparent 1.7px);
+		opacity: 0.55;
+		animation: drift 4.5s ease-in-out infinite;
+	}
+
+	@keyframes drift {
+		50% {
+			transform: translate(2px, -1px);
+		}
 	}
 
 	.note {

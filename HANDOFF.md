@@ -1,3 +1,164 @@
+# Lyrebird — the galaxy audit (2026-08-02, night): what the animation says, what it does not say, and the framing bug that was hiding the corpus
+
+Owner, on the screenshot of a selected bird: *"that's how the activation says — what is it? I
+don't see the structure of the node, I don't know why the points move, why they move. All the
+data animation should tell us something about the data."*
+
+He is right on every count, and one of the three causes turned out to be a bug rather than a
+design choice. Everything below is measured on the **installed v6 build** (348 461 points,
+13 848 knots, `clustering: label`) — the geometry from `positions.f32` + `centroids.json`, the
+projection figures from the manifest the build already writes.
+
+## 0. The corpus's own unit, so the rest of this is readable
+
+**One knot spacing = 0.0395 projection units** — the median nearest-neighbour distance between
+drawn knot centres (`KNOT_GAP` 1.3 included). Everything below is quoted in it, and the new
+stage ruler ticks in it. The corpus is roughly **80 knot-spacings across**.
+
+## 1. THE BUG: the opening "whole galaxy" view was showing about 40 % of the corpus, and had been
+
+`Spinner` eases its scale from **1** up to the opening **6.2** over about a second. `Framing`
+fits the camera **on the first frame it sees a frame set**, reads the group's scale to turn the
+reach into world units, then sets `snapped` and never refits — and its task is registered
+*before* Spinner's. So the fit read scale 1 against a cloud about to become six times bigger,
+the camera landed ~6× too close, and autoload — which *is* the whole-galaxy case — opened
+**inside** the cloud.
+
+Measured with the new ruler: **33 knot-spacings across, against a corpus about 80 wide.** No
+margin anywhere, points to all four edges, so nothing on screen suggested anything was missing;
+it read as "the galaxy is an even fog". `stats.viewRadii` said the same thing all along — 0.4,
+i.e. inside the bounding sphere — and nothing was reading it.
+
+**Fixed** in `Spinner.svelte`: `current` starts at the requested scale (`untrack`) and is
+applied in an effect before any task runs; the ease still belongs to the distance slider. The
+opening view is now **206 spacings across** and the galaxy has a shape — a dense core, an arm,
+outliers — that was simply off-screen before. This is the single largest change to what the app
+looks like in this whole round, and it was three lines.
+
+**Consequences to know about.** Every LOD and blossom gate is quoted against `viewRadii`
+(frontier 3.2 → 1.6, blossom 1.9 → 1.0, size floor 3.5 → 1.8), and that number just went from
+0.4 to about 2.4 at rest. The opening view therefore now draws *fewer* points and *unblossomed*
+knots — which is what those gates were written to do and what the framing bug had been
+defeating. Worth an owner look: the thresholds have never been seen at their intended distances.
+
+## 2. Why there is no visible knot structure — and it is not the renderer
+
+| measured on v6 | value | in knot-spacings |
+|---|---|---|
+| median knot's mean member distance | 0.1286 | **3.3** |
+| p90 knot | 0.2704 | **6.8** |
+| centroid → its own nearest member (median) | 0.0436 | **1.1** |
+| … p90 | 0.117 | 3.0 |
+| members per knot | median 13, mean 25.2, max 1828 | 14.8 % have fewer than 5 |
+
+**The average knot is over three times wider than the distance to the next knot.** They
+interpenetrate everywhere. There are no beads to see, and no amount of point styling will
+produce any: what the owner is looking at in that screenshot is the true arrangement.
+
+Two reasons, both structural:
+
+- **`label` clustering means a knot is a name, not a place.** Every sound goes to the knot of
+  the type it already carries; the clustering never runs on it (docs/22 §22.8). A type's sounds
+  are under no obligation to land together in three dimensions, and they do not.
+- **The projection is weak locally.** The manifest's own numbers, written by every build and
+  **never read by the app until this round**: distance faithfulness **r = 0.667**, and
+  `knnAgreement` **0.085** — only 8.5 % of a point's ten on-screen neighbours share its type.
+  Far above chance among 13 848 knots, and still nine neighbours in ten belong to something
+  else.
+- **386 of 6 733 measured knots are drawn in two places at once** (77 severely). Their centroid
+  lands between the two blobs, which is exactly the "lines go to air" report — and it is a
+  property of the flattening, not of the pin.
+
+The centroid figure deserves its own line: **the pin sits farther from its own nearest member
+than the next knot's centre is** (1.1 spacings against 1.0). `KnotMarkers` is drawing an honest
+mark in genuinely empty space.
+
+**None of this was anywhere in the interface.** The key said "a knot is a cluster of similar
+sounds" and "distance is acoustic similarity" flatly. Both are now corrected and quoted from
+the loaded build (see §5).
+
+## 3. Every animated channel, and what it actually encodes
+
+| channel | driven by | encodes | verdict |
+|---|---|---|---|
+| **idle drift** (`shaders.ts:497`) | `uTime` + per-point hash phase, 0.004 units | **nothing** | Always on. 0.1 spacings — under a pixel at galaxy distance, **~5 px of meaningless wobble zoomed in**. This is "why do the points move". |
+| **rotation** (`Spinner`) | the Rotate toggle | nothing (a depth cue) | Fine, and now stated in the key as such. |
+| **per-point pulse** (`shaders.ts:416`) | knot activation × mic level; **direction and phase are hash noise** | "this knot is active", weakly | The one bit it carries is already carried by size and colour. The direction says nothing. |
+| **wavefront inside the knot** (`aFront`) | each member's **true distance** from where the sound landed | **real** — the knot's internal geometry, in arrival order | The best channel in the app. Also the least visible, because the knot is 3.3 spacings wide and the displacement is capped at ~1.1. |
+| **travelling waves** (≤ 3, signed, interfering) | distance from the sounding knot; crossing fronts add and cancel | **real** | Reach is `4 × knot spacing` = 0.158 units. That was 12 % of the old (broken) opening view and is now **2 %** of the correct one. Effectively invisible at galaxy distance — the owner's "propagate further and stronger" is now *more* wanted, not less. |
+| **blossom** (`aSpread`) | knot radius, as a display transform | radius-ish | Capped at 0.6 × spacing = **18 % of the knot's own spread**, so it is not what makes a selected bird look scattered. Measured before blaming it. |
+| **size** (`shaders.ts:516-551`) | activation, level, front, ripple, learning, selection | **events only** | At rest, size carries exactly one bit of data: a sound in no knot is 35 % smaller. On this build there are **zero** such points, so at rest the size channel carries **nothing at all**. |
+| **colour** | ink / provenance / accent | class, or who is sounding | Fine. |
+
+So: of the motion on screen at rest, **all of it is decoration**; of the motion during a
+response, the two channels that carry real structure are the two that are hardest to see.
+
+## 4. The misses — data this project has measured and no channel shows
+
+Ranked by how much they would repay, cheapest first within a tier.
+
+1. **Members per knot.** Median 13, max 1828, and the two marks are identical. `count` is
+   already in `centroids.json`. A knot pin scaled by log(count) would make the corpus's weight
+   visible in one line of shader.
+2. **Knot spread / cohesion.** `radius` and `cohesion` (0.85 median) ship per knot and are
+   unused. A tight type and a type smeared across the projection look the same.
+3. **`speciesMix` per knot.** Ships per knot, unused. A knot holding two species *is* the
+   "sounds like" claim, at the level where it was measured, and it is invisible.
+4. **`sources` per knot** (field vs synthesized mix) — ships, unused. The provenance colouring
+   answers this per point and then a plurality per knot; the mix itself is thrown away.
+5. **Tearing.** 386 knots drawn twice. Now stated in the key as a number; the *specific* knots
+   are known to the build and could be marked, which would stop them being read as faults.
+6. **`meanDuration` per knot** — ships, unused. Duration is the one acoustic property a viewer
+   can hear and check against the picture.
+7. **Novelty.** `novel` exists per point and only ever becomes a class colour. The novelty
+   score itself (docs/13) never reaches the screen.
+8. **Nothing shows time.** Recording date is in the store and unread (WORK QUEUE §10); there is
+   no way to see the corpus grow, and `grow` was built to make it grow.
+
+And one non-data miss worth its own line: **the activation has no legend and no scale.** A knot
+lights, and nothing says whether that was a 40 % match or a 95 % one. The Reading panel has the
+number; the galaxy does not.
+
+## 5. What changed this round, besides the framing fix
+
+- **Provenance colours is a checkbox**, sitting with Rotate and Labels, instead of a two-row
+  radio group folded inside a `<details>` rollup — three clicks and a paragraph to flip a
+  boolean.
+- **The class list stops lying in ink mode.** It is both the visibility filter and the legend
+  for the colouring; with the colouring off it was printing five class colours beside a cloud
+  drawn entirely in neutral grey. The swatches now go hollow when the points are not wearing
+  them, and the line under the heading says which of the two things the list currently is.
+- **The key was audited against the code and the build, and three lines were wrong or absent.**
+  "A knot is a cluster of similar sounds" is false on a `label` build and now reads from
+  `manifest.clustering`; "distance is acoustic similarity" now quotes r = 0.67 and the 8 %
+  neighbour agreement from the loaded manifest; **size** and **movement** had no entries at all
+  and now have one each, including the plain statement that the resting drift means nothing.
+  New lines: the knot-overlap ratio (3.3× on this build, computed live from `radius` and the
+  measured knot spacing) and the tearing count.
+- **A ruler along the top and left of the stage**, in knot spacings, with a caption that reacts
+  to the zoom (`1 tick = 20 knot-spacings · 206 across · N % of points drawn`). `Scale.svelte`
+  computes pixels-per-knot from the frustum at the view centre's depth and reports only when it
+  moves by 0.5 %; `Ruler.svelte` draws DOM ticks under the floating panels. The projection has
+  no meaningful origin, so the numbers count outward from the centre of the view, and the
+  tooltip says so along with the "exact at the centre depth" caveat any perspective scale bar
+  needs.
+
+## 6. What I would do next, in order
+
+1. **Make the wave's reach a share of the view, not a fixed 4 knot-spacings.** At the corrected
+   opening distance it crosses 2 % of the screen. This is the owner's own ask from the previous
+   round and the framing fix made it worse.
+2. **Put weight on the knot pins** (log member count) and let them survive the LOD. That is the
+   cheapest thing on this page that turns the cloud from a fog into a map.
+3. **Kill the idle drift, or earn it.** If the cloud must move at rest, drive it with something
+   — recording age, novelty, anything measured — or let it be still and leave the motion channel
+   to mean "something is happening".
+4. **Decide what a knot looks like.** A hull, a ring at `radius`, or a per-knot beeswarm as an
+   opt-in display transform. Any of the three would make the structure the owner is looking for
+   *visible*; none of them can make it *exist*, and the key now says so.
+5. **Re-look at every `viewRadii` threshold** now that the number means what it was written to
+   mean.
+
 # Lyrebird — UI round (2026-08-02, later still): the owner's four open UI asks, all four done and all four checked in a browser
 
 `npm run check` at the 4 baseline errors, 0 warnings; `npm run build` green; `verify:layout`

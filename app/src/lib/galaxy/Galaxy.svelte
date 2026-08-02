@@ -13,6 +13,8 @@
 	import NodeProjector from './NodeProjector.svelte';
 	import PointCloud from './PointCloud.svelte';
 	import RelationThreads from './RelationThreads.svelte';
+	import Ruler from './Ruler.svelte';
+	import Scale from './Scale.svelte';
 	import Spinner from './Spinner.svelte';
 	import Stats from './Stats.svelte';
 	import Trajectory from './Trajectory.svelte';
@@ -76,6 +78,12 @@
 		/** Fired on a click that hit no node, so the page can clear its selection. */
 		onbackground?: () => void;
 		/**
+		 * The corpus's own length unit — the median nearest-neighbour distance between
+		 * knot centres, in layout box units — measured by PointCloud and handed back
+		 * out. The ruler ticks in it, and the key quotes the knot width against it.
+		 */
+		knotSpacing?: number;
+		/**
 		 * Written by the renderer, read by whoever wants to draw it. Plain object, not
 		 * state: it is written inside the render loop. See stats.ts.
 		 */
@@ -100,6 +108,7 @@
 		selectedSpecies = '',
 		onpick,
 		onbackground,
+		knotSpacing = $bindable(0.135),
 		stats
 	}: Props = $props();
 
@@ -171,6 +180,14 @@
 		if (moved < 4 && held < 400) onbackground?.();
 	}
 
+	/**
+	 * The stage's scale, in the corpus's own unit: how many pixels one knot spacing
+	 * covers on screen right now. Written by `Scale` inside the canvas — only when it
+	 * actually changes — and read by the ruler bands outside it.
+	 */
+	let pxPerKnot = $state(0);
+	let widthKnots = $state(0);
+
 	let controls = $state<OrbitControlsInstance | undefined>();
 	let cloud = $state<THREE.Group | undefined>();
 	/** Bumped on every grab of the view, which is what ends a camera flight. */
@@ -225,11 +242,21 @@
 			<Stats {stats} />
 		{/if}
 
+		<Scale
+			{knotSpacing}
+			{spread}
+			{controls}
+			onscale={(s) => {
+				pxPerKnot = s.pxPerKnot;
+				widthKnots = s.widthKnots;
+			}}
+		/>
+
 		<Spinner {spin} scale={spread} bind:group={cloud}>
 			<GridBurst {assets} {signal} {view} prov={!plain} />
 			<ContextPaths {assets} {signal} {view} prov={!plain} />
 			<RelationThreads {assets} {view} speciesId={selectedSpecies} />
-			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} {provShown} {adaptive} bind:texture={clusterTexture} {stats} />
+			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} {provShown} {adaptive} bind:texture={clusterTexture} bind:knotSpacing {stats} />
 			<KnotMarkers {assets} {view} clusterState={clusterTexture} {spread} {plain} />
 			<Trajectory {assets} {signal} {view} {spread} {pointSize} prov={!plain} />
 			{#if labels}
@@ -240,6 +267,14 @@
 
 	{#if labels}
 		<NodeLabels {assets} slots={labelSlots} bind:elements={labelElements} prov={!plain} {places} bind:placeElements {onpick} />
+	{/if}
+
+	<!--
+		The scale, outside the canvas: DOM ticks cost nothing per frame and stay crisp,
+		and the numbers only re-render when the zoom has actually moved.
+	-->
+	{#if pxPerKnot > 0}
+		<Ruler {pxPerKnot} {knotSpacing} {widthKnots} {stats} />
 	{/if}
 </div>
 
