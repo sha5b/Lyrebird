@@ -487,6 +487,10 @@
 	 * initial value is the fallback the wave used to carry inline.
 	 */
 	let medianKnotSpacing = 0.135;
+	/** The corpus's own radius in box units (drawn), for anything quoted against it. */
+	let cloudRadius = 1;
+	/** How far a front carries, as a share of that radius. Owner's call, 2026-08-02. */
+	const WAVE_REACH = 0.3;
 
 	/**
 	 * How far a ripple reaches, quoted from the corpus's own spacing: twice the median
@@ -516,8 +520,38 @@
 		// on a build where some knots are empty reads past the middle of the array and, at
 		// a high enough empty share, past its end entirely.
 		medianKnotSpacing = nn[nn.length >> 1] ?? 0.135;
-		material.uniforms.uWaveLocal.value = 4 * medianKnotSpacing;
 		knotSpacing = medianKnotSpacing;
+		/**
+		 * **The reach is a share of the cloud, with the knot spacing only as a floor.**
+		 *
+		 * It used to be `4 × medianKnotSpacing` outright, on the reasoning that a
+		 * denser build should get a tighter ripple. That is true up to a point and it
+		 * broke past it: the spacing collapsed from 0.135 on the 149- and 1024-knot
+		 * builds to **0.0395** on v6's 13 848, so the same rule silently shrank the
+		 * wave by 3.4× and the front now died inside 0.16 box units — about **5 % of
+		 * the cloud's radius**, and ~2 % of the opening view's width once the framing
+		 * bug was fixed and the whole corpus came into frame. Everything else about
+		 * the wave (speed 0.55–1.45 box/s, 3.2 s life, 0.35 shell) was scaled to cross
+		 * the cloud; this one envelope was strangling it.
+		 *
+		 * A wave is a claim about *distance in the space*, so its reach belongs to the
+		 * space, not to the knot count: 30 % of the corpus's own radius. The old
+		 * knot-spacing rule stays as a floor, which is what keeps a small or tightly
+		 * packed corpus from getting a front that swallows it whole.
+		 */
+		let r2 = 0;
+		for (let c = 0; c < clusterCount; c++) {
+			if (!(layout.counts[c] ?? 0)) continue;
+			const x = layout.centroids[c * 3];
+			const y = layout.centroids[c * 3 + 1];
+			const z = layout.centroids[c * 3 + 2];
+			r2 = Math.max(r2, x * x + y * y + z * z);
+		}
+		cloudRadius = Math.sqrt(r2) || 1;
+		material.uniforms.uWaveLocal.value = Math.max(
+			4 * medianKnotSpacing,
+			WAVE_REACH * cloudRadius
+		);
 	});
 
 	// Registered after construction rather than in the geometry block above, because
@@ -1252,7 +1286,14 @@
 			// drawn. A front is meant to be read as movement, and displacement large
 			// enough to see in a still frame is large enough to smear a knot into a
 			// streak — which stops being animation and starts being a wrong position.
-			launch(best, Math.min(0.06, 0.02 + signal.level * 0.055));
+			// Displacement cap 0.06 -> 0.10 box units, with the wave's reach (owner:
+			// "make it propagate more and stronger so we can actually see it"). The
+			// figure is quoted in box units, so it is the same share of the picture at
+			// every listening distance; at 0.10 a front moves a region by about 2.7 knot
+			// spacings at its crest, which is coherent motion of a whole neighbourhood —
+			// the points around a passing shell all move together, so it reads as the
+			// cloud flexing rather than as marks in the wrong place.
+			launch(best, Math.min(0.1, 0.035 + signal.level * 0.09));
 		}
 		if (best !== lastLaunch) lastLaunch = best;
 

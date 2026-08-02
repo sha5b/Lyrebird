@@ -1,3 +1,65 @@
+# Lyrebird — test round (2026-08-02, night 3): the suite is green, and `thresholds` says the match ramp is stale
+
+**Everything that exists was run after the UI/renderer round, all green:**
+
+| check | result |
+|---|---|
+| `npm run check` | 4 baseline errors (all `syrinx-processor.js`), 0 warnings |
+| `npm run build` | green |
+| `verify:layout` | all checks passed — grid 12 ms against the k² loop's 6 513 ms at k = 14 003 |
+| `verify:synth` | **44/44**, median pitch error 0.3 % |
+| `verify:features` | **exit 0** |
+| `verify-parity` | **18/18**, worst difference 2.78e-08 |
+| `verify-inventory-shards` | all assertions pass (index rows, stale-shard cleanup, app contract) |
+| `check-provenance-buffers` | OK — 0 orphan syllables, 0 knots owning no points |
+
+**One number in `verify:features` moved with v6 and is worth carrying:** exact syllable match is
+**30/44 = 68.2 %** against the 50 % floor, where v5 measured 37/44 = 84.1 %. It passes, and the
+drop is the corpus, not this work — nothing in this round touches the renderer's feature path.
+
+## `thresholds` — one of the WORK QUEUE's four unrun tests, now run, and it found something
+
+`uv run birdy-pipeline thresholds --out app/static/birdy --store out/harvest`, measured on the
+**installed v6 assets** (2 000 of 39 930 field syllables):
+
+| | v6 (now) | the constants were tuned against |
+|---|---|---|
+| p1 | 0.648 | 0.509 |
+| p5 | 0.732 | 0.605 |
+| p10 | 0.764 | 0.654 |
+| p25 | 0.819 | 0.728 |
+| p50 | **0.873** | 0.801 |
+
+**The whole distribution moved up about 0.07–0.14, and `MATCH_CEILING` did not.** It is 0.86,
+which used to sit above the median real syllable and now sits **below** it: on this build more
+than half of all genuine birdsong pegs the ramp at full strength. The "a partial match should
+look partial, not certain" behaviour the ramp was written for is largely gone — the Reading
+panel's match percentage is now saturated for the median case. `MATCH_FLOOR` 0.62 is likewise
+below the new p1, so it excludes nothing at all.
+
+Suggested retune, **not applied** (these are tuned constants and the owner's call, and the app's
+live matching changes the moment they move): floor ≈ 0.73 (the new p5, where 0.62 was the old
+p5), ceiling ≈ 0.93. Better still, the ramp could be written into the build and read from the
+manifest, since it is a property of the assets and drifts every time they are rebuilt — which
+is exactly what happened here and what nothing caught.
+
+**Not a bug, and the code already says so:** the same run scores white noise at 0.967 and room
+tone at 0.967, above the median real syllable. `features.ts` documents this in full — the
+cosine cannot separate noise on this corpus and the **tonality gate** is what does the work
+(white noise 0.845 flatness against real syllables' 0.345 at p99). The session gate agrees:
+`verify:features` flags white noise at 5.50 against a 3.95 threshold.
+
+## What none of these tests can see
+
+Every bug fixed in the two rounds above — the framing race that cropped the corpus to 40 %, the
+ink-mode pins wearing species hue, the single global accent, the duplicated roster — was
+invisible to all eight checks and was found by driving a headless browser. **The repo has one
+renderer test (`verify:layout`) and no browser test at all.** A boot-and-assert smoke test would
+have caught three of the four: no page errors, the opening view frames the whole corpus, the
+resting ink-mode stage has no saturated pixels, the song dropdown solos and frames. It needs
+Playwright as a devDependency and a Chromium download, which is a dependency decision rather
+than a code one.
+
 # Lyrebird — colour audit (2026-08-02, night 2): two real bugs behind "the colours are not aligning"
 
 Owner: *"the points are coloured in ink mode — the not-active ones. Double-check the animation

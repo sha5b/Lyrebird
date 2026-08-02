@@ -543,7 +543,15 @@ export function vertexShader(): string {
 			// exponent keeps the *ordering* — nearer is still bigger, which is half the
 			// depth cue — while compressing the range enough that a point is a legible dot
 			// at every distance. The floor and ceiling catch the extremes of a hard zoom.
-			float persp = pow(uSizeScale / max(0.001, -mv.z), 0.7);
+			// Exponent 0.7 -> 0.82 (owner: "can we do something to feel the depth more").
+			// True 1/z is right for a solid and wrong for a scatter — at 1.0 the far side
+			// of the corpus falls under a pixel and turns to fog while the near side
+			// becomes saucers — but 0.7 had compressed the range so hard that size had
+			// almost stopped being a depth cue at all, and size is the strongest one this
+			// picture has after motion parallax. 0.82 restores about half the difference
+			// the compression was throwing away; the floor and the 24 px ceiling below
+			// still catch both extremes, so nothing new can degenerate.
+			float persp = pow(uSizeScale / max(0.001, -mv.z), 0.82);
 			// The floor is three device pixels up close, two at galaxy distance: below
 			// three a disc has no interior left once the edge is feathered, and the mark
 			// degenerates into the feather itself. Up close that is a smudge; at galaxy
@@ -849,7 +857,17 @@ export const fragmentShader = /* glsl */ `
 		float fog = clamp((vDepth - uFogRange.x) / max(0.001, uFogRange.y - uFogRange.x), 0.0, 1.0);
 		fog *= 1.0 - 0.85 * vAct;
 		fog *= 1.0 - 0.4 * vChosen;
-		colour = mix(colour, uSurface, fog * 0.45);
+		// Wash 0.45 -> 0.62 and, new, a slight *darkening* of the near side (owner:
+		// "feel the depth more"). Aerial perspective is a contrast gradient and this
+		// only had half of one — the far marks paled toward the paper while the near
+		// ones sat at the same tone as the middle, so the range the eye reads as depth
+		// was the back half only. Pushing the front toward ink as well widens the same
+		// gradient from both ends, which is what makes a scatter read as a volume, and
+		// it costs one mix. Kept small: at more than a tenth the near marks start
+		// reading as *responding*, which is a different claim and one this view has to
+		// keep for sound.
+		colour = mix(colour, ink, (1.0 - fog) * 0.1 * (1.0 - vAct));
+		colour = mix(colour, uSurface, fog * 0.62);
 
 		// Resting points are faint so density reads as tone and the responding ones carry
 		// the eye; even at full response it stays under 1, because opaque marks stack into
@@ -860,7 +878,7 @@ export const fragmentShader = /* glsl */ `
 		// except the narrow band at the frontier, where it fades the new marks in.
 		float alpha =
 			uOpacity * mask * (0.62 + vAct * 0.38) * vFocus * (1.0 + 0.35 * vChosen) *
-			(1.0 - fog * 0.45) * (1.0 - 0.45 * vUnassigned) * vArrive * vLod;
+			(1.0 - fog * 0.58) * (1.0 - 0.45 * vUnassigned) * vArrive * vLod;
 		// The resting point also gives up a fifth of its weight, so "this knot is
 		// answering" moves two channels at once — class colour to full brightness
 		// above, ink weight here. Rest lands at 0.62 × 0.8 ≈ 0.50 of full alpha
