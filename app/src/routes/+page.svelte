@@ -107,6 +107,33 @@
 	// the camera frames all of it. Choosing a bird is what narrows the view.
 	let speciesId = $state('');
 	let songId = $state('abc_d');
+	/**
+	 * **The word the whole syntax layer is defined over, said once in the interface.**
+	 * `bout` is unexplained jargon everywhere it appears — the key, the Compose tab, a
+	 * dozen tooltips — and it is not a synonym for "song": it is the unit the pipeline
+	 * segments on (`GAP_BOUT_SECONDS = 1.0` in learn.py), so every transition, every
+	 * mined motif and every song type is counted within one. A reader who does not know
+	 * that reads "8 of 18 recorded bouts fall into 2 types" as a sentence about nothing.
+	 * Held as one string so the gloss cannot drift between the places that carry it.
+	 */
+	const BOUT_GLOSS =
+		'A bout is one burst of singing: syllables separated by less than a second of silence. It is the unit everything measured here is counted within — transitions, motifs and song types are all within-bout.';
+	/**
+	 * The song the *view* is about, as distinct from the one merely selected.
+	 *
+	 * Choosing a call from the dropdown now flies the camera to the knots that call
+	 * passes through, which is the only way to see that a one-token repeat class and a
+	 * three-syllable song are different objects. It is a separate piece of state from
+	 * `songId` on purpose: `songId` is also written by the effect that keeps the
+	 * selection valid when the bird changes, and an *automatic* song change must not
+	 * yank the camera off the bird's repertoire — only a deliberate one does.
+	 */
+	let songFocus = $state('');
+	/**
+	 * Chorus draws from this one song and nothing else. Off is the historical pool
+	 * (every song of the selected bird, filtered by the confidence checkboxes).
+	 */
+	let songSolo = $state(false);
 	let text = $state('danger — come here');
 	// The composer (Compose tab): one chip strip, three ways to fill it. `tokens` is the
 	// sequence being edited; `provenance` is why it holds what it holds, which is what
@@ -280,32 +307,15 @@
 	const HISTORY_CAP = 24;
 
 	/**
-	 * Who is singing *right now*: species id → the last time a note of theirs was
-	 * scheduled. The roster strip reads it; a species leaves the roster 10 s after
-	 * its last note, pruned on a slow interval rather than per frame — the map only
-	 * changes when a song is scheduled or a prune fires, never at 60 Hz.
+	 * **The "Now singing" roster is gone, and its state with it.** It was a strip of
+	 * chips across the top of the stage naming the species heard in the last ten
+	 * seconds — the same chips, in the same shape, that the history strip along the
+	 * bottom already carries, one lane apart. Two rows saying nearly the same thing
+	 * read as two different claims and are one; the history is the honest one,
+	 * because it says *what* was sung and not only *who* sang, and it is where the
+	 * eye already is. Deleting the roster also deletes a `setInterval` prune tick and
+	 * a Map rebuilt on every scheduled note.
 	 */
-	let heardAt = $state(new Map<string, number>());
-	const ROSTER_SECONDS = 10;
-	$effect(() => {
-		const id = setInterval(() => {
-			const cutoff = Date.now() - ROSTER_SECONDS * 1000;
-			let changed = false;
-			const next = new Map(heardAt);
-			for (const [species, t] of next) {
-				if (t < cutoff) {
-					next.delete(species);
-					changed = true;
-				}
-			}
-			if (changed) heardAt = next;
-		}, 2000);
-		return () => clearInterval(id);
-	});
-	/** The roster, most recently heard first. */
-	const roster = $derived(
-		[...heardAt.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => id)
-	);
 
 	const clusters = $derived<ClusterLookup | null>(assets ? buildClusterLookup(assets.centroids) : null);
 	const speciesIndex = $derived(assets ? buildSpeciesIndex(assets) : null);
@@ -340,6 +350,43 @@
 	);
 	const songs = $derived(currentSpecies?.songs ?? []);
 	const currentSong = $derived(songs.find((s) => s.id === songId) ?? songs[0]);
+
+	/**
+	 * How many *distinct knots* each of this bird's songs passes through.
+	 *
+	 * Without it the dropdown is misleading in the one way that matters: a repeat class
+	 * is by definition a single collapsed token, so `S01 · heard 6×` is one knot sung
+	 * six times, while `ho → ho2 → kyo` is three. Both render as one line of text, so
+	 * the only way to find out which you picked was to play it and wonder why the galaxy
+	 * did not move. That happened, and it was reported as a bug in the galaxy.
+	 *
+	 * Distinct, not sequence length: a song that returns to a syllable draws a thread
+	 * back to the same knot, and counting it twice would promise two places to look.
+	 * Unplaced syllables (`clusterIndexFor` → -1) are simply not there — the same
+	 * omission the trajectory makes, and the coverage tally beside the label is what
+	 * says how many were dropped.
+	 */
+	const songKnots = $derived.by(() => {
+		const map = new Map<string, number[]>();
+		const bird = currentSpecies;
+		if (!bird || !clusters) return map;
+		for (const song of bird.songs) {
+			const resolved = songSyllables(bird, song.id);
+			const seen: number[] = [];
+			for (const syl of resolved?.syllables ?? []) {
+				const knot = clusterIndexFor(clusters, bird.id, syl.id);
+				if (knot >= 0 && !seen.includes(knot)) seen.push(knot);
+			}
+			map.set(song.id, seen);
+		}
+		return map;
+	});
+	/** The dropdown row: what it is called, how much of the galaxy it touches, what it is. */
+	function songOption(song: { id: string; label: string; gloss: string }): string {
+		const knots = songKnots.get(song.id)?.length ?? 0;
+		const place = knots === 1 ? '1 knot' : `${knots} knots`;
+		return `${song.label} · ${place}${song.gloss ? ` — ${song.gloss}` : ''}`;
+	}
 
 	/**
 	 * The song tally's tooltip, honest about which repertoire is which. A documented
@@ -500,10 +547,9 @@
 					// A different bird while solo runs: rebuild the pool for it. The
 					// shard may still be in flight, so wait for it like setChorus does.
 					engine.panic();
-					const eng = engine;
 					void assets?.loadSpecies(chosen).then((bird) => {
 						if (bird && speciesId === chosen && chorus === 'solo') {
-							eng.startAmbient([bird.id], 12 * tempo, 3);
+							startSoloChorus(bird.id);
 						}
 					});
 					refreshSelection();
@@ -530,8 +576,14 @@
 
 	/**
 	 * What the camera holds in frame, most specific first: a phrase picked out of the
-	 * history, a pinned node, the selected bird's whole repertoire, or — with nothing
-	 * selected, which is how the app opens — the entire galaxy.
+	 * history, a pinned node, a chosen call, the selected bird's whole repertoire, or —
+	 * with nothing selected, which is how the app opens — the entire galaxy.
+	 *
+	 * The call sits below the pin and above the bird: picking a knot is a narrower
+	 * question than picking a call, and picking a call is narrower than picking a bird.
+	 * A call whose syllables all went unplaced frames nothing of its own and falls
+	 * through to the repertoire, which is the honest answer — there is no place to fly
+	 * to, and flying to the origin would invent one.
 	 */
 	const frameNodes = $derived.by(() => {
 		if (selectedSung !== null) {
@@ -539,7 +591,13 @@
 			if (nodes?.length) return nodes;
 		}
 		if (pinnedCluster >= 0) return [pinnedCluster];
-		if (currentSpecies) return clustersOfSpecies.get(currentSpecies.id) ?? allClusters;
+		if (currentSpecies) {
+			if (songFocus) {
+				const knots = songKnots.get(songFocus);
+				if (knots?.length) return knots;
+			}
+			return clustersOfSpecies.get(currentSpecies.id) ?? allClusters;
+		}
 		return allClusters;
 	});
 
@@ -745,7 +803,6 @@
 			// than the menus: whatever sings next draws its own trajectory.
 			created.onScheduled = ({ speciesId: singing, songId, scheduled, voice }) => {
 				singer = voice?.label ?? null;
-				heardAt = new Map(heardAt).set(singing, Date.now());
 				addLive(singing, scheduled, voice?.label ?? '');
 				recordSung(singing, songId, scheduled, voice?.label ?? '');
 				// **A new song makes the held reading stale.** The hold exists so a name stays
@@ -1260,6 +1317,24 @@
 	}
 
 	/**
+	 * The confidence values the chorus checkboxes currently allow, as one derivation
+	 * rather than three copies — every start of a solo chorus reads the same list, so
+	 * the filter can no longer apply to a chorus started by the tempo slider and not to
+	 * one started by picking a bird (it used to: two of the three call sites passed no
+	 * filter at all, and a checkbox only took effect at the next restart).
+	 */
+	const chorusConfidence = $derived(
+		Object.entries(chorusClasses)
+			.filter(([, v]) => v)
+			.flatMap(([k]) => CHORUS_CLASS_CONFIDENCE[k] ?? [])
+	);
+	/** The one call the chorus is pinned to, or nothing — see `songSolo`. */
+	const soloSongIds = $derived(songSolo && songId ? [songId] : undefined);
+	/** Every start of a one-bird chorus, so the two filters cannot diverge between them. */
+	function startSoloChorus(birdId: string) {
+		engine?.startAmbient([birdId], 12 * tempo, 3, chorusConfidence, soloSongIds);
+	}
+	/**
 	 * `solo` keeps the selection: this bird, its backdrop, its highlighted points.
 	 * `global` drops all of it — no focus, no context, no preview thread — so the only
 	 * thing on screen is every trajectory being drawn as it is actually sung.
@@ -1305,7 +1380,43 @@
 		if (chorus !== 'solo' || !bird) return;
 		contextSpecies = bird.id;
 		showContext(bird.id);
-		engine.startAmbient([bird.id], 12 * tempo, 3);
+		startSoloChorus(bird.id);
+	}
+
+	/**
+	 * Pin the chorus to the selected call, or release it back to the bird's whole
+	 * repertoire.
+	 *
+	 * Turning it *on* starts the chorus if nothing is running: "only this call" over
+	 * silence is a filter with nothing to filter, and the control would look broken.
+	 * Turning it off changes nothing but the pool — the chorus effect below reads
+	 * `soloSongIds` and restarts the scheduler, which is how every other pool change
+	 * already lands.
+	 */
+	function toggleSongSolo() {
+		songSolo = !songSolo;
+		if (songSolo && chorus !== 'solo' && engine && speciesId) void setChorus('solo');
+	}
+
+	/**
+	 * A call chosen by hand, which is a different act from the selection being repaired
+	 * when the bird changes: this one is what moves the camera.
+	 *
+	 * The pin and the history phrase both outrank a call in `frameNodes`, so leaving
+	 * either in place would make choosing a call do visibly nothing. Both are cleared —
+	 * the subject has changed, and this is the same reasoning that lets picking a knot
+	 * override the bird.
+	 */
+	function chooseSong(id: string) {
+		const hadPin = pinnedCluster >= 0;
+		songId = id;
+		songFocus = id;
+		selectedSung = null;
+		pinnedCluster = -1;
+		// Releasing the pin has to redraw the backdrop by hand: `showContext` narrows to
+		// the pinned knot's own threads, and nothing else recomputes it once the pin is
+		// gone — `refreshSelection` only calls it when the *bird* changed.
+		if (hadPin && currentSpecies) showContext(currentSpecies.id);
 	}
 
 	/**
@@ -1562,11 +1673,29 @@
 	$effect(() => {
 		engine?.setVolume(volume);
 	});
+	/** The bird the call controls are currently about; a plain let, so writing it is not a change. */
+	let songSpecies = '';
 	$effect(() => {
-		// keep the song selection valid when the species changes
-		if (currentSpecies && !currentSpecies.songs.some((s) => s.id === songId)) {
-			songId = currentSpecies.songs[0]?.id ?? '';
+		const bird = currentSpecies;
+		if (!bird) {
+			// Releasing the bird releases the call with it, so choosing that same bird
+			// again opens on its repertoire rather than jumping back to a call the user
+			// last framed several selections ago.
+			songSpecies = '';
+			return;
 		}
+		// A new bird releases both claims a call can make on the view. Not folded into the
+		// validity check below, because `learned_bout` is a universal id: every fitted
+		// bird has one, so the selection often stays *valid* across a change of bird and
+		// the camera would keep framing one bout of a repertoire the user just asked to
+		// see whole.
+		if (bird.id !== songSpecies) {
+			songSpecies = bird.id;
+			songFocus = '';
+			songSolo = false;
+		}
+		// keep the song selection valid when the species changes
+		if (!bird.songs.some((s) => s.id === songId)) songId = bird.songs[0]?.id ?? '';
 	});
 	$effect(() => {
 		// The scheduler reads this per gap it draws, so no restart: the next pause
@@ -1622,12 +1751,12 @@
 		// applies the new arrival rate.
 		const id = currentSpecies?.id;
 		const rate = tempo;
-		// Read per restart, so a checkbox change re-pools the chorus like a tempo one.
-		const allowed = Object.entries(chorusClasses)
-			.filter(([, v]) => v)
-			.flatMap(([k]) => CHORUS_CLASS_CONFIDENCE[k] ?? []);
+		// Read per restart, so a checkbox change — or a call being soloed — re-pools the
+		// chorus the same way a tempo change does.
+		const allowed = chorusConfidence;
+		void soloSongIds;
 		if (engine) engine.tempo = rate;
-		if (chorus === 'solo' && engine && id) engine.startAmbient([id], 12 * rate, 3, allowed);
+		if (chorus === 'solo' && engine && id) startSoloChorus(id);
 		if (chorus === 'global' && engine && assets) {
 			const loaded = assets;
 			void loaded.ensureSpecies().then(() => {
@@ -2079,7 +2208,19 @@ uv run birdy-pipeline build</pre>
 									</li>
 									<li>
 										<i class="line"></i>
-										<span>A thread links the knots of one bout in the order its syllables were sung.</span>
+										<!--
+											Where the word is defined. `bout` is the unit the whole syntax
+											layer is counted within, and it appeared a dozen times in this
+											interface without once being said — which makes every sentence
+											carrying it unreadable to anyone who has not read the pipeline.
+											It is glossed here, in the key, on its first appearance; every
+											later use carries the same string as a tooltip.
+										-->
+										<span>
+											A thread links the knots of one
+											<b class="term" title={BOUT_GLOSS}>bout</b> — one burst of singing,
+											syllables less than a second apart — in the order they were sung.
+										</span>
 									</li>
 									<li>
 										<i class="breath"></i>
@@ -2102,27 +2243,11 @@ uv run birdy-pipeline build</pre>
 				{/if}
 			</div>
 
-			{#if roster.length}
-				<!--
-					Who is singing, as it happens: one chip per species heard in the
-					last ten seconds, in its own hue, newest loudest-first. Clicking
-					selects the bird — the same path the picker takes, fly-to included.
-				-->
-				<div class="roster" aria-label="Now singing">
-					{#each roster as id (id)}
-						<button
-							class="sung"
-							style:--accent={speciesColourOf(id)}
-							onclick={() => (speciesId = id)}
-							title="Now singing — select {assets?.speciesCommon(id)}"
-						>
-							<span class="swatch"></span>
-							<span class="sung-name">{assets?.speciesCommon(id)}</span>
-						</button>
-					{/each}
-				</div>
-			{/if}
-
+			<!--
+				There was a "Now singing" roster pinned across the top of the stage here.
+				It has been removed: the history strip below is the same chip in the same
+				shape, and it names the call as well as the bird.
+			-->
 			{#if history.length}
 				<!--
 					Newest sits against the reading panel and the run extends left, clipping at
@@ -2499,12 +2624,50 @@ uv run birdy-pipeline build</pre>
 											>{songCoverage.placed}/{songCoverage.total}</span>
 										{/if}
 									</span>
-								<select bind:value={songId}>
+								<!--
+									`value` + `onchange` rather than `bind:value`: choosing a call by hand
+									is an act with consequences — it flies the camera — and the effect that
+									repairs an invalid selection when the bird changes writes the same
+									variable without meaning any of them. The binding could not tell the
+									two apart. Each row carries how many knots the call touches, because a
+									one-token repeat class and a three-syllable song are otherwise the
+									same line of text.
+								-->
+								<select value={songId} onchange={(e) => chooseSong(e.currentTarget.value)}>
 									{#each songs as s (s.id)}
-										<option value={s.id}>{s.label} — {s.gloss}</option>
+										<option value={s.id}>{songOption(s)}</option>
 									{/each}
 								</select>
 							</label>
+							<!--
+								What a chosen call may claim: the camera, and the chorus. Both are
+								toggles with fixed labels, like the Chorus button beneath them — a
+								button whose *label* flips to the opposite action while its
+								highlight says "on" is two conventions contradicting each other.
+							-->
+							{@const focusKnots = currentSong ? (songKnots.get(currentSong.id) ?? []) : []}
+							{@const focused = Boolean(currentSong && songFocus === currentSong.id)}
+							<div class="row">
+								<button
+									class:on={focused}
+									disabled={!focusKnots.length}
+									onclick={() =>
+										(songFocus = focused ? '' : (currentSong?.id ?? ''))}
+									title={focusKnots.length
+										? focused
+											? `The camera is holding this call's ${focusKnots.length === 1 ? 'one knot' : `${focusKnots.length} knots`}. Turn it off to frame the whole repertoire again.`
+											: `Fly to the ${focusKnots.length === 1 ? 'one knot' : `${focusKnots.length} knots`} this call passes through. Choosing a call from the list above does the same thing.`
+										: 'None of this call’s syllables won a knot, so there is nowhere to fly to. The tally beside the label says how many.'}
+									>Frame this call</button
+								>
+								<button
+									class:on={songSolo}
+									disabled={!engine}
+									onclick={toggleSongSolo}
+									title="The chorus draws from this one call instead of everything this bird sings — three individuals answering each other with the same phrase. It overrides the class filter below: naming a call is the more specific instruction. Turning it on starts the chorus if nothing is singing."
+									>Only this call</button
+								>
+							</div>
 							<!--
 								Two rows, not four buttons across. Four never fitted the panel and the
 								last of them was pushed past its right edge, which is why the chorus
@@ -2766,7 +2929,7 @@ uv run birdy-pipeline build</pre>
 									class="primary"
 									disabled={!engine}
 									onclick={singCompose}
-									title="Play the strip through the same engine as every other bout. The galaxy draws the thread for the syllables it can place and skips the rest."
+									title="Play the strip through the same engine every other phrase here uses. The galaxy draws the thread for the syllables it can place and skips the rest."
 								>Sing it</button>
 								<button onclick={clearCompose} title="Empty the strip.">Clear</button>
 								{#if composeCoverage && composeCoverage.placed < composeCoverage.total}
@@ -2810,21 +2973,22 @@ uv run birdy-pipeline build</pre>
 								<button
 									class:on={composeMode === 'guided'}
 									onclick={() => (composeMode = 'guided')}
-									title="The same chips, ranked by the transition probabilities counted from this bird's field recordings, with repeated motifs offered whole. Labelled: measured statistics, our bout."
+									title="The same chips, ranked by the transition probabilities counted from this bird's field recordings, with repeated motifs offered whole. Labelled: measured statistics, our ordering."
 								>Guided</button>
 								<button
 									class:on={composeMode === 'types'}
 									onclick={() => (composeMode = 'types')}
-									title="Orderings this bird was recorded singing, re-expanded into playable bouts. Trill lengths are sampled from the measured repeat rates."
+									title="Orderings this bird was recorded singing, re-expanded into playable bouts. {BOUT_GLOSS} Trill lengths are sampled from the measured repeat rates."
 								>Song types</button>
 							</div>
 
 						{#if composeMode === 'types'}
 							{#if composeTyping}
 								<p class="note faint">
-									{composeTyping.inTypes} of {composeTyping.bouts} recorded bouts fall into
-									{composeTyping.types} types; {composeTyping.unplaced} were heard once.
-									Type ids renumber on every refit.
+									{composeTyping.inTypes} of {composeTyping.bouts} recorded
+									<b class="term" title={BOUT_GLOSS}>bouts</b> — bursts of singing, syllables
+									less than a second apart — fall into {composeTyping.types} types;
+									{composeTyping.unplaced} were heard once. Type ids renumber on every refit.
 								</p>
 							{/if}
 							{#if composeTypes.length}
@@ -2868,7 +3032,7 @@ uv run birdy-pipeline build</pre>
 												class="suggestion"
 												disabled={!engine || !composeTokens.length}
 												onclick={() => { singCompose(); clearCompose(); }}
-												title="The measured probability the bout ends here. Sing the strip and start a new one."
+												title="The measured probability the burst of singing ends here. Sing the strip and start a new one."
 											>
 												<span class="bar"
 													><span style:width={`${composeNext.endP * 100}%`}></span></span
@@ -2881,7 +3045,7 @@ uv run birdy-pipeline build</pre>
 								{:else}
 									<p class="note faint">
 										{composeTokens.length
-											? 'No measured transition continues from here — the bout ends, or pick any chip below.'
+											? 'No measured transition continues from here — the burst of singing ends, or pick any chip below.'
 											: 'No grammar fitted for this bird — the chips below are unranked.'}
 									</p>
 								{/if}
@@ -2891,7 +3055,7 @@ uv run birdy-pipeline build</pre>
 											<button
 												class="suggestion"
 												onclick={() => appendChunk(offer.insert)}
-												title="A repeated motif mined from the bouts: {offer.chunk.sequence.join(' ')} — heard {offer.chunk.count} times (pmi {offer.chunk.pmi.toFixed(2)}). One click inserts {offer.insert.join(' ')}."
+												title="A repeated motif mined from the recorded bursts of singing: {offer.chunk.sequence.join(' ')} — heard {offer.chunk.count} times (pmi {offer.chunk.pmi.toFixed(2)}). One click inserts {offer.insert.join(' ')}."
 											>
 												<span class="note">+ {offer.insert.join(' ')}</span>
 												<span class="note mono faint">heard ×{offer.chunk.count}</span>
@@ -3371,7 +3535,7 @@ uv run birdy-pipeline serve</pre>
 												<div
 													class="fit"
 													title={sp.bout.length
-														? `sampled bout: ${sp.bout.join(' ')}`
+														? `one sampled bout — a burst of singing, syllables under a second apart: ${sp.bout.join(' ')}`
 														: 'no bout sampled'}
 												>
 													<span class="fit-name">{sp.common}</span>
@@ -4133,6 +4297,16 @@ uv run birdy-pipeline serve</pre>
 		color: var(--ink-dim);
 	}
 
+	/* A word of the project's own vocabulary, defined in the sentence it appears in and
+	   carrying the full definition on hover. Marked rather than emphasised: it is a term
+	   being introduced, not a word being stressed. */
+	.term {
+		font-weight: 500;
+		color: var(--ink);
+		border-bottom: 1px dotted var(--rule);
+		cursor: help;
+	}
+
 	.note.pad {
 		padding: 0 1rem 0.9rem;
 	}
@@ -4495,26 +4669,6 @@ uv run birdy-pipeline serve</pre>
 	}
 
 	/* --- what has been sung --- */
-
-	/* The roster is the history strip's live twin: same lane, same chip shape, pinned
-	   to the top of the stage so "who is singing" and "what was sung" never share a
-	   row and can never be mistaken for each other. */
-	.roster {
-		position: absolute;
-		top: 1rem;
-		left: calc(20rem + 2rem);
-		right: calc(21rem + 2rem);
-		z-index: 2;
-		display: flex;
-		justify-content: center;
-		gap: 0.3rem;
-		overflow: hidden;
-		pointer-events: none;
-	}
-
-	.roster .sung {
-		pointer-events: auto;
-	}
 
 	.history {
 		position: absolute;

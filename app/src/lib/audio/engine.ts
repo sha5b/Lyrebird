@@ -308,7 +308,8 @@ export class BirdyEngine {
 		speciesIds: string[],
 		songsPerMinute = 12,
 		birdsPerSpecies = 2,
-		songConfidence?: string[]
+		songConfidence?: string[],
+		songIds?: string[]
 	): void {
 		this.stopAmbient();
 		if (!speciesIds.length) return;
@@ -317,12 +318,23 @@ export class BirdyEngine {
 		// the pool rather than taking turns it cannot spend. Undefined means every
 		// song, the behaviour before the filter existed.
 		const allowed = songConfidence ? new Set(songConfidence) : null;
+		// One named song, which is a stronger statement than a class filter and
+		// therefore replaces it: asking for exactly this call and then having the
+		// confidence checkboxes veto it would be a control silently overruling a more
+		// specific one. The duet answer below draws from the same narrowed list, so a
+		// soloed song is the only thing that can sound.
+		const only = songIds?.length ? new Set(songIds) : null;
 		const pool = speciesIds
 			.map((id) => speciesById(this.assets.inventory, id))
 			.filter((s): s is Species => Boolean(s) && s!.songs.length > 0)
-			.map((s) =>
-				allowed ? { ...s!, songs: s!.songs.filter((g) => allowed.has(g.confidence)) } : s!
-			)
+			.map((s) => {
+				const songs = only
+					? s.songs.filter((g) => only.has(g.id))
+					: allowed
+						? s.songs.filter((g) => allowed.has(g.confidence))
+						: s.songs;
+				return songs === s.songs ? s : { ...s, songs };
+			})
 			.filter((s) => s.songs.length > 0);
 		if (!pool.length) return;
 

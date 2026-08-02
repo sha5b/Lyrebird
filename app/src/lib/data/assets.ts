@@ -192,7 +192,15 @@ async function getOptionalJson<T>(
  * sampling the bird's own measured self-transition rates (the same geometric rule
  * as compose.ts's expandSongType, seeded per song so it is stable), gaps from the
  * measured transition table. Confidence 'inferred': a recurring pattern with no
- * documented function. Types heard fewer than twice stay out — once is not a song.
+ * documented function.
+ *
+ * **Every detected type is listed, including one heard a single time.** The rule used
+ * to be "fewer than twice stays out — once is not a song", and it hid the one thing a
+ * chooser must not hide: that the entry exists at all. A type heard once is a weaker
+ * claim, not an absent one, and it now says so in its own label instead of being
+ * silently dropped. The guard is empty on the shipped build in any case — the pipeline
+ * only mines a type from `SONG_MIN_CLUSTER = 6` bouts, so the smallest `count` in the
+ * corpus is 6 — which is exactly why it was worth removing rather than trusting.
  */
 const withDetectedSongs = (sp: Species): Species => {
 	const detected = sp.grammar?.songTypes;
@@ -202,7 +210,7 @@ const withDetectedSongs = (sp: Species): Species => {
 	const existing = new Set(sp.songs.map((s) => s.id));
 	const songs = [...sp.songs];
 	for (const t of detected) {
-		if ((t.count ?? 0) < 2 || existing.has(t.id) || !t.sequence?.length) continue;
+		if (!(t.count >= 1) || existing.has(t.id) || !t.sequence?.length) continue;
 		// One deterministic expansion per song: run lengths sampled from the measured
 		// self-transition probability, seeded on the song's id so the same build
 		// always plays the same realization.
@@ -225,7 +233,7 @@ const withDetectedSongs = (sp: Species): Species => {
 		if (!seq.length) continue;
 		songs.push({
 			id: t.id,
-			label: `${t.id} · heard ${t.count}×`,
+			label: t.count === 1 ? `${t.id} · heard once` : `${t.id} · heard ${t.count}×`,
 			gloss: 'recurring song type from field recordings; repeats sampled from measured rates',
 			function: 'detected pattern — no documented function',
 			confidence: 'inferred',

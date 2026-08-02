@@ -1,3 +1,59 @@
+# Lyrebird — UI round (2026-08-02, later still): the owner's four open UI asks, all four done and all four checked in a browser
+
+`npm run check` at the 4 baseline errors, 0 warnings; `npm run build` green; `verify:layout`
+green; `verify:synth` 44/44 at 0.3 %. **Everything below was driven in a real browser**
+(headless Chromium against `vite dev`, the shipped v6 assets) rather than reasoned about — the
+last two rounds both shipped things that only a run could have caught, so each claim here has a
+screenshot or a printed value behind it.
+
+1. **The top "Now singing" roster is gone.** Markup, the `.roster` CSS, the `heardAt` map, its
+   2 s prune `setInterval` and the Map rebuilt on every scheduled note all deleted. The history
+   strip along the bottom is the same chip in the same shape and says *what* was sung as well as
+   *who*, which the roster never did.
+2. **`bout` is defined where it is first used.** One `BOUT_GLOSS` constant, so the wording
+   cannot drift: the key now reads *"A thread links the knots of one **bout** — one burst of
+   singing, syllables less than a second apart — in the order they were sung"*, with the full
+   definition (including that transitions, motifs and song types are all counted *within* one)
+   on hover, and the Compose census carries the same gloss inline. Where the word was
+   incidental rather than technical it is simply gone — "the burst of singing ends here" in the
+   grammar's end-probability tooltip, "mined from the recorded bursts of singing" for chunks,
+   "our ordering" in the Guided tooltip. New `.term` style: marked, not emphasised.
+3. **Knot counts are on the song labels.** Verified live on Lark Bunting:
+   `learned bout · 3 knots`, `S01 · heard 32× · 2 knots`, `S03 · heard 9× · 1 knot`. **Distinct**
+   knots, not sequence length — a song that returns to a syllable draws a thread back to the
+   same knot, and counting it twice would promise two places to look. Unplaced syllables are
+   absent, the same omission the trajectory makes; the tally beside the label still says how
+   many were dropped.
+4. **Choosing a call now claims the camera and, optionally, the chorus.**
+   - *Focus.* `frameNodes` gained a branch between the pin and the bird: pick a call and the
+     camera flies to its knots. Driven by a separate `songFocus`, **not** by `songId`, because
+     the effect that repairs an invalid selection when the bird changes writes `songId` without
+     meaning any of it — and `learned_bout` is a universal id, so a selection often stays
+     *valid* across a change of bird. A `Frame this call` toggle does the same by hand and is
+     the way back out. Verified: choosing the one-knot `S03` flies into a single knot; turning
+     the toggle off flies back out to the whole repertoire.
+   - *Solo.* `startAmbient` takes a `songIds` filter; `Only this call` pins the pool to it and
+     starts the chorus if nothing is singing. It **overrides the confidence checkboxes** —
+     naming a call is the more specific instruction, and having a class filter veto it would be
+     a control silently overruling a stricter one. Verified by reading the history strip: 7 of
+     7 songs scheduled after the toggle were `S02`, against `S03 / S02 / learned bout` before.
+   - Both are released when the bird changes or the selection is cleared.
+   - Found and fixed on the way: the class filter was passed at **one of three** solo-chorus
+     start sites, so a checkbox only took effect at the next tempo change. All three now go
+     through one `startSoloChorus`.
+5. **"List every song" was already true, and the guard that could have made it false is gone.**
+   `withDetectedSongs` folds `grammar.songTypes` into the dropdown and dropped any type heard
+   fewer than twice. Measured over all 2 423 shards: 164 song types, **minimum count 6** — the
+   pipeline mines nothing below `SONG_MIN_CLUSTER = 6`, so the guard was excluding nothing, and
+   every type's syllables resolve (164 all-present, 0 partial). The guard is removed anyway and
+   a once-heard type would now list itself as `S0n · heard once`: a weaker claim is not an
+   absent one, and a chooser must not hide that an entry exists.
+
+**Taste calls the owner may want to reverse, each one line:** the fly-to fires on *any* hand
+change of the dropdown (not only on the toggle); choosing a call clears a pinned knot and a
+history selection, because both outrank it in `frameNodes` and leaving them would make the
+click do visibly nothing; `Only this call` starts a chorus rather than waiting for one.
+
 # Lyrebird — UI round (2026-08-02, later): five fixes, two non-bugs, and what is still open
 
 `npm run check` at the 4 baseline errors, 0 warnings, throughout.
@@ -73,19 +129,8 @@ weakest available GPU.**
 
 **STILL OPEN — the owner asked for these and they are not done**
 
-- **Remove the top "Now singing" roster.** `+page.svelte` ~2092, `<div class="roster">`. The
-  bottom strip already carries the same chips; the top row is a duplicate.
-- **"What is a bout?"** The word is unexplained jargon in the UI. It is the unit the whole
-  syntax layer is defined over (`GAP_BOUT_SECONDS = 1.0` — syllables separated by under a
-  second of silence). Either gloss it in place or rename it in user-facing copy.
-- **Put the knot count on the song labels.** A one-token repeat class and a three-syllable
-  song look identical in the dropdown, so the only way to discover the difference is to play it
-  and wonder why the galaxy is not moving — which is exactly what happened. `S01 · heard 6× ·
-  1 knot` against `ho-hoke-kyo · 3 knots`. Cheap, and it removes the confusion above at source.
-- **All songs in the dropdown, with focus and solo.** Owner: selecting a specific song should
-  (a) list every song, (b) fly the camera to that song's knots, (c) make the chorus play **only**
-  that song. Touches the chorus pool, `frameNodes` and the selection — the biggest of these and
-  worth starting fresh rather than at the end of a session.
+- **The four UI asks that were listed here are done** — see the section above this one
+  (2026-08-02, later still). What is left of the list is below.
 - Everything in the WORK QUEUE below (spaces, map-agreement regression, the four unrun pipeline
   tests, the UI sweep whose agents all died on a provider quota error).
 
