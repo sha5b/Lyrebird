@@ -42,6 +42,23 @@ export interface Layout {
 	centroids: Float32Array;
 	/** Members per cluster, from the same pass. */
 	counts: Uint32Array;
+	/** What the local pass did, or null when it was off / unavailable. See `localShapes`. */
+	local: LocalReport | null;
+}
+
+/** What the two-level pass actually did, for the interface to be able to say so. */
+export interface LocalReport {
+	/** Knots given a local frame (2 or more members). */
+	reshaped: number;
+	/** Knots left as the projection drew them: a single member, or no features. */
+	skipped: number;
+	/**
+	 * Drawn box units per unit of feature-space spread — the one global constant that
+	 * ties the local frames back to the corpus's own scale. See `localShapes`.
+	 */
+	scale: number;
+	/** How long the pass took, ms, so a slow build shows up as a number and not a hunch. */
+	ms: number;
 }
 
 /**
@@ -187,13 +204,391 @@ function separateKnots(
 }
 
 /**
+ * Eigenvalues and eigenvectors of a small symmetric matrix, by cyclic Jacobi.
+ *
+ * `d` is 8 here — the shipped per-point feature space — so the O(d³) sweep is 8×8 work
+ * per knot and the whole corpus is one pass. Returns `vectors` column-major in the
+ * sense that eigenvector `j` is `vectors[i * d + j]` over `i`, paired with `values[j]`.
+ */
+function symmetricEigen(
+	input: Float64Array,
+	d: number,
+	a: Float64Array,
+	v: Float64Array,
+	values: Float64Array
+): void {
+	a.set(input);
+	v.fill(0);
+	for (let i = 0; i < d; i++) v[i * d + i] = 1;
+	for (let sweep = 0; sweep < 8; sweep++) {
+		let off = 0;
+		for (let p = 0; p < d; p++) {
+			for (let q = p + 1; q < d; q++) off += a[p * d + q] * a[p * d + q];
+		}
+		if (off < 1e-20) break;
+		for (let p = 0; p < d; p++) {
+			for (let q = p + 1; q < d; q++) {
+				const apq = a[p * d + q];
+				if (Math.abs(apq) < 1e-18) continue;
+				const theta = (a[q * d + q] - a[p * d + p]) / (2 * apq);
+				const sign = theta >= 0 ? 1 : -1;
+				const t = sign / (Math.abs(theta) + Math.sqrt(theta * theta + 1));
+				const c = 1 / Math.sqrt(t * t + 1);
+				const s = t * c;
+				for (let i = 0; i < d; i++) {
+					const aip = a[i * d + p];
+					const aiq = a[i * d + q];
+					a[i * d + p] = c * aip - s * aiq;
+					a[i * d + q] = s * aip + c * aiq;
+				}
+				for (let i = 0; i < d; i++) {
+					const api = a[p * d + i];
+					const aqi = a[q * d + i];
+					a[p * d + i] = c * api - s * aqi;
+					a[q * d + i] = s * api + c * aqi;
+				}
+				for (let i = 0; i < d; i++) {
+					const vip = v[i * d + p];
+					const viq = v[i * d + q];
+					v[i * d + p] = c * vip - s * viq;
+					v[i * d + q] = s * vip + c * viq;
+				}
+			}
+		}
+	}
+	for (let i = 0; i < d; i++) values[i] = a[i * d + i];
+}
+
+/**
+ * Radius of the residual ball against its root-mean-square: √(5/3). A radius drawn as
+ * `R·u^(1/3)` is uniform through a ball of radius R and has RMS `R·√(3/5)`, so the
+ * factor puts the RMS step exactly on the residual the three axes could not carry.
+ */
+const RESIDUAL_BALL = Math.sqrt(5 / 3);
+
+/** Point indices per knot, one pass, as a flat CSR-style pair. */
+function membersOf(clusterId: ArrayLike<number>, k: number): { starts: Int32Array; items: Int32Array } {
+	const starts = new Int32Array(k + 1);
+	for (let i = 0; i < clusterId.length; i++) {
+		const c = clusterId[i];
+		if (c >= 0 && c < k) starts[c + 1]++;
+	}
+	for (let c = 0; c < k; c++) starts[c + 1] += starts[c];
+	const cursor = starts.slice(0, k);
+	const items = new Int32Array(starts[k]);
+	for (let i = 0; i < clusterId.length; i++) {
+		const c = clusterId[i];
+		if (c >= 0 && c < k) items[cursor[c]++] = i;
+	}
+	return { starts, items };
+}
+
+/**
+ * **The two-level layout: knot centres from the global projection, members from their
+ * own.** This is the fix for torn knots, and it is a change of claim, so it is written
+ * out in full.
+ *
+ * A knot is drawn as one place — the tag, the thread, the grid strike and the wave all
+ * go to its centre — but nothing in the pipeline guarantees the projection puts its
+ * members in one place. Measured on the shipped build (`pipeline/analysis/tear_dims.py`),
+ * **385 of 6 255 measurable knots are drawn in two blobs**, and of those **219 are one
+ * blob in the 8-d feature space** and torn only by the squeeze into three dimensions.
+ * For those the centre lands in the gap between the halves, the tag sits on nothing, and
+ * one sung note lights two patches a box-width apart with a label on neither.
+ *
+ * So the arrangement is built in two levels instead of one:
+ *
+ * - **Where a knot is** stays the global projection's answer. Not its members' mean,
+ *   which is exactly the position that can fall in the void, but the position of its
+ *   *feature medoid* — the member closest to the knot's own centre in feature space.
+ *   The knot is drawn where the projection put its most typical sound, which is always
+ *   a real place.
+ * - **What a knot looks like** becomes a 3-d principal-component projection of that
+ *   knot's own members, in the 8-d feature space, laid out around that centre. A knot
+ *   cannot then be torn by the global fit, because the global fit never places a member.
+ *
+ * **Why this loses less than it sounds.** The picture's local structure was already
+ * close to noise: `knnAgreement` on this build is **0.0849** — 8.5 % of a point's ten
+ * nearest neighbours in 3-d share its type — so what the global projection was saying
+ * inside a knot was mostly the residue of a fit dominated by everything else. A local
+ * projection of a couple of dozen members into three dimensions loses very little of
+ * what those members actually differ by. What the picture claims splits cleanly in two:
+ * *knot centres are the coarse acoustic arrangement; spread inside a knot is that
+ * knot's own variation.* Both are true. The single global claim was not.
+ *
+ * **What it does not fix, and must not pretend to.** 166 of the 385 torn knots are two
+ * blobs in the feature space too — the type genuinely holds two kinds of sound. Those
+ * still draw as two lobes here, at their real separation instead of a box-width apart.
+ * The honest repair for them is upstream, in the clustering, not in the layout.
+ *
+ * **Scale.** Local coordinates are scaled by one global constant so that the corpus's
+ * *median* knot keeps exactly the extent it is drawn at today — everything tuned against
+ * that (KNOT_GAP, the wave's reach, the ruler's unit) stays calibrated. Inside that, a
+ * knot's drawn size becomes proportional to its true feature spread, which is what the
+ * extent was always supposed to mean and what a tear was inflating.
+ *
+ * **Orientation carries no meaning across knots.** Each frame is that knot's own
+ * principal axes, so "up" in one knot is unrelated to "up" in the next. Direction inside
+ * a knot is not a claim; distance from its centre is. The signs are pinned to the
+ * member with the largest coordinate so a reload draws the same picture.
+ */
+function localShapes(assets: BirdyAssets, positions: Float32Array): LocalReport | null {
+	const features = assets.pointFeatures;
+	const d = assets.pointFeatureDims;
+	if (!features || d < 2) return null;
+	const started = typeof performance === 'undefined' ? 0 : performance.now();
+	const k = assets.centroids.k;
+	const clusterId = assets.points.clusterId;
+	const { starts, items } = membersOf(clusterId, k);
+
+	const mean = new Float64Array(d);
+	const cov = new Float64Array(d * d);
+	// Scratch for the eigensolver, hoisted: 13 848 knots is 13 848 allocations otherwise.
+	const eigA = new Float64Array(d * d);
+	const eigV = new Float64Array(d * d);
+	const eigValues = new Float64Array(d);
+	const axis = new Int32Array(3);
+	const anchor = new Float32Array(k * 3);
+	const spread8 = new Float64Array(k);
+	const spread3 = new Float64Array(k);
+	// Written on the first pass, read on the second: the local coordinates before the
+	// one global scale is known. Three per member, in `items` order.
+	const localXyz = new Float64Array(items.length * 3);
+
+	let reshaped = 0;
+	let skipped = 0;
+	for (let c = 0; c < k; c++) {
+		const from = starts[c];
+		const to = starts[c + 1];
+		const n = to - from;
+		if (n <= 0) continue;
+		if (n === 1) {
+			const i = items[from];
+			anchor[c * 3] = positions[i * 3];
+			anchor[c * 3 + 1] = positions[i * 3 + 1];
+			anchor[c * 3 + 2] = positions[i * 3 + 2];
+			skipped++;
+			continue;
+		}
+
+		mean.fill(0);
+		let mx = 0;
+		let my = 0;
+		let mz = 0;
+		for (let m = from; m < to; m++) {
+			const i = items[m];
+			const off = i * d;
+			for (let j = 0; j < d; j++) mean[j] += features[off + j];
+			mx += positions[i * 3];
+			my += positions[i * 3 + 1];
+			mz += positions[i * 3 + 2];
+		}
+		for (let j = 0; j < d; j++) mean[j] /= n;
+		mx /= n;
+		my /= n;
+		mz /= n;
+
+		// The medoid in feature space, and the two spreads — one pass, no allocation.
+		cov.fill(0);
+		let bestMember = items[from];
+		let bestDist = Infinity;
+		let sum8 = 0;
+		let sum3 = 0;
+		for (let m = from; m < to; m++) {
+			const i = items[m];
+			const off = i * d;
+			let q = 0;
+			for (let j = 0; j < d; j++) {
+				const dj = features[off + j] - mean[j];
+				q += dj * dj;
+				for (let l = j; l < d; l++) cov[j * d + l] += dj * (features[off + l] - mean[l]);
+			}
+			sum8 += Math.sqrt(q);
+			if (q < bestDist) {
+				bestDist = q;
+				bestMember = i;
+			}
+			const dx = positions[i * 3] - mx;
+			const dy = positions[i * 3 + 1] - my;
+			const dz = positions[i * 3 + 2] - mz;
+			sum3 += Math.sqrt(dx * dx + dy * dy + dz * dz);
+		}
+		for (let j = 0; j < d; j++) {
+			for (let l = j + 1; l < d; l++) cov[l * d + j] = cov[j * d + l];
+		}
+		spread8[c] = sum8 / n;
+		spread3[c] = sum3 / n;
+		anchor[c * 3] = positions[bestMember * 3];
+		anchor[c * 3 + 1] = positions[bestMember * 3 + 1];
+		anchor[c * 3 + 2] = positions[bestMember * 3 + 2];
+
+		symmetricEigen(cov, d, eigA, eigV, eigValues);
+		// The three largest eigenvalues, by selection rather than a sort: d is 8. A space
+		// with fewer than three dimensions leaves the spare axes at -1 and they draw flat.
+		axis[0] = -1;
+		axis[1] = -1;
+		axis[2] = -1;
+		for (let a = 0; a < 3; a++) {
+			let best = -Infinity;
+			for (let j = 0; j < d; j++) {
+				if (j === axis[0] || j === axis[1]) continue;
+				if (eigValues[j] > best) {
+					best = eigValues[j];
+					axis[a] = j;
+				}
+			}
+		}
+		/**
+		 * **The five dimensions the frame cannot show come back as isotropic residue,
+		 * and leaving them out was measurably wrong.**
+		 *
+		 * Three principal axes of an 8-d knot keep the largest separation and throw away
+		 * most of the *within*-lobe spread — so a knot drawn from its top three
+		 * components alone comes out tighter than it is, and any real bimodality in it
+		 * reads as a cleaner split than the sounds support. Measured: the same tearing
+		 * test that scores 379 knots on the global projection scored **390** on a
+		 * top-3-only local frame, not because more knots were torn but because the
+		 * denominator had shrunk.
+		 *
+		 * The residual variance is known exactly — total scatter minus what the three
+		 * axes hold — so each member gets it back as a step in a direction hashed from
+		 * its own index, with the radius drawn uniformly through the ball (`u^(1/3)`,
+		 * scaled by √(5/3) so the root-mean-square step is exactly the residual). A
+		 * fixed-length step was the first version and drew every knot as a hollow shell;
+		 * filling the ball puts the density back where an isotropic residue actually
+		 * lies. Deterministic, so a reload draws the same knot.
+		 */
+		let total = 0;
+		for (let j = 0; j < d; j++) total += eigValues[j];
+		let kept = 0;
+		for (let a = 0; a < 3; a++) if (axis[a] >= 0) kept += eigValues[axis[a]];
+		const residual = Math.sqrt(Math.max(0, total - kept) / n);
+		for (let m = from; m < to; m++) {
+			const i = items[m];
+			const off = i * d;
+			for (let a = 0; a < 3; a++) {
+				const col = axis[a];
+				if (col < 0) {
+					localXyz[m * 3 + a] = 0;
+					continue;
+				}
+				let p = 0;
+				for (let j = 0; j < d; j++) p += (features[off + j] - mean[j]) * eigV[j * d + col];
+				localXyz[m * 3 + a] = p;
+			}
+			if (residual > 0) {
+				const h = Math.imul(i + 1, 2654435761) >>> 0;
+				const g = Math.imul(i + 1, 40503) >>> 0;
+				const cosT = ((h & 0xffff) / 65535) * 2 - 1;
+				const phi = ((h >>> 16) / 65535) * Math.PI * 2;
+				const sinT = Math.sqrt(Math.max(0, 1 - cosT * cosT));
+				const r = RESIDUAL_BALL * residual * Math.cbrt((g & 0xffff) / 65535);
+				localXyz[m * 3] += r * sinT * Math.cos(phi);
+				localXyz[m * 3 + 1] += r * sinT * Math.sin(phi);
+				localXyz[m * 3 + 2] += r * cosT;
+			}
+		}
+		// A principal axis is only defined up to sign, and an unpinned sign would redraw
+		// the knot mirrored on the next load. Pin it to the member that reaches furthest
+		// along the axis: that member's coordinate is positive, always.
+		for (let a = 0; a < 3; a++) {
+			let far = 0;
+			let mag = 0;
+			for (let m = from; m < to; m++) {
+				const p = localXyz[m * 3 + a];
+				if (Math.abs(p) > mag) {
+					mag = Math.abs(p);
+					far = p;
+				}
+			}
+			if (far < 0) for (let m = from; m < to; m++) localXyz[m * 3 + a] = -localXyz[m * 3 + a];
+		}
+		reshaped++;
+	}
+
+	// One global scale, so the median knot keeps the extent it is drawn at today. Taken
+	// over the knots that have a measurable spread in both spaces; a ratio of medians
+	// rather than a median of ratios, because a knot whose 8-d spread is near zero would
+	// otherwise contribute an arbitrarily large ratio to the middle of the set.
+	const s8: number[] = [];
+	const s3: number[] = [];
+	for (let c = 0; c < k; c++) {
+		if (starts[c + 1] - starts[c] < 4) continue;
+		if (!(spread8[c] > 0) || !(spread3[c] > 0)) continue;
+		s8.push(spread8[c]);
+		s3.push(spread3[c]);
+	}
+	s8.sort((a, b) => a - b);
+	s3.sort((a, b) => a - b);
+	const median8 = s8[s8.length >> 1] ?? 0;
+	const median3 = s3[s3.length >> 1] ?? 0;
+	const scale = median8 > 0 && median3 > 0 ? median3 / median8 : 1;
+
+	for (let c = 0; c < k; c++) {
+		const from = starts[c];
+		const to = starts[c + 1];
+		if (to - from < 2) continue;
+		// The knot's drawn extent: its own feature spread at the corpus's scale. The
+		// local coordinates already carry the right *relative* lengths, so this is one
+		// factor per knot, not a renormalisation that would flatten every knot to one size.
+		let sum = 0;
+		for (let m = from; m < to; m++) {
+			const x = localXyz[m * 3];
+			const y = localXyz[m * 3 + 1];
+			const z = localXyz[m * 3 + 2];
+			sum += Math.sqrt(x * x + y * y + z * z);
+		}
+		const drawn = sum / (to - from);
+		const want = spread8[c] * scale;
+		const f = drawn > 1e-12 ? want / drawn : 0;
+		for (let m = from; m < to; m++) {
+			const i = items[m];
+			positions[i * 3] = anchor[c * 3] + localXyz[m * 3] * f;
+			positions[i * 3 + 1] = anchor[c * 3 + 1] + localXyz[m * 3 + 1] * f;
+			positions[i * 3 + 2] = anchor[c * 3 + 2] + localXyz[m * 3 + 2] * f;
+		}
+	}
+	// The single-member knots were already written to their anchor above; write them
+	// through to the positions too, so every clustered point comes out of this pass.
+	for (let c = 0; c < k; c++) {
+		if (starts[c + 1] - starts[c] !== 1) continue;
+		const i = items[starts[c]];
+		positions[i * 3] = anchor[c * 3];
+		positions[i * 3 + 1] = anchor[c * 3 + 1];
+		positions[i * 3 + 2] = anchor[c * 3 + 2];
+	}
+
+	return {
+		reshaped,
+		skipped,
+		scale,
+		ms: typeof performance === 'undefined' ? 0 : Math.round(performance.now() - started)
+	};
+}
+
+/**
  * The arrangement the galaxy draws. The positions are the projection with the knots
  * separated by KNOT_GAP; the centroids are recomputed from the result rather than
  * taken from the manifest, so the tags cannot drift from what is actually drawn.
+ *
+ * `local` runs the two-level pass above before the separation, which is the order that
+ * matters: the members are placed around their knot's centre first, and KNOT_GAP then
+ * moves the whole knot as one — exactly what it did to the projection's knots.
  */
-export function buildLayout(assets: BirdyAssets): Layout {
+export function buildLayout(assets: BirdyAssets, local = true): Layout {
+	const base = expandClusters(
+		assets.positions,
+		assets.points.clusterId,
+		assets.centroids.k,
+		CLUSTER_SPACING
+	);
+	// A copy, because the local pass writes in place and `assets.positions` is the
+	// shipped projection every other reader (and a layout rebuilt with `local` off)
+	// still has to be able to see.
+	const reshaped = base === assets.positions ? Float32Array.from(base) : base;
+	const report = local ? localShapes(assets, reshaped) : null;
 	const positions = separateKnots(
-		expandClusters(assets.positions, assets.points.clusterId, assets.centroids.k, CLUSTER_SPACING),
+		reshaped,
 		assets.points.clusterId,
 		assets.centroids.k,
 		KNOT_GAP
@@ -206,7 +601,8 @@ export function buildLayout(assets: BirdyAssets): Layout {
 	return {
 		positions,
 		centroids: centroidsOf(positions, assets.points.clusterId, assets.centroids.k),
-		counts
+		counts,
+		local: report
 	};
 }
 

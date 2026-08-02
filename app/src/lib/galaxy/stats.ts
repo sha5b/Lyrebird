@@ -12,6 +12,8 @@
  * loop, and a reactive write per frame per field is exactly the kind of cost this is
  * here to find. The page reads it on a slow timer and copies what it wants to draw.
  */
+import type { LocalReport } from './layouts';
+
 export interface GalaxyStats {
 	/** Frames per second, smoothed over roughly the last half second. */
 	fps: number;
@@ -60,6 +62,12 @@ export interface GalaxyStats {
 	 * than the machine's. That is not something a frame counter alone would explain.
 	 */
 	renderer: string;
+	/**
+	 * What the two-level layout pass did at load, or null when it was off or the build
+	 * ships no per-point features. Written once, not per frame — it lives here because
+	 * this is where the page already reads what the stage is doing.
+	 */
+	localKnots: LocalReport | null;
 }
 
 export function createStats(pointsTotal: number, clusters: number): GalaxyStats {
@@ -75,6 +83,7 @@ export function createStats(pointsTotal: number, clusters: number): GalaxyStats 
 		viewRadii: -1,
 		tagsDrawn: 0,
 		clusters,
-		renderer: ''
+		renderer: '',
+		localKnots: null
 	};
 }

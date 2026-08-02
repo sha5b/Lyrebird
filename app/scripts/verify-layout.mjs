@@ -150,6 +150,174 @@ console.log(
 	`\n  at production's k=${K}: grid ${grid.toFixed(0)} ms against the k² loop's ${loop.toFixed(0)} ms`
 );
 
+/**
+ * The two-level arrangement (`localShapes`), on knots built so the right answer is known.
+ *
+ * The three cases that matter, and the one it must NOT "fix":
+ *
+ * 1. A knot the projection tore — one group of sounds in the feature space, two blobs a
+ *    box-width apart in 3-d. Must come out as one blob.
+ * 2. A knot that is genuinely two groups in the feature space. Must STAY two lobes: the
+ *    layout is not allowed to hide a real split, only to stop the flattening inventing one.
+ * 3. Extent. A knot's drawn spread has to stay proportional to its feature spread, or
+ *    everything quoted against it (KNOT_GAP, the wave's reach, the ruler) drifts.
+ *
+ * Plus determinism: the same assets in must give the same positions out, or the picture
+ * mirrors itself between reloads.
+ */
+console.log('\ntwo-level layout (localShapes)');
+
+/** gap/spread between the two halves of a knot, the pipeline's own tearing statistic. */
+function tornRatio(pos, idx) {
+	// Split on the widest axis through the mean — enough to catch a two-blob knot, and
+	// deterministic, which a k-means seeded by chance is not.
+	let m = [0, 0, 0];
+	for (const i of idx) for (let a = 0; a < 3; a++) m[a] += pos[i * 3 + a];
+	m = m.map((v) => v / idx.length);
+	let axis = 0;
+	let best = -1;
+	for (let a = 0; a < 3; a++) {
+		let v = 0;
+		for (const i of idx) v += (pos[i * 3 + a] - m[a]) ** 2;
+		if (v > best) {
+			best = v;
+			axis = a;
+		}
+	}
+	const lo = idx.filter((i) => pos[i * 3 + axis] < m[axis]);
+	const hi = idx.filter((i) => pos[i * 3 + axis] >= m[axis]);
+	if (lo.length < 2 || hi.length < 2) return 0;
+	const mean = (set) => {
+		const c = [0, 0, 0];
+		for (const i of set) for (let a = 0; a < 3; a++) c[a] += pos[i * 3 + a];
+		return c.map((v) => v / set.length);
+	};
+	const ca = mean(lo);
+	const cb = mean(hi);
+	const spreadOf = (set, c) => {
+		let s = 0;
+		for (const i of set)
+			s += Math.hypot(pos[i * 3] - c[0], pos[i * 3 + 1] - c[1], pos[i * 3 + 2] - c[2]);
+		return s / set.length;
+	};
+	const gap = Math.hypot(ca[0] - cb[0], ca[1] - cb[1], ca[2] - cb[2]);
+	const spread = 0.5 * (spreadOf(lo, ca) + spreadOf(hi, cb));
+	return gap / Math.max(spread, 1e-9);
+}
+
+/**
+ * Three knots of 40 points each in an 8-d feature space, and a 3-d projection built to
+ * be wrong in a specific way:
+ *
+ * - knot 0: one feature blob, but the projection puts half of it at x=-0.8 and half at
+ *   x=+0.8 — the tear the two-level pass exists to repair.
+ * - knot 1: two feature blobs, well separated. The projection draws them together; the
+ *   pass must pull them apart again, because that split is in the sounds.
+ * - knot 2: one feature blob, drawn as one blob. Must survive untouched in shape.
+ */
+{
+	const D = 8;
+	const PER = 40;
+	const K3 = 3;
+	const n = K3 * PER;
+	const feat = new Float32Array(n * D);
+	const pos = new Float32Array(n * 3);
+	const clusterId = new Array(n);
+	const unit = (row) => {
+		let s = 0;
+		for (let j = 0; j < D; j++) s += row[j] * row[j];
+		s = Math.sqrt(s) || 1;
+		for (let j = 0; j < D; j++) row[j] /= s;
+		return row;
+	};
+	for (let c = 0; c < K3; c++) {
+		for (let p = 0; p < PER; p++) {
+			const i = c * PER + p;
+			clusterId[i] = c;
+			const row = new Float64Array(D);
+			row[0] = 1;
+			for (let j = 1; j < D; j++) row[j] = (rnd() - 0.5) * 0.08;
+			// knot 1 is two real groups: the second half sits a long way along axis 3.
+			if (c === 1 && p >= PER / 2) row[3] += 1.4;
+			unit(row);
+			for (let j = 0; j < D; j++) feat[i * D + j] = row[j];
+			// The projection: knot 0 torn across x, knots 1 and 2 drawn as tight blobs.
+			const base = [c * 0.05, 0, 0];
+			pos[i * 3] = base[0] + (c === 0 ? (p % 2 ? 0.8 : -0.8) : 0) + (rnd() - 0.5) * 0.02;
+			pos[i * 3 + 1] = base[1] + (rnd() - 0.5) * 0.02;
+			pos[i * 3 + 2] = base[2] + (rnd() - 0.5) * 0.02;
+		}
+	}
+	const assets = {
+		positions: pos,
+		pointFeatures: feat,
+		pointFeatureDims: D,
+		points: { n, clusterId },
+		centroids: { k: K3, items: [] }
+	};
+	const idx = (c) => Array.from({ length: PER }, (_, p) => c * PER + p);
+	const before = buildLayout(assets, false);
+	const after = buildLayout(assets, true);
+
+	const checks = [
+		['knot torn by the projection is repaired', () => tornRatio(after.positions, idx(0)) < 4],
+		['...and it really was torn before', () => tornRatio(before.positions, idx(0)) > 8],
+		['a real split in the features survives', () => tornRatio(after.positions, idx(1)) > 5],
+		['...and the projection had hidden it', () => tornRatio(before.positions, idx(1)) < 4],
+		['an untorn knot stays untorn', () => tornRatio(after.positions, idx(2)) < 4],
+		['every position is finite', () => after.positions.every(Number.isFinite)],
+		[
+			'the pass reports what it did',
+			() => after.local?.reshaped === K3 && before.local === null && after.local.scale > 0
+		],
+		[
+			'the same assets give the same positions',
+			() => {
+				const again = buildLayout(assets, true);
+				return again.positions.every((v, i) => v === after.positions[i]);
+			}
+		],
+		[
+			'a build with no per-point features falls through',
+			() => buildLayout({ ...assets, pointFeatures: null }, true).local === null
+		]
+	];
+	for (const [name, run] of checks) {
+		let ok = false;
+		try {
+			ok = run();
+		} catch (err) {
+			console.log(`  ${name}: threw ${err}`);
+		}
+		if (ok) console.log(`  ${name.padEnd(46)} ok`);
+		else {
+			console.log(`FAIL ${name}`);
+			failures++;
+		}
+	}
+	const spreadOf = (layout, c) => {
+		const set = idx(c);
+		const p = layout.positions;
+		const m = [0, 0, 0];
+		for (const i of set) for (let a = 0; a < 3; a++) m[a] += p[i * 3 + a];
+		for (let a = 0; a < 3; a++) m[a] /= set.length;
+		let s = 0;
+		for (const i of set) s += Math.hypot(p[i * 3] - m[0], p[i * 3 + 1] - m[1], p[i * 3 + 2] - m[2]);
+		return s / set.length;
+	};
+	// The wide knot has to be drawn wider than the tight one, which is the whole content
+	// of "extent is measured". The ratio is not asserted exactly — one global scale ties
+	// the corpus's median knot to its old size, and with three knots that median is noise.
+	const wide = spreadOf(after, 1);
+	const tight = spreadOf(after, 2);
+	if (wide > tight * 2) {
+		console.log(`  ${'extent follows the feature spread'.padEnd(46)} ok (${wide.toFixed(3)} vs ${tight.toFixed(3)})`);
+	} else {
+		console.log(`FAIL extent: wide knot ${wide.toFixed(4)} against tight knot ${tight.toFixed(4)}`);
+		failures++;
+	}
+}
+
 if (failures) {
 	console.log(`\n${failures} FAILURES`);
 	process.exit(1);

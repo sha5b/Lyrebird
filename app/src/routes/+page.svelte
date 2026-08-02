@@ -164,6 +164,26 @@
 	let spin = $state(true);
 	let showLabels = $state(true);
 	/**
+	 * **The two-level arrangement, and it is on by default because the one-level one was
+	 * drawing knots in two places.**
+	 *
+	 * On: a knot sits where the projection put its most typical member, and its members
+	 * are laid out by a local projection of their own feature space around that point
+	 * (`localShapes` in layouts.ts). Off: the raw global projection, which is what every
+	 * build before this one drew.
+	 *
+	 * The switch exists because this changes what the picture *claims* and the two
+	 * should be comparable side by side rather than argued about. Measured on the
+	 * shipped build: knots drawn in two blobs fall from **379 to 245** (severe 77 → 37),
+	 * the widest split inside one knot from **1.27 to 0.80 box units**, and the median
+	 * knot's extent is unchanged (0.134 → 0.1336), so everything calibrated against it
+	 * — KNOT_GAP, the wave's reach, the ruler's unit — stays where it was.
+	 *
+	 * It is read once, when the cloud is built, so flipping it remounts the canvas — the
+	 * same path a map switch takes.
+	 */
+	let localKnots = $state(true);
+	/**
 	 * The points' colour language: off is neutral ink, on tints every point by where
 	 * its sound came from (the provenance classes). Default off — the corpus is one
 	 * cloud first, and the class tint is a layer you ask for.
@@ -1968,7 +1988,10 @@ uv run birdy-pipeline build</pre>
 		</header>
 
 		<div class="stage-wrap">
-			{#key galaxyVersion}
+			<!-- `localKnots` joins the key because the arrangement is read once, when the
+			     cloud is built: flipping it has to rebuild the layout, the wave's graph,
+			     the LOD cells and the ruler's unit, which is exactly what a remount does. -->
+			{#key `${galaxyVersion}:${localKnots}`}
 			<Galaxy
 				{assets}
 				{signal}
@@ -1980,6 +2003,7 @@ uv run birdy-pipeline build</pre>
 				labels={showLabels}
 				plain={!provColours}
 				adaptive={adaptiveDetail}
+				{localKnots}
 				selectedSpecies={focus >= 0 ? (currentSpecies?.id ?? '') : ''}
 				{provShown}
 				pinned={pinnedCluster}
@@ -2048,6 +2072,12 @@ uv run birdy-pipeline build</pre>
 									</label>
 									<label class="check" title="Name tags on the knots a syllable can be sung into.">
 										<input type="checkbox" bind:checked={showLabels} /> Labels
+									</label>
+									<label
+										class="check"
+										title="A knot is drawn where the projection put its most typical sound, and its members are arranged by a local projection of their own feature space. Off draws the raw global projection, which splits some knots across the galaxy. Rebuilds the cloud."
+									>
+										<input type="checkbox" bind:checked={localKnots} /> Local knot shape
 									</label>
 									<!--
 										One bit, one checkbox, sitting with the other two display bits — it was
@@ -2390,23 +2420,42 @@ uv run birdy-pipeline build</pre>
 									</li>
 								</ul>
 								<p class="note faint">
-									Two display transforms, both disclosed: close up — and always for the selected bird —
-									a knot's marks spread out to fill its measured extent, like the jitter in a
-									scatterplot; and knots are drawn twice as far apart as the projection puts them,
-									so there is room between them for a response to happen in. Each knot keeps its
-									own size and shape, and neither transform moves the corpus positions.
+									{#if localKnots}
+										Three display transforms, all disclosed. A knot is drawn where the projection put
+										its most typical sound, and its members are arranged around it by a projection of
+										that knot's own feature space rather than of the whole corpus — otherwise the
+										global flattening splits some knots across the galaxy (below). Close up — and
+										always for the selected bird — a knot's marks spread out to fill its measured
+										extent, like the jitter in a scatterplot. And knots are drawn twice as far apart
+										as the projection puts them, so there is room between them for a response to
+										happen in. Each knot keeps its measured extent, and none of it moves the corpus
+										positions. Direction inside a knot carries no meaning between knots; distance
+										from its centre does.
+									{:else}
+										Two display transforms, both disclosed: close up — and always for the selected
+										bird — a knot's marks spread out to fill its measured extent, like the jitter in
+										a scatterplot; and knots are drawn twice as far apart as the projection puts
+										them, so there is room between them for a response to happen in. Each knot keeps
+										its own size and shape, and neither transform moves the corpus positions.
+									{/if}
 								</p>
 								{#if projQuality?.torn}
 									<!--
 										The build measures this and the app had never shown it, so the one thing a
 										viewer is most likely to read as a rendering fault — a thread that ends in
-										empty space — had a measured explanation nobody could see.
+										empty space — had a measured explanation nobody could see. It now also says
+										what the layout does about it, because "we know and we fixed most of it" and
+										"we know" are different sentences.
 									-->
 									<p class="note faint">
 										{projQuality.torn} of {(projQuality.tornOf ?? 0).toLocaleString()} measured knots are
 										drawn by this projection in two places at once. Their centre — where the tag, the
 										thread and the wave all go — then falls between the two. That is the flattening, not
-										the sound.
+										the sound.{#if localKnots}
+											Local knot shape (Display) repairs the ones that are one group of sounds in the
+											feature space and only look torn in three dimensions; what is left is torn in the
+											measurements too, and no arrangement can honestly draw it as one place.
+										{/if}
 									</p>
 								{/if}
 							</section>

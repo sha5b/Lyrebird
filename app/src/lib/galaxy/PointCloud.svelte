@@ -72,6 +72,14 @@
 		 */
 		adaptive?: boolean;
 		/**
+		 * The two-level arrangement: knot centres from the global projection, members
+		 * from a local projection of their own feature space (`localShapes` in
+		 * layouts.ts). Off draws the raw projection, which is what every earlier build
+		 * did — kept so the two can be compared rather than argued about. Read once, at
+		 * build time: the page remounts the canvas when it changes.
+		 */
+		localKnots?: boolean;
+		/**
 		 * The corpus's own length unit, handed back out: the median nearest-neighbour
 		 * distance between knot centres, in layout box units. Measured here because the
 		 * wave's reach is already quoted against it, and read by the stage ruler, which
@@ -95,6 +103,7 @@
 		plain = false,
 		provShown = [true, true, true, true, true],
 		adaptive = true,
+		localKnots = true,
 		knotSpacing = $bindable(),
 		stats
 	}: Props = $props();
@@ -440,7 +449,10 @@
 		material.uniforms.uSizeScale.value = SIZE_REFERENCE * spread;
 	});
 
-	const layout = untrack(() => buildLayout(assets));
+	const layout = untrack(() => buildLayout(assets, localKnots));
+	$effect(() => {
+		if (stats) stats.localKnots = layout.local;
+	});
 
 	/**
 	 * Seed the buffers from the layout, not from the raw asset.

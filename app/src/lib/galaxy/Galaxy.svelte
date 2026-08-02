@@ -68,6 +68,12 @@
 		 */
 		adaptive?: boolean;
 		/**
+		 * The two-level arrangement (layouts.ts `localShapes`): knot centres from the
+		 * global projection, members from a local projection of their own features.
+		 * Read once at build time — the page remounts the canvas when it changes.
+		 */
+		localKnots?: boolean;
+		/**
 		 * The selected species' id ('' for none): draws the relation threads to the
 		 * species relations.json says share call shapes with it, and lets the partners'
 		 * knots into the label pool while the selection stands.
@@ -104,6 +110,7 @@
 		plain = true,
 		provShown = [true, true, true, true, true],
 		adaptive = true,
+		localKnots = true,
 		selectedSpecies = '',
 		onpick,
 		onbackground,
@@ -240,7 +247,7 @@
 			<GridBurst {assets} {signal} {view} prov={!plain} />
 			<ContextPaths {assets} {signal} {view} prov={!plain} />
 			<RelationThreads {assets} {view} speciesId={selectedSpecies} />
-			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} {provShown} {adaptive} bind:knotSpacing {stats} />
+			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} {provShown} {adaptive} {localKnots} bind:knotSpacing {stats} />
 			<Trajectory {assets} {signal} {view} {spread} {pointSize} prov={!plain} />
 			{#if labels}
 				<NodeProjector {assets} {signal} elements={labelElements} bind:slots={labelSlots} {focus} {pinned} {view} prov={!plain} related={relatedKnots} {stats} />
