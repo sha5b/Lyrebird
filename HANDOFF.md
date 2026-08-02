@@ -1,3 +1,88 @@
+# Lyrebird — removal round (2026-08-02): the knot pins and the region place-names are gone
+
+Both were added the same day, one round earlier (§3 and §2 below), and both are now removed on
+the owner's call: *"we have knot pins as points in the pointcloud, that is wrong… the labels in
+the pointcloud about the species, the small grey ones, also broke — get rid of them."*
+
+**Knot pins** (`KnotMarkers.svelte`, deleted): one marker per membered knot, 13 848 of them,
+drawn as a `T.Points` pass in the same group as the cloud. The switch added last round answered
+"how do I remove them" but not the actual objection — a second point pass *inside the point
+cloud* means the stage draws marks that are not sounds, and a reader cannot tell one kind from
+the other at a glance. Threads and tags still terminate at the centroid; they now do it without
+a mark under them. `PointCloud`'s `texture` bindable existed only to feed this pass and is gone
+with it (the internal `clusterTexture` is unchanged — it still drives the points).
+
+**Region place-names** (`buildPlaceNames`, `PlaceName`, `PLACE_NAME_MAX` in assets.ts;
+NodeProjector's pass six; NodeLabels' `.place` pool): the small grey genus names over the
+whole-galaxy view. The genus rewrite last round took them from one name to five, which was the
+fix for "one tag called Marsh Tit", but they are out entirely rather than tuned again.
+`NodeProjector` is back to five passes and no longer keeps a place clock.
+
+The "Knot pins" checkbox is gone from Display; the key's knot entry no longer promises a pin.
+`npm run check` is clean apart from the four pre-existing `syrinx-processor.js` errors, and
+`npm run build` passes.
+
+The two sections below are kept as written — they are the record of why these existed.
+
+# Lyrebird — reading round (2026-08-02, night 5): room between the knots, regions named by clade, and what the unlabelled marks were
+
+## 1. Twice the space between knots
+
+`KNOT_GAP` 1.3 → **2.0** (owner: *"give the point cloud more space between the points —
+sometimes knots and tones are so near each other that it looks like there is no animation
+between them"*). The measurement behind it: on v6 the median knot's mean member distance is
+0.129 against a median knot spacing of 0.0395, so **the average knot was 3.3× wider than the
+gap to its neighbour** — the knots interpenetrated everywhere and there was no gap for a
+response to happen *in*. At 2.0 the ratio is 2.1.
+
+**The gap went up rather than the knots coming in**, though the two are arithmetically
+identical for that ratio: this way each knot's extent — how tightly its members agree, which
+is measured — is left exactly as the projection reported it (`CLUSTER_SPACING` in layouts.ts
+has the long argument for why shrinking a knot is not available). Everything downstream
+recomputes from the drawn layout: the wave's reach, the framing, the LOD grid, the ruler's
+unit. It is one constant if the owner wants it dialled back toward 1.6.
+
+It cannot make knots into beads and nothing short of a lie about the corpus could: the overlap
+is a property of `label` clustering, where a knot is every sound carrying one type's name and
+those sounds are under no obligation to land together in three dimensions.
+
+## 2. "There is one tag called Marsh Tit — is that a bug?"
+
+Not a bug, and not right either. Region place-names take a 6³ grid over the knots and name a
+cell when one **species** holds 40 % of it. Measured on the shipped build: of the **35 cells**
+that clear the 1 %-of-corpus gate, exactly **one** had such a species — `poecile_palustris` at
+44 % — so the map printed a single name and read as broken. On a 2 423-species corpus a
+species-level plurality is close to unobtainable by construction.
+
+**Regions are now named by genus at a 30 % plurality**, which is the level this map can
+actually speak at *and* the level the colours now speak at, so a region's name and the hue of
+the birds in it say the same thing. Five regions qualify on this build (Poecile 48 %,
+Sclateria, Hirundo, Larvivora, Colibri at 30–33 %); three were on screen in the check run.
+The label is the genus capitalised — a clade takes the Latin the way a map takes a region's
+name — and the share is carried on the record so a weak plurality can be said out loud.
+
+**And no, they do not react to activation, by design.** A place-name is printed cartography:
+it reprojects four times a second and holds one opacity. The instruments that answer are the
+points, the pins and the tags; a map label flickering with the audio would be a fourth thing to
+watch, saying nothing the knot under it is not already saying.
+
+## 3. "I disabled all labels and there are still a lot of points — what are these?"
+
+The **knot pins**: one small mark at each knot's drawn centre, 13 848 of them, drawn by
+`KnotMarkers` — which was never gated on the Labels switch. They are where a tag and a thread
+attach and they brighten when their knot answers, so they are not labels and should not ride
+the labels toggle; but with the labels off they were the only thing on screen a viewer could
+neither name nor remove.
+
+**They now have their own switch** in Display ("Knot pins", default on) with the explanation on
+hover.
+
+## 4. The ruler's rules are gone
+
+The band's border — a full-width line across the top of the stage and a matching one down the
+left — read as a frame around the picture rather than as part of the scale. Removed; the ticks
+are the scale.
+
 # Lyrebird — the response round (2026-08-02, night 4): the wave, depth, taxonomy colour, and a shader that had silently died
 
 Four owner asks in one pass, all checked in a browser.

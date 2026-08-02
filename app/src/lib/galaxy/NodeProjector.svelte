@@ -21,7 +21,7 @@
 	import { T, useTask, useThrelte } from '@threlte/core';
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
-	import { buildSpeciesIndex, clusterProvenance, knotHeat, PLACE_NAME_MAX, type PlaceName } from '$lib/data/assets';
+	import { buildSpeciesIndex, clusterProvenance, knotHeat } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
 	import { provenanceColourScaled, speciesColourScaled } from './palette';
 	import { LABEL_SLOTS, MAX_LABELS } from './labels';
@@ -52,14 +52,6 @@
 		 * pass decide them exactly like any resting knot.
 		 */
 		related?: number[];
-		/**
-		 * The region place-names and their DOM pool (NodeLabels fills it): quiet map
-		 * names for the whole-galaxy view, drawn only far out with nothing selected.
-		 * A separate pool from the tags — a place-name never takes a tag's slot, and
-		 * a tag never takes a place-name's.
-		 */
-		places?: PlaceName[];
-		placeElements?: (HTMLElement | null)[];
 		/** Written, never read: what the stage cost this frame. */
 		stats?: GalaxyStats;
 	}
@@ -74,8 +66,6 @@
 		view,
 		prov = false,
 		related = [],
-		places = [],
-		placeElements = [],
 		stats
 	}: Props = $props();
 
@@ -208,9 +198,6 @@
 	const GAP_X = 168;
 	const GAP_Y = 26;
 	const HOT = 0.12;
-	/** Seconds between place-name reprojections: cartography, not instrumentation. */
-	const PLACE_SECONDS = 0.25;
-	let placeClock = 0;
 
 	useTask((delta) => {
 		const cam = camera.current;
@@ -444,62 +431,6 @@
 		}
 
 		if (stats) stats.tagsDrawn = chosen.length;
-
-		// **Pass six: the place-names.** Quiet region cartography for the
-		// whole-galaxy view, reprojected four times a second rather than per frame —
-		// a name that trails the camera by a quarter second reads as printed, and the
-		// projection is the whole per-frame cost this pass would have had. Shown only
-		// far out (viewRadii ≥ 2.2, where no tag is asking to be read anyway) and
-		// only with nothing selected: a chosen bird narrows the map to one
-		// repertoire, and naming regions then would argue with it. Collision is a
-		// coarse box test against the tags already placed and the names placed this
-		// pass — the pool is twelve, so the test is free.
-		placeClock += delta;
-		if (placeClock >= PLACE_SECONDS) {
-			placeClock = 0;
-			const show = focus < 0 && (stats?.viewRadii ?? -1) >= 2.2;
-			const named: { x: number; y: number }[] = [];
-			for (let i = 0; i < PLACE_NAME_MAX; i++) {
-				const node = placeElements[i];
-				if (!node) continue;
-				const place = places[i];
-				let x = 0;
-				let y = 0;
-				let ok = Boolean(show && place);
-				if (ok && place) {
-					world
-						.set(place.position[0], place.position[1], place.position[2])
-						.applyMatrix4(matrix)
-						.project(cam);
-					ok = world.z <= 1 && world.z >= -1;
-					x = (world.x * 0.5 + 0.5) * width;
-					y = (-world.y * 0.5 + 0.5) * height;
-					if (ok) {
-						for (const ch of chosen) {
-							if (Math.abs(ch.x - x) < 130 && Math.abs(ch.y - y) < 30) {
-								ok = false;
-								break;
-							}
-						}
-					}
-					if (ok) {
-						for (const q of named) {
-							if (Math.abs(q.x - x) < 130 && Math.abs(q.y - y) < 24) {
-								ok = false;
-								break;
-							}
-						}
-					}
-				}
-				if (ok && place) {
-					named.push({ x, y });
-					node.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) translate(-50%, -50%)`;
-					node.style.opacity = '0.85';
-				} else if (node.style.opacity !== '0') {
-					node.style.opacity = '0';
-				}
-			}
-		}
 	});
 </script>
 

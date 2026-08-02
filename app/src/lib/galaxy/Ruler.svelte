@@ -149,7 +149,9 @@
 		left: 0;
 		right: 0;
 		height: var(--ruler, 1.15rem);
-		border-bottom: 1px solid var(--rule);
+		/* No rule under the band. It drew a full-width line across the top of the stage
+		   that read as a border on the picture rather than as part of the scale — the
+		   ticks are the scale, and they say it without cutting the view in half. */
 		background: linear-gradient(var(--paper) 55%, transparent);
 	}
 
@@ -167,7 +169,6 @@
 		bottom: 0;
 		left: 0;
 		width: var(--ruler, 1.15rem);
-		border-right: 1px solid var(--rule);
 		background: linear-gradient(90deg, var(--paper) 55%, transparent);
 	}
 

@@ -2268,8 +2268,8 @@ uv run birdy-pipeline build</pre>
 												<b>A knot is a group of sounds too alike to separate</b>, found by clustering
 												the space rather than by reading the labels.
 											{/if}
-											A documented one also carries its function and its source. The small pin at its
-											centre is where its tag and its threads attach — a waypoint, not a measurement.
+											A documented one also carries its function and its source. Its tag and its
+											threads attach at its centre.
 										</span>
 									</li>
 									{#if knotOverlap}
@@ -2392,8 +2392,9 @@ uv run birdy-pipeline build</pre>
 								<p class="note faint">
 									Two display transforms, both disclosed: close up — and always for the selected bird —
 									a knot's marks spread out to fill its measured extent, like the jitter in a
-									scatterplot; and knots are drawn 30&nbsp;% farther apart than the projection puts
-									them. Neither moves the corpus positions.
+									scatterplot; and knots are drawn twice as far apart as the projection puts them,
+									so there is room between them for a response to happen in. Each knot keeps its
+									own size and shape, and neither transform moves the corpus positions.
 								</p>
 								{#if projQuality?.torn}
 									<!--

@@ -71,12 +71,6 @@
 		 */
 		adaptive?: boolean;
 		/**
-		 * The live cluster-state texture, handed out to the knot-marker pass so every
-		 * consumer of the R/G/B channels reads the same texels. `$bindable` because
-		 * the write happens here: the texture is created at init and never replaced.
-		 */
-		texture?: THREE.DataTexture;
-		/**
 		 * The corpus's own length unit, handed back out: the median nearest-neighbour
 		 * distance between knot centres, in layout box units. Measured here because the
 		 * wave's reach is already quoted against it, and read by the stage ruler, which
@@ -100,7 +94,6 @@
 		plain = false,
 		provShown = [true, true, true, true, true],
 		adaptive = true,
-		texture = $bindable(),
 		knotSpacing = $bindable(),
 		stats
 	}: Props = $props();
@@ -324,10 +317,6 @@
 		}
 		clusterTexture.needsUpdate = true;
 	});
-	// Handed to the knot-marker pass (Galaxy wires it through): the markers light
-	// from the same R/G/B channels the points do, so the quiet gate zeroing this
-	// texture quiets them too, with no second state to keep in step.
-	texture = clusterTexture;
 
 	const material = new THREE.ShaderMaterial({
 		vertexShader: vertexShader(),

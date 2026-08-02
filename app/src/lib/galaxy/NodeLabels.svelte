@@ -21,7 +21,7 @@
 	 */
 	import { untrack } from 'svelte';
 	import { confidenceLabel } from '$lib/lang/translate';
-	import { clusterProvenance, knotHeat, type PlaceName } from '$lib/data/assets';
+	import { clusterProvenance, knotHeat } from '$lib/data/assets';
 	import { provenanceColourScaled, speciesColourScaled } from './palette';
 	import type { BirdyAssets, Centroid } from '$lib/data/types';
 
@@ -45,28 +45,10 @@
 		 * switch the viewer flips, so the tags have to follow it live.
 		 */
 		prov?: boolean;
-		/**
-		 * The region place-names (assets.buildPlaceNames): map names for
-		 * whole-galaxy zoom, positioned by NodeProjector into `placeElements` —
-		 * index-aligned with this array. A separate pool from the tags on purpose:
-		 * a place-name is not a specimen tag, gets no card, no dot, no activation,
-		 * and never competes with the tag pool for a slot.
-		 */
-		places?: PlaceName[];
-		/** Written here, positioned by NodeProjector. `$bindable` for the same reason. */
-		placeElements?: (HTMLElement | null)[];
 		onpick?: (cluster: number) => void;
 	}
 
-	let {
-		assets,
-		slots,
-		elements = $bindable(),
-		prov = false,
-		places = [],
-		placeElements = $bindable([]),
-		onpick
-	}: Props = $props();
+	let { assets, slots, elements = $bindable(), prov = false, onpick }: Props = $props();
 
 	// The corpus does not change while this is mounted, so the lookups are built once.
 	// Names come from the inventory index: a tag must name its bird without fetching
@@ -157,14 +139,6 @@
 			{/if}
 		</div>
 	{/each}
-	{#each places as place, i (i)}
-		<!-- A map name, not a tag: no card, no dot, no interaction. NodeProjector
-		     writes transform and opacity; hidden until it does. Keyed by slot index,
-		     not by species: two regions can share a plurality bird. -->
-		<span class="place" bind:this={() => placeElements[i], (v) => (placeElements[i] = v)}
-			>{place.name}</span
-		>
-	{/each}
 </div>
 
 <style>
@@ -187,24 +161,6 @@
 		   hangs off to its right */
 		will-change: transform, opacity;
 		transition: opacity 140ms linear;
-	}
-
-	/* A region place-name: quiet cartography, not a specimen tag. Small caps, faint
-	   ink, no card, no dot, no pointer — visible only at whole-galaxy zoom with no
-	   selection, and NodeProjector fades it in and out (opacity starts at 0). */
-	.place {
-		position: absolute;
-		top: 0;
-		left: 0;
-		font-size: 0.62rem;
-		text-transform: uppercase;
-		letter-spacing: 0.14em;
-		color: var(--ink-faint);
-		white-space: nowrap;
-		opacity: 0;
-		pointer-events: none;
-		will-change: transform, opacity;
-		transition: opacity 300ms linear;
 	}
 
 	/* Everything that reacts is driven by `--hot` through calc/color-mix rather than by a

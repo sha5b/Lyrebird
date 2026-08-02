@@ -92,27 +92,44 @@ function centroidsOf(positions: Float32Array, clusterId: number[], k: number): F
 const CLUSTER_SPACING = 1;
 
 /**
- * How far apart the knots are drawn, as a scale on each knot's centre: **1.3 — the
- * gaps between knots grow by 30 %, the knots themselves keep shape and extent.**
+ * How far apart the knots are drawn, as a scale on each knot's centre: **2.0 — the gaps
+ * between knots are drawn at twice what the projection puts them, and the knots
+ * themselves keep their shape and extent.**
  *
- * A display transform, and the key in the interface says so. Each clustered point p
- * with knot centre c is drawn at `c * KNOT_GAP + (p - c)`, so everything the
- * projection measured *inside* a knot — the extent CLUSTER_SPACING above warns
- * against touching — is preserved exactly, and only the knot's address moves. The
- * unclustered points stay where the projection put them: they are the haze between
- * knots, and moving them would invent a structure the data does not have.
+ * A display transform, and the key in the interface says so. Each clustered point p with
+ * knot centre c is drawn at `c * KNOT_GAP + (p - c)`, so everything the projection
+ * measured *inside* a knot — the extent CLUSTER_SPACING above warns against touching —
+ * is preserved exactly, and only the knot's address moves. The unclustered points stay
+ * where the projection put them: they are the haze between knots, and moving them would
+ * invent a structure the data does not have. (On the v6 build there are none.)
  *
  * Why it exists: at 1 the dense middle of the production corpus fused into one mass —
  * knots whose centres sit a fraction of a radius apart overdraw into a single blob
- * however the frontier thins them, and no sprite budget fixes neighbours that
- * overlap. The cost is that inter-knot distance is no longer a pure reading of the
- * projection; it is 30 % display air, uniform everywhere, so *relative* positions
- * and every knot-to-knot comparison keep their meaning. Centroids are recomputed as
- * member means after the move (buildLayout), so they scale by exactly 1.3 and every
- * downstream reader — waves, framing, labels, the LOD grid, the NN spacing behind
- * uWaveLocal — sees one consistent picture.
+ * however the frontier thins them, and no sprite budget fixes neighbours that overlap.
+ * The cost is that inter-knot distance is no longer a pure reading of the projection; it
+ * is display air, uniform everywhere, so *relative* positions and every knot-to-knot
+ * comparison keep their meaning. Centroids are recomputed as member means after the move
+ * (buildLayout), so they scale by exactly this factor and every downstream reader —
+ * waves, framing, labels, the LOD grid, the NN spacing behind uWaveLocal, the stage
+ * ruler's unit — sees one consistent picture.
+ *
+ * **1.3 -> 2.0** (owner, 2026-08-02: "give the point cloud more space between the
+ * points — sometimes knots and tones are so near each other that it looks like there is
+ * no animation between them"). The measurement behind it: on v6 the median knot's mean
+ * member distance is 0.129 against a median knot spacing of 0.0395 at 1.3, so **the
+ * average knot was 3.3× wider than the gap to its nearest neighbour** — the knots
+ * interpenetrated everywhere and there was no gap for a response to happen *in*. At 2.0
+ * that ratio is 2.1. It does not turn knots into beads, and nothing short of a lie about
+ * the corpus would: the overlap is a property of `label` clustering, where a knot is
+ * every sound carrying one type's name and those sounds are under no obligation to land
+ * together in three dimensions.
+ *
+ * **The gap goes up rather than the knots coming in**, though the two are arithmetically
+ * equivalent for that ratio: this way each knot's extent — how tightly its members
+ * agree, which is measured — is left exactly as the projection reported it. CLUSTER_SPACING
+ * above is why the other direction is not on the table.
  */
-const KNOT_GAP = 1.3;
+const KNOT_GAP = 2.0;
 
 function expandClusters(
 	positions: Float32Array,

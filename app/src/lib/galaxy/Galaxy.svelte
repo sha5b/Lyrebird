@@ -8,7 +8,6 @@
 	import ContextPaths from './ContextPaths.svelte';
 	import Framing from './Framing.svelte';
 	import GridBurst from './GridBurst.svelte';
-	import KnotMarkers from './KnotMarkers.svelte';
 	import NodeLabels from './NodeLabels.svelte';
 	import NodeProjector from './NodeProjector.svelte';
 	import PointCloud from './PointCloud.svelte';
@@ -20,7 +19,7 @@
 	import Trajectory from './Trajectory.svelte';
 	import { LABEL_SLOTS } from './labels';
 	import { createLayoutView } from './layouts';
-	import { relationPartners, buildPlaceNames, type PlaceName } from '$lib/data/assets';
+	import { relationPartners } from '$lib/data/assets';
 	import { type VisualSignal } from './shaders';
 	import type { GalaxyStats } from './stats';
 
@@ -127,21 +126,6 @@
 	let labelSlots = $state<number[]>(Array.from({ length: LABEL_SLOTS }, () => -1));
 	// The corpus does not change while this is mounted, so the view is sized once.
 	const view = untrack(() => createLayoutView(assets));
-
-	/** The place-name DOM pool, written by NodeLabels, positioned by NodeProjector. */
-	let placeElements = $state<(HTMLElement | null)[]>([]);
-	/** The cloud's live cluster-state texture, bound out of PointCloud for the markers. */
-	let clusterTexture = $state<THREE.DataTexture | undefined>();
-	/**
-	 * The region place-names, computed once the layout is seeded. An effect rather
-	 * than an untrack: PointCloud seeds `view` during child initialisation, so by
-	 * the time effects run the centroids are the drawn ones (knot gap included),
-	 * which is exactly what a name on the map must be quoted against.
-	 */
-	let places = $state<PlaceName[]>([]);
-	$effect(() => {
-		places = buildPlaceNames(assets, view.centroids, view.counts);
-	});
 
 	/**
 	 * The partner knots the label pool may consider while a species is selected:
@@ -256,17 +240,16 @@
 			<GridBurst {assets} {signal} {view} prov={!plain} />
 			<ContextPaths {assets} {signal} {view} prov={!plain} />
 			<RelationThreads {assets} {view} speciesId={selectedSpecies} />
-			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} {provShown} {adaptive} bind:texture={clusterTexture} bind:knotSpacing {stats} />
-			<KnotMarkers {assets} {view} clusterState={clusterTexture} {spread} {plain} />
+			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} {provShown} {adaptive} bind:knotSpacing {stats} />
 			<Trajectory {assets} {signal} {view} {spread} {pointSize} prov={!plain} />
 			{#if labels}
-				<NodeProjector {assets} {signal} elements={labelElements} bind:slots={labelSlots} {focus} {pinned} {view} prov={!plain} related={relatedKnots} {places} {placeElements} {stats} />
+				<NodeProjector {assets} {signal} elements={labelElements} bind:slots={labelSlots} {focus} {pinned} {view} prov={!plain} related={relatedKnots} {stats} />
 			{/if}
 		</Spinner>
 	</Canvas>
 
 	{#if labels}
-		<NodeLabels {assets} slots={labelSlots} bind:elements={labelElements} prov={!plain} {places} bind:placeElements {onpick} />
+		<NodeLabels {assets} slots={labelSlots} bind:elements={labelElements} prov={!plain} {onpick} />
 	{/if}
 
 	<!--
