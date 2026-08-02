@@ -1,3 +1,32 @@
+# Birdy — Session Handoff (2026-08-01, late 5: knot pins, focus cloud, wave reveal)
+
+**Owner round on the pointcloud's readability, all app-side, checks green** (4
+baseline / 0 warnings, parity 18/18, layout, build). Owner confirmed the
+pipeline-side research queue (Perch cross-check, song-bout pool, recordist
+call-types, lat/lng) — unpicked, debug-subset discipline when it starts.
+
+- **Knot centre pins** (`KnotMarkers.svelte`, new): one small marker per membered
+  knot at the drawn centroid, driven by the *same* cluster-state texture as the
+  cloud (R/G/B, same weights), so pins brighten with response, sung and learning
+  and go quiet with the gate. Rest: 1.5 px floor, alpha 0.30, slate with 25 % of
+  the knot's identity hue. Relation threads and labels no longer land on empty
+  space. Own tiny program (3 attributes; the cloud stays at 10).
+- **Selected bird = full cloud, verified and made decisive.** No coverage bug:
+  `reorderCells`' species test already covers unclustered points, and the focused
+  span is exempt from frontier AND governor (now documented). New: the selected
+  bird's knots are always fully blossomed (`aSpread * max(uBlossom, vChosen)`),
+  its marks get a light fog exemption (×(1−0.4·vChosen)) and skip the uAnswer
+  resting dim. Unclustered points keep their shrink — a structure claim, not a
+  selection one.
+- **Wave reveal.** The travelling front now reveals the full local membership:
+  `REVEAL_FRONT = 0.015` (exported from shaders.ts so CPU scan and GLSL share it)
+  adds a third inclusion channel to `updateActiveIndex`; the reveal band
+  (vWave ∈ [0.015, 0.05), vAct < 0.25) renders at 0.38 alpha, resting tone, no
+  accent — density appearing, not answers. `FRONT_WIDTH` 0.16 → 0.22, front amp
+  floor 0.3 → 0.45 (scales with how much of the knot answered). New
+  `stats.pointsRevealed`, shown in the cost readout as "· N revealed". Watch it on
+  the iGPU during chorus: the active pass is deliberately not LOD-bounded.
+
 # Birdy — Session Handoff (2026-08-01, late 4: relations, roster, place-names; spaces research)
 
 **Four sense-making features shipped, plus the owner's "how do we find new songs"

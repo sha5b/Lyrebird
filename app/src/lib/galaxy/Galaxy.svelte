@@ -8,6 +8,7 @@
 	import ContextPaths from './ContextPaths.svelte';
 	import Framing from './Framing.svelte';
 	import GridBurst from './GridBurst.svelte';
+	import KnotMarkers from './KnotMarkers.svelte';
 	import NodeLabels from './NodeLabels.svelte';
 	import NodeProjector from './NodeProjector.svelte';
 	import PointCloud from './PointCloud.svelte';
@@ -120,6 +121,8 @@
 
 	/** The place-name DOM pool, written by NodeLabels, positioned by NodeProjector. */
 	let placeElements = $state<(HTMLElement | null)[]>([]);
+	/** The cloud's live cluster-state texture, bound out of PointCloud for the markers. */
+	let clusterTexture = $state<THREE.DataTexture | undefined>();
 	/**
 	 * The region place-names, computed once the layout is seeded. An effect rather
 	 * than an untrack: PointCloud seeds `view` during child initialisation, so by
@@ -226,7 +229,8 @@
 			<GridBurst {assets} {signal} {view} prov={!plain} />
 			<ContextPaths {assets} {signal} {view} prov={!plain} />
 			<RelationThreads {assets} {view} speciesId={selectedSpecies} />
-			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} {provShown} {adaptive} {stats} />
+			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} {provShown} {adaptive} bind:texture={clusterTexture} {stats} />
+			<KnotMarkers {assets} {view} clusterState={clusterTexture} {spread} {plain} />
 			<Trajectory {assets} {signal} {view} {spread} {pointSize} prov={!plain} />
 			{#if labels}
 				<NodeProjector {assets} {signal} elements={labelElements} bind:slots={labelSlots} {focus} {pinned} {view} prov={!plain} related={relatedKnots} {places} {placeElements} {stats} />

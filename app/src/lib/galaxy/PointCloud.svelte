@@ -12,6 +12,7 @@
 	import {
 		FRONT_LIFE,
 		FRONT_ONSET,
+		REVEAL_FRONT,
 		SIZE_REFERENCE,
 		WAVE_SOURCES,
 		buildClusterMembers,
@@ -68,6 +69,12 @@
 		 * the Display panel's "adaptive detail" switch turns it off.
 		 */
 		adaptive?: boolean;
+		/**
+		 * The live cluster-state texture, handed out to the knot-marker pass so every
+		 * consumer of the R/G/B channels reads the same texels. `$bindable` because
+		 * the write happens here: the texture is created at init and never replaced.
+		 */
+		texture?: THREE.DataTexture;
 		/** Written, never read: how many points each pass actually drew. See stats.ts. */
 		stats?: GalaxyStats;
 	}
@@ -84,6 +91,7 @@
 		plain = false,
 		provShown = [true, true, true, true, true],
 		adaptive = true,
+		texture = $bindable(),
 		stats
 	}: Props = $props();
 
@@ -277,6 +285,10 @@
 		t.needsUpdate = true;
 		return t;
 	});
+	// Handed to the knot-marker pass (Galaxy wires it through): the markers light
+	// from the same R/G/B channels the points do, so the quiet gate zeroing this
+	// texture quiets them too, with no second state to keep in step.
+	texture = clusterTexture;
 
 	const material = new THREE.ShaderMaterial({
 		vertexShader: vertexShader(),
@@ -794,6 +806,14 @@
 	 * reorder there is — it runs on a focus change, never per frame, and the uploads
 	 * it triggers (64 small indices plus the packed aMisc buffer, whose w channel is
 	 * the rank) happen only then.
+	 *
+	 * Verified end to end (2026-08-02, owner: "inside a single bird we want its full
+	 * cloud"): the test reads `aSpecies` with NO cluster condition, so the bird's
+	 * UNCLUSTERED points (aCluster -1 — field audio the clustering placed nowhere)
+	 * join the focused span exactly like its typed knots. And the span is exempt from
+	 * every throttle downstream: `updateLod` draws `cell.focused + fraction × rest`,
+	 * so neither the frontier nor the adaptive governor's cap can take one of the
+	 * bird's marks away — the cap scales only `fraction`, never `focused`.
 	 */
 	function reorderCells(focus: number) {
 		const species = geometry.attributes.aSpecies.array as Float32Array;
@@ -915,11 +935,18 @@
 	 *
 	 * The index is rebuilt per frame from the same quantities the vertex shader reads,
 	 * with the thresholds set *below* the shader's cuts (0.22 against 0.25, 0.04
-	 * against 0.05). A point that clears the shader's bar but not this one would vanish
-	 * from both passes, so the set is deliberately a superset: it may draw a point the
-	 * fragment shader then discards, and it may never omit one the shader would keep.
-	 * The resting pass still draws everything, because on a quiet frame everything is
-	 * resting and that is the picture.
+	 * against 0.05, and REVEAL_FRONT as the third, lowest channel). A point that
+	 * clears the shader's bar but not this one would vanish from both passes, so the
+	 * set is deliberately a superset: it may draw a point the fragment shader then
+	 * discards, and it may never omit one the shader would keep. The resting pass
+	 * still draws everything, because on a quiet frame everything is resting and
+	 * that is the picture.
+	 *
+	 * The third channel is the reveal: the front's skirt (REVEAL_FRONT against the
+	 * response's 0.04/0.05) carries the knot's whole membership into the active pass
+	 * while the shell crosses it, so a wave shows the local cloud rather than only
+	 * its responders. The shader sorts responder from revealed (vWave band + vAct);
+	 * here they share one index, and only the counter tells them apart.
 	 */
 	const activeIndex = untrack(() => new Uint32Array(Math.max(1, assets.points.n)));
 	const activeIndexAttribute = untrack(() =>
@@ -949,10 +976,14 @@
 		// pass is skipped and an idle galaxy costs nothing to explore.
 		if (!signal.level && signal.best < 0 && !waveActive && !learning.length) {
 			if (activeGeometry.drawRange.count !== 0) activeGeometry.setDrawRange(0, 0);
-			if (stats) stats.pointsResponding = 0;
+			if (stats) {
+				stats.pointsResponding = 0;
+				stats.pointsRevealed = 0;
+			}
 			return;
 		}
 		let n = 0;
+		let revealed = 0;
 		for (let i = 0; i < clusterOfPoint.length; i++) {
 			const c = clusterOfPoint[i];
 			let v = pointAct[i] ?? 0;
@@ -962,11 +993,22 @@
 				const learn = learnPerCluster[c] * 0.55;
 				if (learn > v) v = learn;
 			}
-			if (v >= 0.22 || front[i] >= 0.04) activeIndex[n++] = i;
+			if (v >= 0.22 || front[i] >= 0.04) {
+				activeIndex[n++] = i;
+			} else if (front[i] >= REVEAL_FRONT) {
+				// The shell's skirt, not a response: in the index so the active pass
+				// can draw the density, counted apart so the cost readout can say
+				// what the wave is carrying rather than what is answering.
+				activeIndex[n++] = i;
+				revealed++;
+			}
 		}
 		activeIndexAttribute.needsUpdate = true;
 		activeGeometry.setDrawRange(0, n);
-		if (stats) stats.pointsResponding = n;
+		if (stats) {
+			stats.pointsResponding = n - revealed;
+			stats.pointsRevealed = revealed;
+		}
 	}
 
 	/**
@@ -1029,7 +1071,11 @@
 				oz /= w;
 			}
 			const radius = graph.radii[c];
-			const floor = (acts[c] ?? 0) * 0.3;
+			// The floor scales with how much of the knot answered (0.45 of the cluster
+			// activation, up from 0.3 — owner, 2026-08-02: "stronger"): a knot that
+			// matched hard throws a hard shell, a glancing match a soft one, and the
+			// per-member amp below still ranks the members inside it.
+			const floor = (acts[c] ?? 0) * 0.45;
 			for (let m = 0; m < mem.length; m++) {
 				const i = mem[m];
 				const d =
@@ -1290,7 +1336,10 @@
 			frontAge.fill(Number.POSITIVE_INFINITY);
 			learnPerCluster.fill(0);
 			if (activeGeometry.drawRange.count !== 0) activeGeometry.setDrawRange(0, 0);
-			if (stats) stats.pointsResponding = 0;
+			if (stats) {
+				stats.pointsResponding = 0;
+				stats.pointsRevealed = 0;
+			}
 		}
 		// The density governor runs ahead of the frontier walk, so updateLod reads the
 		// cap this frame already settled on. The seed waits for the GPU's name (Stats

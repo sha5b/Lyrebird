@@ -1976,7 +1976,8 @@ uv run birdy-pipeline build</pre>
 												<dt>points</dt>
 												<dd>
 													{cost.pointsDrawn.toLocaleString()} of {cost.pointsTotal.toLocaleString()}{#if cost.pointsResponding > 0}
-														· {cost.pointsResponding.toLocaleString()} responding{/if}
+														· {cost.pointsResponding.toLocaleString()} responding{/if}{#if cost.pointsRevealed > 0}
+													· {cost.pointsRevealed.toLocaleString()} revealed{/if}
 												</dd>
 											</div>
 											<div>

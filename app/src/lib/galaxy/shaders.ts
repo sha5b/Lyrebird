@@ -98,7 +98,19 @@ export const WAVE_SOURCES = 3;
 export const SIZE_REFERENCE = 4.0;
 
 /**
- * The point cloud's vertex stage. It no longer takes the cluster count: the three
+ * Where the wavefront's skirt becomes a *reveal*: a point whose front value sits in
+ * [REVEAL_FRONT, 0.05) without responding (vAct < 0.25) is carried into the active
+ * pass as visible density — the knot's whole membership showing as the shell
+ * passes, not only the members that matched. 0.015 against the response cut's 0.05:
+ * the front is a gaussian of width FRONT_WIDTH, so this puts the reveal's outer
+ * edge sqrt(ln(1/0.015)) ≈ 2.05 widths (≈ 0.45 knot-radii) from the shell's centre
+ * against the response's 1.73 (≈ 0.38) — a thin honest skirt, not a second wave.
+ * Quoted as a shader constant so the fragment discard, the reveal band and the
+ * CPU's active-index scan (PointCloud) can never drift apart.
+ */
+export const REVEAL_FRONT = 0.015;
+
+/** The point cloud's vertex stage. It no longer takes the cluster count: the three
  * per-cluster channels moved into `uClusterState` (see the uniform's comment), so the
  * shader's source is the same string for a 64-knot galaxy and a 14 000-knot one, and
  * the number of knots is no longer a compile-time constant of the renderer.
@@ -408,10 +420,13 @@ export function vertexShader(): string {
 			// The blossom shares aRadDir with the front: both move the point along the
 			// true radial from its own centroid, the front as a passing ring, the
 			// blossom as the camera's approach spreading the knot's marks to fill its
-			// measured extent. Zero at galaxy distance, where uBlossom is 0.
+			// measured extent. Zero at galaxy distance, where uBlossom is 0 — except
+			// for the selected bird, whose knots are always fully open: choosing it
+			// asked for its whole cloud, and a knot that stays fused until the camera
+			// closes is the selection's own marks hiding from it.
 			vec3 p = base
 				+ burst * pulse * 0.004 * (0.6 + uLevel * 0.9)
-				+ aRadDir * (aFront * aBloom + aSpread * uBlossom);
+				+ aRadDir * (aFront * aBloom + aSpread * max(uBlossom, vChosen));
 
 			// Waves, plural, each expanding from the knot that is actually sounding.
 			//
@@ -612,11 +627,20 @@ export const fragmentShader = /* glsl */ `
 		// of response, and in a dense knot the activation visually vanishes under
 		// "old points not moving". The 0.25 matches the "glow is earned" line below;
 		// the wavefront rides the active pass because a passing ring *is* the response.
+		// The REVEAL_FRONT band below the response cut is the reveal: the shell's
+		// skirt carries the knot's whole membership into the active pass as visible
+		// density — resting tone, low alpha, no accent — so a passing wave shows the
+		// local cloud instead of only its responders.
 	#ifdef ACTIVE_PASS
-		if (vAct < 0.25 && vWave < 0.05) discard;
+		if (vAct < 0.25 && vWave < ${REVEAL_FRONT}) discard;
 	#else
-		if (vAct >= 0.25 || vWave >= 0.05) discard;
+		if (vAct >= 0.25 || vWave >= ${REVEAL_FRONT}) discard;
 	#endif
+		// 1 exactly on the reveal band: below the response cut in both channels,
+		// inside the shell's skirt. Revealed points are density appearing, never an
+		// answer being claimed — they keep the resting tone and take none of the
+		// response's colour walk, halo or accent.
+		float reveal = step(${REVEAL_FRONT}, vWave) * (1.0 - step(0.05, vWave)) * (1.0 - step(0.25, vAct));
 		// The Display panel's class filter: hidden provenance classes are gone from
 		// the picture entirely (both passes), not dimmed — a dimmed "hidden" class is
 		// still a claim about the space it occupies.
@@ -768,9 +792,13 @@ export const fragmentShader = /* glsl */ `
 		//
 		// Responding points are exempted in proportion to how hard they respond: the whole
 		// job of this view is to show where a sound landed, and a match that happens to be
-		// at the back should not be dimmer than the paper.
+		// at the back should not be dimmer than the paper. The selected bird gets a
+		// lighter, standing version of the same exemption — its marks stay crisp at
+		// depth while the selection stands, or "its full cloud" would fog out exactly
+		// where the bird owns most of the volume.
 		float fog = clamp((vDepth - uFogRange.x) / max(0.001, uFogRange.y - uFogRange.x), 0.0, 1.0);
 		fog *= 1.0 - 0.85 * vAct;
+		fog *= 1.0 - 0.4 * vChosen;
 		colour = mix(colour, uSurface, fog * 0.45);
 
 		// Resting points are faint so density reads as tone and the responding ones carry
@@ -789,13 +817,19 @@ export const fragmentShader = /* glsl */ `
 		// (raised from 0.41 when the rest wash went up: the mist needed presence,
 		// and the 2× jump on response is what keeps activation legible above it).
 		alpha *= 0.8 + 0.2 * vAct;
+		// The reveal sits at a third of a resting mark's weight on top of everything
+		// above: present enough that the knot's membership reads as density while the
+		// shell crosses it, quiet enough that it can never be mistaken for one of the
+		// responders lighting next to it (those keep the full ramp).
+		alpha *= mix(1.0, 0.38, reveal);
 		// While the corpus is answering, resting ink gives up another share of its weight.
 		// Paint order still lets a resting sprite overpaint a lit one behind it (the
 		// ACTIVE_PASS split covers the clear responders; this softens the borderline rest),
 		// so the response stays legible in the thick of the cloud. Driven by uAnswer, not
 		// uLevel — see that uniform for why a loud sound the corpus cannot place must not
-		// dim anything.
-		alpha *= 1.0 - 0.4 * uAnswer * (1.0 - vAct);
+		// dim anything. The selected bird is exempt: the dim exists to make the answer
+		// legible, and the selection's marks are the thing being read, not the crowd.
+		alpha *= 1.0 - 0.4 * uAnswer * (1.0 - vAct) * (1.0 - vChosen);
 		// The dim half of the orphan pulse: it breathes the mark *down* against the
 		// paper, the opposite direction from a response.
 		alpha *= 1.0 - 0.55 * oPulse;
@@ -948,8 +982,14 @@ export function mixRgb(a: readonly number[], b: readonly number[], t: number): n
 
 /** Ring speed in knot-radii per second: the front crosses a knot in about 0.42 s. */
 export const FRONT_SPEED = 2.4;
-/** Ring thickness in knot-radii: broad enough to read as a front, tight enough to order neighbours. */
-export const FRONT_WIDTH = 0.16;
+/**
+ * Ring thickness in knot-radii: broad enough to read as a front, tight enough to
+ * order neighbours. Widened 0.16 → 0.22 (2026-08-02, owner: "propagate more and be
+ * stronger") — the shell's gaussian is ~37 % broader, so the front reads as a wave
+ * moving through the knot's whole neighbourhood rather than a rim flash, and the
+ * reveal skirt (REVEAL_FRONT) widens with it automatically.
+ */
+export const FRONT_WIDTH = 0.22;
 /** Seconds a front lives from onset; the ring has crossed and faded by then. */
 export const FRONT_LIFE = 0.95;
 /** Cluster activation rising through this starts a front; falling back through it re-arms. */

@@ -24,6 +24,12 @@ export interface GalaxyStats {
 	/** Points the responding pass drew last frame; 0 on a silent frame. */
 	pointsResponding: number;
 	/**
+	 * Points in the active pass carried by the wavefront's skirt rather than by a
+	 * response (REVEAL_FRONT): the local cloud the wave shows as it passes. 0 on a
+	 * silent frame. Reported apart so "responding" keeps meaning "answering".
+	 */
+	pointsRevealed: number;
+	/**
 	 * Share of the corpus in front of the level-of-detail frontier, 0..1 — a live
 	 * fraction, not a level: the representatives' share at galaxy distance, 1 close
 	 * up. -1 until the first frame reports.
@@ -63,6 +69,7 @@ export function createStats(pointsTotal: number, clusters: number): GalaxyStats 
 		pointsDrawn: 0,
 		pointsTotal,
 		pointsResponding: 0,
+		pointsRevealed: 0,
 		lod: -1,
 		densityCap: 1,
 		viewRadii: -1,
