@@ -78,6 +78,14 @@
 			holdTimer = null;
 		}, READING_HOLD_MS);
 	}
+	/** Drop the held reading now: its subject has been superseded. */
+	function releaseHeldReading() {
+		heldReading = null;
+		if (holdTimer) {
+			clearTimeout(holdTimer);
+			holdTimer = null;
+		}
+	}
 	/** What the panel draws: the live reading if there is one, else the last one. */
 	const panelReading = $derived(reading?.best ? reading : heldReading);
 	const readingIsLive = $derived(Boolean(reading?.best));
@@ -740,6 +748,17 @@
 				heardAt = new Map(heardAt).set(singing, Date.now());
 				addLive(singing, scheduled, voice?.label ?? '');
 				recordSung(singing, songId, scheduled, voice?.label ?? '');
+				// **A new song makes the held reading stale.** The hold exists so a name stays
+				// readable for six seconds after the sound that produced it stops — but it was
+				// only ever cleared on a reload, so during a chorus the panel could keep
+				// showing the PREVIOUS song's match while a new one was already sounding.
+				// That is the "it is not showing the newest sound" the owner reported: not a
+				// missed update, a stale one outliving its subject. The moment something else
+				// is scheduled, the last thing we heard is no longer the last thing we heard.
+				// The live reading is untouched — if the matcher places this new song, it
+				// takes over on its own; if it cannot, the panel goes quiet, which is the
+				// honest answer rather than another bird's name.
+				releaseHeldReading();
 				if (chorus !== 'global' && singing !== contextSpecies) {
 					contextSpecies = singing;
 					showContext(singing);
@@ -1874,20 +1893,17 @@ uv run birdy-pipeline build</pre>
 										</label>
 									</div>
 									{#if provColours}
-										<ul class="legend">
-											{#each provLegend as row (row.cls)}
-												<li class:absent={row.share === 0}>
-													<i style:background={row.colour}></i>
-													<b>{row.name}</b>
-													<span class="mono"
-														>{row.share === 0 ? 'none' : `${Math.round(row.share * 100)}%`}</span
-													>
-												</li>
-											{/each}
-										</ul>
+										<!--
+											The class list used to be repeated here as a read-only legend AND
+											below as the visibility filter — the same five classes with the
+											same shares, stacked, which read as the panel contradicting
+											itself. The filter below carries swatch, name and share already,
+											so it IS the legend; this only says what the hue means.
+										-->
 										<p class="note faint">
 											Hue says what kind of thing a sound is; the tag beside it names the
 											bird. The big split is whether a bird made the sound or we did.
+											The classes and their shares are the filter below.
 										</p>
 									{:else}
 										<p class="note faint">
@@ -3997,23 +4013,12 @@ uv run birdy-pipeline serve</pre>
 		border-radius: 50%;
 	}
 
-	.legend b {
-		font-weight: 500;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
 
 	.legend span {
 		font-size: 0.7rem;
 		color: var(--ink-faint);
 	}
 
-	/* An empty class keeps its row: knowing the pool exists and is empty is a different
-	   fact from the colour simply being missing, and only one of them is a bug. */
-	.legend li.absent {
-		opacity: 0.5;
-	}
 
 	/* The cost readout. A label column and a figures column, like the meters in the
 	   header, so it reads as an instrument rather than as part of the picture. */

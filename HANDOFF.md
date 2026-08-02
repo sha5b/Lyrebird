@@ -1,3 +1,94 @@
+# Lyrebird — UI round (2026-08-02, later): five fixes, two non-bugs, and what is still open
+
+`npm run check` at the 4 baseline errors, 0 warnings, throughout.
+
+**Fixed**
+
+1. **The trajectory gradient was never broken — it was fed identical colours.** `rebuild()`
+   already interpolates per vertex (`mixRgb(colA, colB, t)`, start knot at t=0, end knot at
+   t=1). The fault was upstream in `knotPalettes`: ink mode handed **every** knot the same
+   `#8595ae`, so the gradient blended slate into slate. Ink mode now uses each knot's own
+   species hue with the same per-knot `knotHeat` shift the tags use, so two knots of one bird
+   still differ along the thread. **The bead came free**: it is
+   `mix(uColdColor, vColour, 0.35 + peak)` reading the same per-vertex colour.
+   **Provenance mode still has the same flatness for a different reason** — 94 % of knots are
+   the `recorded` class, so nearly every segment is green into green. Unfixed, and it needs a
+   decision rather than a patch: either the class hue gets a per-knot shift, or threads keep
+   speaking bird in both modes.
+2. **The Display panel rendered the class list twice** — a read-only legend and the
+   visibility filter, same five classes, same shares, stacked. Self-inflicted: the shares were
+   added to the filter earlier in the session, which turned it into a second legend. The
+   read-only copy is gone; the filter *is* the legend. Took `.legend b` and `.legend li.absent`
+   dead with it (caught by `npm run check`, removed).
+3. **The reading panel could show a stale name.** `heldReading` keeps a match readable for
+   6 s after its sound stops, and it was **only ever cleared on reload** — so during a chorus
+   the panel could keep showing the *previous* song's match while a new one was already
+   sounding. Now `onScheduled` calls `releaseHeldReading()`: the moment something else is
+   scheduled, the last thing we heard is no longer the last thing we heard. The live reading is
+   untouched; if the matcher cannot place the new song the panel goes quiet, which is the
+   honest answer rather than another bird's name.
+4. **Knot markers were below the visual threshold** — 1.5 px / 0.30 alpha, so threads landed
+   on an anchor nobody could see. Now 2.4 px / 0.50, still under the cloud's 2–3 px so the
+   "waypoint, not data" ordering holds.
+5. **The activation dim is local.** It rode `uAnswer` globally, so one syllable restyled the
+   whole galaxy. It now rides `vWave` and follows the front outward from the knot that
+   sounded, with a 0.25 floor so a response is still felt corpus-wide.
+
+**Two things that turned out NOT to be bugs — do not re-hunt**
+
+- **"Songs always land on the same node."** They do, and correctly. For
+  `horornis_diphone` the three dropdown entries are `ho → ho2 → kyo` (**3 knots**),
+  `learned_bout = ['L02','L02']` (**1 knot**), and `S01 = ['L02']` (**1 knot**, `kind=repeat`,
+  `count=6`). A **repeat class is by definition one collapsed token**, and `_sample_bout` drew
+  L02 twice because uguisu's transition table has a strong self-loop. All 17 uguisu types own
+  a knot (5771–5787), authored ones included, so resolution is clean. Common corpus-wide —
+  the v6 learn log is full of `example bout L01 L01`.
+- **The `sung` channel is correctly wired.** `applyScheduledPulses` runs every frame
+  (`listener.ts:422`) and writes both `activations[node]` and `sung[node]` for every node of
+  every live path with a time-windowed pulse. Nodes along a song *do* light. The owner saw one
+  node because both songs tested touch one knot.
+
+**Why the cloud is slow, measured (owner asked "what do we do inherently wrong")**
+
+**Fill, not point count.** 14 floats/vertex × 348 461 points = **~20 MB of vertex fetch per
+pass**; against roughly **45 M blended fragments a frame** (~22× overdraw at 1080p) across two
+passes. `transparent` + `depthWrite:false` + NormalBlending means **no early-Z and every
+fragment is a framebuffer read-modify-write**. That blending is *not* a mistake — additive on
+white dissolves the cloud, and normal blending is what makes density read as darkness — so the
+honest summary is: **the most expensive rasterisation mode, chosen for good reasons, run on the
+weakest available GPU.**
+
+- **Done:** an early `discard` for fragments whose alpha falls below 1/255 after the
+  seven-multiply chain. Below that the blend is a **no-op**, so this is not an approximation,
+  and a dimmed corpus is the state the galaxy spends most of its time in.
+- **Rejected, with reasons.** *Attribute packing*: `aMisc` is **already** four packed channels
+  behind `#define`s (an early grep of mine called it dead — it is not, and it was checked
+  before anything was deleted). The remaining win is ~2 floats against a cost that fill
+  outweighs 2:1 — wrong trade for a refactor touching every writer with no browser to test in.
+  *Dropping the 24 px size ceiling*: quadratic in fill and tempting, but it only binds close to
+  the camera, which is exactly "inside a bird" where the owner asked for **more** presence. It
+  would fight the stated goal. *WebGPU*: owner ruled it out as experimental; it is also a
+  rewrite.
+- **Still the biggest single win and not a code change: run the browser on the RTX.**
+
+**STILL OPEN — the owner asked for these and they are not done**
+
+- **Remove the top "Now singing" roster.** `+page.svelte` ~2092, `<div class="roster">`. The
+  bottom strip already carries the same chips; the top row is a duplicate.
+- **"What is a bout?"** The word is unexplained jargon in the UI. It is the unit the whole
+  syntax layer is defined over (`GAP_BOUT_SECONDS = 1.0` — syllables separated by under a
+  second of silence). Either gloss it in place or rename it in user-facing copy.
+- **Put the knot count on the song labels.** A one-token repeat class and a three-syllable
+  song look identical in the dropdown, so the only way to discover the difference is to play it
+  and wonder why the galaxy is not moving — which is exactly what happened. `S01 · heard 6× ·
+  1 knot` against `ho-hoke-kyo · 3 knots`. Cheap, and it removes the confusion above at source.
+- **All songs in the dropdown, with focus and solo.** Owner: selecting a specific song should
+  (a) list every song, (b) fly the camera to that song's knots, (c) make the chorus play **only**
+  that song. Touches the chorus pool, `frameNodes` and the selection — the biggest of these and
+  worth starting fresh rather than at the end of a session.
+- Everything in the WORK QUEUE below (spaces, map-agreement regression, the four unrun pipeline
+  tests, the UI sweep whose agents all died on a provider quota error).
+
 # Lyrebird — WORK QUEUE (owner round, 2026-08-02) — read this before touching the galaxy
 
 **v6 IS NOW INSTALLED** (this supersedes the "parked" entry below, which is kept for its

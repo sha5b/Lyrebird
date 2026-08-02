@@ -588,6 +588,10 @@ export const fragmentShader = /* glsl */ `
 	 * fault.
 	 */
 	uniform float uAnswer;
+	/** The travelling front's gaussian width, shared with the vertex stage (same
+	 *  uniforms object), so the resting dim can be normalised against the same
+	 *  scale the wave is drawn at rather than against a second magic number. */
+	uniform float uWaveWidth;
 	/** Per-class visibility (documented, learned, field, unlabelled in x..w, candidate
 	 * in uProvHideCand): 1 hides the class outright — the Display panel's filter for
 	 * isolating, say, only the sounds nobody has named. */
@@ -829,10 +833,38 @@ export const fragmentShader = /* glsl */ `
 		// uLevel — see that uniform for why a loud sound the corpus cannot place must not
 		// dim anything. The selected bird is exempt: the dim exists to make the answer
 		// legible, and the selection's marks are the thing being read, not the crowd.
-		alpha *= 1.0 - 0.4 * uAnswer * (1.0 - vAct) * (1.0 - vChosen);
+		//
+		// **Local, not global** (owner, 2026-08-02: "the pointcloud gets denser when
+		// activated — can we do it that this is localized"). The dim used to apply to every
+		// resting mark in the corpus the moment anything answered, so one syllable restyled
+		// the whole galaxy and the eye had nowhere to go. It now rides the travelling front:
+		// vWave is this point's own wave amplitude, so the recession follows the shell
+		// outward from the knot that sounded and the far side of the cloud is left alone.
+		// A floor of 0.25 keeps a whisper of the old global behaviour, so a response is
+		// still felt corpus-wide rather than being invisible outside the front.
+		float dimHere = mix(0.25, 1.0, clamp(vWave / max(uWaveWidth, 1e-4), 0.0, 1.0));
+		alpha *= 1.0 - 0.4 * uAnswer * dimHere * (1.0 - vAct) * (1.0 - vChosen);
 		// The dim half of the orphan pulse: it breathes the mark *down* against the
 		// paper, the opposite direction from a response.
 		alpha *= 1.0 - 0.55 * oPulse;
+		// **Throw away the fragments that would blend to nothing.**
+		//
+		// The shader already discards on the pass split, the class filter and the disc
+		// mask — but nothing caught a fragment that survived all three and then had its
+		// alpha multiplied down to invisibility by the chain above (aerial perspective,
+		// the focus dim, the unassigned shrink, the arrival fade, the resting wash, the
+		// answer dim, the orphan breath — seven multiplies, several of which reach zero
+		// on their own). Those fragments still cost a full framebuffer read-modify-write
+		// each, because this material is transparent with depthWrite off and normal
+		// blending, so there is no early-Z and no cheap path for "adds nothing".
+		//
+		// This is the one place where fill can be cut without changing the picture: at
+		// 1/255 the mark is already below what an 8-bit framebuffer can represent, so
+		// discarding is not an approximation — the blend it replaces is a no-op. Fill is
+		// the dominant cost here (roughly 45 M blended fragments a frame at 348 461 points
+		// against ~20 MB of vertex fetch per pass), and a dimmed corpus is exactly the
+		// state the galaxy spends most of its time in.
+		if (alpha < 0.004) discard;
 		gl_FragColor = vec4(colour, clamp(alpha, 0.0, 1.0));
 	}
 `;

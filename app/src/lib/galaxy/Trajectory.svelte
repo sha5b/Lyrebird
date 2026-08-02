@@ -4,7 +4,7 @@
 	import * as THREE from 'three';
 	import { clusterProvenance, knotHeat } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
-	import { ACCENT, provenanceColourScaled } from './palette';
+	import { ACCENT, provenanceColourScaled, speciesColourScaled } from './palette';
 	import type { LayoutView } from './layouts';
 	import {
 		MAX_PATHS,
@@ -57,9 +57,24 @@
 			provenance: centroids.map(
 				(_, i) => new THREE.Color(provenanceColourScaled(classes[i] ?? 4, light(i)))
 			),
-			// Ink mode: the threads go quiet with the points, and the sung note is the
-			// accent bead (uColdColor below) — one loud thing at a time.
-			ink: centroids.map(() => new THREE.Color('#8595ae'))
+			// **Ink mode: the knot's own bird, not one flat slate** (owner, 2026-08-02:
+			// "end and start are the node colour they connect and the gradient between").
+			//
+			// This used to hand every knot the same `#8595ae`, so the per-vertex gradient
+			// below was interpolating slate into slate and the threads read as one dead
+			// colour however far apart their endpoints were. The gradient was never broken;
+			// it was being fed two identical colours. Provenance mode has the same problem
+			// for a different reason — 94 % of knots are the `recorded` class, so nearly
+			// every segment there is green into green.
+			//
+			// Ink mode's rule is the one the owner stated: points stay greyscale, and hue
+			// answers "whose sound is this" wherever it can be read — the tags, the
+			// activation, and now the threads. `light()` is the same per-knot heat shift
+			// the tags use, so two knots of ONE bird still differ along the thread instead
+			// of collapsing to a single hue.
+			ink: centroids.map(
+				(c, i) => new THREE.Color(speciesColourScaled(c.speciesId, light(i)))
+			)
 		};
 	});
 	const knotColours = $derived(prov ? knotPalettes.provenance : knotPalettes.ink);

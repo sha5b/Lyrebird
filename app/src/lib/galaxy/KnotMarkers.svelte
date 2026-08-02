@@ -6,8 +6,8 @@
 	 * 0.079 box units away (and the blossom spreads members further on approach), so
 	 * every thread, label anchor and wave origin terminated in empty space. The
 	 * marker is the visible anchor those things land on. It is a *waypoint, not
-	 * data* — smaller and dimmer than a real point at rest (1.5 px floor against the
-	 * cloud's 2-3 px, 0.35 alpha against the wash's ~0.5), so the galaxy does not
+	 * data* — smaller and dimmer than a real point at rest (2.4 px floor against the
+	 * cloud's 2-3 px, 0.50 alpha level with the wash), so the galaxy does not
 	 * gain 14 003 new blobs; at whole-galaxy zoom they read as the faint pin a map
 	 * leaves under a region.
 	 *
@@ -121,7 +121,14 @@
 				// floor, because a waypoint must stay under the data; the ceiling
 				// keeps a hard-answering knot's pin under the marks around it.
 				float persp = pow(uSizeScale / max(0.001, -mv.z), 0.7);
-				gl_PointSize = clamp((2.0 + vHot * 3.0) * uPixelRatio * persp, 1.5, 9.0);
+				// Floor raised 1.5 -> 2.4 px (owner, 2026-08-02: threads still read as ending
+				// in air). A waypoint under the data was the right idea and was tuned one
+				// step too far: at 1.5 px and 0.30 alpha the pin was below the visual
+				// threshold at galaxy distance, so a thread landed on nothing a reader
+				// could see and the anchor it was built to provide did not exist in
+				// practice. 2.4 sits just under the cloud's 2-3 px resting floor, so the
+				// ordering the original note argued for still holds.
+				gl_PointSize = clamp((2.6 + vHot * 3.0) * uPixelRatio * persp, 2.4, 10.0);
 			}
 		`,
 		fragmentShader: /* glsl */ `
@@ -140,7 +147,10 @@
 				// only fully claimed when the knot answers. Alpha stays under the
 				// resting wash's ~0.5 even at full response.
 				vec3 colour = mix(vec3(0.52, 0.58, 0.68), vColour, 0.25 + 0.75 * vHot);
-				gl_FragColor = vec4(colour, disc * (0.30 + 0.55 * vHot));
+				// Resting alpha 0.30 -> 0.50, level with the cloud's own resting wash rather
+				// than half of it: a thread endpoint has to be as visible as the marks the
+				// thread runs between, or the eye reads the line as unterminated.
+				gl_FragColor = vec4(colour, disc * (0.50 + 0.45 * vHot));
 			}
 		`,
 		uniforms: {
