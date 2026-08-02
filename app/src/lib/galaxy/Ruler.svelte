@@ -148,7 +148,7 @@
 		top: 0;
 		left: 0;
 		right: 0;
-		height: 1.15rem;
+		height: var(--ruler, 1.15rem);
 		border-bottom: 1px solid var(--rule);
 		background: linear-gradient(var(--paper) 55%, transparent);
 	}
@@ -166,7 +166,7 @@
 		top: 0;
 		bottom: 0;
 		left: 0;
-		width: 1.15rem;
+		width: var(--ruler, 1.15rem);
 		border-right: 1px solid var(--rule);
 		background: linear-gradient(90deg, var(--paper) 55%, transparent);
 	}
@@ -221,8 +221,8 @@
 	   strip uses, so nothing in the middle of the stage is ever covered twice. */
 	.ruler-caption {
 		position: absolute;
-		top: 1.35rem;
-		left: calc(20rem + 3.6rem);
+		top: calc(var(--ruler, 1.15rem) + 0.2rem);
+		left: calc(var(--ruler, 1.15rem) + 20rem + 2.6rem);
 		z-index: 1;
 		margin: 0;
 		display: flex;

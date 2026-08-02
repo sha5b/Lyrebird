@@ -1,3 +1,65 @@
+# Lyrebird — colour audit (2026-08-02, night 2): two real bugs behind "the colours are not aligning"
+
+Owner: *"the points are coloured in ink mode — the not-active ones. Double-check the animation
+colours, sometimes it seems it's not aligning correctly, maybe a bug?"* Both halves were real,
+and they are different bugs.
+
+## 1. Ink mode was drawing 13 848 species-coloured marks at rest — the knot pins
+
+`KnotMarkers` colours each pin `mix(slate, identityHue, 0.25 + 0.75 × response)`, and in ink
+mode the identity hue is the **species** hue. That rule was copied from the tags, which is a
+pool of **28**; the pins are one per membered knot, **13 848 of them**. The same argument that
+removed species hue from the *points* on 2026-08-01 ("a hundred hues on a dense scatter cannot
+be told apart") applies here and was missed.
+
+Measured on a headless capture of the resting ink-mode stage, silenced and with labels off:
+**1.6 % of the stage's pixels came back saturated**, in the mode whose whole promise is that
+nothing is coloured until it sounds — greens, blues and violets scattered through a grey cloud.
+
+**Fixed:** a `uRestTint` uniform, 0 in ink and 0.25 in provenance. Ink-mode pins now rest in the
+neutral slate and walk to their bird's hue only as the knot answers; provenance mode is
+unchanged, because five class colours at rest is exactly what that mode is for. Re-measured
+after the change: saturation > 20 fell 1.64 % → 1.00 % with the chorus running (the rest is
+tags and live threads, which are meant to be coloured), and > 30 fell to **0.014 %** at rest —
+the remaining chroma is the pins' own neutral slate.
+
+## 2. The accent was one colour for the whole stage, so a chorus of five birds sang in one hue
+
+`uAccent` is a single uniform, eased on the CPU toward the species hue of whichever knot won
+`signal.best` that frame. One bird singing: correct. **A whole-aviary chorus sounds four or
+five species at once, and every one of their knots lit in one bird's hue** — and during the
+~0.25 s ease, in a blend belonging to neither. That is the "sometimes it does not line up"
+report, and it was not a timing bug: the picture only had one accent colour to give.
+
+**Fixed, and it cost no new attribute.** The cluster-state texture is RGBA and only RGB was in
+use. **A now carries each knot's own species hue in turns**, written once at init (it is static
+per knot) and preserved by the quiet gate, which zeroes only the three live channels. The
+fragment converts it with the exact sRGB transfer function so a knot matches its own tag, and
+falls back to the uniform when the hue is 0 (an unassigned point, or an older build). Provenance
+mode keeps the uniform on purpose: there the accent is a *class* colour, and the class belongs
+to the subject rather than to the knot.
+
+Verified during a live global chorus: 4–6 distinct hue buckets present in the same frame
+(210°, 330°, 240°, 300°, 270°, 180°), each matching its own tag — a crimson tanager, a cyan
+robin and a blue dove lit at once, which was impossible before.
+
+## 3. The panels now clear the ruler
+
+One `--ruler` custom property on `.stage-wrap` (1.15 rem). The controls column, the display
+buttons, the history strip, the panel max-heights and the ruler caption all inset by it plus
+their own margin, and `Ruler` reads the same variable for its band size — so the frame moves
+together and the panel can no longer sit on the scale.
+
+## Not a bug, checked and recorded so nobody re-hunts it
+
+- **The pin and the points genuinely do not coincide.** Both anchor on the drawn centroid, and
+  on this build the centroid sits **1.1 knot-spacings from its own nearest member** (median).
+  Tags, threads and waves all anchor there too, so they agree with each other and disagree with
+  the cloud — by the corpus's geometry, not by a transform bug.
+- **The two cluster-state texture grids match.** `PointCloud` and `KnotMarkers` size the
+  texture by the same `min(1024, count)` / `ceil` rule, so a pin cannot be reading another
+  knot's channels. This was the obvious candidate for "not aligning" and it is clean.
+
 # Lyrebird — the galaxy audit (2026-08-02, night): what the animation says, what it does not say, and the framing bug that was hiding the corpus
 
 Owner, on the screenshot of a selected bird: *"that's how the activation says — what is it? I

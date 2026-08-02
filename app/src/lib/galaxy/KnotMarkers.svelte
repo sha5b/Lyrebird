@@ -132,6 +132,7 @@
 			}
 		`,
 		fragmentShader: /* glsl */ `
+			uniform float uRestTint;
 			varying vec3 vColour;
 			varying float vHot;
 			void main() {
@@ -142,11 +143,24 @@
 				// by the derivative, so a distant pin is a small crisp dot.
 				float aa = max(fwidth(d), 0.0015);
 				float disc = 1.0 - smoothstep(0.40 - aa, 0.40 + aa, d);
-				// Rest is a neutral slate with a quarter of the identity hue — enough
-				// that the pin is visibly a marker, not a stray datum, and the hue is
-				// only fully claimed when the knot answers. Alpha stays under the
-				// resting wash's ~0.5 even at full response.
-				vec3 colour = mix(vec3(0.52, 0.58, 0.68), vColour, 0.25 + 0.75 * vHot);
+				// **How much identity hue a pin wears at rest depends on the mode, and in
+				// ink mode the answer is none.**
+				//
+				// It used to be a flat quarter of the hue in both modes, on the grounds
+				// that the pin follows the tags' rule. The tags are a pool of 28; the
+				// pins are one per membered knot — **13 848 on the shipped build** — so
+				// the same argument that took the species hue off the *points* applies
+				// here and was missed: at that density a hundred hues are confetti, not
+				// identity. Measured on a headless capture of the resting ink-mode
+				// stage, 1.6 % of the stage's pixels came back saturated in the mode
+				// whose whole promise is that nothing is coloured until it sounds. In
+				// provenance mode the resting tint stays: five class colours at rest is
+				// exactly what that mode is for.
+				//
+				// Answering is unchanged in both: the pin walks to its full identity
+				// hue, which in ink mode is the sounding bird's species hue — the same
+				// colour the cloud's accent takes, so the two agree.
+				vec3 colour = mix(vec3(0.52, 0.58, 0.68), vColour, uRestTint + (1.0 - uRestTint) * vHot);
 				// Resting alpha 0.30 -> 0.50, level with the cloud's own resting wash rather
 				// than half of it: a thread endpoint has to be as visible as the marks the
 				// thread runs between, or the eye reads the line as unterminated.
@@ -157,7 +171,9 @@
 			uClusterState: { value: null },
 			uClusterTexSize: { value: new THREE.Vector2(texWidth, texHeight) },
 			uPixelRatio: { value: typeof window === 'undefined' ? 1 : Math.min(2, window.devicePixelRatio) },
-			uSizeScale: { value: SIZE_REFERENCE }
+			uSizeScale: { value: SIZE_REFERENCE },
+			/** Identity hue carried at rest: none in ink mode, a quarter in provenance. */
+			uRestTint: { value: 0 }
 		},
 		transparent: true,
 		depthWrite: false,
@@ -172,6 +188,10 @@
 
 	$effect(() => {
 		material.uniforms.uSizeScale.value = SIZE_REFERENCE * spread;
+	});
+
+	$effect(() => {
+		material.uniforms.uRestTint.value = plain ? 0 : 0.25;
 	});
 
 	useTask(() => {

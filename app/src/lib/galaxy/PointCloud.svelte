@@ -30,7 +30,8 @@
 		PROV_FIELD,
 		PROV_LEARNED,
 		provenanceColour,
-		speciesColour
+		speciesColour,
+		speciesHue
 	} from './palette';
 	import { buildLayout, nearestNeighbourDistances, type LayoutView } from './layouts';
 	import type { GalaxyStats } from './stats';
@@ -293,6 +294,35 @@
 		t.generateMipmaps = false;
 		t.needsUpdate = true;
 		return t;
+	});
+	/**
+	 * **The texture's fourth channel: each knot's own species hue, written once.**
+	 *
+	 * The accent used to be a single uniform — `uAccent`, eased on the CPU toward
+	 * whichever species owned `signal.best`. With one bird singing that is right. With
+	 * a whole-aviary chorus, four or five species sound at once and **every one of
+	 * their knots lit in the same hue**, the hue of whichever knot happened to win
+	 * `best` that frame, and during the ease it was a colour belonging to neither
+	 * bird. That is the "the animation colours do not line up" report, and it was not a
+	 * timing bug: the picture only ever had one accent colour to give.
+	 *
+	 * The fix costs nothing: the cluster-state texture is RGBA and only RGB was in use.
+	 * A is the knot's species hue in turns (0..1), offset off zero so that **0 keeps
+	 * meaning "no per-knot hue"** — an unassigned point, or a build without this
+	 * channel — and the shader falls back to the uniform. Static per knot, so it is
+	 * written once here and preserved by the quiet gate's zero-fill, which now clears
+	 * only the three live channels.
+	 */
+	const HUE_FLOOR = 0.02;
+	untrack(() => {
+		const items = assets.centroids.items;
+		for (let c = 0; c < clusterCount; c++) {
+			const id = items[c]?.speciesId ?? '';
+			clusterState[c * 4 + 3] = id
+				? HUE_FLOOR + (1 - HUE_FLOOR) * ((speciesHue(id) % 360) / 360)
+				: 0;
+		}
+		clusterTexture.needsUpdate = true;
 	});
 	// Handed to the knot-marker pass (Galaxy wires it through): the markers light
 	// from the same R/G/B channels the points do, so the quiet gate zeroing this
@@ -1332,7 +1362,14 @@
 			updateActiveIndex();
 		} else if (!wasQuiet) {
 			wasQuiet = true;
-			clusterState.fill(0);
+			// Only the three live channels: A carries each knot's static species hue and
+			// a zero there would mean "this knot has no bird", which is never true.
+			for (let c = 0; c < clusterCount; c++) {
+				const o = c * 4;
+				clusterState[o] = 0;
+				clusterState[o + 1] = 0;
+				clusterState[o + 2] = 0;
+			}
 			clusterTexture.needsUpdate = true;
 			activation.fill(0);
 			activationAttribute.needsUpdate = true;

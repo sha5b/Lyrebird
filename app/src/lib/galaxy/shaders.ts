@@ -190,17 +190,20 @@ export function vertexShader(): string {
 		 * R = activation (live match or scheduled pulse), G = sung (1 only for a note we
 		 * scheduled and know the identity of), B = learning (pipeline work, a slow swell
 		 * that must never read as a response — folded into R it drove the same fast jump
-		 * and the same ink as a match).
+		 * and the same ink as a match), A = the knot's own species hue in turns, written
+		 * once and never animated (see the note on the fourth channel in PointCloud):
+		 * it is what lets several birds sing at once in their own colours instead of all
+		 * of them borrowing the single eased uAccent uniform.
 		 */
 		uniform sampler2D uClusterState;
 		uniform vec2 uClusterTexSize;
 
-		/** Row-major cluster index -> its RGB channels, at texel centres, nearest-filtered. */
-		vec3 clusterState(int index) {
+		/** Row-major cluster index -> its four channels, at texel centres, nearest-filtered. */
+		vec4 clusterState(int index) {
 			float i = float(index);
 			float x = (mod(i, uClusterTexSize.x) + 0.5) / uClusterTexSize.x;
 			float y = (floor(i / uClusterTexSize.x) + 0.5) / uClusterTexSize.y;
-			return texture2D(uClusterState, vec2(x, y)).rgb;
+			return texture2D(uClusterState, vec2(x, y));
 		}
 		uniform float uTime;
 		uniform float uLevel;
@@ -294,6 +297,8 @@ export function vertexShader(): string {
 		 * cancel like water rather than each playing at full strength independently.
 		 */
 		varying float vRipple;
+		/** This point's knot's species hue in turns, 0 for none. See the A channel. */
+		varying float vHue;
 		/** The slow grey breath of the nearest region when input is heard but unclaimed. */
 		varying float vUnmatchedRing;
 
@@ -317,7 +322,11 @@ export function vertexShader(): string {
 			bool assigned = aCluster >= -0.5;
 			int index = assigned ? int(aCluster + 0.5) : 0;
 			vUnassigned = assigned ? 0.0 : 1.0;
-			vec3 state = assigned ? clusterState(index) : vec3(0.0);
+			vec4 state = assigned ? clusterState(index) : vec4(0.0);
+			// This knot's own bird, as a hue the fragment can wear. 0 means "no bird
+			// here" — an unassigned point, or a build written before the channel existed
+			// — and the fragment falls back to the single eased accent uniform.
+			vHue = state.a;
 			float clusterAct = state.r;
 			// aAct already folds the cluster activation into the point's own affinity; the
 			// cluster array is the floor, so a scheduled node still lights every member
@@ -621,6 +630,31 @@ export const fragmentShader = /* glsl */ `
 	varying float vWave;
 	varying float vRipple;
 	varying float vUnmatchedRing;
+	/** The knot's own species hue in turns, 0 = none. See uClusterState's A channel. */
+	varying float vHue;
+
+	/**
+	 * Hue → RGB at the palette's fixed saturation and lightness, then sRGB → linear.
+	 *
+	 * The species hues are authored as hsl(h, 82%, 45%) strings and every other
+	 * consumer hands them to THREE.Color.setStyle, which converts into the renderer's
+	 * working (linear) space. A shader that skipped the second step would draw the same
+	 * bird noticeably brighter here than on its own tag, so the conversion is done with
+	 * the exact piecewise transfer function rather than a 2.2 approximation.
+	 */
+	vec3 speciesHueColour(float turns) {
+		float c = (1.0 - abs(2.0 * 0.45 - 1.0)) * 0.82;
+		float hp = fract(turns) * 6.0;
+		float x = c * (1.0 - abs(mod(hp, 2.0) - 1.0));
+		vec3 rgb = hp < 1.0 ? vec3(c, x, 0.0)
+			: hp < 2.0 ? vec3(x, c, 0.0)
+			: hp < 3.0 ? vec3(0.0, c, x)
+			: hp < 4.0 ? vec3(0.0, x, c)
+			: hp < 5.0 ? vec3(x, 0.0, c)
+			: vec3(c, 0.0, x);
+		rgb += 0.45 - c * 0.5;
+		return mix(rgb / 12.92, pow((rgb + 0.055) / 1.055, vec3(2.4)), step(0.04045, rgb));
+	}
 
 	void main() {
 		// The two-pass split (PointCloud draws the same geometry twice): the resting
@@ -741,7 +775,19 @@ export const fragmentShader = /* glsl */ `
 		// which is what "only the colour language changes" was always supposed to mean.
 		vec3 ink = mix(classCol, vec3(0.13, 0.16, 0.21), uPlain);
 		vec3 rest = mix(uSurface, mix(classCol, vec3(0.45, 0.47, 0.50), uPlain), 0.5);
-		vec3 end = mix(ink, uAccent, clamp(vAccent, 0.0, 1.0));
+		// **The accent is this knot's bird, not the frame's loudest bird.**
+		//
+		// uAccent is one eased colour for the whole stage, chosen from whichever knot
+		// won signal.best. One bird singing: correct. A chorus of five: every sounding
+		// knot in the corpus wore one bird's hue, and during the ease it wore a blend of
+		// two — which is the "the colours do not line up" report. In ink mode each knot
+		// now takes its own species hue straight from the cluster texture's A channel,
+		// so two birds answering each other are two colours. Provenance mode keeps the
+		// uniform: there the accent is a *class* colour and the class is the subject's,
+		// not the knot's. Hue 0 means the knot has no bird (or an older build), and the
+		// uniform stands in.
+		vec3 accent = (uPlain > 0.5 && vHue > 0.0) ? speciesHueColour(vHue) : uAccent;
+		vec3 end = mix(ink, accent, clamp(vAccent, 0.0, 1.0));
 
 		// A chosen bird's points sit most of the way along their own ramp even at rest, so
 		// the selection is a violet set of marks rather than the same marks in a thinner

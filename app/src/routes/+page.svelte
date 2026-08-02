@@ -3943,13 +3943,20 @@ uv run birdy-pipeline serve</pre>
 	.stage-wrap {
 		position: relative;
 		overflow: hidden;
+		/**
+		 * How much of each edge the stage ruler owns. Everything that floats over the
+		 * canvas clears it by this plus its own margin, so a panel never sits on the
+		 * scale — and `Ruler` reads the same variable for the band size, so the two
+		 * cannot drift apart. Change it here and the whole frame moves together.
+		 */
+		--ruler: 1.15rem;
 	}
 
 	/* --- display settings, on the view itself --- */
 
 	.viewctl {
 		position: absolute;
-		top: 1rem;
+		top: calc(var(--ruler) + 1rem);
 		right: 1rem;
 		z-index: 4;
 		display: grid;
@@ -4019,7 +4026,7 @@ uv run birdy-pipeline serve</pre>
 		display: grid;
 		grid-template-rows: auto minmax(0, 1fr);
 		height: fit-content;
-		max-height: calc(100% - 2rem);
+		max-height: calc(100% - 2rem - var(--ruler));
 		background: var(--paper-raised);
 		border: 1px solid var(--rule);
 		border-radius: var(--radius);
@@ -4027,8 +4034,8 @@ uv run birdy-pipeline serve</pre>
 	}
 
 	.controls {
-		top: 1rem;
-		left: 1rem;
+		top: calc(var(--ruler) + 1rem);
+		left: calc(var(--ruler) + 1rem);
 		width: 20rem;
 	}
 
@@ -4042,7 +4049,7 @@ uv run birdy-pipeline serve</pre>
 		/* Short enough that the display panel, which drops from the button above it, has
 		   somewhere to be. The body scrolls, so this costs nothing but the illusion that
 		   a long reading has to be read all at once. */
-		max-height: min(26rem, calc(100% - 2rem));
+		max-height: min(26rem, calc(100% - 2rem - var(--ruler)));
 	}
 
 	/* The scrolling half of a card, under its header. */
@@ -4845,7 +4852,7 @@ uv run birdy-pipeline serve</pre>
 		bottom: 1rem;
 		/* the lane between the two columns: it clips at the left rather than sliding
 		   under the controls, and stops before the reading card rather than behind it */
-		left: calc(20rem + 2rem);
+		left: calc(var(--ruler) + 20rem + 3rem);
 		right: calc(21rem + 2rem);
 		z-index: 2;
 		display: flex;
@@ -5063,10 +5070,10 @@ uv run birdy-pipeline serve</pre>
 
 	@media (max-width: 760px) {
 		.controls {
-			left: 0.6rem;
+			left: calc(var(--ruler) + 0.6rem);
 			right: 0.6rem;
 			width: auto;
-			max-height: calc(100% - 1.2rem);
+			max-height: calc(100% - 1.2rem - var(--ruler));
 		}
 
 		.readings {
