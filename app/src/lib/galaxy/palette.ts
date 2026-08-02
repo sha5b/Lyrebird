@@ -137,27 +137,75 @@ export function provenanceColourScaled(cls: number, lightScale: number): string 
  * bird" is a question with a text answer right next to it, so the hue is
  * presentation, never the sole carrier.
  *
- * The hue is a hash of the species id, not an index into the inventory: learned ids
- * renumber across refits, and a colour that silently moved between two birds after a
- * rebuild would be a claim nobody made. Hashing keeps a bird's hue stable across
- * rebuilds and across machines. Saturation 82 % at lightness 45 % — vivid, on the
- * owner's call ("heatmap, not pastel", 2026-08-01) — while staying light enough to
- * read as a mark on the paper and clear of the ink (16 %) the interface is drawn in.
+ * The hue is a hash, not an index into the inventory: learned ids renumber across
+ * refits, and a colour that silently moved between two birds after a rebuild would be a
+ * claim nobody made. Hashing keeps a bird's hue stable across rebuilds and across
+ * machines. Saturation ~82 % at lightness 45 % — vivid, on the owner's call ("heatmap,
+ * not pastel", 2026-08-01) — while staying light enough to read as a mark on the paper
+ * and clear of the ink (16 %) the interface is drawn in.
+ *
+ * **What is hashed is the GENUS, not the species** (owner, 2026-08-02: "colour them by
+ * the genome stuff so we can see where the birds derive from"). Hashing the whole id
+ * spent the hue circle on 2 423 unrelated numbers: two thrushes were as far apart as a
+ * thrush and an owl, so the one thing a colour could have told you — *what kind of bird
+ * just answered* — was the one thing it did not. The species id is `genus_species`, so
+ * the genus is free, and on this corpus it is worth having: **1 043 genera over 2 423
+ * species, and 75.5 % of species sit in a genus with at least one sibling.**
+ *
+ * So: **hue is the clade, and the shade is the bird.** A genus takes one hue; each of
+ * its species is jittered up to ±14° inside that band and given its own saturation
+ * between 74 % and 90 %. Two *Turdus* are then two shades of one colour, and a
+ * *Turdus* against a *Scytalopus* is two colours.
+ *
+ * **The honest limit, and it matters: genus is the deepest taxonomy this corpus holds.**
+ * Family and order are not collected — nothing in the store or the inventory carries
+ * them — so "broader than a genus" cannot be coloured today, and a genus hue is
+ * *arbitrary*: neighbouring hues do not mean neighbouring clades, only the same hue
+ * means the same genus. Adding family would be a harvest-side field, in the same class
+ * of one-field change as lat/lng (WORK QUEUE §11).
  */
-export function speciesHue(id: string): number {
-	// FNV-1a, then a golden-angle turn from the hash so near hashes still land apart.
+function hash32(text: string): number {
+	// FNV-1a.
 	let h = 2166136261;
-	for (let i = 0; i < id.length; i++) {
-		h ^= id.charCodeAt(i);
+	for (let i = 0; i < text.length; i++) {
+		h ^= text.charCodeAt(i);
 		h = Math.imul(h, 16777619);
 	}
-	return ((h >>> 0) * 137.508) % 360;
+	return h >>> 0;
+}
+
+/** The clade a species id names: everything before the first underscore. */
+export function speciesGenus(id: string): string {
+	const cut = id.indexOf('_');
+	return cut > 0 ? id.slice(0, cut) : id;
+}
+
+/** The genus's own hue — the same for every bird in it. */
+export function genusHue(genus: string): number {
+	// The golden angle from the hash, so near hashes still land apart on the circle.
+	return (hash32(genus) * 137.508) % 360;
+}
+
+/** How far inside its genus's band one species may sit, in degrees either way. */
+const SPECIES_SPREAD = 14;
+
+export function speciesHue(id: string): number {
+	const base = genusHue(speciesGenus(id));
+	// A second, independent hash so the offset is not correlated with the base — with
+	// one hash the members of a genus would fan out in hash order, which is nothing.
+	const jitter = ((hash32(`${id}/within`) % 2001) / 2000 - 0.5) * 2 * SPECIES_SPREAD;
+	return (base + jitter + 360) % 360;
+}
+
+/** Saturation 74–90 %: the second axis a species varies on inside its genus's hue. */
+export function speciesSaturation(id: string): number {
+	return 74 + (hash32(`${id}/sat`) % 17);
 }
 
 export function speciesColour(id: string): string {
 	// Comma form, not the modern space form: THREE's Color.setStyle only parses the
 	// comma grammar (the space form is silently ignored and reads as white).
-	return `hsl(${speciesHue(id).toFixed(1)}, 82%, 45%)`;
+	return `hsl(${speciesHue(id).toFixed(1)}, ${speciesSaturation(id)}%, 45%)`;
 }
 
 /**
@@ -170,7 +218,7 @@ export function speciesColour(id: string): string {
  */
 export function speciesColourScaled(id: string, lightScale: number): string {
 	const scale = Math.min(1.2, Math.max(0.8, lightScale));
-	return `hsl(${speciesHue(id).toFixed(1)}, 82%, ${(45 * scale).toFixed(1)}%)`;
+	return `hsl(${speciesHue(id).toFixed(1)}, ${speciesSaturation(id)}%, ${(45 * scale).toFixed(1)}%)`;
 }
 
 

@@ -22,7 +22,7 @@
 	import * as THREE from 'three';
 	import { clusterProvenance } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
-	import { provenanceColour } from './palette';
+	import { provenanceColour, speciesColour } from './palette';
 	import type { LayoutView } from './layouts';
 	import { waveClaim, type VisualSignal } from './shaders';
 
@@ -32,7 +32,10 @@
 		/** Where the centroids are right now, so a cross lands on its knot. */
 		view: LayoutView;
 		colour?: string;
-		/** Strike each cross in its knot's provenance class colour instead of the rule grey. */
+		/**
+		 * Provenance mode: strike each cross in its knot's class colour. Off (ink mode)
+		 * it takes the knot's own bird hue — see `strikeColour`.
+		 */
 		prov?: boolean;
 		/**
 		 * Half-length of each rule as a share of the visible height, rather than a fixed
@@ -47,6 +50,11 @@
 	// 1.2 of the visible half-height: the rule runs past the edge of the frame, which is
 	// what makes it read as a ruled line across the background rather than as a small
 	// cross sitting on a knot. Quoted against the view so that holds at every zoom.
+	//
+	// Reach, dash size and fade were all pushed further out for one round (2.4 / 120
+	// steps / a slower taper) and taken straight back on the owner's look: the longer,
+	// finer rules read as scaffolding rather than as a strike. Only the *colour* change
+	// from that round survives — see `strikeColour`.
 	let {
 		assets,
 		signal,
@@ -64,10 +72,14 @@
 	const LIFETIME = 1.9;
 	/**
 	 * Segments per rule, which is what sets the *dash* length: a rule spans `reach` and is
-	 * drawn as this many alternating on/off pieces, so each dash is `reach / STEPS` long.
-	 * Raising it makes the dashing finer without shortening the line — those are two
-	 * separate things and conflating them once already made the rules tiny instead of
-	 * finely dashed.
+	 * drawn as this many alternating on/off pieces, so each dash — and each gap, they are
+	 * the same length by construction — is `reach / STEPS` long. Raising it makes the
+	 * dashing finer without shortening the line: those are two separate things and
+	 * conflating them once already made the rules tiny instead of finely dashed.
+	 *
+	 * Tried at 120 (dash and gap ~2 % of the visible half-height instead of 6 %) and
+	 * reverted on the owner's look: at that size the rule stopped reading as a struck
+	 * line and started reading as graph paper.
 	 */
 	const STEPS = 20;
 	const SEGMENTS_PER_BURST = 3 * STEPS;
@@ -130,7 +142,13 @@
 
 	/**
 	 * A strike's colour, resolved when it is struck rather than when it is drawn: the
-	 * knot's class while the provenance mode is on, and the neutral rule grey otherwise.
+	 * knot's class in provenance mode, and **the knot's own bird** in ink mode.
+	 *
+	 * The ink case used to be a flat rule grey, which made the cross the one part of the
+	 * response that said nothing about who was singing while the wave, the points and the
+	 * tag all did (owner, 2026-08-02). It is the same hue those three use — and since the
+	 * hue is now the genus, a cross also says roughly *what kind of bird* struck it. The
+	 * grey survives as the fallback for a knot with no species.
 	 *
 	 * Held at strike time on purpose. A cross outlives the note that made it by nearly two
 	 * seconds, and re-resolving it per frame would let a cross change colour halfway
@@ -139,8 +157,12 @@
 	 */
 	const scratch = new THREE.Color();
 	function strikeColour(cluster: number): THREE.Color {
-		const cls = prov ? (knotClass[cluster] ?? -1) : -1;
-		return scratch.set(cls >= 0 ? provenanceColour(cls) : colour);
+		if (prov) {
+			const cls = knotClass[cluster] ?? -1;
+			return scratch.set(cls >= 0 ? provenanceColour(cls) : colour);
+		}
+		const speciesId = assets.centroids.items[cluster]?.speciesId ?? '';
+		return scratch.set(speciesId ? speciesColour(speciesId) : colour);
 	}
 
 	/**

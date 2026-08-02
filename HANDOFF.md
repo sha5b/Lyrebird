@@ -1,3 +1,71 @@
+# Lyrebird — the response round (2026-08-02, night 4): the wave, depth, taxonomy colour, and a shader that had silently died
+
+Four owner asks in one pass, all checked in a browser.
+
+## 1. The wave propagates, at last — the limiter was a rule that aged badly
+
+`uWaveLocal` bounded every front at `4 × medianKnotSpacing`. That rule reads well and it
+rotted: the spacing fell from 0.135 on the 149- and 1024-knot builds to **0.0395** on v6's
+13 848, so the same line of code silently shrank the wave **3.4×** and a front died inside
+0.16 box units — about **5 % of the cloud's radius**, and ~2 % of the opening view once the
+framing fix brought the whole corpus into frame. Everything else about the wave (speed
+0.55–1.45 box/s, 3.2 s life, 0.35 shell) was already scaled to cross the cloud; this one
+envelope was strangling it.
+
+**The reach now belongs to the space, not to the knot count: 30 % of the corpus's own
+radius**, with the old knot-spacing rule kept as a floor so a small or tightly packed corpus
+cannot get a front that swallows it. Displacement cap 0.06 → 0.10 box units in the same
+breath ("stronger"). Owner's verdict on seeing it: *"wave works great."*
+
+## 2. Depth
+
+Two changes, both in the fragment/vertex stage, both cheap:
+
+- **Perspective exponent 0.7 → 0.82.** At 0.7 the size range was compressed so hard that size
+  had almost stopped being a depth cue, and after occlusion and parallax it is the strongest
+  one this picture has. The floor and the 24 px ceiling still catch both extremes.
+- **The aerial gradient now works from both ends.** It faded the far marks toward the paper
+  (0.45, now 0.62) and did nothing to the near ones, so the contrast range the eye reads as
+  depth was the back half only. The near marks now take a tenth of a step toward ink. Kept
+  small deliberately: past that they start reading as *responding*, which is a claim this
+  view has to keep for sound.
+
+## 3. A bird's colour is now its genus
+
+`speciesHue` hashed the whole species id, which spent the colour circle on 2 423 unrelated
+numbers: two thrushes were as far apart as a thrush and an owl, so the one thing a colour
+could have told you — **what kind of bird just answered** — was the one thing it did not.
+
+The id is `genus_species`, so the clade is free, and on this corpus it is worth having:
+**1 043 genera over 2 423 species, 75.5 % of species in a genus with at least one sibling**
+(largest: *Turdus* at 34). Now: **hue is the genus, shade is the bird** — one hue per genus,
+each species jittered up to ±14° inside that band with its own saturation between 74 % and
+90 %. Everything downstream moved with it in one edit: tags, threads, knot pins, chips, the
+per-knot response accent.
+
+**The honest limit, and it is in the key on screen:** genus is the deepest taxonomy this
+corpus holds. Family and order are not collected anywhere in the store or the inventory, so
+"broader than a genus" cannot be coloured today — that is a harvest-side field, the same class
+of one-field change as lat/lng (WORK QUEUE §11). And a genus hue is *arbitrary*: only the same
+hue means anything, neighbouring hues are not neighbouring clades.
+
+## 4. GridBurst: the colour kept, the styling reverted, and a shader that had silently died
+
+- **Kept:** a strike is now struck in **the knot's own bird hue** in ink mode (the class colour
+  in provenance, as before). It was a flat grey, which made the cross the one part of a
+  response that said nothing about who sang while the wave, the points and the tag all did.
+  Since the hue is now the genus, a cross also says roughly what kind of bird struck it.
+- **Reverted on the owner's look:** the longer reach (2.4 half-heights), the finer dashes (120
+  steps) and the slower taper. At that size the rule stopped reading as a struck line and
+  started reading as graph paper. Back to 1.2 / 20 steps / the original fade, exactly as
+  before.
+- **A bug worth remembering:** the intermediate version named a GLSL variable `out`, which is a
+  reserved word. The vertex shader then failed to compile and **the entire grid vanished with
+  no visible error** — a dead `ShaderMaterial` draws nothing and reports only to the console,
+  which is why it took the owner's console paste to find. `npm run check` cannot see inside a
+  shader string; nothing in this repo can. That is one more argument for the browser smoke
+  test in the test round above.
+
 # Lyrebird — test round (2026-08-02, night 3): the suite is green, and `thresholds` says the match ramp is stale
 
 **Everything that exists was run after the UI/renderer round, all green:**

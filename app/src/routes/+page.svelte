@@ -2332,6 +2332,24 @@ uv run birdy-pipeline build</pre>
 										</span>
 									</li>
 									<li>
+										<i class="clade"></i>
+										<!--
+											The hue is the GENUS, not the species. Hashing the whole id spent the
+											colour circle on 2 423 unrelated numbers, so two thrushes were as far
+											apart as a thrush and an owl and the one thing a colour could have said
+											— what kind of bird just answered — was the one thing it did not say.
+											Genus is also as deep as this corpus goes: family and order are not
+											collected, so the limit is stated here rather than implied.
+										-->
+										<span>
+											<b>A bird's colour is its genus.</b> Every species in a genus wears one hue and
+											differs only in shade, so what answers tells you what kind of bird it was before
+											you read the name. Only <i>the same hue</i> means anything — neighbouring hues
+											are not neighbouring clades — and genus is as deep as this corpus goes: family
+											and order are not collected.
+										</span>
+									</li>
+									<li>
 										<i class="hue"></i>
 										<span>
 											<b>Colour says one thing at a time.</b> Off — the points are neutral, and hue is
@@ -4445,6 +4463,16 @@ uv run birdy-pipeline serve</pre>
 		background:
 			radial-gradient(circle at 28% 50%, var(--ink-dim) 1px, transparent 1.1px),
 			radial-gradient(circle at 72% 50%, var(--ink-dim) 3px, transparent 3.1px);
+	}
+
+	/* Three shades of one hue: a genus, and the species inside it. */
+	.legend.key i.clade {
+		background: linear-gradient(
+			90deg,
+			color-mix(in srgb, #b45309 55%, white) 33%,
+			#b45309 33% 66%,
+			color-mix(in srgb, #b45309 75%, black) 66%
+		);
 	}
 
 	/* Two knots wider than the gap between them: the overlap, as a mark. */

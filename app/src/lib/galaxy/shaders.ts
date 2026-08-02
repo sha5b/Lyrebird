@@ -644,11 +644,17 @@ export const fragmentShader = /* glsl */ `
 	/**
 	 * Hue → RGB at the palette's fixed saturation and lightness, then sRGB → linear.
 	 *
-	 * The species hues are authored as hsl(h, 82%, 45%) strings and every other
-	 * consumer hands them to THREE.Color.setStyle, which converts into the renderer's
-	 * working (linear) space. A shader that skipped the second step would draw the same
-	 * bird noticeably brighter here than on its own tag, so the conversion is done with
-	 * the exact piecewise transfer function rather than a 2.2 approximation.
+	 * The species hues are authored as hsl(h, s, 45%) strings and every other consumer
+	 * hands them to THREE.Color.setStyle, which converts into the renderer's working
+	 * (linear) space. A shader that skipped the second step would draw the same bird
+	 * noticeably brighter here than on its own tag, so the conversion is done with the
+	 * exact piecewise transfer function rather than a 2.2 approximation.
+	 *
+	 * Saturation is the palette's midpoint rather than the bird's own 74-90 % — the
+	 * texture channel carries the hue and there is no room for a second number. The
+	 * worst case is 8 points of saturation between a knot and its tag, which is under
+	 * what the eye separates at this size; the hue, which is the part that says which
+	 * clade answered, is exact.
 	 */
 	vec3 speciesHueColour(float turns) {
 		float c = (1.0 - abs(2.0 * 0.45 - 1.0)) * 0.82;
