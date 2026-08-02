@@ -1,4 +1,99 @@
-# Lyrebird — Session Handoff (2026-08-02: v6 BUILT AND PARKED, and a UI sweep is owed)
+# Lyrebird — WORK QUEUE (owner round, 2026-08-02) — read this before touching the galaxy
+
+**v6 IS NOW INSTALLED** (this supersedes the "parked" entry below, which is kept for its
+measurements). `app/static/birdy` = 348 461 points, **13 848 clusters**, built
+2026-08-02T09:27; `data/learned-inventory.json` = 13 748 syllables. Owner accepted the
+song-layer trade with the measurement in hand. **v5 backed up at
+`/tmp/birdy-prod/v5-INSTALLED-backup` + `v5-learned-inventory.backup.json`** (and in git) —
+revert is one `rsync`. Whole suite green: parity **18/18** at 2.78e-08, synth **44/44** at
+0.3 %, `verify:features` exit 0, shards + provenance buffers OK, pipeline `verify` clean,
+`npm run check` at the 4 baseline errors. One thing improved: field-knot in-manifold
+agreement **3.17 → 2.95** median, 74.7 % → **84.8 %** under threshold.
+
+## THREE OF THE OWNER'S ASKS ALREADY EXIST — tune, do not rebuild
+
+Checked in the source before writing this. Whoever picks this up should **look at the running
+app first**, because the gap may be visibility rather than absence.
+
+1. **"Centroids mostly don't have a point in the middle, lines go to air."**
+   `KnotMarkers.svelte` **already does exactly this** — one marker per membered knot at the
+   drawn centre, and its own docstring says *"it reacts to everything its knot reacts to"*
+   via the shared `clusterState` texture (R activation / G sung / B learn), no second state
+   channel. **So this is a visibility problem, not a missing feature**: rest is a 1.5 px
+   floor at 0.35 alpha against the cloud's 2–3 px at ~0.5, deliberately "a waypoint, not
+   data". The owner cannot see it. **Action: raise its resting presence until a thread
+   visibly lands on something**, and check the thread endpoints actually terminate on the
+   marker rather than near it.
+2. **"Inside a single bird, show its full point cloud."** Partly there: `vChosen` exists,
+   the chosen species is exempt from the frontier and the governor, and its knots are force-
+   blossomed (`aSpread * max(uBlossom, vChosen)`). **Action: verify the LOD too** — a focused
+   species must draw *every* one of its points at *every* camera distance, not just be
+   blossomed. Check `updateLod`'s focus branch actually unions the whole species in.
+3. **"Localised activation instead of the whole cloud densifying."** The reveal mechanism
+   exists (`REVEAL_FRONT = 0.015` in `shaders.ts`, third inclusion channel in
+   `updateActiveIndex`, `stats.pointsRevealed`). What is still global is the **resting dim**:
+   `uAnswer` dims the entire cloud whenever anything answers. **Action: make the reveal the
+   only densification and drop or localise the global `uAnswer` dim**, then widen the front —
+   owner wants it to *propagate further and stronger*, and to reveal the full local cloud
+   where it passes. Treat it as a 3-D travelling front like `GridBurst`, which is the model
+   the owner named.
+
+## THE REST OF THE OWNER'S LIST — not built
+
+4. **The cloud is hard to read.** Owner: *"we can't read much out of it."* Two named
+   sub-asks: **place the knots more distinctly** (they read as one mass), and make the
+   **song lines legible** — they are currently hard to see at all.
+5. **The travelling dot on a song line has a colour-gradient bug**: *"sometimes it doesn't
+   have the same colour gradient between the 2 points it wants to connect."* Look at the
+   bead's vertex colours in `Trajectory.svelte` against the two endpoint knots' hues — most
+   likely the bead interpolates in a different space, or against a stale endpoint, than the
+   line it rides.
+6. **A song playing should animate its line, and that wants refining.** Currently the
+   animation is (at most) the bead; owner wants the line itself to respond.
+
+## SPACES THAT EXIST AND ARE IDLE — the research opportunity, owner-confirmed
+
+7. **Perch 2.0's 1536-d embedding as a *second opinion on novelty*.** The extraction is
+   already shipped (`perch.label_novel(keep_embeddings=True)`) and **docs/13 §A1
+   pre-registered the exact question** — "does Perch's space agree this is novel?" — and it
+   was never implemented as a signal. W6 is why it is interesting: Perch retrieves species
+   **8×** better than our critic, and the two external models **disagree with each other more
+   than either differs from ours**. So **cross-space disagreement is itself the new
+   information**: "critic says novel, Perch says familiar" flags one kind of interesting, the
+   reverse flags another. Owner also asks directly: **test whether Perch or our approach is
+   better** — note W6's honest limit, the critic is a *syllable* space averaged over a
+   recording, so any comparison must be per-recording or it is unfair.
+8. **The song-level novelty pool nobody consumes**: docs/12 clusters bouts into song types and
+   **1 726 bouts were heard exactly once** and sit unused. `grow`'s novelty answer is
+   syllable-level only.
+9. **The 28-d vs 32-d disagreement is unexploited** — measured at ~0.49 centroid agreement
+   (docs/20). Same syllable, two opinions, and the disagreement is thrown away.
+10. **Metadata already in the store and never read.** The recordist's own call-type label
+    ("song" / "alarm call") is discarded unread — `harvest.py:1170` even calls it *"the
+    cheapest available route to labelling what a call does"*. Also unused: co-singing
+    species, country, date, sex, stage, playbackUsed.
+11. **lat/lng is not collected at all** — a one-field harvest change opens the
+    dialect/geography axis (docs/18 P4, sketched and unbuilt; the whitepaper notes the corpus
+    now has the depth for it).
+12. **Standing caveat on every new space**: the recorder confound (W1/W6, docs/23). Even
+    Perch's archive-scale space carries five sixths of our recordist structure.
+
+## OPEN MEASUREMENTS
+
+13. **Map agreement fell again on v6 and I have no mechanism for it.** Region agreement
+    **0.4909 → 0.3977**, species **0.5619 → 0.5094**, tie-adjusted 0.7056 → 0.6785. The v5
+    explanation (more knots, harder nearest-centroid lookup) **is contradicted** — v6 has
+    *fewer* knots (13 848 vs 14 003), so the lookup should be marginally easier. Something in
+    the re-typing moved the descriptor→embedding relationship. Needs measuring, not guessing.
+14. **Four pipeline tests exist and none has been run.** `specbench` is the valuable one —
+    it renders fitted types against cached audio on MCD / multi-res STFT and is **the only
+    instrument in the project that speaks to audible fidelity**, which every cosine number in
+    this session explicitly does not. Then `placement` (docs/09's four numbers, direct v5-v6
+    comparison), `syntax` (would quantify the song-layer cost properly instead of counting
+    repeat classes), and `thresholds` (re-measures the browser's match ramp — the assets just
+    changed underneath it).
+
+# Lyrebird — Session Handoff (2026-08-02: v6 built, and a UI sweep is owed)
 
 **v6 is built, verified green by the build's own checks, and DELIBERATELY NOT INSTALLED.**
 It lives at `/tmp/birdy-prod/v6/` (assets + `learned-v6.json`). `app/static/birdy` and
