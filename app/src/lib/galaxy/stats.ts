@@ -29,6 +29,12 @@ export interface GalaxyStats {
 	 * up. -1 until the first frame reports.
 	 */
 	lod: number;
+	/**
+	 * The density governor's cap on the frontier, 0..1: 1 means the camera alone
+	 * decides how much draws, anything less means the frame rate asked for less and
+	 * got it. Written every frame; see the governor in PointCloud.
+	 */
+	densityCap: number;
 	/** Name tags positioned last frame. Bounded by the pool, never by the corpus. */
 	tagsDrawn: number;
 	/** Knots the build holds. */
@@ -51,6 +57,7 @@ export function createStats(pointsTotal: number, clusters: number): GalaxyStats 
 		pointsTotal,
 		pointsResponding: 0,
 		lod: -1,
+		densityCap: 1,
 		tagsDrawn: 0,
 		clusters,
 		renderer: ''

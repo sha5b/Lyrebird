@@ -23,14 +23,11 @@
 	import * as THREE from 'three';
 	import { buildSpeciesIndex, clusterProvenance, knotHeat } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
-	import { ACCENT, provenanceColourScaled, speciesColourScaled } from './palette';
+	import { provenanceColourScaled, speciesColourScaled } from './palette';
 	import { LABEL_SLOTS, MAX_LABELS } from './labels';
 	import type { LayoutView } from './layouts';
 	import type { VisualSignal } from './shaders';
 	import type { GalaxyStats } from './stats';
-
-	/** The tag's resting accent in ink mode: the same slate the context threads use. */
-	const INK_NEUTRAL = '#8595ae';
 
 	interface Props {
 		assets: BirdyAssets;
@@ -48,8 +45,6 @@
 		view: LayoutView;
 		/** Provenance language for the tag accent, matching the points and threads. */
 		prov?: boolean;
-		/** Bird language for the tag accent: the species hue everywhere. */
-		bird?: boolean;
 		/** Written, never read: what the stage cost this frame. */
 		stats?: GalaxyStats;
 	}
@@ -63,7 +58,6 @@
 		pinned = -1,
 		view,
 		prov = false,
-		bird = false,
 		stats
 	}: Props = $props();
 
@@ -107,7 +101,7 @@
 	let colourKey = '';
 	const colourCache = new Map<number, string>();
 	function knotColour(i: number): string {
-		const key = prov ? 'prov' : bird ? 'bird' : 'ink';
+		const key = prov ? 'prov' : 'hue';
 		if (key !== colourKey) {
 			colourKey = key;
 			colourCache.clear();
@@ -382,15 +376,12 @@
 			node.style.zIndex = String(Math.round((1 - (ch.z + 1) / 2) * 1000) + (ch.hot ? 2000 : 0));
 			node.style.setProperty('--hot', ch.open ? '1' : '0');
 			node.style.setProperty('--act', shown[i].toFixed(3));
-			// The tag's accent follows the stage's language. Bird and provenance modes:
-			// the identity colour (species hue / class colour), all the time. Ink mode:
-			// neutral at rest and the one accent when the knot answers — "violet marks
-			// activity" is the whole point of ink mode, and a tag that kept its bird's
-			// hue there spoke a language nothing else on the stage was speaking.
-			node.style.setProperty(
-				'--accent',
-				prov || bird ? knotColour(i) : ch.hot ? ACCENT : INK_NEUTRAL
-			);
+			// The tag's accent is the identity colour in both languages — the bird's
+			// hue in ink mode, the knot's class colour in provenance — at rest and hot
+			// alike; how much of it shows is --hot's job, not the colour's. It is also
+			// the same hue the cloud's response accent lights in (easeAccent), so a
+			// singing knot and its tag can never disagree about who is sounding.
+			node.style.setProperty('--accent', knotColour(i));
 
 			// The one piece of text that changes while running. Written only when the
 			// rounded percentage actually moves, and only for a label that is open.

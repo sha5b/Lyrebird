@@ -4,7 +4,7 @@
 	import * as THREE from 'three';
 	import { clusterProvenance } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
-	import { provenanceColourScaled, speciesColourScaled } from './palette';
+	import { provenanceColourScaled } from './palette';
 	import type { LayoutView } from './layouts';
 	import type { VisualSignal } from './shaders';
 
@@ -15,11 +15,9 @@
 		view: LayoutView;
 		/** Provenance language: each segment takes its knot's class colour. */
 		prov?: boolean;
-		/** Bird language: each path takes its bird's hue (the labels' colour). */
-		bird?: boolean;
 	}
 
-	let { assets, signal, view, prov = false, bird = false }: Props = $props();
+	let { assets, signal, view, prov = false }: Props = $props();
 
 	const centroids = untrack(() => assets.centroids.items);
 	const klass = untrack(() => clusterProvenance(assets));
@@ -29,8 +27,9 @@
 	// drawn twice and the accumulated alpha reads darker, so the bird's reused paths stand
 	// out — on a light ground that means normal blending, not additive.
 	// Colours follow the stage's language: neutral slate in ink mode (the backdrop the
-	// accent reads against), the bird's hue in bird mode, the class colour in
-	// provenance mode — per-vertex, so a thread never speaks two languages at once.
+	// accent reads against — the bird's hue lives on the tags and the response, not on
+	// every thread), the class colour in provenance mode — per-vertex, so a thread
+	// never speaks two languages at once.
 	const NEUTRAL = new THREE.Color('#8595ae');
 	const geometry = new THREE.BufferGeometry();
 	const material = new THREE.LineBasicMaterial({
@@ -50,10 +49,6 @@
 		const c = new THREE.Color();
 		for (const path of paths) {
 			const nodes = path.filter((i) => i >= 0 && i < centroids.length);
-			let birdColour: THREE.Color | null = null;
-			if (bird && nodes.length) {
-				birdColour = new THREE.Color(speciesColourScaled(centroids[nodes[0]]?.speciesId ?? '', 1.0));
-			}
 			for (let n = 0; n < nodes.length - 1; n++) {
 				const a = nodes[n] * 3;
 				const b = nodes[n + 1] * 3;
@@ -63,7 +58,6 @@
 				);
 				for (const knot of [nodes[n], nodes[n + 1]]) {
 					if (prov) c.setStyle(provenanceColourScaled(klass[knot] ?? 4, 1.0));
-					else if (birdColour) c.copy(birdColour);
 					else c.copy(NEUTRAL);
 					colors.push(c.r, c.g, c.b);
 				}
@@ -85,7 +79,6 @@
 	$effect(() => {
 		// A language switch does not bump the context version; force the repaint.
 		void prov;
-		void bird;
 		builtVersion = -1;
 	});
 

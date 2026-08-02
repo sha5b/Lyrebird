@@ -1,3 +1,32 @@
+# Birdy — Session Handoff (2026-08-01, late 3: adaptive density, knot spacing, bird mode out)
+
+**Owner round 3 on the galaxy: mid-zoom fps still tanked, knots too tight, bird
+colouring "useless".** All three addressed app-side; checks green (4 baseline errors,
+0 warnings, parity 18/18, layout, build). Owner visual pass owed on all of it.
+
+- **Adaptive density governor.** The frontier's ceiling is now driven by measured
+  frame time: >20 ms sinks the cap fast (delta×0.8), <13 ms recovers slowly
+  (delta×0.15), clamp [0.10, 1]; effective fraction = min(shownFraction, cap), so
+  throttling *dissolves* through the aRank fade instead of popping. Seeds at 0.55 when
+  the renderer string says Intel-non-Arc. `stats.densityCap` feeds a cost-readout row
+  ("held at NN% for framerate", shown only when < 0.99) and a Display-panel
+  "adaptive detail" toggle (default on; off pins cap 1). This cannot tank by
+  construction — density thins toward the priority order, i.e. toward structure.
+- **Spacing.** `KNOT_GAP = 1.3` in layouts.ts (`separateKnots`: p → c·1.3 + (p−c),
+  unclustered points untouched, centroids recompute so everything downstream —
+  waves, framing, uWaveLocal, LOD grid — reads the expanded geometry; required a
+  bounding-sphere recompute in PointCloud's layout-seed block). Blossom widened:
+  target 1.35× knot radius, cap 0.6× median knot spacing. The key note discloses both
+  display transforms.
+- **Bird mode removed from the points.** The cloud now speaks ink or provenance only;
+  `aBird` is gone — **the program is down to 10 attributes** (15 before the Mesa fix).
+  The ink-mode accent is now the **responding bird's species hue** (FNV hash, same as
+  the tags) instead of the universal violet — violet only when nothing names a who.
+  Tags carry the species hue whenever provenance is off (NodeLabels, NodeProjector
+  `--accent`), so tag and cloud accent agree. Threads (ContextPaths, Trajectory) lost
+  their species palettes with the mode. Taste knobs for the owner: the 20/13 ms
+  governor band, KNOT_GAP 1.3, blossom 1.35/0.6.
+
 # Birdy — Session Handoff (2026-08-01, late 2: cloud visuals — blossom, ring-down, haze)
 
 **Owner asked for visual enhancement of the point cloud: spacing, lab-style finish,

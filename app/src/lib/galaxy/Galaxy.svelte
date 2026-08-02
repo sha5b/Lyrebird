@@ -44,20 +44,25 @@
 		learning?: number[];
 		/**
 		 * Neutral ink instead of the provenance class tint. Owned by the page's display
-		 * settings (the "Provenance colours" switch).
+		 * settings (the point-colour switch).
 		 *
 		 * It switches the whole stage's colour *language*, not just the cloud: the points,
 		 * the tags and the trajectory threads move together, because two languages on
-		 * screen at once invite the reading that their hues are related. Off, hue answers
-		 * "which bird" on the tags and threads and the points are neutral; on, hue answers
-		 * "what kind of thing" everywhere. No activation rule changes either way, and the
-		 * accent keeps meaning exactly one thing in both.
+		 * screen at once invite the reading that their hues are related. On (ink), the
+		 * points and threads are neutral and hue answers "which bird" where it can be
+		 * read — on the tags, and on the response itself, which lights in the singing
+		 * bird's hue. Off (provenance), hue answers "what kind of thing" everywhere. No
+		 * activation rule changes either way, and the accent keeps meaning exactly one
+		 * thing in both.
 		 */
 		plain?: boolean;
 		/** Per-class point visibility in PROVENANCE order; false hides the class. */
 		provShown?: boolean[];
-		/** Colour the points by species hue (labels keep the same language). */
-		bird?: boolean;
+		/**
+		 * The density governor: the measured frame time may hold the LOD frontier back.
+		 * The Display panel's "adaptive detail" switch; default on.
+		 */
+		adaptive?: boolean;
 		onpick?: (cluster: number) => void;
 		/** Fired on a click that hit no node, so the page can clear its selection. */
 		onbackground?: () => void;
@@ -82,7 +87,7 @@
 		learning = [],
 		plain = true,
 		provShown = [true, true, true, true, true],
-		bird = false,
+		adaptive = true,
 		onpick,
 		onbackground,
 		stats
@@ -182,17 +187,17 @@
 
 		<Spinner {spin} scale={spread} bind:group={cloud}>
 			<GridBurst {assets} {signal} {view} prov={!plain} />
-			<ContextPaths {assets} {signal} {view} prov={!plain} {bird} />
-			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} {provShown} {bird} {stats} />
-			<Trajectory {assets} {signal} {view} {spread} {pointSize} prov={!plain} {bird} />
+			<ContextPaths {assets} {signal} {view} prov={!plain} />
+			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} {provShown} {adaptive} {stats} />
+			<Trajectory {assets} {signal} {view} {spread} {pointSize} prov={!plain} />
 			{#if labels}
-				<NodeProjector {assets} {signal} elements={labelElements} bind:slots={labelSlots} {focus} {pinned} {view} prov={!plain} {bird} {stats} />
+				<NodeProjector {assets} {signal} elements={labelElements} bind:slots={labelSlots} {focus} {pinned} {view} prov={!plain} {stats} />
 			{/if}
 		</Spinner>
 	</Canvas>
 
 	{#if labels}
-		<NodeLabels {assets} slots={labelSlots} bind:elements={labelElements} prov={!plain} {bird} {onpick} />
+		<NodeLabels {assets} slots={labelSlots} bind:elements={labelElements} prov={!plain} {onpick} />
 	{/if}
 </div>
 

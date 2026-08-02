@@ -130,10 +130,11 @@ export function provenanceColourScaled(cls: number, lightScale: number): string 
  * This needs a defence, because the note at the top of this file argues against species
  * hues, and it still stands: on a static scatter, hue cannot identify a hundred species,
  * and pretending it can is how the old islands view lied. So the POINTS do not wear
- * species hues — they wear their provenance class, always. The hue lives on the label:
- * the tag dot, the tag name, the trajectory thread, the accent, and nowhere else. Hue
- * answers "which bird", the class tint answers "what kind of thing" — and a label is
- * where "which bird" is a question with a text answer right next to it, so the hue is
+ * species hues — they wear their provenance class, or neutral ink. The hue lives where
+ * it can be read: on the label (the tag dot and the tag name), and on the response
+ * accent in ink mode, which lights in the singing bird's hue. Hue answers "which
+ * bird", the class tint answers "what kind of thing" — and a label is where "which
+ * bird" is a question with a text answer right next to it, so the hue is
  * presentation, never the sole carrier.
  *
  * The hue is a hash of the species id, not an index into the inventory: learned ids

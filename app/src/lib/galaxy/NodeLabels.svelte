@@ -25,9 +25,6 @@
 	import { provenanceColourScaled, speciesColourScaled } from './palette';
 	import type { BirdyAssets, Centroid } from '$lib/data/types';
 
-	/** The tag dot's resting colour in ink mode: the same slate the context threads use. */
-	const INK_NEUTRAL = '#8595ae';
-
 	interface Props {
 		assets: BirdyAssets;
 		/**
@@ -48,12 +45,10 @@
 		 * switch the viewer flips, so the tags have to follow it live.
 		 */
 		prov?: boolean;
-		/** Bird language: the species hue everywhere (ink mode keeps tags neutral). */
-		bird?: boolean;
 		onpick?: (cluster: number) => void;
 	}
 
-	let { assets, slots, elements = $bindable(), prov = false, bird = false, onpick }: Props = $props();
+	let { assets, slots, elements = $bindable(), prov = false, onpick }: Props = $props();
 
 	// The corpus does not change while this is mounted, so the lookups are built once.
 	// Names come from the inventory index: a tag must name its bird without fetching
@@ -72,13 +67,15 @@
 	 * edge a touch lighter (1.1), same hue and saturation throughout — a slight
 	 * gradient of the label colour, never a different one.
 	 *
-	 * With the provenance mode on, the same tag answers the other question instead: the
-	 * hue becomes the knot's class, matching the points under it. Leaving the tags in
-	 * species hues while the cloud switched to classes put two colour languages on the
-	 * screen at once, and a violet tag over an amber knot invites the reading that the
-	 * two colours are related — so the whole picture speaks one language at a time.
-	 * Either way the tag still *names* the bird in words right beside the dot, which is
-	 * why hue is free to carry the other axis.
+	 * Ink mode keeps the hue on the tag even though the points under it are neutral:
+	 * the tag is exactly where a hue can be read (the name sits right beside the dot),
+	 * and it is the same hue the response accent lights in, so a singing knot and its
+	 * tag agree. With the provenance mode on, the same tag answers the other question
+	 * instead: the hue becomes the knot's class, matching the points under it. Two
+	 * languages at once put a violet tag over an amber knot and invite the reading
+	 * that the colours are related — so the whole picture speaks one language at a
+	 * time. Either way the tag still *names* the bird in words right beside the dot,
+	 * which is why hue is free to carry the other axis.
 	 *
 	 * Both per-knot arrays are one pass over the corpus, so they stay lazy: on a build
 	 * with 14 000 knots the provenance tally is not work to do before the first frame
@@ -93,7 +90,7 @@
 			knotClass ??= clusterProvenance(assets);
 			return provenanceColourScaled(knotClass[i] ?? 4, light);
 		}
-		return bird ? speciesColourScaled(c.speciesId, light) : INK_NEUTRAL;
+		return speciesColourScaled(c.speciesId, light);
 	};
 </script>
 
@@ -169,8 +166,9 @@
 	/* Everything that reacts is driven by `--hot` through calc/color-mix rather than by a
 	   class, so the transitions are the browser's and no state has to cross into Svelte.
 	   The dot's colour comes from --accent (written per frame by the projector): the
-	   identity hue in bird and provenance modes, neutral at rest and the one accent
-	   when hot in ink mode; the inline style is only the first frame's fallback. */
+	   identity hue — the bird's in ink mode, the class's in provenance — at every
+	   state, with --hot driving how much of it shows; the inline style is only the
+	   first frame's fallback. */
 	.dot {
 		flex: none;
 		width: 7px;

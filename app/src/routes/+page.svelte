@@ -137,14 +137,14 @@
 	// comes from (the provenance classes the note below names). Default off: the
 	// corpus is one cloud first, and the class tint is a layer you ask for.
 	/**
-	 * The points' colour language: neutral ink, the species hue the labels already
-	 * speak ("who"), or the provenance classes ("what kind of thing"). The tags and
-	 * threads only move between bird-hue and provenance (a third language would sit
-	 * on screen at the same time as the points' own, and two hue readings of one
-	 * stage invite confusion) — so 'bird' is a points-only switch into the labels'
-	 * existing language.
+	 * The points' colour language: neutral ink, or the provenance classes ("what kind
+	 * of thing"). There used to be a third — every point in its species' hue — and it
+	 * read as confetti: a hundred hues on a dense scatter cannot be told apart, so
+	 * "who" moved to where hue can be read: the tags, and the response itself, which
+	 * lights in the singing bird's hue. The tags and threads follow the same two
+	 * languages, because two hue readings of one stage invite confusion.
 	 */
-	let pointColour = $state<'ink' | 'bird' | 'prov'>('ink');
+	let pointColour = $state<'ink' | 'prov'>('ink');
 	const provColours = $derived(pointColour === 'prov');
 	/**
 	 * Per-class point visibility in PROVENANCE order (documented, learned, field,
@@ -169,6 +169,12 @@
 	 * drawing the readout cannot itself become the thing being measured.
 	 */
 	let costOpen = $state(false);
+	/**
+	 * The density governor's switch: on, the measured frame time may hold the level of
+	 * detail back; off, the camera alone decides how much draws. The answer for an
+	 * integrated GPU is on — see the governor in PointCloud.
+	 */
+	let adaptiveDetail = $state(true);
 	const galaxyStats = $derived(
 		assets ? createStats(assets.points.n, assets.centroids.items.length) : null
 	);
@@ -1737,7 +1743,7 @@ uv run birdy-pipeline build</pre>
 				speed={tempo}
 				labels={showLabels}
 				plain={!provColours}
-			bird={pointColour === 'bird'}
+				adaptive={adaptiveDetail}
 				{provShown}
 				pinned={pinnedCluster}
 				frame={frameNodes}
@@ -1808,18 +1814,14 @@ uv run birdy-pipeline build</pre>
 								</div>
 								<!--
 									One colour language at a time on the points, chosen as a mode:
-									neutral ink (hue lives on the tags, saying which bird), the
-									species hue itself ("who", points-only — the tags already speak
-									it), or the provenance classes ("what kind of thing", which moves
-									the tags and threads too, so the stage never speaks two hue
-									languages at once).
+									neutral ink (hue lives where it can be read — the tags, and the
+									response itself, which lights in the singing bird's hue), or the
+									provenance classes ("what kind of thing", which moves the tags and
+									threads too, so the stage never speaks two hue languages at once).
 								-->
 								<div class="checks" role="radiogroup" aria-label="Point colour">
-									<label class="check" title="Neutral ink points; hue on the tags and threads says which bird.">
+									<label class="check" title="Neutral ink points; hue on the tags says which bird, and what sounds lights in that bird's hue.">
 										<input type="radio" bind:group={pointColour} value="ink" /> Ink
-									</label>
-									<label class="check" title="Each point in its bird's hue — the same colour its tags and threads already use.">
-										<input type="radio" bind:group={pointColour} value="bird" /> Bird
 									</label>
 									<label class="check" title="Colour everything by where each sound comes from, not by which bird it is.">
 										<input type="radio" bind:group={pointColour} value="prov" /> Provenance
@@ -1841,14 +1843,10 @@ uv run birdy-pipeline build</pre>
 										Hue says what kind of thing a sound is; the tag beside it names the
 										bird. The big split is whether a bird made the sound or we did.
 									</p>
-								{:else if pointColour === 'bird'}
-									<p class="note faint">
-										Points and tags share one hue: the bird. The big split is who, not
-										what kind of thing — the Provenance mode has that key instead.
-									</p>
 								{:else}
 									<p class="note faint">
-										Points are neutral ink. Hue on the tags and threads says which bird.
+										Points are neutral ink. Hue on the tags says which bird, and what
+										sounds lights in that bird's hue.
 									</p>
 								{/if}
 							</section>
@@ -1909,6 +1907,12 @@ uv run birdy-pipeline build</pre>
 								<div class="checks">
 									<label
 										class="check"
+										title="Hold the level of detail back when the measured frame time says the GPU cannot keep up. On an integrated chip this is what keeps the close view smooth."
+									>
+										<input type="checkbox" bind:checked={adaptiveDetail} /> Adaptive detail
+									</label>
+									<label
+										class="check"
 										title="Frame rate, how many points and tags the stage actually drew, and which GPU the browser gave us."
 									>
 										<input type="checkbox" bind:checked={costOpen} /> What this costs
@@ -1935,6 +1939,12 @@ uv run birdy-pipeline build</pre>
 													{cost.lod < 0 ? 'settling' : `${Math.round(cost.lod * 100)}% of the points`}
 												</dd>
 											</div>
+											{#if cost.densityCap < 0.99}
+												<div>
+													<dt>density</dt>
+													<dd>held at {Math.round(cost.densityCap * 100)}% for framerate</dd>
+												</div>
+											{/if}
 											<div>
 												<dt>tags</dt>
 												<dd>{cost.tagsDrawn} of {cost.clusters.toLocaleString()} knots</dd>
@@ -1997,7 +2007,7 @@ uv run birdy-pipeline build</pre>
 									</li>
 									<li>
 										<i class="hue"></i>
-										<span>Three colour languages (Display): Ink — everything neutral, violet marks what sounds. Bird — every dot, thread and tag takes its bird's hue. Provenance — everything takes the class colour.</span>
+										<span>Two colour languages (Display): Ink — everything neutral; what sounds lights in its bird's hue, and the tags carry the same hue. Provenance — everything takes the class colour.</span>
 									</li>
 									<li>
 										<i class="ring"></i>
@@ -2013,12 +2023,14 @@ uv run birdy-pipeline build</pre>
 									</li>
 									<li>
 										<i style:background="var(--signal)"></i>
-										<span>Violet marks what you asked for: the note singing now, or the selected bird's points.</span>
+										<span>The one loud colour marks what you asked for: the note singing now — in its bird's hue, violet when nothing names a who — or the selected bird's points.</span>
 									</li>
 								</ul>
 								<p class="note faint">
 									Close up, a knot's marks spread to fill its measured extent — display
-									jitter like a scatterplot's; the corpus positions are unchanged.
+									jitter like a scatterplot's. Knots are also drawn 30 % farther apart
+									than the projection puts them. Both are display transforms; the corpus
+									positions are unchanged.
 								</p>
 							</section>
 						</div>

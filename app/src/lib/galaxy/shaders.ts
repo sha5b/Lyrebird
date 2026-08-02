@@ -118,9 +118,6 @@ export function vertexShader(): string {
 		 * 4 candidate.
 		 */
 		attribute float aProv;
-		/** The point's species hue as RGB (palette.speciesColour), for the bird-colour
-		 * point mode: same hash the labels use, so a point and its tags always agree. */
-		attribute vec3 aBird;
 		/** 1 while a scheduled orphan note — a type with points but no cluster — sounds. */
 		attribute float aOrphan;
 		/**
@@ -134,9 +131,10 @@ export function vertexShader(): string {
 		/**
 		 * Four per-point floats packed into one attribute, because attribute slots are
 		 * a hard budget: Mesa's Intel driver in Firefox reports fewer than 15, and the
-		 * 15-attribute version of this program failed to link there — packed, the
-		 * program asks for 11. The old names survive as defines below, so the body
-		 * reads as it always has.
+		 * 15-attribute version of this program failed to link there — packed, and with
+		 * the bird-colour mode's per-point hue gone with its mode, the program asks
+		 * for 10. The old names survive as defines below, so the body reads as it
+		 * always has.
 		 *
 		 * x — aSeed: per-point phase offsets (multiply-and-mod hash).
 		 * y — aBloom: how far this point may bloom as the front passes: 45 % of its
@@ -146,8 +144,8 @@ export function vertexShader(): string {
 		 *   yet a blooming member still lands inside its own knot's neighbourhood
 		 *   rather than the next knot's.
 		 * z — aSpread: how far this point may drift outward along aRadDir as the
-		 *   camera closes in (uBlossom): sqrt(hash) × knotRadius × 1.1 minus the
-		 *   resting distance from its own centroid, capped at half the median knot
+		 *   camera closes in (uBlossom): sqrt(hash) × knotRadius × 1.35 minus the
+		 *   resting distance from its own centroid, capped at 0.6 × the median knot
 		 *   spacing. Interior points move most, rim points barely, so the knot's
 		 *   outline is preserved — display jitter, the same status a scatterplot's
 		 *   jitter has. Zero for the unassigned, which are already sparse.
@@ -274,8 +272,6 @@ export function vertexShader(): string {
 		varying float vLod;
 		/** Provenance category of this point (see aProv). */
 		varying float vProv;
-		/** The point's species hue (see aBird). */
-		varying vec3 vBird;
 		/** 1 while this point's orphan type is being played (see aOrphan). */
 		varying float vOrphan;
 		/** The wavefront ring passing through this point (see aFront). */
@@ -291,7 +287,6 @@ export function vertexShader(): string {
 
 		void main() {
 			vProv = aProv;
-			vBird = aBird;
 			vOrphan = aOrphan;
 			vWave = aFront;
 			// **A point can belong to no cluster, and that is a result, not a gap.**
@@ -560,9 +555,6 @@ export const fragmentShader = /* glsl */ `
 	uniform vec3 uProvCand;
 	/** 1 for neutral ink/plain points, 0 for the provenance class tint. */
 	uniform float uPlain;
-	/** 1 for the bird-colour point mode: the class tint is replaced by the species
-	 * hue (same hash as the labels), keeping every other rule — wash, ramp, tone. */
-	uniform float uBird;
 	/** The same clock the vertex stage pulses by; the orphan pulse breathes on it. */
 	uniform float uTime;
 	/** Live input level, 0..1 — drives the pulse and the growth in the vertex stage. */
@@ -606,7 +598,6 @@ export const fragmentShader = /* glsl */ `
 	/** 0..1 across the level-of-detail frontier's fade band; 1 in the active pass. */
 	varying float vLod;
 	varying float vProv;
-	varying vec3 vBird;
 	varying float vOrphan;
 	varying float vWave;
 	varying float vRipple;
@@ -705,11 +696,10 @@ export const fragmentShader = /* glsl */ `
 			: (vProv < 1.5 ? uProvLearned
 			: (vProv < 2.5 ? uProvField
 			: (vProv < 3.5 ? uProvArrivals : uProvCand)));
-		// The bird-colour mode swaps the class colour for the species hue and keeps
-		// every rule that sits on top of it — the wash, the ramp, the tone shifts, the
-		// accent — so "who" and "what kind" are two readings of the same marks, never
-		// two different responses.
-		vec3 classCol = uBird > 0.5 ? vBird : prov;
+		// The points speak class or ink, never species hue: at this density a hundred
+		// hues cannot be told apart, so "who" lives on the labels and on the accent —
+		// which in ink mode IS the responding bird's hue, set on the CPU (easeAccent).
+		vec3 classCol = prov;
 		// The plain look swaps the class colours for a neutral pair and keeps every
 		// other rule — same wash, same ramp, same tone shifts — so "coloured / plain"
 		// changes what the points *say about provenance*, never how they respond.

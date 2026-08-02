@@ -63,10 +63,11 @@
 		 */
 		provShown?: boolean[];
 		/**
-		 * Colour the points by species hue instead of neutral ink or provenance class —
-		 * the same hash the labels use, so a point and its tag always agree on "who".
+		 * The density governor: let the measured frame time hold the LOD frontier back
+		 * instead of letting the camera alone decide how much draws. On by default —
+		 * the Display panel's "adaptive detail" switch turns it off.
 		 */
-		bird?: boolean;
+		adaptive?: boolean;
 		/** Written, never read: how many points each pass actually drew. See stats.ts. */
 		stats?: GalaxyStats;
 	}
@@ -82,7 +83,7 @@
 		learning = [],
 		plain = false,
 		provShown = [true, true, true, true, true],
-		bird = false,
+		adaptive = true,
 		stats
 	}: Props = $props();
 
@@ -131,13 +132,14 @@
 	 * about who" state.
 	 *
 	 * **Which hue it eases to depends on the language the stage is speaking**, and it has
-	 * to, because the accent is what a knot walks toward as it lights. The three modes
-	 * differ on purpose: in provenance mode the accent is the subject's class colour
-	 * (the activation speaks the same "what kind of thing" as the resting cloud); in
-	 * bird mode it is the subject's species hue (everything is "who", the accent too);
-	 * in ink mode it never retints — violet is the one loud thing, and a match that
-	 * flared the bird's own hue read as bird mode, which is exactly the complaint this
-	 * three-way split answers.
+	 * to, because the accent is what a knot walks toward as it lights. In provenance
+	 * mode the accent is the subject's class colour — the activation speaks the same
+	 * "what kind of thing" as the resting cloud. In ink mode it is the subject's own
+	 * species hue, the same FNV-hash hue the labels carry: a singing bird lights in
+	 * ITS hue on a neutral field, which is how the response says "who" without
+	 * painting the whole cloud in hues that cannot be told apart at this density
+	 * (the bird-colour point mode did exactly that, and is gone). With no
+	 * identifiable species the violet stands in.
 	 *
 	 * What the accent *means* is untouched either way: it is still "this is the one you
 	 * asked for", and it is still the only thing on the field wearing it.
@@ -153,14 +155,14 @@
 			if (focus >= 0) cls = speciesClass[focus] ?? -1;
 			else if (waveClaim(signal)) cls = knotClass[signal.best] ?? -1;
 			if (cls >= 0) hue = provenanceColour(cls);
-		} else if (bird) {
-			// Bird mode: the subject's own hue.
+		} else {
+			// Ink mode: the subject's own hue — the selected bird, or whoever the
+			// sounding knot belongs to. Empty stays violet: no claim about who.
 			let subject = '';
 			if (focus >= 0) subject = speciesIdByIndex[focus] ?? '';
 			else if (waveClaim(signal)) subject = assets.centroids.items[signal.best]?.speciesId ?? '';
 			if (subject) hue = speciesColour(subject);
 		}
-		// Ink mode: hue stays empty — the accent is the interface violet, always.
 		accentTarget.set(hue || ACCENT);
 		const eased = accentNow.lerp(accentTarget, Math.min(1, delta * 4));
 		material.uniforms.uAccent.value = eased;
@@ -200,7 +202,8 @@
 	 * budget, z = blossom magnitude, w = LOD rank. Packing is not tidiness, it is
 	 * budget: Mesa's Intel driver in Firefox reports fewer than 15 vertex attribute
 	 * slots, and the 15-attribute program failed to link there, so four floats ride
-	 * one slot (11 attributes total). The array is allocated once and each untrack
+	 * one slot (10 attributes now — the bird-colour mode's per-point hue went with
+	 * the mode). The array is allocated once and each untrack
 	 * block below writes the channel it owns — the geometry block the seed, the
 	 * aRadDir block bloom and spread, the lod block the rank. Dynamic because the
 	 * rank channel is rewritten on a focus change (`reorderCells`); that change
@@ -227,18 +230,6 @@
 		const born = new Float32Array(assets.points.n);
 		const generation = assets.points.generation;
 		const speciesIndex = buildSpeciesIndex(assets);
-		// The species hue as per-point RGB — the same hash the labels use, so a point
-		// and its tag can never disagree about which bird a colour means.
-		const bird = new Float32Array(assets.points.n * 3);
-		{
-			const c = new THREE.Color();
-			for (let i = 0; i < assets.points.n; i++) {
-				c.setStyle(speciesColour(assets.points.speciesId[i] ?? ''));
-				bird[i * 3] = c.r;
-				bird[i * 3 + 1] = c.g;
-				bird[i * 3 + 2] = c.b;
-			}
-		}
 		for (let i = 0; i < assets.points.n; i++) {
 			cluster[i] = assets.points.clusterId[i] ?? -1;
 			species[i] = speciesIndex.get(assets.points.speciesId[i] ?? '') ?? -1;
@@ -250,7 +241,6 @@
 		g.setAttribute('aCluster', new THREE.BufferAttribute(cluster, 1));
 		g.setAttribute('aSpecies', new THREE.BufferAttribute(species, 1));
 		g.setAttribute('aBorn', new THREE.BufferAttribute(born, 1));
-		g.setAttribute('aBird', new THREE.BufferAttribute(bird, 3));
 		g.setAttribute('aAct', activationAttribute);
 		g.setAttribute('aProv', new THREE.BufferAttribute(pointProvenance(assets), 1));
 		g.setAttribute('aOrphan', orphanAttribute);
@@ -304,8 +294,7 @@
 			uProvField: { value: new THREE.Color(PROV_FIELD) },
 			uProvArrivals: { value: new THREE.Color(PROV_ARRIVALS) },
 			uProvCand: { value: new THREE.Color(PROV_CANDIDATE) },
-			uPlain: { value: untrack(() => (plain && !bird ? 1 : 0)) },
-			uBird: { value: untrack(() => (bird ? 1 : 0)) },
+			uPlain: { value: untrack(() => (plain ? 1 : 0)) },
 			// "Heard, but nothing claimed": where the nearest region breathes, and how
 			// strongly. Eased in the frame task; 0 means silent.
 			uUnmatchedOrigin: { value: new THREE.Vector3() },
@@ -403,13 +392,7 @@
 	});
 
 	$effect(() => {
-		// Neutral ink only when the mode asks for it: bird mode is a *colour* mode, so
-		// plain has to step aside for it (uBird swaps the class tint for the hue).
-		material.uniforms.uPlain.value = plain && !bird ? 1 : 0;
-	});
-
-	$effect(() => {
-		material.uniforms.uBird.value = bird ? 1 : 0;
+		material.uniforms.uPlain.value = plain ? 1 : 0;
 	});
 
 	$effect(() => {
@@ -423,11 +406,15 @@
 	 *
 	 * They were filled with `assets.positions` at construction, and drawing from the raw
 	 * projection while the labels read the layout's centroids let any transform the
-	 * layout applies drift the marks off their tags.
+	 * layout applies drift the marks off their tags. The bounding sphere is recomputed
+	 * for the same reason: the layout's knot separation (KNOT_GAP in layouts.ts) pushes
+	 * points past the raw projection's bounds, and fitFog and the active geometry both
+	 * read this sphere.
 	 */
 	untrack(() => {
 		current.set(layout.positions);
 		positionAttribute.needsUpdate = true;
+		geometry.computeBoundingSphere();
 		view.centroids.set(layout.centroids);
 		view.counts.set(layout.counts);
 		view.version++;
@@ -492,13 +479,15 @@
 		// (uBlossom in shaders.ts). sqrt(hash) gives a uniform-over-disc target radius
 		// inside the knot, so interior points move most and rim points barely — the
 		// knot's outline is preserved, which is what separates display jitter from
-		// moved data. Capped at half the median knot spacing, so an opened knot still
-		// cannot reach into its neighbour. The hash reuses the seed's multiply-and-mod
-		// style with a different modulus (104729, prime) so the spread is not
-		// correlated with the seed that already drives phase, size and arrival.
-		// Unassigned points and points in a zero-radius knot keep 0; a point resting
-		// exactly on its centroid has no aRadDir and its magnitude is moot.
-		const spreadCap = 0.5 * medianKnotSpacing;
+		// moved data. The target runs to 1.35 × the knot radius (up from 1.1: a tight
+		// knot at 3 px a mark still fused at its rim) and the cap is 0.6 × the median
+		// knot spacing, so an opened knot still cannot reach into its neighbour. The
+		// hash reuses the seed's multiply-and-mod style with a different modulus
+		// (104729, prime) so the spread is not correlated with the seed that already
+		// drives phase, size and arrival. Unassigned points and points in a
+		// zero-radius knot keep 0; a point resting exactly on its centroid has no
+		// aRadDir and its magnitude is moot.
+		const spreadCap = 0.6 * medianKnotSpacing;
 		for (let i = 0; i < n; i++) {
 			const c = assets.points.clusterId[i];
 			if (c < 0 || c >= clusterCount) continue;
@@ -507,7 +496,7 @@
 			const dz = layout.positions[i * 3 + 2] - layout.centroids[c * 3 + 2];
 			const d = Math.hypot(dx, dy, dz);
 			const h = ((i * 2654435761) % 104729) / 104729;
-			const targetRadius = Math.sqrt(h) * graph.radii[c] * 1.1;
+			const targetRadius = Math.sqrt(h) * graph.radii[c] * 1.35;
 			misc[i * 4 + 2] = Math.min(spreadCap, Math.max(0, targetRadius - d));
 			if (d < 1e-6) continue;
 			radDir[i * 3] = dx / d;
@@ -590,6 +579,25 @@
 
 	const LOD_FAR = 3.2;
 	const LOD_NEAR = 1.6;
+	/**
+	 * The density governor: a cap on the frontier, driven by the measured frame time
+	 * rather than by the camera. Fill rate is the budget on an integrated GPU — the
+	 * owner runs Firefox on Mesa Intel — and the frontier's own curve cannot know
+	 * what a frame costs, so the smoothed frameMs in `stats` steers: above 20 ms the
+	 * cap falls fast (delta * 0.8 — a bad spell answers inside a second), below 13 ms
+	 * it rises slowly (delta * 0.15 — the asymmetric rates are what keep it from
+	 * oscillating across the threshold), clamped to [0.10, 1] so the representatives
+	 * never thin out entirely. Reductions read as the frontier's own dissolve, not a
+	 * pop: the aRank fade band swallows them. Off (`adaptive` false), the cap is
+	 * pinned at 1 and the camera decides alone, as before.
+	 *
+	 * Seeded once from the GPU name, the first frame Stats has reported it: Mesa
+	 * Intel (and not Arc — the discrete Intels are not the fill-bound case) starts at
+	 * 0.55 rather than paying the fall from 1 down to it through the first seconds
+	 * of exploring.
+	 */
+	let densityCap = 1;
+	let capSeeded = false;
 	/**
 	 * Cells per axis of the resting pass's spatial split: 4³ = 64. Few enough that the
 	 * extra draw calls cost nothing next to the rasterisation they save, fine enough
@@ -831,7 +839,7 @@
 			lodFocus = focus;
 			reorderCells(focus);
 		}
-		const fraction = shownFraction(viewRadii);
+		const fraction = Math.min(shownFraction(viewRadii), adaptive ? densityCap : 1);
 		material.uniforms.uLod.value = fraction;
 		// Two more distance-driven uniforms ride the same read, one smoothstep each —
 		// the same t*t*(3-2t) shape shownFraction builds on, and no per-frame cost to
@@ -1281,6 +1289,22 @@
 			if (activeGeometry.drawRange.count !== 0) activeGeometry.setDrawRange(0, 0);
 			if (stats) stats.pointsResponding = 0;
 		}
+		// The density governor runs ahead of the frontier walk, so updateLod reads the
+		// cap this frame already settled on. The seed waits for the GPU's name (Stats
+		// reports it after mount, so the first frames still see an empty string);
+		// with no stats prop there is nothing to steer by and the cap simply stays 1.
+		if (!capSeeded && stats?.renderer) {
+			capSeeded = true;
+			if (/intel/i.test(stats.renderer) && !/arc/i.test(stats.renderer)) densityCap = 0.55;
+		}
+		if (adaptive) {
+			const ms = stats?.frameMs ?? 0;
+			if (ms > 20) densityCap = Math.max(0.1, densityCap - delta * 0.8);
+			else if (ms > 0 && ms < 13) densityCap = Math.min(1, densityCap + delta * 0.15);
+		} else if (densityCap !== 1) {
+			densityCap = 1;
+		}
+		if (stats) stats.densityCap = densityCap;
 		updateLod();
 
 		// "Heard, but nothing claimed": ease the regional breath toward the nearest

@@ -4,7 +4,7 @@
 	import * as THREE from 'three';
 	import { clusterProvenance, knotHeat } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
-	import { ACCENT, provenanceColourScaled, speciesColourScaled } from './palette';
+	import { ACCENT, provenanceColourScaled } from './palette';
 	import type { LayoutView } from './layouts';
 	import {
 		MAX_PATHS,
@@ -26,13 +26,11 @@
 		spread?: number;
 		/** The cloud's particle size; the beads are quoted against it. */
 		pointSize?: number;
-		/** Colour the threads by the knot's provenance class instead of by its bird. */
+		/** Colour the threads by the knot's provenance class instead of leaving them neutral. */
 		prov?: boolean;
-		/** Bird language: threads in the species hue (ink mode keeps them neutral). */
-		bird?: boolean;
 	}
 
-	let { assets, signal, view, spread = 1, pointSize = 3, prov = false, bird = false }: Props = $props();
+	let { assets, signal, view, spread = 1, pointSize = 3, prov = false }: Props = $props();
 
 	/** Samples per segment: enough that the travelling highlight moves smoothly. */
 	const SUBDIVISIONS = 14;
@@ -43,18 +41,19 @@
 	 * Each knot's hue as RGB, with the label mapping's per-knot lightness shift — the
 	 * trajectory gradient's endpoints. Computed once; the walk between two knots is
 	 * baked per vertex in `rebuild`.
+	 *
+	 * Both languages are built once and the switch picks between them, rather than
+	 * rebuilding a palette every time the viewer flips it: the two arrays together are a
+	 * few thousand floats, and a rebuild during a chorus is the one thing this component
+	 * is written to avoid. There is no species-hue palette: the bird's hue lives on
+	 * the tags and the response accent, and on every thread at once it read as the
+	 * ball of wool the crowd factor below exists to prevent.
 	 */
-	//
-	// Both languages are built once and the switch picks between them, rather than
-	// rebuilding a palette every time the viewer flips it: the two arrays together are a
-	// few thousand floats, and a rebuild during a chorus is the one thing this component
-	// is written to avoid.
 	const knotPalettes = untrack(() => {
 		const heat = knotHeat(assets);
 		const classes = clusterProvenance(assets);
 		const light = (i: number) => 0.9 + (heat[i] ?? 0.5) * 0.2;
 		return {
-			species: centroids.map((c, i) => new THREE.Color(speciesColourScaled(c.speciesId, light(i)))),
 			provenance: centroids.map(
 				(_, i) => new THREE.Color(provenanceColourScaled(classes[i] ?? 4, light(i)))
 			),
@@ -63,9 +62,7 @@
 			ink: centroids.map(() => new THREE.Color('#8595ae'))
 		};
 	});
-	const knotColours = $derived(
-		prov ? knotPalettes.provenance : bird ? knotPalettes.species : knotPalettes.ink
-	);
+	const knotColours = $derived(prov ? knotPalettes.provenance : knotPalettes.ink);
 	// Preallocated to every path we will ever draw at once, then a draw range is set per
 	// rebuild — reallocating buffers on every note would churn GPU memory during a chorus.
 	// Line *segments* rather than a strip, so separate paths are never joined together.
@@ -119,7 +116,7 @@
 			// its own weight array: the bead is the live position, the thread is
 			// structure, and they do not fade on the same rule
 			uAlpha: { value: beadAlpha },
-			// Rewritten from `prov` below; the initial value is the species-hue mode's.
+			// Rewritten from `prov` below; the initial value is the ink mode's.
 			uColdColor: { value: new THREE.Color(ACCENT) },
 			uPixelRatio: { value: typeof window === 'undefined' ? 1 : Math.min(2, window.devicePixelRatio) },
 			uPointSize: { value: untrack(() => pointSize) },
@@ -164,8 +161,8 @@
 	 * In provenance mode the cold end becomes the same cool grey the thread already
 	 * rests at, which hands the bead's hue over to the knot it is passing — so the
 	 * animation running along a phrase is the class colour of whatever it is crossing.
-	 * The accent stays the cold end in the species-hue mode, where it is the only thing
-	 * marking the live position.
+	 * The accent stays the cold end in ink mode, where it is the only thing marking
+	 * the live position.
 	 */
 	$effect(() => {
 		(beadMaterial.uniforms.uColdColor.value as THREE.Color).set(prov ? '#9aa6b8' : ACCENT);

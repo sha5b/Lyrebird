@@ -1,6 +1,6 @@
 /**
- * The cloud's one arrangement: the measured acoustic projection, with each knot
- * expanded about its own centre.
+ * The cloud's one arrangement: the measured acoustic projection, with the knots drawn
+ * further apart than the projection puts them.
  *
  * There used to be a second arrangement that pulled the points apart into one island
  * per species, and a morph that animated between the two. It was removed — it was
@@ -91,6 +91,29 @@ function centroidsOf(positions: Float32Array, clusterId: number[], k: number): F
  */
 const CLUSTER_SPACING = 1;
 
+/**
+ * How far apart the knots are drawn, as a scale on each knot's centre: **1.3 — the
+ * gaps between knots grow by 30 %, the knots themselves keep shape and extent.**
+ *
+ * A display transform, and the key in the interface says so. Each clustered point p
+ * with knot centre c is drawn at `c * KNOT_GAP + (p - c)`, so everything the
+ * projection measured *inside* a knot — the extent CLUSTER_SPACING above warns
+ * against touching — is preserved exactly, and only the knot's address moves. The
+ * unclustered points stay where the projection put them: they are the haze between
+ * knots, and moving them would invent a structure the data does not have.
+ *
+ * Why it exists: at 1 the dense middle of the production corpus fused into one mass —
+ * knots whose centres sit a fraction of a radius apart overdraw into a single blob
+ * however the frontier thins them, and no sprite budget fixes neighbours that
+ * overlap. The cost is that inter-knot distance is no longer a pure reading of the
+ * projection; it is 30 % display air, uniform everywhere, so *relative* positions
+ * and every knot-to-knot comparison keep their meaning. Centroids are recomputed as
+ * member means after the move (buildLayout), so they scale by exactly 1.3 and every
+ * downstream reader — waves, framing, labels, the LOD grid, the NN spacing behind
+ * uWaveLocal — sees one consistent picture.
+ */
+const KNOT_GAP = 1.3;
+
 function expandClusters(
 	positions: Float32Array,
 	clusterId: number[],
@@ -117,16 +140,46 @@ function expandClusters(
 }
 
 /**
- * The arrangement the galaxy draws. The positions are the projection with each knot
- * expanded about its own centre; the centroids are recomputed from the result rather
- * than taken from the manifest, so the tags cannot drift from what is actually drawn.
+ * Move every knot's centre out from the origin by `factor`, carrying its members with
+ * it: p → c*factor + (p − c). Knot shape and extent are untouched — only the gaps
+ * grow. Unclustered points are copied through unchanged.
+ */
+function separateKnots(
+	positions: Float32Array,
+	clusterId: number[],
+	k: number,
+	factor: number
+): Float32Array {
+	if (factor === 1) return positions;
+	const centres = centroidsOf(positions, clusterId, k);
+	const out = new Float32Array(positions.length);
+	for (let i = 0; i < clusterId.length; i++) {
+		const c = clusterId[i];
+		if (c < 0 || c >= k) {
+			out[i * 3] = positions[i * 3];
+			out[i * 3 + 1] = positions[i * 3 + 1];
+			out[i * 3 + 2] = positions[i * 3 + 2];
+			continue;
+		}
+		for (let a = 0; a < 3; a++) {
+			const centre = centres[c * 3 + a];
+			out[i * 3 + a] = centre * factor + (positions[i * 3 + a] - centre);
+		}
+	}
+	return out;
+}
+
+/**
+ * The arrangement the galaxy draws. The positions are the projection with the knots
+ * separated by KNOT_GAP; the centroids are recomputed from the result rather than
+ * taken from the manifest, so the tags cannot drift from what is actually drawn.
  */
 export function buildLayout(assets: BirdyAssets): Layout {
-	const positions = expandClusters(
-		assets.positions,
+	const positions = separateKnots(
+		expandClusters(assets.positions, assets.points.clusterId, assets.centroids.k, CLUSTER_SPACING),
 		assets.points.clusterId,
 		assets.centroids.k,
-		CLUSTER_SPACING
+		KNOT_GAP
 	);
 	const counts = new Uint32Array(assets.centroids.k);
 	for (let i = 0; i < assets.points.clusterId.length; i++) {
