@@ -1,3 +1,141 @@
+# Lyrebird — Session Handoff (2026-08-02: v6 BUILT AND PARKED, and a UI sweep is owed)
+
+**v6 is built, verified green by the build's own checks, and DELIBERATELY NOT INSTALLED.**
+It lives at `/tmp/birdy-prod/v6/` (assets + `learned-v6.json`). `app/static/birdy` and
+`data/learned-inventory.json` are untouched and still the **v5** build. The reason for
+parking is one number, below.
+
+**What v6 is.** `pipeline/analysis/run_production_v6.sh` — learn (two-start) -> docrefit ->
+respfit -> build -> verify, run unattended. Learn 08:02-11:01 (**2 h 59 m**), docrefit 23 s,
+respfit 7 m 45 s, build 21 min. 348 461 points, **13 848 clusters**, type coverage
+13 748/13 748 = 100 %, all the build's own checks passed.
+
+**What it gains, all measured:**
+
+| | v5 (installed) | v6 (parked) |
+|---|---|---|
+| median resynthesis cosine | 0.6477 | **0.6790 (+0.0313)** |
+| documented calls with measured texture | **0 of 44** | **9 of 44** |
+| types carrying respiration | **0** | **186** |
+| types carrying two-voice | 3 471 | 3 749 |
+| relations.json | 5.6 MB (hand-trimmed) | **3.7 MB (pipeline-trimmed)** |
+
+The +0.0313 essentially reproduces the debug gate's +0.0330 over 13 704 types, so **the
+two-start's gain holds at production scale**. The encoder basin won a steady **51 %** of
+types across the whole run, identical to debug.
+
+**WHY IT IS PARKED — the song layer lost half its content.**
+
+| | v5 | v6 |
+|---|---|---|
+| species with song types | **98** | **68** |
+| repeat classes | **260** | **82** |
+| motifs | 96 | 82 |
+| grammar chunks | **5 593** | **1 272** |
+
+Repeat classes fell **68 %** and chunks **77 %**. That is not drift: repeat classes are an
+*adopted* result (docs/22 §22.2) recorded as taking species-with-a-song **48 -> 98** with the
+shuffle control unmoved at 0.170 %. v6 lands at 68, most of the way back to the pre-adoption
+baseline. **Installing v6 would trade a syntax headline for a synthesis one**, and this
+project does not get to do that quietly.
+
+**MEASURED, and it is not a bug: the fit objective trades against the syntax layer.**
+
+Run through the pipeline's own `bout_sequences` / `_collapse_runs` against v6's typing, over
+all 44 species that lost every repeat class. **Every one is genuinely under the bar** —
+`SONG_MIN_CLUSTER = 6`, and their best collapsed string is seen:
+
+| times seen | species | |
+|---|---|---|
+| 5 | 7 | **one short of the bar** |
+| 4 | 11 | |
+| 3 | 12 | |
+| 2 | 9 | |
+| 0–1 | 5 | structure genuinely gone |
+
+**41 % (18 of 44) are within two of the threshold.** The detector is behaving exactly as
+specified; nothing is misfiring.
+
+**The mechanism is confirmed by the type counts.** Those 44 species gained types — **mean
++2.1** — against **−0.06 across all 2 423**. More types split the same physical repeat across
+different ids: a bout that collapsed to `('L17',)` six times now collapses to `('L17',)` four
+times and `('L23',)` twice, neither clears 6, and the class vanishes.
+
+**So the finding is a real property of the project, not an accident of this run: the
+syllable-level objective and the sequence-level structure are not aligned.** The two-start
+made the fits measurably better (+0.0313 median cosine, gate-passing, never worse per type)
+and that better typing is a *worse* typing for finding repeats, because finer distinctions
+fracture the runs repeat detection depends on. **Nothing in the pipeline measures this
+trade** — the two-start's gate reads resynthesis cosine and cannot see the song funnel
+narrowing behind it. Any future change to typing should be scored on the song funnel as well
+as on the cosine, and there is currently no gate that does it.
+
+The cheap follow-up, *not* taken: re-run song detection alone against v6's typing at
+`SONG_MIN_CLUSTER = 5` to see whether the structure is fractured or gone. It is minutes and
+needs no refit — but it is exactly the threshold-lowering docs/12 warns against, since the
+constant is pinned at 6 by a permutation control (at 4 the control chains 103 spurious bouts
+into 17 spurious types; at 6 it finds one type over 0.2 % of bouts). Read the control before
+touching the number.
+
+The re-typing itself was clean: the sweep re-chose for **301 of 2 423 species** (87 up to
++50 types, 214 down to −56, net −155 = 1.1 %), **no species dropped or added, zero duplicate
+ids**.
+
+**Two script bugs found by running it, both mine, both fixed in the script:**
+
+1. **`learn --inventory` doubled the inventory.** `cmd_learn` ends with
+   `write_learned_inventory(out, merge_learned_inventory(inventory, document))` — the flag is
+   **merged back into the fit** to preserve the hand-authored calls, and it wants the
+   *authored* `data/inventory.json` (12 species, 44 syllables). The first v6 attempt passed
+   `data/learned-inventory.json` (2 423 species, **13 859 fitted types**), so every fitted
+   type was folded in as though a person had written it: 13 903 -> **27 607** syllables,
+   `hirundo_rustica` at 16 with five ids twice over. The help text ("used for species names
+   and citations, never overwritten") is true and incomplete. **Omit the flag** — the default
+   is the authored file and it is what arms A-D used.
+2. **The build's 9-hour stage was the permutation battery.** The first attempt omitted
+   `--no-relations`, which skips "the permutation tests that say which groupings the geometry
+   corresponds to". It ran 9 h at 268 % CPU and was not hung. `relations.json` is still
+   written either way.
+3. **`verify --assets` is not a flag** — it is `verify --out`. The chain's stage 5 reported
+   `FAILED at verify` for that reason alone. Fixed in the script, and **verify has since been
+   run by hand on the v6 assets: all checks passed** — 348 461 points, 13 848 clusters,
+   point-features mean cosine 0.838 to own centroid against 0.068 to all, calibration
+   monotonic over 100 % of measured beta steps, contract 8.6 worst error 0.03 % F0. So v6 is
+   a complete and verified artefact that is parked on the song number, not a broken one.
+   One projection figure moved and is worth carrying: distance faithfulness pearson
+   **0.667 against v5's 0.691**.
+
+**A UI BUG SWEEP IS OWED, and the agent swarm that was doing it died mid-flight.**
+
+Eight audit agents were dispatched across the app and **all eight failed on a provider quota
+error** (`403 usage limit for this billing cycle`) before returning anything. Nothing was
+audited. The territories they were given are the right ones and are worth re-running when
+quota allows:
+
+- `+page.svelte` **1-1400** (script): state written-but-never-read, effects with stale
+  closures or re-running more than intended, async races where `loadSpecies`/`setChorus`/
+  `sing*` resolve after the state moved, diverged duplicate logic, dead handlers.
+- `+page.svelte` **1400-4469** (markup + styles): dead markup, CSS classes defined-but-unused
+  and used-but-undefined, unreachable branches, and **orphaned copy describing features that
+  no longer exist — bird mode was removed from the points, so hunt its leftovers**.
+- `PointCloud.svelte` + `shaders.ts` + `palette.ts`: leftovers from the day's many reworks
+  (`uMorph`, `aTarget`, `aBird`, `uBird`, `vBird`, `lodLevels`, hysteresis), uniforms declared
+  but never written or read, unused varyings, GLSL dead branches, stats fields written but
+  never displayed, double work across `updateLod`/`updateActiveIndex`/`updateFronts`, and
+  **who disposes the shared cluster texture `KnotMarkers` borrows**.
+- The rest of `galaxy/`: props declared but never passed (and passed but never used),
+  per-frame allocations inside `useTask`, effects missing cleanup, **label-pool `bound`/`slots`
+  desync**, unused exports in `layouts.ts`/`stats.ts`.
+- `data/`: fetch/cache races, endianness and typed-array view bugs on the `.f32` readers,
+  shard-vs-whole-file divergence, error paths that leave assets half-initialised.
+- `audio/`: timer leaks, worklet message races, scheduler edge cases (tempo 0, empty species),
+  `startAmbient` while already running, `stopAmbient` leaving state in flight.
+- `lang/` + `PipelineClient`: dead exports, token/gap off-by-ones, polling leaks.
+
+Known already from this session and worth folding into that sweep: the memberless-knot
+`(0,0,0)` invariant is still unguarded in `ContextPaths`, `Trajectory` and `NodeProjector`;
+and `centroids.json` ships a prose `note` carrying a stale "44 MB" figure.
+
 # Birdy — Session Handoff (2026-08-01, late 5: knot pins, focus cloud, wave reveal)
 
 **Owner round on the pointcloud's readability, all app-side, checks green** (4

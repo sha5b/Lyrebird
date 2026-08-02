@@ -46,9 +46,9 @@
    ],
    "attack": 0.008,
    "hold": true,
-   "harmonic": 0.35,
+   "harmonic": 0.1,
    "am": 140.0,
-   "amDepth": 0.0,
+   "amDepth": 0.6,
    "formants": [
     [
      4378.3,
@@ -56,19 +56,57 @@
      0.15
     ]
    ],
-   "rough": 0.65,
-   "noise": 0.85,
-   "gammaScale": 3.0,
+   "gammaScale": 2.0,
+   "tractQ": 0.0,
+   "noise": 0.25,
+   "rough": 0.0,
    "vib": {
     "rate": 4.0,
-    "depth": 0.025
+    "depth": 0.09
    },
    "learned": {
     "members": 18,
-    "resynthesisCosine": 0.4102,
-    "rivalCosine": 0.2311,
+    "resynthesisCosine": 0.5872,
+    "rivalCosine": 0.1342,
     "nearestOwn": true,
-    "f0ErrorPercent": -3.09
+    "f0ErrorPercent": -5.71
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      307.65
+     ],
+     [
+      0.125,
+      370.15
+     ],
+     [
+      0.25,
+      346.5
+     ],
+     [
+      0.375,
+      281.05
+     ],
+     [
+      0.625,
+      374.65
+     ],
+     [
+      0.875,
+      345.4
+     ],
+     [
+      1.0,
+      371.55
+     ]
+    ],
+    "gamma": 3994.2745948487564,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.05
    }
   },
   {
@@ -78,8 +116,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.044,
-   "level": 1.35,
-   "timbre": "pure",
+   "level": 0.35,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
@@ -90,11 +128,11 @@
      4342.9
     ]
    ],
-   "attack": 0.016,
+   "attack": 0.004,
    "hold": true,
    "harmonic": 0.0,
-   "am": 80.0,
-   "amDepth": 0.0,
+   "am": 28.12,
+   "amDepth": 0.266,
    "formants": [
     [
      4378.3,
@@ -103,14 +141,20 @@
     ]
    ],
    "gammaScale": 6.0,
+   "two": true,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.05
+   },
+   "noise": 0.6,
+   "rough": 0.0,
    "tractQ": 30.0,
-   "noise": 0.05,
    "learned": {
     "members": 16,
-    "resynthesisCosine": 0.7381,
-    "rivalCosine": -0.2998,
+    "resynthesisCosine": 0.8142,
+    "rivalCosine": -0.3686,
     "nearestOwn": true,
-    "f0ErrorPercent": 17.57
+    "f0ErrorPercent": 7.23
    }
   }
  ],
@@ -154,8 +198,7 @@
    "repeatTypes": 0,
    "inTypes": 0,
    "unplaced": 0,
-   "minClusterSize": 6,
-   "controlPlaced": 0
+   "minClusterSize": 6
   }
  }
 }

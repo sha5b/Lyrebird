@@ -13,7 +13,7 @@
    "refs": [],
    "dur": 0.592,
    "level": 1.35,
-   "timbre": "reed",
+   "timbre": "pure",
    "contour": [
     [
      0.0,
@@ -28,23 +28,40 @@
      2385.6
     ]
    ],
-   "attack": 0.016,
+   "attack": 0.008,
    "hold": true,
    "harmonic": 0.0,
    "gammaScale": 0.5,
-   "tractQ": 6.0,
-   "noise": 0.25,
-   "rough": 0.08,
-   "vib": {
-    "rate": 4.0,
-    "depth": 0.01
-   },
+   "tractQ": 12.0,
+   "noise": 0.4,
+   "rough": 0.11632081866264343,
    "learned": {
     "members": 7,
-    "resynthesisCosine": 0.7481,
-    "rivalCosine": 0.6096,
+    "resynthesisCosine": 0.7841,
+    "rivalCosine": 0.6793,
     "nearestOwn": true,
-    "f0ErrorPercent": 0.88
+    "f0ErrorPercent": -0.01
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      3019.0008678369077
+     ],
+     [
+      0.125,
+      3131.7322299328216
+     ],
+     [
+      1.0,
+      3123.483593681901
+     ]
+    ],
+    "gamma": 18117.205617901443,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.02
    }
   },
   {
@@ -72,36 +89,22 @@
    ],
    "attack": 0.03,
    "hold": true,
-   "harmonic": 0.5,
-   "gammaScale": 0.5,
-   "tractQ": 0.0,
-   "noise": 0.85,
-   "rough": 0.65,
-   "am": 80.0,
-   "amDepth": 0.0,
+   "harmonic": 0.2,
+   "gammaScale": 3.0,
+   "tractQ": 12.0,
+   "noise": 0.25,
+   "rough": 0.0,
    "vib": {
-    "rate": 8.0,
-    "depth": 0.01
+    "rate": 4.0,
+    "depth": 0.025
    },
-   "fricative": true,
-   "formants": [
-    [
-     2711.2989394619476,
-     8.0,
-     2.0
-    ],
-    [
-     6830.618534315889,
-     8.0,
-     2.0
-    ]
-   ],
+   "two": true,
    "learned": {
     "members": 20,
-    "resynthesisCosine": 0.7663,
-    "rivalCosine": 0.6787,
+    "resynthesisCosine": 0.8295,
+    "rivalCosine": 0.6759,
     "nearestOwn": true,
-    "f0ErrorPercent": 0.04
+    "f0ErrorPercent": -7.21
    }
   }
  ],
@@ -149,8 +152,7 @@
    "repeatTypes": 0,
    "inTypes": 0,
    "unplaced": 0,
-   "minClusterSize": 6,
-   "controlPlaced": 0
+   "minClusterSize": 6
   }
  }
 }

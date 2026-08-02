@@ -12,8 +12,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.1493,
-   "level": 1.35,
-   "timbre": "reed",
+   "level": 1.05,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
@@ -48,20 +48,66 @@
      891.9
     ]
    ],
-   "attack": 0.0066,
+   "attack": 0.008,
    "hold": true,
    "harmonic": 0.9,
    "gammaScale": 2.0,
-   "tractQ": 3.0,
-   "noise": 0.85,
+   "tractQ": 0.0,
+   "noise": 0.8500000238418579,
+   "rough": 0.0,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
+   },
    "amDepth": 0.3,
    "am": 30.0,
    "learned": {
     "members": 4,
-    "resynthesisCosine": 0.718,
-    "rivalCosine": -0.1395,
+    "resynthesisCosine": 0.8226,
+    "rivalCosine": -0.2893,
     "nearestOwn": true,
-    "f0ErrorPercent": -9.6
+    "f0ErrorPercent": -3.3
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      447.4
+     ],
+     [
+      0.125,
+      404.4
+     ],
+     [
+      0.25,
+      331.7
+     ],
+     [
+      0.5,
+      305.55
+     ],
+     [
+      0.625,
+      502.9
+     ],
+     [
+      0.75,
+      477.55
+     ],
+     [
+      0.875,
+      321.85
+     ],
+     [
+      1.0,
+      445.95
+     ]
+    ],
+    "gamma": 4667.909143490229,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.02
    }
   },
   {
@@ -71,8 +117,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.104,
-   "level": 1.35,
-   "timbre": "pure",
+   "level": 1.05,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
@@ -99,24 +145,25 @@
      3704.1
     ]
    ],
-   "attack": 0.0293,
+   "attack": 0.12,
    "hold": false,
    "harmonic": 0.0,
-   "am": 13.16,
-   "amDepth": 0.0,
-   "gammaScale": 4.5,
+   "gammaScale": 3.0,
    "tractQ": 30.0,
-   "two": true,
+   "noise": 0.0,
+   "rough": 0.65,
+   "amDepth": 0.3,
+   "am": 30.0,
    "vib": {
     "rate": 12.0,
-    "depth": 0.05
+    "depth": 0.01
    },
    "learned": {
     "members": 21,
-    "resynthesisCosine": 0.8317,
-    "rivalCosine": -0.4007,
+    "resynthesisCosine": 0.8188,
+    "rivalCosine": -0.5167,
     "nearestOwn": true,
-    "f0ErrorPercent": -7.35
+    "f0ErrorPercent": -6.16
    }
   }
  ],
@@ -160,8 +207,7 @@
    "repeatTypes": 0,
    "inTypes": 0,
    "unplaced": 0,
-   "minClusterSize": 6,
-   "controlPlaced": 0
+   "minClusterSize": 6
   }
  }
 }

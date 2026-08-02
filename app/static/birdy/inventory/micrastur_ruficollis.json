@@ -12,8 +12,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.08,
-   "level": 1.35,
-   "timbre": "buzz",
+   "level": 1.05,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
@@ -36,11 +36,11 @@
      2041.2
     ]
    ],
-   "attack": 0.03,
+   "attack": 0.016,
    "hold": false,
-   "harmonic": 0.5,
+   "harmonic": 0.0,
    "am": 15.65,
-   "amDepth": 0.8,
+   "amDepth": 0.45,
    "formants": [
     [
      1920.5,
@@ -58,20 +58,20 @@
      0.2
     ]
    ],
-   "gammaScale": 0.5,
+   "gammaScale": 2.0,
    "tractQ": 30.0,
-   "noise": 0.12,
    "rough": 0.65,
+   "two": true,
    "vib": {
-    "rate": 8.0,
+    "rate": 34.0,
     "depth": 0.09
    },
    "learned": {
     "members": 26,
-    "resynthesisCosine": 0.5869,
-    "rivalCosine": -0.1792,
+    "resynthesisCosine": 0.6015,
+    "rivalCosine": -0.0486,
     "nearestOwn": true,
-    "f0ErrorPercent": 3.21
+    "f0ErrorPercent": 17.73
    }
   },
   {
@@ -81,7 +81,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.088,
-   "level": 0.3,
+   "level": 0.75,
    "timbre": "buzz",
    "contour": [
     [
@@ -101,32 +101,38 @@
      4106.4
     ]
    ],
-   "attack": 0.004,
+   "attack": 0.008,
    "hold": true,
    "harmonic": 0.9,
    "formants": [
     [
      2289.5188831594724,
      2.0,
-     2.0
+     0.5
     ],
     [
      4368.450554124434,
      2.0,
-     2.0
+     0.5
     ]
    ],
-   "gammaScale": 4.5,
-   "noise": 0.12,
-   "amDepth": 0.45,
+   "gammaScale": 6.0,
+   "tractQ": 0.0,
+   "noise": 0.05,
+   "rough": 0.08,
    "am": 140.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.05
+   },
    "fricative": true,
    "learned": {
     "members": 5,
-    "resynthesisCosine": 0.6939,
-    "rivalCosine": -0.0184,
+    "resynthesisCosine": 0.7033,
+    "rivalCosine": 0.001,
     "nearestOwn": true,
-    "f0ErrorPercent": 7.11
+    "f0ErrorPercent": 4.44
    }
   }
  ],
@@ -175,8 +181,7 @@
    "repeatTypes": 0,
    "inTypes": 0,
    "unplaced": 0,
-   "minClusterSize": 6,
-   "controlPlaced": 0
+   "minClusterSize": 6
   }
  }
 }

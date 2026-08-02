@@ -7,94 +7,139 @@
  "syllables": [
   {
    "id": "L00",
-   "label": "learned L00 \u00b7 663 Hz \u00b7 40 ms",
+   "label": "learned L00 \u00b7 475 Hz \u00b7 44 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.04,
+   "dur": 0.044,
    "level": 0.3,
-   "timbre": "reed",
+   "timbre": "pure",
    "contour": [
     [
      0.0,
-     657.1
+     444.9
     ],
     [
-     0.25,
-     655.7
+     0.375,
+     441.2
     ],
     [
      0.5,
-     576.3
+     490.1
     ],
     [
      0.625,
-     628.0
+     500.9
     ],
     [
      0.75,
-     626.8
+     458.0
+    ],
+    [
+     0.875,
+     502.6
     ],
     [
      1.0,
-     867.5
+     494.3
     ]
    ],
    "attack": 0.016,
    "hold": false,
-   "harmonic": 0.0,
-   "am": 140.0,
-   "amDepth": 0.8,
-   "gammaScale": 0.5,
-   "tractQ": 3.0,
-   "noise": 0.85,
-   "rough": 0.65,
+   "harmonic": 0.35,
+   "am": 25.0,
+   "amDepth": 0.6,
+   "formants": [
+    [
+     2447.2,
+     6.0,
+     1.0
+    ],
+    [
+     7341.7,
+     6.0,
+     0.3333
+    ]
+   ],
+   "noise": 0.0,
+   "rough": 0.2,
    "vib": {
-    "rate": 12.0,
-    "depth": 0.05
+    "rate": 34.0,
+    "depth": 0.025
    },
+   "gammaScale": 1.5,
+   "tractQ": 3.0,
    "learned": {
-    "members": 11,
-    "resynthesisCosine": 0.3973,
-    "rivalCosine": 0.0201,
+    "members": 6,
+    "resynthesisCosine": 0.4002,
+    "rivalCosine": 0.032,
     "nearestOwn": true,
-    "f0ErrorPercent": -5.7
+    "f0ErrorPercent": -4.4
    }
   },
   {
-   "id": "L01",
-   "label": "learned L01 \u00b7 2372 Hz \u00b7 81 ms",
+   "id": "L02",
+   "label": "learned L02 \u00b7 2430 Hz \u00b7 43 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0814,
-   "level": 0.9,
-   "timbre": "buzz",
+   "dur": 0.0427,
+   "level": 1.35,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
-     2365.2
+     2394.9
     ],
     [
      1.0,
-     2378.8
+     2465.2
     ]
    ],
-   "attack": 0.016,
+   "attack": 0.008,
    "hold": true,
    "harmonic": 0.0,
-   "am": 25.0,
-   "amDepth": 0.8,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     2447.2,
+     6.0,
+     1.0
+    ],
+    [
+     7341.7,
+     6.0,
+     0.3333
+    ]
+   ],
    "gammaScale": 0.5,
-   "tractQ": 6.0,
-   "rough": 0.65,
-   "two": true,
+   "tractQ": 30.0,
+   "noise": 0.6,
+   "rough": 0.4,
    "learned": {
-    "members": 14,
-    "resynthesisCosine": 0.3188,
-    "rivalCosine": -0.4011,
+    "members": 19,
+    "resynthesisCosine": 0.4735,
+    "rivalCosine": -0.2893,
     "nearestOwn": true,
-    "f0ErrorPercent": -1.54
+    "f0ErrorPercent": -1.23
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      1796.1750000000002
+     ],
+     [
+      1.0,
+      1848.8999999999999
+     ]
+    ],
+    "gamma": 10681.359984154331,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.02
    }
   }
  ],
@@ -107,8 +152,8 @@
    "confidence": "invented",
    "refs": [],
    "sequence": [
-    "L00",
-    "L00"
+    "L02",
+    "L02"
    ],
    "gaps": [
     0.06
@@ -117,21 +162,22 @@
  ],
  "grammar": {
   "start": [
-   "L00",
-   "L01"
+   "L02",
+   "L00"
   ],
   "transitions": {
    "L00": {
-    "end": 0.5,
-    "L00": 0.5
+    "L00": 0.6,
+    "end": 0.4
    },
-   "L01": {
-    "L01": 1.0
+   "L02": {
+    "L02": 0.7778,
+    "end": 0.2222
    }
   },
   "gaps": {
-   "L00>L00": 0.411,
-   "L01>L01": 0.048
+   "L00>L00": 0.72,
+   "L02>L02": 0.095
   },
   "songTyping": {
    "bouts": 6,
@@ -142,8 +188,7 @@
    "repeatTypes": 0,
    "inTypes": 0,
    "unplaced": 0,
-   "minClusterSize": 6,
-   "controlPlaced": 0
+   "minClusterSize": 6
   }
  }
 }

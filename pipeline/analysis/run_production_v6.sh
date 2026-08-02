@@ -93,7 +93,7 @@ uv run birdy-pipeline build \
 tail -20 "$STAGE/build.log" | tee -a "$LOG"
 
 say "stage 5: verify the built assets"
-uv run birdy-pipeline verify --assets "$STAGE/assets" >> "$STAGE/verify.log" 2>&1 || die "verify"
+uv run birdy-pipeline verify --out "$STAGE/assets" >> "$STAGE/verify.log" 2>&1 || die "verify"
 tail -6 "$STAGE/verify.log" | tee -a "$LOG"
 
 say "CHAIN COMPLETE - nothing installed yet, by design"

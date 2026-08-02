@@ -6,98 +6,37 @@
  "summary": "Learned from 2 field recordings: 2 syllable types fitted from 32 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
-   "id": "L00",
-   "label": "learned L00 \u00b7 457 Hz \u00b7 91 ms",
-   "function": "",
-   "confidence": "unlabelled",
-   "refs": [],
-   "dur": 0.0907,
-   "level": 1.05,
-   "timbre": "reed",
-   "contour": [
-    [
-     0.0,
-     482.0
-    ],
-    [
-     0.375,
-     457.0
-    ],
-    [
-     0.625,
-     470.4
-    ],
-    [
-     1.0,
-     421.4
-    ]
-   ],
-   "attack": 0.004,
-   "hold": true,
-   "harmonic": 0.35,
-   "am": 80.0,
-   "amDepth": 0.15,
-   "vib": {
-    "rate": 4.0,
-    "depth": 0.025
-   },
-   "formants": [
-    [
-     6000.0,
-     6.0,
-     1.0
-    ]
-   ],
-   "tractQ": 0.0,
-   "rough": 0.65,
-   "learned": {
-    "members": 9,
-    "resynthesisCosine": 0.4726,
-    "rivalCosine": 0.6052,
-    "nearestOwn": false,
-    "f0ErrorPercent": 8.56
-   }
-  },
-  {
    "id": "L01",
-   "label": "learned L01 \u00b7 505 Hz \u00b7 53 ms",
+   "label": "learned L01 \u00b7 496 Hz \u00b7 59 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0533,
-   "level": 0.35,
-   "timbre": "buzz",
+   "dur": 0.0587,
+   "level": 0.3,
+   "timbre": "pure",
    "contour": [
     [
      0.0,
-     518.7
+     503.5
     ],
     [
      0.375,
-     539.8
+     527.4
     ],
     [
      0.5,
-     506.0
-    ],
-    [
-     0.625,
-     509.7
-    ],
-    [
-     0.75,
-     479.4
+     483.3
     ],
     [
      1.0,
-     480.5
+     472.0
     ]
    ],
-   "attack": 0.0053,
+   "attack": 0.12,
    "hold": false,
-   "harmonic": 1.0,
-   "am": 30.61,
-   "amDepth": 0.15,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.3,
    "formants": [
     [
      6000.0,
@@ -106,12 +45,84 @@
     ]
    ],
    "gammaScale": 1.5,
+   "tractQ": 6.0,
+   "noise": 0.0,
+   "rough": 0.20385456085205078,
+   "two": true,
    "learned": {
-    "members": 23,
-    "resynthesisCosine": 0.7018,
-    "rivalCosine": 0.233,
+    "members": 31,
+    "resynthesisCosine": 0.7642,
+    "rivalCosine": -0.0178,
     "nearestOwn": true,
-    "f0ErrorPercent": 2.15
+    "f0ErrorPercent": 3.02
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      251.75
+     ],
+     [
+      0.375,
+      263.7
+     ],
+     [
+      0.5,
+      241.65
+     ],
+     [
+      1.0,
+      236.0
+     ]
+    ],
+    "gamma": 2907.8373832852094,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.2
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 1025 Hz \u00b7 27 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0267,
+   "level": 0.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1051.3
+    ],
+    [
+     1.0,
+     999.4
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.7,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 3.0,
+   "noise": 0.6,
+   "am": 25.0,
+   "amDepth": 0.15,
+   "rough": 0.4,
+   "learned": {
+    "members": 1,
+    "resynthesisCosine": 0.8033,
+    "rivalCosine": -0.0628,
+    "nearestOwn": true,
+    "f0ErrorPercent": 36.92
    }
   }
  ],
@@ -134,33 +145,30 @@
  ],
  "grammar": {
   "start": [
-   "L01",
-   "L00"
+   "L01"
   ],
   "transitions": {
-   "L00": {
-    "L00": 1.0
-   },
    "L01": {
-    "L01": 0.7826,
-    "end": 0.2174
+    "L01": 0.8,
+    "end": 0.2
+   },
+   "L02": {
+    "L01": 1.0
    }
   },
   "gaps": {
-   "L00>L00": 0.029,
-   "L01>L01": 0.063
+   "L01>L01": 0.047
   },
   "songTyping": {
    "bouts": 6,
-   "short": 6,
-   "candidates": 0,
-   "repeatCandidates": 4,
+   "short": 5,
+   "candidates": 1,
+   "repeatCandidates": 3,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,
-   "unplaced": 0,
-   "minClusterSize": 6,
-   "controlPlaced": 0
+   "unplaced": 1,
+   "minClusterSize": 6
   }
  }
 }

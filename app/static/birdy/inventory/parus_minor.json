@@ -177,88 +177,121 @@
    ]
   },
   {
-   "id": "L32",
-   "label": "learned L32 \u00b7 5131 Hz \u00b7 261 ms",
+   "id": "L33",
+   "label": "learned L33 \u00b7 554 Hz \u00b7 29 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.2613,
+   "dur": 0.0293,
+   "level": 0.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     554.7
+    ],
+    [
+     1.0,
+     552.6
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 1.0,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.15
+    ]
+   ],
+   "gammaScale": 6.0,
+   "noise": 0.4,
+   "amDepth": 0.8,
+   "am": 140.0,
+   "learned": {
+    "members": 1,
+    "resynthesisCosine": 0.7933,
+    "rivalCosine": -0.7651,
+    "nearestOwn": true,
+    "f0ErrorPercent": 7.79
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      277.35
+     ],
+     [
+      1.0,
+      276.3
+     ]
+    ],
+    "gamma": 3245.114614231131,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.1
+   }
+  },
+  {
+   "id": "L32",
+   "label": "learned L32 \u00b7 4999 Hz \u00b7 251 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2506,
    "level": 1.35,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     6030.2
+     6083.4
     ],
     [
      0.125,
-     6373.6
+     6357.1
     ],
     [
      0.25,
-     6248.9
+     6251.2
     ],
     [
      0.375,
-     3377.8
+     3398.2
+    ],
+    [
+     0.75,
+     4302.4
     ],
     [
      1.0,
-     4384.5
+     4415.1
     ]
    ],
-   "attack": 0.06,
+   "attack": 0.03,
    "hold": false,
    "harmonic": 0.0,
-   "am": 45.0,
-   "amDepth": 0.3,
+   "am": 140.0,
+   "amDepth": 0.8,
    "vib": {
-    "rate": 4.0,
-    "depth": 0.253
+    "rate": 4.04,
+    "depth": 0.09
    },
-   "rough": 0.08,
-   "two": true,
-   "learned": {
-    "members": 27,
-    "resynthesisCosine": 0.8868,
-    "rivalCosine": -0.357,
-    "nearestOwn": true,
-    "f0ErrorPercent": -18.89
-   }
-  },
-  {
-   "id": "L31",
-   "label": "learned L31 \u00b7 6351 Hz \u00b7 48 ms",
-   "function": "",
-   "confidence": "unlabelled",
-   "refs": [],
-   "dur": 0.048,
-   "level": 0.45,
-   "timbre": "buzz",
-   "contour": [
+   "formants": [
     [
-     0.0,
-     6098.9
-    ],
-    [
-     1.0,
-     6613.2
+     6000.0,
+     6.0,
+     0.15
     ]
    ],
-   "attack": 0.016,
-   "hold": false,
-   "harmonic": 0.35,
-   "gammaScale": 1.5,
-   "rough": 0.65,
-   "amDepth": 0.15,
-   "am": 12.0,
-   "tractQ": 6.0,
+   "rough": 0.08,
    "learned": {
-    "members": 4,
-    "resynthesisCosine": 0.646,
-    "rivalCosine": -0.0256,
+    "members": 30,
+    "resynthesisCosine": 0.8544,
+    "rivalCosine": -0.8476,
     "nearestOwn": true,
-    "f0ErrorPercent": -0.7
+    "f0ErrorPercent": -26.57
    }
   }
  ],
@@ -368,33 +401,30 @@
    "confidence": "invented",
    "refs": [],
    "sequence": [
-    "L31",
     "L32",
     "L32"
    ],
    "gaps": [
-    0.06,
     0.06
    ]
   }
  ],
  "grammar": {
   "start": [
-   "L31",
-   "L32"
+   "L32",
+   "L33"
   ],
   "transitions": {
-   "L31": {
-    "L32": 1.0
-   },
    "L32": {
-    "L32": 0.7778,
-    "end": 0.2222
+    "L32": 0.8333,
+    "end": 0.1667
+   },
+   "L33": {
+    "end": 1.0
    }
   },
   "gaps": {
-   "L31>L32": 0.044,
-   "L32>L32": 0.149
+   "L32>L32": 0.147
   },
   "songTyping": {
    "bouts": 6,
@@ -405,8 +435,7 @@
    "repeatTypes": 0,
    "inTypes": 0,
    "unplaced": 0,
-   "minClusterSize": 6,
-   "controlPlaced": 0
+   "minClusterSize": 6
   }
  },
  "learnedFrom": "Learned from 1 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them."

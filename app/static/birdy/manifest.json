@@ -1,100 +1,100 @@
 {
- "builtAt": "2026-08-01T14:51:27+00:00",
+ "builtAt": "2026-08-02T09:27:35+00:00",
  "pipeline": "birdy-pipeline",
  "contract": "docs/08-implementation.md v1",
  "inventoryVersion": 1,
  "inventorySource": {
-  "path": "/home/sha5b/Documents/GitHub/Birdy/data/learned-inventory.json",
-  "name": "learned-inventory.json",
-  "writtenAt": "2026-08-01T08:29:24+00:00",
+  "path": "/tmp/birdy-prod/v6/learned-v6.json",
+  "name": "learned-v6.json",
+  "writtenAt": "2026-08-02T09:09:20+00:00",
   "species": 2423,
-  "syllables": 13903
+  "syllables": 13748
  },
  "typeCoverage": {
-  "types": 13903,
-  "withCluster": 13903,
+  "types": 13748,
+  "withCluster": 13748,
   "orphans": [],
   "share": 1.0
  },
  "relations": null,
  "clusterPlan": {
-  "k": 14003,
-  "types": 13903,
-  "typeSeeds": 13903,
+  "k": 13848,
+  "types": 13748,
+  "typeSeeds": 13748,
   "sourceSplitTypes": 0,
   "unlabelledPoints": 20241,
   "allowance": 100,
-  "wanted": 14003,
+  "wanted": 13848,
   "capped": false,
   "cap": null,
-  "seededTypes": 13903,
+  "seededTypes": 13748,
   "typesLost": 0,
   "splitKnotsLost": 0,
   "assignment": "labelled points assigned to their own type's source blob; kmeans over the points with no label"
  },
  "points": 348461,
  "pointsDropped": 0,
- "clusters": 14003,
+ "clusters": 13848,
  "dims": 28,
  "seed": 0,
  "projection": "cmds",
  "projectionParams": {
   "eigenvalues": [
-   120.78702193204907,
-   62.4108257480183,
-   47.49465804812995
+   120.98018817095262,
+   62.1529751892235,
+   47.66326866135163
   ],
   "varianceRatio": [
-   0.17237684299395584,
-   0.08906735954746443,
-   0.06778028866395805
+   0.17251078579150508,
+   0.08862656564909556,
+   0.06796507803858415
   ],
-  "negativeEigenvalueMass": 0.40861832461981346,
+  "negativeEigenvalueMass": 0.40836214984964236,
   "landmarks": 800,
   "mode": "landmark",
   "metric": "cosine"
  },
  "faithfulness": {
-  "pearson": 0.6908,
-  "spearman": 0.6893,
+  "pearson": 0.6672,
+  "spearman": 0.6655,
   "pairs": 200000,
   "definition": "correlation between 32-d cosine distance and 3D euclidean distance over random point pairs; 1.0 = distances fully meaningful"
  },
  "knnAgreement": {
   "k": 10,
-  "value": 0.1199,
+  "value": 0.0849,
   "definition": "share of a point's 3D k nearest neighbours sharing its type"
  },
  "tearing": {
-  "measured": 8052,
-  "torn": 32,
-  "severe": 4,
-  "median": 2.083,
-  "worstGap": 0.814,
+  "measured": 6733,
+  "torn": 386,
+  "severe": 77,
+  "median": 2.342,
+  "worstGap": 1.269,
   "definition": "clusters this projection draws in two places at once, so their centroid \u2014 where the label, the trajectory and the wave all go \u2014 lands between two blobs instead of on the points; splitting a single blob scores ~2, so 2 is the null and 'torn' counts above 5"
  },
  "projectionComparison": {
   "cmds": {
    "faithfulness": {
-    "pearson": 0.6908,
-    "spearman": 0.6893,
+    "pearson": 0.6672,
+    "spearman": 0.6655,
     "pairs": 200000
    },
-   "knnAgreement": 0.1199,
-   "purity": 0.9451,
-   "meanRadius": 0.8266,
+   "knnAgreement": 0.0849,
+   "purity": 0.9452,
+   "meanRadius": 0.8012,
    "params": {
     "eigenvalues": [
-     120.78702193204907,
-     62.4108257480183,
-     47.49465804812995
+     120.98018817095262,
+     62.1529751892235,
+     47.66326866135163
     ],
     "varianceRatio": [
-     0.17237684299395584,
-     0.08906735954746443,
-     0.06778028866395805
+     0.17251078579150508,
+     0.08862656564909556,
+     0.06796507803858415
     ],
-    "negativeEigenvalueMass": 0.40861832461981346,
+    "negativeEigenvalueMass": 0.40836214984964236,
     "landmarks": 800,
     "mode": "landmark",
     "metric": "cosine"
@@ -117,17 +117,17 @@
    "evalRecordings": 1547,
    "split": "by recording, 80/20; every knob \u2014 penalties, sigma, and which map class ships \u2014 was chosen on a further 80/20 split of the fit side, never on these rows",
    "lambda": 0.1,
-   "medianCosine": 0.9176,
-   "meanCosine": 0.904,
+   "medianCosine": 0.9174,
+   "meanCosine": 0.9038,
    "deciles": [
-    0.8361,
-    0.8715,
-    0.8918,
-    0.9061,
-    0.9176,
-    0.9276,
+    0.8358,
+    0.8712,
+    0.8916,
+    0.9059,
+    0.9174,
+    0.9274,
     0.9367,
-    0.946,
+    0.9459,
     0.9566
    ],
    "target": 0.8,
@@ -136,17 +136,17 @@
    "kind": "rff-ridge",
    "sigma": 6.0,
    "D": 2048,
-   "centroidAgreement": 0.4909,
+   "centroidAgreement": 0.3977,
    "centroidAgreementDefinition": "share of held-out syllables whose nearest cluster centroid of this galaxy is the same through the 28-d -> 32-d map as through the critic",
-   "centroidAgreementTieAdjusted": 0.7056,
+   "centroidAgreementTieAdjusted": 0.6785,
    "centroidAgreementTieAdjustedDefinition": "the same agreement with boundary near-ties excluded (true-space top-2 margin under 0.05; the share of flips that are a near-miss between adjacent knots rather than a wrong bird, per docs/20)",
-   "speciesAgreement": 0.5619,
+   "speciesAgreement": 0.5094,
    "speciesAgreementDefinition": "share of held-out syllables whose nearest knot carries the same majority species through the map as through the critic \u2014 the honest single-label claim; knot-level answers are 'nearest of several close knots' (docs/20 \u00a720.2)"
   },
   "centroidVectors": "vector32 = 32-d embedding centroid (primary); vector = 28-d centroid over the same members, for the pre-embedding fallback"
  },
  "kmeans": {
-  "k": 14003,
+  "k": 13848,
   "nInit": 3,
   "fittedOver": "the points with no label only",
   "assignment": "labelled points assigned to their own type's source blob; kmeans over the points with no label",
@@ -163,7 +163,7 @@
   "bytes": 11150752,
   "dims": 8,
   "space": "PCA of the standardised 32-d feature space, rows unit-normalised",
-  "varianceRatioTotal": 0.6111,
+  "varianceRatioTotal": 0.6089,
   "purpose": "per-point render response only; the reported match still uses the cluster centroid vectors"
  },
  "functionClasses": {
@@ -225,7 +225,7 @@
    ]
   },
   "counts": {
-   "unclassified": 13950,
+   "unclassified": 13795,
    "structural": 24,
    "alarm": 11,
    "territorial": 10,
@@ -3826,12 +3826,12 @@
  },
  "durationSeconds": [
   0.0254,
-  4.2915
+  3.3499
  ],
- "clusterPurity": 0.9451,
+ "clusterPurity": 0.9452,
  "clusterPurityNote": "1.0 by construction: label assignment puts each typed point in its own type's cluster, so purity and typeCoverage measure nothing here. The statistic that still measures the map is whether a point's nearest centroid is its own type's knot (docs/22 \u00a722.8)",
  "unassigned": 0,
- "meanRadius": 0.8266,
+ "meanRadius": 0.8012,
  "files": [
   "manifest.json",
   "inventory.json",

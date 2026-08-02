@@ -6,37 +6,53 @@
  "summary": "Learned from 2 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
-   "id": "L00",
-   "label": "learned L00 \u00b7 1993 Hz \u00b7 61 ms",
+   "id": "L02",
+   "label": "learned L02 \u00b7 512 Hz \u00b7 103 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0614,
-   "level": 1.05,
+   "dur": 0.1026,
+   "level": 0.4004899561405182,
    "timbre": "reed",
    "contour": [
     [
      0.0,
-     3353.0
+     524.7
     ],
     [
      0.125,
-     1662.4
+     500.3
     ],
     [
      0.25,
-     1639.5
+     527.7
+    ],
+    [
+     0.375,
+     496.9
+    ],
+    [
+     0.5,
+     493.8
+    ],
+    [
+     0.625,
+     525.4
+    ],
+    [
+     0.875,
+     524.1
     ],
     [
      1.0,
-     1728.0
+     501.2
     ]
    ],
    "attack": 0.004,
    "hold": true,
-   "harmonic": 0.0,
-   "am": 45.0,
-   "amDepth": 0.15,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.6,
    "formants": [
     [
      4378.3,
@@ -44,82 +60,67 @@
      0.6
     ]
    ],
-   "gammaScale": 3.0,
+   "gammaScale": 1.5,
    "tractQ": 3.0,
-   "noise": 0.05,
-   "two": true,
+   "noise": 0.0,
+   "rough": 0.0,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.05
+   },
    "learned": {
-    "members": 20,
-    "resynthesisCosine": 0.5419,
-    "rivalCosine": 0.3373,
+    "members": 10,
+    "resynthesisCosine": 0.6653,
+    "rivalCosine": 0.1169,
     "nearestOwn": true,
-    "f0ErrorPercent": 17.53
+    "f0ErrorPercent": 0.02
    }
   },
   {
-   "id": "L01",
-   "label": "learned L01 \u00b7 4766 Hz \u00b7 611 ms",
+   "id": "L03",
+   "label": "learned L03 \u00b7 4628 Hz \u00b7 80 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.6107,
-   "level": 0.3,
-   "timbre": "buzz",
+   "dur": 0.08,
+   "level": 0.6,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
-     4699.7
-    ],
-    [
-     0.125,
-     4878.5
-    ],
-    [
-     0.25,
-     4790.0
-    ],
-    [
-     0.375,
-     5011.0
-    ],
-    [
-     0.5,
-     4703.6
+     4617.9
     ],
     [
      1.0,
-     4528.4
+     4638.5
     ]
    ],
-   "attack": 0.12,
+   "attack": 0.004,
    "hold": true,
-   "harmonic": 0.1,
-   "am": 9.49,
-   "amDepth": 0.0,
-   "vib": {
-    "rate": 22.0,
-    "depth": 0.025
-   },
+   "harmonic": 0.9,
    "formants": [
     [
-     845.2861410183435,
-     8.0,
-     2.0
-    ],
-    [
-     5083.5393171114765,
-     8.0,
-     2.0
+     4378.3,
+     6.0,
+     0.6
     ]
    ],
-   "gammaScale": 2.0,
-   "fricative": true,
+   "gammaScale": 1.0,
+   "tractQ": 3.0,
+   "noise": 0.12,
+   "rough": 0.2,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.01
+   },
    "learned": {
-    "members": 9,
-    "resynthesisCosine": 0.4729,
-    "rivalCosine": 0.1116,
+    "members": 19,
+    "resynthesisCosine": 0.6185,
+    "rivalCosine": 0.2624,
     "nearestOwn": true,
-    "f0ErrorPercent": -2.25
+    "f0ErrorPercent": 0.61
    }
   }
  ],
@@ -132,44 +133,55 @@
    "confidence": "invented",
    "refs": [],
    "sequence": [
-    "L00",
-    "L00"
+    "L03",
+    "L03",
+    "L02",
+    "L02",
+    "L03",
+    "L03"
    ],
    "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
     0.06
    ]
   }
  ],
  "grammar": {
   "start": [
-   "L00",
-   "L01"
+   "L03",
+   "L02"
   ],
   "transitions": {
-   "L00": {
-    "L00": 0.8,
+   "L02": {
+    "L02": 0.5,
+    "L03": 0.3,
     "end": 0.2
    },
-   "L01": {
-    "L01": 0.6667,
-    "end": 0.3333
+   "L03": {
+    "L03": 0.6316,
+    "end": 0.2632,
+    "L02": 0.1053
    }
   },
   "gaps": {
-   "L00>L00": 0.135,
-   "L01>L01": 0.023
+   "L02>L02": 0.208,
+   "L02>L03": 0.179,
+   "L03>L02": 0.111,
+   "L03>L03": 0.064
   },
   "songTyping": {
    "bouts": 7,
-   "short": 7,
-   "candidates": 0,
-   "repeatCandidates": 4,
+   "short": 5,
+   "candidates": 2,
+   "repeatCandidates": 2,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,
-   "unplaced": 0,
-   "minClusterSize": 6,
-   "controlPlaced": 0
+   "unplaced": 2,
+   "minClusterSize": 6
   }
  }
 }

@@ -6,93 +6,123 @@
  "summary": "Learned from 1 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
-   "id": "L00",
-   "label": "learned L00 \u00b7 3182 Hz \u00b7 72 ms",
+   "id": "L02",
+   "label": "learned L02 \u00b7 1433 Hz \u00b7 43 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.072,
-   "level": 1.35,
+   "dur": 0.0427,
+   "level": 0.75,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     3276.2
+     804.7
+    ],
+    [
+     0.125,
+     1263.9
+    ],
+    [
+     0.375,
+     2674.8
+    ],
+    [
+     0.5,
+     2652.2
+    ],
+    [
+     0.625,
+     2223.8
+    ],
+    [
+     0.75,
+     1581.4
+    ],
+    [
+     0.875,
+     1035.5
     ],
     [
      1.0,
-     3090.2
+     678.0
     ]
    ],
-   "attack": 0.0347,
+   "attack": 0.12,
    "hold": false,
    "harmonic": 0.0,
-   "am": 12.0,
-   "amDepth": 0.6,
+   "am": 25.0,
+   "amDepth": 0.8,
    "gammaScale": 0.5,
-   "tractQ": 30.0,
-   "noise": 0.12,
+   "tractQ": 0.11810935917207468,
+   "noise": 0.85,
+   "rough": 0.2,
    "learned": {
-    "members": 19,
-    "resynthesisCosine": 0.4706,
-    "rivalCosine": -0.0738,
+    "members": 2,
+    "resynthesisCosine": 0.7842,
+    "rivalCosine": -0.0688,
     "nearestOwn": true,
-    "f0ErrorPercent": -0.74
+    "f0ErrorPercent": -10.15
+   },
+   "respiration": {
+    "tauX": 0.022360679774997897,
+    "tauP": 0.012574334296829354,
+    "alphaI": 0.05,
+    "alphaRel": 0.125,
+    "forcing": 20.0
    }
   },
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 3534 Hz \u00b7 39 ms",
+   "label": "learned L01 \u00b7 3267 Hz \u00b7 43 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0387,
-   "level": 0.6,
+   "dur": 0.0427,
+   "level": 0.9,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     3488.7
-    ],
-    [
-     0.25,
-     3490.0
-    ],
-    [
-     0.375,
-     3884.6
-    ],
-    [
-     0.625,
-     3778.5
-    ],
-    [
-     0.75,
-     3309.6
+     3380.2
     ],
     [
      1.0,
-     3295.5
+     3158.3
     ]
    ],
-   "attack": 0.008,
-   "hold": false,
+   "attack": 0.004,
+   "hold": true,
    "harmonic": 0.0,
-   "am": 80.0,
-   "amDepth": 0.45,
    "gammaScale": 0.5,
-   "tractQ": 30.0,
-   "noise": 0.05,
-   "vib": {
-    "rate": 12.0,
-    "depth": 0.01
-   },
+   "tractQ": 12.0,
+   "noise": 0.12,
+   "rough": 0.4,
+   "amDepth": 0.15,
+   "am": 140.0,
    "learned": {
-    "members": 8,
-    "resynthesisCosine": 0.3965,
-    "rivalCosine": 0.3542,
+    "members": 25,
+    "resynthesisCosine": 0.4889,
+    "rivalCosine": -0.1469,
     "nearestOwn": true,
-    "f0ErrorPercent": 7.84
+    "f0ErrorPercent": 0.33
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      2535.1499999999996
+     ],
+     [
+      1.0,
+      2368.7250000000004
+     ]
+    ],
+    "gamma": 7181.657239531594,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.2
    }
   }
  ],
@@ -105,44 +135,51 @@
    "confidence": "invented",
    "refs": [],
    "sequence": [
-    "L00",
-    "L00"
+    "L01",
+    "L01",
+    "L02",
+    "L01",
+    "L01",
+    "L02"
    ],
    "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
     0.06
    ]
   }
  ],
  "grammar": {
   "start": [
-   "L00",
    "L01"
   ],
   "transitions": {
-   "L00": {
-    "end": 0.6667,
-    "L00": 0.3333
-   },
    "L01": {
-    "end": 0.7143,
-    "L01": 0.2857
+    "end": 0.64,
+    "L01": 0.28,
+    "L02": 0.08
+   },
+   "L02": {
+    "end": 0.5,
+    "L01": 0.5
    }
   },
   "gaps": {
-   "L00>L00": 0.237,
-   "L01>L01": 0.237
+   "L01>L01": 0.301,
+   "L01>L02": 0.507
   },
   "songTyping": {
    "bouts": 17,
-   "short": 17,
-   "candidates": 0,
-   "repeatCandidates": 2,
+   "short": 16,
+   "candidates": 1,
+   "repeatCandidates": 1,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,
-   "unplaced": 0,
-   "minClusterSize": 6,
-   "controlPlaced": 0
+   "unplaced": 1,
+   "minClusterSize": 6
   }
  }
 }
