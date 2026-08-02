@@ -25,10 +25,11 @@
 	 * Which GPU the browser gave us.
 	 *
 	 * Read once, and through `WEBGL_debug_renderer_info` because the plain `RENDERER`
-	 * string is masked to a generic value in most browsers. Firefox withholds the
-	 * unmasked string unless `webgl.enable-debug-renderer-info` is set, so the masked
-	 * string is the fallback rather than an error: a vague answer still distinguishes a
-	 * software rasteriser from a real one.
+	 * string is masked to a generic value in most browsers. That extension is
+	 * deprecated in Firefox, and `getExtension` can answer null there, so the
+	 * unmasked string is used when the extension is present and the plain string
+	 * when it is not — a vague answer still distinguishes a software rasteriser from
+	 * a real one, and a missing extension is not an error.
 	 */
 	$effect(() => {
 		const gl = renderer?.getContext();
@@ -36,7 +37,7 @@
 		try {
 			const ext = gl.getExtension('WEBGL_debug_renderer_info');
 			stats.renderer = String(
-				(ext && gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) || gl.getParameter(gl.RENDERER)
+				ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)
 			);
 		} catch {
 			stats.renderer = 'unavailable';

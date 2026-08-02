@@ -88,17 +88,19 @@
 		stats
 	}: Props = $props();
 
-	// Plain array, deliberately not reactive: NodeLabels writes the elements into it and
-	// NodeProjector moves them every frame. Routing that through Svelte state would mean
-	// thousands of proxy writes a second to position some text.
-	const labelElements: (HTMLElement | null)[] = [];
+	// The slot elements, written once per slot at mount by NodeLabels and only read
+	// afterwards — the per-frame positioning writes go straight to `node.style` and
+	// never touch this array, so $state here buys the bind: its reactivity without
+	// paying proxy writes per frame. (DOM nodes are not plain objects; $state stores
+	// them raw.) The bind: exists because Svelte 5 warns on an unbound prop mutation.
+	let labelElements = $state<(HTMLElement | null)[]>([]);
 	/**
 	 * Which knot each tag slot holds, or -1. This one *is* reactive, because a rebind has
 	 * to re-render the tag's text — and only a rebind does, which is a few times a second
 	 * at most. The pool is fixed-size, so neither the DOM nor the per-frame write cost
 	 * moves when the corpus grows; see labels.ts for the measurement behind that.
 	 */
-	const labelSlots = $state<number[]>(Array.from({ length: LABEL_SLOTS }, () => -1));
+	let labelSlots = $state<number[]>(Array.from({ length: LABEL_SLOTS }, () => -1));
 	// The corpus does not change while this is mounted, so the view is sized once.
 	const view = untrack(() => createLayoutView(assets));
 
@@ -184,13 +186,13 @@
 			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} {provShown} {bird} {stats} />
 			<Trajectory {assets} {signal} {view} {spread} {pointSize} prov={!plain} {bird} />
 			{#if labels}
-				<NodeProjector {assets} {signal} elements={labelElements} slots={labelSlots} {focus} {pinned} {view} prov={!plain} {bird} {stats} />
+				<NodeProjector {assets} {signal} elements={labelElements} bind:slots={labelSlots} {focus} {pinned} {view} prov={!plain} {bird} {stats} />
 			{/if}
 		</Spinner>
 	</Canvas>
 
 	{#if labels}
-		<NodeLabels {assets} slots={labelSlots} elements={labelElements} prov={!plain} {bird} {onpick} />
+		<NodeLabels {assets} slots={labelSlots} bind:elements={labelElements} prov={!plain} {bird} {onpick} />
 	{/if}
 </div>
 
@@ -203,11 +205,16 @@
 		   measured field the cloud is read against is now the 3D cage inside the scene,
 		   which turns with it; this is just enough tone on the paper that the window does
 		   not read as a void, and it must stay well under the cage or the flat lattice
-		   wins the depth argument again. */
+		   wins the depth argument again. The first layer is a vignette — 4 % of ink at
+		   the corners, none past 55 % of the way out — so the stage reads as a printed
+		   sheet rather than a lit screen. Pure CSS on the paper under the canvas: zero
+		   GPU, and the hairlines stay visible through it. */
 		background-image:
+			radial-gradient(ellipse at center, transparent 55%, rgba(16, 22, 31, 0.04) 100%),
 			linear-gradient(var(--grid-coarse) 1px, transparent 1px),
 			linear-gradient(90deg, var(--grid-coarse) 1px, transparent 1px);
 		background-size:
+			100% 100%,
 			120px 120px,
 			120px 120px;
 		opacity: 1;

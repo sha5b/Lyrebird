@@ -108,7 +108,6 @@ export function vertexShader(): string {
 		#define WAVE_SOURCES ${WAVE_SOURCES}
 
 		attribute float aCluster;
-		attribute float aSeed;
 		attribute float aAct;
 		attribute float aSpecies;
 		/** Which build this point joined in; see the point metadata's generation array. */
@@ -133,22 +132,37 @@ export function vertexShader(): string {
 		/** Unit direction from the point's own cluster centroid — true geometry, at load. */
 		attribute vec3 aRadDir;
 		/**
-		 * How far this point may bloom as the front passes: 45 % of its knot's own
-		 * radius (median knot measured on the 1024-cluster build: radius 0.185 → 0.083),
-		 * capped at 0.045 — about 0.8 × the median knot spacing (0.057) — so a dense
-		 * knot's members clearly separate as the ring crosses, yet a blooming member
-		 * still lands inside its own knot's neighbourhood rather than the next knot's.
+		 * Four per-point floats packed into one attribute, because attribute slots are
+		 * a hard budget: Mesa's Intel driver in Firefox reports fewer than 15, and the
+		 * 15-attribute version of this program failed to link there — packed, the
+		 * program asks for 11. The old names survive as defines below, so the body
+		 * reads as it always has.
+		 *
+		 * x — aSeed: per-point phase offsets (multiply-and-mod hash).
+		 * y — aBloom: how far this point may bloom as the front passes: 45 % of its
+		 *   knot's own radius (median knot measured on the 1024-cluster build: radius
+		 *   0.185 → 0.083), capped at 0.045 — about 0.8 × the median knot spacing
+		 *   (0.057) — so a dense knot's members clearly separate as the ring crosses,
+		 *   yet a blooming member still lands inside its own knot's neighbourhood
+		 *   rather than the next knot's.
+		 * z — aSpread: how far this point may drift outward along aRadDir as the
+		 *   camera closes in (uBlossom): sqrt(hash) × knotRadius × 1.1 minus the
+		 *   resting distance from its own centroid, capped at half the median knot
+		 *   spacing. Interior points move most, rim points barely, so the knot's
+		 *   outline is preserved — display jitter, the same status a scatterplot's
+		 *   jitter has. Zero for the unassigned, which are already sparse.
+		 * w — aRank: position in the level-of-detail priority order, 0..1 within the
+		 *   point's own spatial cell's unfocused remainder; a focused bird's points
+		 *   are all 0, so they never sit on the fade frontier. Representatives and
+		 *   unclustered points rank lowest, so they are the last to thin as the
+		 *   camera backs off. Rewritten only when the order changes — load and focus
+		 *   changes — never per frame.
 		 */
-		attribute float aBloom;
-		attribute vec3 aTarget;
-		/**
-		 * Position in the level-of-detail priority order, 0..1 within the point's own
-		 * spatial cell's unfocused remainder; a focused bird's points are all 0, so
-		 * they never sit on the fade frontier. Representatives and unclustered points
-		 * rank lowest, so they are the last to thin as the camera backs off. Rewritten
-		 * only when the order changes — load and focus changes — never per frame.
-		 */
-		attribute float aRank;
+		attribute vec4 aMisc;
+		#define aSeed aMisc.x
+		#define aBloom aMisc.y
+		#define aSpread aMisc.z
+		#define aRank aMisc.w
 
 		/**
 		 * The three per-cluster channels, as one texture rather than three uniform arrays.
@@ -165,7 +179,7 @@ export function vertexShader(): string {
 		 *
 		 * R = activation (live match or scheduled pulse), G = sung (1 only for a note we
 		 * scheduled and know the identity of), B = learning (pipeline work, a slow swell
-		 * that must never read as a response — folded into R it drove the same 9 Hz jump
+		 * that must never read as a response — folded into R it drove the same fast jump
 		 * and the same ink as a match).
 		 */
 		uniform sampler2D uClusterState;
@@ -196,7 +210,21 @@ export function vertexShader(): string {
 		 * not thinned by the camera.
 		 */
 		uniform float uLod;
-		uniform float uMorph;
+		/**
+		 * The knot blossom, 0..1 from the camera distance: at whole-galaxy zoom a
+		 * knot's marks sit at their corpus positions; approaching, they drift outward
+		 * along aRadDir to fill the knot's measured extent. Opens over 1.9 → 1.0
+		 * cloud radii, so the spacing arrives with the LOD detail rather than after
+		 * it. Display jitter only — nothing in the corpus moves.
+		 */
+		uniform float uBlossom;
+		/**
+		 * 1 near, 0 far, over 3.5 → 1.8 cloud radii: blends the point-size floor
+		 * between 3 and 2 device pixels. Below 3 px a feathered disc is all feather —
+		 * at galaxy distance that feather is the intended haze (and less fill on an
+		 * iGPU); the crisp disc returns on approach.
+		 */
+		uniform float uNearFloor;
 		/** The newest generation, and how far its arrival has run (0..1). */
 		uniform float uGeneration;
 		uniform float uArrival;
@@ -289,9 +317,9 @@ export function vertexShader(): string {
 			// even when nothing is being matched against it.
 			float act = clamp(max(aAct, clusterAct * 0.25), 0.0, 1.0);
 			// Learning is a slow swell, not a response: the knot brightens a little and
-			// breathes at the rate the breath arrives with, but it never drives the 9 Hz
-			// jump below — that motion is reserved for sound, so work and audio can no
-			// longer be mistaken for each other.
+			// breathes at the rate the breath arrives with, but it never drives the
+			// response pulse below — that motion is reserved for sound, so work and
+			// audio can no longer be mistaken for each other.
 			float learn = state.b;
 			vAct = max(act, learn * 0.55);
 			vSeed = aSeed;
@@ -343,11 +371,12 @@ export function vertexShader(): string {
 			vLod = smoothstep(0.0, 0.02, uLod - aRank);
 #endif
 
-			// Rearranging between layouts. Each point takes its own slightly different
-			// share of the transition, so the cloud flows apart and back together instead
-			// of sliding as one rigid body — you can follow individual points across.
-			float lead = mix(0.75, 1.25, aSeed);
-			vec3 base = mix(position, aTarget, clamp(uMorph * lead, 0.0, 1.0));
+			// One arrangement, so the base is the position outright. The layout-morph
+			// path this used to be (aTarget + uMorph, each point on its own share of the
+			// transition) never left uMorph = 0 once the islands layout went, and its
+			// attribute was one of the four the Mesa link failure cost — it is in git
+			// history if a morph ever comes back.
+			vec3 base = position;
 
 			// **The wavefront is the primary motion now; the per-point jitter is texture.**
 			//
@@ -369,15 +398,25 @@ export function vertexShader(): string {
 			// shipped 149-cluster build, the mean member sits 0.079 from its own centroid
 			// and a sixth of the assigned points already rest nearer a *neighbouring*
 			// centroid than that, so the sum of both terms stays under half a cluster
-			// radius (0.011 texture + 0.032 front = 0.043 at full level): a responding
+			// radius (0.006 texture + 0.032 front = 0.038 at full level): a responding
 			// knot swells hard in order, and never spills into the knot next door.
-			float pulse = act * (0.5 + 0.5 * sin(uTime * 9.0 + aSeed * 6.2831853));
+			//
+			// The texture's clock slowed from 9.0 to 2.6 rad/s (~0.4 Hz), and its
+			// amplitude from 0.007 to 0.004: at the old rate a held note buzzed, and on
+			// a still frame the buzz read as flicker. The wavefront already owns the
+			// attack — the onset ping is the front, not this term — so what a sustained
+			// note needed was a slow swell, not a faster vibrato.
+			float pulse = act * (0.5 + 0.5 * sin(uTime * 2.6 + aSeed * 6.2831853));
 			float za = aSeed * 6.2831853 * 1.7;
 			float zb = aSeed * 6.2831853 * 2.9;
 			vec3 burst = normalize(vec3(cos(za) * sin(zb), cos(zb), sin(za) * sin(zb)) + vec3(1e-4));
+			// The blossom shares aRadDir with the front: both move the point along the
+			// true radial from its own centroid, the front as a passing ring, the
+			// blossom as the camera's approach spreading the knot's marks to fill its
+			// measured extent. Zero at galaxy distance, where uBlossom is 0.
 			vec3 p = base
-				+ burst * pulse * 0.007 * (0.6 + uLevel * 0.9)
-				+ aRadDir * aFront * aBloom;
+				+ burst * pulse * 0.004 * (0.6 + uLevel * 0.9)
+				+ aRadDir * (aFront * aBloom + aSpread * uBlossom);
 
 			// Waves, plural, each expanding from the knot that is actually sounding.
 			//
@@ -486,9 +525,12 @@ export function vertexShader(): string {
 			// depth cue — while compressing the range enough that a point is a legible dot
 			// at every distance. The floor and ceiling catch the extremes of a hard zoom.
 			float persp = pow(uSizeScale / max(0.001, -mv.z), 0.7);
-			// The floor is three device pixels rather than two: below that a disc has no
-			// interior left once the edge is feathered, and the mark degenerates into the
-			// feather itself — which is exactly what a haze is. The floor rises with the
+			// The floor is three device pixels up close, two at galaxy distance: below
+			// three a disc has no interior left once the edge is feathered, and the mark
+			// degenerates into the feather itself. Up close that is a smudge; at galaxy
+			// distance the feather IS the intended haze — and a 2 px sprite is less fill
+			// on an integrated GPU — so uNearFloor blends the floor down as the camera
+			// backs off and the crisp disc returns on approach. The floor rises with the
 			// point's own response: at whole-galaxy zoom persp pins every mark to the
 			// floor, which used to erase the size channel exactly when the whole cloud
 			// was visible — a responding point is now strictly larger than a resting one
@@ -496,7 +538,7 @@ export function vertexShader(): string {
 			// are the worst overdraw source on an integrated GPU — transparent sprites
 			// stack, and fill rate is the budget there — and a 24 px mark is still a
 			// readable disc.
-			gl_PointSize = clamp(size * uPixelRatio * persp, 3.0 + vAct * 2.0, 24.0);
+			gl_PointSize = clamp(size * uPixelRatio * persp, mix(2.0, 3.0, uNearFloor) + vAct * 2.0, 24.0);
 		}
 	`;
 }

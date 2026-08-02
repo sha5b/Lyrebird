@@ -1,3 +1,48 @@
+# Birdy — Session Handoff (2026-08-01, late 2: cloud visuals — blossom, ring-down, haze)
+
+**Owner asked for visual enhancement of the point cloud: spacing, lab-style finish,
+better animations/activations.** All implemented app-side; `npm run check` at the 4
+baseline errors, `verify-parity` 18/18, `verify:layout` green (last two run before the
+tracker/gate edits; the shader work was checked after each step). **Owner visual pass
+still owed** — every piece reverts independently if the taste read disagrees.
+
+- **Knot blossom (the spacing fix).** New static attribute `aSpread`: each point gets a
+  deterministic target radius inside its knot (`sqrt(hash) × knotRadius × 1.1`, uniform
+  over the disc, capped at 0.5 × median knot spacing, rim points barely move).
+  `p += aRadDir * (aFront*aBloom + aSpread*uBlossom)` — one shared multiply in the
+  vertex shader. `uBlossom` opens 1.9 → 1.0 cloud radii: knots are compact structure at
+  galaxy distance and blossom into separated individuals on approach (beeswarm/Gaia-sky
+  reference). Corpus positions untouched; the "Reading the galaxy" key discloses the
+  display jitter.
+- **Ring-down afterglow (the animation fix).** The trackers' release was 32–58 ms — marks
+  snapped off. Now: `PointTracker.update` runs an asymmetric EMA (attack 0.7, release
+  0.97 ≈ 0.4 s half-life) and `ActivationTracker.decay` releases activations at 0.97
+  while `strength` keeps the pace-aware fast fall (it gates `best()`/HUD). The 9 Hz
+  response buzz is a 0.4 Hz swell (`sin(uTime*9.0)` → `2.6`, displacement 0.007 →
+  0.004) — the wavefront owns the attack, a held note breathes. **The quiet gate got a
+  settle window** (`QUIET_SETTLE_FRAMES = 90`): uploads continue ~1.5 s into silence so
+  the ring-down reaches ~0.02 before the freeze zero-fills; idle silence still uploads
+  nothing, and chorus gaps under ~2 s no longer blink.
+- **Lab finish.** Distance-dependent size floor: `mix(2.0, 3.0, uNearFloor)` (3.5 → 1.8
+  radii) — distant knots render as finer haze, which is also less iGPU fill; the crisp
+  3 px disc returns on approach, responders keep their `+vAct*2.0` rise. Subtle CSS
+  vignette on `.stage` (radial-gradient layer in the existing background stack, 4 %
+  ink at the corners, hairline grid untouched).
+- **Mesa attribute overflow, found by the owner's first run and fixed same day.**
+  `aSpread` was the 15th vertex attribute and Firefox/Mesa refused to link the program
+  ("Number of attributes exceeds Mesa's reported max attribute count") — the cloud did
+  not render at all. Two moves took it to **11**: `aTarget` + `uMorph` deleted (dead
+  code, pinned 0 since it shipped; in git history if the morph ever returns) and
+  `aSeed/aBloom/aSpread/aRank` packed into one `vec4 aMisc` (DynamicDrawUsage;
+  `reorderCells` writes the w channel at stride 4). Side cost recorded: a focus change
+  now uploads the 5.6 MB packed buffer instead of the 1.4 MB rank buffer — still
+  focus-change-only, never per frame. `Stats.svelte` also falls back to plain
+  `gl.RENDERER` when `WEBGL_debug_renderer_info` is absent (deprecated in Firefox).
+  The label pool's dev-mode warnings are gone too: `slots` and `elements` are now
+  passed with `bind:` (`$bindable` in NodeProjector/NodeLabels), the tag ref is a
+  function binding, and `labelElements` is `$state` — free, since the array is only
+  written at mount (the per-frame positioning goes straight to `node.style`).
+
 # Birdy — Session Handoff (2026-08-01, late: smooth LOD, chorus stops on Compose, text-first Compose tab)
 
 **Three owner-reported UI issues fixed, all in the app.** Checks green: `npm run check`

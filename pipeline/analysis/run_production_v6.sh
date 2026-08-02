@@ -45,10 +45,17 @@ print(f"  seeded with {len(d['species'])} species / {n} syllables of prior ids")
 PY
 
 say "stage 1: learn, with the two-start descent (this is the long one, ~2 h)"
+# NO --inventory. `cmd_learn` ends with
+#   write_learned_inventory(out, merge_learned_inventory(inventory, document))
+# so --inventory is MERGED BACK INTO THE FIT to preserve the hand-authored calls. It wants
+# the authored data/inventory.json (12 species, 44 syllables), which is the default. The
+# first v6 attempt passed data/learned-inventory.json instead — 2 423 species and 13 859
+# FITTED types — so every fitted type was merged in as though a person had written it and
+# the inventory came out doubled: hirundo_rustica had 16 syllables with L09/L13/L14/L19/L21
+# each appearing twice. Arms A-D omitted the flag and were clean. Omit it.
 uv run birdy-pipeline learn \
     --store "$STORE" \
     --out "$LEARNED" \
-    --inventory "$INV" \
     --inverse out/inverse.pt \
     --inverse-two-start \
     >> "$STAGE/learn.log" 2>&1 || die "learn"
@@ -81,6 +88,7 @@ uv run birdy-pipeline build \
     --clustering label \
     --out "$STAGE/assets" \
     --no-compare-projections \
+    --no-relations \
     >> "$STAGE/build.log" 2>&1 || die "build"
 tail -20 "$STAGE/build.log" | tee -a "$LOG"
 

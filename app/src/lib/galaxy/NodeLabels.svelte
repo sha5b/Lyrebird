@@ -38,7 +38,8 @@
 		slots: number[];
 		/**
 		 * Written into by this component, read by NodeProjector. **Slot-aligned, not
-		 * centroid-aligned.** Plain array, not state.
+		 * centroid-aligned.** Plain array, not state. `$bindable` because the write
+		 * happens here: Svelte 5 warns when a child mutates an unbound prop.
 		 */
 		elements: (HTMLElement | null)[];
 		/**
@@ -52,7 +53,7 @@
 		onpick?: (cluster: number) => void;
 	}
 
-	let { assets, slots, elements, prov = false, bird = false, onpick }: Props = $props();
+	let { assets, slots, elements = $bindable(), prov = false, bird = false, onpick }: Props = $props();
 
 	// The corpus does not change while this is mounted, so the lookups are built once.
 	// Names come from the inventory index: a tag must name its bird without fetching
@@ -101,7 +102,7 @@
 		<!-- `--hot` (0 or 1) and `--act` (0..1) are written per frame by NodeProjector.
 		     The wrapper is keyed by slot, so it is created once and only its contents
 		     change when a different knot is bound into it. -->
-		<div class="tag" bind:this={elements[s]}>
+		<div class="tag" bind:this={() => elements[s], (v) => (elements[s] = v)}>
 			{#if ci >= 0}
 				{@const centroid = centroids[ci]}
 				<button

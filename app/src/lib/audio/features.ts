@@ -555,22 +555,31 @@ export class ActivationTracker {
 	}
 
 	/**
+	 * Release rate of the activations in `decay()`: 0.97 is a ~0.4 s half-life at
+	 * 60 fps, so a sung knot glows for ~0.8 s after its note instead of snapping off.
+	 */
+	private static readonly RELEASE = 0.97;
+
+	/**
 	 * Pulls everything toward zero — used when the input goes quiet.
 	 *
 	 * The floor matters: an exponential decay never reaches zero, and a residual
 	 * activation of 1e-7 is still enough to keep a node's label open and its points
 	 * faintly lit. Below a thousandth it is snapped to nothing.
 	 *
-	 * The rate follows the pace like the attack does: in a dense passage the gaps
-	 * between notes are short, and a slow release would smear one note's knot into the
-	 * next — the same lag the pace-aware EMA fixes on the way up.
+	 * The two channels fall at different rates on purpose. `strength` is a measurement —
+	 * it gates `best()` and the HUD — so it keeps the pace-aware rate: in a dense
+	 * passage a slow fall would smear one note's knot into the next. The activations
+	 * are the *picture*, and the picture rings down (RELEASE above). The smear argument
+	 * does not apply here — this function only runs on frames with no usable signal, so
+	 * the slow release can never blur one sounding note into the next; retargeting
+	 * during sound lives in `update()`, unchanged.
 	 */
 	decay(): Float32Array {
-		const smoothing = this.effectiveSmoothing();
-		this.strength *= smoothing;
+		this.strength *= this.effectiveSmoothing();
 		if (this.strength < 1e-3) this.strength = 0;
 		for (let i = 0; i < this.activations.length; i++) {
-			const v = this.activations[i] * smoothing;
+			const v = this.activations[i] * ActivationTracker.RELEASE;
 			this.activations[i] = v < 1e-3 ? 0 : v;
 		}
 		// `similarity` is a measurement, not a level: it holds the last cosine actually
@@ -613,6 +622,14 @@ export class ActivationTracker {
  * flat blob.
  */
 export class PointTracker {
+	/**
+	 * Release rate of the per-point EMA, applied only when the target falls below the
+	 * current value: 0.97 is a ~0.4 s half-life at 60 fps, so a sung mark rings down
+	 * over ~0.8 s instead of snapping off (the constructor's 0.7 is ~32 ms). The
+	 * attack keeps the fast rate — a new note must light now; only the afterglow is
+	 * slow. `pulseCluster` only ever raises values, so this is the sole release path.
+	 */
+	private static readonly RELEASE = 0.97;
 	readonly activation: Float32Array;
 	private readonly affinity: Float32Array;
 	private readonly features: Float32Array | null;
@@ -714,7 +731,9 @@ export class PointTracker {
 				1,
 				Math.max(clusterAct * 0.45, affinity * affinity) * (0.08 + clusterAct * 3) * strength
 			);
-			this.activation[i] = this.smoothing * this.activation[i] + (1 - this.smoothing) * target;
+			const current = this.activation[i];
+			const rate = target < current ? PointTracker.RELEASE : this.smoothing;
+			this.activation[i] = rate * current + (1 - rate) * target;
 		}
 		return this.activation;
 	}

@@ -37,7 +37,8 @@
 		signal: VisualSignal;
 		/** Filled by NodeLabels; **slot-aligned**, length `LABEL_SLOTS`. */
 		elements: (HTMLElement | null)[];
-		/** Centroid index bound into each slot, or -1. Written here, read by NodeLabels. */
+		/** Centroid index bound into each slot, or -1. Written here, read by NodeLabels —
+		 * hence `$bindable`: Svelte 5 warns when a child mutates an unbound prop. */
 		slots: number[];
 		/** Species index to keep at full strength; -1 shows every species equally. */
 		focus?: number;
@@ -57,7 +58,7 @@
 		assets,
 		signal,
 		elements,
-		slots,
+		slots = $bindable(),
 		focus = -1,
 		pinned = -1,
 		view,

@@ -187,32 +187,39 @@
 	const front = untrack(() => new Float32Array(assets.points.n));
 	const frontAttribute = new THREE.BufferAttribute(front, 1).setUsage(THREE.DynamicDrawUsage);
 
-	// `position` and `aTarget` hold the same arrangement: the shader still interpolates
-	// between them, but with the islands layout gone there is nothing to morph to, so
-	// both are seeded with the acoustic layout and `uMorph` never leaves zero.
+	// One arrangement, one position buffer. The aTarget/uMorph pair it used to pair
+	// with was dead weight — uMorph never left zero — and cost a vertex attribute the
+	// program could not spare; see aMisc below.
 	const current = untrack(() => Float32Array.from(assets.positions));
-	const target = untrack(() => Float32Array.from(assets.positions));
 	const positionAttribute = new THREE.BufferAttribute(current, 3).setUsage(
 		THREE.DynamicDrawUsage
 	);
-	const targetAttribute = new THREE.BufferAttribute(target, 3).setUsage(THREE.DynamicDrawUsage);
 
 	/**
-	 * Per-point phase offsets. Kept out here because the CPU has to reproduce the shader's
-	 * per-point transition progress when a rearrangement is interrupted.
+	 * Four per-point floats packed into one vec4: x = seed (phase offsets), y = bloom
+	 * budget, z = blossom magnitude, w = LOD rank. Packing is not tidiness, it is
+	 * budget: Mesa's Intel driver in Firefox reports fewer than 15 vertex attribute
+	 * slots, and the 15-attribute program failed to link there, so four floats ride
+	 * one slot (11 attributes total). The array is allocated once and each untrack
+	 * block below writes the channel it owns — the geometry block the seed, the
+	 * aRadDir block bloom and spread, the lod block the rank. Dynamic because the
+	 * rank channel is rewritten on a focus change (`reorderCells`); that change
+	 * uploads the whole packed buffer, 5.6 MB at the shipped corpus against the old
+	 * rank-only 1.4 MB — still a focus change only, never a frame.
 	 */
-	const seeds = untrack(() => {
-		const s = new Float32Array(assets.points.n);
-		for (let i = 0; i < s.length; i++) s[i] = ((i * 2654435761) % 1000) / 1000;
-		return s;
-	});
+	const misc = untrack(() => new Float32Array(assets.points.n * 4));
+	const miscAttribute = untrack(() =>
+		new THREE.BufferAttribute(misc, 4).setUsage(THREE.DynamicDrawUsage)
+	);
 
 	const geometry = untrack(() => {
 		const g = new THREE.BufferGeometry();
 		g.setAttribute('position', positionAttribute);
-		g.setAttribute('aTarget', targetAttribute);
+		// aMisc lands here, on the base geometry, because the resting cells and the
+		// active geometry copy this geometry's attribute objects at construction — a
+		// per-point attribute added after those copies would never reach either pass.
+		g.setAttribute('aMisc', miscAttribute);
 		const cluster = new Float32Array(assets.points.n);
-		const seed = seeds;
 		const species = new Float32Array(assets.points.n);
 		// -1 survives into the attribute rather than being clamped to 0: a point in no
 		// cluster is a result the density clustering went out of its way to produce, and
@@ -236,9 +243,11 @@
 			cluster[i] = assets.points.clusterId[i] ?? -1;
 			species[i] = speciesIndex.get(assets.points.speciesId[i] ?? '') ?? -1;
 			born[i] = generation?.[i] ?? 0;
+			// The seed channel of aMisc: per-point phase offsets, the same multiply-
+			// and-mod hash the shader's texture term is tuned against.
+			misc[i * 4] = ((i * 2654435761) % 1000) / 1000;
 		}
 		g.setAttribute('aCluster', new THREE.BufferAttribute(cluster, 1));
-		g.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
 		g.setAttribute('aSpecies', new THREE.BufferAttribute(species, 1));
 		g.setAttribute('aBorn', new THREE.BufferAttribute(born, 1));
 		g.setAttribute('aBird', new THREE.BufferAttribute(bird, 3));
@@ -311,9 +320,9 @@
 			uHighlight: { value: -1 },
 			// Rewritten from `spread` below; the initial value only has to be sane.
 			uSizeScale: { value: SIZE_REFERENCE },
-			// Never leaves zero now that there is one arrangement: the shader interpolates
-			// between `position` and `aTarget`, and both hold the same layout.
-			uMorph: { value: 0 },
+			// uMorph (0 → 1 between `position` and aTarget) is gone with the one-layout
+			// world: it never left zero, and its attribute was one the program could
+			// not spare. If a morph ever comes back it is in git history.
 			// The generation currently arriving, and how far its arrival has run. Set from
 			// the manifest; 0 on an asset set built before growth existed, which makes the
 			// arrival a no-op because every point then shares generation 0 and starts done.
@@ -333,6 +342,13 @@
 			// frame from the camera distance by updateLod, so the initial value only has
 			// to be sane for the first frame. The responding pass ignores it (see vLod).
 			uLod: { value: 1 },
+			// The knot blossom, 0 closed .. 1 fully open — rewritten every frame from the
+			// camera distance by updateLod (opens inside 1.9 cloud radii, fully open at
+			// 1.0), so the initial value only has to be sane for the first frame.
+			uBlossom: { value: 0 },
+			// Blends the point-size floor between 2 and 3 device pixels (1 near, 0 far) —
+			// same per-frame driver as uBlossom.
+			uNearFloor: { value: 0 },
 			uOpacity: { value: 1 },
 			uProvHide: { value: new THREE.Vector4() },
 			uProvHideCand: { value: 0 },
@@ -411,9 +427,7 @@
 	 */
 	untrack(() => {
 		current.set(layout.positions);
-		target.set(layout.positions);
 		positionAttribute.needsUpdate = true;
-		targetAttribute.needsUpdate = true;
 		view.centroids.set(layout.centroids);
 		view.counts.set(layout.counts);
 		view.version++;
@@ -427,6 +441,14 @@
 	const graph = untrack(() =>
 		buildClusterMembers(layout.positions, assets.points.clusterId, clusterCount)
 	);
+
+	/**
+	 * The median nearest-neighbour centroid distance of the loaded build, kept next to
+	 * the uniform it feeds: the knot blossom below quotes its own cap against the same
+	 * spacing, so neither knot's display drift can reach into its neighbour. The
+	 * initial value is the fallback the wave used to carry inline.
+	 */
+	let medianKnotSpacing = 0.135;
 
 	/**
 	 * How far a ripple reaches, quoted from the corpus's own spacing: twice the median
@@ -455,7 +477,8 @@
 		// so it is `nn.length >> 1`, not `clusterCount >> 1`. Indexing by the cluster count
 		// on a build where some knots are empty reads past the middle of the array and, at
 		// a high enough empty share, past its end entirely.
-		material.uniforms.uWaveLocal.value = 4 * (nn[nn.length >> 1] ?? 0.135);
+		medianKnotSpacing = nn[nn.length >> 1] ?? 0.135;
+		material.uniforms.uWaveLocal.value = 4 * medianKnotSpacing;
 	});
 
 	// Registered after construction rather than in the geometry block above, because
@@ -464,6 +487,18 @@
 	untrack(() => {
 		const n = assets.points.n;
 		const radDir = new Float32Array(n * 3);
+		// The knot blossom's per-point magnitude (the z channel of aMisc): how far the
+		// point may drift outward along its own aRadDir once the camera closes in
+		// (uBlossom in shaders.ts). sqrt(hash) gives a uniform-over-disc target radius
+		// inside the knot, so interior points move most and rim points barely — the
+		// knot's outline is preserved, which is what separates display jitter from
+		// moved data. Capped at half the median knot spacing, so an opened knot still
+		// cannot reach into its neighbour. The hash reuses the seed's multiply-and-mod
+		// style with a different modulus (104729, prime) so the spread is not
+		// correlated with the seed that already drives phase, size and arrival.
+		// Unassigned points and points in a zero-radius knot keep 0; a point resting
+		// exactly on its centroid has no aRadDir and its magnitude is moot.
+		const spreadCap = 0.5 * medianKnotSpacing;
 		for (let i = 0; i < n; i++) {
 			const c = assets.points.clusterId[i];
 			if (c < 0 || c >= clusterCount) continue;
@@ -471,6 +506,9 @@
 			const dy = layout.positions[i * 3 + 1] - layout.centroids[c * 3 + 1];
 			const dz = layout.positions[i * 3 + 2] - layout.centroids[c * 3 + 2];
 			const d = Math.hypot(dx, dy, dz);
+			const h = ((i * 2654435761) % 104729) / 104729;
+			const targetRadius = Math.sqrt(h) * graph.radii[c] * 1.1;
+			misc[i * 4 + 2] = Math.min(spreadCap, Math.max(0, targetRadius - d));
 			if (d < 1e-6) continue;
 			radDir[i * 3] = dx / d;
 			radDir[i * 3 + 1] = dy / d;
@@ -479,17 +517,16 @@
 		geometry.setAttribute('aFront', frontAttribute);
 		geometry.setAttribute('aRadDir', new THREE.BufferAttribute(radDir, 3));
 
-		// The per-point bloom budget, from the knot's own radius: 45 % of it, floored
-		// so a tiny knot still separates visibly, capped at 0.045 (≈ 0.8 × the median
-		// knot spacing on the 1024-cluster build) so the bloom stays inside the knot's
-		// neighbourhood. See aBloom in shaders.ts for the measured numbers.
-		const bloom = new Float32Array(n);
+		// The per-point bloom budget (the y channel of aMisc), from the knot's own
+		// radius: 45 % of it, floored so a tiny knot still separates visibly, capped
+		// at 0.045 (≈ 0.8 × the median knot spacing on the 1024-cluster build) so the
+		// bloom stays inside the knot's neighbourhood. See aMisc in shaders.ts for the
+		// measured numbers.
 		for (let i = 0; i < n; i++) {
 			const c = assets.points.clusterId[i];
 			if (c < 0 || c >= clusterCount) continue;
-			bloom[i] = Math.min(0.045, Math.max(0.015, 0.45 * graph.radii[c]));
+			misc[i * 4 + 1] = Math.min(0.045, Math.max(0.015, 0.45 * graph.radii[c]));
 		}
-		geometry.setAttribute('aBloom', new THREE.BufferAttribute(bloom, 1));
 	});
 
 	/**
@@ -561,13 +598,12 @@
 	const LOD_GRID = 4;
 
 	/**
-	 * The point's position in its cell's priority order, normalised 0..1 — the `aRank`
-	 * the shader's frontier fade is quoted against. Rewritten only when the order
-	 * changes (load, and a focus change via `reorderCells`), so a static attribute
-	 * with a manual needsUpdate, not one of the per-frame dynamics.
+	 * The point's position in its cell's priority order, normalised 0..1 — the w
+	 * channel of aMisc, which the shader's frontier fade quotes as `aRank`. Rewritten
+	 * only when the order changes (load, and a focus change via `reorderCells`), so a
+	 * manual needsUpdate, not one of the per-frame dynamics — the channel is what
+	 * makes the packed attribute dynamic at all.
 	 */
-	const rank = untrack(() => new Float32Array(assets.points.n));
-	const rankAttribute = untrack(() => new THREE.BufferAttribute(rank, 1));
 
 	interface RestCell {
 		/** Grid index 0..63, stable across reorders — the {#each} key. */
@@ -664,7 +700,6 @@
 			bases[c]![cursor[c]++] = p;
 		}
 
-		geometry.setAttribute('aRank', rankAttribute);
 		// Reach past the point's resting position. A tight bounding sphere would let the
 		// frustum test cull a cell whose marks are in fact visible, and the marks move:
 		// the wave displaces resting points up to 0.06 box units (the launch cap), the
@@ -713,7 +748,7 @@
 			);
 			g.setDrawRange(0, 0);
 			for (let m = 0; m < base.length; m++) {
-				rank[base[m]] = base.length > 1 ? m / (base.length - 1) : 0;
+				misc[base[m] * 4 + 3] = base.length > 1 ? m / (base.length - 1) : 0;
 			}
 			cells.push({ key: c, base, index, geometry: g, focused: 0, rest: base.length });
 		}
@@ -749,7 +784,8 @@
 	 * on the fade frontier either; the remainder keeps the global priority order and
 	 * is ranked over itself, so the fraction applies to it exactly. This is the only
 	 * reorder there is — it runs on a focus change, never per frame, and the uploads
-	 * it triggers (64 small indices plus the rank attribute) happen only then.
+	 * it triggers (64 small indices plus the packed aMisc buffer, whose w channel is
+	 * the rank) happen only then.
 	 */
 	function reorderCells(focus: number) {
 		const species = geometry.attributes.aSpecies.array as Float32Array;
@@ -761,7 +797,7 @@
 					const p = cell.base[m];
 					if (Math.abs(species[p] - focus) < 0.5) {
 						idx[f++] = p;
-						rank[p] = 0;
+						misc[p * 4 + 3] = 0;
 					}
 				}
 			}
@@ -771,14 +807,14 @@
 				const p = cell.base[m];
 				if (focus >= 0 && Math.abs(species[p] - focus) < 0.5) continue;
 				idx[f + r] = p;
-				rank[p] = restCount > 1 ? r / (restCount - 1) : 0;
+				misc[p * 4 + 3] = restCount > 1 ? r / (restCount - 1) : 0;
 				r++;
 			}
 			cell.focused = f;
 			cell.rest = restCount;
 			cell.index.needsUpdate = true;
 		}
-		rankAttribute.needsUpdate = true;
+		miscAttribute.needsUpdate = true;
 	}
 
 	let lodFocus = -2;
@@ -797,6 +833,22 @@
 		}
 		const fraction = shownFraction(viewRadii);
 		material.uniforms.uLod.value = fraction;
+		// Two more distance-driven uniforms ride the same read, one smoothstep each —
+		// the same t*t*(3-2t) shape shownFraction builds on, and no per-frame cost to
+		// speak of.
+		//
+		// The blossom opens over 1.9 → 1.0 cloud radii: closed at whole-galaxy zoom,
+		// where a knot is a few pixels and spread would be invisible fill; fully open
+		// just past LOD_NEAR (1.6), so the knot's marks spread to fill its measured
+		// extent while the LOD frontier is still paying detail out — spacing and
+		// detail arrive together rather than one after the other.
+		const bloomT = Math.min(1, Math.max(0, (1.9 - viewRadii) / (1.9 - 1.0)));
+		material.uniforms.uBlossom.value = bloomT * bloomT * (3 - 2 * bloomT);
+		// The size floor relaxes over 3.5 → 1.8 radii: at galaxy distance a sub-3 px
+		// mark is all feather, and that feather is the intended haze (with less fill
+		// on an iGPU as a bonus); the crisp 3 px disc returns as the camera closes.
+		const nearT = Math.min(1, Math.max(0, (3.5 - viewRadii) / (3.5 - 1.8)));
+		material.uniforms.uNearFloor.value = nearT * nearT * (3 - 2 * nearT);
 		let drawn = 0;
 		for (const cell of lod.cells) {
 			const count = cell.focused + Math.round(fraction * cell.rest);
@@ -826,6 +878,18 @@
 	 * left behind.
 	 */
 	let wasQuiet = false;
+	/**
+	 * Consecutive silent frames, and the settle window the freeze waits for. The
+	 * trackers' release is a ~0.4 s half-life ring-down (features.ts, RELEASE), so a
+	 * freeze on the first silent frame would cut a mark still glowing at ~0.5. The
+	 * gate keeps uploading the honestly decaying values for 90 frames (~1.5 s at
+	 * 60 fps) after the four-way quiet test first holds; by then the ring-down sits at
+	 * ~0.02, and the freeze's zero-fill swaps out residue no eye can see. A chorus gap
+	 * shorter than the window never freezes at all — which is also what keeps widely
+	 * spaced notes from blinking.
+	 */
+	const QUIET_SETTLE_FRAMES = 90;
+	let quietFrames = 0;
 
 	/** Scratch for the learning channel, so the texture write allocates nothing. */
 	const learnPerCluster = untrack(() => new Float32Array(Math.max(1, clusterCount)));
@@ -1153,17 +1217,20 @@
 		u.uAnswer.value += (answer - u.uAnswer.value) * (1 - Math.pow(rate, delta * 60));
 		u.uHighlight.value = signal.best;
 
-		// **Silent frames upload nothing.** The four GPU writes below — three
-		// corpus-length attributes (activation, orphan, front ≈ 3 × 1.4 MB at the
-		// production corpus) and the cluster-state texture — used to fire every frame,
-		// sounding or not: ~250 MB/s of shared-memory traffic on the owner's Intel
-		// iGPU for a picture that was not changing. Quiet is the same four-way idle
-		// test `updateActiveIndex` already early-outs on; a sounding orphan note keeps
-		// `level` up because the extractor hears the synth's own output, so the pulse
-		// channel is safe under it. Sustained quiet skips the lot, including the O(n)
-		// active-index scan; the first silent frame uploads zeros once.
+		// **Silent frames upload nothing — after the ring-down has finished.** The four
+		// GPU writes below — three corpus-length attributes (activation, orphan, front
+		// ≈ 3 × 1.4 MB at the production corpus) and the cluster-state texture — used to
+		// fire every frame, sounding or not: ~250 MB/s of shared-memory traffic on the
+		// owner's Intel iGPU for a picture that was not changing. Quiet is the same
+		// four-way idle test `updateActiveIndex` already early-outs on; a sounding
+		// orphan note keeps `level` up because the extractor hears the synth's own
+		// output, so the pulse channel is safe under it. Sustained quiet — the test
+		// held for QUIET_SETTLE_FRAMES, so the trackers' ~0.4 s ring-down has played
+		// out on screen — skips the lot, including the O(n) active-index scan; the
+		// freeze frame uploads zeros once.
 		const quiet = !signal.level && signal.best < 0 && !waveActive && !learning.length;
-		if (!quiet) {
+		quietFrames = quiet ? quietFrames + 1 : 0;
+		if (!quiet || quietFrames <= QUIET_SETTLE_FRAMES) {
 			wasQuiet = false;
 			// The three channels, interleaved into the texture's RGB. One pass over the
 			// clusters (a thousand, not a corpus), where the uniform-array version did three
@@ -1172,7 +1239,7 @@
 			// The learning pipeline breathes through its own channel, not the audio one.
 			// Slower than a note and never marked as sung: this is work happening at a place
 			// in the corpus, not a sound, and it must not be mistaken for one — the shader
-			// turns it into a slow swell and keeps the 9 Hz jump for actual responses.
+			// turns it into a slow swell and keeps the fast pulse for actual responses.
 			const acts = signal.activations;
 			const sungs = signal.sung;
 			const breath = learning.length ? 0.45 + 0.35 * Math.sin(u.uTime.value * 3.2) : 0;

@@ -2016,6 +2016,10 @@ uv run birdy-pipeline build</pre>
 										<span>Violet marks what you asked for: the note singing now, or the selected bird's points.</span>
 									</li>
 								</ul>
+								<p class="note faint">
+									Close up, a knot's marks spread to fill its measured extent — display
+									jitter like a scatterplot's; the corpus positions are unchanged.
+								</p>
 							</section>
 						</div>
 					</div>
