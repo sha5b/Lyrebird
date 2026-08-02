@@ -110,6 +110,17 @@ export const SIZE_REFERENCE = 4.0;
  */
 export const REVEAL_FRONT = 0.015;
 
+/**
+ * The offset the cluster-state texture's A channel carries so that **0 can keep
+ * meaning "this knot has no bird"** — see the channel's note in PointCloud. A knot's
+ * hue is written as `HUE_FLOOR + (1 - HUE_FLOOR) * turns`, so the fragment has to take
+ * the floor back off before it can treat the value as turns. It did not, for one
+ * round: every knot's accent came out up to 7.2° around the circle from the hue the
+ * same bird's tag and thread were drawn in, which is exactly the kind of near-match
+ * that reads as "the colours do not line up". Exported so the two sides cannot drift.
+ */
+export const HUE_FLOOR = 0.02;
+
 /** The point cloud's vertex stage. It no longer takes the cluster count: the three
  * per-cluster channels moved into `uClusterState` (see the uniform's comment), so the
  * shader's source is the same string for a 64-knot galaxy and a 14 000-knot one, and
@@ -800,7 +811,10 @@ export const fragmentShader = /* glsl */ `
 		// uniform: there the accent is a *class* colour and the class is the subject's,
 		// not the knot's. Hue 0 means the knot has no bird (or an older build), and the
 		// uniform stands in.
-		vec3 accent = (uPlain > 0.5 && vHue > 0.0) ? speciesHueColour(vHue) : uAccent;
+		// The A channel is written with a floor so 0 can mean "no bird" (HUE_FLOOR), so
+		// the floor comes back off here before the value is read as turns.
+		float hueTurns = (vHue - ${HUE_FLOOR}) / (1.0 - ${HUE_FLOOR});
+		vec3 accent = (uPlain > 0.5 && vHue > 0.0) ? speciesHueColour(hueTurns) : uAccent;
 		vec3 end = mix(ink, accent, clamp(vAccent, 0.0, 1.0));
 
 		// A chosen bird's points sit most of the way along their own ramp even at rest, so

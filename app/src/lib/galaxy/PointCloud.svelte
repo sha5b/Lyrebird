@@ -12,6 +12,7 @@
 	import {
 		FRONT_LIFE,
 		FRONT_ONSET,
+		HUE_FLOOR,
 		REVEAL_FRONT,
 		SIZE_REFERENCE,
 		WAVE_SOURCES,
@@ -304,9 +305,9 @@
 	 * meaning "no per-knot hue"** — an unassigned point, or a build without this
 	 * channel — and the shader falls back to the uniform. Static per knot, so it is
 	 * written once here and preserved by the quiet gate's zero-fill, which now clears
-	 * only the three live channels.
+	 * only the three live channels. The floor lives in shaders.ts, because the fragment
+	 * has to subtract exactly the same number back off.
 	 */
-	const HUE_FLOOR = 0.02;
 	untrack(() => {
 		const items = assets.centroids.items;
 		for (let c = 0; c < clusterCount; c++) {
