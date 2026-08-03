@@ -1,10 +1,221 @@
+# Lyrebird — one scale on the stage, and Learn's three main actions (2026-08-03)
+
+## 1. The stage had two scales and only one of them meant anything
+
+Owner: *"i want the grid background to align with the ruler and also be reactive to the zoom…
+make the grid get a bit smaller when we zoom in like the ruler, it aligns with it."*
+
+**First, a correction worth carrying forward: there is no 3-D grid.** `.stage`'s comment says
+*"the measured field the cloud is read against is now the 3D cage inside the scene, which turns
+with it"* — **that cage does not exist.** Nothing in the scene draws it; the comment outlived
+whatever component did. The only persistent lattice is the flat CSS background on `.stage`, and
+`GridBurst` is the transient per-note crosses, which is a different thing (and still the
+suspect for the "diagonal red and blue streaks" report).
+
+What was wrong: `background-size: 120px 120px`. **Fixed pixels, agreeing with nothing**, while
+the ruler's divisions re-scale with the zoom. So the picture carried two scales at once, and the
+squares were not a unit of anything — at one zoom a square was three knot spacings, at another a
+fifth of one. **A reader reads a grid as a measure whether or not it is one**, so the lattice was
+quietly answering "how big is that gap" with a number that had no referent.
+
+Now a coarse square is **one labelled tick** and a fine square a fifth of it, both from
+`galaxy/ticks.ts`, which the ruler now reads too. A grid line and a tick at the same place is one
+claim made twice, and it re-scales with the zoom because the step does.
+
+Two details that are the whole difficulty:
+
+- **The half-tile offset.** The ruler counts outward from the centre of the view, because the
+  projection has no meaningful origin, so its zero sits at `extent / 2`. A CSS background at
+  `background-position: 50%` puts its tile origin at `(extent − tile) / 2` — **half a tile short**
+  — so every line would land exactly *between* two ticks. That reads as alignment failing rather
+  than as a different grid. Adding half a tile back is the correction, and `verify:ticks` proves
+  the naive version would miss.
+- **`--grid-fine` was a declared, unused token.** It has a job now: the fifth divisions, under the
+  coarse lines at 0.035 of ink against 0.03. Five and not ten, because every step is 1, 2 or 5
+  times a power of ten and five divides all three into something countable.
+
+### `verify:ticks`: 18 checks, and the failing one taught me about the ruler
+
+The claim — every grid line falls on a ruler tick — fails by *half a tile*, which on screen reads
+as "the alignment is a bit off" and never as anything broken. So it is computed at 167 zooms
+across six viewport widths (13 324 ticks) rather than looked at once.
+
+**One check failed on the first run and the check was wrong, not the code.** I asserted the drawn
+spacing brackets `TARGET_PX = 78`. It does not: the 1-2-5 choice rounds the step *up*, so **78 px
+is a floor**, and the spacing runs 78 to 190 px — up to 2.4x the "target" just before each step
+change. That is now written down where the constant is defined, because it is what bounds the
+grid: a coarse square is 78–190 px and a fine one 16–38 px, which is exactly why five divisions
+stay countable instead of becoming texture.
+
+Proven by mutation:
+
+```
+drop the half-tile offset          2 checks fail, incl. "a line falls on the ruler zero"
+put the grid back on fixed 120 px  1 check fails ("every step is 1, 2 or 5 x a power of ten")
+ten fine divisions instead of five 1 check fails
+```
+
+## 2. Learn's main actions are main actions now
+
+Owner: *"start learning is one… harvesting is in the drawer, that's correct, but build should be
+outside of it, it's a main action. Same goes for refining the dataset — button is missing."*
+
+Both right, and the second was the more useful observation.
+
+**Rebuild is out of the drawer.** It was inside "run one step by hand", which was wrong twice
+over: it is not a step of the loop — the loop rebuilds on its own when drift says the frame has
+stopped describing its contents — and it is the action that decides what the galaxy on screen
+*is*. Harvest and Learn genuinely are hand versions of loop steps, so they stay in. It keeps its
+stated cost, because being a main action does not make it cheap.
+
+**"Refine the dataset" is a new main action and it is not a new capability.** The
+least-collected-first ordering has always been in `harvest.py` — a bird with nothing served before
+a bird with two thousand — but the only way to ask for it was the drawer's Harvest form, behind a
+species picker defaulted to "every species" and four sliders. **So the single most useful thing
+you can do to the corpus looked like a configuration exercise.** The button is the same call with
+no species chosen, and it says what it will do: how many known birds hold nothing, and that they
+go first. The count moved here from the drawer's note, which now explains only what the form adds
+— choosing one bird, and how deeply.
+
+The page reads: **Start learning · Refine the dataset · Rebuild the galaxy**, then a rule, then
+the drawer with Harvest and Learn. The divider's meaning changed with it and its comment says so.
+
+## 3. Tests
+
+`npm run check` clean apart from the four pre-existing `syrinx-processor.js` errors, zero
+warnings. `build`, `verify:ticks`, `verify:zip`, `verify:context-threads`, `verify:performance`,
+`verify:layout`, `verify:inventory-table`, `verify:biplot`, `verify:trajectory` and
+`verify:split-knots` all pass.
+
+**The browser backlog is now seven changes deep** and is overdue: three thread inks, the weighted
+grammar alpha, the reordered provenance key, the Learn page's copy and split, the info page's
+downloads row and figure widths, this round's grid, and Learn's reordered actions. The grid is the
+one I would look at first — it is the only change that alters the whole stage at once, and
+`verify:ticks` can prove the arithmetic but not that five layers of CSS background compose the way
+the rule says.
+
+# Lyrebird — the build can be taken away, and two things on the info page were badly wrong (2026-08-03)
+
+Owner, on the info page: *"i want the json to be there to download as a link, you click and load
+all in a zip"*, *"the download whitepaper button is nearly not visible thats bad"*, *"the images on
+the right corner are not going to the width of the container"*. All three real, and the second and
+third were one-line causes.
+
+## 1. The whole build leaves as one zip, and it is the end of §1's argument
+
+Every figure on the info page is read from the loaded manifest, which is the property that makes
+that page trustworthy. This is the other half of it: **the reader can take the build away and
+check any of them.** Not an export format and not a summary — the same bytes the browser loaded.
+
+**The file list is `manifest.files`, which is the pipeline's own record of what it wrote.** A list
+kept in the app instead would drift the first time the pipeline wrote a twelfth file, and the
+download would then quietly be a subset of the build while still calling itself the build. Found
+while wiring it: the `Manifest` type declared `files?: Record<string, string>` and the pipeline
+writes an **array** of eleven paths. Nothing had ever read the field, so nothing had disagreed
+with it.
+
+`relations.json` is deliberately absent because it is absent from `manifest.files` — a sidecar the
+app reads three pairs of at a time, not part of the build's contract. One production build wrote
+760 MB of it.
+
+Measured on the installed build: **76.7 MB of assets to a 22.9 MB archive, 30 %, in 1.0 s.**
+
+`data/zip.ts` is hand-rolled and that is a deliberate trade: a zip with no encryption, no zip64
+and known sizes is about sixty lines of header writing, `CompressionStream` has done the only hard
+part since Safari 16.4, and a library would be more bytes shipped to every visitor than the format
+costs to write. Sizes are known before anything is written because each entry is compressed in
+full first, which is what lets it emit ordinary local headers instead of the streaming variant
+with data descriptors — a plain zip is the one every tool opens. Guards throw rather than write a
+broken file past 4 GB or 65 535 entries.
+
+Two details that are decisions rather than defaults. The archive is stamped with the **build's**
+`builtAt` and not the download time, so two downloads of one build are byte-identical and cannot
+be mistaken for two builds. And every fetch carries `builtAt` as its cache-buster, the same rule
+the loader follows and for the same reason: an archive must not be assembled from two builds.
+
+### `verify:zip`: 15 checks, and `unzip` is the judge
+
+A zip is the archetype of the failure this project keeps naming: **an off-by-one in a
+central-directory offset produces a file of the right size, with every payload byte present, that
+no tool will open.** Nothing throws. So a self-consistency test is close to worthless — the same
+wrong arithmetic would be used to read it back.
+
+`verify-zip.mjs` writes real archives and hands them to the system `unzip`, which knows the format
+and did not learn it from us: `-t` for integrity, `-p` for byte-exact round-trip, `-l` for the
+listing. CRC-32 is checked against the format's documented values (`"a"` → `0xe8b7be43`,
+`"123456789"` → `0xcbf43926`). Covered: a nested path, a zero-length member, incompressible
+binary, and a pre-1980 stamp.
+
+Then it mutates and requires rejection, because a test that only ever sees valid input cannot tell
+you it would notice invalid input:
+
+```
+central-directory offset off by one   unzip exits non-zero
+wrong CRC in a local header           unzip exits non-zero
+truncated payload                     unzip exits non-zero
+```
+
+The real 11-file build was also packed and checked end to end — `unzip -t` clean, and
+`points.json`, `inventory.json`, `inventory/index.json` and `positions.f32` byte-exact out the
+other side.
+
+**No size is printed on the button.** It is not known until the archive is packed, and a number
+there would be a figure this page invented, which is the one thing this page may not do. The file
+count comes from the manifest; the prose says "roughly a third", which is a ratio rather than a
+fabricated absolute.
+
+## 2. The two download affordances were the least visible thing on the page
+
+The whitepaper was a `.paperlink` inside a `.note` — 0.74 rem, `--ink-dim`, **the same weight as
+the paragraph above it**. So the one thing on the info page a reader might want to *take away* was
+harder to see than the body copy. A thing you can leave with is a control, and both are controls
+now, in `controls.css`'s existing button vocabulary rather than a new one.
+
+The look is repeated rather than shared, because `button {}` is an element rule and an
+`<a download>` cannot inherit it. Repeating the vocabulary keeps a download reading as the same
+kind of object as every other control; inventing a look would have said it was a different kind of
+thing.
+
+## 3. `.figure` was wearing the prose measure
+
+One line: `max-width: 44rem`, which is `.measure` — the cap that keeps a *line of prose* short
+enough to read. **An image has no line length to protect**, so on the wide figure column every
+screenshot stopped short of the container and read as misaligned against the text beside it.
+Removed from the image; the caption is prose and keeps it.
+
+## 4. One property amended honestly
+
+`InfoPage`'s docstring said it holds no state, and the download keeps a progress line while it
+packs — because compressing 77 MB behind a silent button reads as a broken button. That is
+transient state about the component's own control and nothing else; the fetching and packing live
+in `data/asset-download.ts`. The property that matters is intact and is restated in the docstring:
+every *figure* on the page is still a prop, so the page cannot invent one.
+
+`mapDir` is now a prop, so a `--clustering both` root packs the galaxy on screen rather than the
+root's. Passed in rather than guessed.
+
+## 5. Tests
+
+`npm run check` clean apart from the four pre-existing `syrinx-processor.js` errors, zero warnings.
+`build`, `verify:zip`, `verify:context-threads`, `verify:performance`, `verify:layout`,
+`verify:inventory-table`, `verify:biplot`, `verify:trajectory` and `verify:split-knots` all pass.
+
+**The browser backlog is now five changes deep and is the thing to clear next**: the three thread
+inks, the weighted grammar alpha, the reordered provenance key, the Learn page's copy and split,
+and this round's downloads row and figure widths. Every one is a rendering change, and this
+project's record says a rendering change is not verified until somebody has seen it — the
+computed-style probe and the DOM-count probe both exist because screenshot diffing could not do it.
+
 # Lyrebird — the grammar gets its weight back, and the synthetic space gets an answer (2026-08-03)
 
-The chain is **still in stage 1 (`learn`)** at 14:39, about three hours in: `learned-v8.json.partial`
-is 16.5 MB against the 21.1 MB of prior inventory stage 0 seeded, so roughly four fifths through.
-On that rate learn ends about 15:25 and the chain about 16:00, later than the ~15:20 the
-READ-THIS-FIRST section estimated for the whole run. Nothing here touches the pipeline or the
-installed assets.
+The v8 chain ran underneath all of this and **landed at 15:12 having reproduced the installed
+build byte-for-byte** — see the section headed "the v8 chain LANDED" below. Nothing in this round
+touches the pipeline or the installed assets.
+
+(A note on extrapolating from a partial file, since it was done here and it was wrong: at 14:39
+`learned-v8.json.partial` was 16.5 MB against the 21.1 MB stage 0 had seeded, which read as four
+fifths through and put the finish near 16:00. Learn ended four minutes later, at 14:43. The
+partial is not written at a rate proportional to species remaining, so its size is not a clock.)
 
 ## 1. The one experiment the last round said to run first, and it has a sharper answer than expected
 
@@ -724,38 +935,65 @@ predicts held-out types, filling the gaps is warranted and `inverse.py` can rend
 does not, the synthetic space generates plausible noise. `w5_field_retrieval.py` is the
 retrieval template and `geometry.py` supplies the null.
 
-# Lyrebird — READ THIS FIRST (2026-08-03, ~11:55): the v8 chain is running unattended
+# Lyrebird — the v8 chain LANDED and it reproduced v7 bit-for-bit (2026-08-03, 15:12)
 
-**A full production chain started at 11:41 and nobody has checked it.** It is
-`pipeline/analysis/run_production_v8.sh`, detached with `setsid`, and it takes about
-3 h 40 m — so it should be finished by roughly **15:20**.
+**Finished 15:12:55, 3 h 31 m. Nothing was installed, because there is nothing to install:
+v8 is byte-identical to what `app/static/birdy` already holds.** Every asset file md5-matches
+the installed one and the inventory matches too (`de98ec12…` both). Every manifest number is
+the same figure rather than a near one — knnAgreement 0.4685, faithfulness 0.4745 / 0.4829,
+torn 1864 / 5320, severe 1009, trustworthiness 0.9247, continuity 0.9036, purity 0.9452,
+meanRadius 0.5303. (The chain's own narration prints "3D kNN agreement 46.9 %", which is that
+same 0.4685 rounded — not a difference.)
 
-    tail -f pipeline/out/v8-chain.out        # the stage-by-stage narration
-    tail -f pipeline/out/v8/learn.log        # stage 1, the long one
-    ls pipeline/out/v8/assets                # exists only once stage 4 starts writing
+Both gates passed on the way: `verify.log` says `all checks passed`, and **stage 6 did not
+shout** — every watched count came out +0 %:
 
-Stages: learn (~3 h) -> docrefit (23 s) -> respfit (~8 min) -> build with
-`--projection pacmap` (~25 min) -> verify -> **stage 6, the song funnel**.
+```
+                        installed  candidate  change
+species                      2423       2423     +0 %
+types                       13748      13748     +0 %
+species with a song            68         68     +0 %
+song types                    164        164     +0 %
+repeat classes                 82         82     +0 %
+motifs                         82         82     +0 %
+grammar chunks               1272       1272     +0 %
+```
 
-**What to do when it lands, in order:**
+**Why identical is the correct result and not a failed run.** Two things were checked before
+concluding it, because "the output equals the input" is also what a chain that silently
+discarded its own work looks like:
 
-1. **Read stage 6 before anything else.** It compares the re-learned inventory against the
-   installed one on species-with-a-song, song types, repeat classes, motifs and grammar
-   chunks, and says loudly if any watched count fell more than 20 %. The v6 re-learn cost
-   repeat classes 68 % and grammar chunks 77 % while improving every syllable number it was
-   gated on. **If stage 6 shouts, that is the expected trade and not a failure — it is a
-   decision.** Nothing is installed either way.
-2. Check `pipeline/out/v8/verify.log` says `all checks passed`.
-3. Compare the projection line against the installed v7: knnAgreement 0.4685,
-   faithfulness 0.4745, torn 1864/5320.
-4. Only then decide about installing. `app/static/birdy` currently holds **v7**, which is
-   PaCMAP over v6's inventory. Every build is reproducible from the pipeline — v7 from
-   `pipeline/out/v7-prod/assets` — so a build is never backed up by copying it about. Git
-   and the pipeline are the record.
+- **The store has not grown.** `harvest-gan/state.json` reads `syllableObservations: 340079`
+  and `streamCount: 425061`, which is exactly what the installed manifest recorded. No new
+  audio has arrived since that inventory was written on 2026-08-02.
+- **No fitting code changed.** Every commit since then touches the *projector and build*
+  layer — PaCMAP, poincare, the split gate, cmds-chord, the match ramp — and none of them
+  touches learn, docrefit or respfit.
 
-**Two things the chain will not settle**, so they are not surprises: the production
+Same store, same fitting code, fixed seeds: deterministic reproduction, down to PaCMAP's
+seeded layout. The stages did do their work and said so — docrefit shipped 11 of 17 one-tone
+re-fits, respfit ran its gate over 1 277 species — and the result of doing it again on
+unchanged inputs is the same file.
+
+**So what the 3 h 31 m actually bought is a reproducibility proof**, end to end: the galaxy
+on screen is exactly what this pipeline produces today, so every figure quoted anywhere in
+this handoff is re-derivable rather than historical. That is worth more than a new build would
+have been, and it is not an install.
+
+**What would make a next chain produce something different:** new audio in the store (harvest
+first — the queue serves the emptiest bird first), or a change inside learn/docrefit/respfit.
+Rebuilding alone cannot, and re-rolling the projection on identical input reproduces the same
+positions.
+
+**Two things this chain did not settle**, so they are not surprises: the production
 cMDS-versus-PaCMAP bake-off (skipped for time — `--compare-projections` would add UMAP over
 348 461 points), and `grow` stays unavailable on any PaCMAP build.
+
+**One instrument note, for whoever writes the next watcher.** The monitor armed on this run
+polled `pgrep -f run_production_v8.sh` to detect the chain exiting, and its own shell command
+line contains that string — so it matched itself and could never have fired. The stage lines
+carried the information instead, and no time was lost, but a `pgrep -f` on a pattern that
+appears in the watcher's own command is a check that always says yes.
 
 # Lyrebird — the interface round (2026-08-03): a page instead of a popover, and a ruler that says one thing
 

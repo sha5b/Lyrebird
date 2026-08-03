@@ -586,7 +586,19 @@ export interface Manifest {
 		store?: string;
 		definition?: string;
 	};
-	files?: Record<string, string>;
+	/**
+	 * Every file this build is made of, relative to the asset root — the pipeline's own
+	 * list of what it wrote (`galaxy.py`, `"files": [...]`).
+	 *
+	 * Declared as a map until something first read it, which is when the mismatch showed:
+	 * the pipeline writes an **array** of eleven paths. Nothing had used the field, so
+	 * nothing had disagreed with it.
+	 *
+	 * It is the definitive answer to "what is this build", which is why the asset download
+	 * packs exactly this and never a list of its own — a hand-kept copy would drift the
+	 * first time the pipeline wrote a twelfth file.
+	 */
+	files?: string[];
 	[key: string]: unknown;
 }
 

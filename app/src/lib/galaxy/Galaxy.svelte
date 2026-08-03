@@ -6,6 +6,7 @@
 	import type { OrbitControls as OrbitControlsInstance } from 'three/examples/jsm/controls/OrbitControls.js';
 	import type { BirdyAssets } from '$lib/data/types';
 	import { biplotAxes, type ScreenReading } from './biplot';
+	import { FINE_DIVISIONS, TARGET_PX, gridOffsetPx, tickStep } from './ticks';
 	import ContextPaths from './ContextPaths.svelte';
 	import Framing from './Framing.svelte';
 	import GridBurst from './GridBurst.svelte';
@@ -196,10 +197,33 @@
 	let cloud = $state<THREE.Group | undefined>();
 	/** Bumped on every grab of the view, which is what ends a camera flight. */
 	let grabbed = $state(0);
+
+	/**
+	 * The background grid, in the ruler's own divisions.
+	 *
+	 * One coarse square is one labelled tick and one fine square is a fifth of it, so the
+	 * lattice behind the cloud is the same measure the numbers along the edges are counting —
+	 * and it re-scales with the zoom because the step does. A gap of two squares is two ticks
+	 * at any zoom, which is what a grid on a plot is for.
+	 *
+	 * Falls back to the ruler's target spacing before `Scale` has reported, so the stage never
+	 * flashes an enormous or a zero-sized lattice on the first frame.
+	 */
+	const gridStep = $derived(tickStep(pxPerKnot));
+	const gridCoarsePx = $derived(pxPerKnot > 0 ? gridStep * pxPerKnot : TARGET_PX);
+	const gridFinePx = $derived(gridCoarsePx / FINE_DIVISIONS);
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="stage" {onpointerdown} {onpointerup}>
+<div
+	class="stage"
+	{onpointerdown}
+	{onpointerup}
+	style:--grid-coarse-px={`${gridCoarsePx}px`}
+	style:--grid-fine-px={`${gridFinePx}px`}
+	style:--grid-coarse-at={`${gridOffsetPx(gridCoarsePx)}px`}
+	style:--grid-fine-at={`${gridOffsetPx(gridFinePx)}px`}
+>
 	<Canvas>
 		<!--
 			Opened from above the equator rather than on it. At the old near-level elevation
@@ -288,22 +312,42 @@
 		position: absolute;
 		inset: 0;
 		background: var(--paper);
-		/* Only the decade grid survives here, at a fraction of its old weight. The
-		   measured field the cloud is read against is now the 3D cage inside the scene,
-		   which turns with it; this is just enough tone on the paper that the window does
-		   not read as a void, and it must stay well under the cage or the flat lattice
-		   wins the depth argument again. The first layer is a vignette — 4 % of ink at
-		   the corners, none past 55 % of the way out — so the stage reads as a printed
-		   sheet rather than a lit screen. Pure CSS on the paper under the canvas: zero
-		   GPU, and the hairlines stay visible through it. */
+		/* Graph paper in the ruler's divisions, so the lattice is a measure rather than a
+		   texture.
+
+		   It was `120px 120px` — fixed pixels, changing with nothing — while the ruler's
+		   divisions changed as you zoomed. Two scales on one picture, and only one of them
+		   meant anything: at one zoom a square was three knot spacings and at another a fifth
+		   of one. A reader reads a grid as a measure whether or not it is one, so the squares
+		   were answering "how big is that gap" with a number that had no referent.
+
+		   Now a coarse square is one labelled tick and a fine square a fifth of it, both from
+		   `ticks.ts`, and both offset half a tile so a line lands on the ruler's zero at the
+		   centre of the view — the ruler counts outward from the middle, so `50%` alone would
+		   put every line exactly *between* two ticks.
+
+		   Fine under coarse, and both well under the point cloud: `--grid-fine` is 0.035 of ink
+		   and `--grid-coarse` 0.03, which is a sheet of paper rather than a lit lattice. The
+		   first layer is a vignette — 4 % at the corners, none past 55 % of the way out. Pure
+		   CSS under the canvas: zero GPU, and the hairlines stay visible through it. */
 		background-image:
 			radial-gradient(ellipse at center, transparent 55%, rgba(16, 22, 31, 0.04) 100%),
 			linear-gradient(var(--grid-coarse) 1px, transparent 1px),
-			linear-gradient(90deg, var(--grid-coarse) 1px, transparent 1px);
+			linear-gradient(90deg, var(--grid-coarse) 1px, transparent 1px),
+			linear-gradient(var(--grid-fine) 1px, transparent 1px),
+			linear-gradient(90deg, var(--grid-fine) 1px, transparent 1px);
 		background-size:
 			100% 100%,
-			120px 120px,
-			120px 120px;
+			var(--grid-coarse-px) var(--grid-coarse-px),
+			var(--grid-coarse-px) var(--grid-coarse-px),
+			var(--grid-fine-px) var(--grid-fine-px),
+			var(--grid-fine-px) var(--grid-fine-px);
+		background-position:
+			center,
+			calc(50% + var(--grid-coarse-at)) calc(50% + var(--grid-coarse-at)),
+			calc(50% + var(--grid-coarse-at)) calc(50% + var(--grid-coarse-at)),
+			calc(50% + var(--grid-fine-at)) calc(50% + var(--grid-fine-at)),
+			calc(50% + var(--grid-fine-at)) calc(50% + var(--grid-fine-at));
 		opacity: 1;
 	}
 </style>

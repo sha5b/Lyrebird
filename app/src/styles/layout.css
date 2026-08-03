@@ -156,9 +156,15 @@
    the number is referenced from the prose, because "as shown above" stops being true
    the moment the layout reflows. */
 
+/* A figure fills its column.
+
+   It used to carry `max-width: 44rem`, which is `.measure` — the cap that keeps a *line of
+   prose* short enough to read. An image has no line length to protect, so on the info page's
+   wide figure column every screenshot stopped short of the container's edge and read as
+   misaligned against the text beside it. The caption still wants the measure and keeps it. */
+
 .figure {
 	margin: 0 0 1.4rem;
-	max-width: 44rem;
 }
 
 .figure img {
@@ -174,6 +180,8 @@
 	font-size: 0.72rem;
 	line-height: 1.55;
 	color: var(--ink-dim);
+	/* The caption is prose, so it keeps the reading measure the image gave up. */
+	max-width: 44rem;
 }
 
 .figure figcaption b {
@@ -296,6 +304,68 @@
 	color: var(--ink);
 	text-decoration: underline;
 	text-underline-offset: 0.15em;
+}
+
+/* A download, as a control rather than as a sentence.
+
+   The whitepaper link was a `.paperlink` inside a `.note` — 0.74 rem, `--ink-dim`, the same
+   weight as the paragraph above it — so the one thing on the info page a reader might want to
+   *take away* was the least visible thing on it. A thing you can leave with is a control.
+
+   The look is `controls.css`'s button, repeated rather than shared because `button {}` is an
+   element rule and an `<a download>` cannot inherit it. Repeating the vocabulary keeps the
+   download reading as the same kind of object as every other control in the app; inventing a
+   look for it would say it was a different kind of thing. */
+
+.downloads {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin: 0.2rem 0 0.6rem;
+}
+
+.downloadlink {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 0.45rem;
+	cursor: pointer;
+	background: var(--paper-raised);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	padding: 0.45rem 0.75rem;
+	font-size: 0.76rem;
+	font-weight: 500;
+	letter-spacing: 0.015em;
+	color: var(--ink);
+	text-decoration: none;
+	transition:
+		background 110ms ease,
+		border-color 110ms ease,
+		color 110ms ease;
+}
+
+.downloadlink:hover:not(:disabled) {
+	border-color: var(--rule-strong);
+	background: var(--paper);
+}
+
+.downloadlink:focus-visible {
+	outline: 2px solid var(--signal);
+	outline-offset: 1px;
+}
+
+.downloadlink:disabled {
+	cursor: progress;
+	color: var(--ink-dim);
+}
+
+/* The size and format, subordinate to the name: a reader deciding whether to click wants
+   "the whitepaper" first and "0.7 MB" second. */
+
+.downloadlink .mono {
+	font-size: 0.66rem;
+	letter-spacing: 0.04em;
+	font-weight: 400;
 }
 
 /* The scrolling half of a card, under its header. */

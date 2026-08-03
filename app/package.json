@@ -2,7 +2,7 @@
 	"name": "app",
 	"private": true,
 	"version": "0.0.1",
-	"description": "Lyrebird: browser half \u2014 realtime syrinx synthesis, mic analysis, the galaxy.",
+	"description": "Lyrebird: browser half — realtime syrinx synthesis, mic analysis, the galaxy.",
 	"license": "CC-BY-NC-SA-4.0",
 	"type": "module",
 	"scripts": {
@@ -22,7 +22,9 @@
 		"measure:layout": "node --experimental-strip-types --max-old-space-size=4096 scripts/measure-layout.mjs",
 		"verify:biplot": "node --experimental-strip-types scripts/verify-biplot.mjs",
 		"verify:performance": "node --experimental-strip-types scripts/verify-performance.mjs",
-		"verify:context-threads": "node --experimental-strip-types scripts/verify-context-threads.mjs"
+		"verify:context-threads": "node --experimental-strip-types scripts/verify-context-threads.mjs",
+		"verify:zip": "node --experimental-strip-types scripts/verify-zip.mjs",
+		"verify:ticks": "node --experimental-strip-types scripts/verify-ticks.mjs"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^7.0.1",

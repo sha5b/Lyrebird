@@ -483,27 +483,238 @@ uv run birdy-pipeline serve</pre>
 		</label>
 	</section>
 
+	<!--
+		Refine the dataset: one press for "go and collect for the birds that hold least".
+
+		The ordering has always been least-collected-first, inside `harvest.py` — a bird with
+		nothing is served before a bird with two thousand — but the only way to ask for it was
+		the Harvest form in the drawer, with a species picker defaulted to "every species" and
+		four sliders in front of it. So the single most useful thing to do to the corpus looked
+		like a configuration exercise, and the policy that makes it useful was invisible.
+
+		It is the same call the drawer's Harvest makes with no species chosen. That is the point:
+		this is not a new capability, it is the main action finally being one.
+	-->
+	<section class="block">
+		<h3 class="blocktitle">Refine the dataset</h3>
+		<p class="note faint">
+			Collect more audio for the birds that hold least, emptiest first.
+			{#if emptySpecies > 0}
+				<b class="mono">{emptySpecies.toLocaleString()}</b> of
+				<b class="mono">{harvestOptions.length.toLocaleString()}</b> known birds hold nothing
+				yet, so they are served before the rest.
+			{:else if pipelineStatus.store.exists}
+				Every known bird holds something, so this deepens the thinnest rather than filling
+				a gap.
+			{/if}
+			Measurements only — the audio is analysed and deleted unless its licence allows
+			keeping it.
+		</p>
+		<button
+			class="primary wide"
+			disabled={jobRunning || pipelineBusy}
+			title="A harvest across every species the pipeline knows, in least-collected-first order. The same call as Harvest in the drawer with no species chosen; the drawer is where the per-species and quality settings live."
+			onclick={() =>
+				runPipeline(() =>
+					pipeline.harvest({
+						species: null,
+						perSpecies: harvestPerSpecies,
+						quality: harvestQuality,
+						cap: harvestCap,
+						maxSeconds: harvestMaxSeconds,
+						fromDir: harvestFromDir || null
+					})
+				)}
+		>
+			Collect for the emptiest birds
+		</button>
+	</section>
+
+	<!--
+		Rebuild is a main action and reads as one now.
+
+		It was inside the "run one step by hand" drawer, which was wrong twice over: it is not a
+		step of the loop above — the loop rebuilds on its own when drift says the frame has
+		stopped describing its contents — and it is the action that decides what the galaxy on
+		screen *is*. Harvest and Learn genuinely are hand versions of loop steps, so they stay
+		in the drawer.
+
+		It keeps its stated cost, because being a main action does not make it cheap: Harvest and
+		Learn accrete and move nothing already drawn, while Rebuild re-clusters and re-projects
+		the whole corpus so every point takes a new position.
+	-->
+	<section class="block rebuild">
+		<h3
+			class="blocktitle help"
+			title="Renders {pipelineStatus.learned.exists
+				? `${learnedTypeCount} fitted + 44 documented`
+				: '44 documented'} syllables and folds in the whole harvest. Both always."
+		>
+			Rebuild the galaxy
+		</h3>
+		<p class="note faint">
+			<b>This one is not incremental.</b> Harvest and Learn add to what exists. Rebuild
+			re-clusters and re-projects the whole corpus, so every point and every knot moves and
+			the galaxy on screen is replaced.
+			{#if pipelineStatus.built.points}
+				At this corpus's size — <b class="mono"
+					>{pipelineStatus.built.points.toLocaleString()}</b
+				> points — expect it to take a while.
+			{/if}
+		</p>
+		<div class="segmented">
+			<button
+				class:on={buildClustering === 'kmeans'}
+				onclick={() => (buildClustering = 'kmeans')}
+				title="One cluster per syllable type, seeded at that type's own centre, every point assigned. This is what lets the app name, label and draw a path for anything it sings — it cannot report an unidentified sound."
+				>Name everything</button
+			>
+			<button
+				class:on={buildClustering === 'hdbscan'}
+				onclick={() => (buildClustering = 'hdbscan')}
+				title="Find however many dense regions there are and leave the rest unassigned. Regions of real audio with nothing documented in them are flagged `unknown` — candidate new syllables. Coverage is not guaranteed, so this is for discovery rather than for the galaxy you listen in."
+				>Find the unknown</button
+			>
+			<button
+				class:on={buildClustering === 'label'}
+				onclick={() => (buildClustering = 'label')}
+				title="Skip the clustering for every sound that already carries a type and give each type its own knot; k-means runs only over the sounds with no label. Every type gets a knot, so nothing sings without lighting — but the knots are then the labels rather than a second, independent finding, and this view still cannot report an unidentified sound. This is the answer at full-corpus scale and it is what the shipped build uses: 348 461 sounds in 14 003 knots, every type covered. Asking k-means for tens of thousands of groups is the wrong instrument (docs/22 §22.5)."
+				>Use the labels</button
+			>
+		</div>
+		{#if buildClustering === 'label'}
+			<!--
+				Said on the surface that offers it, because it is the one honesty
+				difference between this and "Name everything": coverage becomes
+				certain and purity stops being a measurement (docs/22 §22.8).
+			-->
+			<p class="note faint">
+				Every type gets its own knot, so type coverage will read 100 % — by
+				construction, not as a finding. Cluster purity stops measuring the map for
+				the same reason; what still measures it is whether a live sound's nearest
+				knot is its own type.
+			</p>
+		{/if}
+		{#if buildClustering === 'hdbscan'}
+			<label class="field">
+				<span class="lbl">
+					Smallest type <b class="mono">{buildMinCluster}</b>
+				</span>
+				<input
+					type="range"
+					min="5"
+					max="200"
+					step="5"
+					bind:value={buildMinCluster}
+					title="Fewest points that may be called a syllable type. Lower finds more, smaller groups and calls less of the corpus noise."
+				/>
+			</label>
+		{/if}
+		<details class="diag">
+			<summary
+				class="note faint"
+				title="For reading a measurement, not for a galaxy to use: leaving a half out of the corpus is how you verify a figure, at the price of a galaxy that is missing it."
+			>
+				Leave one out (diagnostic)
+			</summary>
+			<div class="checks">
+				<label
+					class="check"
+					title="Off: build the documented repertoire alone, without the syllables fitted to real recordings."
+				>
+					<input
+						type="checkbox"
+						bind:checked={buildUseLearned}
+						disabled={!pipelineStatus.learned.exists}
+					/> Fitted syllables
+				</label>
+				<label
+					class="check"
+					title="Off: build the renders alone. Useful for reading verify:features; the galaxy loses the real repertoire's shape."
+				>
+					<input type="checkbox" bind:checked={buildIncludeHarvest} /> Harvested audio
+				</label>
+			</div>
+		</details>
+		<button
+			class="wide"
+			disabled={jobRunning || pipelineBusy}
+			title="Each learning pass rebuilds when the repertoire has moved on; this only forces it now. Clustering and the projection are computed over the whole corpus at once, so a syllable learned a minute ago has no position until the next build."
+			onclick={() =>
+				runPipeline(() =>
+					pipeline.build({
+						useLearned: buildUseLearned,
+						includeHarvest: buildIncludeHarvest,
+						clustering: buildClustering,
+						minClusterSize: buildMinCluster
+					})
+				)}>Rebuild</button
+		>
+		{#if pipelineStatus.built.exists}
+			<dl class="facts mono">
+				<div><dt>points</dt><dd>{pipelineStatus.built.points ?? '—'}</dd></div>
+				<div><dt>clusters</dt><dd>{pipelineStatus.built.clusters ?? '—'}</dd></div>
+				{#if coverage}
+					<div>
+						<dt>named</dt>
+						<dd class:warn={coverage.share < 0.98}>
+							{coverage.withCluster}/{coverage.types}
+						</dd>
+					</div>
+				{/if}
+			</dl>
+			{#if coverage && coverage.orphans.length}
+				<p class="note faint">
+					{coverage.orphans.length} type{coverage.orphans.length === 1 ? '' : 's'} with
+					no cluster, so nothing lights when they are sung:
+					<span class="mono">{coverage.orphans.slice(0, 4).join(', ')}</span
+					>{coverage.orphans.length > 4 ? ` +${coverage.orphans.length - 4}` : ''}
+				</p>
+			{/if}
+			{#if relationHeadline}
+				<p class="note faint">Geometry: {relationHeadline}</p>
+			{/if}
+		{/if}
+		{#if corpusHealth}
+			<dl
+				class="facts mono"
+				title="Knots that carry a documented function, and knots a syllable can be sung into. A corpus with none of the second draws no threads at all, because nothing resolves to a place."
+			>
+				<div><dt>documented</dt><dd>{corpusHealth.documented}/{corpusHealth.clusters}</dd></div>
+				<div><dt>singable</dt><dd>{corpusHealth.mapped}</dd></div>
+			</dl>
+			{#if corpusHealth.mapped === 0}
+				<p class="note faint">
+					<b>No knot in this galaxy is tied to a syllable</b>, so nothing draws a
+					thread and nothing lights when a bird sings. A harvest-only build has that
+					shape: it is real audio with no documented calls in it. Rebuild with
+					<b>synthetic renders</b> — with <b>Harvested</b> still ticked — to get a
+					corpus that carries both.
+				</p>
+			{/if}
+		{/if}
+		{#if reloading}
+			<p class="note faint">Loading the new galaxy…</p>
+		{/if}
+	</section>
+
+	<hr class="groupsplit" />
+
 	<details class="rollup block">
 		<summary class="mono faint">run one step by hand</summary>
 
 	<section class="block">
 		<h3 class="blocktitle">Harvest</h3>
 		<!--
-			The queue policy, said out loud. It has always been least-collected-first, and it
-			was only ever logged on the server — so this panel gave a reader no way to know
-			whether a run would widen the corpus or deepen the birds already deepest.
+			The queue policy, said out loud, because it was only ever logged on the server. The
+			count lives with "Refine the dataset" above rather than being repeated here: this is
+			the form for choosing *which* bird and how deeply, and the ordering only applies when
+			no species is chosen.
 		-->
 		<p class="note faint">
-			<b>Emptiest first.</b> Every species is queued by what it already holds, so a bird
-			with nothing is served before a bird with two thousand, and the order flattens out
-			again once the new ones have caught up.
-			{#if emptySpecies > 0}
-				<b class="mono">{emptySpecies.toLocaleString()}</b> of
-				<b class="mono">{harvestOptions.length.toLocaleString()}</b> known birds hold
-				nothing yet, and they go first.
-			{:else if pipelineStatus.store.exists}
-				Every known bird already holds something, so this deepens rather than widens.
-			{/if}
+			<b>Emptiest first</b> when no species is chosen: a bird with nothing is served before
+			a bird with two thousand, and the order flattens out again once the new ones have
+			caught up. Choose a species and it collects for that one only.
 		</p>
 		{#if !pipelineStatus.hasKey && !harvestFromDir}
 			<p class="note faint">
@@ -652,184 +863,20 @@ uv run birdy-pipeline serve</pre>
 		{/if}
 	</section>
 
-	<!--
-		The one action on this page that is not incremental, kept apart from the ones that are.
-
-		Harvest and Learn accrete: they add recordings and fit types, they can be run again
-		without undoing anything, and neither moves a point that is already drawn. Rebuild
-		re-clusters and re-projects the **whole** corpus at once, so every knot and every one
-		of 348 461 points takes a new position — it replaces the picture you are looking at,
-		and at production scale it takes about twenty-five minutes.
-
-		They sat in one undifferentiated column of four sections, so the cheapest thing on the
-		page and the most expensive one read as the same kind of button. This is a divider and
-		a stated cost, not a redesign: the grouping is the information.
-	-->
-	<hr class="groupsplit" />
-	<section class="block rebuild">
-		<h3
-			class="blocktitle help"
-			title="Renders {pipelineStatus.learned.exists
-				? `${learnedTypeCount} fitted + 44 documented`
-				: '44 documented'} syllables and folds in the whole harvest. Both always."
-		>
-			Rebuild the galaxy
-		</h3>
-		<p class="note faint">
-			<b>This one is not incremental.</b> Harvest and Learn add to what exists. Rebuild
-			re-clusters and re-projects the whole corpus, so every point and every knot moves
-			and the galaxy on screen is replaced.
-			{#if pipelineStatus.built.points}
-				At this corpus's size — <b class="mono"
-					>{pipelineStatus.built.points.toLocaleString()}</b
-				> points — expect it to take a while.
-			{/if}
-		</p>
-		<div class="segmented">
-			<button
-				class:on={buildClustering === 'kmeans'}
-				onclick={() => (buildClustering = 'kmeans')}
-				title="One cluster per syllable type, seeded at that type's own centre, every point assigned. This is what lets the app name, label and draw a path for anything it sings — it cannot report an unidentified sound."
-				>Name everything</button
-			>
-			<button
-				class:on={buildClustering === 'hdbscan'}
-				onclick={() => (buildClustering = 'hdbscan')}
-				title="Find however many dense regions there are and leave the rest unassigned. Regions of real audio with nothing documented in them are flagged `unknown` — candidate new syllables. Coverage is not guaranteed, so this is for discovery rather than for the galaxy you listen in."
-				>Find the unknown</button
-			>
-			<button
-				class:on={buildClustering === 'label'}
-				onclick={() => (buildClustering = 'label')}
-				title="Skip the clustering for every sound that already carries a type and give each type its own knot; k-means runs only over the sounds with no label. Every type gets a knot, so nothing sings without lighting — but the knots are then the labels rather than a second, independent finding, and this view still cannot report an unidentified sound. This is the answer at full-corpus scale and it is what the shipped build uses: 348 461 sounds in 14 003 knots, every type covered. Asking k-means for tens of thousands of groups is the wrong instrument (docs/22 §22.5)."
-				>Use the labels</button
-			>
-		</div>
-		{#if buildClustering === 'label'}
-			<!--
-				Said on the surface that offers it, because it is the one honesty
-				difference between this and "Name everything": coverage becomes
-				certain and purity stops being a measurement (docs/22 §22.8).
-			-->
-			<p class="note faint">
-				Every type gets its own knot, so type coverage will read 100 % — by
-				construction, not as a finding. Cluster purity stops measuring the map for
-				the same reason; what still measures it is whether a live sound's nearest
-				knot is its own type.
-			</p>
-		{/if}
-		{#if buildClustering === 'hdbscan'}
-			<label class="field">
-				<span class="lbl">
-					Smallest type <b class="mono">{buildMinCluster}</b>
-				</span>
-				<input
-					type="range"
-					min="5"
-					max="200"
-					step="5"
-					bind:value={buildMinCluster}
-					title="Fewest points that may be called a syllable type. Lower finds more, smaller groups and calls less of the corpus noise."
-				/>
-			</label>
-		{/if}
-		<details class="diag">
-			<summary
-				class="note faint"
-				title="For reading a measurement, not for a galaxy to use: leaving a half out of the corpus is how you verify a figure, at the price of a galaxy that is missing it."
-			>
-				Leave one out (diagnostic)
-			</summary>
-			<div class="checks">
-				<label
-					class="check"
-					title="Off: build the documented repertoire alone, without the syllables fitted to real recordings."
-				>
-					<input
-						type="checkbox"
-						bind:checked={buildUseLearned}
-						disabled={!pipelineStatus.learned.exists}
-					/> Fitted syllables
-				</label>
-				<label
-					class="check"
-					title="Off: build the renders alone. Useful for reading verify:features; the galaxy loses the real repertoire's shape."
-				>
-					<input type="checkbox" bind:checked={buildIncludeHarvest} /> Harvested audio
-				</label>
-			</div>
-		</details>
-		<button
-			class="wide"
-			disabled={jobRunning || pipelineBusy}
-			title="Each learning pass rebuilds when the repertoire has moved on; this only forces it now. Clustering and the projection are computed over the whole corpus at once, so a syllable learned a minute ago has no position until the next build."
-			onclick={() =>
-				runPipeline(() =>
-					pipeline.build({
-						useLearned: buildUseLearned,
-						includeHarvest: buildIncludeHarvest,
-						clustering: buildClustering,
-						minClusterSize: buildMinCluster
-					})
-				)}>Rebuild</button
-		>
-		{#if pipelineStatus.built.exists}
-			<dl class="facts mono">
-				<div><dt>points</dt><dd>{pipelineStatus.built.points ?? '—'}</dd></div>
-				<div><dt>clusters</dt><dd>{pipelineStatus.built.clusters ?? '—'}</dd></div>
-				{#if coverage}
-					<div>
-						<dt>named</dt>
-						<dd class:warn={coverage.share < 0.98}>
-							{coverage.withCluster}/{coverage.types}
-						</dd>
-					</div>
-				{/if}
-			</dl>
-			{#if coverage && coverage.orphans.length}
-				<p class="note faint">
-					{coverage.orphans.length} type{coverage.orphans.length === 1 ? '' : 's'} with
-					no cluster, so nothing lights when they are sung:
-					<span class="mono">{coverage.orphans.slice(0, 4).join(', ')}</span
-					>{coverage.orphans.length > 4 ? ` +${coverage.orphans.length - 4}` : ''}
-				</p>
-			{/if}
-			{#if relationHeadline}
-				<p class="note faint">Geometry: {relationHeadline}</p>
-			{/if}
-		{/if}
-		{#if corpusHealth}
-			<dl
-				class="facts mono"
-				title="Knots that carry a documented function, and knots a syllable can be sung into. A corpus with none of the second draws no threads at all, because nothing resolves to a place."
-			>
-				<div><dt>documented</dt><dd>{corpusHealth.documented}/{corpusHealth.clusters}</dd></div>
-				<div><dt>singable</dt><dd>{corpusHealth.mapped}</dd></div>
-			</dl>
-			{#if corpusHealth.mapped === 0}
-				<p class="note faint">
-					<b>No knot in this galaxy is tied to a syllable</b>, so nothing draws a
-					thread and nothing lights when a bird sings. A harvest-only build has that
-					shape: it is real audio with no documented calls in it. Rebuild with
-					<b>synthetic renders</b> — with <b>Harvested</b> still ticked — to get a
-					corpus that carries both.
-				</p>
-			{/if}
-		{/if}
-		{#if reloading}
-			<p class="note faint">Loading the new galaxy…</p>
-		{/if}
-	</section>
-
 	</details>
 {/if}
 {/snippet}
 
 <style>
-	/* The boundary between the steps that accrete and the one that replaces everything.
+	/* The boundary between the page's main actions and the hand versions of the loop's steps.
+
+	   Above it: start learning, refine the dataset, rebuild the galaxy — the three things
+	   somebody comes to this page to do. Below it, in a drawer: Harvest and Learn on their own,
+	   which are what the loop does per pass and are for driving one step deliberately.
+
 	   A rule and a little air rather than a box or a colour: the two groups are still the
 	   same kind of control, and the only claim being made is that one of them is different
-	   in cost. A warning tint would say "dangerous", which is wrong — a rebuild is the
+	   in kind. A warning tint would say "dangerous", which is wrong — a rebuild is the
 	   normal end of a learning run, just not an incremental one. */
 
 	.groupsplit {

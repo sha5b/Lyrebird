@@ -2216,6 +2216,7 @@ uv run birdy-pipeline build</pre>
 				{fittedTypes}
 				loadedTypes={inventoryRows.length}
 				{knotOverlap}
+				{mapDir}
 				onclose={() => (page = '')}
 			/>
 		{/if}

@@ -116,7 +116,7 @@ function normaliseFeatureSpace(raw: FeatureSpace & NestedFeatureSpace): FeatureS
  * the *same* build — a cached `points.json` beside a fresh `positions.f32` is a galaxy
  * whose metadata describes someone else's points.
  */
-function assetUrl(path: string, bust: string): string {
+export function assetUrl(path: string, bust: string): string {
 	return `${base}/${ROOT}/${path}${bust ? `?v=${encodeURIComponent(bust)}` : ''}`;
 }
 

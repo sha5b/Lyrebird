@@ -28,6 +28,8 @@
 	 * disappear behind the columns.
 	 */
 
+	import { tickLabel, tickStep } from './ticks';
+
 	interface Props {
 		/** Device-independent pixels per knot spacing, from Scale. */
 		pxPerKnot: number;
@@ -37,25 +39,13 @@
 
 	let { pxPerKnot, knotSpacing }: Props = $props();
 
-	/** Roughly how far apart labelled ticks should sit, in pixels. */
-	const TARGET_PX = 78;
-
 	/**
-	 * A tick step from the 1-2-5 sequence, in knot spacings, so the labels stay round
-	 * at every zoom. Below one spacing it keeps going in tenths — up close a single
-	 * knot fills the screen and a ruler whose smallest division is the whole knot has
-	 * nothing to say.
+	 * The step is `ticks.ts`'s, not this file's, because the background grid is drawn from the
+	 * same number. It lived here while the grid was a fixed 120 px lattice that agreed with
+	 * nothing; a grid line and a tick are now the same claim and must come from one place.
 	 */
-	const step = $derived.by(() => {
-		if (!(pxPerKnot > 0)) return 1;
-		const raw = TARGET_PX / pxPerKnot;
-		const mag = Math.pow(10, Math.floor(Math.log10(raw)));
-		const norm = raw / mag;
-		const nice = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
-		return nice * mag;
-	});
-	/** How the step is written: 0.5 needs a decimal, 20 must not have one. */
-	const label = (v: number) => (step < 1 ? v.toFixed(1) : String(Math.round(v)));
+	const step = $derived(tickStep(pxPerKnot));
+	const label = (v: number) => tickLabel(v, step);
 
 	let width = $state(0);
 	let height = $state(0);

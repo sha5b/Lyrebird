@@ -13,9 +13,18 @@
 	 * Extracting it only became possible once the shared CSS vocabulary moved to
 	 * `styles/layout.css`. While `.note`, `.pagesection` and `.claims` lived in the page's
 	 * scoped styles, a component could not look like the app it belonged to.
+	 *
+	 * **One amendment to "holds no state".** The build download keeps a progress line while
+	 * it packs, because compressing 77 MB behind a silent button reads as a broken button.
+	 * That is transient state about this component's own control and nothing else — it owns
+	 * no part of the performance, and the property that matters is intact: every *figure* on
+	 * this page is still a prop, so the page cannot invent one. The fetching and packing
+	 * themselves live in `data/asset-download.ts`.
 	 */
 	import { base } from '$app/paths';
 	import { BOUT_GLOSS } from '$lib/lang/glossary';
+	import { packBuild, saveBlob } from '$lib/data/asset-download';
+	import type { GalaxyMap } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
 
 	interface Props {
@@ -45,6 +54,14 @@
 		loadedTypes: number;
 		/** How many times wider the average knot is than the gap to its nearest neighbour. */
 		knotOverlap: { ratio: number } | null;
+		/**
+		 * The sub-build the reader is looking at, `''` on an ordinary single-map root.
+		 *
+		 * Needed so the download packs the galaxy on screen: a `--clustering both` root holds
+		 * two complete asset sets, and packing the wrong one would hand over a different
+		 * picture from the one being read about.
+		 */
+		mapDir: '' | GalaxyMap;
 		onclose: () => void;
 	}
 
@@ -61,8 +78,34 @@
 		fittedTypes,
 		loadedTypes,
 		knotOverlap,
+		mapDir,
 		onclose
 	}: Props = $props();
+
+	/** Idle, or what the download is doing. The button's own state, nothing else's. */
+	let packing = $state<{ phase: 'fetch' | 'pack'; done: number; total: number } | null>(null);
+	let packError = $state('');
+
+	/** How many files the build says it is, so the button can be honest before it is pressed. */
+	const buildFiles = $derived(assets.manifest.files?.length ?? 0);
+
+	async function downloadBuild() {
+		if (packing) return;
+		packError = '';
+		packing = { phase: 'fetch', done: 0, total: buildFiles };
+		try {
+			const { name, blob } = await packBuild(assets, mapDir, fetch, (p) => {
+				packing = { phase: p.phase, done: p.done, total: p.total };
+			});
+			saveBlob(blob, name);
+		} catch (err) {
+			// Said on the page rather than only in the console: a download that does nothing
+			// and explains nothing is the worst of the three possible outcomes.
+			packError = err instanceof Error ? err.message : 'the build could not be packed';
+		} finally {
+			packing = null;
+		}
+	}
 </script>
 
 	<div class="stagepage" role="region" aria-label="What this is, how to read it, and the legend">
@@ -145,10 +188,44 @@
 							</dd>
 						</div>
 					</dl>
-					<p class="note">
-						<a class="paperlink" href="{base}/lyrebird-whitepaper.pdf" download
-							>Download the whitepaper — PDF, 0.7 MB</a
-						>
+					<!--
+						Two downloads, and they were one underlined phrase inside a 0.74 rem note —
+						the same weight as the body copy around it, so the one thing on this page a
+						reader might want to *take away* was the least visible thing on it. They are
+						controls now, in the app's existing button vocabulary rather than a new one.
+
+						The build itself is the end of §1's argument: every figure here is read from
+						the manifest, and this is how a reader checks any of them. It packs exactly
+						what `manifest.files` lists, so it is the build and not a summary of it.
+					-->
+					<div class="downloads">
+						<a class="downloadlink" href="{base}/lyrebird-whitepaper.pdf" download>
+							The whitepaper <span class="mono faint">PDF · 0.7 MB</span>
+						</a>
+						<button class="downloadlink" onclick={downloadBuild} disabled={!!packing}>
+							{#if packing}
+								{packing.phase === 'fetch' ? 'Fetching' : 'Compressing'}
+								<span class="mono faint">{packing.done}/{packing.total}</span>
+							{:else}
+								This build, as data
+								<!--
+									No size claimed, and that is the same rule the rest of this page
+									follows. The archive's size is not known until it is packed — it
+									depends on the build — and a number printed here would be a figure
+									this page invented. The file count comes from the manifest.
+								-->
+								<span class="mono faint">ZIP · {buildFiles} files</span>
+							{/if}
+						</button>
+					</div>
+					<p class="note faint">
+						The archive is the same bytes the browser loaded — the manifest, the inventory,
+						the points, the centroids and the raw float blocks, under the paths the manifest
+						names, and it compresses to roughly a third of the build. Unpacked, it is an
+						asset root the pipeline's own <b class="mono">verify</b> can be pointed at.
+						{#if packError}
+							<b>That failed: {packError}</b>
+						{/if}
 					</p>
 				</section>
 
