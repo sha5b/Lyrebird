@@ -22,6 +22,7 @@
 	 */
 	import { useTask, useThrelte } from '@threlte/core';
 	import * as THREE from 'three';
+	import { readScreenAxes, type BiplotAxis, type ScreenReading } from './biplot';
 
 	interface Props {
 		/** Median nearest-neighbour knot distance, in layout box units. */
@@ -30,11 +31,26 @@
 		spread?: number;
 		/** The OrbitControls target — the point the view is about. */
 		controls?: { target: THREE.Vector3 } | undefined;
-		/** Device pixels per knot spacing, and the view's width in knot spacings. */
-		onscale?: (scale: { pxPerKnot: number; widthKnots: number; heightKnots: number }) => void;
+		/**
+		 * The readable directions fitted once for this build (`biplot.ts`). Passed in
+		 * rather than computed here: the fit is over every knot and does not change with
+		 * the camera; only which of them lines up with the screen does.
+		 */
+		axes?: BiplotAxis[];
+		/** Device pixels per knot spacing, the view's width, and what its axes mean. */
+		onscale?: (scale: {
+			pxPerKnot: number;
+			widthKnots: number;
+			heightKnots: number;
+			reading?: ScreenReading[];
+		}) => void;
 	}
 
-	let { knotSpacing, spread = 1, controls, onscale }: Props = $props();
+	let { knotSpacing, spread = 1, controls, axes, onscale }: Props = $props();
+	// Reused, so a camera move costs no allocation on a frame that is already reporting.
+	const camRight = new THREE.Vector3();
+	const camUp = new THREE.Vector3();
+	const camInto = new THREE.Vector3();
 
 	const { camera, size } = useThrelte();
 	const eye = new THREE.Vector3();
@@ -65,10 +81,27 @@
 		// spam at galaxy distance or freeze up close.
 		if (last > 0 && Math.abs(pxPerKnot - last) / last < 0.005) return;
 		last = pxPerKnot;
+		// What the screen's own directions currently mean. The camera basis is read from
+		// its world matrix rather than from its rotation, because the cloud sits inside a
+		// scaled, spun group and only the matrix knows about both. A uniform scale and a
+		// rotation leave directions intact, so the basis is still orthonormal here.
+		let reading: ScreenReading[] | undefined;
+		if (axes?.length) {
+			cam.matrixWorld.extractBasis(camRight, camUp, camInto);
+			reading = readScreenAxes(
+				axes,
+				[camRight.x, camRight.y, camRight.z],
+				[camUp.x, camUp.y, camUp.z],
+				// three.js' third basis vector points *out* of the screen, so negate it to
+				// get "into the picture", which is the direction a caption means.
+				[-camInto.x, -camInto.y, -camInto.z]
+			);
+		}
 		onscale({
 			pxPerKnot,
 			widthKnots: $size.width / pxPerKnot,
-			heightKnots: height / pxPerKnot
+			heightKnots: height / pxPerKnot,
+			reading
 		});
 	});
 </script>

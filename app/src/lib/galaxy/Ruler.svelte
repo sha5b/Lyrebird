@@ -28,6 +28,7 @@
 	 * disappear behind the columns.
 	 */
 	import type { GalaxyStats } from './stats';
+	import type { ScreenReading } from './biplot';
 
 	interface Props {
 		/** Device-independent pixels per knot spacing, from Scale. */
@@ -38,9 +39,11 @@
 		widthKnots: number;
 		/** The live stats object, sampled slowly for the caption. */
 		stats?: GalaxyStats;
+		/** What each screen direction currently means — see `biplot.ts`. */
+		reading?: ScreenReading[];
 	}
 
-	let { pxPerKnot, knotSpacing, widthKnots, stats }: Props = $props();
+	let { pxPerKnot, knotSpacing, widthKnots, stats, reading }: Props = $props();
 
 	/** Roughly how far apart labelled ticks should sit, in pixels. */
 	const TARGET_PX = 78;
@@ -109,6 +112,29 @@
 		if (live && live.lod >= 0) parts.push(`${Math.round(live.lod * 100)} % of points drawn`);
 		return parts.join(' · ');
 	});
+
+	/**
+	 * What the directions on screen mean right now — the answer to "I cannot read anything
+	 * off this picture", which was true and measured: correlating each drawn axis against
+	 * every nameable quantity, the strongest was knot member count at +0.26.
+	 *
+	 * The meaning is not axis-aligned, which is why it took a biplot to find. Fitted
+	 * obliquely, the shipped build explains 64 % of loudness and 40 % of brightness along
+	 * single directions. `r2` is printed with each one because an arrow without it is a
+	 * confident claim about an unknown amount — and duration, at 0.015, is honestly absent
+	 * from this picture and so never appears here at all.
+	 */
+	const axisCaption = $derived.by(() =>
+		(reading ?? [])
+			.map((r) => {
+				const where =
+					r.axis === 'right' ? (r.align > 0 ? 'right' : 'left') :
+					r.axis === 'up' ? (r.align > 0 ? 'up' : 'down') :
+					r.align > 0 ? 'away' : 'toward';
+				return `${where} → ${r.name} (${Math.round(r.r2 * 100)} %)`;
+			})
+			.join(' · ')
+	);
 </script>
 
 <div class="ruler ruler-top" bind:clientWidth={width} aria-hidden="true">
@@ -130,6 +156,13 @@
 	title={`Distance from the centre of the view, in knot spacings — the median gap between two neighbouring knots on this build (${knotSpacing.toFixed(3)} projection units). One tick is ${label(step)}. The scale is exact at the depth of the view centre and approximate nearer or farther, as in any perspective view, and it counts from the centre because the projection has no meaningful origin.`}
 >
 	<span class="unit">1 tick = {label(step)} knot-spacing{step === 1 ? '' : 's'}</span>
+	{#if axisCaption}
+		<span
+			class="axes"
+			title="Which nameable acoustic quantity increases fastest along each screen direction, and the share of that quantity the direction explains (r-squared). Fitted over every knot from the shipped 28-d descriptor, so it is a property of this build; the percentage is how much to trust the arrow. A quantity the picture does not carry — duration, at 2 % — is never shown."
+			>{axisCaption}</span
+		>
+	{/if}
 	<span class="faint">{caption}</span>
 </p>
 
@@ -241,5 +274,13 @@
 
 	.ruler-caption .faint {
 		opacity: 0.75;
+	}
+
+	/* Dimmer than the unit: the scale is a fact about the picture, this is a fitted
+	   reading of it, and the percentages beside each name say how good a fit. */
+	.ruler-caption .axes {
+		color: var(--ink-dim);
+		opacity: 0.8;
+		cursor: help;
 	}
 </style>

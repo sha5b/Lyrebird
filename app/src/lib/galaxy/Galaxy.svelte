@@ -5,6 +5,7 @@
 	import type * as THREE from 'three';
 	import type { OrbitControls as OrbitControlsInstance } from 'three/examples/jsm/controls/OrbitControls.js';
 	import type { BirdyAssets } from '$lib/data/types';
+	import { biplotAxes, type ScreenReading } from './biplot';
 	import ContextPaths from './ContextPaths.svelte';
 	import Framing from './Framing.svelte';
 	import GridBurst from './GridBurst.svelte';
@@ -178,6 +179,18 @@
 	 */
 	let pxPerKnot = $state(0);
 	let widthKnots = $state(0);
+	/**
+	 * What the screen's directions currently mean, from `biplot.ts` — rewritten whenever
+	 * the camera settles, so the ruler's caption can name a direction instead of leaving
+	 * "left" and "up" as the only two channels a viewer has and neither of them readable.
+	 */
+	let reading = $state<ScreenReading[]>([]);
+	/**
+	 * Fitted once per build: the direction each nameable acoustic quantity increases
+	 * fastest in, and how much of it that direction explains. Over knots, because the 28-d
+	 * descriptor ships per knot and a knot is the unit the picture places.
+	 */
+	const axes = $derived(biplotAxes(assets, view.centroids));
 
 	let controls = $state<OrbitControlsInstance | undefined>();
 	let cloud = $state<THREE.Group | undefined>();
@@ -237,9 +250,11 @@
 			{knotSpacing}
 			{spread}
 			{controls}
+			{axes}
 			onscale={(s) => {
 				pxPerKnot = s.pxPerKnot;
 				widthKnots = s.widthKnots;
+				reading = s.reading ?? [];
 			}}
 		/>
 
@@ -264,7 +279,7 @@
 		and the numbers only re-render when the zoom has actually moved.
 	-->
 	{#if pxPerKnot > 0}
-		<Ruler {pxPerKnot} {knotSpacing} {widthKnots} {stats} />
+		<Ruler {pxPerKnot} {knotSpacing} {widthKnots} {stats} {reading} />
 	{/if}
 </div>
 
