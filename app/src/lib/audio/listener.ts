@@ -127,17 +127,26 @@ export class Listener {
 		this.signal.focus = index;
 	}
 
-	private static clean(nodes: number[], times: { start: number; end: number }[] | null) {
+	private static clean(
+		nodes: number[],
+		times: { start: number; end: number }[] | null,
+		companions: number[][] | null = null
+	) {
 		const keptNodes: number[] = [];
 		const keptTimes: { start: number; end: number }[] = [];
+		const keptCompanions: number[][] = [];
 		nodes.forEach((node, i) => {
 			if (node < 0) return;
 			keptNodes.push(node);
 			if (times?.[i]) keptTimes.push(times[i]);
+			// Dropped in step with the nodes, or a split type's second knot would end up
+			// attached to whichever syllable happened to survive the -1 filter next to it.
+			if (companions) keptCompanions.push((companions[i] ?? []).filter((c) => c >= 0));
 		});
 		return {
 			nodes: keptNodes,
-			times: times && keptTimes.length === keptNodes.length ? keptTimes : null
+			times: times && keptTimes.length === keptNodes.length ? keptTimes : null,
+			companions: keptCompanions.some((c) => c.length) ? keptCompanions : null
 		};
 	}
 
@@ -159,6 +168,7 @@ export class Listener {
 			cleaned.nodes.length > 1
 				? {
 						nodes: cleaned.nodes,
+						companions: cleaned.companions,
 						times: null,
 						progress: -1,
 						alpha: IDLE_ALPHA,
@@ -189,12 +199,14 @@ export class Listener {
 		nodes: number[],
 		times: { start: number; end: number }[],
 		speciesId = '',
-		label = ''
+		label = '',
+		companions: number[][] | null = null
 	): void {
-		const cleaned = Listener.clean(nodes, times);
+		const cleaned = Listener.clean(nodes, times, companions);
 		if (cleaned.nodes.length < 2) return;
 		this.live.push({
 			nodes: cleaned.nodes,
+			companions: cleaned.companions,
 			times: cleaned.times,
 			progress: -1,
 			// invisible until the first note sounds; `advancePaths` raises it
@@ -552,6 +564,13 @@ export class Listener {
 					// This one we *know*, so it is marked as sung rather than matched — see
 					// the note on `sung` in shaders.ts for why the two must look different.
 					this.signal.sung[node] = Math.max(this.signal.sung[node], pulse);
+					// A split type's other knot is the same sound and is marked sung too:
+					// it is ground truth by exactly the same warrant, and leaving it on the
+					// merely-resembling channel would draw it in the wrong colour.
+					for (const other of path.companions?.[i] ?? []) {
+						this.signal.activations[other] = Math.max(this.signal.activations[other], pulse);
+						this.signal.sung[other] = Math.max(this.signal.sung[other], pulse);
+					}
 				}
 			});
 			const current = path.nodes[Math.round(path.progress)];
@@ -569,7 +588,9 @@ export class Listener {
 			if (path.progress < 0) continue;
 			path.nodes.forEach((node, i) => {
 				const pulse = Listener.scheduledPulse(path, i, now);
-				if (pulse > 0.05) this.points.pulseCluster(node, pulse);
+				if (pulse <= 0.05) return;
+				this.points.pulseCluster(node, pulse);
+				for (const other of path.companions?.[i] ?? []) this.points.pulseCluster(other, pulse);
 			});
 		}
 	}

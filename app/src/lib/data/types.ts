@@ -387,6 +387,16 @@ export interface Centroid {
 	vector32?: VectorRow;
 	count: number;
 	/**
+	 * Which of its type's knots this is, largest first, and how many there are.
+	 *
+	 * A type owns two when the build split it — the field/synthetic seam, or its own
+	 * sounds forming two groups past `TYPE_SPLIT_SEPARATION`. Rank 0 is the type's main
+	 * home: the one a song's thread runs through and the one a fly-to frames. Absent on
+	 * builds before 2026-08-03, where a type never owned more than one.
+	 */
+	blobRank?: number;
+	blobCount?: number;
+	/**
 	 * The centroid in the reduced space of `point-features.f32`. Used only to decide how
 	 * brightly each individual point responds; the reported match still uses `vector`.
 	 */

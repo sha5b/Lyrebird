@@ -1,3 +1,149 @@
+# Lyrebird — the pipeline pair (2026-08-03): both of last round's open items, and both premises were wrong
+
+HANDOFF §5 left two things "not done, both need a rebuild". Both are now built and measured.
+Neither turned out to be the thing it was described as, and in both cases the measurement is
+the deliverable.
+
+**Neither is installed.** `--space embed` needs the store's `typing.json`, which
+`pipeline/out/harvest` does not have — it needs `learn`, ~3 h. So the code is in, tested, and
+waiting on that run. `pipeline/out/harvest-gan` does carry typing.json + embeddings.f32 and is
+the cheapest route to a real end-to-end build when someone wants one.
+
+## 1. cMDS and the "honest" metric: it trades worse, and the number behind the ask means
+   something else
+
+The ask was: `negativeEigenvalueMass` is **0.408**, cMDS is fitting a space that cannot exist,
+the rows are unit vectors so the chord `√(2 − 2·cos)` *is* their Euclidean distance and drives
+the negative mass to zero. All of that is true. `cmds-chord` implements it, one
+`mds_squared_distances` serves the full path, the landmark path and `grow.embed`, and the
+projection basis now records which metric it was fitted with so a grown point cannot be placed
+through the other one. Asserted in the self-test: the chord distance is the Euclidean one to
+1e-16, and its double-centred matrix is PSD to 1e-9.
+
+**And it measures worse**, on the shipped 13 848 knot vectors, landmark and full paths alike:
+
+```
+projector    metric   neg mass   3 axes   r(cos)  rho(cos)  r(chord)
+cmds         cosine      40.4 %    33.4 %   0.7436    0.7362    0.7239
+cmds-chord   chord        0.0 %    32.2 %   0.6956    0.6854    0.6827
+```
+
+Note the last column: the cosine fit is a **better fit to chord distance than the chord fit
+is**. That needed explaining before it could be used, and the explanation is reweighting —
+every metric in the family `(1 − cos)^p` orders every pair identically and differs only in how
+far pairs are weighted against near ones. The sweep:
+
+```
+   p    neg mass   pearson   spearman
+ 0.5       0.0 %    0.6925     0.6811   <- the chord, a true Euclidean distance
+ 1.0      41.4 %    0.7414     0.7332   <- shipped
+ 1.5      62.1 %    0.7498     0.7462
+ 2.0      73.7 %    0.7360     0.7364
+ 4.0      91.1 %    0.6125     0.6133
+```
+
+**Faithfulness peaks at 62 % negative mass and is at its worst at 0 %.** So
+`negativeEigenvalueMass` does not measure "how much the 3D picture has to invent", which is
+what galaxy.py's docstring said it measured for a year. It measures one true thing — that
+classical MDS is fitted to a dissimilarity no Euclidean space can hold — and nothing about the
+quality of the answer. Docstring corrected. `cmds` stays the default. p = 1.5 measures best by
+0.008 and is **not** adopted: a knob fitted to a faithfulness number on one seed is how the
+match ramp got into trouble in the first place.
+
+`pipeline/analysis/mds_metric.py` is the whole thing, re-runnable.
+
+## 2. The bimodality split: the statistic behind "166 genuinely torn" does not survive 8-d
+
+The plan was to gate `_type_blobs` on a type's own bimodality using the same test
+`torn_clusters` uses — gap over spread, torn above 5. **That threshold is unreachable above
+three dimensions and the reason is arithmetic.** A blob's mean radius grows like √d while the
+gap between its two halves does not, so the ratio collapses as dimension rises. Measured on
+unit rows, two blobs a full **180° apart** — the most separated two groups on a sphere can be:
+
+```
+             null (one blob)   90° apart   180° apart
+3-d                1.5 .. 2.0        5.48         7.45
+8-d                0.7 .. 1.1        2.70         3.61
+32-d               0.4 .. 0.7        1.25         1.82
+```
+
+A gate of 5 is sensible in 3-d and sits **above the maximum achievable** in 8-d. So last
+round's `tear_dims.py` figure — *"166 of the 385 are also torn in 8-d, therefore genuinely two
+groups"* — is not measuring what it says: at >5 in 8-d it selects configurations with unequal
+spread or outliers, not separated groups. **The 3-d half of that script stands; the 8-d half
+and the 166 need re-deriving.** Not done here.
+
+**The gate that shipped is an effect size instead**: project both halves onto the line joining
+their centres, divide the gap by the pooled standard deviation *on that line*. The √d inflation
+cancels and the number means the same thing in every dimension — 3.1..4.9 on one blob whatever
+`d`, 8..10 on two blobs 90° apart. Calibrated on a heavy-tailed null: at the 40-member floor a
+gate of 6.0 falsely splits about **1 %** of single blobs, and 0 % by 80 members; below 40
+members it is 12 %, which is what the floor is for.
+
+`TYPE_SPLIT_SEPARATION = 6.0`, `TYPE_SPLIT_MIN_MEMBERS = 40`, `TYPE_SPLIT_MIN_SIDE = 8` (the
+same floor `grow.MIN_NOVEL_CLUSTER` uses). Measured against the shipped **8-d** per-point
+features — a lower bound, since 8-d folds some splits shut — it would split **317 knots**, 2.3 %
+of all knots but **13.6 % of all points**, since these are the big ones.
+
+The blob tuple now carries *why* it split, and the manifest separates `sourceSplitTypes` from
+`bimodalSplitTypes`. Each centroid carries `blobRank` / `blobCount`.
+
+## 3. The app could not have addressed a split knot, and that was a live landmine
+
+`buildClusterLookup` kept the **first** cluster it saw per `(species, syllable)` and dropped the
+rest. Harmless today — 0 of 13 748 types own two knots on this build — and it would have turned
+the split into the previous round's bug with the sign flipped: the second blob drawn, never lit,
+never labelled. Splitting without fixing this would have been strictly worse than not splitting.
+
+Owner's call on what a second knot gets: **it lights and is tagged with the first; the thread
+still runs through the primary.** A song is a sequence in time and a forked line would say the
+bird sang one syllable in two places at once, while a lit-but-unnamed blob is the exact
+complaint that started all of this. So:
+
+- `allBySyllable` carries every knot, primary first, sorted on the build's own `blobRank`
+  rather than on file order — a rebuild that reorders centroids cannot silently move which knot
+  a thread runs through.
+- `LivePath.companions` is per node, and both `applyScheduledPulses` and `pulseScheduledPoints`
+  light them. They are written to `sung`, not merely `activations`: a split type's other knot is
+  ground truth by exactly the same warrant, and the merely-resembling channel is drawn in a
+  different colour.
+- Tags come free — `NodeProjector` picks its candidates by scanning activations.
+- `clusterIndexFor` is unchanged and still returns one place.
+
+The lookup moved to `src/lib/data/cluster-lookup.ts` so a test could import it: `assets.ts` uses
+a TypeScript parameter property, which node's strip-only mode refuses, and that is why the other
+harnesses re-derive what they check. Re-deriving is fine for a rule with one reading and wrong
+here — the bug is *in the lookup*, so a test that reimplements it would reproduce it.
+`assets.ts` re-exports, so no importer changed.
+
+## 4. Tests
+
+- `npm run verify:split-knots` (new): both knots reachable, primary is rank 0 even when the
+  array is out of order, a legacy build with no ranks still resolves, an unranked two-knot build
+  falls back to the larger blob, companions stay attached to their own syllable when an unplaced
+  one is dropped between them, and the shipped assets are self-consistent about rank/count.
+- `galaxy.self_test` gains: a real two-lobed type splits, a *wide single* blob does not, a
+  two-lobed type of 20 members does not, rank 0 is the larger side, `split_separation=inf`
+  restores the old behaviour exactly; plus the chord metric's two exactness claims and a
+  round-trip of both metrics through `grow.embed` — with the negative case, that the wrong
+  metric really does move the points, so the round-trip is not vacuous.
+- `verify --out` reports the match ramp and fails on an inverted one.
+
+`npm run check` clean apart from the four pre-existing `syrinx-processor.js` errors;
+`npm run build`, `verify:layout`, `verify:split-knots`, `check-provenance-buffers`,
+`verify-inventory-shards`, `galaxy.self_test` and pipeline `verify` all pass. **Not run: a real
+build with either change in it** — see the note at the top.
+
+## 5. What I would do next
+
+1. **`learn` on `pipeline/out/harvest`, then build.** Everything above is waiting on it, and it
+   is the only way to see the split in the picture.
+2. **Re-derive the "genuinely torn" count** with the effect-size statistic, in the 32-d
+   clustering space rather than the 8-d shadow. `tear_dims.py` needs the new statistic and a
+   `--dump-points` matrix.
+3. **Re-measure the ramp after that build** (`thresholds --write` runs automatically in `build`
+   now, so this is just reading it).
+
 # Lyrebird — the match ramp round (2026-08-03): the ramp ships with the assets it measures
 
 The test round of 2026-08-02 ran `thresholds` for the first time and found that the browser's

@@ -1,5 +1,15 @@
 import { base } from '$app/paths';
 import { hydrateCentroids } from './centroid-vectors';
+// The cluster lookup lives in its own module so `verify:split-knots` can import it —
+// this file uses a TypeScript parameter property, which node's strip-only mode refuses.
+// Re-exported here so every existing importer keeps working unchanged.
+import { buildClusterLookup, clusterIndexFor, type ClusterLookup } from './cluster-lookup';
+export {
+	buildClusterLookup,
+	clusterIndexFor,
+	clusterIndicesFor,
+	type ClusterLookup
+} from './cluster-lookup';
 import type { BirdyAssets, Centroid, Centroids, EmbeddingSpace, FeatureSpace, Inventory, InventoryIndex, Manifest, PointCloudMeta, RelationsDoc, Species, SpeciesIndexEntry, SyrinxCalibration } from './types';
 
 const ROOT = 'birdy';
@@ -492,53 +502,6 @@ export function songSyllables(species: Species, songId: string) {
 
 export function formatRefs(inventory: Inventory, refs: string[]): string[] {
 	return refs.map((r) => inventory.refs[r] ?? r);
-}
-
-/**
- * Which galaxy cluster a syllable belongs to. Built once, because a phrase has to be
- * turned into a path through the cloud on every selection.
- */
-export interface ClusterLookup {
-	bySyllable: Map<string, number>;
-}
-
-export function buildClusterLookup(centroids: Centroids): ClusterLookup {
-	const bySyllable = new Map<string, number>();
-	centroids.items.forEach((item, index) => {
-		if (item.syllableId && !bySyllable.has(`${item.speciesId}/${item.syllableId}`)) {
-			bySyllable.set(`${item.speciesId}/${item.syllableId}`, index);
-		}
-	});
-	return { bySyllable };
-}
-
-/**
- * Where a syllable sits in the galaxy, or -1 if it does not sit anywhere.
- *
- * **It used to fall back to "any cluster of the same species", and that was a placement
- * claim the corpus could not support.** Clustering is fitted over the whole point cloud
- * and a syllable only wins a cluster if enough of its renders land together; on the
- * 176-cluster build of 2026-07, 83 of the inventory's 176 syllables did not, so nearly
- * half of them were
- * being resolved by that fallback. It returned `bySpecies`, which is the *first* cluster
- * of that bird in file order — an arbitrary knot, the same one for every unplaced
- * syllable the bird has. A phrase with three unplaced syllables therefore drew a
- * trajectory that kept returning to one node chosen by nothing, and it looked exactly
- * like a measured path.
- *
- * -1 propagates: `Listener.clean` drops the node and its scheduled time together, so the
- * thread joins the syllables whose position *is* known, at the times they actually sound,
- * and a phrase with fewer than two of those draws nothing. That silence is the honest
- * reading and it is not left silent — `syllableCoverage` below lets the interface say how
- * much of a call it can place, so a missing thread reads as a gap in the corpus rather
- * than as a rendering fault.
- */
-export function clusterIndexFor(
-	lookup: ClusterLookup,
-	speciesId: string,
-	syllableId: string
-): number {
-	return lookup.bySyllable.get(`${speciesId}/${syllableId}`) ?? -1;
 }
 
 /** How many of a sequence's syllables the galaxy can place, and how many there are. */

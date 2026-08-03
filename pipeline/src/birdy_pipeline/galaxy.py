@@ -88,6 +88,37 @@ FIELD_SOURCE = "field"
 #: that genuinely coincide, which is what keeps the second seed honest.
 SOURCE_SEED_GATE = 0.9
 
+#: A type is drawn as two knots when its own sounds form two groups this far apart, in
+#: pooled standard deviations along the axis that separates them.
+#:
+#: **The obvious statistic does not work here and the obvious threshold is unreachable.**
+#: `torn_clusters` scores a knot by gap/spread — the distance between its two halves over
+#: their mean radius — and calls it torn above 5. That is calibrated for *three*
+#: dimensions and nothing else: a blob's mean radius grows like sqrt(d) while the gap
+#: between two halves does not, so the whole statistic collapses as dimension rises.
+#: Measured on unit rows, two blobs a full 180 degrees apart — the most separated two
+#: groups on a sphere can possibly be — score 7.45 in 3-d, **3.61 in 8-d and 1.82 in
+#: 32-d**. A gate of 5 in 8-d is therefore above the maximum a clean two-blob split can
+#: reach, and in 32-d so is a gate of 2. Anything it does select there is selecting on
+#: unequal spread, not on separation.
+#:
+#: So the gate is an *effect size* instead: project both halves onto the line joining
+#: their centres and divide the gap by the pooled standard deviation on that line. The
+#: sqrt(d) inflation cancels, and the number means the same thing in every dimension —
+#: measured on one blob it sits at 3.1..4.9 whatever the dimension, and on two blobs 90
+#: degrees apart at 8..10.
+#:
+#: 6.0 is where the false-split rate on a single heavy-tailed blob is about 1 % at the
+#: 40-member floor and 0 % by 80 members. Below 40 members it is 12 % and the floor is
+#: what keeps it out, not the gate.
+TYPE_SPLIT_SEPARATION = 6.0
+#: Members a type needs before its shape is allowed to argue for two knots at all.
+TYPE_SPLIT_MIN_MEMBERS = 40
+#: And members each side needs to become a knot. 8 mirrors `grow.MIN_NOVEL_CLUSTER`,
+#: which is the critic's own typing floor — below it the pipeline does not call a group
+#: of sounds a type anywhere else either.
+TYPE_SPLIT_MIN_SIDE = 8
+
 PROJECTIONS = ("umap", "pca", "cmds", "cmds-chord")
 DEFAULT_PROJECTION = "cmds"  # most distance-faithful; see README "Galaxy shape"
 FAITHFULNESS_PAIRS = 200_000
@@ -761,25 +792,75 @@ def _print_projection_table(results: dict[str, dict[str, Any]], chosen: str) -> 
     print("", file=sys.stderr)
 
 
+def blob_separation(m: np.ndarray, min_side: int = TYPE_SPLIT_MIN_SIDE) -> tuple[float, np.ndarray | None]:
+    """How bimodal one group of points is, in pooled standard deviations.
+
+    2-means, then project both halves onto the line joining their centres and divide the
+    gap by the pooled standard deviation *on that line*. Everything off the separating
+    axis is dropped, which is exactly what makes the number comparable across dimensions
+    — see `TYPE_SPLIT_SEPARATION` for the measurements, and for why the gap/spread ratio
+    `torn_clusters` uses cannot be carried above three dimensions.
+
+    Returns `(separation, labels)`, or `(0.0, None)` when there is no two-sided split with
+    `min_side` points either way.
+    """
+    if len(m) < 2 * min_side:
+        return 0.0, None
+    km = KMeans(n_clusters=2, n_init=4, random_state=0).fit(m)
+    a, b = m[km.labels_ == 0], m[km.labels_ == 1]
+    if len(a) < min_side or len(b) < min_side:
+        return 0.0, None
+    axis = b.mean(axis=0) - a.mean(axis=0)
+    norm = float(np.linalg.norm(axis))
+    if norm < 1.0e-12:
+        return 0.0, None
+    axis = axis / norm
+    pa, pb = a @ axis, b @ axis
+    pooled = float(np.sqrt(0.5 * (pa.var() + pb.var())))
+    return float(abs(pb.mean() - pa.mean()) / max(pooled, 1.0e-9)), km.labels_
+
+
 def _type_blobs(
-    z: np.ndarray, points: PointSet, gate: float = SOURCE_SEED_GATE
+    z: np.ndarray,
+    points: PointSet,
+    gate: float = SOURCE_SEED_GATE,
+    split_separation: float = TYPE_SPLIT_SEPARATION,
 ) -> list[tuple[tuple[str, str], int, np.ndarray]]:
-    """Every labelled point's home group: one per type, two when its sources disagree.
+    """Every labelled point's home group: one per type, two when the type is two things.
 
     The one rule for "which points belong together by their label", so the seeding
     (`_type_seed_means`) and the assignment (`label_assign`) cannot drift onto different
-    partitions. A type is split in two when it holds points on both sides of the source
-    gap and its two means point further apart than `gate` — the measurement behind that
-    gate is in `_type_seed_means`.
+    partitions.
 
-    Returns `(key, rank, row indices)` per blob, sorted by key, rank 0 first; on a split
-    rank 0 is the *field* blob and rank 1 the synthetic one.
+    A type splits for either of two reasons, tested in this order:
+
+    1. **Its sources disagree.** Field and synthetic members whose means point further
+       apart than `gate`. The measurement behind that gate is in `_type_seed_means`.
+    2. **Its own sounds are two groups.** `blob_separation` past `split_separation`, with
+       at least `TYPE_SPLIT_MIN_MEMBERS` members and `TYPE_SPLIT_MIN_SIDE` either way.
+
+    **Why the second one exists.** A type that is genuinely two groups of sounds gets one
+    centroid in the empty space between them: the tag, the thread, the grid strike and the
+    wave all go to a place with no points, while both real blobs light. That is the "one
+    note shines and there is no label and no connection" report, and the 2026-08-03 round
+    established it is not always the projection's fault — a separation surviving a linear
+    map to 8-d exists in the full space too. The layout can repair the ones the projection
+    invented and deliberately does not hide the ones that are real; this is the repair for
+    those, upstream, where a knot can be made into one place by making it one thing.
+
+    Set `split_separation` to `inf` to test the source seam alone, which is what every
+    build before 2026-08-03 did.
+
+    Returns `(key, rank, row indices)` per blob, sorted by key, rank 0 first. On a source
+    split rank 0 is the *field* blob; on a bimodality split rank 0 is the larger one, so
+    "rank 0" means the same thing to a reader either way — the type's main home, and the
+    one the app threads a song through.
     """
     labelled: dict[tuple[str, str], list[int]] = {}
     for i, (sp, syl) in enumerate(zip(points.species_id, points.syllable_id)):
         if syl:
             labelled.setdefault((sp, syl), []).append(i)
-    blobs: list[tuple[tuple[str, str], int, np.ndarray]] = []
+    blobs: list[tuple[tuple[str, str], int, str, np.ndarray]] = []
     for key, idx in sorted(labelled.items()):
         ix = np.asarray(idx)
         is_field = np.asarray([points.source[i] == FIELD_SOURCE for i in ix])
@@ -791,10 +872,22 @@ def _type_blobs(
                 / max(float(np.linalg.norm(fm) * np.linalg.norm(sm)), 1.0e-12)
             )
             if cos < gate:
-                blobs.append((key, 0, f))
-                blobs.append((key, 1, s))
+                blobs.append((key, 0, "source", f))
+                blobs.append((key, 1, "source", s))
                 continue
-        blobs.append((key, 0, ix))
+        # Only types the source seam left whole are asked the second question. A type
+        # already drawn as two knots has had its answer, and splitting a split would
+        # start making claims about sub-groups of a handful of points.
+        if np.isfinite(split_separation) and ix.size >= TYPE_SPLIT_MIN_MEMBERS:
+            sep, labels = blob_separation(z[ix])
+            if labels is not None and sep > split_separation:
+                left, right = ix[labels == 0], ix[labels == 1]
+                if left.size < right.size:
+                    left, right = right, left
+                blobs.append((key, 0, "bimodal", left))
+                blobs.append((key, 1, "bimodal", right))
+                continue
+        blobs.append((key, 0, "whole", ix))
     return blobs
 
 
@@ -820,9 +913,9 @@ def _type_seed_means(
     lose. The partition itself is `_type_blobs`, shared with `label_assign`.
     """
     blobs = _type_blobs(z, points, gate)
-    seeds = [z[ix].mean(axis=0) for _, _, ix in blobs]
-    owners = [(key, rank) for key, rank, _ in blobs]
-    n_split = sum(1 for _, rank, _ in blobs if rank == 1)
+    seeds = [z[ix].mean(axis=0) for _, _, _, ix in blobs]
+    owners = [(key, rank) for key, rank, _, _ in blobs]
+    n_split = sum(1 for _, rank, _, _ in blobs if rank == 1)
     return seeds, n_split, owners
 
 
@@ -913,10 +1006,10 @@ def label_assign(
     n = len(points.species_id)
     cluster_id = np.full(n, -1, dtype=int)
     centres: list[np.ndarray] = []
-    for c, (_, _, ix) in enumerate(blobs):
+    for c, (_, _, _, ix) in enumerate(blobs):
         cluster_id[ix] = c
         centres.append(z[ix].mean(axis=0))
-    keys = {key for key, _, _ in blobs}
+    keys = {key for key, _, _, _ in blobs}
 
     untyped = np.nonzero(cluster_id < 0)[0]
     extra = 0
@@ -933,7 +1026,9 @@ def label_assign(
         "k": len(centres),
         "types": len(keys),
         "typeSeeds": len(blobs),
-        "sourceSplitTypes": len(blobs) - len(keys),
+        "sourceSplitTypes": sum(1 for _, rank, why, _ in blobs if rank == 1 and why == "source"),
+        "bimodalSplitTypes": sum(1 for _, rank, why, _ in blobs if rank == 1 and why == "bimodal"),
+        "splitTypes": len(blobs) - len(keys),
         "unlabelledPoints": int(untyped.size),
         "allowance": extra,
         "wanted": len(centres),
@@ -1418,7 +1513,8 @@ def build_galaxy(
             print(
                 f"label assignment: k={k_final} from the labels — "
                 f"{plan_report['types']} types "
-                f"({plan_report['sourceSplitTypes']} split by source) + "
+                f"({plan_report['sourceSplitTypes']} split by source, "
+                f"{plan_report.get('bimodalSplitTypes', 0)} by their own shape) + "
                 f"{plan_report['allowance']} kmeans clusters for "
                 f"{plan_report['unlabelledPoints']} points with no label",
                 file=sys.stderr,
@@ -1639,6 +1735,22 @@ def build_galaxy(
             }
         )
         counts.append(int(sel.size))
+
+    # Which of its type's knots each item is, so the app never has to infer it from file
+    # order. A type owns two when the source seam or the bimodality gate split it, and the
+    # app has to address *both*: the whole point of splitting is that one centroid was
+    # landing in the void between two real groups, and lighting only the first would trade
+    # a knot with no points under it for a knot that never lights. `blobRank` 0 is the
+    # larger blob — the type's main home, and the one a song's thread runs through.
+    by_type: dict[tuple[str, str], list[int]] = {}
+    for i, it in enumerate(items):
+        if it.get("syllableId"):
+            by_type.setdefault((it.get("speciesId", ""), it["syllableId"]), []).append(i)
+    for members in by_type.values():
+        members.sort(key=lambda i: -items[i]["count"])
+        for rank, i in enumerate(members):
+            items[i]["blobRank"] = rank
+            items[i]["blobCount"] = len(members)
 
     # How many types actually ended up with a cluster carrying their name.
     #
@@ -2287,7 +2399,7 @@ def self_test(verbose: bool = True) -> None:
     )
 
     blobs = _type_blobs(z, points)
-    got = {(key, rank): len(ix) for key, rank, ix in blobs}
+    got = {(key, rank): len(ix) for key, rank, _, ix in blobs}
     assert got == {
         (("sp_a", "L01"), 0): 30,
         (("sp_a", "L01"), 1): 20,
@@ -2298,6 +2410,47 @@ def self_test(verbose: bool = True) -> None:
     assert n_split == 1 and len(seeds) == 3, f"seeding disagrees with the blobs: {owners}"
     assert [o for o, _ in owners].count(("sp_a", "L01")) == 2
 
+    # --- the bimodality gate: a type that is two groups of its own sounds ---
+    #
+    # Planted so every arm is checked: one type genuinely in two places, one wide but
+    # single, and one two-lobed type too small to be believed.
+    b_rows, b_species, b_syllable, b_song, b_source = [], [], [], [], []
+
+    def badd(block: np.ndarray, sp: str, syl: str) -> None:
+        b_rows.append(block)
+        b_species.extend([sp] * len(block))
+        b_syllable.extend([syl] * len(block))
+        b_song.extend([""] * len(block))
+        b_source.extend([FIELD_SOURCE] * len(block))
+
+    # two tight lobes, far apart: this is the case the gate exists for
+    badd(np.array([1.0, 0, 0]) + rng.normal(0, 0.05, (30, 3)), "sp_c", "L01")
+    badd(np.array([0, 1.0, 0]) + rng.normal(0, 0.05, (30, 3)), "sp_c", "L01")
+    # one blob, as wide as the pair above is far apart: wide is not the same as two
+    badd(np.array([0, 0, 1.0]) + rng.normal(0, 0.5, (60, 3)), "sp_d", "L01")
+    # two lobes again, but only 20 points: under TYPE_SPLIT_MIN_MEMBERS
+    badd(np.array([1.0, 0, 0]) + rng.normal(0, 0.05, (10, 3)), "sp_e", "L01")
+    badd(np.array([0, 1.0, 0]) + rng.normal(0, 0.05, (10, 3)), "sp_e", "L01")
+    bz = np.vstack(b_rows)
+    bpoints = PointSet(
+        x=bz, species_id=b_species, syllable_id=b_syllable, song_id=b_song,
+        duration=[0.1] * len(bz), source=b_source,
+    )
+    by_key: dict[tuple[str, str], list[tuple[int, str, int]]] = {}
+    for key, rank, why, ix in _type_blobs(bz, bpoints):
+        by_key.setdefault(key, []).append((rank, why, len(ix)))
+    assert len(by_key[("sp_c", "L01")]) == 2, f"a real split was missed: {by_key}"
+    assert all(w == "bimodal" for _, w, _ in by_key[("sp_c", "L01")]), by_key
+    assert len(by_key[("sp_d", "L01")]) == 1, f"a wide single blob was split: {by_key}"
+    assert len(by_key[("sp_e", "L01")]) == 1, f"a 20-member type was split: {by_key}"
+    # rank 0 is the larger side, so "the type's main home" reads the same either way
+    ranks = sorted(by_key[("sp_c", "L01")])
+    assert ranks[0][2] >= ranks[1][2], f"rank 0 is not the larger blob: {ranks}"
+
+    # And the escape hatch every build before 2026-08-03 effectively used.
+    off = _type_blobs(bz, bpoints, split_separation=float("inf"))
+    assert len(off) == 3, f"split_separation=inf still split something: {off}"
+
     cluster_id, centres, k, report = label_assign(z, points, seed=0)
     assert k == len(centres) == 3 + report["allowance"], (k, report)
     # Every labelled point in its own type's cluster, and never in the remainder.
@@ -2305,7 +2458,7 @@ def self_test(verbose: bool = True) -> None:
         if not syl:
             assert cluster_id[i] >= 3, "an unlabelled point took a type's knot"
             continue
-        key, rank, _ = blobs[cluster_id[i]]
+        key, rank, _, _ = blobs[cluster_id[i]]
         assert key == (sp, syl), f"point {i} landed in {key}, not {(sp, syl)}"
     assert (cluster_id >= 0).all(), "label assignment left a point in no cluster"
 

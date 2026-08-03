@@ -962,6 +962,15 @@ export const fragmentShader = /* glsl */ `
  */
 export interface LivePath {
 	nodes: number[];
+	/**
+	 * Per node, the type's *other* knots — empty for all but the split types.
+	 *
+	 * A type the build split owns two knots, and both are that sound. They light and are
+	 * tagged with the node itself, so no lit blob is ever left unnamed; the thread runs
+	 * through `nodes` alone, because a song is a sequence in time and a forked line would
+	 * say the bird sang one syllable in two places at once.
+	 */
+	companions: number[][] | null;
 	/** Scheduled syllable windows in AudioContext time; null for a static preview. */
 	times: { start: number; end: number }[] | null;
 	/** Position along the path in node units while singing; -1 when not animating. */

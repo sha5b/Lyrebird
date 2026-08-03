@@ -9,6 +9,7 @@
 		CLASS_COUNT,
 		PROVENANCE,
 		clusterIndexFor,
+		clusterIndicesFor,
 		detectGalaxyMaps,
 		loadAssets,
 		pointProvenance,
@@ -970,7 +971,10 @@
 			scheduled.map((s) => clusterIndexFor(clusters, speciesId, s.syllableId)),
 			scheduled.map((s) => ({ start: s.at, end: s.at + s.dur })),
 			speciesId,
-			label
+			label,
+			// A split type owns a second knot that is the same sound. It lights and is
+			// tagged with the first; the thread above still runs through the primary only.
+			scheduled.map((s) => clusterIndicesFor(clusters, speciesId, s.syllableId).slice(1))
 		);
 		// The syllables that resolved to no cluster draw nothing above — the thread
 		// drops them by design. Their own points still exist, so they flash while the
