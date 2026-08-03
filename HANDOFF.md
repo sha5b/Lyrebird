@@ -189,14 +189,35 @@ scales each knot by its own feature spread, which is what `radius`/`cohesion` me
 is genuinely still undrawn — `meanDuration`, `speciesMix`, the per-knot source mix — has no
 channel left, since hue is spent on genus and size on LOD and events.
 
-## 6. Not verified, and it needs to be
+## 6. Verified on screen — v7 is installed
 
-**Nothing in this round has been looked at.** `app/static/birdy` is still the cMDS v6 build,
-so PaCMAP and the lobe tags are not on screen; a production rebuild needs `harvest-gan`, the
-only store with typing.json *and* embeddings.f32. Every figure above except the shipped-build
-ones comes from the 40-species descriptor-space corpus — the *ranking* transfers, the
-absolutes do not. And three renderer changes now stand untested by any browser: the ribbon
-threads, the per-lobe tags, and the axis caption.
+**v7 is built, installed and looked at.** Owner, on seeing it: *"much better yes."* That is
+the verification the tests could not reach, and it covers the three renderer changes that
+had no automated check between them: the **ribbon threads** (a dead ShaderMaterial draws
+nothing, so "the threads are visible" is also "the shader compiled"), the **per-lobe tags**,
+and the **axis caption**.
+
+Production figures, 348 461 points and 13 848 knots, against the cMDS build it replaced:
+
+```
+                          v6 cmds    v7 pacmap
+knnAgreement               0.0849       0.4685   5.5x
+trustworthiness                 -       0.9247
+continuity                      -       0.9036
+faithfulness r             0.6672       0.4745
+torn / measured          386/6733    1864/5320
+brightness as a direction   0.402        0.618
+```
+
+`drawnLobes` at production scale: **1 750 second anchors, 18 188 members that would
+otherwise light unnamed, 63 ms** — against `localShapes`' 197 ms, and agreeing with the
+pipeline's independent k-means count of 1 864.
+
+v6 is backed up at `/tmp/birdy-prod/v6-INSTALLED-backup`; revert is one `rsync`.
+
+**Still not measured at production scale:** the split-gate A/B and the cMDS-versus-PaCMAP
+bake-off were both run on the 40-species descriptor-space corpus. The *ranking* transfers;
+the absolute figures do not.
 
 New instruments: `npm run verify:biplot`, `verify:trajectory`, `verify:split-knots`;
 `neighbourhood_quality` in the pipeline; `pipeline/analysis/mds_metric.py`.
