@@ -88,7 +88,7 @@ FIELD_SOURCE = "field"
 #: that genuinely coincide, which is what keeps the second seed honest.
 SOURCE_SEED_GATE = 0.9
 
-PROJECTIONS = ("umap", "pca", "cmds")
+PROJECTIONS = ("umap", "pca", "cmds", "cmds-chord")
 DEFAULT_PROJECTION = "cmds"  # most distance-faithful; see README "Galaxy shape"
 FAITHFULNESS_PAIRS = 200_000
 KNN_AGREEMENT_K = 10
@@ -269,12 +269,69 @@ def cosine_distance_matrix(z: np.ndarray) -> np.ndarray:
     return np.maximum(d, 0.0)
 
 
+#: The two dissimilarities classical MDS can be fitted to, and the reason there are two.
+#:
+#: **`cosine` is not a Euclidean distance and cMDS is only defined for one that is.** Fed
+#: squared cosine distances, the double-centred matrix is indefinite: the production build
+#: measured `negativeEigenvalueMass` at **0.408**, so 41 % of the eigenvalue mass was
+#: negative and the projector was fitting a space that cannot exist. The three kept axes
+#: then hold 33 % of a quantity that is partly imaginary.
+#:
+#: **`chord` is the same information with the arithmetic repaired.** The rows are unit
+#: vectors, so the honest Euclidean distance between two of them is the chord
+#: `sqrt(2 - 2 cos)` — the straight line through the sphere rather than the angle. Its
+#: square is `2 * (1 - cos)`: linear in cosine distance, same ordering, same neighbours,
+#: and the double-centred matrix is then `2 U U^T` centred, which is positive
+#: semi-definite *by construction*. The negative mass is not reduced, it is zero.
+#:
+#: Both stay available because that argument is about the arithmetic, not about the
+#: picture, and which picture is better is a measurement — `--compare-projections` scores
+#: them side by side on faithfulness, kNN agreement and tearing.
+MDS_METRICS = ("cosine", "chord")
+
+
+def mds_squared_distances(u: np.ndarray, v: np.ndarray, metric: str) -> np.ndarray:
+    """Squared dissimilarity between two sets of *already unit-normalised* rows.
+
+    One function because three places need to agree on it and drifting apart is silent:
+    the full-matrix path, the landmark path, and `grow.embed`, which places a new point
+    into a frame some earlier build fitted. A point embedded with the wrong metric lands
+    somewhere plausible and wrong.
+    """
+    cos = u @ v.T
+    if metric == "chord":
+        # |a - b|^2 for unit a, b. Exact, not an approximation of the cosine distance.
+        return np.maximum(2.0 - 2.0 * cos, 0.0)
+    if metric == "cosine":
+        return np.maximum(1.0 - cos, 0.0) ** 2
+    raise ValueError(f"unknown MDS metric {metric!r}, expected one of {MDS_METRICS}")
+
+
 def _classical_mds(d2: np.ndarray, k: int = 3) -> tuple[np.ndarray, dict[str, Any]]:
     """Torgerson/PCoA on a squared-distance matrix: double-centre, top-k eigenpairs.
 
     Cosine distance is not Euclidean, so the double-centred matrix has negative
-    eigenvalues; `negativeEigenvalueMass` says how much of the spectrum they hold,
-    which is the honest measure of how much the 3D picture has to invent.
+    eigenvalues, and `negativeEigenvalueMass` says how much of the spectrum they hold.
+
+    **It is not a measure of how much the 3D picture has to invent, and this docstring
+    said it was.** Measured (`pipeline/analysis/mds_metric.py`) over the family
+    `d = (1 - cos)^p`, every member of which orders every pair identically and differs
+    only in how far pairs are weighted against near ones:
+
+        p       neg mass   pearson   spearman
+        0.5        0.0 %    0.6925     0.6811   <- the chord, a true Euclidean distance
+        1.0       41.4 %    0.7414     0.7332   <- shipped
+        1.5       62.1 %    0.7498     0.7462
+        2.0       73.7 %    0.7360     0.7364
+        4.0       91.1 %    0.6125     0.6133
+
+    Faithfulness peaks at **62 %** negative mass and is at its **worst at 0 %**. The two
+    are decoupled. Repairing the indefiniteness — `cmds-chord`, where the metric is the
+    chord `sqrt(2 - 2 cos)` between the unit rows and the double-centred matrix is PSD by
+    construction — costs about 0.05 of faithfulness, on the cosine yardstick and on the
+    chord's own. What the number does measure, truly, is that classical MDS is being
+    fitted to a dissimilarity no Euclidean space can hold. That is worth knowing and it
+    is not a defect in the answer.
     """
     row = d2.mean(axis=0)
     b = -0.5 * (d2 - row[None, :] - row[:, None] + d2.mean())
@@ -294,7 +351,11 @@ def _classical_mds(d2: np.ndarray, k: int = 3) -> tuple[np.ndarray, dict[str, An
 
 
 def _landmark_mds(
-    z: np.ndarray, k: int = 3, n_landmarks: int = CMDS_LANDMARKS, seed: int = 0
+    z: np.ndarray,
+    k: int = 3,
+    n_landmarks: int = CMDS_LANDMARKS,
+    seed: int = 0,
+    metric: str = "cosine",
 ) -> tuple[np.ndarray, dict[str, Any]]:
     """Silva-Tenenbaum landmark MDS, for corpora too big for the full matrix."""
     rng = np.random.default_rng(seed)
@@ -302,14 +363,14 @@ def _landmark_mds(
     m = min(n_landmarks, n)
     idx = rng.choice(n, size=m, replace=False)
     u = _unit_rows(z)
-    d_lm = np.maximum(1.0 - u[idx] @ u[idx].T, 0.0)
-    np.fill_diagonal(d_lm, 0.0)
-    pos_lm, info = _classical_mds(d_lm**2, k)
+    d2_lm = mds_squared_distances(u[idx], u[idx], metric)
+    np.fill_diagonal(d2_lm, 0.0)
+    pos_lm, info = _classical_mds(d2_lm, k)
 
     # embed the rest: x = -0.5 * L_pinv @ (d_x^2 - mean_landmark_sq)
     lam = np.maximum(np.asarray(info["eigenvalues"][:k], dtype=np.float64), 1.0e-12)
     l_pinv = (pos_lm / lam).T  # (k, m)
-    d_all = np.maximum(1.0 - u @ u[idx].T, 0.0) ** 2  # (n, m)
+    d_all = mds_squared_distances(u, u[idx], metric)  # (n, m)
     mean_sq = d_all.mean(axis=0)
     pos = -0.5 * (d_all - mean_sq[None, :]) @ l_pinv.T
     pos[idx] = pos_lm
@@ -322,6 +383,7 @@ def _landmark_mds(
             "landmarks": u[idx],
             "lPinv": l_pinv,
             "meanSq": mean_sq,
+            "metric": metric,
         },
     }
     return pos, info
@@ -369,15 +431,17 @@ def project(
             "varianceRatioTotal": float(pca.explained_variance_ratio_.sum()),
         }
 
-    if method == "cmds":
+    if method in ("cmds", "cmds-chord"):
+        metric = "chord" if method == "cmds-chord" else "cosine"
         if n <= CMDS_FULL_MAX:
             if verbose:
                 print(
-                    f"projection cmds: classical MDS on the {n}x{n} cosine distance "
+                    f"projection {method}: classical MDS on the {n}x{n} {metric} distance "
                     "matrix (full eigendecomposition)",
                     file=sys.stderr,
                 )
-            d2_full = cosine_distance_matrix(z) ** 2
+            d2_full = mds_squared_distances(_unit_rows(z), _unit_rows(z), metric)
+            np.fill_diagonal(d2_full, 0.0)
             pos, info = _classical_mds(d2_full)
             info["mode"] = "full"
             # The same out-of-sample frame the landmark path emits, with every point
@@ -391,17 +455,19 @@ def project(
                 "landmarks": _unit_rows(z),
                 "lPinv": (pos / lam_full).T,
                 "meanSq": d2_full.mean(axis=0),
+                "metric": metric,
             }
         else:
             if verbose:
                 print(
-                    f"projection cmds: landmark MDS, {CMDS_LANDMARKS} landmarks "
+                    f"projection {method}: landmark MDS on {metric} distances, "
+                    f"{CMDS_LANDMARKS} landmarks "
                     f"(n={n} exceeds the {CMDS_FULL_MAX}-point full-matrix limit)",
                     file=sys.stderr,
                 )
-            pos, info = _landmark_mds(z, seed=seed)
+            pos, info = _landmark_mds(z, seed=seed, metric=metric)
             info["mode"] = "landmark"
-        info["metric"] = "cosine"
+        info["metric"] = metric
         return pos, info
 
     raise ValueError(f"unknown projection {method!r}, expected one of {PROJECTIONS}")
@@ -1689,6 +1755,7 @@ def build_galaxy(
             peak=np.asarray(chosen["frame"]["peak"]),
             mean=emb_mean if space == "embed" else mean,
             std=emb_std if space == "embed" else std,
+            metric=str(basis_parts.get("metric", "cosine")),
         ).save(out_dir)
         if verbose:
             print(f"wrote {out_dir / 'projection-basis.json'}", file=sys.stderr)
@@ -2255,5 +2322,61 @@ def self_test(verbose: bool = True) -> None:
             named.add((info["speciesId"], info["syllableId"]))
     assert named == {("sp_a", "L01"), ("sp_b", "L02")}, named
 
+    # --- the two MDS metrics, and the out-of-sample frame each one leaves behind ---
+    #
+    # The chord claim is exact and worth asserting rather than trusting: for unit rows it
+    # *is* the Euclidean distance, so the double-centred matrix is PSD and the negative
+    # eigenvalue mass is zero, not merely small.
+    probe = np.random.default_rng(0).normal(size=(80, 12))
+    u_probe = _unit_rows(probe)
+    truth = ((u_probe[:, None, :] - u_probe[None, :, :]) ** 2).sum(-1)
+    chord = mds_squared_distances(u_probe, u_probe, "chord")
+    assert np.abs(chord - truth).max() < 1.0e-9, "the chord metric is not the euclidean one"
+    _, chord_info = _classical_mds(chord)
+    assert chord_info["negativeEigenvalueMass"] < 1.0e-9, (
+        f"chord cMDS should be exactly PSD, got {chord_info['negativeEigenvalueMass']}"
+    )
+
+    # A basis records the metric it was fitted with, and `grow.embed` has to use it: a
+    # point placed through the other one lands somewhere plausible and wrong, and nothing
+    # downstream can tell. The invariant is that re-embedding the build's own rows
+    # reproduces the positions the build gave them.
+    from .grow import ProjectionBasis, embed
+
+    for metric_name in MDS_METRICS:
+        method = "cmds-chord" if metric_name == "chord" else "cmds"
+        raw, info = project(probe, method, seed=0, verbose=False)
+        parts = info["basis"]
+        assert parts["metric"] == metric_name, parts["metric"]
+        basis = ProjectionBasis(
+            landmarks=parts["landmarks"],
+            l_pinv=parts["lPinv"],
+            mean_sq=parts["meanSq"],
+            cluster_shift=np.zeros((1, 3)),
+            centre=np.zeros(3),
+            scale=np.ones(3),
+            knee=1.0,
+            peak=np.ones(3),
+            mean=np.zeros(probe.shape[1]),
+            std=np.ones(probe.shape[1]),
+            metric=metric_name,
+        )
+        again = embed(basis, probe, np.full(len(probe), -1))
+        worst = float(np.abs(again - raw).max())
+        assert worst < 1.0e-6, f"{method}: re-embedding moved its own points by {worst}"
+
+    # And the negative half of it: the wrong metric must actually change the answer, or
+    # the assertion above proves nothing.
+    wrong = ProjectionBasis(
+        landmarks=parts["landmarks"], l_pinv=parts["lPinv"], mean_sq=parts["meanSq"],
+        cluster_shift=np.zeros((1, 3)), centre=np.zeros(3), scale=np.ones(3), knee=1.0,
+        peak=np.ones(3), mean=np.zeros(probe.shape[1]), std=np.ones(probe.shape[1]),
+        metric="cosine",
+    )
+    assert float(np.abs(embed(wrong, probe, np.full(len(probe), -1)) - raw).max()) > 1.0e-3, (
+        "the two metrics place points identically — the basis's metric field is not load-bearing"
+    )
+
     if verbose:
-        print("galaxy self-test ok: blobs shared, labels assigned, no type unnamed")
+        print("galaxy self-test ok: blobs shared, labels assigned, no type unnamed, "
+              "both MDS metrics round-trip through their own basis")

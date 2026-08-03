@@ -105,6 +105,12 @@ class ProjectionBasis:
     #: Feature-space standardisation, frozen so a new descriptor lands on the same axes.
     mean: np.ndarray
     std: np.ndarray
+    #: Which dissimilarity the build's cMDS was fitted to (`galaxy.MDS_METRICS`).
+    #: **A basis written before 2026-08-03 carries none and is `cosine` by definition** —
+    #: that was the only metric there was. Recorded rather than assumed because measuring
+    #: a new point's distance with the other one lands it somewhere plausible and wrong,
+    #: and nothing downstream could tell.
+    metric: str = "cosine"
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -124,6 +130,7 @@ class ProjectionBasis:
             "peak": self.peak.astype(float).tolist(),
             "mean": self.mean.astype(float).tolist(),
             "std": self.std.astype(float).tolist(),
+            "metric": self.metric,
         }
 
     @staticmethod
@@ -138,6 +145,7 @@ class ProjectionBasis:
             scale=arr("scale"),
             knee=float(raw["knee"]),
             peak=arr("peak"),
+            metric=str(raw.get("metric", "cosine")),
             mean=arr("mean"),
             std=arr("std"),
         )
@@ -169,8 +177,11 @@ def embed(basis: ProjectionBasis, x: np.ndarray, cluster_id: np.ndarray) -> np.n
     u = _unit_rows(z)
 
     # Out-of-sample landmark MDS, with the corpus's own centring term rather than one
-    # re-measured over the new rows — that is what keeps the old points still.
-    d2 = np.maximum(1.0 - u @ basis.landmarks.T, 0.0) ** 2
+    # re-measured over the new rows — that is what keeps the old points still. The
+    # dissimilarity is the build's own (import is local: galaxy imports grow back).
+    from .galaxy import mds_squared_distances
+
+    d2 = mds_squared_distances(u, basis.landmarks, basis.metric)
     pos = -0.5 * (d2 - basis.mean_sq[None, :]) @ basis.l_pinv.T
 
     k = basis.cluster_shift.shape[0]
