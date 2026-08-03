@@ -26,6 +26,12 @@
 	import { BirdyEngine, type ScheduledSyllable } from '$lib/audio/engine';
 	import { Listener } from '$lib/audio/listener';
 	import { SoundingLog } from '$lib/audio/sounding';
+	import {
+		initialPerformance,
+		reduce as reducePerformance,
+		type Command as PerformanceCommand,
+		type Event as PerformanceEvent
+	} from '$lib/state/performance';
 	import InventoryTable from '$lib/InventoryTable.svelte';
 	import { buildInventoryRows, indexRows } from '$lib/data/inventory-rows';
 	import { createIndividual } from '$lib/audio/individual';
@@ -122,9 +128,25 @@
 	 * kind of thing again.
 	 */
 	let tab = $state<'sing' | 'words' | 'listen'>('sing');
+	/**
+	 * **The one value the chorus and the selection are, and the only thing that writes it.**
+	 *
+	 * This was thirteen pieces of state, eleven functions and seven effects in this scope, and
+	 * two bugs came out of that in one session — a `setChorus` that toggled because a button
+	 * called it, and two flags that both meant "did the aviary have the air". Both are
+	 * structural, so `state/performance.ts` is a pure reducer over `(state, event)` and every
+	 * transition is checked by `verify:performance` in milliseconds rather than by a
+	 * four-minute browser probe.
+	 *
+	 * The six values below are `$derived` projections of it, so the two hundred places that
+	 * *read* `chorus` or `speciesId` are unchanged and **nothing but `dispatch` can write
+	 * them.** That is the property the old code could not have: any of those places could
+	 * assign, and several did.
+	 */
+	let perf = $state(initialPerformance());
 	// Empty on purpose: the app opens on the whole corpus rather than on one bird, and
 	// the camera frames all of it. Choosing a bird is what narrows the view.
-	let speciesId = $state('');
+	const speciesId = $derived(perf.speciesId);
 	/**
 	 * Which call the Sing tab is on, or `''` for **all songs** — the first row of the
 	 * dropdown and what every bird opens on.
@@ -136,7 +158,7 @@
 	 * dropdown ("Frame this call", "Only this call") said the same thing twice more
 	 * and could contradict it.
 	 */
-	let songId = $state('');
+	const songId = $derived(perf.songId);
 	let text = $state('danger — come here');
 	// The composer (Compose tab): one chip strip, three ways to fill it. `tokens` is the
 	// sequence being edited; `provenance` is why it holds what it holds, which is what
@@ -148,7 +170,7 @@
 	// Well above the old 0.8 ceiling: see the limiter note on the slider. Nothing in the
 	// synthesis path ever reaches full scale on its own, so unity was quiet rather than loud.
 	let volume = $state(1.5);
-	let chorus = $state<'off' | 'solo' | 'global'>('off');
+	const chorus = $derived(perf.chorus);
 	let micOn = $state(false);
 	let inputSource = $state<'microphone' | 'system'>('microphone');
 	let inputDeviceId = $state('');
@@ -325,7 +347,7 @@
 	let lastPhrase = $state<Phrase | null>(null);
 	let nowSinging = $state<ScheduledSyllable[]>([]);
 	let voices = $state(0);
-	let pinnedCluster = $state(-1);
+	const pinnedCluster = $derived(perf.knot);
 
 	/**
 	 * What has been sung, newest first. The strip along the bottom is the only record of
@@ -355,7 +377,7 @@
 		// was on screen when the pointer arrived.
 		if (historyFrozen) frozenHistory = untrack(() => history);
 	});
-	let selectedSung = $state<number | null>(null);
+	const selectedSung = $derived(perf.sungId);
 	let sungCounter = 0;
 	/** Enough to overflow any window; the strip clips the rest at the far end. */
 	const HISTORY_CAP = 24;
@@ -559,79 +581,27 @@
 	/**
 	 * Choosing a bird hands it the chorus, and releasing it hands the chorus back.
 	 *
-	 * The whole-aviary chorus and a chosen bird contradict each other, and the
-	 * contradiction used to be invisible: `focus` is deliberately -1 during a global
-	 * chorus — no species is more the subject than any other — so picking a bird changed
-	 * the labels and the camera while leaving every point at the same weight, and the
-	 * selection looked ignored. The old rule silenced the aviary and left you with a
-	 * chosen bird and nothing to hear. Starting *its* chorus instead is the answer to the
-	 * same contradiction: the subject changes, the aviary does not go quiet.
+	 * **This was a 38-line effect and it is a transition now.** It read four variables —
+	 * `chorus`, `speciesId`, `resumeGlobal`, `lastSpeciesChoice` — decided between four
+	 * outcomes, and shared the resume question with a second flag in `clearSelection`. Both of
+	 * this session's chorus bugs lived in that overlap. `state/performance.ts` holds the whole
+	 * decision as `chooseBird` / `releaseSelection`, and `verify:performance` asserts each of
+	 * the four outcomes the effect used to reach implicitly.
 	 *
-	 * Guarded on the current mode because `setChorus` toggles — calling it with the mode
-	 * that is already running is how you stop it, which would make selecting a bird that
-	 * is already singing switch it off.
-	 *
-	 * Two leaks this guard used to leave open:
-	 *
-	 * - Switching bird *while* solo ran only refreshed the display: the ambient pool
-	 *   still held the previous species, so the old bird — not the new one — kept
-	 *   singing, sometimes for as long as its shard took to load.
-	 * - `stopAmbient` stops the scheduler but not the notes already posted to the
-	 *   worklet, so the aviary's in-flight songs played on into the solo. Only the
-	 *   selected bird (and its same-species duet partners) may be heard in solo, so
-	 *   the voices are cut when a selection change takes the chorus over.
-	 *
-	 * And one state machine for the way back: returning to all birds restores the
-	 * whole-aviary chorus if it was running when the selection began, and stays
-	 * silent if the user had stopped it — both are "how it was", which is the only
-	 * honest answer to "what should all birds sound like".
+	 * The one part that stays here is the tab guard: handing the air to a solo chorus is a
+	 * Sing-tab behaviour, and the Compose tab has a species picker with no chorus controls, so
+	 * a pick there must not start — or hijack — a chorus the user cannot see. That is a fact
+	 * about this screen's layout rather than about the performance, so it guards the dispatch
+	 * rather than living inside the reducer.
 	 */
-	let lastSpeciesChoice = $state('');
-	/**
-	 * Whether the whole-aviary chorus had the air when the current selection took it.
-	 * Written here, read on the way back; `silence` and any toggle to 'off' clear it,
-	 * because an explicit stop must survive the round trip.
-	 */
-	let resumeGlobal = false;
-	$effect(() => {
-		const chosen = speciesId;
-		if (chosen === lastSpeciesChoice) return;
-		lastSpeciesChoice = chosen;
-		untrack(() => {
-			if (!engine) return;
-			// Handing the air to a solo chorus is a Sing-tab behaviour. The Compose tab
-			// has a species picker of its own but no chorus controls, so a pick there
-			// must not start — or hijack — a chorus the user cannot see. pickCluster
-			// switches listen → sing in the same handler and effects run after state
-			// settles, so galaxy clicks still arrive here with tab already 'sing'.
-			if (tab !== 'sing') return;
-			if (chosen) {
-				if (chorus !== 'solo') {
-					resumeGlobal = chorus === 'global';
-					// Cut in-flight notes only when a chorus was actually running — with
-					// the chorus off, what is playing is something the user asked for
-					// by hand, and selecting a bird must not silence it.
-					if (chorus !== 'off') engine.panic();
-					void setChorus('solo');
-				} else {
-					// A different bird while solo runs: rebuild the pool for it. The
-					// shard may still be in flight, so wait for it like setChorus does.
-					engine.panic();
-					void assets?.loadSpecies(chosen).then((bird) => {
-						if (bird && speciesId === chosen && chorus === 'solo') {
-							startSoloChorus(bird.id);
-						}
-					});
-					refreshSelection();
-				}
-			} else if (chorus === 'solo') {
-				if (resumeGlobal) void setChorus('global');
-				else void setChorus('off');
-				resumeGlobal = false;
-			}
-		});
-	});
-
+	function chooseBird(id: string) {
+		if (tab !== 'sing') {
+			// Still record the choice; just do not let it take the air.
+			perf = { ...perf, speciesId: id, songId: '' };
+			return;
+		}
+		dispatch({ k: 'chooseBird', id });
+	}
 	/** Cluster ids per species, for framing a whole repertoire at once. */
 	const clustersOfSpecies = $derived.by(() => {
 		const map = new Map<string, number[]>();
@@ -794,8 +764,6 @@
 				holdTimer = null;
 			}
 			history = [];
-			selectedSung = null;
-			pinnedCluster = -1;
 			// Scheduled windows belong to an audio clock that has just been disposed of, and
 			// their keys to an inventory that may not hold them any more. Both make the table's
 			// cursor point at the wrong row rather than at none.
@@ -804,18 +772,21 @@
 			inventoryVersion++;
 			// A new inventory can drop a species — `--learned-only` does exactly that — and a
 			// selection pointing at one that is gone leaves `currentSpecies` null, which reads
-			// as "all birds" while the dropdown still shows the missing name.
-			if (speciesId && !loaded.inventoryIndex.some((s) => s.id === speciesId)) {
-				speciesId = '';
-			}
+			// as "all birds" while the dropdown still shows the missing name. The whole
+			// performance is reset here anyway: a galaxy reload invalidates the knot indices
+			// and the phrase ids as well as the species list.
+			const keepBird =
+				perf.speciesId && loaded.inventoryIndex.some((sp) => sp.id === perf.speciesId)
+					? perf.speciesId
+					: '';
+			perf = { ...initialPerformance(), speciesId: keepBird, soloMode: perf.soloMode };
 			signal = createSignal(loaded.centroids.items.length, loaded.points.n);
 			galaxyVersion += 1;
 			// Only if audio was already running: `enter` needs a user gesture the first time,
 			// and by here there has been one. It restores the whole-corpus chorus itself.
-			chorus = 'off';
 			if (wasSinging !== 'off' || hadMic) {
 				await enter();
-				if (wasSinging === 'solo') setChorus('solo');
+				if (wasSinging === 'solo') dispatch({ k: 'setChorus', mode: 'solo' });
 			}
 		} catch (err) {
 			loadError = err instanceof Error ? err.message : String(err);
@@ -914,7 +885,7 @@
 			perPointMeasured = live.perPointMeasured;
 			// The aviary starts full. A silent galaxy gives no reason to believe any of
 			// this is live, and the whole-corpus chorus is what the view is built to show.
-			setChorus('global');
+			dispatch({ k: 'setChorus', mode: 'global' });
 			if (created.sampleRateMismatch) {
 				rateNote = `This browser is running audio at ${Math.round(created.ctx.sampleRate)} Hz, but the corpus was analysed at ${assets.featureSpace.sampleRate} Hz. Matching still works, slightly less precisely.`;
 			}
@@ -947,20 +918,6 @@
 		].slice(0, HISTORY_CAP);
 	}
 
-	/**
-	 * **One flag, because two of them raced and the loser silenced the aviary.**
-	 *
-	 * There used to be a `chorusToResume` here and a `resumeGlobal` beside the `speciesId`
-	 * effect, both answering "did the whole-aviary chorus have the air when this selection
-	 * took it". `clearSelection` acted on the first synchronously and the effect acted on
-	 * the second a tick later, so both asked for `global` — and `setChorus` was a toggle,
-	 * so the second ask stopped what the first had started. Measured: 0 songs in 14 s after
-	 * a deselect, and stuck there. `resumeGlobal` is now the only one, it lives beside the
-	 * effect that reads it, and `clearSelection` no longer resumes anything by hand.
-	 */
-	function noteChorusBeforeSelecting() {
-		if (selectedSung === null && pinnedCluster < 0) resumeGlobal = chorus === 'global';
-	}
 
 	/**
 	 * Selecting a past phrase draws its path as a static thread and focuses its bird, so
@@ -968,14 +925,12 @@
 	 * empty space in the view, clears it.
 	 */
 	function selectSung(entry: Sung) {
-		if (selectedSung === entry.id) {
-			clearSelection();
-			return;
-		}
-		noteChorusBeforeSelecting();
-		selectedSung = entry.id;
-		speciesId = entry.speciesId;
-		listener?.setPreview(entry.nodes, entry.speciesId, entry.label);
+		const wasSelected = selectedSung === entry.id;
+		dispatch({ k: 'selectSung', sungId: entry.id, speciesId: entry.speciesId });
+		// The reducer treats the same chip twice as a release, so the preview thread follows:
+		// drawn for a new phrase, dropped when the phrase is let go.
+		if (wasSelected) listener?.clearPreview();
+		else listener?.setPreview(entry.nodes, entry.speciesId, entry.label);
 	}
 
 	/**
@@ -985,14 +940,7 @@
 	 * birds, and the `speciesId` effect then hands the chorus back the way it came.
 	 */
 	function clearSelection() {
-		if (selectedSung === null && pinnedCluster < 0 && !speciesId) return;
-		selectedSung = null;
-		pinnedCluster = -1;
-		// Back to the whole corpus: the selection had narrowed it to one bird. Writing
-		// `speciesId` is the whole of it — the effect below owns handing the air back,
-		// and this function resuming the chorus *as well* is the race that left it stuck.
-		speciesId = '';
-		refreshSelection();
+		dispatch({ k: 'releaseSelection' });
 	}
 
 	/**
@@ -1451,14 +1399,84 @@
 	 * two modes and not a checkbox — one plays back a repertoire, the other generates from a
 	 * statistic. The `Improvise` button beside them does the same walk once.
 	 */
-	let soloMode = $state<'songs' | 'improvise'>('songs');
-	/** Every start of a one-bird chorus, so the two filters cannot diverge between them. */
-	function startSoloChorus(birdId: string) {
-		// In improvise mode the ambient scheduler stays off and the effect below drives it:
-		// `startAmbient` can only pick phrases that exist, and the point of this mode is the
-		// ones that do not.
-		if (soloMode === 'improvise') return;
-		engine?.startAmbient([birdId], 12 * tempo, 3, chorusConfidence, soloSongIds);
+	const soloMode = $derived(perf.soloMode);
+
+	/**
+	 * The one writer of `perf`, and the bridge from a decision to the engine.
+	 *
+	 * `reducePerformance` decides *what is true now* and returns the commands that make it so.
+	 * This runs them. The split is the point: the decisions are checkable without an audio
+	 * context, and the only code that needs one is `perform` below.
+	 */
+	function dispatch(event: PerformanceEvent) {
+		const step = reducePerformance(perf, event);
+		perf = step.state;
+		for (const command of step.commands) void perform(command);
+	}
+
+	/**
+	 * Carries out one command.
+	 *
+	 * The two asynchronous ones re-check `perf.epoch` after their await. The old code guarded
+	 * the same waits by re-reading `chorus`, which is right until the state has moved *and
+	 * moved back* — a fast double click on a chorus button does exactly that, and the stale
+	 * fetch then started a chorus nobody had asked for. An epoch cannot be confused with
+	 * itself.
+	 */
+	async function perform(command: PerformanceCommand) {
+		if (!engine || !assets) return;
+		switch (command.k) {
+			case 'panic':
+				engine.panic();
+				return;
+			case 'stopAmbient':
+				engine.stopAmbient();
+				return;
+			case 'clearPaths':
+				listener?.clearPaths();
+				return;
+			case 'showContext': {
+				// `contextSpecies` is a cache, not state: half a dozen things refresh the
+				// backdrop and redrawing the same one is wasted work on 13 848 knots.
+				const want = command.speciesId || null;
+				if (contextSpecies === want) return;
+				contextSpecies = want;
+				showContext(command.speciesId);
+				return;
+			}
+			case 'refreshSelection':
+				refreshSelection();
+				return;
+			case 'startGlobal': {
+				const loaded = assets;
+				// Every bird's songs is the one thing a whole-corpus chorus cannot get lazily,
+				// and exactly what the whole file is for: one fetch, then every shard lookup
+				// is a cache hit.
+				await loaded.ensureSpecies();
+				inventoryVersion++;
+				if (perf.epoch !== command.epoch) return;
+				engine.startAmbient(
+					loaded.inventoryIndex.map((s) => s.id),
+					22 * tempo,
+					2,
+					chorusConfidence
+				);
+				return;
+			}
+			case 'startSolo': {
+				// In improvise mode the ambient scheduler stays off and the effect below drives
+				// it: `startAmbient` can only pick phrases that exist, and the point of that
+				// mode is the ones that do not.
+				if (perf.soloMode === 'improvise') return;
+				if (!command.speciesId) return;
+				const bird = await assets.loadSpecies(command.speciesId);
+				if (!bird || perf.epoch !== command.epoch) return;
+				contextSpecies = bird.id;
+				showContext(bird.id);
+				engine.startAmbient([bird.id], 12 * tempo, 3, chorusConfidence, soloSongIds);
+				return;
+			}
+		}
 	}
 	/**
 	 * The improvised chorus.
@@ -1481,79 +1499,18 @@
 		return () => clearInterval(id);
 	});
 	/**
-	 * **A setter, not a toggle, and that distinction was a bug.**
+	 * The chorus buttons.
 	 *
-	 * This function used to read `chorus = chorus === mode ? 'off' : mode`, which is
-	 * button behaviour — and it is called programmatically from four places. Measured in a
-	 * browser: selecting a phrase from the history strip and then clicking the stage away
-	 * scheduled **0 songs in 14 seconds**, against 8 for the whole-aviary chorus, and every
-	 * later selection stayed silent too. Two resume paths raced (`chorusToResume` in
-	 * `clearSelection` and `resumeGlobal` in the `speciesId` effect) and whichever arrived
-	 * second asked for the mode that was already running, which the toggle read as *stop*.
-	 *
-	 * So: `setChorus` sets. `toggleChorus` below is the button, and it is the only caller
-	 * that may turn a running chorus off by asking for it again.
-	 *
-	 * `solo` keeps the selection: this bird, its backdrop, its highlighted points.
-	 * `global` drops all of it — no focus, no context, no preview thread — so the only
-	 * thing on screen is every trajectory being drawn as it is actually sung.
-	 */
-	async function setChorus(mode: 'off' | 'solo' | 'global') {
-		if (!engine || !assets) return;
-		chorus = mode;
-		engine.stopAmbient();
-		listener?.clearPaths();
-		if (chorus === 'off') {
-			// An explicit stop survives a later deselect: the aviary must not resume
-			// behind a chorus the user deliberately ended.
-			resumeGlobal = false;
-			contextSpecies = null;
-			refreshSelection();
-			return;
-		}
-		if (chorus === 'global') {
-			contextSpecies = null;
-			// The whole aviary is the subject, so nothing should still be claiming to be
-			// it: clearing the bird also releases the camera back to the entire galaxy,
-			// which is the only framing in which a chorus of twelve makes any sense.
-			speciesId = '';
-			pinnedCluster = -1;
-			selectedSung = null;
-			// Every bird's songs is the one thing a whole-corpus chorus cannot get
-			// lazily — and exactly what the whole file is for: one fetch, after which
-			// every shard lookup is a cache hit.
-			await assets.ensureSpecies();
-			inventoryVersion++;
-			if (chorus !== 'global') return; // toggled off while the corpus loaded
-			showContext('');
-			engine.startAmbient(
-				species.map((s) => s.id),
-				22 * tempo,
-				2
-			);
-			return;
-		}
-		// Solo: the bird's shard may still be in flight (this runs one tick after the
-		// picker changed), so wait for it rather than trusting currentSpecies to be
-		// the new bird already.
-		const bird = await assets.loadSpecies(speciesId);
-		if (chorus !== 'solo' || !bird) return;
-		contextSpecies = bird.id;
-		showContext(bird.id);
-		startSoloChorus(bird.id);
-	}
-
-	/**
-	 * The chorus buttons. Asking for the mode that is already running stops it, which is
-	 * what a pressed button should do — and is exactly what `setChorus` must not do on its
-	 * own, because four effects call it with a mode they merely want to be in.
+	 * Asking for the mode already running stops it, which is what a pressed button should do.
+	 * **That behaviour used to live inside `setChorus`, which is what made it a bug**: four
+	 * effects called that function with a mode they merely wanted to be *in*, two raced on the
+	 * same transition, and the second arrival asked for the running mode — read as *stop*. The
+	 * reducer keeps `pressChorus` and `setChorus` as two events for exactly this reason, and
+	 * `verify:performance` sweeps 512 programmatic sequences to assert none of them can reach
+	 * silence.
 	 */
 	function toggleChorus(mode: 'solo' | 'global') {
-		if (chorus === mode) {
-			silence();
-			return;
-		}
-		void setChorus(mode);
+		dispatch({ k: 'pressChorus', mode });
 	}
 
 	/**
@@ -1567,14 +1524,7 @@
 	 * override the bird.
 	 */
 	function chooseSong(id: string) {
-		const hadPin = pinnedCluster >= 0;
-		songId = id;
-		selectedSung = null;
-		pinnedCluster = -1;
-		// Releasing the pin has to redraw the backdrop by hand: `showContext` narrows to
-		// the pinned knot's own threads, and nothing else recomputes it once the pin is
-		// gone — `refreshSelection` only calls it when the *bird* changed.
-		if (hadPin && currentSpecies) showContext(currentSpecies.id);
+		dispatch({ k: 'chooseSong', id });
 	}
 
 	/**
@@ -1582,18 +1532,13 @@
 	 * their travelling highlights animating through notes that will never sound.
 	 */
 	function silence() {
-		engine?.panic();
-		chorus = 'off';
-		resumeGlobal = false;
-		listener?.clearPaths();
-		contextSpecies = null;
-		refreshSelection();
+		dispatch({ k: 'stop' });
 	}
 
-	// A tab with no chorus controls must not hold a running chorus: entering Compose
-	// stops one the same way the Stop button does — voices cut, trajectories cleared,
-	// resumeGlobal dropped, so nothing resumes behind the user's back. Returning to
-	// Sing stays silent, because an explicit stop survives the round trip.
+	// A tab with no chorus controls must not hold a running chorus: entering Compose stops one
+	// the way an explicit stop does — voices cut, trajectories cleared, and the resume flag
+	// spent, so nothing comes back behind the user. Returning to Sing stays silent, which is
+	// the `stop` event's contract and is asserted in `verify:performance`.
 	$effect(() => {
 		if (tab === 'words' && chorus !== 'off') silence();
 	});
@@ -1643,15 +1588,13 @@
 	 */
 	function pickCluster(index: number) {
 		if (!assets) return;
-		noteChorusBeforeSelecting();
-		pinnedCluster = pinnedCluster === index ? -1 : index;
 		const centroid = assets.centroids.items[index];
-		if (!centroid) return;
-		if (species.some((s) => s.id === centroid.speciesId)) {
-			speciesId = centroid.speciesId;
-			if (tab === 'listen') tab = 'sing';
-		}
-		showContext(centroid.speciesId);
+		// A knot the corpus has no bird for still pins; it just takes no species with it.
+		const owner =
+			centroid && species.some((sp) => sp.id === centroid.speciesId) ? centroid.speciesId : '';
+		// Clicking a knot is a Sing-tab question, and `pickCluster` is reachable from Listen.
+		if (owner && tab === 'listen') tab = 'sing';
+		dispatch({ k: 'pickKnot', knot: index, speciesId: owner });
 	}
 
 	// --- the optional local pipeline control surface ---
@@ -1912,23 +1855,23 @@
 	$effect(() => {
 		engine?.setVolume(volume);
 	});
-	/** The bird the call selection is currently about; a plain let, so writing it is not a change. */
-	let songSpecies = '';
+	/**
+	 * A call the loaded bird does not sing falls back to the whole repertoire.
+	 *
+	 * **This effect used to do two jobs and only one of them is left.** It also cleared the
+	 * call on every change of bird, because `learned_bout` is a universal id — every fitted
+	 * bird has one, so a selection stays *valid* across a change of bird and the camera would
+	 * keep framing one call of a repertoire the user just asked to see whole. `chooseBird`
+	 * clears `songId` in the reducer now, which is where a rule about what a selection *means*
+	 * belongs. What remains is a repair for a rebuild landing under a live selection, and that
+	 * genuinely is an effect: it depends on a shard arriving.
+	 */
 	$effect(() => {
 		const bird = currentSpecies;
-		// Every change of bird opens on all songs — the repertoire framed, the chorus
-		// drawing from all of it. Unconditional, and not merely a validity repair,
-		// because `learned_bout` is a universal id: every fitted bird has one, so a
-		// selection often stays *valid* across a change of bird and the camera would
-		// keep framing one call of a repertoire the user just asked to see whole.
-		if (bird?.id !== songSpecies) {
-			songSpecies = bird?.id ?? '';
-			songId = '';
-			return;
+		if (!bird || !perf.songId) return;
+		if (!bird.songs.some((song) => song.id === perf.songId)) {
+			untrack(() => dispatch({ k: 'chooseSong', id: '' }));
 		}
-		// A call this bird does not sing (a rebuild under the selection) falls back the
-		// same way.
-		if (bird && songId && !bird.songs.some((s) => s.id === songId)) songId = '';
 	});
 	$effect(() => {
 		// The scheduler reads this per gap it draws, so no restart: the next pause
@@ -1982,36 +1925,29 @@
 		// Tempo is one control over the whole aviary: the drift, the pulse, how long each
 		// syllable lasts and how often a bird starts. Restarting the scheduler is what
 		// applies the new arrival rate.
-		const id = currentSpecies?.id;
+		//
+		// **This used to re-implement both chorus starts inline** — the solo pool, the global
+		// pool, the improvise special case and a re-check after the corpus fetch — so there
+		// were two copies of "how a chorus begins" and they had already drifted (this one
+		// passed the confidence filter to the aviary; `setChorus` did not). Re-pooling is a
+		// re-entry into the mode already running, which is exactly the event `setChorus` is:
+		// the reducer re-emits the start command and the executor is the single copy.
 		const rate = tempo;
-		// Read per restart, so a checkbox change — or a call being soloed — re-pools the
-		// chorus the same way a tempo change does.
-		const allowed = chorusConfidence;
+		void chorusConfidence;
 		void soloSongIds;
-		// Switching between songs and improvise has to re-pool the same way a tempo change
-		// does — and in one direction it has to *stop* the ambient scheduler, which only a
-		// restart through here does.
-		const mode = soloMode;
 		if (engine) engine.tempo = rate;
-		if (chorus === 'solo' && engine && id) {
-			if (mode === 'improvise') engine.stopAmbient();
-			else startSoloChorus(id);
-		}
-		if (chorus === 'global' && engine && assets) {
-			const loaded = assets;
-			void loaded.ensureSpecies().then(() => {
-				// The whole corpus is here now — the one moment the inventory table can hold
-				// every row rather than the handful of birds that have been selected.
-				inventoryVersion++;
-				if (chorus === 'global')
-					engine?.startAmbient(
-						loaded.inventoryIndex.map((s) => s.id),
-						22 * rate,
-						2,
-						allowed
-					);
-			});
-		}
+		if (perf.chorus === 'off') return;
+		// **Re-issue the start command; do not dispatch a transition.** Re-pooling is not a
+		// state change, and routing it through `setChorus` moved the epoch — which invalidated
+		// the very start command the transition had just emitted, because that one was still
+		// awaiting a species shard. Measured: the solo chorus voiced 1 sample in 56 where it
+		// had managed 18. The epoch exists to discard *superseded* work, so a re-pool has to
+		// carry the current one.
+		untrack(() =>
+			perf.chorus === 'global'
+				? void perform({ k: 'startGlobal', epoch: perf.epoch })
+				: void perform({ k: 'startSolo', speciesId: perf.speciesId, epoch: perf.epoch })
+		);
 	});
 	$effect(() => {
 		listener?.setFocus(focus);
@@ -2810,7 +2746,11 @@ uv run birdy-pipeline build</pre>
 									>{repertoireCoverage.placed}/{repertoireCoverage.total}</span>
 								{/if}
 							</span>
-							<SpeciesPicker options={speciesOptions} bind:value={speciesId} />
+							<SpeciesPicker
+								options={speciesOptions}
+								value={speciesId}
+								onchange={chooseBird}
+							/>
 						</div>
 						<!--
 							"All birds" is a place in the list, not an absence of one, so it gets the same
@@ -2841,7 +2781,7 @@ uv run birdy-pipeline build</pre>
 												class="chip"
 												style:color={speciesColourOf(partner)}
 												title="Select {relationPartner(p, currentSpecies.id)}"
-												onclick={() => (speciesId = partner)}
+												onclick={() => chooseBird(partner)}
 											>{relationPartner(p, currentSpecies.id)}</button>
 										{/each}
 									</p>
@@ -2939,7 +2879,7 @@ uv run birdy-pipeline build</pre>
 									class:on={chorus === 'solo' && soloMode === 'songs'}
 									disabled={!engine}
 									onclick={() => {
-										soloMode = 'songs';
+										dispatch({ k: 'setSoloMode', mode: 'songs' });
 										toggleChorus('solo');
 									}}
 									title="Three individuals of this bird answer each other at random intervals, drawing from its repertoire. Each voice keeps its own pitch, timing and position."
@@ -2949,10 +2889,12 @@ uv run birdy-pipeline build</pre>
 									class:on={chorus === 'solo' && soloMode === 'improvise'}
 									disabled={!engine}
 									onclick={() => {
+										// Pressing the mode that is already sounding stops it, the same as the
+										// Songs button beside it; asking for a mode you are not in starts it.
 										const wasOn = chorus === 'solo' && soloMode === 'improvise';
-										soloMode = 'improvise';
+										dispatch({ k: 'setSoloMode', mode: 'improvise' });
 										if (wasOn) silence();
-										else void setChorus('solo');
+										else dispatch({ k: 'setChorus', mode: 'solo' });
 									}}
 									title={grammarCoverage
 										? `The same three voices, walking this bird's measured grammar instead of its repertoire — transitions counted from its own field recordings, sampled fresh each phrase. ${grammarCoverage.placed} of its ${grammarCoverage.total} fitted types won a cluster, so the thread shows those and skips the rest.`
@@ -3083,7 +3025,11 @@ uv run birdy-pipeline build</pre>
 					<section class="block">
 						<label class="field">
 							<span class="lbl">Species</span>
-							<select bind:value={speciesId}>
+						<!-- One-way plus an event, because `speciesId` is a projection of `perf` now and
+							     only `dispatch` may write it. `chooseBird` is also where the tab guard lives:
+							     a pick on this tab records the bird and does not take the air, because this
+							     tab has no chorus controls to give it back with. -->
+							<select value={speciesId} onchange={(e) => chooseBird(e.currentTarget.value)}>
 								{#each species as s (s.id)}
 									<option value={s.id}>{s.common}</option>
 								{/each}
@@ -3131,7 +3077,7 @@ uv run birdy-pipeline build</pre>
 								<p class="note faint">
 									A documented call for this exists, but not for this bird:
 									{#each preview.documentedElsewhere as other (other)}
-										<button class="link" onclick={() => (speciesId = other)}>
+										<button class="link" onclick={() => chooseBird(other)}>
 											{assets.speciesCommon(other)}
 										</button>
 									{/each}
@@ -3441,7 +3387,8 @@ uv run birdy-pipeline build</pre>
 								{#if pinned.functionClass}<div><dt>class</dt><dd>{pinned.functionClass}</dd></div>{/if}
 							</dl>
 							<p class="note">{pinned.function || 'No documented function.'}</p>
-							<button onclick={() => (pinnedCluster = -1)}>Unpin</button>
+							<button onclick={() => dispatch({ k: 'pickKnot', knot: pinnedCluster, speciesId: '' })}
+								>Unpin</button>
 						</section>
 					{/if}
 				{/if}

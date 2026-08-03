@@ -1,3 +1,95 @@
+# Lyrebird — the performance is one value now (2026-08-03)
+
+The chain is still in stage 1 (`learn`). This round is the refactor the previous one said should
+come before the tab panels, and for the reason it gave: **both of that round's bugs came out of
+this machine being four effects and two flags in one scope.**
+
+## What it was
+
+Thirteen pieces of state, eleven functions and seven effects in a 4 200-line scope, with no
+statement anywhere of who owned what. The single largest was a 38-line effect that read four of
+those variables and decided between four outcomes.
+
+## What it is
+
+`src/lib/state/performance.ts` — 319 lines, no imports, nothing that touches the engine, the
+listener, the camera or the DOM. `reduce(state, event)` returns the next state **and the
+commands that make it so, as data**. The page has one `dispatch` and one `perform`.
+
+```
+events    chooseBird · releaseSelection · pickKnot · chooseSong · selectSung
+          pressChorus · setChorus · setSoloMode · stop
+commands  panic · stopAmbient · clearPaths · startGlobal · startSolo
+          showContext · refreshSelection
+```
+
+The six values the rest of the page reads — `chorus`, `speciesId`, `songId`, `selectedSung`,
+`pinnedCluster`, `soloMode` — are `$derived` **projections** of `perf`. So about two hundred
+readers are unchanged and **nothing but `dispatch` can write them**. That is the property the old
+code could not have: any of those places could assign, and several did. Making them `const` is
+what produced the fix list — the compiler named all nineteen writers.
+
+Three rules that previously existed only as the shape of an if-chain are now written down:
+
+- **Precedence.** `subjectOf` — knot, then history phrase, then call, then bird, then corpus.
+  It lived inside `frameNodes` and three other places re-derived it.
+- **Resume.** One flag, set on the way in, read on the way back, cleared by every explicit stop.
+- **Epoch.** Two commands are asynchronous. The old code guarded them by re-reading `chorus`
+  after the await, which is right until the state has moved *and moved back* — what a fast
+  double click does. A command carries the epoch it was emitted at.
+
+## `verify:performance`: 42 checks, and it catches both original bugs
+
+Proven by mutation, not asserted:
+
+```
+reintroduce the toggle in setChorus   5 checks fail, incl. "89 of 512
+                                     programmatic sequences silence the chorus"
+stop consulting the resume flag       3 checks fail, incl. "the aviary comes back"
+```
+
+That second number is the whole argument for the refactor. The bug was not one wrong line; it
+was a shape in which **one sequence in six silences the app**, and no amount of care at the call
+sites would have found that.
+
+Also swept: no event sequence throws or loses a field (1 000 three-event runs), every async
+command carries its epoch, and any transition that starts or stops a chorus moves the epoch.
+
+## One regression I introduced, measured and fixed
+
+Routing the re-pool effect (tempo, confidence filter, chosen call) through `setChorus` moved the
+epoch — which invalidated the start command the *original* transition had just emitted, because
+that one was still awaiting a species shard. The solo chorus voiced **1 sample in 56 where it
+had managed 18**. Re-pooling is not a state change, so it re-issues the command directly with
+the current epoch. Restored to 13/56.
+
+That is exactly the failure the epoch exists to prevent, caused by misusing the epoch. Worth
+keeping in view: a token that discards superseded work is only correct if the thing reissuing
+work is not itself a new transition.
+
+## Deleted
+
+`setChorus`, `toggleChorus`'s body, `startSoloChorus`, `noteChorusBeforeSelecting`,
+`chorusToResume`, `resumeGlobal`, `lastSpeciesChoice`, `songSpecies`, the 38-line species
+effect, and the inline re-implementation of both chorus starts inside the restart effect — which
+had **already drifted**: it passed the confidence filter to the aviary and `setChorus` did not.
+Two copies of "how a chorus begins", one of them wrong, is what a state machine with no owner
+produces.
+
+`+page.svelte` is **4 129 lines**, from 6 286 at the start of the day.
+
+## Tests
+
+`npm run check` clean apart from the four pre-existing `syrinx-processor.js` errors, zero
+warnings. `build`, `verify:layout`, `verify:split-knots`, `verify:trajectory`,
+`verify:inventory-table`, `verify:biplot`, `verify:performance` and `check-provenance-buffers`
+all pass. The browser probe was re-run and every behaviour it measures is intact: the history
+strip stays stable under the pointer and selects the bird aimed at, clicking away resumes the
+aviary, solo songs and solo improvise both sound, and pressing the running mode stops it.
+
+**Next:** the three tab panels. They were blocked on this and are not blocked now — Sing needs
+`dispatch`, the projections and `frameNodes`, which is a prop list rather than a tangle.
+
 # Lyrebird — two selection bugs, two choruses, and the stylesheet comes out of the page (2026-08-03)
 
 The v8 chain is still in stage 1 (`learn`, started 11:41, still going at 13:32). Nothing here
