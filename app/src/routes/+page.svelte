@@ -1574,7 +1574,13 @@
 			knnK: m.knnAgreement?.k ?? 10,
 			knn: m.knnAgreement?.value ?? null,
 			torn: m.tearing?.torn ?? null,
-			tornOf: m.tearing?.measured ?? null
+			tornOf: m.tearing?.measured ?? null,
+			// The local half, added when the projector was chosen on it. `pearson` is a
+			// correlation over random pairs and so is dominated by far ones; these two say
+			// whether a point's *own* neighbours are its neighbours, which is what a viewer
+			// reads when two marks sit together. Absent on builds before 2026-08-03.
+			trust: m.neighbourhood?.trustworthiness ?? null,
+			continuity: m.neighbourhood?.continuity ?? null
 		};
 	});
 	/**
@@ -1975,7 +1981,19 @@ uv run birdy-pipeline build</pre>
 			<dl class="readings mono">
 				<div><dt>points</dt><dd>{assets.points.n.toLocaleString()}</dd></div>
 				<div><dt>clusters</dt><dd>{assets.centroids.k}</dd></div>
+				<!--
+					Both halves, because the projector was chosen on the second and reading only
+					the first would say this build got worse. `distance r` is global and
+					dominated by far pairs; `neighbours` is the share of a point's ten drawn
+					neighbours that share its type, which is what proximity on screen claims.
+				-->
 				<div><dt>distance r</dt><dd>{faithfulness?.toFixed(3) ?? '—'}</dd></div>
+				{#if projQuality?.knn != null}
+					<div title="Share of a point's {projQuality.knnK} nearest neighbours ON SCREEN that carry its own syllable type. Chance on this corpus is far under one percent, so anything here is real structure — but it is also the honest limit on reading two nearby marks as the same sound.">
+						<dt>neighbours</dt>
+						<dd>{Math.round(projQuality.knn * 100)} %</dd>
+					</div>
+				{/if}
 				<div><dt>voices</dt><dd>{voices}</dd></div>
 				<div><dt>f0</dt><dd>{pitch > 20 ? Math.round(pitch) : '—'}<span class="unit">Hz</span></dd></div>
 				<div class="meter">
@@ -2453,12 +2471,15 @@ uv run birdy-pipeline build</pre>
 									-->
 									<p class="note faint">
 										{projQuality.torn} of {(projQuality.tornOf ?? 0).toLocaleString()} measured knots are
-										drawn by this projection in two places at once. Their centre — where the tag, the
-										thread and the wave all go — then falls between the two. That is the flattening, not
-										the sound.{#if localKnots}
-											Local knot shape (Display) repairs the ones that are one group of sounds in the
-											feature space and only look torn in three dimensions; what is left is torn in the
-											measurements too, and no arrangement can honestly draw it as one place.
+										drawn by this projection in two places at once — the price this arrangement pays for
+										putting similar sounds together, and it is paid deliberately. <b>Both places are
+										named.</b> A torn knot gets an anchor in each of its two patches, each one sitting on
+										that patch's own most central member rather than on a mean between them, so no lit
+										patch is left without a label. The thread of a song still runs through the larger of
+										the two, because a bird sang one syllable and a forked line would say otherwise.{#if localKnots}
+											Local knot shape (Display) additionally reshapes each knot from its own members, so
+											what you see inside one is that knot's own variation rather than the residue of a
+											fit dominated by everything else.
 										{/if}
 									</p>
 								{/if}

@@ -1,12 +1,12 @@
 {
- "builtAt": "2026-08-02T09:27:35+00:00",
+ "builtAt": "2026-08-03T08:51:31+00:00",
  "pipeline": "birdy-pipeline",
  "contract": "docs/08-implementation.md v1",
  "inventoryVersion": 1,
  "inventorySource": {
-  "path": "/tmp/birdy-prod/v6/learned-v6.json",
-  "name": "learned-v6.json",
-  "writtenAt": "2026-08-02T09:09:20+00:00",
+  "path": "/home/sha5b/Documents/GitHub/Birdy/data/learned-inventory.json",
+  "name": "learned-inventory.json",
+  "writtenAt": "2026-08-02T09:49:52+00:00",
   "species": 2423,
   "syllables": 13748
  },
@@ -22,6 +22,8 @@
   "types": 13748,
   "typeSeeds": 13748,
   "sourceSplitTypes": 0,
+  "bimodalSplitTypes": 0,
+  "splitTypes": 0,
   "unlabelledPoints": 20241,
   "allowance": 100,
   "wanted": 13848,
@@ -37,67 +39,54 @@
  "clusters": 13848,
  "dims": 28,
  "seed": 0,
- "projection": "cmds",
+ "projection": "pacmap",
  "projectionParams": {
-  "eigenvalues": [
-   120.98018817095262,
-   62.1529751892235,
-   47.66326866135163
-  ],
-  "varianceRatio": [
-   0.17251078579150508,
-   0.08862656564909556,
-   0.06796507803858415
-  ],
-  "negativeEigenvalueMass": 0.40836214984964236,
-  "landmarks": 800,
-  "mode": "landmark",
-  "metric": "cosine"
+  "nNeighbors": 10,
+  "mnRatio": 0.5,
+  "fpRatio": 2.0,
+  "metric": "chord"
  },
  "faithfulness": {
-  "pearson": 0.6672,
-  "spearman": 0.6655,
+  "pearson": 0.4745,
+  "spearman": 0.4829,
   "pairs": 200000,
   "definition": "correlation between 32-d cosine distance and 3D euclidean distance over random point pairs; 1.0 = distances fully meaningful"
  },
  "knnAgreement": {
   "k": 10,
-  "value": 0.0849,
+  "value": 0.4685,
   "definition": "share of a point's 3D k nearest neighbours sharing its type"
  },
+ "neighbourhood": {
+  "trustworthiness": 0.9247,
+  "continuity": 0.9036,
+  "sampled": 4000,
+  "k": 10,
+  "definition": "trustworthiness = of the points drawn near a point, the share that belong near it (the picture inventing neighbours); continuity = of the points that belong near it, the share drawn near it (the picture hiding them). 1 is perfect, about 0.5 is what a random arrangement scores"
+ },
  "tearing": {
-  "measured": 6733,
-  "torn": 386,
-  "severe": 77,
-  "median": 2.342,
-  "worstGap": 1.269,
+  "measured": 5320,
+  "torn": 1864,
+  "severe": 1009,
+  "median": 3.824,
+  "worstGap": 1.154,
   "definition": "clusters this projection draws in two places at once, so their centroid \u2014 where the label, the trajectory and the wave all go \u2014 lands between two blobs instead of on the points; splitting a single blob scores ~2, so 2 is the null and 'torn' counts above 5"
  },
  "projectionComparison": {
-  "cmds": {
+  "pacmap": {
    "faithfulness": {
-    "pearson": 0.6672,
-    "spearman": 0.6655,
+    "pearson": 0.4745,
+    "spearman": 0.4829,
     "pairs": 200000
    },
-   "knnAgreement": 0.0849,
+   "knnAgreement": 0.4685,
    "purity": 0.9452,
-   "meanRadius": 0.8012,
+   "meanRadius": 0.5303,
    "params": {
-    "eigenvalues": [
-     120.98018817095262,
-     62.1529751892235,
-     47.66326866135163
-    ],
-    "varianceRatio": [
-     0.17251078579150508,
-     0.08862656564909556,
-     0.06796507803858415
-    ],
-    "negativeEigenvalueMass": 0.40836214984964236,
-    "landmarks": 800,
-    "mode": "landmark",
-    "metric": "cosine"
+    "nNeighbors": 10,
+    "mnRatio": 0.5,
+    "fpRatio": 2.0,
+    "metric": "chord"
    }
   }
  },
@@ -3831,7 +3820,7 @@
  "clusterPurity": 0.9452,
  "clusterPurityNote": "1.0 by construction: label assignment puts each typed point in its own type's cluster, so purity and typeCoverage measure nothing here. The statistic that still measures the map is whether a point's nearest centroid is its own type's knot (docs/22 \u00a722.8)",
  "unassigned": 0,
- "meanRadius": 0.8012,
+ "meanRadius": 0.5303,
  "files": [
   "manifest.json",
   "inventory.json",
@@ -3852,7 +3841,7 @@
  "memberAnchor": false,
  "variantsPerSong": 3,
  "harvest": {
-  "store": "out/harvest-gan",
+  "store": "/home/sha5b/Documents/GitHub/Birdy/pipeline/out/harvest-gan",
   "points": 340079,
   "fieldPoints": "syllables",
   "recordings": 10184,
@@ -3869,24 +3858,24 @@
  "clusterSeparation": 1.6,
  "envelopeAsOutputGain": true,
  "matchRamp": {
-  "floor": 0.7317,
-  "ceiling": 0.9476,
+  "floor": 0.7573,
+  "ceiling": 0.9794,
   "rule": "floor = p5, ceiling = p90",
   "percentiles": {
-   "p1": 0.6537,
-   "p5": 0.7317,
-   "p10": 0.7628,
-   "p25": 0.8181,
-   "p50": 0.8728,
-   "p75": 0.9151,
-   "p90": 0.9476,
-   "p95": 0.9615,
-   "p99": 0.9783
+   "p1": 0.6694,
+   "p5": 0.7573,
+   "p10": 0.798,
+   "p25": 0.8688,
+   "p50": 0.9282,
+   "p75": 0.9642,
+   "p90": 0.9794,
+   "p95": 0.986,
+   "p99": 0.993
   },
-  "max": 0.9919,
+  "max": 1.0,
   "sampled": 2000,
-  "population": 39930,
-  "store": "pipeline/out/harvest",
+  "population": 340079,
+  "store": "/home/sha5b/Documents/GitHub/Birdy/pipeline/out/harvest-gan",
   "definition": "best-centroid cosine over real harvested field syllables; the browser ramps activation strength between floor and ceiling with a smoothstep, so below the floor nothing lights and above the ceiling a match reads as certain"
  }
 }

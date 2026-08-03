@@ -528,6 +528,28 @@ export interface Manifest {
 	 */
 	knnAgreement?: { k: number; value: number; definition?: string };
 	/**
+	 * The local half of the picture's honesty, which `faithfulness` cannot see.
+	 *
+	 * Faithfulness is a correlation over random pairs and is therefore dominated by far
+	 * ones: it says whether the coarse map is right and is nearly blind to whether a
+	 * point's own neighbours are its neighbours. **The projector was chosen on this pair**,
+	 * so reading only faithfulness would say the current build got worse.
+	 *
+	 * `trustworthiness` — of the points drawn near a point, the share that belong near it;
+	 * low means the picture invents neighbours, which is the failure that misleads, because
+	 * two marks drawn together is a claim. `continuity` — of the points that belong near
+	 * it, the share drawn near it; low means the picture hides them, a loss rather than a
+	 * lie. 1 is perfect and about 0.5 is what a random arrangement scores. Absent on
+	 * builds before 2026-08-03.
+	 */
+	neighbourhood?: {
+		trustworthiness: number;
+		continuity: number;
+		sampled?: number;
+		k?: number;
+		definition?: string;
+	};
+	/**
 	 * Knots this projection draws in two places at once, so their centroid — where the
 	 * label, the thread and the wave all go — lands between two blobs instead of on
 	 * the points. `median` ~2 is the null (splitting one blob scores about 2); `torn`
