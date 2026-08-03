@@ -235,8 +235,11 @@
 		transition: opacity 140ms linear;
 	}
 
-	/* Everything that reacts is driven by `--hot` through calc/color-mix rather than by a
-	   class, so the transitions are the browser's and no state has to cross into Svelte.
+	/* Everything that reacts is driven by the two custom properties NodeProjector writes per
+	   frame — `--hot`, a binary for "this card is open", and `--act`, the eased 0..1 activation
+	   — through calc/color-mix rather than by a class, so no per-frame state has to cross into
+	   Svelte. The card's own opening is `--hot`'s; the ring on the knot is `--act`'s, because a
+	   mark on the data has to ramp with the data.
 	   The dot's colour comes from --accent (written per frame by the projector): the
 	   identity hue — the bird's in ink mode, the class's in provenance — at every
 	   state, carried on the ring's border since nothing fills; the inline style is only
@@ -276,15 +279,25 @@
 		margin-top: 0;
 		padding: 0;
 		border-radius: 50%;
-		/* Transparent enough that the points inside it still read.
-		   The ring is an annotation on the cloud and the cloud is the data, so it must not be
-		   the strongest mark at the place it is pointing at. At rest it is a little over a
-		   third of its hue and it comes up to full only when its knot is answering, which is
-		   the one moment the ring is the subject rather than the frame. */
+		/* **The ring answers the activation, not the card.**
+
+		   It was driven by `--hot`, which is a *binary* — whether this tag's card is open — so
+		   the one mark sitting on the knot snapped between two states while everything else on
+		   the stage ramped. `--act` is the same eased 0..1 the points ramp on and the match
+		   meter fills with, written per frame by NodeProjector, so the ring now rises and falls
+		   with its knot instead of switching.
+
+		   `--hot` still contributes, at 0.4: a pinned or selected knot has a card open without
+		   necessarily sounding, and its ring should be findable. Whichever is greater wins, so
+		   activation can always take it the rest of the way.
+
+		   Transparent at rest because the ring is an annotation and the cloud is the data — it
+		   must not be the strongest mark at the place it is pointing at. */
+		--ring-on: max(var(--act, 0), calc(var(--hot, 0) * 0.4));
 		border: 1px solid
 			color-mix(
 				in srgb,
-				var(--accent, currentColor) calc(38% + var(--hot, 0) * 62%),
+				var(--accent, currentColor) calc(38% + var(--ring-on) * 62%),
 				transparent
 			);
 		background: none;
@@ -299,11 +312,14 @@
 		pointer-events: auto;
 		cursor: pointer;
 		/* A little more growth than before, because the fill used to carry the state change
-		   and now the size and the border are all there is. */
-		transform: translate(-50%, -50%) scale(calc(1 + var(--hot, 0) * 0.9));
-		transition:
-			transform 120ms ease,
-			border-color 120ms ease;
+		   and now the size and the border are all there is. On `--ring-on`, so the growth is
+		   the same ramp as the colour and both follow the knot. */
+		transform: translate(-50%, -50%) scale(calc(1 + var(--ring-on) * 0.9));
+		/* **No CSS transition, and that is deliberate.** `--act` is rewritten every frame and
+		   is already eased upstream (`shown[i] += (act - shown[i]) * ease`, delta-corrected in
+		   NodeProjector). A transition on top would smooth an already smoothed value and add
+		   its own 120 ms of lag, so the ring would trail the points it sits among. This is the
+		   same reason the match meter next to it sets `width` from `--act` with no transition. */
 	}
 
 	/**

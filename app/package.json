@@ -25,7 +25,8 @@
 		"verify:context-threads": "node --experimental-strip-types scripts/verify-context-threads.mjs",
 		"verify:zip": "node --experimental-strip-types scripts/verify-zip.mjs",
 		"verify:ticks": "node --experimental-strip-types scripts/verify-ticks.mjs",
-		"verify:fade": "node --experimental-strip-types scripts/verify-fade.mjs"
+		"verify:fade": "node --experimental-strip-types scripts/verify-fade.mjs",
+		"probe:stage": "node scripts/probe-stage.mjs"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^7.0.1",
@@ -34,6 +35,7 @@
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
 		"@types/node": "^26.1.2",
 		"@types/three": "^0.185.1",
+		"playwright": "^1.62.1",
 		"svelte": "^5.56.1",
 		"svelte-check": "^4.6.0",
 		"typescript": "^6.0.3",

@@ -2003,41 +2003,29 @@
 	});
 
 	/**
-	 * The legend's rows, **ordered by the share each class actually carries**.
+	 * The provenance filter's rows, **ordered by the share each class actually carries**.
 	 *
-	 * This was a hardcoded order under a comment claiming "strongest-carrying class first
-	 * so the eye starts where the mass is", and in the shipped build it was neither. It put
-	 * `synthesized` at the head of the list holding **none of the corpus** — measured: 0 of
-	 * 348 461 points and 0 of 13 848 knots — above `field`, which holds 94 % of it. So the
-	 * first thing a reader met in the key to the picture was a class the picture cannot
-	 * contain, and the last was one of the two that make up almost all of it.
+	 * The list was an inline literal in the markup, in class-strength order, under a sibling
+	 * `provLegend` that claimed to sort "strongest-carrying class first" and **was rendered
+	 * nowhere** — so the sort was dead code and the visible list led with `documented` at 2 %
+	 * while `recorded`, which is 94 % of the corpus, came third. Measured in a browser, which
+	 * is the only reason it was caught: the first attempt at this fixed the unused array and
+	 * changed nothing on screen.
 	 *
-	 * `synthesized` is empty for a reason rather than by accident, and the reason is in
-	 * `corpus.py`: a fitted type that has field members renders nothing unless a build asks
-	 * for `--member-anchor`, because putting our own render on the map is a claim about the
-	 * synthesiser and not about a bird. So the class stays in the vocabulary — a build *can*
-	 * emit it, and a key that cannot name what the pipeline can produce is worse than one
-	 * with an empty row. It just stops being introduced first. Sorting by the measured share
-	 * makes the order true of whatever is loaded instead of true of one build.
-	 *
-	 * Ties keep the declaration order, which is the class strength order, so an empty build
-	 * still reads sensibly rather than arbitrarily.
+	 * `synthesized` is empty on this build by construction — a fitted type with member
+	 * observations renders no synthetic copy — so sorting by share is also what stops an
+	 * unreachable class from being introduced first. It stays in the list because a build *can*
+	 * emit it; it just goes where its weight puts it. Ties keep declaration order, which is
+	 * class strength, so an unloaded corpus still reads sensibly.
 	 */
-	const provLegend = $derived.by(() =>
+	const provFilterOrder = $derived(
 		[
+			PROVENANCE.documented,
 			PROVENANCE.learned,
 			PROVENANCE.field,
-			PROVENANCE.documented,
 			PROVENANCE.unlabelled,
 			PROVENANCE.candidate
-		]
-			.map((cls) => ({
-				cls,
-				name: PROV_NAMES[cls],
-				colour: provenanceColour(cls),
-				share: provShare[cls] ?? 0
-			}))
-			.sort((a, b) => b.share - a.share)
+		].sort((a, b) => (provShare[b] ?? 0) - (provShare[a] ?? 0))
 	);
 	$effect(() => {
 		// Tempo is one control over the whole aviary: the drift, the pulse, how long each
@@ -2449,7 +2437,7 @@ uv run birdy-pipeline build</pre>
 										: 'A filter, not a key — the points are neutral ink until Provenance colours is on.'}
 								</p>
 								<div class="checks">
-									{#each [PROVENANCE.documented, PROVENANCE.learned, PROVENANCE.field, PROVENANCE.unlabelled, PROVENANCE.candidate] as cls (cls)}
+									{#each provFilterOrder as cls (cls)}
 										{@const share = provShare[cls] ?? 0}
 										<!--
 											A class with no points on the loaded build gets a disabled toggle
