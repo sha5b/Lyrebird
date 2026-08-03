@@ -1,3 +1,75 @@
+# Lyrebird — the song lines (2026-08-03): the thread was one pixel wide, and it is not a styling choice
+
+Owner asks 4b and 6 from the WORK QUEUE: *"make the song lines legible — they are currently
+hard to see at all"* and *"a song playing should animate its line, and that wants refining"*.
+Both have one cause.
+
+## 1. `lineWidth` does not work, and the code already knew
+
+`THREE.LineSegments` rasterises `gl.LINES`, and WebGL's `lineWidth` is ignored by every
+desktop driver worth naming: **a thread is exactly one pixel however close the camera gets**.
+One pixel at 0.55 alpha over a 348 461-point cloud is not a faint line, it is no line. The bead
+run beside it exists only to compensate — its own comment says so: *"a GL line is capped at one
+pixel wide, which disappears against the cloud, so the path is also drawn as a run of small
+sprites"*. So there was no styling change available; the geometry had to change.
+
+**The thread is now a ribbon**: two triangles per node-to-node segment, corners offset
+perpendicular to the segment **in screen space** in the vertex shader, so the width is in
+pixels and does not change with depth. Resting width 2.2 px against the cloud's 2–3 px marks —
+legible over a dense scatter without becoming the loudest thing on the stage, which keeps the
+project's ordering that the points are the data and the thread is a relation drawn between
+them.
+
+No subdivisions any more. The old geometry sampled each segment 14 times because the travelling
+highlight had to move smoothly along it; on a ribbon the along-path coordinate is a varying and
+the swell is computed per *fragment*, so a straight segment needs exactly two ends and comes out
+smoother than the 14-sample version. The bead geometry keeps its subdivisions — those are the
+marks running along the thread and there has to be a run of them.
+
+## 2. The line animates by changing shape, not only brightness
+
+That is ask 6, and it is the reason the width is computed in the vertex shader rather than
+faked in the fragment. Three things widen the ribbon:
+
+- the **travelling peak** — the same gaussian the bead rides — takes it to about 5.7 px, so the
+  note passing along the phrase is a swell running through the line;
+- the part **already sung** is held about a third fuller than the part still to come, so the
+  phrase visibly fills in as it is performed;
+- **nothing at all while idle**: a selected-but-unplayed call stays the thin thread it was, so
+  the animation still means "this is sounding now".
+
+## 3. What is verified, and what is not — say it plainly
+
+**The shader is not verified. Nothing in this repo can compile GLSL.** A dead `ShaderMaterial`
+draws nothing and reports only to the console, which is how this project lost its entire grid
+to a variable named `out`. So the work was split so that most of it *could* be checked, and
+`npm run verify:trajectory` (new) checks it:
+
+- the buffer construction is a pure function in `ribbon.ts` — vertex counts, both sides present,
+  every vertex paired with its own far end, the along-path index spanning `n..n+1` (an
+  off-by-one there puts the swell on the wrong syllable and reads as lag, not as a bug);
+- the three cases that would draw nothing or NaN: a zero-length segment is skipped rather than
+  normalised into NaN, which would take the whole draw call and not just its quad; a one-node
+  path emits nothing; the segment cap binds before the buffer ends, since writing past a
+  Float32Array is a silent no-op in JS and would show as a thread that stops halfway;
+- **the vertex shader's pixel arithmetic, restated in JS and checked against it** — half-width
+  is 2.000000 px for a 4 px thread at w = 1, 5 and 40, so the perspective divide is right, and
+  the same for vertical and diagonal segments, so the per-axis resolution divide is right. This
+  is the half that goes wrong quietly: an offset that forgets the divide looks correct at one
+  depth and wrong at every other;
+- a **reserved-word scan** over every exported shader string, and a check that every varying a
+  fragment shader reads is both declared and assigned by its vertex shader. Proven to fail:
+  injecting `vec2 out = ...` into the ribbon shader makes it report
+  *"declares a variable named 'out', which is reserved in GLSL"* and exit 1. It is a text scan,
+  not a compiler, and it says so.
+
+What is left unverified is everything a screen would tell you: whether 2.2 px is right, whether
+the swell reads, whether the ribbon fights the bead. **Someone has to look at it.**
+
+`npm run check` clean apart from the four pre-existing `syrinx-processor.js` errors;
+`build`, `verify:layout`, `verify:split-knots`, `verify:trajectory` and
+`check-provenance-buffers` all pass.
+
 # Lyrebird — the pipeline pair (2026-08-03): both of last round's open items, and both premises were wrong
 
 HANDOFF §5 left two things "not done, both need a rebuild". Both are now built and measured.

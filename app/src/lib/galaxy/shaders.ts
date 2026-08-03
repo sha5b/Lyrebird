@@ -1284,9 +1284,116 @@ export const trajectoryFragmentShader = /* glsl */ `
 `;
 
 /**
- * Beads along the same polyline. A GL line is capped at one pixel wide, which disappears
- * against the cloud, so the path is also drawn as a run of small sprites — and the
- * travelling highlight becomes a bead running along the thread.
+ * The thread with a width in pixels — two triangles a segment, offset perpendicular in
+ * screen space. See `ribbon.ts` for why a GL line could not do this job.
+ *
+ * The width is not constant along the thread, and that is the answer to "a song playing
+ * should animate its line". Three things widen it, all in the vertex shader so they move
+ * the geometry rather than only its brightness:
+ *
+ * - the **travelling peak**, the same gaussian the bead rides, so the note passing along
+ *   the phrase is a swell running through the line;
+ * - the part **already sung**, held a little fuller than the part still to come, so the
+ *   phrase visibly fills in as it is performed;
+ * - nothing at all while idle: a selected-but-unplayed call stays the thin thread it was.
+ */
+export const trajectoryRibbonVertexShader = /* glsl */ `
+	attribute vec3 aOther;
+	attribute float aSide;
+	attribute float aIndex;
+	attribute float aPath;
+	attribute vec3 aColour;
+
+	uniform float uProgress[${MAX_PATHS}];
+	uniform float uAlpha[${MAX_PATHS}];
+	/** Drawing-buffer size in device pixels, for the pixels-to-clip conversion below. */
+	uniform vec2 uResolution;
+	/** Resting thread width, full width in *device* pixels (the component scales it). */
+	uniform float uWidth;
+
+	varying float vIndex;
+	varying float vProgress;
+	varying float vAlpha;
+	varying float vPeak;
+	varying float vSide;
+	varying vec3 vColour;
+
+	void main() {
+		int p = int(aPath + 0.5);
+		vIndex = aIndex;
+		vProgress = uProgress[p];
+		vAlpha = uAlpha[p];
+		vColour = aColour;
+		vSide = aSide;
+
+		bool singing = vProgress >= 0.0;
+		// Squared by hand — pow with a negative base is undefined in GLSL ES.
+		float r = (aIndex - vProgress) / 0.45;
+		vPeak = singing ? exp(-(r * r)) : 0.0;
+		float passed = singing ? step(aIndex, vProgress) : 0.0;
+
+		vec4 self = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+		vec4 other = projectionMatrix * modelViewMatrix * vec4(aOther, 1.0);
+
+		// Screen-space direction, so the width is in pixels at any depth. Both endpoints
+		// have to be in front of the camera for the perspective divide to mean anything;
+		// when one is not, the ribbon collapses to its centre line rather than being
+		// thrown across the screen by a division through a negative w.
+		float wSelf = max(self.w, 1e-6);
+		float wOther = max(other.w, 1e-6);
+		vec2 screenSelf = self.xy / wSelf * uResolution;
+		vec2 screenOther = other.xy / wOther * uResolution;
+		vec2 delta = screenOther - screenSelf;
+		float len = length(delta);
+		bool visible = self.w > 0.0 && other.w > 0.0 && len > 1e-6;
+
+		float width = uWidth * (1.0 + 0.35 * passed + 1.6 * vPeak);
+		vec2 dir = visible ? delta / len : vec2(1.0, 0.0);
+		vec2 normal = vec2(-dir.y, dir.x);
+		// Pixels to clip space, and the two factors that look missing are cancelled:
+		// a corner steps a *half* width (x0.5), and NDC spans 2 units across
+		// uResolution pixels (x2.0). Their product is 1. Then clip = ndc * w.
+		vec2 offset = visible
+			? normal * aSide * width * self.w / uResolution
+			: vec2(0.0);
+
+		self.xy += offset;
+		gl_Position = self;
+	}
+`;
+
+export const trajectoryRibbonFragmentShader = /* glsl */ `
+	uniform vec3 uColdColor;
+
+	varying float vIndex;
+	varying float vProgress;
+	varying float vAlpha;
+	varying float vPeak;
+	varying float vSide;
+	varying vec3 vColour;
+
+	void main() {
+		bool singing = vProgress >= 0.0;
+		// while idle the whole path reads as one faint thread; while singing the part
+		// already sung stays lit so the order of the phrase remains visible
+		float passed = singing ? step(vIndex, vProgress) : 1.0;
+
+		// The ribbon has real width now, so it also needs an edge. Without this the
+		// quad's sides are hard pixel steps and a near-horizontal thread crawls.
+		float edge = 1.0 - smoothstep(0.55, 1.0, abs(vSide));
+
+		float base = 0.55 + 0.35 * passed;
+		vec3 colour = mix(uColdColor, vColour, clamp(0.35 + vPeak, 0.0, 1.0));
+		float a = vAlpha * (base + vPeak * 0.6) * edge;
+		if (a < 0.004) discard;
+		gl_FragColor = vec4(colour, clamp(a, 0.0, 1.0));
+	}
+`;
+
+/**
+ * Beads along the same polyline. Kept now that the thread has a width of its own: the
+ * bead is where the note *is*, which a swell in a line says less precisely than a mark
+ * running along it.
  */
 export const trajectoryPointsVertexShader = /* glsl */ `
 	attribute float aIndex;

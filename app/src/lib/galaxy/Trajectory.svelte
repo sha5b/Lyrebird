@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { T, useTask } from '@threlte/core';
+	import { T, useTask, useThrelte } from '@threlte/core';
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
 	import { clusterProvenance, knotHeat } from '$lib/data/assets';
@@ -10,12 +10,13 @@
 		MAX_PATHS,
 		SIZE_REFERENCE,
 		mixRgb,
-		trajectoryFragmentShader,
 		trajectoryPointsFragmentShader,
 		trajectoryPointsVertexShader,
-		trajectoryVertexShader,
+		trajectoryRibbonFragmentShader,
+		trajectoryRibbonVertexShader,
 		type VisualSignal
 	} from './shaders';
+	import { allocateRibbon, buildRibbon, RIBBON_VERTICES_PER_SEGMENT } from './ribbon';
 
 	interface Props {
 		assets: BirdyAssets;
@@ -97,6 +98,28 @@
 		return g;
 	});
 
+	/**
+	 * The thread itself, as ribbons. One quad per node-to-node segment — no subdivisions,
+	 * because the travelling swell is computed per vertex and interpolated, so a straight
+	 * segment needs exactly two ends. The bead geometry above keeps its subdivisions:
+	 * those are the marks running *along* the thread and there has to be a run of them.
+	 */
+	const MAX_SEGMENTS = MAX_PATHS * (MAX_NODES - 1);
+	const ribbon = untrack(() => allocateRibbon(MAX_SEGMENTS));
+	const ribbonGeometry = untrack(() => {
+		const g = new THREE.BufferGeometry();
+		const dyn = (a: Float32Array, n: number) =>
+			new THREE.BufferAttribute(a, n).setUsage(THREE.DynamicDrawUsage);
+		g.setAttribute('position', dyn(ribbon.position, 3));
+		g.setAttribute('aOther', dyn(ribbon.other, 3));
+		g.setAttribute('aSide', dyn(ribbon.side, 1));
+		g.setAttribute('aIndex', dyn(ribbon.index, 1));
+		g.setAttribute('aPath', dyn(ribbon.path, 1));
+		g.setAttribute('aColour', dyn(ribbon.colour, 3));
+		g.setDrawRange(0, 0);
+		return g;
+	});
+
 	const progress = new Float32Array(MAX_PATHS).fill(-1);
 	/** What is drawn: eased toward `wanted`, so nothing ever cuts. */
 	const alpha = new Float32Array(MAX_PATHS);
@@ -114,12 +137,29 @@
 		uColdColor: { value: new THREE.Color('#9aa6b8') }
 	});
 
+	/**
+	 * Resting thread width in CSS pixels.
+	 *
+	 * 2.2 against the cloud's 2-3 px marks: a thread has to be legible over a dense
+	 * scatter without becoming the loudest thing on the stage, and the ordering the
+	 * project keeps is that the points are the data and the thread is a relation drawn
+	 * between them. The travelling swell takes it to about 5.7 px, which is where it
+	 * reads as a note passing rather than as a second cloud.
+	 */
+	const THREAD_WIDTH = 2.2;
+
 	const material = new THREE.ShaderMaterial({
-		vertexShader: trajectoryVertexShader,
-		fragmentShader: trajectoryFragmentShader,
-		uniforms: shared(),
+		vertexShader: trajectoryRibbonVertexShader,
+		fragmentShader: trajectoryRibbonFragmentShader,
+		uniforms: {
+			...shared(),
+			uResolution: { value: new THREE.Vector2(1, 1) },
+			uWidth: { value: THREAD_WIDTH }
+		},
 		transparent: true,
 		depthWrite: false,
+		// A ribbon is two triangles and the camera orbits, so it is seen from both sides.
+		side: THREE.DoubleSide,
 		blending: THREE.NormalBlending
 	});
 
@@ -153,6 +193,26 @@
 	$effect(() => {
 		beadMaterial.uniforms.uPointSize.value = pointSize;
 	});
+
+	/**
+	 * The ribbon's width is in pixels, so it needs the drawing buffer's actual size — and
+	 * it changes with the window, so this is read every frame in the task below rather
+	 * than once. `getSize` is the CSS size; `getDrawingBufferSize` is what the shader's
+	 * clip-space arithmetic is against, and on a retina display they differ by two.
+	 */
+	const { renderer } = useThrelte();
+	const bufferSize = new THREE.Vector2();
+	function syncResolution(): void {
+		if (!renderer) return;
+		renderer.getDrawingBufferSize(bufferSize);
+		const res = material.uniforms.uResolution.value as THREE.Vector2;
+		if (res.x === bufferSize.x && res.y === bufferSize.y) return;
+		res.set(Math.max(1, bufferSize.x), Math.max(1, bufferSize.y));
+		// uWidth is quoted in CSS pixels and the resolution is in device pixels, so the
+		// ratio between them is exactly the pixel ratio and does not need asking for.
+		const ratio = renderer.getPixelRatio ? renderer.getPixelRatio() : 1;
+		material.uniforms.uWidth.value = THREAD_WIDTH * ratio;
+	}
 
 	let builtVersion = -1;
 	let builtLayout = -1;
@@ -222,9 +282,37 @@
 		geometry.attributes.aColour.needsUpdate = true;
 		geometry.setDrawRange(0, v);
 		geometry.computeBoundingSphere();
+
+		// The same paths again as ribbons. Built from the node list rather than from the
+		// subdivided run above: a straight segment needs two ends, and the swell that
+		// travels along it is interpolated from them.
+		const ribbonPaths = paths.slice(0, MAX_PATHS).map((path, p) => ({
+			nodes: path.nodes.filter((i) => i >= 0 && i < centroids.length).slice(0, MAX_NODES),
+			pathId: p
+		}));
+		const rv = buildRibbon(
+			ribbon,
+			ribbonPaths,
+			(k) => [view.centroids[k * 3], view.centroids[k * 3 + 1], view.centroids[k * 3 + 2]],
+			(k) => {
+				const c = knotColours[k];
+				return [c.r, c.g, c.b];
+			},
+			MAX_SEGMENTS
+		);
+		for (const name of ['position', 'aOther', 'aSide', 'aIndex', 'aPath', 'aColour']) {
+			ribbonGeometry.attributes[name].needsUpdate = true;
+		}
+		ribbonGeometry.setDrawRange(0, rv);
+		// Bounded by hand: the ribbon's vertices sit on the centre line and the shader
+		// pushes them outward, so a bounding sphere fitted to the buffer is a little small
+		// — and the frustum culling that would use it is off anyway, as it is for the
+		// cloud, because the whole galaxy is one object that is always partly on screen.
+		ribbonGeometry.computeBoundingSphere();
 	}
 
 	useTask((delta) => {
+		syncResolution();
 		// Rebuild when the set of paths changes, and on every frame of a rearrangement —
 		// otherwise the threads stay behind while the knots they connect move away.
 		if (signal.pathsVersion !== builtVersion || view.version !== builtLayout) {
@@ -275,10 +363,11 @@
 
 	$effect(() => () => {
 		geometry.dispose();
+		ribbonGeometry.dispose();
 		material.dispose();
 		beadMaterial.dispose();
 	});
 </script>
 
-<T.LineSegments {geometry} {material} frustumCulled={false} />
+<T.Mesh geometry={ribbonGeometry} {material} frustumCulled={false} />
 <T.Points {geometry} material={beadMaterial} frustumCulled={false} />
