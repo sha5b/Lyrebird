@@ -27,23 +27,15 @@
 	 * canvas, which spans the whole stage, so they are drawn full width and simply
 	 * disappear behind the columns.
 	 */
-	import type { GalaxyStats } from './stats';
-	import type { ScreenReading } from './biplot';
 
 	interface Props {
 		/** Device-independent pixels per knot spacing, from Scale. */
 		pxPerKnot: number;
 		/** The knot spacing itself, in layout box units — for the tooltip. */
 		knotSpacing: number;
-		/** The view's width in knot spacings. */
-		widthKnots: number;
-		/** The live stats object, sampled slowly for the caption. */
-		stats?: GalaxyStats;
-		/** What each screen direction currently means — see `biplot.ts`. */
-		reading?: ScreenReading[];
 	}
 
-	let { pxPerKnot, knotSpacing, widthKnots, stats, reading }: Props = $props();
+	let { pxPerKnot, knotSpacing }: Props = $props();
 
 	/** Roughly how far apart labelled ticks should sit, in pixels. */
 	const TARGET_PX = 78;
@@ -82,59 +74,6 @@
 	const topTicks = $derived(ticks(width));
 	const leftTicks = $derived(ticks(height));
 
-	/**
-	 * The caption is read on a slow timer for the same reason the cost readout is: the
-	 * stats object is written inside the render loop, and making the instrument
-	 * reactive would make reading it part of what it measures.
-	 */
-	let live = $state<{ radii: number; lod: number } | null>(null);
-	$effect(() => {
-		const source = stats;
-		if (!source) return;
-		const sample = () => (live = { radii: source.viewRadii, lod: source.lod });
-		sample();
-		const id = setInterval(sample, 400);
-		return () => clearInterval(id);
-	});
-
-	/**
-	 * `stats.viewRadii` is deliberately not quoted here even though it is the obvious
-	 * candidate. It is the camera's distance over the cloud's bounding radius, and on
-	 * the opening view it read **0.4** while the framing bug had the camera inside the
-	 * cloud, and about 2.4 now that Spinner hands Framing the real scale. It is a
-	 * correct number and an unreadable one: "2.4 cloud radii" means nothing without
-	 * knowing what the build's bounding radius is, and it went silently wrong for as
-	 * long as the framing did. A width in the corpus's own unit needs no such
-	 * explanation and cannot drift from what is on screen.
-	 */
-	const caption = $derived.by(() => {
-		const parts = [`${widthKnots < 10 ? widthKnots.toFixed(1) : Math.round(widthKnots)} across`];
-		if (live && live.lod >= 0) parts.push(`${Math.round(live.lod * 100)} % of points drawn`);
-		return parts.join(' · ');
-	});
-
-	/**
-	 * What the directions on screen mean right now — the answer to "I cannot read anything
-	 * off this picture", which was true and measured: correlating each drawn axis against
-	 * every nameable quantity, the strongest was knot member count at +0.26.
-	 *
-	 * The meaning is not axis-aligned, which is why it took a biplot to find. Fitted
-	 * obliquely, the shipped build explains 64 % of loudness and 40 % of brightness along
-	 * single directions. `r2` is printed with each one because an arrow without it is a
-	 * confident claim about an unknown amount — and duration, at 0.015, is honestly absent
-	 * from this picture and so never appears here at all.
-	 */
-	const axisCaption = $derived.by(() =>
-		(reading ?? [])
-			.map((r) => {
-				const where =
-					r.axis === 'right' ? (r.align > 0 ? 'right' : 'left') :
-					r.axis === 'up' ? (r.align > 0 ? 'up' : 'down') :
-					r.align > 0 ? 'away' : 'toward';
-				return `${where} → ${r.name} (${Math.round(r.r2 * 100)} %)`;
-			})
-			.join(' · ')
-	);
 </script>
 
 <div class="ruler ruler-top" bind:clientWidth={width} aria-hidden="true">
@@ -156,14 +95,6 @@
 	title={`Distance from the centre of the view, in knot spacings — the median gap between two neighbouring knots on this build (${knotSpacing.toFixed(3)} projection units). One tick is ${label(step)}. The scale is exact at the depth of the view centre and approximate nearer or farther, as in any perspective view, and it counts from the centre because the projection has no meaningful origin.`}
 >
 	<span class="unit">1 tick = {label(step)} knot-spacing{step === 1 ? '' : 's'}</span>
-	{#if axisCaption}
-		<span
-			class="axes"
-			title="Which nameable acoustic quantity increases fastest along each screen direction, and the share of that quantity the direction explains (r-squared). Fitted over every knot from the shipped 28-d descriptor, so it is a property of this build; the percentage is how much to trust the arrow. A quantity the picture does not carry — duration, at 2 % — is never shown."
-			>{axisCaption}</span
-		>
-	{/if}
-	<span class="faint">{caption}</span>
 </p>
 
 <style>
@@ -251,12 +182,15 @@
 		transform: translateY(-50%);
 	}
 
-	/* The lane between the two columns, clear of both — the same offsets the history
-	   strip uses, so nothing in the middle of the stage is ever covered twice. */
+	/* Anchored to the RIGHT edge, not offset from the left.
+	   It used to sit at `left: --ruler + 20rem + 2.6rem` — a hard-coded guess at the width
+	   of the controls column — and the column outgrew the guess, so the caption ran back
+	   underneath the Sing panel. A right anchor cannot be wrong about a left-hand panel's
+	   width, and the caption is short enough now that it never reaches the middle. */
 	.ruler-caption {
 		position: absolute;
 		top: calc(var(--ruler, 1.15rem) + 0.2rem);
-		left: calc(var(--ruler, 1.15rem) + 20rem + 2.6rem);
+		right: calc(var(--ruler, 1.15rem) + 0.6rem);
 		z-index: 1;
 		margin: 0;
 		display: flex;
@@ -272,15 +206,5 @@
 		color: var(--ink-dim);
 	}
 
-	.ruler-caption .faint {
-		opacity: 0.75;
-	}
-
-	/* Dimmer than the unit: the scale is a fact about the picture, this is a fitted
-	   reading of it, and the percentages beside each name say how good a fit. */
-	.ruler-caption .axes {
-		color: var(--ink-dim);
-		opacity: 0.8;
-		cursor: help;
-	}
-</style>
+	
+	</style>

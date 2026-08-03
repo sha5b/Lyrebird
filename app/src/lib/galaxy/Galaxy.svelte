@@ -279,7 +279,7 @@
 		and the numbers only re-render when the zoom has actually moved.
 	-->
 	{#if pxPerKnot > 0}
-		<Ruler {pxPerKnot} {knotSpacing} {widthKnots} {stats} {reading} />
+		<Ruler {pxPerKnot} {knotSpacing} />
 	{/if}
 </div>
 
