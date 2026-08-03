@@ -13,7 +13,7 @@
  *
  * Run with `npm run verify:layout`. Exits non-zero on any disagreement.
  */
-import { nearestNeighbourDistances } from '../src/lib/galaxy/layouts.ts';
+import { buildLayout, nearestNeighbourDistances } from '../src/lib/galaxy/layouts.ts';
 
 /** The `k²` loop this replaced, kept verbatim as the thing being checked against. */
 function brute(cents, counts, k) {

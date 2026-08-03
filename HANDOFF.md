@@ -1,3 +1,141 @@
+# Lyrebird — the torn-knot round (2026-08-03): a knot is drawn in one place now
+
+The report was *"very few times we see the red points somewhere where no activation was or
+sound or anything"*, then, sharper: *"one note shines and we see it and then the second but no
+label and no activation and no connection."*
+
+It was not the renderer inventing points. It was **projection tearing**, which this build has
+been measuring all along and nobody had read: `manifest.tearing` says **386 of 6 733 measurable
+knots are drawn in two places at once**, 77 of them severely, worst gap **1.269 box units** on a
+box whose half-width is 1. When such a knot is sung, `PointTracker.pulseCluster` lights every
+member by cluster id with no reference to position, so **both** blobs go to the sung accent —
+the red points — while the tag, the thread, the grid strike and the wave all read
+`view.centroids[c]`, the arithmetic mean, which lands in the gap between the halves. One blob
+gets the label, the other is lit with no label, no thread and no wave. 5.7 % of knots is "very
+few times".
+
+Two things it was **not**, both checked rather than assumed: orphan syllables (a scheduled note
+whose type owns no knot would look identical, but `typeCoverage.share` is **1** and
+`orphans` is empty — every scheduled syllable resolves), and a bad choice of projector (the
+pipeline already bakes off umap/pca/cmds, and UMAP tore 95 of 166 against cMDS's 3 on the corpus
+`torn_clusters`' docstring was written against).
+
+## 1. Is a torn knot torn in the data, or only in its shadow?
+
+Nobody had asked, because the tearing test only ever ran on the 3-d output.
+`pipeline/analysis/tear_dims.py` (new) runs the same test on the shipped 8-d point features —
+a PCA of the standardised 32-d critic space, rows unit-normalised — and on the 3-d positions,
+over the same knots:
+
+```
+3-d   torn(>5): 385   severe(>8): 77   median 2.357
+8-d   torn(>5): 210   severe(>8): 31   median 1.887
+
+of the 385 torn in 3-d:  166 also torn in 8-d    219 whole in 8-d
+plus 44 knots torn in 8-d but whole in 3-d — a real split the projection folds shut
+```
+
+The implication runs one way and that is enough: a separation surviving a *linear* projection to
+8-d exists in 32-d too, so **166 (43 %) are genuinely two groups of sounds** and no arrangement
+can honestly draw them as one place. **219 (57 %) are one group, torn by the squeeze into three
+dimensions.** The field/synthetic seam explains none of it — only 2 of the 385 torn knots hold
+both sources, and `clusterPlan.sourceSplitTypes` is 0.
+
+## 2. The two-level layout (`localShapes` in layouts.ts)
+
+**Where a knot is** stays the global projection's answer, but not its members' mean — that is
+exactly the position that can fall in the void. It is the position of the knot's **feature
+medoid**, the member closest to the knot's centre in feature space: the knot is drawn where the
+projection put its most typical sound, which is always a real place.
+
+**What a knot looks like** is now a 3-d principal-component projection of *that knot's own
+members* in the 8-d space, laid out around that centre. The global fit never places a member,
+so it cannot tear one.
+
+The five dimensions the frame cannot show come back as **isotropic residue** — total scatter
+minus what the three axes hold, as a step of that RMS length in a direction hashed from the
+point's index, radius drawn uniformly through the ball. This is not decoration: without it the
+top-3 frame keeps the largest separation and throws away most of the within-lobe spread, and the
+tearing test scored **390** (worse than the projection's 379) purely because the denominator had
+shrunk. A fixed-length step was the first attempt and drew every knot as a hollow shell.
+
+Local coordinates are scaled by **one global constant** (median 3-d spread ÷ median feature
+spread, 0.4258 on this build) so the corpus's median knot keeps exactly the extent it had. Inside
+that, a knot's drawn size is proportional to its true feature spread — which is what extent was
+always supposed to mean, and what a tear was inflating.
+
+Measured on the shipped build, `npm run measure:layout` (new):
+
+```
+                    torn  severe  median ratio      widest split in one knot
+projected            379      77         2.320      max 1.269   1590 knots > 0.5
+two-level            245      37         2.003      max 0.802    913 knots > 0.5
+
+knot extent   median 0.134 -> 0.1336    p10 0.0715 -> 0.0699    p90 0.2764 -> 0.2502
+local pass    197 ms at load, 13 414 knots reshaped, 434 single-member skipped
+```
+
+Median ratio **2.003** against a null of 2.0 — the median knot is now one blob by the test's own
+definition. The 245 that remain are the ones torn in the measurements; the honest repair for
+those is upstream, in the clustering, not here.
+
+**What this changes about the picture's claims**, and it is a change, so it is on screen. The
+single global claim ("distance is acoustic distance everywhere") becomes two true ones: *knot
+centres are the coarse acoustic arrangement; spread inside a knot is that knot's own variation.*
+It loses less than it sounds — `knnAgreement` on this build is **0.0849**, so 8.5 % of a point's
+ten nearest neighbours in 3-d shared its type, and what the global fit was saying inside a knot
+was mostly residue. **Direction inside a knot carries no meaning between knots**; distance from
+its centre does. Signs are pinned to the member reaching furthest along each axis, so a reload
+draws the same knot.
+
+`Display -> Local knot shape`, default on. It is read once when the cloud is built, so flipping
+it remounts the canvas (`{#key `${galaxyVersion}:${localKnots}`}`) — the same path a map switch
+takes. The switch exists so the two arrangements can be compared side by side rather than argued
+about. The key's own note now says which of the three display transforms are running, and the
+torn-knot note says what the layout does about it.
+
+## 3. The hue floor was written and never taken off
+
+Found on the way. `PointCloud` writes each knot's species hue into the cluster-state texture's A
+channel as `HUE_FLOOR + (1 - HUE_FLOOR) * turns`, with the floor there so **0 can keep meaning
+"this knot has no bird"**. The fragment read the value straight back as turns, so every knot's
+accent sat up to **7.2°** around the circle from the hue the same bird's tag and thread are drawn
+in — near-matching, which is the kind that reads as "the colours do not line up". `HUE_FLOOR` now
+lives in `shaders.ts` and the fragment subtracts it before decoding, so the two sides cannot
+drift.
+
+## 4. Tests and tools
+
+- `npm run verify:layout` gains a section on `localShapes`: a knot torn by the projection is
+  repaired; a knot genuinely split in the features **stays** split (the layout may not hide a
+  real finding, only stop the flattening inventing one); an untorn knot survives; extent follows
+  the feature spread; the pass is deterministic; a build with no per-point features falls
+  through. All pass.
+- `npm run measure:layout` (`app/scripts/measure-layout.mjs`) is the before/after on a real
+  asset root — re-run it after every rebuild, because the numbers above are this build's.
+- `pipeline/analysis/tear_dims.py` is the 3-d-versus-8-d question, the one that decides whether a
+  tear is the layout's problem or the clustering's.
+- `stats.localKnots` carries what the pass did (reshaped / skipped / scale / ms).
+
+## 5. Still open, pipeline side — not done
+
+Both need a rebuild to land, so neither is in this round:
+
+1. **Split the 166 genuinely-torn knots.** `_type_blobs` already splits a type in two when its
+   blobs point further apart than cosine 0.9, but it only ever tests the field/synthetic seam,
+   which explains none of these. The same gate on a type's own bimodality in 32-d would catch
+   them, and then a knot is one place because it is one thing.
+2. **Feed cMDS the metric the space actually has.** `projectionParams.negativeEigenvalueMass` is
+   **0.408** — 41 % of the eigenvalue mass is negative, meaning the dissimilarity being fitted is
+   not Euclidean-embeddable and classical MDS is fitting a space that cannot exist. The vectors
+   are unit rows, so the chord distance `√(2 − 2·cos)` *is* the Euclidean distance between them
+   and drives the negative mass to zero. The three kept axes currently hold 32.9 % of the
+   variance; `--compare-projections` would say in one run whether the honest metric trades
+   better.
+
+`npm run check` is clean apart from the four pre-existing `syrinx-processor.js` errors;
+`npm run build`, `npm run verify:layout` and `npm run measure:layout` all pass.
+
 # Lyrebird — removal round (2026-08-02): the knot pins and the region place-names are gone
 
 Both were added the same day, one round earlier (§3 and §2 below), and both are now removed on
