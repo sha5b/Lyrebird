@@ -1,3 +1,51 @@
+# Lyrebird — the clear-out (2026-08-03): what PaCMAP superseded is gone
+
+PaCMAP is the approach, so the things it replaced are removed rather than left lying about.
+Every finding survives — in the section below, in the docstrings, and in git — but no code
+that nothing will ever run again.
+
+**Removed from the pipeline (163 + 30 lines):**
+
+- **`poincare`** — the hyperbolic projector. Won on a planted tree (0.602 against cMDS's
+  0.580) and lost on the real corpus (0.684 against 0.724), because what gets embedded is
+  the acoustic space and that carries taxonomy only weakly. §4 below has the numbers.
+- **`cmds-chord`** — the exact Euclidean metric for cMDS. Correct arithmetic (negative
+  eigenvalue mass exactly zero) and measurably worse: 0.722/0.699 against 0.767/0.742.
+  `mds_squared_distances` **keeps** the chord metric, because a `projection-basis.json`
+  written while that projector existed records `metric: "chord"` and a reader that cannot
+  handle a value it once wrote is a bug. `pipeline/analysis/mds_metric.py` still runs the
+  whole comparison, through `_landmark_mds` instead of a projector nobody should pick.
+
+`PROJECTIONS` is now `umap, pca, cmds, pacmap` — the set worth running, not everything ever
+tried.
+
+**Removed from the app (89 lines):**
+
+- **`trajectoryVertexShader` / `trajectoryFragmentShader`** — the one-pixel `LineSegments`
+  shaders, orphaned by the ribbon pass earlier the same day. Nothing referenced them.
+- **The `CLAIM_*` taxonomy** — eight exports mapping call functions to four "claim" classes,
+  with labels and hints. Entirely self-referential: `CLAIM_OF_FUNCTION` fed `CLAIM_LABELS`
+  fed nothing, and no file outside `shaders.ts` had ever read any of it. Its own docstring
+  said the view that used it "has been taken out" and that the taxonomy was kept anyway;
+  `functionClass` still ships on every centroid, so if that view comes back the reasoning
+  is one `git show` away.
+
+Checked and **kept**: `FRONT_SPEED`/`FRONT_WIDTH`/`frontEnvelope` (used inside `shaders.ts`),
+`speciesGenus`/`genusHue`/`speciesSaturation` (used inside `palette.ts`),
+`AssetsMissingError` (thrown). Over-exported, not orphaned.
+
+## The cost of the new default, and it is not small
+
+**A PaCMAP build writes no `projection-basis.json`, so `grow` cannot extend it.** `grow`
+adds new audio to an existing galaxy without moving the points already in it, and it does
+that through the frozen frame only cMDS emits. PaCMAP does expose a `transform`, and its own
+documentation rules it out for this purpose — *"the same point could be mapped into a
+different place"* is exactly what `grow` may not do.
+
+So a galaxy on the current default can be rebuilt and never extended. The build now says so
+on stderr instead of leaving it to be discovered. If growth matters more than the 3.2x local
+structure, `--projection cmds` is one flag; that is a real trade and it is the owner's.
+
 # Lyrebird — what the 3-d picture says, and four attempts to make it say more (2026-08-03)
 
 Owner: *"does the 3d representation make any sense, does it tell us anything important? Is

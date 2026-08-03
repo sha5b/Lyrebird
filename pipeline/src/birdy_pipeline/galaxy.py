@@ -141,7 +141,7 @@ TYPE_SPLIT_MIN_MEMBERS = 40
 #: of sounds a type anywhere else either.
 TYPE_SPLIT_MIN_SIDE = 8
 
-PROJECTIONS = ("umap", "pca", "cmds", "cmds-chord", "pacmap", "poincare")
+PROJECTIONS = ("umap", "pca", "cmds", "pacmap")
 #: **`pacmap` since 2026-08-03, and the trade it makes is measured on both sides.**
 #:
 #: cMDS held this seat because distance faithfulness was the only thing the build scored,
@@ -153,8 +153,16 @@ PROJECTIONS = ("umap", "pca", "cmds", "cmds-chord", "pacmap", "poincare")
 #:     umap           0.341     0.328   0.931   0.947   65.7%   156/447
 #:     pca            0.589     0.568   0.845   0.941   22.2%    15/502
 #:     cmds           0.767     0.742   0.850   0.956   21.4%    18/493
-#:     cmds-chord     0.722     0.699   0.861   0.961   23.2%    19/493
 #:     pacmap         0.324     0.284   0.936   0.933   68.5%   217/438
+#:
+#: Two candidates were measured in the same round and **removed** rather than kept, so
+#: this list is the set worth running rather than everything ever tried. `cmds-chord`
+#: fitted the chord distance — exact, PSD, negative eigenvalue mass zero — and scored
+#: 0.722/0.699/0.861/0.961, worse than plain cMDS on both faithfulness yardsticks.
+#: `poincare` embedded the corpus in the 3-d Poincaré ball, won on a planted tree
+#: (0.602 against cMDS's 0.580) and lost on the real corpus (0.684 against 0.724),
+#: because what is being embedded is the acoustic space and that carries taxonomy only
+#: weakly. Both findings are written up in HANDOFF; the code is in git history.
 #:
 #: PaCMAP puts **68.5 %** of a point's ten drawn neighbours on its own type against cMDS's
 #: 21.4 % — a 3.2x gain on the thing the picture is for — and pays with global faithfulness
@@ -426,10 +434,12 @@ def _classical_mds(d2: np.ndarray, k: int = 3) -> tuple[np.ndarray, dict[str, An
         4.0       91.1 %    0.6125     0.6133
 
     Faithfulness peaks at **62 %** negative mass and is at its **worst at 0 %**. The two
-    are decoupled. Repairing the indefiniteness — `cmds-chord`, where the metric is the
-    chord `sqrt(2 - 2 cos)` between the unit rows and the double-centred matrix is PSD by
-    construction — costs about 0.05 of faithfulness, on the cosine yardstick and on the
-    chord's own. What the number does measure, truly, is that classical MDS is being
+    are decoupled. Repairing the indefiniteness — fitting the chord `sqrt(2 - 2 cos)`
+    between the unit rows, where the double-centred matrix is PSD by construction — costs
+    about 0.05 of faithfulness, on the cosine yardstick and on the chord's own. It shipped
+    briefly as a `cmds-chord` projector and was removed once that was measured;
+    `mds_squared_distances` still offers the metric, and
+    `pipeline/analysis/mds_metric.py` still runs the comparison. What the number does measure, truly, is that classical MDS is being
     fitted to a dissimilarity no Euclidean space can hold. That is worth knowing and it
     is not a defect in the answer.
     """
@@ -489,169 +499,6 @@ def _landmark_mds(
     return pos, info
 
 
-#: Hyperbolic embedding: epochs, pairs sampled per epoch per point, and the step.
-POINCARE_EPOCHS = 250
-POINCARE_PAIRS = 12
-POINCARE_LR = 0.3
-#: How far inside the ball a point may go. The Poincaré metric diverges at 1, so a point
-#: allowed to reach the boundary produces infinite distances and NaN gradients from there
-#: on. 1e-4 of margin costs nothing — the boundary is infinitely far away in the metric.
-POINCARE_EPS = 1.0e-4
-
-
-def poincare_distances(u: np.ndarray, v: np.ndarray) -> np.ndarray:
-    """Row-wise hyperbolic distance in the Poincaré ball."""
-    nu = np.sum(u * u, axis=1)
-    nv = np.sum(v * v, axis=1)
-    sq = np.sum((u - v) ** 2, axis=1)
-    arg = 1.0 + 2.0 * sq / np.maximum((1.0 - nu) * (1.0 - nv), 1.0e-12)
-    return np.arccosh(np.maximum(arg, 1.0))
-
-
-def _poincare_embed(
-    z: np.ndarray, seed: int = 0, verbose: bool = True
-) -> tuple[np.ndarray, dict[str, Any]]:
-    """Embed the corpus in the 3-d Poincaré ball instead of 3-d Euclidean space.
-
-    **Why hyperbolic is worth trying on this corpus specifically.** The data is a tree:
-    1 043 genera over 2 423 species over 13 748 types. Euclidean space has polynomial room
-    around a point and a tree needs exponential room, which is the whole reason a taxonomy
-    embedded in three flat dimensions has to crush its branches together. Hyperbolic space
-    has that room by construction, and Poincaré embeddings (Nickel & Kiela 2017) match or
-    beat high-dimensional Euclidean baselines for taxonomies at **two to four** dimensions
-    — the regime this picture is stuck in.
-
-    Fitted by Riemannian SGD on sampled-pair stress rather than by h-MDS eigendecomposition
-    (Sala et al. 2018): h-MDS needs `cosh` of the whole distance matrix, which is n^2 and
-    overflows for any scale large enough to be interesting, and its recovery step
-    eigendecomposes an indefinite matrix — the same class of arithmetic that
-    `negativeEigenvalueMass` records going wrong for cMDS. Sampled pairs cost O(n) an epoch
-    and cannot overflow.
-
-    **THE APP'S DISTANCE READING DOES NOT APPLY TO THIS OUTPUT, AND THAT IS NOT A DETAIL.**
-    Positions are ball coordinates: the *hyperbolic* distance between two of them is the
-    fitted acoustic distance, and the Euclidean distance the renderer measures is a
-    monotone but wildly non-linear function of it — two marks a pixel apart near the rim
-    can be further apart in the metric than two marks across the middle. Everything quoted
-    in box units (`KNOT_GAP`, the wave's reach, the stage ruler's knot-spacing unit, the
-    LOD gates) would be measuring the wrong thing. `info["metric"]` says `poincare` so a
-    consumer can refuse it, and nothing ships this until the renderer can read the metric.
-    It is here to answer whether the geometry is worth that work.
-
-    **AND THE ANSWER, MEASURED, IS NO — on this corpus.** Against the shipped 13 848 knot
-    vectors, correlation with the target chord distance:
-
-        poincare     0.6836  (hyperbolic distance, the one it fits)
-        cmds         0.7239
-        cmds-chord   0.6827
-        pca          0.5870
-        pacmap       0.4041
-
-    On a *planted* three-level tree it wins as the literature predicts — 0.602 against
-    cMDS's 0.580 — and on the real corpus it loses. The premise is where it breaks: the
-    corpus is a taxonomy (1 043 genera, 2 423 species, 13 748 types) but the thing being
-    embedded is the **acoustic** space, and that space carries taxonomy only weakly. On the
-    shipped build 9.8 % of a point's drawn neighbours share its species against 0.31 % by
-    chance: 31x chance, and nine neighbours in ten still belong to another bird. A space
-    that is only faintly a tree does not need a geometry built for trees, and the fit says
-    so itself — it settles at a maximum radius of 0.68, never reaching for the exponential
-    room near the boundary that is the whole reason to be here.
-
-    Two honest limits on that conclusion: this is a hand-rolled sampled-pair optimiser, not
-    a tuned Poincaré implementation, so "did not win" is weaker than "cannot win"; and a
-    hyperbolic embedding of the **taxonomy itself** — rather than of the acoustics — was
-    never tried and is a different question, one about drawing a clade map instead of an
-    acoustic one.
-    """
-    rng = np.random.default_rng(seed)
-    n = z.shape[0]
-    u = _unit_rows(z)
-    # Target: the chord distance, which for unit rows is the honest Euclidean distance
-    # between them (see MDS_METRICS). Scaled so the corpus's typical separation lands
-    # around 1 in the hyperbolic metric, where the ball has usable resolution.
-    probe = rng.choice(n, size=min(2000, n), replace=False)
-    pu = u[probe]
-    sample = np.sqrt(np.maximum(2.0 - 2.0 * (pu @ pu.T), 0.0))
-    scale = 1.0 / max(float(np.median(sample[sample > 0])), 1.0e-6)
-
-    x = rng.normal(0.0, 1.0e-3, (n, 3))
-    if verbose:
-        print(
-            f"projection poincare: {POINCARE_EPOCHS} epochs x {POINCARE_PAIRS} pairs/point, "
-            f"lr {POINCARE_LR}, target scale {scale:.3f}",
-            file=sys.stderr,
-        )
-
-    def clip(a: np.ndarray) -> np.ndarray:
-        norm = np.linalg.norm(a, axis=1, keepdims=True)
-        limit = 1.0 - POINCARE_EPS
-        over = norm > limit
-        if np.any(over):
-            a = np.where(over, a / np.maximum(norm, 1e-12) * limit, a)
-        return a
-
-    losses: list[float] = []
-    for epoch in range(POINCARE_EPOCHS):
-        lr = POINCARE_LR * (1.0 - epoch / POINCARE_EPOCHS)
-        loss = 0.0
-        for _ in range(POINCARE_PAIRS):
-            j = rng.integers(0, n, n)
-            keep = j != np.arange(n)
-            a, b = np.arange(n)[keep], j[keep]
-            target = scale * np.sqrt(np.maximum(2.0 - 2.0 * np.sum(u[a] * u[b], axis=1), 0.0))
-            xa, xb = x[a], x[b]
-            d = poincare_distances(xa, xb)
-            err = d - target
-            loss += float(np.mean(err**2))
-
-            # d(arcosh(arg))/d(arg) = 1/sqrt(arg^2 - 1); the rest is the chain rule on the
-            # ball's conformal factor. Guarded at arg = 1, where two points coincide and
-            # the derivative is genuinely infinite.
-            na = np.sum(xa * xa, axis=1)
-            nb = np.sum(xb * xb, axis=1)
-            sq = np.sum((xa - xb) ** 2, axis=1)
-            den = np.maximum((1.0 - na) * (1.0 - nb), 1.0e-12)
-            arg = 1.0 + 2.0 * sq / den
-            dda = 1.0 / np.maximum(np.sqrt(arg**2 - 1.0), 1.0e-6)
-            # gradient of arg wrt xa
-            # **Both endpoints move.** Updating only one side of each pair was the first
-            # version and it barely converged (pearson 0.145 against a target the Euclidean
-            # projectors reach 0.77 on): every pair is a constraint on two points, and half
-            # the gradient thrown away is half the information in the sample.
-            common = (2.0 * err * dda)[:, None]
-            g_a = (4.0 / den)[:, None] * (xa - xb) + (
-                (4.0 * sq * (1.0 - nb) / den**2)[:, None] * xa
-            )
-            g_b = (4.0 / den)[:, None] * (xb - xa) + (
-                (4.0 * sq * (1.0 - na) / den**2)[:, None] * xb
-            )
-            # Riemannian correction: the ball's metric scales the gradient by
-            # ((1-|x|^2)/2)^2, which is what stops a point near the rim taking an
-            # enormous step and leaving the ball.
-            step_a = ((1.0 - na) ** 2 / 4.0)[:, None] * (common * g_a)
-            step_b = ((1.0 - nb) ** 2 / 4.0)[:, None] * (common * g_b)
-            np.add.at(x, a, -lr * step_a)
-            np.add.at(x, b, -lr * step_b)
-            x = clip(x)
-        losses.append(loss / POINCARE_PAIRS)
-        if verbose and (epoch + 1) % 20 == 0:
-            print(f"  epoch {epoch + 1}: stress {losses[-1]:.4f}", file=sys.stderr)
-
-    return canonical_signs(x), {
-        "metric": "poincare",
-        "epochs": POINCARE_EPOCHS,
-        "pairsPerPoint": POINCARE_PAIRS,
-        "targetScale": round(scale, 4),
-        "finalStress": round(losses[-1], 4) if losses else 0.0,
-        "maxRadius": round(float(np.max(np.linalg.norm(x, axis=1))), 4),
-        "warning": (
-            "ball coordinates: the fitted distance is the HYPERBOLIC distance between "
-            "them, not the euclidean one the renderer measures. Everything quoted in box "
-            "units is wrong for this output."
-        ),
-    }
-
-
 def project(
     z: np.ndarray,
     method: str,
@@ -684,10 +531,6 @@ def project(
             "metric": UMAP_METRIC,
         }
 
-    if method == "poincare":
-        pos, info = _poincare_embed(z, seed=seed, verbose=verbose)
-        return pos, info
-
     if method == "pacmap":
         from pacmap import PaCMAP
 
@@ -699,7 +542,7 @@ def project(
                 file=sys.stderr,
             )
         # Unit rows, so the euclidean distance PaCMAP uses is the chord distance — the
-        # same geometry `cmds-chord` fits, and monotone in the cosine the matcher uses.
+        # the chord distance, and monotone in the cosine the matcher uses.
         # Passing raw standardised rows instead would let a loud descriptor dominate the
         # neighbour graph, which is the one thing the whole space is normalised to avoid.
         reducer = PaCMAP(
@@ -727,8 +570,8 @@ def project(
             "varianceRatioTotal": float(pca.explained_variance_ratio_.sum()),
         }
 
-    if method in ("cmds", "cmds-chord"):
-        metric = "chord" if method == "cmds-chord" else "cosine"
+    if method == "cmds":
+        metric = "cosine"
         if n <= CMDS_FULL_MAX:
             if verbose:
                 print(
@@ -2209,6 +2052,20 @@ def build_galaxy(
     # embed build — because the landmarks are rows of that space and `grow` has to place
     # new points through the same transform.
     basis_parts = chosen.get("basisParts")
+    if basis_parts is None and verbose:
+        # **Loudly, because it silently disables a whole feature.** `grow` adds new audio
+        # to an existing galaxy without moving the points already in it, and it does that
+        # through the frozen frame written below. Only cMDS emits one. PaCMAP does expose a
+        # `transform`, and its own documentation rules it out for this: "the same point
+        # could be mapped into a different place" is precisely what grow may not do. So a
+        # build on the current default can be rebuilt but never extended.
+        from .grow import BASIS_FILE
+
+        print(
+            f"NOTE: projection {projection} writes no {BASIS_FILE} — this galaxy can be "
+            "rebuilt but not grown (`grow` needs cMDS's frozen frame)",
+            file=sys.stderr,
+        )
     if basis_parts is not None:
         from .grow import ProjectionBasis
 
@@ -2866,9 +2723,14 @@ def self_test(verbose: bool = True) -> None:
     # reproduces the positions the build gave them.
     from .grow import ProjectionBasis, embed
 
-    for metric_name in MDS_METRICS:
-        method = "cmds-chord" if metric_name == "chord" else "cmds"
-        raw, info = project(probe, method, seed=0, verbose=False)
+    # Only cosine is selectable by a projector now — `cmds-chord` was removed once the
+    # bake-off measured it worse than plain cMDS on both yardsticks. The chord branch of
+    # `mds_squared_distances` stays, because a basis written before that carries
+    # `metric: "chord"` and a reader that cannot handle a value it once wrote is a bug;
+    # the assertions above still exercise it directly, and the negative test below proves
+    # it is not a no-op.
+    for metric_name in ("cosine",):
+        raw, info = project(probe, "cmds", seed=0, verbose=False)
         parts = info["basis"]
         assert parts["metric"] == metric_name, parts["metric"]
         basis = ProjectionBasis(
@@ -2894,7 +2756,7 @@ def self_test(verbose: bool = True) -> None:
         landmarks=parts["landmarks"], l_pinv=parts["lPinv"], mean_sq=parts["meanSq"],
         cluster_shift=np.zeros((1, 3)), centre=np.zeros(3), scale=np.ones(3), knee=1.0,
         peak=np.ones(3), mean=np.zeros(probe.shape[1]), std=np.ones(probe.shape[1]),
-        metric="cosine",
+        metric="chord",
     )
     assert float(np.abs(embed(wrong, probe, np.full(len(probe), -1)) - raw).max()) > 1.0e-3, (
         "the two metrics place points identically — the basis's metric field is not load-bearing"

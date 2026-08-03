@@ -17,62 +17,6 @@
  */
 
 /**
- * How much meaning is claimed for a cluster. The pipeline sorts each cluster's documented
- * function into a behavioural class, and those classes collapse into how strong a claim
- * they make.
- *
- * **Nothing draws with this at the moment.** The Meaning arrangement, which grouped the
- * cloud by claim and gave the unclaimed clusters an island of their own, has been taken
- * out; `functionClass` is still on every centroid in `centroids.json`, so the taxonomy and
- * the reasoning below are kept intact rather than deleted with the view that used them.
- *
- * **`none` is not a claim, and keeping it separate is the whole point.** It used to fall
- * into `structural`, which reads as "a song element carrying syntax" — a real assertion
- * about a bird. Most clusters are now fitted to field recordings and carry no documented
- * function at all, so that default silently turned "we do not know" into "we know this is
- * song structure" for two thirds of the galaxy. They are their own group now, which is what
- * lets the share of the corpus that has no documented function be counted honestly.
- *
- * Four and not six because this is a scatter plot: only three categorical hues stay
- * separable under colour-vision deficiency (validated against the light surface — worst
- * pair ΔE 9.2 deutan, 24.0 normal), and the fourth is a neutral, which does not compete
- * with them. The finer six-class detail lives in the node labels.
- */
-export const CLAIM_REFERENTIAL = 0;
-export const CLAIM_SOCIAL = 1;
-export const CLAIM_STRUCTURAL = 2;
-export const CLAIM_NONE = 3;
-export const CLAIM_COUNT = 4;
-
-/**
- * What each claim island is called, and what its claim amounts to. Ordered from the
- * strongest claim to none at all.
- */
-export const CLAIM_LABELS: Record<number, string> = {
-	0: 'referential',
-	1: 'social',
-	2: 'structural',
-	3: 'no documented meaning'
-};
-
-export const CLAIM_HINTS: Record<number, string> = {
-	0: 'names something outside the bird',
-	1: 'says something about the singer',
-	2: 'carries syntax, refers to nothing',
-	3: 'real audio, nothing documented'
-};
-
-export const CLAIM_OF_FUNCTION: Record<string, number> = {
-	alarm: CLAIM_REFERENTIAL,
-	recruitment: CLAIM_REFERENTIAL,
-	territorial: CLAIM_SOCIAL,
-	courtship: CLAIM_SOCIAL,
-	contact: CLAIM_SOCIAL,
-	structural: CLAIM_STRUCTURAL,
-	unclassified: CLAIM_NONE
-};
-
-/**
  * Simultaneous waves. Three, because a chorus is several birds at once and the point of
  * the interference is that you can see two of them meet; a fourth adds cost and nothing
  * legible on top of three overlapping fronts.
@@ -1227,61 +1171,6 @@ export function buildClusterMembers(
 	return { members, radii };
 }
 
-
-export const trajectoryVertexShader = /* glsl */ `
-	attribute float aIndex;
-	attribute float aPath;
-	/**
-	 * This vertex's hue: the gradient between the two knots the segment joins, baked
-	 * at rebuild from each knot's species colour (the same mapping the labels use,
-	 * knot-lightness included). The thread's colour walk along a phrase is the one
-	 * place hues legitimately blend — it is the bird's path crossing its own knots.
-	 */
-	attribute vec3 aColour;
-
-	uniform float uProgress[${MAX_PATHS}];
-	uniform float uAlpha[${MAX_PATHS}];
-
-	varying float vIndex;
-	varying float vProgress;
-	varying float vAlpha;
-	varying vec3 vColour;
-
-	void main() {
-		int p = int(aPath + 0.5);
-		vIndex = aIndex;
-		vProgress = uProgress[p];
-		vAlpha = uAlpha[p];
-		vColour = aColour;
-		gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-	}
-`;
-
-export const trajectoryFragmentShader = /* glsl */ `
-	uniform vec3 uColdColor;
-
-	varying float vIndex;
-	varying float vProgress;
-	varying float vAlpha;
-	varying vec3 vColour;
-
-	void main() {
-		bool singing = vProgress >= 0.0;
-		// while idle the whole path reads as one faint thread; while singing the part
-		// already sung stays lit so the order of the phrase remains visible
-		float passed = singing ? step(vIndex, vProgress) : 1.0;
-		// Squared by hand — pow with a negative base is undefined in GLSL ES.
-		float r = (vIndex - vProgress) / 0.45;
-		float peak = singing ? exp(-(r * r)) : 0.0;
-
-		// A GL line is one pixel whatever the zoom, so as the dots shrink toward their
-		// floor the thread is the only thing still joining them, and it has to hold a
-		// little more ink to do that job than it needed when the dots were large.
-		float base = 0.55 + 0.35 * passed;
-		vec3 colour = mix(uColdColor, vColour, clamp(0.35 + peak, 0.0, 1.0));
-		gl_FragColor = vec4(colour, clamp(vAlpha * (base + peak * 0.6), 0.0, 1.0));
-	}
-`;
 
 /**
  * The thread with a width in pixels — two triangles a segment, offset perpendicular in

@@ -65,8 +65,25 @@ def run(z: np.ndarray, label: str) -> None:
     print(f"\n--- {label} ---")
     print(f"{'projector':12} {'metric':7} {'neg mass':>9} {'3 axes':>8} "
           f"{'r(cos)':>8} {'rho(cos)':>9} {'r(chord)':>9}")
-    for method in ("cmds", "cmds-chord"):
-        pos, info = galaxy.project(z, method, seed=0, verbose=False)
+    # `cmds-chord` was a projector until 2026-08-03 and was removed once this measurement
+    # said it was worse on both yardsticks. The metric survives in
+    # `galaxy.mds_squared_distances`, so the comparison is still runnable — it just goes
+    # through `_classical_mds` directly rather than through a projector nobody should pick.
+    for method, metric in (("cmds", "cosine"), ("chord (removed)", "chord")):
+        # Mirror `project`'s own full-vs-landmark decision. Calling `_classical_mds` on the
+        # whole matrix regardless was the first version of this and it is not a small
+        # mistake: 13 848 knots is a 1.5 GB matrix and an O(n^3) eigendecomposition, where
+        # the build itself would have used 800 landmarks.
+        if z.shape[0] <= galaxy.CMDS_FULL_MAX:
+            u = galaxy._unit_rows(z)
+            d2 = galaxy.mds_squared_distances(u, u, metric)
+            np.fill_diagonal(d2, 0.0)
+            pos, info = galaxy._classical_mds(d2)
+            info = {**info, "mode": "full"}
+        else:
+            pos, info = galaxy._landmark_mds(z, seed=0, metric=metric)
+            info = {**info, "mode": "landmark"}
+        info = {**info, "metric": metric}
         f = galaxy.faithfulness(z, pos, seed=0)
         fc = chord_faithfulness(z, pos, seed=0)
         print(f"{method:12} {info['metric']:7} {info['negativeEigenvalueMass'] * 100:8.1f} % "
@@ -130,7 +147,8 @@ print(
     "indefiniteness runs the right way. It measures one true thing — that classical MDS is\n"
     "being fitted to a dissimilarity no Euclidean space can hold — and nothing at all about\n"
     "the quality of the answer.\n"
-    "\nSo `cmds` stays the default and `cmds-chord` ships as a measured alternative. p = 1.5\n"
+    "\nSo the chord metric was measured and **removed** rather than shipped, and `pacmap`\n"
+    "is the default for reasons the local metrics settled separately. p = 1.5\n"
     "measures best by 0.008 and is NOT adopted: it is a fitted exponent with no argument\n"
     "behind it, on one seed, and a knob tuned to a faithfulness number is how the match ramp\n"
     "got into trouble."
