@@ -531,6 +531,29 @@ export interface Manifest {
 		worstGap: number;
 		definition?: string;
 	};
+	/**
+	 * Where the live match ramp sits for *this* asset set, measured by the build against
+	 * the centroids it just wrote (`birdy-pipeline thresholds`, or the build's own pass).
+	 *
+	 * **The two numbers in `features.ts` are the fallback, not the answer.** They were
+	 * hand-tuned against a 2026-07 corpus and went stale in silence: by v6 the whole
+	 * distribution of real field syllables had moved up 0.07-0.14, which left the floor
+	 * (0.62) below the *first* percentile — excluding nothing — and the ceiling (0.86)
+	 * below the *median* real syllable, so most genuine birdsong pegged the ramp at full
+	 * strength. The ramp is a property of the assets and now travels with them.
+	 */
+	matchRamp?: {
+		floor: number;
+		ceiling: number;
+		/** e.g. `floor = p5, ceiling = p90` — the rule, so the numbers can be re-derived. */
+		rule?: string;
+		percentiles?: Record<string, number>;
+		max?: number;
+		sampled?: number;
+		population?: number;
+		store?: string;
+		definition?: string;
+	};
 	files?: Record<string, string>;
 	[key: string]: unknown;
 }

@@ -1,3 +1,74 @@
+# Lyrebird — the match ramp round (2026-08-03): the ramp ships with the assets it measures
+
+The test round of 2026-08-02 ran `thresholds` for the first time and found that the browser's
+match ramp had gone stale in silence. This closes it, and not by editing the two numbers.
+
+**What was wrong.** `MATCH_FLOOR` 0.62 and `MATCH_CEILING` 0.86 were hand-tuned against a
+2026-07 corpus whose real field syllables ran p5 0.605 · p50 0.801. By v6 the whole distribution
+had moved up 0.07–0.14 — re-measured on the installed build, p5 **0.732** · p50 **0.873** — and
+the constants had not. The floor sat below the **first** percentile, so it excluded nothing at
+all, and the ceiling sat below the **median** real syllable, so more than half of all genuine
+birdsong pegged the ramp at full strength. "A partial match should look partial, not certain"
+had quietly stopped being true, and nothing caught it for a month, because a constant cannot
+notice that its corpus was rebuilt.
+
+## 1. The ramp is a property of the assets, so it now travels with them
+
+`manifest.matchRamp`, written by every build and by `thresholds --write`, read by the app.
+The rule rather than the numbers is what is fixed: **floor = p5, ceiling = p90** of how real
+harvested field syllables score against *these* centroids. p5 keeps the floor's stated promise
+(it lets in nineteen field syllables in twenty) and is where the hand-tuned floor sat in the
+corpus it was tuned against; p90 is where a match is unambiguous by the corpus's own account.
+On the installed build that is **0.732 .. 0.948**, and the median field syllable now reads
+**72 %** strength instead of 100 %.
+
+`MATCH_FLOOR`/`MATCH_CEILING` survive as the fallback for an asset set that ships no ramp, and
+carry v6's measurement. `matchRamp()` refuses an inverted or degenerate pair — the app divides by
+`ceiling − floor`, so an inverted one would invert the whole matcher and light the galaxy hardest
+on the sounds least like a bird, silently. `verify` fails on the same condition and reports
+absence without failing, since a build with no harvest store has nothing to measure.
+
+## 2. Every downstream gate held, and that is the point of using percentiles
+
+`strength` gates four other things, all tuned against the old ramp, and the obvious worry was
+that retuning the ramp silently retunes all of them. Measured across the v5→v6 shift:
+
+```
+gate                 old cosine  old pct     new cosine  new pct
+name a call (0.25)        0.698      19 %         0.802      21 %
+wave claim (0.15)         0.679      15 %         0.784      16 %
+tag claim (0.02)          0.640       9 %         0.750       8 %
+panel shows (0.01)        0.634       8 %         0.744       7 %
+```
+
+Every one lands within two points of the **corpus share** it used to gate, because a threshold
+on a percentile-anchored ramp is really a threshold on "what fraction of genuine birdsong clears
+this". So `REPORT_STRENGTH` and the three shader gates are unchanged, deliberately, and the
+table is in `translate.ts` where the next person will go to ask. With the ramp left as constants
+it was the opposite: the same 0.25 went from naming 81 % of real syllables to naming all of them.
+
+## 3. Not a regression, and it never was the cosine's job
+
+White noise and room tone still score **0.967**, above the median real syllable, and still read
+100 % on the ramp alone. The tonality gate is what rejects them and it is untouched:
+`verify:features` measures both at flatness 0.848 and **strength 0.000**. The instrument now
+prints the ramp's verdict on the probes next to the birds' so nobody re-hunts this.
+
+## 4. Tools
+
+- `thresholds` prints p1…p99 (it printed to p50, which cannot site a ceiling), marks which two
+  the ramp uses, says what the median syllable reads, and takes `--write`.
+- The measurement is one function, `measure_match_ramp`, run against the **finished asset
+  directory** — so the build's pass and a by-hand run months later cannot disagree.
+- `galaxy.write_manifest` is now the only manifest writer. Amending one with a plain
+  `json.dumps` reflowed all 3 858 lines; one writer, one format, a 22-line diff.
+- `verify:features` reads the shipped ramp instead of the constants, and says which it got.
+
+`npm run check` is clean apart from the four pre-existing `syrinx-processor.js` errors;
+`npm run build`, `verify:features` (30/44, exit 0) and pipeline `verify` all pass. **Not
+re-run: the ramp at build time** — that path is exercised only by a full rebuild, which is the
+next round's business.
+
 # Lyrebird — the torn-knot round (2026-08-03): a knot is drawn in one place now
 
 The report was *"very few times we see the red points somewhere where no activation was or

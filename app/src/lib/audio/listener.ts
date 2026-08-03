@@ -2,6 +2,7 @@ import { PitchDetector } from 'pitchy';
 import {
 	ActivationTracker,
 	FeatureExtractor,
+	matchRamp,
 	PointTracker,
 	SessionGate,
 	standardise
@@ -90,7 +91,15 @@ export class Listener {
 			...assets.featureSpace,
 			sampleRate: engine.ctx.sampleRate
 		});
-		this.tracker = new ActivationTracker(assets.centroids, assets.featureSpace);
+		// The ramp travels with the assets (`manifest.matchRamp`) because it is a property
+		// of them — where a real field syllable scores against *these* centroids. See the
+		// constants in features.ts for the month the app spent with a stale one.
+		this.tracker = new ActivationTracker(
+			assets.centroids,
+			assets.featureSpace,
+			0.82,
+			matchRamp(assets.manifest)
+		);
 		this.points = new PointTracker(assets);
 		const gateSpec = assets.featureSpace.embedding?.sessionGate;
 		this.gate =

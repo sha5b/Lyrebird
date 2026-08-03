@@ -734,6 +734,29 @@ def cmd_build(
             f"{stats.faithfulness['pearson']:.3f}, spearman "
             f"{stats.faithfulness['spearman']:.3f}; 3D kNN agreement "
             f"{stats.knn_agreement * 100:.1f} %")
+
+        # The browser's match ramp, measured against the centroids this build just wrote
+        # and folded into the manifest it reads. It is a property of the assets — where a
+        # real field syllable scores against *these* centroids — and it moved 0.07-0.14
+        # between v5 and v6 with the hand-tuned constants left behind, which is why it is
+        # no longer allowed to be a constant. Analysis, not output: a build must not fail
+        # on it, and a build with no field audio simply leaves the key out and lets the
+        # app fall back.
+        try:
+            ramp = measure_match_ramp(mode_out, store_path)
+            if ramp is None:
+                log("match ramp: no harvest store, manifest keeps no matchRamp "
+                    "(the app falls back to its constants)")
+            else:
+                manifest = galaxy.read_manifest(mode_out)
+                manifest["matchRamp"] = ramp
+                galaxy.write_manifest(mode_out, manifest)
+                log(f"match ramp: {ramp['rule']} = {ramp['floor']:.3f}..{ramp['ceiling']:.3f} "
+                    f"over {ramp['sampled']} field syllables "
+                    f"(median {ramp['percentiles']['p50']:.3f})")
+        except Exception as exc:
+            log(f"match ramp skipped: {exc}")
+
         rc = verify(mode_out)
         if rc != 0:
             return rc
@@ -2768,6 +2791,89 @@ def cmd_verify(args: argparse.Namespace) -> int:
     return verify(Path(args.out))
 
 
+# Where the browser's match ramp sits in the distribution of real field syllables.
+#
+# **These two percentiles are the rule; the two numbers in `features.ts` are only its
+# last answer.** The constants were tuned by hand against a 2026-07 corpus and then went
+# stale in silence: by v6 the whole distribution had moved up 0.07-0.14, which put the
+# floor (0.62) below the *first* percentile — excluding nothing — and the ceiling (0.86)
+# below the *median* real syllable, so more than half of all genuine birdsong pegged the
+# ramp at full strength and "a partial match should look partial" had quietly stopped
+# being true. Nothing caught it, because nothing re-measured it.
+#
+# So the ramp is a property of the assets and now ships with them. `matchRamp` in the
+# manifest is written by every build, the app reads it, and the constants remain only as
+# the fallback for an older asset set.
+#
+# **p5** keeps the floor's stated promise — it lets in about nineteen field syllables in
+# twenty — and it is where the hand-tuned floor sat in the corpus it was tuned against
+# (0.62 against that corpus's p5 of 0.605).
+#
+# **p90** is the ceiling: above it a match is unambiguous by the corpus's own account,
+# and below it the response ramps. It has to sit well above the median or the ramp is
+# saturated for the typical case, which is exactly the failure being fixed.
+MATCH_RAMP_FLOOR_PCT = 5
+MATCH_RAMP_CEILING_PCT = 90
+
+#: Reported so a reader can see the shape either side of the two that are used.
+MATCH_RAMP_PERCENTILES = (1, 5, 10, 25, 50, 75, 90, 95, 99)
+
+
+def measure_match_ramp(
+    out: Path, store_path: Path, sample: int = 2000, seed: int = 0
+) -> dict | None:
+    """Score real field syllables and the noise probes against the *shipped* centroids.
+
+    Returns the manifest's `matchRamp` record, or None when there is no harvest store to
+    measure against — a build with no field audio has nothing to set the ramp from, and
+    an invented ramp is worse than the fallback.
+
+    Runs against the finished asset directory rather than against the build's in-memory
+    state on purpose: it is then the same code path whether it runs at the end of a build
+    or by hand months later on the installed assets, and the two can never disagree.
+    """
+    store_path = Path(store_path)
+    if not (store_path / "state.json").exists():
+        return None
+
+    centroids = json.loads((out / "centroids.json").read_text(encoding="utf-8"))
+    space = json.loads((out / "feature-space.json").read_text(encoding="utf-8"))
+    mean = np.asarray(space["mean"], dtype=float)
+    std = np.maximum(np.asarray(space["std"], dtype=float), 1.0e-6)
+    vectors = galaxy.centroid_vectors(out, centroids)["vector"]
+    vectors = vectors / np.maximum(np.linalg.norm(vectors, axis=1, keepdims=True), 1.0e-12)
+
+    rng = np.random.default_rng(seed)
+    store = harvest.HarvestStore(store_path)
+    rows = [np.asarray(o.descriptor, dtype=float) for o in store.syllables if o.descriptor]
+    if not rows:
+        return None
+    chosen = rows if len(rows) <= sample else [
+        rows[i] for i in rng.choice(len(rows), sample, replace=False)
+    ]
+
+    z = features.standardise(np.asarray(chosen, dtype=float), mean, std)
+    z = z / np.maximum(np.linalg.norm(z, axis=1, keepdims=True), 1.0e-12)
+    scores = np.max(z @ vectors.T, axis=1)
+
+    pct = {f"p{q}": round(float(np.percentile(scores, q)), 4) for q in MATCH_RAMP_PERCENTILES}
+    return {
+        "floor": round(float(np.percentile(scores, MATCH_RAMP_FLOOR_PCT)), 4),
+        "ceiling": round(float(np.percentile(scores, MATCH_RAMP_CEILING_PCT)), 4),
+        "rule": f"floor = p{MATCH_RAMP_FLOOR_PCT}, ceiling = p{MATCH_RAMP_CEILING_PCT}",
+        "percentiles": pct,
+        "max": round(float(scores.max()), 4),
+        "sampled": len(chosen),
+        "population": len(rows),
+        "store": str(store_path),
+        "definition": (
+            "best-centroid cosine over real harvested field syllables; the browser ramps "
+            "activation strength between floor and ceiling with a smoothstep, so below "
+            "the floor nothing lights and above the ceiling a match reads as certain"
+        ),
+    }
+
+
 def cmd_thresholds(args: argparse.Namespace) -> int:
     """Re-measure the match ramp the browser uses to say "this is not birdsong".
 
@@ -2777,6 +2883,9 @@ def cmd_thresholds(args: argparse.Namespace) -> int:
     is two thirds field audio put birdsong and noise in different places. This prints
     where each sits now, so the ramp can be set from the measurement instead of from
     memory.
+
+    `--write` puts the answer in the manifest, which is where the app now reads it from.
+    Every build writes it too; this is the way to repair an asset set without a rebuild.
     """
     out = Path(args.out)
     centroids = json.loads((out / "centroids.json").read_text(encoding="utf-8"))
@@ -2792,9 +2901,6 @@ def cmd_thresholds(args: argparse.Namespace) -> int:
         scores = vectors @ z
         i = int(np.argmax(scores))
         return float(scores[i]), i
-
-    def best_cosine(descriptor: np.ndarray) -> float:
-        return best_match(descriptor)[0]
 
     def name_of(index: int) -> str:
         item = centroids["items"][index]
@@ -2812,6 +2918,7 @@ def cmd_thresholds(args: argparse.Namespace) -> int:
         "silence with a click": np.concatenate([[1.0], np.zeros(t.size - 1)]),
     }
     log("what the corpus says is not birdsong:")
+    probe_scores: list[float] = []
     for name, audio in probes.items():
         d = features.descriptor(syrinx.peak_normalise(audio), rate)
         if d is None:
@@ -2820,26 +2927,46 @@ def cmd_thresholds(args: argparse.Namespace) -> int:
         # Naming the winner is the difference between "the matcher is broken" and "one
         # cluster is a bin of wind and rain". Only the second has a fix.
         score, index = best_match(d)
+        probe_scores.append(score)
         log(f"  {name:24} {score:.3f}  -> {name_of(index)}")
 
     # Real birds, from the harvested syllables: this is the case the ramp has to let in.
     store_path = Path(args.store)
-    if (store_path / "state.json").exists():
-        store = harvest.HarvestStore(store_path)
-        rows = [np.asarray(o.descriptor, dtype=float) for o in store.syllables if o.descriptor]
-        if rows:
-            sample = rows if len(rows) <= args.sample else [
-                rows[i] for i in rng.choice(len(rows), args.sample, replace=False)
-            ]
-            scores = np.array([best_cosine(r) for r in sample])
-            log(f"\nreal field syllables (n={len(sample)} of {len(rows)}):")
-            for q in (1, 5, 10, 25, 50):
-                log(f"  p{q:<3} {np.percentile(scores, q):.3f}")
-            log(f"  max  {scores.max():.3f}")
-            log("\nMATCH_FLOOR should sit above the loudest thing that is not a bird and "
-                "below p10 of the real ones; MATCH_CEILING where a match is unambiguous.")
-    else:
+    ramp = measure_match_ramp(out, store_path, sample=args.sample, seed=args.seed)
+    if ramp is None:
         log(f"\nno harvest store at {store_path}: skipping the real-audio side")
+        return 0
+
+    log(f"\nreal field syllables (n={ramp['sampled']} of {ramp['population']}):")
+    for q in MATCH_RAMP_PERCENTILES:
+        mark = ""
+        if q == MATCH_RAMP_FLOOR_PCT:
+            mark = "  <- floor"
+        elif q == MATCH_RAMP_CEILING_PCT:
+            mark = "  <- ceiling"
+        log(f"  p{q:<3} {ramp['percentiles'][f'p{q}']:.3f}{mark}")
+    log(f"  max  {ramp['max']:.3f}")
+    log(f"\nramp: {ramp['rule']} = {ramp['floor']:.3f} .. {ramp['ceiling']:.3f}")
+
+    # What the ramp does to the typical syllable is the number the old constants got
+    # wrong, so say it rather than leaving it to be inferred from the percentiles.
+    def smoothstep(x: float) -> float:
+        t = min(1.0, max(0.0, (x - ramp["floor"]) / max(ramp["ceiling"] - ramp["floor"], 1e-9)))
+        return t * t * (3 - 2 * t)
+
+    p50 = ramp["percentiles"]["p50"]
+    log(f"  the median field syllable ({p50:.3f}) reads {smoothstep(p50) * 100:.0f} % strength")
+    log(f"  the noise probes above would read "
+        f"{', '.join(f'{smoothstep(s) * 100:.0f} %' for s in probe_scores)} "
+        "before the tonality gate, which is what actually rejects them")
+
+    if args.write:
+        manifest = galaxy.read_manifest(out)
+        manifest["matchRamp"] = ramp
+        galaxy.write_manifest(out, manifest)
+        log(f"\nwrote matchRamp to {out / 'manifest.json'}")
+    else:
+        log("\n--write puts this in the manifest, which is where the app reads it from.")
     return 0
 
 
@@ -3032,6 +3159,32 @@ def verify(out: Path) -> int:
             log(f"  projection        {man.get('projection', '?')}: distance pearson "
                 f"{f['pearson']:.3f} / spearman {f['spearman']:.3f} over {f['pairs']} "
                 f"pairs, purity {man.get('clusterPurity', 0) * 100:.1f} %")
+        # The browser's match ramp. Absence is reported, not failed: a build with no
+        # harvest store has no field syllables to set it from, and the app then falls
+        # back to its constants. An *unusable* ramp is a failure, because the app divides
+        # by `ceiling - floor` and an inverted pair inverts the whole matcher — lighting
+        # the galaxy hardest on the sounds least like a bird, silently.
+        ramp = man.get("matchRamp")
+        if not ramp:
+            log("  match ramp        absent — the app will use its fallback constants "
+                "(re-run `thresholds --write` against a harvest store)")
+        else:
+            floor, ceiling = ramp.get("floor"), ramp.get("ceiling")
+            if not isinstance(floor, (int, float)) or not isinstance(ceiling, (int, float)):
+                problems.append("manifest.matchRamp has no numeric floor/ceiling")
+            elif not ceiling > floor:
+                problems.append(
+                    f"manifest.matchRamp is inverted or degenerate: {floor} .. {ceiling}"
+                )
+            elif ceiling > 1.0 or floor < -1.0:
+                problems.append(
+                    f"manifest.matchRamp is outside cosine range: {floor} .. {ceiling}"
+                )
+            else:
+                p50 = (ramp.get("percentiles") or {}).get("p50")
+                median = f", median field syllable {p50:.3f}" if isinstance(p50, float) else ""
+                log(f"  match ramp        {ramp.get('rule', '?')} = {floor:.3f}..{ceiling:.3f} "
+                    f"over {ramp.get('sampled', '?')} field syllables{median}")
     if problems:
         for p in problems:
             log(f"  FAIL: {p}")
@@ -3923,6 +4076,8 @@ def build_parser() -> argparse.ArgumentParser:
     th.add_argument("--store", default=str(DEFAULT_HARVEST_STORE))
     th.add_argument("--sample", type=int, default=2000, help="field syllables to score")
     th.add_argument("--seed", type=int, default=0)
+    th.add_argument("--write", action="store_true",
+                    help="write the measured ramp into the asset set's manifest.json")
     th.set_defaults(func=cmd_thresholds)
     return p
 

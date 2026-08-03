@@ -2110,8 +2110,22 @@ def build_galaxy(
         ],
         **(build_info or {}),
     }
-    _write_json(out_dir / "manifest.json", manifest)
+    write_manifest(out_dir, manifest)
     return stats
+
+
+def write_manifest(out_dir: Path, manifest: dict[str, Any]) -> None:
+    """The only place a manifest is written, so its formatting cannot fork.
+
+    `thresholds --write` amends a shipped manifest in place, and doing that with a
+    plain `json.dumps` reflowed all 3 858 lines of it — the same content, an
+    unreadable diff, and no way to see what actually changed. One writer instead.
+    """
+    _write_json(out_dir / "manifest.json", manifest)
+
+
+def read_manifest(out_dir: Path) -> dict[str, Any]:
+    return json.loads((out_dir / "manifest.json").read_text(encoding="utf-8"))
 
 
 def _write_inventory_shards(out_dir: Path, inventory: dict[str, Any]) -> None:

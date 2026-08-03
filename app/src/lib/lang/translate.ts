@@ -14,7 +14,25 @@ export interface Candidate {
 	speciesCommon: string;
 }
 
-/** Below this the input does not resemble the corpus well enough to name a call. */
+/**
+ * Below this the input does not resemble the corpus well enough to name a call.
+ *
+ * **It did not need retuning when the match ramp did, and the reason is the point of
+ * tying that ramp to percentiles.** `strength` is a smoothstep between the 5th and 90th
+ * percentile of how real field syllables score against the shipped centroids, so a
+ * threshold on it is really a threshold on *what share of genuine birdsong clears it* —
+ * and that share is stable across rebuilds even when every cosine in the corpus moves.
+ * Measured across the v5-to-v6 shift, which moved the whole distribution up 0.07-0.14:
+ *
+ *   gate                 old cosine  old pct     new cosine  new pct
+ *   name a call (0.25)        0.698      19 %         0.802      21 %
+ *   wave claim (0.15)         0.679      15 %         0.784      16 %
+ *   tag claim (0.02)          0.640       9 %         0.750       8 %
+ *
+ * Every one lands within two points of the corpus share it used to gate. With the ramp
+ * left as hand-set constants it was the opposite — the same 0.25 went from naming 81 %
+ * of real syllables to naming effectively all of them.
+ */
 const REPORT_STRENGTH = 0.25;
 
 export interface Reading {

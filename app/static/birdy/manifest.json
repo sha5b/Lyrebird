@@ -3867,5 +3867,26 @@
   16.0
  ],
  "clusterSeparation": 1.6,
- "envelopeAsOutputGain": true
+ "envelopeAsOutputGain": true,
+ "matchRamp": {
+  "floor": 0.7317,
+  "ceiling": 0.9476,
+  "rule": "floor = p5, ceiling = p90",
+  "percentiles": {
+   "p1": 0.6537,
+   "p5": 0.7317,
+   "p10": 0.7628,
+   "p25": 0.8181,
+   "p50": 0.8728,
+   "p75": 0.9151,
+   "p90": 0.9476,
+   "p95": 0.9615,
+   "p99": 0.9783
+  },
+  "max": 0.9919,
+  "sampled": 2000,
+  "population": 39930,
+  "store": "pipeline/out/harvest",
+  "definition": "best-centroid cosine over real harvested field syllables; the browser ramps activation strength between floor and ceiling with a smoothstep, so below the floor nothing lights and above the ceiling a match reads as certain"
+ }
 }

@@ -10,7 +10,13 @@
  *
  *   npm run verify:features
  */
-import { ActivationTracker, FeatureExtractor, SessionGate, standardise } from '../src/lib/audio/features.ts';
+import {
+	ActivationTracker,
+	FeatureExtractor,
+	matchRamp,
+	SessionGate,
+	standardise
+} from '../src/lib/audio/features.ts';
 import { attach } from '../src/lib/data/centroid-vectors.ts';
 import { loadGenerated, loadGeneratedFloats, loadInventory, render } from './lib/worklet-host.mjs';
 
@@ -18,6 +24,10 @@ const inventory = loadInventory();
 const rawSpace = loadGenerated('feature-space.json');
 const centroids = loadGenerated('centroids.json');
 const calibration = loadGenerated('syrinx-calibration.json');
+// The match ramp ships in the manifest, so the leak test below has to read it from there
+// or it is asserting about a ramp the app does not run. Absent on older builds, where
+// `matchRamp` returns the fallback constants — which is also what the app would use.
+const ramp = matchRamp(loadGenerated('manifest.json') ?? undefined);
 
 // The per-cluster vectors are a binary sidecar since 2026-08-01 (centroid-vectors.ts):
 // 64 % of centroids.json's bytes, and this script needs them to build a matcher at all.
@@ -69,13 +79,17 @@ function describe(signal) {
 	return extractor.descriptor();
 }
 
-const tracker = new ActivationTracker(centroids, spec, 0);
+const tracker = new ActivationTracker(centroids, spec, 0, ramp);
 let hits = 0;
 let speciesHits = 0;
 let total = 0;
 const confusions = [];
 const zRows = []; // standardised descriptors, for the session-gate assertions below
 
+console.log(
+	`match ramp ${ramp.floor.toFixed(3)}..${ramp.ceiling.toFixed(3)} ` +
+		`(${ramp.fromAssets ? 'from manifest.matchRamp' : 'FALLBACK CONSTANTS — these assets ship no ramp'})\n`
+);
 console.log('species                     syllable        -> matched cluster                          sim');
 for (const species of inventory.species) {
 	for (const syllable of species.syllables) {
@@ -142,7 +156,7 @@ for (const [name, signal] of Object.entries(probes)) {
 		continue;
 	}
 	const flatness = descriptor[descriptor.length - 1];
-	const noise = new ActivationTracker(centroids, spec, 0);
+	const noise = new ActivationTracker(centroids, spec, 0, ramp);
 	const nz = standardise(descriptor, spec);
 	if (name === 'white noise') whiteNoiseZ = nz;
 	noise.update(nz, flatness);

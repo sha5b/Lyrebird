@@ -249,26 +249,62 @@ function cosine(a: Float32Array | number[], b: Float32Array | number[]): number 
  * node while nothing was playing.
  *
  * These two numbers turn the relative measure into an absolute one, and they come from
- * the corpus rather than from taste. Re-measured against the shipped assets by
- * `birdy-pipeline thresholds`, on 2000 of the 31,653 harvested field syllables:
+ * the corpus rather than from taste. The floor lets in about nineteen field syllables in
+ * twenty; between floor and ceiling the response ramps, which is the honest behaviour
+ * for a live recording of a real bird — a partial match should look partial, not
+ * certain.
  *
- *   p1 0.509 · p5 0.605 · p10 0.654 · p25 0.728 · p50 0.801 · max 0.992
- *
- * The floor lets in about nine syllables in ten; between floor and ceiling the response
- * ramps, which is the honest behaviour for a live recording of a real bird — a partial
- * match should look partial, not certain.
+ * **They are the fallback now, not the answer: `manifest.matchRamp` overrides them, and
+ * every build writes it.** The reason is a bug this pair caused. They were tuned against
+ * a 2026-07 corpus whose real syllables ran p5 0.605 · p50 0.801, and by v6 the whole
+ * distribution had moved up 0.07-0.14 (p5 0.732 · p50 0.873) while the constants did
+ * not. The floor then sat below the *first* percentile, excluding nothing at all, and
+ * the ceiling below the *median* real syllable, so more than half of all genuine
+ * birdsong pegged the ramp at full strength and the ramp had stopped ramping. Nothing
+ * caught it for a month, because a constant cannot notice that its corpus was rebuilt.
+ * The values below are v6's measurement, kept in step by
+ * `uv run birdy-pipeline thresholds --write`.
  *
  * **The cosine alone can no longer carry this test, and the old comment claiming it
- * could was measuring a corpus that no longer exists.** Against 176 centroids fitted to
- * two thirds field audio, white noise scores 0.996 and room tone 0.996 — both above the
- * *median* real syllable. That is not a tuning failure: some of those clusters are bins
- * of wind and rain, and 59 noise-leaning syllables average into a centroid that is more
- * noise-like than any of its members (they score p99 0.941 individually, 0.996 pooled).
- * No floor separates the two, and dropping the worst clusters only promotes the next
- * ones. The tonality gate below is what actually does the work.
+ * could was measuring a corpus that no longer exists.** Against centroids fitted to two
+ * thirds field audio, white noise and room tone both score 0.967 — above the *median*
+ * real syllable. That is not a tuning failure: some of those clusters are bins of wind
+ * and rain, and noise-leaning syllables average into a centroid that is more noise-like
+ * than any of its members. No floor separates the two, and dropping the worst clusters
+ * only promotes the next ones. The tonality gate below is what actually does the work.
  */
-const MATCH_FLOOR = 0.62;
-const MATCH_CEILING = 0.86;
+const MATCH_FLOOR = 0.732;
+const MATCH_CEILING = 0.948;
+
+/**
+ * The build's own answer for this asset set, or the constants above when the assets
+ * predate `matchRamp` — or carry one that is not a usable ramp.
+ *
+ * The validity test is not defensive habit. A ramp is fed to `smoothstep`, which divides
+ * by `ceiling - floor`: an equal pair divides by zero and an inverted one inverts the
+ * whole matcher, lighting the galaxy hardest on the sounds least like a bird. Both are
+ * silent failures at runtime, and both are cheap to refuse here.
+ */
+export function matchRamp(manifest?: { matchRamp?: { floor?: number; ceiling?: number } }): {
+	floor: number;
+	ceiling: number;
+	fromAssets: boolean;
+} {
+	const m = manifest?.matchRamp;
+	const floor = m?.floor;
+	const ceiling = m?.ceiling;
+	const usable =
+		typeof floor === 'number' &&
+		typeof ceiling === 'number' &&
+		Number.isFinite(floor) &&
+		Number.isFinite(ceiling) &&
+		ceiling > floor &&
+		floor > -1 &&
+		ceiling <= 1;
+	return usable
+		? { floor: floor as number, ceiling: ceiling as number, fromAssets: true }
+		: { floor: MATCH_FLOOR, ceiling: MATCH_CEILING, fromAssets: false };
+}
 
 /**
  * Spectral flatness above which the input is broadband noise and not a bird, whatever it
@@ -413,9 +449,21 @@ export class ActivationTracker {
 	private readonly zMapped: Float32Array | null;
 	/** 0..1 confidence that the input matches anything in the corpus. EMA-smoothed. */
 	strength = 0;
+	/**
+	 * The match ramp in force, and whether it came from the assets or from the fallback
+	 * constants. Public because it is a claim the interface makes — a reading is only
+	 * readable against the ramp that produced it.
+	 */
+	readonly ramp: { floor: number; ceiling: number; fromAssets: boolean };
 
-	constructor(centroids: Centroids, spec: FeatureSpace, smoothing = 0.82) {
+	constructor(
+		centroids: Centroids,
+		spec: FeatureSpace,
+		smoothing = 0.82,
+		ramp = matchRamp()
+	) {
 		this.smoothingBase = smoothing;
+		this.ramp = ramp;
 		this.temperature = spec.temperature || 0.12;
 		const embedding = spec.embedding;
 		const map = embedding?.map;
@@ -537,7 +585,7 @@ export class ActivationTracker {
 		// Two tests, and both have to pass: how close the nearest cluster is, and whether
 		// the input is a tone at all. Either one alone lets noise through.
 		const tonal = 1 - smoothstep(TONAL_FLOOR, TONAL_CEILING, flatness);
-		const target = smoothstep(MATCH_FLOOR, MATCH_CEILING, max) * tonal;
+		const target = smoothstep(this.ramp.floor, this.ramp.ceiling, max) * tonal;
 		const smoothing = this.effectiveSmoothing();
 		this.strength = smoothing * this.strength + (1 - smoothing) * target;
 
