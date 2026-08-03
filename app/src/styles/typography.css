@@ -1,0 +1,15 @@
+/**
+ * The type vocabulary, global so that a component can use it.
+ *
+ * **This used to live in the page's scoped styles, which was a real bug and not only
+ * untidiness.** Svelte scopes a component's CSS to that component, so `.note` and `.faint`
+ * defined in `+page.svelte` reached nothing inside `InventoryTable.svelte` — the first
+ * component extracted from the page had to redefine a paragraph style that already existed
+ * six hundred lines away. A shared vocabulary has to be shared.
+ */
+code,
+.mono {
+	font-family: var(--font-mono);
+	font-size: 0.88em;
+	font-variant-numeric: tabular-nums;
+}

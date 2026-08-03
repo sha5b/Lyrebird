@@ -142,10 +142,60 @@ which costs one wrapper per *drawn* row (about forty), not per row in the corpus
 `verify:inventory-table` and `check-provenance-buffers` all pass. Every surface was looked at
 in a real browser.
 
-**Not done:** the tone pass on the new page copy — §1 and §2 were written straight and have
-not been through `/ste-writing`. The three ideas from the earlier interface round (radial
-decompression of the core, the depth exponent, a drawable knot hull) are untouched and still
-the best-argued things on the list.
+§1 and §2 have been through `/ste-writing` (STE-flavored): no semicolons, no contractions, no
+sentence over 25 words, active voice, and every measured figure left exact. One semicolon in §5
+went with them. The figures were re-rendered after the label revert, so what they show is what
+ships.
+
+**Not done:** the three ideas from the earlier interface round (radial decompression of the
+core, the depth exponent, a drawable knot hull) are untouched and still the best-argued things
+on the list.
+
+## 9. Asked and answered: can AI close the three "it does not" rows?
+
+Owner asked how the three refusals in §1 could be solved, and *"where is the synthetic space
+where we try to find the missing parts based on the geometrical structures of already known and
+learned?"* Not built — this is the survey, because the pieces all exist and the blocking number
+is small.
+
+**Every component is already in the repo.** `critic.py` gives the 32-d embedding the galaxy
+clusters in and a novelty scorer (AUC 0.825 on held-out species, calibrated to 5 % FPR).
+`spacemap.py` bridges the browser's 28-d descriptor into it (RFF ridge, 0.9043 median cosine).
+`density.py`'s docstring already names the primitive: *"a dense region containing both
+documented renders and unlabelled field audio is the translation primitive this project has
+been missing."* `inverse.py` decodes a mel patch to syrinx parameters, so a **point that does
+not exist yet can be rendered** — trained on unlimited synthetic data because we own the
+forward model. `geometry.py` is the arbiter: kNN lift against a label-permutation null, and *a
+grouping that cannot beat its own shuffle is reported as no relation.* `perch.py` sets the
+discipline for how a model's guess may appear at all — quarantined metadata with an honesty
+label, and **nothing in learn.py reads it**.
+
+**The blocking measurement, taken here: there are 53 documented functions over 12 species.**
+`territorial` 10, `structural` 24, `alarm` 11, `contact` 4, `recruitment` 2, `courtship` 2.
+That is the entire anchor set for any propagation onto 13 704 fitted types, and function is
+species-specific — one clade's alarm need not be acoustically like another's. So the honest
+prior is that cross-species function transfer is weak. It is cheap to measure and the
+measurement is the deliverable.
+
+Row by row:
+
+1. **"It does not translate birdsong" — keep it.** Not an AI problem. Translation needs paired
+   call-to-behaviour ground truth, which is field biology. Perch returns species, not meaning.
+2. **"It does not say what a fitted type is for" — this is the one that can move**, and only by
+   changing the epistemic category: not *"L33 is an alarm call"* but *"L33 sits where 78 % of
+   documented neighbours are alarm calls, and this predictor scores X on species it never
+   saw."* A prediction that ships its own error rate is allowed; an identity is not.
+3. **"It does not claim the picture is a faithful map" — partly, and not with a better
+   projection.** 3-d is the ceiling. The measured split already says it: coarse is trustworthy
+   (0.9247), local is not (0.4685). The fix is to stop asking the picture to carry the local
+   question.
+
+**The one experiment to run first**, because it is cheap and it decides everything: hold out a
+real fitted type, interpolate in the 32-d embedding between that species' remaining types, and
+ask whether the interpolant lands nearer the held-out type than chance. If the geometry
+predicts held-out types, filling the gaps is warranted and `inverse.py` can render them. If it
+does not, the synthetic space generates plausible noise. `w5_field_retrieval.py` is the
+retrieval template and `geometry.py` supplies the null.
 
 # Lyrebird — READ THIS FIRST (2026-08-03, ~11:55): the v8 chain is running unattended
 

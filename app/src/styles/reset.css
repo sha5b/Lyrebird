@@ -1,0 +1,35 @@
+/**
+ * The reset and the document ground.
+ *
+ * Small on purpose. This project is a light instrument on paper, so the base is the page's
+ * ground colour, the two typefaces, and a scrollbar that does not look like an operating
+ * system's. Everything else is earned by a class.
+ */
+* {
+	box-sizing: border-box;
+	/* Instrument chrome, not document: thin, quiet scrollbars everywhere. */
+	scrollbar-width: thin;
+	scrollbar-color: var(--rule-strong) transparent;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+	background: var(--paper);
+	color: var(--ink);
+	font-family: var(--font-sans);
+	font-size: 13px;
+	line-height: 1.55;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3 {
+	margin: 0;
+	font-weight: 600;
+	letter-spacing: -0.006em;
+}

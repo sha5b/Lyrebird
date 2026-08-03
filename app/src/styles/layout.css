@@ -1,0 +1,699 @@
+/**
+ * The layout and content vocabulary the whole app shares.
+ *
+ * **Moved here out of `+page.svelte`, and the reason is a bug rather than tidiness.** Svelte
+ * scopes a component's CSS to that component, so `.note`, `.block`, `.field` and the rest —
+ * defined in the page — reached nothing inside a component extracted *from* that page. The
+ * first extraction hit it immediately: `InventoryTable.svelte` had to redefine a paragraph
+ * style that already existed a thousand lines away in the file it came out of. A vocabulary
+ * that only one file can speak is not a vocabulary, and it is what made the page a monolith
+ * — every new surface had to be built inside it to look like the rest of the app.
+ *
+ * What is here: the type helpers (`.note`, `.faint`, `.strap`), the panel furniture
+ * (`.block`, `.blocktitle`, `.row`, `.field`, `.facts`), the control compounds
+ * (`.segmented`, `.check`, `.rollup`), the job-log surfaces, and the full-stage page
+ * furniture (`.pagesheet` through `.figure`).
+ *
+ * What is NOT here, and stays scoped to the page: anything about the *stage* — the bench
+ * grid, the hud, the floating panels, the history strip, the legend, the ruler's captions.
+ * Those are one screen's arrangement, not a vocabulary, and globalising them would only move
+ * the monolith into the stylesheet.
+ */
+.strap {
+	margin: 0;
+	font-family: var(--font-mono);
+	color: var(--ink-faint);
+	font-size: 0.6rem;
+	letter-spacing: 0.06em;
+}
+
+/* Full width, because two columns of reference material at 78rem in the middle of a
+   1600 px screen wastes the half of the screen that would have held the second column.
+   The padding is what keeps it off the edges. */
+
+.pagesheet {
+	min-height: 100%;
+}
+
+/* Sticky, because these are long documents: on a page you scroll for a minute, a close
+   button at the top is a close button you have to scroll back to. */
+
+.pagehead {
+	position: sticky;
+	top: 0;
+	z-index: 2;
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 1.5rem;
+	padding: 1.1rem 2.6rem 0.9rem;
+	background: var(--paper-raised);
+	border-bottom: 1px solid var(--ink);
+}
+
+.pagehead h2 {
+	margin: 0;
+	font-size: 1.05rem;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.pagehead .strap {
+	margin: 0.25rem 0 0;
+}
+
+.pageclose {
+	flex: initial;
+	padding: 0.3rem 0.7rem;
+	font-size: 0.66rem;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+/**
+ * Two columns across the whole width, and the columns are what give prose its measure.
+ *
+ * A paragraph running the full width of a 1600 px screen is one long line the eye loses
+ * its place in — which is what the first version did — and a single centred 38rem column
+ * leaves two thirds of the screen empty. Two columns solve both at once: each is about a
+ * paragraph wide, and together they fill the page.
+ *
+ * `align-content: start` so a short right column does not stretch its sections, and the
+ * gap is wide enough (3.5rem) that the two columns cannot be read as one wrapped line.
+ */
+
+.pagebody {
+	padding: 2rem 2.6rem 4rem;
+	display: grid;
+	gap: 0 3.5rem;
+	grid-template-columns: 1fr;
+	align-content: start;
+}
+
+@media (min-width: 68rem) {
+	.pagebody.twocol {
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	}
+}
+
+/* Inside a column the measure is the column, so this only caps the widest case. */
+
+.measure {
+	max-width: 44rem;
+}
+
+/* Numbered sections, because this is a document about measurements and a reader who
+   wants to point at one needs something to point at. */
+
+.pagesection {
+	padding: 0 0 2.4rem;
+	min-width: 0;
+}
+
+.pagesection > h3 {
+	display: flex;
+	align-items: baseline;
+	gap: 0.7rem;
+	margin: 0 0 1rem;
+	font-size: 0.9rem;
+	letter-spacing: 0.02em;
+	padding-bottom: 0.45rem;
+	border-bottom: 1px solid var(--rule);
+}
+
+.pagesection > h3 .num {
+	flex: none;
+	font-family: var(--font-mono);
+	font-size: 0.7rem;
+	color: var(--ink-faint);
+}
+
+.pagesection p {
+	margin: 0 0 0.9rem;
+}
+
+/* Two columns once there is room for two: prose on the left, reference on the right,
+   so the legend is never something to scroll past to reach the summary. */
+
+.pagegrid {
+	display: grid;
+	gap: 1.6rem 2.6rem;
+	grid-template-columns: 1fr;
+}
+
+@media (min-width: 66rem) {
+	.pagegrid {
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	}
+}
+
+.pagecol > section.block {
+	margin-bottom: 1.2rem;
+}
+
+/* A figure is a screenshot of the instrument, so it is framed like the stage: a rule
+   around it and the caption under it in the same voice as the readings. Numbered, and
+   the number is referenced from the prose, because "as shown above" stops being true
+   the moment the layout reflows. */
+
+.figure {
+	margin: 0 0 1.4rem;
+	max-width: 44rem;
+}
+
+.figure img {
+	display: block;
+	width: 100%;
+	height: auto;
+	border: 1px solid var(--rule);
+	background: var(--paper);
+}
+
+.figure figcaption {
+	margin-top: 0.5rem;
+	font-size: 0.72rem;
+	line-height: 1.55;
+	color: var(--ink-dim);
+}
+
+.figure figcaption b {
+	font-family: var(--font-mono);
+	font-size: 0.68rem;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--ink-faint);
+	font-weight: 400;
+	margin-right: 0.4rem;
+}
+
+/* The vocabulary. A word, then what it is — as a list of terms rather than as prose,
+   because a reader arrives at it with one word in mind and wants to find that word. */
+
+.deflist {
+	margin: 0 0 1rem;
+	max-width: 40rem;
+}
+
+.deflist > div {
+	display: grid;
+	grid-template-columns: 7rem minmax(0, 1fr);
+	gap: 0.2rem 1rem;
+	padding: 0.55rem 0;
+	border-top: 1px solid var(--rule);
+}
+
+.deflist > div:last-child {
+	border-bottom: 1px solid var(--rule);
+}
+
+@media (max-width: 40rem) {
+	.deflist > div {
+		grid-template-columns: 1fr;
+	}
+}
+
+.deflist dt {
+	font-family: var(--font-mono);
+	font-size: 0.72rem;
+	color: var(--ink);
+}
+
+.deflist dd {
+	margin: 0;
+	font-size: 0.78rem;
+	line-height: 1.6;
+	color: var(--ink-dim);
+}
+
+/* A claim and its warrant, side by side. The point of the pair is that no claim on this
+   page appears without the thing that licenses it. */
+
+.claims {
+	margin: 0 0 1.2rem;
+	max-width: 46rem;
+	border-top: 1px solid var(--rule);
+}
+
+.claims > div {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	gap: 0.9rem;
+	padding: 0.6rem 0;
+	border-bottom: 1px solid var(--rule);
+	font-size: 0.76rem;
+	line-height: 1.55;
+}
+
+@media (max-width: 46rem) {
+	.claims > div {
+		grid-template-columns: 1fr;
+		gap: 0.2rem;
+	}
+}
+
+.claims dt {
+	color: var(--ink);
+}
+
+.claims dd {
+	margin: 0;
+	color: var(--ink-dim);
+}
+
+.claims .no {
+	color: var(--invented);
+}
+
+/* The fitted directions, as a table rather than a sentence: five names and five shares
+   are a reading, and a reading is a column of numbers. */
+
+.axistable {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	gap: 0.15rem 1rem;
+	margin: 0.4rem 0 0.6rem;
+	font-size: 0.72rem;
+}
+
+.axistable div {
+	display: contents;
+}
+
+.axistable dt {
+	color: var(--ink-dim);
+}
+
+.axistable dd {
+	margin: 0;
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+/* The one outbound link on the stage. Underlined rather than coloured: the accent is
+   spoken for and means "this is responding to sound". */
+
+.paperlink {
+	color: var(--ink);
+	text-decoration: underline;
+	text-underline-offset: 0.15em;
+}
+
+/* The scrolling half of a card, under its header. */
+
+.cardbody {
+	min-height: 0;
+	overflow-y: auto;
+	display: grid;
+	align-content: start;
+	/* Long unbroken strings — citation dois, file paths, mono ids — must wrap at the
+	   panel's edge rather than run under its `overflow: hidden` and read as cut off. */
+	overflow-wrap: break-word;
+}
+
+/* One rhythm for the whole panel: sections separated by a rule, a single padding
+   value, and a single gap between everything inside them. */
+
+.block {
+	display: grid;
+	gap: 0.6rem;
+	padding: 0.9rem 1rem;
+	border-bottom: 1px solid var(--rule);
+	align-content: start;
+}
+
+.block:last-child {
+	border-bottom: none;
+}
+
+a.chip {
+	text-decoration: none;
+	display: grid;
+	place-items: center;
+	padding: 0.4rem 0.7rem;
+}
+
+.blocktitle {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 0.5rem;
+	font-size: 0.58rem;
+	text-transform: uppercase;
+	letter-spacing: 0.11em;
+	color: var(--ink-faint);
+	font-weight: 600;
+}
+
+.field {
+	display: grid;
+	gap: 0.3rem;
+}
+
+.lbl {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 0.5rem;
+	font-size: 0.6rem;
+	color: var(--ink-faint);
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+}
+
+.lbl b {
+	color: var(--ink-dim);
+	font-weight: 500;
+	text-transform: none;
+	letter-spacing: 0;
+}
+
+.sliders {
+	display: grid;
+	gap: 0.6rem;
+}
+
+.sliders.two {
+	grid-template-columns: 1fr 1fr;
+	gap: 0.6rem 0.75rem;
+}
+
+.row {
+	display: flex;
+	gap: 0.4rem;
+	/* Wrap rather than overflow. `flex: 1` on a nowrap button only distributes space
+	   that exists; past three buttons the labels are wider than the panel and the last
+	   one leaves the panel entirely, where it is invisible and unclickable. */
+	flex-wrap: wrap;
+}
+
+.row > button {
+	flex: 1 1 6.5rem;
+	min-width: 0;
+	white-space: nowrap;
+}
+
+button.wide {
+	width: 100%;
+}
+
+.segmented {
+	display: flex;
+}
+
+.segmented button {
+	flex: 1;
+	border-radius: 0;
+}
+
+.segmented button:first-child {
+	border-radius: var(--radius) 0 0 var(--radius);
+}
+
+.segmented button:last-child {
+	border-radius: 0 var(--radius) var(--radius) 0;
+	margin-left: -1px;
+}
+
+/* Wrapping is load-bearing, not tidiness. These sit inside a panel that is a fixed
+   16rem wide and clips its overflow, so a row that refuses to wrap does not merely
+   look cramped — it stretches the panel's content box past the clip and takes the
+   prose under it along, which is how a third checkbox left every paragraph in the
+   Display panel cut off down the right-hand edge. */
+
+.checks {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 1rem;
+}
+
+.check {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	font-size: 0.76rem;
+	color: var(--ink-dim);
+}
+
+.check input {
+	width: auto;
+}
+
+/* A class with nothing in it on the loaded build. Kept visible rather than removed:
+   "this corpus has none of these" is a fact about the corpus and worth reading, and a
+   row that vanishes cannot say it. Same treatment as `.legend li.absent`. */
+
+.check.absent {
+	opacity: 0.5;
+}
+
+.check.absent input {
+	cursor: not-allowed;
+}
+
+.check .swatch {
+	width: 0.6rem;
+	height: 0.6rem;
+	border-radius: 50%;
+}
+
+/* Ink mode: the class has no colour on screen, so it has none here either. An
+   outline still marks the row as a class you can hide. */
+
+.check .swatch.hollow {
+	box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+.note {
+	margin: 0;
+	font-size: 0.74rem;
+	line-height: 1.5;
+	color: var(--ink-dim);
+}
+
+/* A word of the project's own vocabulary, defined in the sentence it appears in and
+   carrying the full definition on hover. Marked rather than emphasised: it is a term
+   being introduced, not a word being stressed. */
+
+.term {
+	font-weight: 500;
+	color: var(--ink);
+	border-bottom: 1px dotted var(--rule);
+	cursor: help;
+}
+
+.note.pad {
+	padding: 0 1rem 0.9rem;
+}
+
+.faint {
+	color: var(--ink-faint);
+}
+
+/* label/value pairs on one baseline, so figures line up down the column */
+
+.facts {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.3rem 0.75rem;
+	margin: 0;
+	font-size: 0.7rem;
+}
+
+/* Coverage below 98 % means some types cannot be played at all, which is worth a colour
+   rather than a number a reader has to divide in their head. */
+
+.facts dd.warn {
+	color: var(--invented);
+	font-weight: 600;
+}
+
+/* Folded away by default: leaving a half out of the corpus is how you read a
+   measurement, not how you build a galaxy to use. */
+
+.diag {
+	border-top: 1px dotted var(--rule);
+	padding-top: 0.35rem;
+}
+
+.diag summary {
+	cursor: pointer;
+}
+
+.facts > div {
+	display: flex;
+	justify-content: space-between;
+	gap: 0.4rem;
+	border-bottom: 1px dotted var(--rule);
+	padding-bottom: 0.15rem;
+}
+
+.facts dt {
+	color: var(--ink-faint);
+}
+
+.facts dd {
+	margin: 0;
+	color: var(--ink);
+}
+
+/**
+ * One line, clipped, never wrapping. A job's newest message is the status; letting it
+ * wrap to three lines makes the panel jump every time the message changes length,
+ * which is most seconds.
+ */
+
+.doing {
+	margin: 0;
+	padding: 0.4rem 0.5rem;
+	border-left: 2px solid var(--signal);
+	background: var(--paper);
+	font-size: 0.66rem;
+	line-height: 1.4;
+	color: var(--ink);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.loglines summary {
+	cursor: pointer;
+	font-size: 0.6rem;
+	padding: 0.2rem 0;
+}
+
+.joblog {
+	max-height: 12rem;
+	overflow: auto;
+	white-space: pre-wrap;
+	word-break: break-word;
+	font-size: 0.64rem;
+	line-height: 1.45;
+	color: var(--ink-dim);
+}
+
+.chip {
+	font-size: 0.66rem;
+	padding: 0.08rem 0.35rem;
+	border-radius: 2px;
+	background: var(--paper);
+	border: 1px solid var(--rule);
+	color: var(--ink-dim);
+}
+
+/* --- Compose tab -------------------------------------------------------------- */
+
+button.chip {
+	cursor: pointer;
+}
+
+/* A text word boundary on the strip: the one place a gap is not the flat placeholder. */
+
+.chip.wordbreak {
+	border-left: 2px solid var(--ink-dim);
+}
+
+.error {
+	color: #b91c1c;
+}
+
+button.link {
+	display: inline;
+	padding: 0;
+	margin: 0 0.1rem;
+	border: none;
+	background: none;
+	color: var(--signal);
+	text-decoration: underline;
+	font-size: inherit;
+}
+
+/* How much of something the galaxy can place, as a tally beside its label. Three
+   characters where there used to be a paragraph; the sentence lives in the tooltip. */
+
+.tally {
+	margin-left: auto;
+	padding: 0.05rem 0.3rem;
+	border: 1px solid var(--rule);
+	border-radius: 999px;
+	font-size: 0.56rem;
+	color: var(--ink-faint);
+	cursor: help;
+}
+
+/* Nothing to draw at all is a different fact from drawing part of it, and the one
+   case a viewer is likely to read as a fault. */
+
+.tally.none {
+	border-color: color-mix(in srgb, var(--signal) 45%, var(--rule));
+	color: var(--signal);
+}
+
+/* Sitting inside a button rather than at the end of a label row, where the auto
+   margin would shove it against the far edge. */
+
+.tally.inline {
+	margin-left: 0.3rem;
+	cursor: inherit;
+}
+
+/* A summary line with the detail folded behind it. The totals are what you check
+   after a fit; the per-species breakdown is what you open when a total looks wrong,
+   and printing it always was more than half the Learn tab. */
+
+.rollup > summary {
+	font-size: 0.6rem;
+	cursor: pointer;
+	list-style: none;
+}
+
+/* The manual steps folded behind one line: they are the same cycle the switch above
+   runs, done by hand, and they should not be the first thing the tab shows. */
+
+.rollup.block > summary {
+	text-transform: uppercase;
+	letter-spacing: 0.09em;
+}
+
+/* The steps sit inside a `.block`, so their own block padding would double the
+   parent's. Strip the sides and let the rules between them do the separating. */
+
+.rollup.block > .block {
+	padding-left: 0;
+	padding-right: 0;
+}
+
+.rollup.block > .block:first-of-type {
+	padding-top: 0.7rem;
+}
+
+/* A title whose explanation lives on hover. */
+
+.blocktitle.help {
+	cursor: help;
+}
+
+/* The live tail of a running job. Fixed height so a chatty pass cannot push the
+   controls out of the panel, which is what the full log used to do. */
+
+.stream {
+	margin: 0.35rem 0 0;
+	padding: 0.4rem 0.5rem;
+	max-height: 11rem;
+	overflow-y: auto;
+	background: var(--paper);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	font-size: 0.58rem;
+	line-height: 1.45;
+	color: var(--ink-dim);
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.rollup > summary::before {
+	content: '▸ ';
+}
+
+.rollup[open] > summary::before {
+	content: '▾ ';
+}

@@ -349,6 +349,20 @@
 		nodes: number[];
 	}
 	let history = $state<Sung[]>([]);
+	/**
+	 * Whether the pointer is inside the history strip, in which case the drawn list is held
+	 * still. See the strip's own note: the chips shift right as each new phrase is prepended,
+	 * so an unfrozen strip hands a click to whichever phrase slid under the cursor.
+	 */
+	let historyFrozen = $state(false);
+	/** The list the strip actually draws — the live one, or the last one before the freeze. */
+	let frozenHistory = $state<Sung[]>([]);
+	const shownHistory = $derived(historyFrozen ? frozenHistory : history);
+	$effect(() => {
+		// Snapshot on the way in, not on the way out: what the user is reaching for is what
+		// was on screen when the pointer arrived.
+		if (historyFrozen) frozenHistory = untrack(() => history);
+	});
 	let selectedSung = $state<number | null>(null);
 	let sungCounter = 0;
 	/** Enough to overflow any window; the strip clips the rest at the far end. */
@@ -942,15 +956,18 @@
 	}
 
 	/**
-	 * The chorus the aviary was running when the current selection began, so clearing the
-	 * selection can hand the air back to it. Picking a phrase or a knot starts that bird's
-	 * solo chorus (see the effect on `speciesId`); going back should restore what it
-	 * replaced rather than leaving silence, and "what it replaced" is only ever the
-	 * whole-corpus chorus or nothing.
+	 * **One flag, because two of them raced and the loser silenced the aviary.**
+	 *
+	 * There used to be a `chorusToResume` here and a `resumeGlobal` beside the `speciesId`
+	 * effect, both answering "did the whole-aviary chorus have the air when this selection
+	 * took it". `clearSelection` acted on the first synchronously and the effect acted on
+	 * the second a tick later, so both asked for `global` — and `setChorus` was a toggle,
+	 * so the second ask stopped what the first had started. Measured: 0 songs in 14 s after
+	 * a deselect, and stuck there. `resumeGlobal` is now the only one, it lives beside the
+	 * effect that reads it, and `clearSelection` no longer resumes anything by hand.
 	 */
-	let chorusToResume = $state(false);
 	function noteChorusBeforeSelecting() {
-		if (selectedSung === null && pinnedCluster < 0) chorusToResume = chorus === 'global';
+		if (selectedSung === null && pinnedCluster < 0) resumeGlobal = chorus === 'global';
 	}
 
 	/**
@@ -979,13 +996,11 @@
 		if (selectedSung === null && pinnedCluster < 0 && !speciesId) return;
 		selectedSung = null;
 		pinnedCluster = -1;
-		// Back to the whole corpus: the selection had narrowed it to one bird.
+		// Back to the whole corpus: the selection had narrowed it to one bird. Writing
+		// `speciesId` is the whole of it — the effect below owns handing the air back,
+		// and this function resuming the chorus *as well* is the race that left it stuck.
 		speciesId = '';
 		refreshSelection();
-		// `setChorus` toggles, so guard the mode as well: starting the aviary chorus by
-		// hand already clears the selection, and this must never switch it back off.
-		if (chorusToResume && engine && chorus !== 'global') void setChorus('global');
-		chorusToResume = false;
 	}
 
 	/**
@@ -1433,18 +1448,67 @@
 	 * overruling a more specific one.
 	 */
 	const soloSongIds = $derived(songId ? [songId] : undefined);
+	/**
+	 * What a one-bird chorus sings.
+	 *
+	 * `songs` draws from the repertoire — the calls and bouts this bird is recorded or
+	 * documented singing, which is the chorus this app has always had. `improvise` walks the
+	 * bird's **measured grammar** instead: the transition probabilities counted from its own
+	 * field recordings, sampled fresh every time, so no two phrases are the same and none of
+	 * them is a phrase anybody recorded. The two are different claims, which is why they are
+	 * two modes and not a checkbox — one plays back a repertoire, the other generates from a
+	 * statistic. The `Improvise` button beside them does the same walk once.
+	 */
+	let soloMode = $state<'songs' | 'improvise'>('songs');
 	/** Every start of a one-bird chorus, so the two filters cannot diverge between them. */
 	function startSoloChorus(birdId: string) {
+		// In improvise mode the ambient scheduler stays off and the effect below drives it:
+		// `startAmbient` can only pick phrases that exist, and the point of this mode is the
+		// ones that do not.
+		if (soloMode === 'improvise') return;
 		engine?.startAmbient([birdId], 12 * tempo, 3, chorusConfidence, soloSongIds);
 	}
 	/**
+	 * The improvised chorus.
+	 *
+	 * An effect rather than a timer started and stopped by hand, because it has to end on
+	 * every one of: the chorus stopping, the mode changing, the bird changing, the tempo
+	 * changing, and the galaxy reloading. An effect's teardown covers all five; four
+	 * `clearInterval` calls scattered through the state machine is how the last round's
+	 * chorus bug happened.
+	 *
+	 * Floored at 1.5 s between phrases: an improvised bout runs about a second, and asking
+	 * for them faster than they finish stacks voices instead of making a chorus.
+	 */
+	$effect(() => {
+		if (chorus !== 'solo' || soloMode !== 'improvise') return;
+		if (!engine || !currentSpecies) return;
+		const every = Math.max(1500, 60_000 / (12 * tempo));
+		untrack(() => singImprovisation());
+		const id = setInterval(() => untrack(() => singImprovisation()), every);
+		return () => clearInterval(id);
+	});
+	/**
+	 * **A setter, not a toggle, and that distinction was a bug.**
+	 *
+	 * This function used to read `chorus = chorus === mode ? 'off' : mode`, which is
+	 * button behaviour — and it is called programmatically from four places. Measured in a
+	 * browser: selecting a phrase from the history strip and then clicking the stage away
+	 * scheduled **0 songs in 14 seconds**, against 8 for the whole-aviary chorus, and every
+	 * later selection stayed silent too. Two resume paths raced (`chorusToResume` in
+	 * `clearSelection` and `resumeGlobal` in the `speciesId` effect) and whichever arrived
+	 * second asked for the mode that was already running, which the toggle read as *stop*.
+	 *
+	 * So: `setChorus` sets. `toggleChorus` below is the button, and it is the only caller
+	 * that may turn a running chorus off by asking for it again.
+	 *
 	 * `solo` keeps the selection: this bird, its backdrop, its highlighted points.
 	 * `global` drops all of it — no focus, no context, no preview thread — so the only
 	 * thing on screen is every trajectory being drawn as it is actually sung.
 	 */
 	async function setChorus(mode: 'off' | 'solo' | 'global') {
 		if (!engine || !assets) return;
-		chorus = chorus === mode ? 'off' : mode;
+		chorus = mode;
 		engine.stopAmbient();
 		listener?.clearPaths();
 		if (chorus === 'off') {
@@ -1485,6 +1549,19 @@
 		contextSpecies = bird.id;
 		showContext(bird.id);
 		startSoloChorus(bird.id);
+	}
+
+	/**
+	 * The chorus buttons. Asking for the mode that is already running stops it, which is
+	 * what a pressed button should do — and is exactly what `setChorus` must not do on its
+	 * own, because four effects call it with a mode they merely want to be in.
+	 */
+	function toggleChorus(mode: 'solo' | 'global') {
+		if (chorus === mode) {
+			silence();
+			return;
+		}
+		void setChorus(mode);
 	}
 
 	/**
@@ -2005,8 +2082,15 @@
 		// chorus the same way a tempo change does.
 		const allowed = chorusConfidence;
 		void soloSongIds;
+		// Switching between songs and improvise has to re-pool the same way a tempo change
+		// does — and in one direction it has to *stop* the ambient scheduler, which only a
+		// restart through here does.
+		const mode = soloMode;
 		if (engine) engine.tempo = rate;
-		if (chorus === 'solo' && engine && id) startSoloChorus(id);
+		if (chorus === 'solo' && engine && id) {
+			if (mode === 'improvise') engine.stopAmbient();
+			else startSoloChorus(id);
+		}
 		if (chorus === 'global' && engine && assets) {
 			const loaded = assets;
 			void loaded.ensureSpecies().then(() => {
@@ -3092,8 +3176,29 @@ uv run birdy-pipeline build</pre>
 					Newest sits against the reading panel and the run extends left, clipping at
 					the far end: what just happened is where your eye already is.
 				-->
-				<div class="history">
-					{#each history as entry (entry.id)}
+				<!--
+					**Frozen while the pointer is over it.** The newest phrase is prepended, so
+					every chip shifts one place right as the chorus sings — measured at about one
+					every two seconds during a whole-aviary chorus. Reaching for a chip therefore
+					selected whichever phrase had slid under the cursor by the time the click
+					landed, and the camera flew to a bird the user had not asked for. That is the
+					owner's *"the cam sometimes doesn't focus"*: it focused correctly, on the wrong
+					bird.
+
+					`history` keeps filling; this only holds the *rendered* list still while a
+					pointer is inside the strip, and releases it on the way out. Freezing the
+					display rather than the data means nothing is dropped and the strip needs no
+					memory of its own.
+				-->
+				<!-- `group`, not `list`: these are controls, and each one selects the phrase it names. -->
+				<div
+					class="history"
+					role="group"
+					aria-label="Phrases already sung — select one to go back to it"
+					onpointerenter={() => (historyFrozen = true)}
+					onpointerleave={() => (historyFrozen = false)}
+				>
+					{#each shownHistory as entry (entry.id)}
 						<button
 							class="sung"
 							class:on={selectedSung === entry.id}
@@ -3479,33 +3584,60 @@ uv run birdy-pipeline build</pre>
 									{/if}
 								</button>
 							</div>
-							<div class="row">
+						<!--
+								**Two choruses for one bird, and no Stop.** The modes are different
+								claims about what you are hearing, not two speeds of the same thing:
+								`Songs` plays back a repertoire, `Improvise` samples the measured
+								grammar and produces phrases nobody recorded. So they are a segmented
+								pair, and each one stops the chorus when it is the one already running.
+
+								Stop is gone on the owner's call — *"it stops anyway when we deselect"* —
+								and that is true: clicking the stage clears the bird, and the effect on
+								`speciesId` hands the air back to whatever had it. A third button whose
+								whole job was already done by two other gestures was one more thing
+								that could disagree with them.
+							-->
+							<div class="segmented">
 								<button
-									class:on={chorus === 'solo'}
+									class:on={chorus === 'solo' && soloMode === 'songs'}
 									disabled={!engine}
-									onclick={() => setChorus('solo')}
-									title="Three individuals of this bird answer each other at random intervals. Each voice keeps its own pitch, timing and position."
-									>Chorus</button
+									onclick={() => {
+										soloMode = 'songs';
+										toggleChorus('solo');
+									}}
+									title="Three individuals of this bird answer each other at random intervals, drawing from its repertoire. Each voice keeps its own pitch, timing and position."
+									>Songs</button
 								>
-								<button disabled={!engine} onclick={silence}>Stop</button>
+								<button
+									class:on={chorus === 'solo' && soloMode === 'improvise'}
+									disabled={!engine}
+									onclick={() => {
+										const wasOn = chorus === 'solo' && soloMode === 'improvise';
+										soloMode = 'improvise';
+										if (wasOn) silence();
+										else void setChorus('solo');
+									}}
+									title={grammarCoverage
+										? `The same three voices, walking this bird's measured grammar instead of its repertoire — transitions counted from its own field recordings, sampled fresh each phrase. ${grammarCoverage.placed} of its ${grammarCoverage.total} fitted types won a cluster, so the thread shows those and skips the rest.`
+										: "The same three voices, walking this bird's measured grammar instead of its repertoire. Every phrase is sampled fresh, so none of them is one anybody recorded."}
+									>Improvise</button
+								>
 							</div>
 						{:else}
 							<div class="row">
 								<!--
-									Not `primary`: Chorus is a toggle, and the filled style is
-									reserved for one-shot actions — on a toggle it made the *off*
-									state render black, which reads as pressed. The `.on` class
-									carries the active look, as it does for the solo Chorus above.
+									Not `primary`: this is a toggle, and the filled style is reserved
+									for one-shot actions — on a toggle it made the *off* state render
+									black, which reads as pressed. `.on` carries the active look.
 								-->
 								<button
 									class:on={chorus === 'global'}
 									disabled={!engine}
-									onclick={() => setChorus('global')}
+									onclick={() => toggleChorus('global')}
 									title="The whole aviary at once. Every species draws its own trajectory as it sings. Choose a bird to narrow the labels to its repertoire."
 								>
 									Chorus
 								</button>
-								<button disabled={!engine} onclick={silence}>Stop</button>
 							</div>
 						{/if}
 						{#if chorus !== 'off'}
@@ -4515,8 +4647,7 @@ uv run birdy-pipeline serve</pre>
 	{/if}
 {/snippet}
 
-<style>
-	/* A bench, not a page: a rule across the top, an instrument panel down each side and
+<style>	/* A bench, not a page: a rule across the top, an instrument panel down each side and
 	   the specimen between them. Fixed rows and columns mean the sidebars get the whole
 	   height of the window, which is what stops the controls needing to scroll. */
 	/* A rule across the top and the specimen filling everything under it. Both panels
@@ -4543,14 +4674,6 @@ uv run birdy-pipeline serve</pre>
 		font-size: 0.95rem;
 		font-weight: 600;
 		letter-spacing: -0.01em;
-	}
-
-	.strap {
-		margin: 0;
-		font-family: var(--font-mono);
-		color: var(--ink-faint);
-		font-size: 0.6rem;
-		letter-spacing: 0.06em;
 	}
 
 	/* Every live figure in one strip, labelled, monospaced, tabular — an instrument
@@ -4674,234 +4797,6 @@ uv run birdy-pipeline serve</pre>
 		background: var(--paper-raised);
 	}
 
-	/* Full width, because two columns of reference material at 78rem in the middle of a
-	   1600 px screen wastes the half of the screen that would have held the second column.
-	   The padding is what keeps it off the edges. */
-	.pagesheet {
-		min-height: 100%;
-	}
-
-	/* Sticky, because these are long documents: on a page you scroll for a minute, a close
-	   button at the top is a close button you have to scroll back to. */
-	.pagehead {
-		position: sticky;
-		top: 0;
-		z-index: 2;
-		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: 1.5rem;
-		padding: 1.1rem 2.6rem 0.9rem;
-		background: var(--paper-raised);
-		border-bottom: 1px solid var(--ink);
-	}
-
-	.pagehead h2 {
-		margin: 0;
-		font-size: 1.05rem;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-	}
-
-	.pagehead .strap {
-		margin: 0.25rem 0 0;
-	}
-
-	.pageclose {
-		flex: initial;
-		padding: 0.3rem 0.7rem;
-		font-size: 0.66rem;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-	}
-
-	/**
-	 * Two columns across the whole width, and the columns are what give prose its measure.
-	 *
-	 * A paragraph running the full width of a 1600 px screen is one long line the eye loses
-	 * its place in — which is what the first version did — and a single centred 38rem column
-	 * leaves two thirds of the screen empty. Two columns solve both at once: each is about a
-	 * paragraph wide, and together they fill the page.
-	 *
-	 * `align-content: start` so a short right column does not stretch its sections, and the
-	 * gap is wide enough (3.5rem) that the two columns cannot be read as one wrapped line.
-	 */
-	.pagebody {
-		padding: 2rem 2.6rem 4rem;
-		display: grid;
-		gap: 0 3.5rem;
-		grid-template-columns: 1fr;
-		align-content: start;
-	}
-
-	@media (min-width: 68rem) {
-		.pagebody.twocol {
-			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-		}
-	}
-
-	/* Inside a column the measure is the column, so this only caps the widest case. */
-	.measure {
-		max-width: 44rem;
-	}
-
-	/* Numbered sections, because this is a document about measurements and a reader who
-	   wants to point at one needs something to point at. */
-	.pagesection {
-		padding: 0 0 2.4rem;
-		min-width: 0;
-	}
-
-	.pagesection > h3 {
-		display: flex;
-		align-items: baseline;
-		gap: 0.7rem;
-		margin: 0 0 1rem;
-		font-size: 0.9rem;
-		letter-spacing: 0.02em;
-		padding-bottom: 0.45rem;
-		border-bottom: 1px solid var(--rule);
-	}
-
-	.pagesection > h3 .num {
-		flex: none;
-		font-family: var(--font-mono);
-		font-size: 0.7rem;
-		color: var(--ink-faint);
-	}
-
-	.pagesection :global(p) {
-		margin: 0 0 0.9rem;
-	}
-
-	/* Two columns once there is room for two: prose on the left, reference on the right,
-	   so the legend is never something to scroll past to reach the summary. */
-	.pagegrid {
-		display: grid;
-		gap: 1.6rem 2.6rem;
-		grid-template-columns: 1fr;
-	}
-
-	@media (min-width: 66rem) {
-		.pagegrid {
-			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-		}
-	}
-
-	.pagecol > :global(section.block) {
-		margin-bottom: 1.2rem;
-	}
-
-	/* A figure is a screenshot of the instrument, so it is framed like the stage: a rule
-	   around it and the caption under it in the same voice as the readings. Numbered, and
-	   the number is referenced from the prose, because "as shown above" stops being true
-	   the moment the layout reflows. */
-	.figure {
-		margin: 0 0 1.4rem;
-		max-width: 44rem;
-	}
-
-	.figure img {
-		display: block;
-		width: 100%;
-		height: auto;
-		border: 1px solid var(--rule);
-		background: var(--paper);
-	}
-
-	.figure figcaption {
-		margin-top: 0.5rem;
-		font-size: 0.72rem;
-		line-height: 1.55;
-		color: var(--ink-dim);
-	}
-
-	.figure figcaption b {
-		font-family: var(--font-mono);
-		font-size: 0.68rem;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		color: var(--ink-faint);
-		font-weight: 400;
-		margin-right: 0.4rem;
-	}
-
-	/* The vocabulary. A word, then what it is — as a list of terms rather than as prose,
-	   because a reader arrives at it with one word in mind and wants to find that word. */
-	.deflist {
-		margin: 0 0 1rem;
-		max-width: 40rem;
-	}
-
-	.deflist > div {
-		display: grid;
-		grid-template-columns: 7rem minmax(0, 1fr);
-		gap: 0.2rem 1rem;
-		padding: 0.55rem 0;
-		border-top: 1px solid var(--rule);
-	}
-
-	.deflist > div:last-child {
-		border-bottom: 1px solid var(--rule);
-	}
-
-	@media (max-width: 40rem) {
-		.deflist > div {
-			grid-template-columns: 1fr;
-		}
-	}
-
-	.deflist dt {
-		font-family: var(--font-mono);
-		font-size: 0.72rem;
-		color: var(--ink);
-	}
-
-	.deflist dd {
-		margin: 0;
-		font-size: 0.78rem;
-		line-height: 1.6;
-		color: var(--ink-dim);
-	}
-
-	/* A claim and its warrant, side by side. The point of the pair is that no claim on this
-	   page appears without the thing that licenses it. */
-	.claims {
-		margin: 0 0 1.2rem;
-		max-width: 46rem;
-		border-top: 1px solid var(--rule);
-	}
-
-	.claims > div {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-		gap: 0.9rem;
-		padding: 0.6rem 0;
-		border-bottom: 1px solid var(--rule);
-		font-size: 0.76rem;
-		line-height: 1.55;
-	}
-
-	@media (max-width: 46rem) {
-		.claims > div {
-			grid-template-columns: 1fr;
-			gap: 0.2rem;
-		}
-	}
-
-	.claims dt {
-		color: var(--ink);
-	}
-
-	.claims dd {
-		margin: 0;
-		color: var(--ink-dim);
-	}
-
-	.claims .no {
-		color: var(--invented);
-	}
-
 	/* The Learn page does not scroll as a document. The table inside it is a windowed list
 	   whose slice is computed from one scroll offset, and a scrolling page would give it a
 	   second — the row under the cursor would then be placed against the wrong one. So the
@@ -4998,30 +4893,6 @@ uv run birdy-pipeline serve</pre>
 		}
 	}
 
-	/* The fitted directions, as a table rather than a sentence: five names and five shares
-	   are a reading, and a reading is a column of numbers. */
-	.axistable {
-		display: grid;
-		grid-template-columns: 1fr auto;
-		gap: 0.15rem 1rem;
-		margin: 0.4rem 0 0.6rem;
-		font-size: 0.72rem;
-	}
-
-	.axistable div {
-		display: contents;
-	}
-
-	.axistable dt {
-		color: var(--ink-dim);
-	}
-
-	.axistable dd {
-		margin: 0;
-		text-align: right;
-		font-variant-numeric: tabular-nums;
-	}
-
 	/* A page opener wearing a reading's clothes: same stack, same type, no button chrome
 	   until it is hovered or open, so the header row stays a row of facts. */
 	.reading-open {
@@ -5050,14 +4921,6 @@ uv run birdy-pipeline serve</pre>
 
 	.reading-open.on dd {
 		color: var(--signal);
-	}
-
-	/* The one outbound link on the stage. Underlined rather than coloured: the accent is
-	   spoken for and means "this is responding to sound". */
-	.paperlink {
-		color: var(--ink);
-		text-decoration: underline;
-		text-underline-offset: 0.15em;
 	}
 
 	.level {
@@ -5116,17 +4979,6 @@ uv run birdy-pipeline serve</pre>
 		max-height: min(26rem, calc(100% - 2rem - var(--ruler)));
 	}
 
-	/* The scrolling half of a card, under its header. */
-	.cardbody {
-		min-height: 0;
-		overflow-y: auto;
-		display: grid;
-		align-content: start;
-		/* Long unbroken strings — citation dois, file paths, mono ids — must wrap at the
-		   panel's edge rather than run under its `overflow: hidden` and read as cut off. */
-		overflow-wrap: break-word;
-	}
-
 	.readout .best,
 	.readout .candidates {
 		display: grid;
@@ -5179,20 +5031,6 @@ uv run birdy-pipeline serve</pre>
 		border-bottom-color: var(--signal);
 	}
 
-	/* One rhythm for the whole panel: sections separated by a rule, a single padding
-	   value, and a single gap between everything inside them. */
-	.block {
-		display: grid;
-		gap: 0.6rem;
-		padding: 0.9rem 1rem;
-		border-bottom: 1px solid var(--rule);
-		align-content: start;
-	}
-
-	.block:last-child {
-		border-bottom: none;
-	}
-
 	.clip {
 		display: grid;
 		gap: 0.4rem;
@@ -5201,25 +5039,6 @@ uv run birdy-pipeline serve</pre>
 	.clip audio {
 		width: 100%;
 		height: 2rem;
-	}
-
-	a.chip {
-		text-decoration: none;
-		display: grid;
-		place-items: center;
-		padding: 0.4rem 0.7rem;
-	}
-
-	.blocktitle {
-		display: flex;
-		justify-content: space-between;
-		align-items: baseline;
-		gap: 0.5rem;
-		font-size: 0.58rem;
-		text-transform: uppercase;
-		letter-spacing: 0.11em;
-		color: var(--ink-faint);
-		font-weight: 600;
 	}
 
 	h2 {
@@ -5235,110 +5054,6 @@ uv run birdy-pipeline serve</pre>
 		border-bottom: 1px solid var(--rule);
 	}
 
-	.field {
-		display: grid;
-		gap: 0.3rem;
-	}
-
-	.lbl {
-		display: flex;
-		justify-content: space-between;
-		align-items: baseline;
-		gap: 0.5rem;
-		font-size: 0.6rem;
-		color: var(--ink-faint);
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-	}
-
-	.lbl b {
-		color: var(--ink-dim);
-		font-weight: 500;
-		text-transform: none;
-		letter-spacing: 0;
-	}
-
-	.sliders {
-		display: grid;
-		gap: 0.6rem;
-	}
-
-	.sliders.two {
-		grid-template-columns: 1fr 1fr;
-		gap: 0.6rem 0.75rem;
-	}
-
-	.row {
-		display: flex;
-		gap: 0.4rem;
-		/* Wrap rather than overflow. `flex: 1` on a nowrap button only distributes space
-		   that exists; past three buttons the labels are wider than the panel and the last
-		   one leaves the panel entirely, where it is invisible and unclickable. */
-		flex-wrap: wrap;
-	}
-
-	.row > button {
-		flex: 1 1 6.5rem;
-		min-width: 0;
-		white-space: nowrap;
-	}
-
-	button.wide {
-		width: 100%;
-	}
-
-	.segmented {
-		display: flex;
-	}
-
-	.segmented button {
-		flex: 1;
-		border-radius: 0;
-	}
-
-	.segmented button:first-child {
-		border-radius: var(--radius) 0 0 var(--radius);
-	}
-
-	.segmented button:last-child {
-		border-radius: 0 var(--radius) var(--radius) 0;
-		margin-left: -1px;
-	}
-
-	/* Wrapping is load-bearing, not tidiness. These sit inside a panel that is a fixed
-	   16rem wide and clips its overflow, so a row that refuses to wrap does not merely
-	   look cramped — it stretches the panel's content box past the clip and takes the
-	   prose under it along, which is how a third checkbox left every paragraph in the
-	   Display panel cut off down the right-hand edge. */
-	.checks {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem 1rem;
-	}
-
-	.check {
-		display: flex;
-		align-items: center;
-		gap: 0.4rem;
-		font-size: 0.76rem;
-		color: var(--ink-dim);
-	}
-
-	.check input {
-		width: auto;
-	}
-
-	/* A class with nothing in it on the loaded build. Kept visible rather than removed:
-	   "this corpus has none of these" is a fact about the corpus and worth reading, and a
-	   row that vanishes cannot say it. Same treatment as `.legend li.absent`. */
-	.check.absent {
-		opacity: 0.5;
-	}
-
-	.check.absent input {
-		cursor: not-allowed;
-	}
-
 	/* Which question a filter answers. The chorus filter and the point filter share three
 	   words and are two different axes; before this the only way to know was to read the
 	   source. */
@@ -5348,18 +5063,6 @@ uv run birdy-pipeline serve</pre>
 		letter-spacing: 0.04em;
 		text-transform: lowercase;
 		color: var(--ink-faint);
-	}
-
-	.check .swatch {
-		width: 0.6rem;
-		height: 0.6rem;
-		border-radius: 50%;
-	}
-
-	/* Ink mode: the class has no colour on screen, so it has none here either. An
-	   outline still marks the row as a class you can hide. */
-	.check .swatch.hollow {
-		box-shadow: inset 0 0 0 1px var(--rule);
 	}
 
 	/* The provenance key. A swatch, the class, and its share of the corpus — the share
@@ -5541,31 +5244,6 @@ uv run birdy-pipeline serve</pre>
 		}
 	}
 
-	.note {
-		margin: 0;
-		font-size: 0.74rem;
-		line-height: 1.5;
-		color: var(--ink-dim);
-	}
-
-	/* A word of the project's own vocabulary, defined in the sentence it appears in and
-	   carrying the full definition on hover. Marked rather than emphasised: it is a term
-	   being introduced, not a word being stressed. */
-	.term {
-		font-weight: 500;
-		color: var(--ink);
-		border-bottom: 1px dotted var(--rule);
-		cursor: help;
-	}
-
-	.note.pad {
-		padding: 0 1rem 0.9rem;
-	}
-
-	.faint {
-		color: var(--ink-faint);
-	}
-
 	.strong {
 		margin: 0;
 		font-size: 0.95rem;
@@ -5585,15 +5263,6 @@ uv run birdy-pipeline serve</pre>
 		border: 1px solid var(--rule);
 		border-radius: var(--radius);
 		background: var(--paper);
-	}
-
-	/* label/value pairs on one baseline, so figures line up down the column */
-	.facts {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 0.3rem 0.75rem;
-		margin: 0;
-		font-size: 0.7rem;
 	}
 
 	/* The running job, at the top of the Learn page. It used to report in the right-hand
@@ -5684,41 +5353,6 @@ uv run birdy-pipeline serve</pre>
 		}
 	}
 
-	/* Coverage below 98 % means some types cannot be played at all, which is worth a colour
-	   rather than a number a reader has to divide in their head. */
-	.facts dd.warn {
-		color: var(--invented);
-		font-weight: 600;
-	}
-
-	/* Folded away by default: leaving a half out of the corpus is how you read a
-	   measurement, not how you build a galaxy to use. */
-	.diag {
-		border-top: 1px dotted var(--rule);
-		padding-top: 0.35rem;
-	}
-
-	.diag summary {
-		cursor: pointer;
-	}
-
-	.facts > div {
-		display: flex;
-		justify-content: space-between;
-		gap: 0.4rem;
-		border-bottom: 1px dotted var(--rule);
-		padding-bottom: 0.15rem;
-	}
-
-	.facts dt {
-		color: var(--ink-faint);
-	}
-
-	.facts dd {
-		margin: 0;
-		color: var(--ink);
-	}
-
 	pre {
 		margin: 0;
 		padding: 0.55rem 0.65rem;
@@ -5727,40 +5361,6 @@ uv run birdy-pipeline serve</pre>
 		border-radius: var(--radius);
 		overflow-x: auto;
 		font-size: 0.7rem;
-	}
-
-	/**
-	 * One line, clipped, never wrapping. A job's newest message is the status; letting it
-	 * wrap to three lines makes the panel jump every time the message changes length,
-	 * which is most seconds.
-	 */
-	.doing {
-		margin: 0;
-		padding: 0.4rem 0.5rem;
-		border-left: 2px solid var(--signal);
-		background: var(--paper);
-		font-size: 0.66rem;
-		line-height: 1.4;
-		color: var(--ink);
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-
-	.loglines summary {
-		cursor: pointer;
-		font-size: 0.6rem;
-		padding: 0.2rem 0;
-	}
-
-	.joblog {
-		max-height: 12rem;
-		overflow: auto;
-		white-space: pre-wrap;
-		word-break: break-word;
-		font-size: 0.64rem;
-		line-height: 1.45;
-		color: var(--ink-dim);
 	}
 
 	.badge {
@@ -5815,31 +5415,12 @@ uv run birdy-pipeline serve</pre>
 		gap: 0.25rem;
 	}
 
-	.chip {
-		font-size: 0.66rem;
-		padding: 0.08rem 0.35rem;
-		border-radius: 2px;
-		background: var(--paper);
-		border: 1px solid var(--rule);
-		color: var(--ink-dim);
-	}
-
-	/* --- Compose tab -------------------------------------------------------------- */
-	button.chip {
-		cursor: pointer;
-	}
-
 	/* The "sounds like" partners: chips inline in a note, not a strip of their own. */
 	.sounds-like {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
 		gap: 0.25rem;
-	}
-
-	/* A text word boundary on the strip: the one place a gap is not the flat placeholder. */
-	.chip.wordbreak {
-		border-left: 2px solid var(--ink-dim);
 	}
 
 	/* Fit-quality dot: how close a render of this type sits to the type's cluster in the
@@ -5899,21 +5480,6 @@ uv run birdy-pipeline serve</pre>
 		border-top: 1px solid var(--rule);
 		color: var(--ink-faint);
 		font-size: 0.68rem;
-	}
-
-	.error {
-		color: #b91c1c;
-	}
-
-	button.link {
-		display: inline;
-		padding: 0;
-		margin: 0 0.1rem;
-		border: none;
-		background: none;
-		color: var(--signal);
-		text-decoration: underline;
-		font-size: inherit;
 	}
 
 	/* --- what has been sung --- */
@@ -5995,89 +5561,6 @@ uv run birdy-pipeline serve</pre>
 		height: 9px;
 		border-radius: 2px;
 		transform: translateY(1px);
-	}
-
-	/* How much of something the galaxy can place, as a tally beside its label. Three
-	   characters where there used to be a paragraph; the sentence lives in the tooltip. */
-	.tally {
-		margin-left: auto;
-		padding: 0.05rem 0.3rem;
-		border: 1px solid var(--rule);
-		border-radius: 999px;
-		font-size: 0.56rem;
-		color: var(--ink-faint);
-		cursor: help;
-	}
-
-	/* Nothing to draw at all is a different fact from drawing part of it, and the one
-	   case a viewer is likely to read as a fault. */
-	.tally.none {
-		border-color: color-mix(in srgb, var(--signal) 45%, var(--rule));
-		color: var(--signal);
-	}
-
-	/* Sitting inside a button rather than at the end of a label row, where the auto
-	   margin would shove it against the far edge. */
-	.tally.inline {
-		margin-left: 0.3rem;
-		cursor: inherit;
-	}
-
-	/* A summary line with the detail folded behind it. The totals are what you check
-	   after a fit; the per-species breakdown is what you open when a total looks wrong,
-	   and printing it always was more than half the Learn tab. */
-	.rollup > summary {
-		font-size: 0.6rem;
-		cursor: pointer;
-		list-style: none;
-	}
-
-	/* The manual steps folded behind one line: they are the same cycle the switch above
-	   runs, done by hand, and they should not be the first thing the tab shows. */
-	.rollup.block > summary {
-		text-transform: uppercase;
-		letter-spacing: 0.09em;
-	}
-
-	/* The steps sit inside a `.block`, so their own block padding would double the
-	   parent's. Strip the sides and let the rules between them do the separating. */
-	.rollup.block > .block {
-		padding-left: 0;
-		padding-right: 0;
-	}
-
-	.rollup.block > .block:first-of-type {
-		padding-top: 0.7rem;
-	}
-
-	/* A title whose explanation lives on hover. */
-	.blocktitle.help {
-		cursor: help;
-	}
-
-	/* The live tail of a running job. Fixed height so a chatty pass cannot push the
-	   controls out of the panel, which is what the full log used to do. */
-	.stream {
-		margin: 0.35rem 0 0;
-		padding: 0.4rem 0.5rem;
-		max-height: 11rem;
-		overflow-y: auto;
-		background: var(--paper);
-		border: 1px solid var(--rule);
-		border-radius: var(--radius);
-		font-size: 0.58rem;
-		line-height: 1.45;
-		color: var(--ink-dim);
-		white-space: pre-wrap;
-		word-break: break-word;
-	}
-
-	.rollup > summary::before {
-		content: '▸ ';
-	}
-
-	.rollup[open] > summary::before {
-		content: '▾ ';
 	}
 
 	.fitted {

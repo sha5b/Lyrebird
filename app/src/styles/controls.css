@@ -1,0 +1,102 @@
+/**
+ * Every control, at the element level: buttons, selects, inputs, ranges, checkboxes.
+ *
+ * These are element selectors, so a `<button>` anywhere in the app — page or component —
+ * already looks right without a class. `.primary` and `.on` are the two states worth a
+ * name: the one filled action, and a toggle that is currently on.
+ */
+button,
+select,
+input,
+textarea {
+	font: inherit;
+	color: inherit;
+}
+
+button {
+	cursor: pointer;
+	background: var(--paper-raised);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	padding: 0.4rem 0.7rem;
+	font-size: 0.76rem;
+	font-weight: 500;
+	letter-spacing: 0.015em;
+	color: var(--ink-dim);
+	transition:
+		background 110ms ease,
+		border-color 110ms ease,
+		color 110ms ease;
+}
+
+button:hover:not(:disabled) {
+	border-color: var(--rule-strong);
+	color: var(--ink);
+}
+
+button:focus-visible {
+	outline: 2px solid var(--signal);
+	outline-offset: 1px;
+}
+
+button:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+/* The primary action is the only filled control on the page. */
+button.primary {
+	background: var(--ink);
+	border-color: var(--ink);
+	color: var(--paper-raised);
+	font-weight: 500;
+}
+
+button.primary:hover:not(:disabled) {
+	background: var(--signal);
+	border-color: var(--signal);
+	color: #fff;
+}
+
+button.on {
+	border-color: var(--signal);
+	color: var(--signal);
+	background: var(--signal-soft);
+}
+
+select,
+input[type='text'],
+textarea {
+	width: 100%;
+	background: var(--paper-raised);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	padding: 0.35rem 0.45rem;
+	color: var(--ink);
+}
+
+select:focus-visible,
+input[type='text']:focus-visible,
+textarea:focus-visible {
+	outline: 2px solid var(--signal);
+	outline-offset: -1px;
+	border-color: var(--signal);
+}
+
+input[type='range'] {
+	width: 100%;
+	accent-color: var(--signal);
+}
+
+input[type='checkbox'] {
+	accent-color: var(--signal);
+}
+
+textarea {
+	resize: vertical;
+	min-height: 3.6rem;
+}
+
+a {
+	color: var(--signal);
+}
