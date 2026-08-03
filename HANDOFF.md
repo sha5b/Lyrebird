@@ -1,3 +1,40 @@
+# Lyrebird — room to breathe (2026-08-03): KNOT_GAP 2.0 -> 3.0 on the PaCMAP build
+
+Owner, on the installed v7: *"it tends to dense up a lot and we nearly can't see the
+connection between them — so we need to visually give all nodes much more space in between
+so they can breathe."*
+
+**The crowding is absolute, not relative, and the obvious ratio would have hidden that.**
+The number this project usually quotes — how many times wider a knot is than the gap to its
+nearest neighbour — actually *improved* when PaCMAP replaced cMDS:
+
+```
+                            v6 cmds    v7 pacmap
+median knot spacing          0.0395       0.0280
+median knot extent           0.0829       0.0417
+width / gap                    2.1x        1.49x
+```
+
+PaCMAP packs neighbourhoods tighter, so the whole cloud shrank by about 30 % and every knot
+shrank with it. The ratio looked better while the picture got denser, and a thread between
+two knots then runs through occupied space rather than clear air — which is the half of the
+report about connections.
+
+**KNOT_GAP 3.0** is where both readings agree: spacing back to **0.0419**, just past what v6
+had, and the ratio at **0.99x** — the crossover where a knot is no wider than the gap to its
+neighbour, so knots stop interpenetrating and read as separate places. One constant if it
+wants dialling: 3.7 gives 0.8x, 2.5 gives 1.2x. Each knot's own extent is untouched, which is
+the whole point of moving the gap rather than shrinking the knots (`CLUSTER_SPACING` has the
+argument). Everything downstream recomputes from the drawn layout: the wave's reach, the
+framing, the LOD grid, the ruler's unit.
+
+**Found while measuring, and it is good news nobody had looked for:** `localShapes` repairs
+far more tearing than the pipeline's own count suggests. The manifest reports **1 864 of
+5 320** knots torn, and `drawnLobes` on the raw shipped positions agrees at 1 750 — but on
+the positions the app actually *draws*, after the local pass reshapes each knot from its own
+features, only **244 of 6 389** are still two-lobed. So the two-level layout is doing most of
+the work, and the per-lobe tags are the backstop for the 244 it cannot honestly repair.
+
 # Lyrebird — the clear-out (2026-08-03): what PaCMAP superseded is gone
 
 PaCMAP is the approach, so the things it replaced are removed rather than left lying about.

@@ -147,9 +147,24 @@ const CLUSTER_SPACING = 1;
  * waves, framing, labels, the LOD grid, the NN spacing behind uWaveLocal, the stage
  * ruler's unit — sees one consistent picture.
  *
- * **1.3 -> 2.0** (owner, 2026-08-02: "give the point cloud more space between the
- * points — sometimes knots and tones are so near each other that it looks like there is
- * no animation between them"). The measurement behind it: on v6 the median knot's mean
+ * **2.0 -> 3.0** (owner, 2026-08-03, on the PaCMAP build: "it tends to dense up a lot and
+ * we nearly can't see the connection between them — give all nodes much more space in
+ * between so they can breathe"). The measurement says the crowding is **absolute, not
+ * relative**, which the obvious ratio would have hidden: PaCMAP packs the cloud about 30 %
+ * tighter than cMDS did, so the median knot spacing fell **0.0395 -> 0.0280** while the
+ * width-to-gap ratio actually *improved*, 2.1x to 1.49x. Everything shrank together, and a
+ * thread between two knots then runs through occupied space instead of clear air — which is
+ * the half of the report about connections.
+ *
+ * 3.0 is where the two readings agree. It restores the absolute spacing (0.0280 -> 0.042,
+ * just past what v6 had) and takes the ratio to **1.0x** — the crossover where a knot is no
+ * wider than the gap to its neighbour, so knots stop interpenetrating and start reading as
+ * separate places with room between them. One constant if it wants dialling: 3.7 would give
+ * 0.8x, 2.5 would give 1.2x.
+ *
+ * **2.0 was the previous answer to the same complaint, on the cMDS build** (owner,
+ * 2026-08-02: "give the point cloud more space between the points — sometimes knots and
+ * tones are so near each other that it looks like there is no animation between them"). The measurement behind it: on v6 the median knot's mean
  * member distance is 0.129 against a median knot spacing of 0.0395 at 1.3, so **the
  * average knot was 3.3× wider than the gap to its nearest neighbour** — the knots
  * interpenetrated everywhere and there was no gap for a response to happen *in*. At 2.0
@@ -163,7 +178,7 @@ const CLUSTER_SPACING = 1;
  * agree, which is measured — is left exactly as the projection reported it. CLUSTER_SPACING
  * above is why the other direction is not on the table.
  */
-const KNOT_GAP = 2.0;
+const KNOT_GAP = 3.0;
 
 function expandClusters(
 	positions: Float32Array,
