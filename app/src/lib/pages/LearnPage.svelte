@@ -167,6 +167,22 @@
 		}
 		return out;
 	});
+
+	/**
+	 * How many known birds hold nothing in the store yet, because they are the ones a
+	 * harvest serves first.
+	 *
+	 * The ordering already exists and has since `harvest.py` grew it — targets are sorted by
+	 * what each species already has, so *"a bird with nothing is always served before a bird
+	 * with two thousand, and once the new ones have caught up the order flattens back out on
+	 * its own"*. It is logged where nobody watching this page can see it, so pressing Harvest
+	 * looked like it might spend the run deepening the twelve birds that are already deep.
+	 * Saying the number is the whole fix: the policy was never missing, only invisible.
+	 */
+	const emptySpecies = $derived.by(() => {
+		const held = new Set(pipelineStatus?.store?.species ?? []);
+		return harvestOptions.filter((s) => !held.has(s.id)).length;
+	});
 </script>
 
 	<div class="stagepage tall" role="region" aria-label="The pipeline and the learned inventory">
@@ -472,6 +488,23 @@ uv run birdy-pipeline serve</pre>
 
 	<section class="block">
 		<h3 class="blocktitle">Harvest</h3>
+		<!--
+			The queue policy, said out loud. It has always been least-collected-first, and it
+			was only ever logged on the server — so this panel gave a reader no way to know
+			whether a run would widen the corpus or deepen the birds already deepest.
+		-->
+		<p class="note faint">
+			<b>Emptiest first.</b> Every species is queued by what it already holds, so a bird
+			with nothing is served before a bird with two thousand, and the order flattens out
+			again once the new ones have caught up.
+			{#if emptySpecies > 0}
+				<b class="mono">{emptySpecies.toLocaleString()}</b> of
+				<b class="mono">{harvestOptions.length.toLocaleString()}</b> known birds hold
+				nothing yet, and they go first.
+			{:else if pipelineStatus.store.exists}
+				Every known bird already holds something, so this deepens rather than widens.
+			{/if}
+		</p>
 		{#if !pipelineStatus.hasKey && !harvestFromDir}
 			<p class="note faint">
 				No <span class="mono">XC_API_KEY</span> in the server's environment. Set one to
@@ -619,7 +652,21 @@ uv run birdy-pipeline serve</pre>
 		{/if}
 	</section>
 
-	<section class="block">
+	<!--
+		The one action on this page that is not incremental, kept apart from the ones that are.
+
+		Harvest and Learn accrete: they add recordings and fit types, they can be run again
+		without undoing anything, and neither moves a point that is already drawn. Rebuild
+		re-clusters and re-projects the **whole** corpus at once, so every knot and every one
+		of 348 461 points takes a new position — it replaces the picture you are looking at,
+		and at production scale it takes about twenty-five minutes.
+
+		They sat in one undifferentiated column of four sections, so the cheapest thing on the
+		page and the most expensive one read as the same kind of button. This is a divider and
+		a stated cost, not a redesign: the grouping is the information.
+	-->
+	<hr class="groupsplit" />
+	<section class="block rebuild">
 		<h3
 			class="blocktitle help"
 			title="Renders {pipelineStatus.learned.exists
@@ -628,6 +675,16 @@ uv run birdy-pipeline serve</pre>
 		>
 			Rebuild the galaxy
 		</h3>
+		<p class="note faint">
+			<b>This one is not incremental.</b> Harvest and Learn add to what exists. Rebuild
+			re-clusters and re-projects the whole corpus, so every point and every knot moves
+			and the galaxy on screen is replaced.
+			{#if pipelineStatus.built.points}
+				At this corpus's size — <b class="mono"
+					>{pipelineStatus.built.points.toLocaleString()}</b
+				> points — expect it to take a while.
+			{/if}
+		</p>
 		<div class="segmented">
 			<button
 				class:on={buildClustering === 'kmeans'}
@@ -769,6 +826,18 @@ uv run birdy-pipeline serve</pre>
 {/snippet}
 
 <style>
+	/* The boundary between the steps that accrete and the one that replaces everything.
+	   A rule and a little air rather than a box or a colour: the two groups are still the
+	   same kind of control, and the only claim being made is that one of them is different
+	   in cost. A warning tint would say "dangerous", which is wrong — a rebuild is the
+	   normal end of a learning run, just not an incremental one. */
+
+	.groupsplit {
+		border: 0;
+		border-top: 1px solid var(--rule);
+		margin: 1.6rem 0 0.2rem;
+	}
+
 	/* This page's own arrangement: a fixed-height two-pane layout, which is why it does not
 	   share the scrolling-document rules in `styles/layout.css`. The table keeps its own
 	   scrollbar because it is a windowed list, and a windowed list inside a scrolling page

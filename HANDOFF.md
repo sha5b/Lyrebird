@@ -113,14 +113,127 @@ The second mutation originally *crashed* the script instead of failing it, which
 that tells whoever runs it nothing. The checks read through `?.` and NaN now, so an empty pass
 reports which claim stopped being made.
 
-## 3. Tests
+## 3. Asked: we have `synthesized` as a provenance class and we never synthesize anything
+
+Owner, and **right, measured**: the class holds **0 of 348 461 points and 0 of 13 848 knots**. So
+does `unlabelled arrival`. Two of the five classes are empty in the shipped build.
+
+Synthesis does happen — 8 382 points are renders — but every one of them is of an *authored*
+sound, so every one is classed `documented`:
+
+```
+synthetic        1 056   44 documented syllables x 24 variants   -> documented
+synthetic-song   7 326   2 442 authored songs x 3 variants       -> documented
+field          340 079   real recordings                         -> field / candidate
+```
+
+1 056 = 44 x 24 exactly, and 44 is 13 748 - 13 704: the documented syllables. The amber class
+needs a point that is **both** a fitted `L*` type **and** our render, and those never co-occur,
+because of one line in `corpus.py`:
+
+```python
+if not anchor:
+    continue
+```
+
+`--member-anchor` is off by default (`memberAnchor: false`), and the comment above it gives the
+reason: rendering a fitted type would put *"the rendered voice's own place on the map — a claim
+about our synthesiser rather than about a bird"*. A fitted type that has field members therefore
+renders nothing. Only a type with no members renders, "because renders are all the evidence it
+has" — and those are exactly the 44 authored calls.
+
+**So the class is empty by design, and the bug is elsewhere: the key introduced it first.** The
+Display list was a hardcoded order under a comment claiming "strongest-carrying class first so
+the eye starts where the mass is", and it led with the class holding none of the corpus while
+`field`, which holds 94 %, came second. **Fixed by sorting on the measured share**, so the order
+is true of whatever is loaded rather than of one build. The class stays in the vocabulary: a
+build *can* emit it, and a key that cannot name what the pipeline can produce is worse than one
+with an empty row.
+
+## 4. The Learn page: two things said out loud, one thing separated
+
+- **Harvest already serves the emptiest bird first**, and had since `harvest.py` grew the
+  ordering — *"a bird with nothing is always served before a bird with two thousand, and once the
+  new ones have caught up the order flattens back out on its own"*. It was logged on the server
+  where nobody on this page could see it, so pressing Harvest looked like it might spend the run
+  deepening the twelve birds already deepest. **The policy was never missing, only invisible**:
+  the panel now states it and counts how many known birds hold nothing yet.
+- **Rebuild is separated from Harvest and Learn**, because it is the one action on the page that
+  is not incremental: the other two accrete and move nothing already drawn, while Rebuild
+  re-clusters and re-projects the whole corpus so every point takes a new position. Four
+  undifferentiated sections made the cheapest control and the most expensive one read alike. A
+  rule and a stated cost, not a warning tint — a rebuild is the normal end of a learning run.
+
+**Not done, and it is the sharper finding of the three:** the Keep-learning loop's third step is
+`grow`, `grow` needs `projection-basis.json`, and **a PaCMAP build does not write one** — the
+installed v7 has no such file. So on the installed galaxy the loop can harvest and fit but the
+galaxy cannot accrete. The loop's UI does not know this. Owner has seen it and did not pick it.
+
+## 5. The function-transfer measurement: a clean null, and it closes a question
+
+`pipeline/analysis/function_transfer.py`, pre-registered, against the installed assets. The
+second refusal — *"it does not say what a fitted type is for"* — was argued in §9 of an earlier
+round from the size of the anchor set. It is now **measured** rather than argued.
+
+Leave-one-species-out nearest-neighbour transfer of `functionClass` in the shipped 32-d
+embedding. The whole anchor set is 53 documented functions over 12 species, six classes,
+badly unbalanced (`structural` 24, `alarm` 11, `territorial` 10, `contact` 4, `recruitment` 2,
+`courtship` 2).
+
+```
+arm                                accuracy   hits
+LOSO k=1                             0.4151   22/53
+LOSO k=3                             0.3774   20/53
+majority class (`structural`)        0.4528   24/53   <- the number to beat
+within-species k=1 (the ceiling)     0.4717   25/53
+permutation null, 2 000 shuffles     0.2784 mean, 0.3962 at the 95th
+```
+
+**Cross-species function transfer does not beat a constant answer.** 0.4151 against 0.4528 —
+always saying "structural" is better than asking the geometry. It does beat its own shuffle
+(p = 0.0375), so the embedding carries *some* function signal; there is just not enough of it to
+beat a majority vote. And the ceiling says why that is not a projection problem: even
+*within*-species transfer reaches only 0.4717, barely over the constant.
+
+**The decisive arm is G4.** 15 of the 53 labels are `inferred` and 10 `experimental`; only 28 are
+`documented`. On those 28 the accuracy is **0.3571 against a majority baseline of 0.5714** — far
+worse than a constant. So whatever the full set was picking up, it was the inference and not the
+documentation.
+
+So **the refusal stands, and now with a number behind it.** The honest fix is more documented
+function, not a better model: 53 anchors over 12 species is not an anchor set to propagate from.
+Standing limit stated in the output: at n = 53 one species' repertoire moves every figure, so the
+gates are the finding and the third decimal is not.
+
+## 6. The literature, August 2026
+
+- **Function and behavioural context is the field's own stated frontier**, not something already
+  solved elsewhere — the comparative review of bioacoustic foundation models puts it as the next
+  step, with explainability work only beginning to say which spectral cues models use. So §5's
+  null is where the field is, not behind it.
+- **What does transfer across species is valence, not function.** XGBoost separates positive from
+  negative contact calls across seven ungulate species at ~89 %, and species-independent emotional
+  analysis reports the same with the caveat we measured: *"notable variability at the species level
+  in how emotional states are conveyed"*. The transferable axis is low-dimensional arousal, not a
+  six-class function taxonomy. **If this project ever wants a cross-species claim, that is the
+  shape of one that could hold** — and it is a different claim from the one the refusal declines.
+- **Generative bird audio is established, and the field uses it as augmentation rather than as a
+  finding.** BirdDiff conditions a diffusion generator on MFCCs, species label and text over 12
+  wild species; DDPM spectrogram augmentation improves classification; a 2026 hybrid strategy does
+  the same for killer-whale detection. That is exactly the epistemic category `perch.py`'s
+  quarantine already implies — **a generated sound is training data, never evidence that a type
+  exists.** Worth keeping if a fill-the-gaps button is ever built on §1's result.
+- Perch 2.0 still tops BirdSet in the 2026 review, which leaves the earlier round's "test whether
+  Perch or our critic is better, per recording" exactly where it was.
+
+## 7. Tests
 
 `npm run check` clean apart from the four pre-existing `syrinx-processor.js` errors, zero
 warnings. `build`, `verify:layout`, `verify:split-knots`, `verify:trajectory`,
 `verify:inventory-table`, `verify:biplot`, `verify:performance` and `verify:context-threads` all
-pass. **Not yet looked at in a browser** — the three inks and the weighted alpha are a rendering
-change, and this project's own record says a rendering change is not verified until somebody has
-seen it.
+pass. **Not yet looked at in a browser** — the three inks, the weighted alpha, the reordered
+provenance key and the Learn page's new copy are all rendering changes, and this project's own
+record says a rendering change is not verified until somebody has seen it.
 
 # Lyrebird — the performance is one value now (2026-08-03)
 
