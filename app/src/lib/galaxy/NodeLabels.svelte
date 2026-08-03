@@ -23,6 +23,7 @@
 	import { confidenceLabel } from '$lib/lang/translate';
 	import { clusterProvenance, knotHeat } from '$lib/data/assets';
 	import { provenanceColourScaled, speciesColourScaled } from './palette';
+	import { describeForm } from '$lib/data/syllable-name';
 	import type { BirdyAssets, Centroid } from '$lib/data/types';
 
 	interface Props {
@@ -92,6 +93,37 @@
 		}
 		return speciesColourScaled(c.speciesId, light);
 	};
+
+	/**
+	 * What to write on the tag.
+	 *
+	 * **A fitted type's stored label is a serial number and three figures** — `learned L01 ·
+	 * 1468 Hz · 69 ms` — which names the sound after the order it was fitted in. The tag has
+	 * room for one line and that line was spending it on `L01`. It carries the description of
+	 * the waveform instead, the same words the inventory table shows: `buzzy trilled rise`.
+	 * The figures were never lost, they are on the line under it.
+	 *
+	 * Built lazily and rebuilt when the inventory grows, because **a tag must be able to name
+	 * its knot without fetching that bird's shard**: the description needs the syllable's
+	 * measured fields, which only the shard has, so a knot whose bird has not loaded yet
+	 * falls back to the stored label. In practice the whole-corpus chorus fetches every
+	 * species in one request before any tag appears.
+	 */
+	let described: Map<string, string> | null = null;
+	let describedFor = -1;
+	const tagName = (c: Centroid): string => {
+		const loaded = assets.inventory.species;
+		if (describedFor !== loaded.length) {
+			described = new Map();
+			for (const sp of loaded) {
+				for (const syl of sp.syllables) {
+					if (syl.learned) described.set(`${sp.id}/${syl.id}`, describeForm(syl));
+				}
+			}
+			describedFor = loaded.length;
+		}
+		return described?.get(`${c.speciesId}/${c.syllableId}`) ?? c.label;
+	};
 </script>
 
 <div class="layer" aria-hidden="true">
@@ -111,13 +143,20 @@
 					onclick={() => onpick?.(ci)}
 				></button>
 				<div class="card">
+					<!--
+						**The bird first, then the sound.** It used to lead with the syllable and put
+						the species on the line below, which is the wrong way round for the question
+						a viewer actually has when a knot lights up: they want to know who that was.
+						The sound moves down beside the counts, where it is still the first thing on
+						that line.
+					-->
 					<div class="head">
 						<span class="id mono">C{String(centroid.id).padStart(2, '0')}</span>
-						<!-- full label on hover: learned names run long and the card caps their width -->
-						<span class="name" title={centroid.label}>{centroid.label}</span>
+						<span class="name">{speciesName(centroid.speciesId)}</span>
 					</div>
 					<div class="meta mono">
-						<span>{speciesName(centroid.speciesId)}</span>
+						<!-- full stored label on hover, so a fitted type's id is one gesture away -->
+						<span class="sound" title={centroid.label}>{tagName(centroid)}</span>
 						<span>n={centroid.count}</span>
 						{#if centroid.meanDuration}<span>{Math.round(centroid.meanDuration * 1000)} ms</span>{/if}
 					</div>
@@ -190,17 +229,25 @@
 			background 120ms ease;
 	}
 
+	/**
+	 * Near-paper, with the colour spent on the left rule and the name.
+	 *
+	 * **A filled version of this was tried and taken back out.** Filling the card with the
+	 * knot's colour made the tag the loudest thing on the stage — owner: *"too dominant"* —
+	 * and it was: a tag is an annotation on the cloud, and the cloud is the data. The colour
+	 * saying "which bird" is not worth the largest block of ink on the screen, especially
+	 * when a chorus puts a dozen of them up at once. `overflow: hidden` stays from that
+	 * attempt, and so does the wrapping `.figures` below: the text was overflowing the card
+	 * all along, and only a filled card made it visible.
+	 */
 	.card {
 		margin-top: -0.35rem;
 		padding: 0.15rem 0.4rem;
 		max-width: 15rem;
+		overflow: hidden;
 		border-left: 1px solid
 			color-mix(in srgb, var(--accent, var(--signal)) calc(var(--hot, 0) * 100%), var(--rule));
-		background: color-mix(
-			in srgb,
-			var(--paper) calc(78% + var(--hot, 0) * 16%),
-			transparent
-		);
+		background: color-mix(in srgb, var(--paper) calc(78% + var(--hot, 0) * 16%), transparent);
 		transition:
 			border-color 140ms ease,
 			background 140ms ease;
@@ -247,6 +294,12 @@
 		color: var(--ink-faint);
 	}
 
+	/* The sound's description shares the meta line but is the reason to read it, so it is
+	   ink rather than the faint grey the counts are drawn in. */
+	.meta .sound {
+		color: var(--ink-dim);
+	}
+
 	/* Everything below only exists once the cluster responds — a resting galaxy stays a
 	   readable diagram rather than 44 paragraphs. */
 	.detail {
@@ -273,23 +326,22 @@
 		background: var(--accent, var(--signal));
 	}
 
+	/* Wraps, and it has to. `nowrap` on a 15 rem card with five figures on it does not fit
+	   and never did — it was running past the card's edge and being clipped mid-word
+	   (`measured fiel`). Invisible on a near-transparent card, which is why it survived. */
 	.figures {
 		display: flex;
-		gap: 0.4rem;
+		flex-wrap: wrap;
+		gap: 0.1rem 0.4rem;
 		font-size: 0.58rem;
 		color: var(--ink-faint);
-		white-space: nowrap;
 	}
 
 	.figures .match {
 		color: var(--accent, var(--signal));
 	}
 
-	.figures .conf {
-		color: var(--ink-faint);
-		font-style: italic;
-	}
-
+	.figures .conf,
 	.figures .evidence {
 		color: var(--ink-faint);
 		font-style: italic;

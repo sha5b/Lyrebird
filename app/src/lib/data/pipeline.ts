@@ -4,7 +4,7 @@
  * Everything here degrades to "not running". The galaxy is precomputed and the app
  * needs no backend to show it; this only exists so harvesting and learning can be
  * driven from the interface instead of from a terminal. If the process is not up, the
- * Learn tab says how to start it and nothing else changes.
+ * Learn page says how to start it and nothing else changes.
  */
 
 const DEFAULT_ORIGIN = 'http://127.0.0.1:8781';
@@ -151,7 +151,7 @@ export interface PipelineStatus {
  * degrades gracefully.** A refused connection rejects immediately, which is the case this
  * client was written for; a process that holds the socket open and never replies — starting
  * up, wedged, or a stale build compiling its kernels — leaves `fetch` pending forever. The
- * Learn tab sets `pipelineChecked` only after the status call settles, so it sat on
+ * Learn page sets `pipelineChecked` only after the status call settles, so it sat on
  * "checking…" indefinitely instead of falling through to the message that explains how to
  * start the process.
  *

@@ -1,3 +1,152 @@
+# Lyrebird — the learn page, and a name for a sound nobody named (2026-08-03)
+
+**The v8 chain is still running** — see the section below this one, which is still the first
+thing to read. It went into stage 1 (`learn`) at 11:41 and was still there at 12:45. Nothing
+in this round touches the pipeline or the installed assets, so the two do not interact.
+
+## 1. Learn is a page off the header, not a tab in a 20 rem column
+
+Owner: *"we have a learn tab, I want to move it into the top."* The left strip reads
+**Sing / Compose / Listen** now, and all three are ways of making or hearing a sound. Learn
+never was: it drives the pipeline, it reports a run that outlives any selection, and it wanted
+twice the width it had. It opens from a `learn` cell in the header's readings row beside
+`info`, and that cell shows a pulsing dot and the job's age while a run is going — the only
+place the app could admit to a running loop while the galaxy is what you are looking at.
+
+Consequences worth knowing: the pipeline poll is fast (1.5 s) while the page is **open** and
+slow (6 s) otherwise, where it used to key off the tab; the right-hand readout panel is
+unconditionally the *reading* again, because the learning run used to displace it.
+
+## 2. The inventory table, and it follows playback
+
+Owner: *"a data table on that page which follows playback — while it plays it jumps around in
+the list."* 13 748 rows over 2 423 species, over a canvas already drawing 348 461 points, so
+it is **windowed**: only the visible slice exists, held by two spacers. The arithmetic is in
+`inventory-rows.ts` because an off-by-one in it shows as *a row that never highlights* rather
+than as an error.
+
+The cursor is new and is the part that could have been quietly wrong. `onScheduled` hands over
+a whole phrase at once and then the audio clock runs alone, so nothing knew which note was
+sounding at any instant. `SoundingLog` (`audio/sounding.ts`) is that reading. **The
+latest-starting window wins, not the first found** — during a chorus the first-match version
+marks whichever bird started earliest, which reads as the table lagging a phrase behind rather
+than as a bug. Proven to fail: mutating the scan to first-match makes
+`verify:inventory-table` report it.
+
+The list is pulled to the sounding row only when that row has **left the middle half** of the
+viewport, then centres it. Centring on every note makes a table a blur at chorus rates, which
+would defeat having one.
+
+## 3. A fitted type gets a name, and it is a description of a noise
+
+Owner: *"we call all learned L whatever — wouldn't it make more sense to give them the real
+infos, real type names, real call names?"*
+
+**Half of that is available and half of it is not, and the difference is the project.** A
+documented call's name comes out of a paper with a citation and names a *function*: `jar` and
+`tsupi` are Suzuki 2014 on the Japanese great tit, `feebee` is the chickadee, `hawkPerched`
+the Siberian jay. Nobody has ever documented what `L33` is for, so giving it a call name would
+be a claim with no source — the exact false positive the owner warned against in the same
+breath.
+
+What *is* available is the form. The pipeline measured this syllable's timbre class, its
+modulation depth and rate, its vibrato and its pitch track. So a fitted type is named after
+what it sounds like and never after what it might mean:
+
+```
+L33  ->  buzzy rattling flat          554 Hz   29 ms
+L32  ->  buzzy rattling fall, dipping  5.2 kHz  251 ms
+```
+
+`syllable-name.ts` holds it. Two things were tuned against the corpus rather than by taste:
+**at most one modulation word** (the first version produced *"reedy trilled warbling
+two-voiced steep fall, dipping"* — accurate and past the length at which a name is a name),
+and `MOD_DEPTH = 0.4`, because `amDepth` clusters at 0.15/0.3/0.45/0.6/0.8 over the 13 704
+fitted types and a lower gate called four types in five *trilled* — a word every row carries
+describes nothing. Median name is 37 characters.
+
+The test has a **forbidden-word scan** over described names — `alarm`, `contact`, `warning`
+and five more. It is blunt on purpose: if one of those ever enters the vocabulary, that fails
+rather than shipping a claim with nothing behind it.
+
+Where it shows: the inventory table's `sound` column, and the tags in the cloud, which used to
+spend their one line on `L01`.
+
+## 4. What the table says out loud that the ids were saying alone
+
+`doc` / `fit` is a column now. A reader meeting `jar` beside `L33` had no way to know the first
+was a name and the second a serial number, and the app was signalling it with font weight.
+Also fixed: the id column was 3.2 rem and `hawkSearching` ran straight over the column beside
+it. Counted off the syllable's `learned` field, never off the shape of the id — the shape
+happens to be right and is one rename from being wrong.
+
+## 5. The two pages were badly designed, and were redesigned
+
+Owner, in order: *"the design and placement of the buttons is ugly"*, *"the page design for
+both is horrific"*, *"make a 2 column design and the entire width"*, *"get rid of the grid"*.
+All four were fair.
+
+- **The header openers had no padding and no divider**, so `info close` ran into `learn open`
+  as one word. The cause is one selector: `.readings > div` does not match a `<button>`. A
+  cell of that row is a cell of that row whichever element it is.
+- **The pages laid prose directly on the stage's grid ruling**, so every line of body copy had
+  a rule through it. The graph was reaching for "turning the same instrument over" and it cost
+  legibility, which is not a trade. The stage keeps its grid; a document is paper.
+- **Full width, two columns**, 2.6 rem padding. A single centred 38 rem column left two thirds
+  of a 1600 px screen empty; full-bleed paragraphs are one long line. Two columns are both
+  fixes at once.
+- **The left column of the Learn page was clipping** — the store path and the critic line ran
+  out from under themselves. `min-width: 0`: a grid item's default minimum is its content's,
+  and one unbreakable 52-character path was widening the track past itself.
+
+## 6. The info page was reworked, with figures
+
+Owner: *"we need explanations of what types are, fits, froms, knots… what the project is
+(please no false negatives no false positives)… nice design with explanations and a screenshot
+of different things that are mentioned, nice to scroll, nice to look at but still scientific."*
+
+Six numbered sections. **§1 is a table of what the app will and will not say**, claims and
+refusals in the same list, because a limit stated beside a claim is harder to skip than a
+caveat at the end. **§2 is the vocabulary** — point, type, knot, id, doc, fit, Hz·ms, fit,
+from, bout, match — which is what §4 above needed a reader to already know. §3 carries four
+**figures, which are screenshots of this app** (`app/static/figures/`, 576 KB for four,
+quantised and downscaled from 1.7 MB). §5 quotes the loaded manifest and nothing else. §6 is
+the old legend, verbatim and diffed against git to prove it.
+
+Also on §1: "no samples" and "340 079 measurements of real recordings" are both true and sound
+contradictory, so the page says what is kept is the measurement and never the audio.
+
+## 7. The node label: filled, then put back
+
+The tags were reworked to be filled with the knot's colour with black-or-white ink chosen from
+that colour's **measured luminance** — lightness is not brightness, and yellow at 45 % L is
+about three times as luminous as blue at the same L. It worked, it was tested, and the owner's
+verdict on seeing it was *"too dominant"*, which is right: a tag is an annotation and the cloud
+is the data. **Reverted**, and `readableInk` was deleted with it rather than left lying about.
+
+Two things kept from the attempt. The **bird's name is first now** and the sound second —
+owner's call, and the right way round for the question a lit knot raises. And `.figures`
+wraps: it was `nowrap` on a 15 rem card holding five figures, so it had *always* been
+overflowing and being clipped mid-word (`measured fiel`). Only a filled card made it visible.
+
+## 8. Tests and state
+
+`npm run verify:inventory-table` is new: 60 checks over the row building, the window
+arithmetic, the follow rule, the sounding cursor, and the naming. Two of them were proven to
+fail by mutation (first-match cursor; `padTop` off by one row).
+
+`npm run check` clean apart from the four pre-existing `syrinx-processor.js` errors, and
+**zero warnings** — the table's `aria-rowcount`/`aria-rowindex` needed the grid row pattern,
+which costs one wrapper per *drawn* row (about forty), not per row in the corpus. `build`,
+`verify:layout`, `verify:split-knots`, `verify:trajectory`, `verify:biplot`,
+`verify:inventory-table` and `check-provenance-buffers` all pass. Every surface was looked at
+in a real browser.
+
+**Not done:** the tone pass on the new page copy — §1 and §2 were written straight and have
+not been through `/ste-writing`. The three ideas from the earlier interface round (radial
+decompression of the core, the depth exponent, a drawable knot hull) are untouched and still
+the best-argued things on the list.
+
 # Lyrebird — READ THIS FIRST (2026-08-03, ~11:55): the v8 chain is running unattended
 
 **A full production chain started at 11:41 and nobody has checked it.** It is

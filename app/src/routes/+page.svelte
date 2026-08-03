@@ -23,6 +23,9 @@
 	} from '$lib/data/assets';
 	import { BirdyEngine, type ScheduledSyllable } from '$lib/audio/engine';
 	import { Listener } from '$lib/audio/listener';
+	import { SoundingLog } from '$lib/audio/sounding';
+	import InventoryTable from '$lib/InventoryTable.svelte';
+	import { buildInventoryRows, indexRows } from '$lib/data/inventory-rows';
 	import { createIndividual } from '$lib/audio/individual';
 	import { compilePhrase, improvise, type Phrase } from '$lib/lang/grammar';
 	import {
@@ -105,7 +108,17 @@
 	let singer = $state<string | null>(null);
 	let perPointMeasured = $state(false);
 
-	let tab = $state<'sing' | 'words' | 'listen' | 'learn'>('sing');
+	/**
+	 * Which of the left column's three panels is showing.
+	 *
+	 * **Learn used to be a fourth, and it is a `page` now.** Owner: *"we have a learn tab, I
+	 * want to move it into the top."* The three that remain are all about making a sound —
+	 * sing one, compose one, listen for one — and Learn was never that: it drives the
+	 * pipeline, it reports a run that outlives any selection, and it wanted twice the width
+	 * of a 20 rem column for its store figures and its inventory. The tab strip reads as one
+	 * kind of thing again.
+	 */
+	let tab = $state<'sing' | 'words' | 'listen'>('sing');
 	// Empty on purpose: the app opens on the whole corpus rather than on one bird, and
 	// the camera frames all of it. Choosing a bird is what narrows the view.
 	let speciesId = $state('');
@@ -158,8 +171,13 @@
 	 * question-mark icon on the right edge — too small for the material and named after
 	 * nothing. It reads as a page because it is one: it replaces the stage instead of
 	 * covering a corner of it.
+	 *
+	 * `learn` joined it for the same reason from the other direction — it was a tab in a
+	 * 20 rem column, and what it has to show is a pipeline's state and 13 748 fitted
+	 * syllables. Both openers sit in the header's readings row, at the end, because that row
+	 * is already where a viewer looks for what the build is.
 	 */
-	let page = $state<'' | 'info'>('');
+	let page = $state<'' | 'info' | 'learn'>('');
 	/**
 	 * The known/unknown map switcher. `mapsAvailable` is probed once at startup: a
 	 * `--clustering both` build ships `known/` and `unknown/` next to the root asset set,
@@ -378,6 +396,8 @@
 		let stale = false;
 		loaded.loadSpecies(id).then((sp) => {
 			if (!stale) currentSpecies = sp ?? null;
+			// A shard that has landed is a species the inventory table can now show rows for.
+			if (sp) inventoryVersion++;
 		});
 		return () => {
 			stale = true;
@@ -770,7 +790,12 @@
 			history = [];
 			selectedSung = null;
 			pinnedCluster = -1;
+			// Scheduled windows belong to an audio clock that has just been disposed of, and
+			// their keys to an inventory that may not hold them any more. Both make the table's
+			// cursor point at the wrong row rather than at none.
+			sounding.clear();
 			assets = loaded;
+			inventoryVersion++;
 			// A new inventory can drop a species — `--learned-only` does exactly that — and a
 			// selection pointing at one that is gone leaves `currentSpecies` null, which reads
 			// as "all birds" while the dropdown still shows the missing name.
@@ -982,8 +1007,26 @@
 	 */
 	const syllablePoints = $derived(assets ? buildSyllablePointIndex(assets) : null);
 
+	/**
+	 * Every note that has been scheduled, so the inventory table can follow playback.
+	 *
+	 * `addLive` is the one funnel every sounding phrase passes through — the chorus arrives
+	 * via `onScheduled`, "Sing it" and the composer call it directly — which is why the log
+	 * is filled here and not in three places. Recorded before `addLive`'s own early return,
+	 * because a syllable that resolves to no knot draws no thread and still sounds: its row
+	 * should mark, and the table is the only surface that admits such a type exists.
+	 */
+	const sounding = new SoundingLog();
+
 	/** Adds the trajectory a phrase takes through the galaxy, in time with the audio. */
 	function addLive(speciesId: string, scheduled: ScheduledSyllable[], label = '') {
+		sounding.add(
+			scheduled.map((s) => ({
+				key: `${speciesId}/${s.syllableId}`,
+				start: s.at,
+				end: s.at + s.dur
+			}))
+		);
 		const live = listener;
 		if (!clusters || !live || !scheduled.length) return;
 		live.addLive(
@@ -1424,6 +1467,7 @@
 			// lazily — and exactly what the whole file is for: one fetch, after which
 			// every shard lookup is a cache hit.
 			await assets.ensureSpecies();
+			inventoryVersion++;
 			if (chorus !== 'global') return; // toggled off while the corpus loaded
 			showContext('');
 			engine.startAmbient(
@@ -1571,11 +1615,71 @@
 	 * Fitted types in the inventory `learn` last wrote, summed over species.
 	 *
 	 * Shown because the number is the whole point of the loop: it is what grows as audio
-	 * arrives, and a Learn tab that never showed it made "keep learning" unfalsifiable.
+	 * arrives, and a Learn page that never showed it made "keep learning" unfalsifiable.
 	 */
 	const learnedTypeCount = $derived(
 		(pipelineStatus?.learned?.species ?? []).reduce((n, s) => n + (s.types ?? 0), 0)
 	);
+
+	// --- The inventory table on the Learn page --------------------------------------
+	/**
+	 * Every syllable type in the loaded build, as rows.
+	 *
+	 * Recomputed when a species' shard arrives, which is what `inventoryVersion` is for:
+	 * `assets.inventory.species` is a plain array mutated in place by `loadSpecies`, and
+	 * `assets` is `$state.raw`, so nothing here would ever re-run on its own. The whole
+	 * corpus lands in one fetch when the global chorus starts (`ensureSpecies()`), so in
+	 * practice this fills once and then holds 13 748 rows.
+	 */
+	const inventoryRows = $derived.by(() => {
+		void inventoryVersion;
+		if (!assets) return [];
+		const lookup = clusters;
+		return buildInventoryRows(assets.inventory, assets.inventoryIndex, (sp, syl) =>
+			lookup ? clusterIndexFor(lookup, sp, syl) : -1
+		);
+	});
+	const inventoryRowIndex = $derived(indexRows(inventoryRows));
+	/**
+	 * Bumped whenever the set of loaded species may have changed.
+	 *
+	 * A counter rather than a derived length, because `inventory.species.length` is not
+	 * reactive either — the only honest signal is "something asked for a shard and it has
+	 * landed", and that is what the chorus effect and every selection report.
+	 */
+	let inventoryVersion = $state(0);
+	/** The key of the note sounding now, ticked only while the Learn page is open. */
+	let soundingKey = $state('');
+	const soundingRow = $derived(soundingKey ? (inventoryRowIndex.get(soundingKey) ?? -1) : -1);
+	/** Whether the table is pulled to the sounding row, or stays where it was scrolled. */
+	let followPlayback = $state(true);
+	/**
+	 * The cursor's clock.
+	 *
+	 * 60 ms, which is under the shortest syllable this corpus holds (35 ms exists, but the
+	 * median is an order of magnitude longer) and coarse enough that a table of a hundred
+	 * drawn rows is not re-laid-out sixty times a second. It runs **only while the page is
+	 * open**: a timer polling the audio clock behind a closed page is cost with no reader,
+	 * and this one would run for as long as the app does.
+	 */
+	$effect(() => {
+		if (page !== 'learn' || !engine) {
+			soundingKey = '';
+			return;
+		}
+		const ctx = engine.ctx;
+		const tick = () => (soundingKey = sounding.at(ctx.currentTime));
+		tick();
+		const id = setInterval(tick, 60);
+		return () => clearInterval(id);
+	});
+
+	/** Clicking a row goes to that type's knot, the same as clicking it in the cloud. */
+	function pickRow(row: { speciesId: string; syllableId: string; knot: number }) {
+		if (row.knot < 0) return;
+		page = '';
+		pickCluster(row.knot);
+	}
 	/**
 	 * What the projection is worth, from the loaded build's own manifest.
 	 *
@@ -1672,7 +1776,7 @@
 	}
 
 	/**
-	 * Poll the control process on every tab, quickly on Learn and slowly elsewhere.
+	 * Poll the control process always, quickly with the Learn page open and slowly otherwise.
 	 *
 	 * **It used to stop the moment you left the Learn tab, which is the moment you would
 	 * leave it.** You start a loop, go back to Sing to listen while it works, and from then
@@ -1681,13 +1785,13 @@
 	 * galaxy has been replaced. The whole point of learning while the app runs is that you
 	 * are somewhere else in the app while it happens.
 	 *
-	 * Slower off the Learn tab because the reason to poll is different. On Learn it is the
-	 * job log, which is a progress indicator and wants to move; everywhere else it is one
-	 * question — has the build stamp changed — and asking that every six seconds is enough.
+	 * Slower with the page shut because the reason to poll is different. Open, it is the job
+	 * log, which is a progress indicator and wants to move; closed, it is one question — has
+	 * the build stamp changed — and asking that every six seconds is enough.
 	 */
 	const POLL_MS = { learn: 1500, elsewhere: 6000 };
 	$effect(() => {
-		const fast = tab === 'learn';
+		const fast = page === 'learn';
 		if (fast) pipelineWaited = 0;
 		refreshPipeline();
 		const id = setInterval(refreshPipeline, fast ? POLL_MS.learn : POLL_MS.elsewhere);
@@ -1771,6 +1875,44 @@
 			mapped: clusters.bySyllable.size
 		};
 	});
+
+	// --- what the info page quotes -----------------------------------------------------
+	/**
+	 * How much of the corpus is measured field audio and how much is this synthesiser's own
+	 * render of the documented repertoire.
+	 *
+	 * On the page because "no samples" and "340 079 measurements of real recordings" are both
+	 * true and sound contradictory: what is kept is the measurement, never the audio. A page
+	 * that says the first without the second invites the reader to discover the second and
+	 * conclude they were misled.
+	 */
+	const sourceMix = $derived.by(() => {
+		const mix = assets?.manifest?.sourceMix;
+		if (!mix) return null;
+		const field = mix.field ?? 0;
+		let rendered = 0;
+		for (const [key, n] of Object.entries(mix)) if (key !== 'field') rendered += n ?? 0;
+		return { field, rendered };
+	});
+	/**
+	 * The ramp the match meter is drawn against, from the build that shipped it.
+	 *
+	 * Quoted rather than the constants, because the constants are only the fallback for an
+	 * asset set that ships no ramp — and the whole point of the ramp travelling with the
+	 * assets is that a page describing it cannot go stale against the corpus.
+	 */
+	const matchFloor = $derived(assets?.manifest?.matchRamp?.floor ?? null);
+	const matchCeiling = $derived(assets?.manifest?.matchRamp?.ceiling ?? null);
+	/**
+	 * How many of the loaded types were fitted from field audio rather than documented.
+	 *
+	 * Counted off `learned` on the syllable, never off the shape of the id. `L07` looks like
+	 * a fitted id and `feebee` looks like a documented one, and the app happens to be right
+	 * about both — but a rule that reads a name to decide what kind of claim a row is making
+	 * is one rename away from being wrong, and the field is right there.
+	 */
+	const fittedTypes = $derived(inventoryRows.filter((r) => r.fitted).length);
+	const documentedTypes = $derived(inventoryRows.length - fittedTypes);
 
 	const learnedTotals = $derived.by(() => {
 		const list = pipelineStatus?.learned.species;
@@ -1868,6 +2010,9 @@
 		if (chorus === 'global' && engine && assets) {
 			const loaded = assets;
 			void loaded.ensureSpecies().then(() => {
+				// The whole corpus is here now — the one moment the inventory table can hold
+				// every row rather than the handful of birds that have been selected.
+				inventoryVersion++;
 				if (chorus === 'global')
 					engine?.startAmbient(
 						loaded.inventoryIndex.map((s) => s.id),
@@ -2040,6 +2185,28 @@ uv run birdy-pipeline build</pre>
 					<dt>info</dt>
 					<dd>{page === 'info' ? 'close' : 'open'}</dd>
 				</button>
+				<!--
+					The second page, beside the first. It reports a running job, so it says so
+					here rather than only behind the click: a learning loop outlives whatever
+					you go and do next, and a dot on the opener is the only place the app can
+					admit that while the galaxy is what you are looking at.
+				-->
+				<button
+					class="reading-open"
+					class:on={page === 'learn'}
+					aria-pressed={page === 'learn'}
+					title="Harvest, fit and rebuild — and every syllable type the pipeline has fitted, as a table that follows what is singing."
+					onclick={() => (page = page === 'learn' ? '' : 'learn')}
+				>
+					<dt>learn</dt>
+					<dd>
+						{#if jobRunning}
+							<span class="joblive" aria-hidden="true"></span>{job?.seconds ?? 0}s
+						{:else}
+							{page === 'learn' ? 'close' : 'open'}
+						{/if}
+					</dd>
+				</button>
 			</dl>
 		</header>
 
@@ -2079,7 +2246,21 @@ uv run birdy-pipeline build</pre>
 			scrolled past to reach the other.
 		-->
 		{#if page === 'info'}
-			<div class="stagepage" role="region" aria-label="Paper, summary and legend">
+			<!--
+				**The information page, and it is a document.** The first version laid its prose
+				directly onto the page's grid ruling at full bleed, so every line had a rule
+				running through it and paragraphs ran the whole width of the screen. It also
+				never explained its own vocabulary: a reader met `jar`, `L33`, `fit`, `from` and
+				`knot` with nothing to tell them what kind of thing each one was.
+
+				So: a sheet on the ruled ground, a measure prose is readable at, numbered
+				sections, and figures that are screenshots of this app rather than diagrams of
+				it. Every number is read from the loaded build. Where the app cannot do
+				something, §1 says so in the same table as the things it can — a limit stated
+				beside a claim is harder to skip than a caveat at the end.
+			-->
+			<div class="stagepage" role="region" aria-label="What this is, how to read it, and the legend">
+				<div class="pagesheet">
 				<header class="pagehead">
 					<div>
 						<h2>Lyrebird</h2>
@@ -2090,71 +2271,329 @@ uv run birdy-pipeline build</pre>
 					>
 				</header>
 
-				<div class="pagegrid">
-					<section class="pagecol">
-						<h3 class="blocktitle">The paper</h3>
-						<p class="note">
-							<a class="paperlink" href="{base}/lyrebird-whitepaper.pdf" download
-								>Download the whitepaper — PDF, 0.7 MB</a
-							>
-						</p>
-
-						<h3 class="blocktitle">What this is</h3>
-						<p class="note">
-							Lyrebird makes bird sound from a model of the syrinx. It holds no recordings of
-							birds as samples. A physical oscillator produces every note you hear.
-						</p>
-						<p class="note">
-							Each call in the inventory carries a function taken from the literature, with the
-							citation and a statement of how well the literature supports it. The app never
-							states a meaning the sources do not give.
-						</p>
-						<p class="note">
-							The cloud draws {assets.points.n.toLocaleString()} sounds in
-							{assets.centroids.k.toLocaleString()} knots. A knot holds every sound that carries
-							one syllable type's name. Its three axes are a projection of a
-							{assets.featureSpace.dims}-dimensional acoustic space, so the picture keeps part of
-							that space and loses the rest.
-						</p>
-						<p class="note">
-							Two numbers in the header say how much it keeps. <b>distance r</b> scores the coarse
-							arrangement over random pairs. <b>neighbours</b> is the share of a point's ten
-							nearest marks on screen that carry its own type. The second is the one to read when
-							two marks sit together.
-						</p>
-
-						<h3 class="blocktitle">What a direction means</h3>
-						<p class="note">
-							The axes are not named quantities. A least-squares fit over every knot finds the
-							direction each acoustic quantity increases fastest along, and how much of it that
-							direction explains.
-						</p>
-						{#if axes.length}
-							<dl class="axistable mono">
-								{#each axes as a (a.name)}
-									<div><dt>{a.name}</dt><dd>{Math.round(a.r2 * 100)} %</dd></div>
-								{/each}
+				<div class="pagebody twocol">
+					<!-- Column one is the argument and the numbers; column two is the figures and
+					     the legend, which are what a reader comes back to rather than reads once. -->
+					<div class="pagecolumn">
+						<section class="pagesection">
+							<h3><span class="num">§1</span> What this is</h3>
+						<p class="note measure">
+								Lyrebird holds no recordings of birds. A physical model of the <b>syrinx</b> makes
+								every note as you hear it. That model is the two-parameter oscillator a real bird
+								drives with air-sac pressure and syringeal tension. Nothing here is a sample and
+								nothing is pre-rendered.
+							</p>
+							<p class="note measure">
+								The cloud you arrived at is a corpus of {assets.points.n.toLocaleString()} measured
+								sounds from {assets.inventoryIndex.length.toLocaleString()} species. {sourceMix
+									? `${sourceMix.field.toLocaleString()} of them are measurements of real field recordings. The other ${sourceMix.rendered.toLocaleString()} are this synthesizer's own renders of the documented repertoire.`
+									: ''}
+								The pipeline measures each recording and then discards it. It keeps only the
+								measurements, and it never sends audio to your browser.
+							</p>
+							<p class="note measure">
+								<b>What this app will say, and what it will not</b> is the whole design. So it is a
+								table and not a paragraph:
+							</p>
+						<dl class="claims">
+								<div>
+									<dt>It names the function of a call when a source named it.</dt>
+									<dd>
+										The app shows the citation and a confidence label with the name.
+										{corpusHealth
+											? `${corpusHealth.documented.toLocaleString()} of the ${corpusHealth.clusters.toLocaleString()} knots in this build carry one`
+											: 'Every documented call carries one'}.
+									</dd>
+								</div>
+								<div>
+									<dt>It reports what a live sound is most like.</dt>
+									<dd>
+										The app finds the nearest cluster and gives the match a strength. The gate is
+										the fifth percentile of real field syllables, {Math.round((matchFloor ?? 0) * 100)} %
+										on this build. A weak match therefore reads as weak.
+									</dd>
+								</div>
+								<div>
+									<dt class="no">It does not translate birdsong.</dt>
+									<dd>
+										There are no sentences here. Machine learning can describe a repertoire. It can
+										also link a call to a behavior. It cannot recover meaning, and nothing on this
+										screen says that it can.
+									</dd>
+								</div>
+								<div>
+									<dt class="no">It does not say what a fitted type is for.</dt>
+									<dd>
+										The pipeline found
+										{fittedTypes
+											? `${fittedTypes.toLocaleString()} of the ${inventoryRows.length.toLocaleString()} loaded types`
+											: 'most of this corpus'} in field audio by clustering, not by reading a
+										paper. The app describes each one by its sound and leaves it unlabeled. See §2.
+									</dd>
+								</div>
+								<div>
+									<dt class="no">It does not claim the picture is a true map.</dt>
+									<dd>
+										Three dimensions cannot hold {assets.featureSpace.dims}. §5 gives the measured
+										cost of that instead of an assurance.
+									</dd>
+								</div>
 							</dl>
-							<p class="note faint">
-								Read the share before the name. A quantity under about 10 % has no direction worth
+							<p class="note">
+								<a class="paperlink" href="{base}/lyrebird-whitepaper.pdf" download
+									>Download the whitepaper — PDF, 0.7 MB</a
+								>
+							</p>
+						</section>
+
+						<section class="pagesection">
+							<h3><span class="num">§2</span> The words on screen</h3>
+							<p class="note measure">
+								The inventory table on the <b>learn</b> page has a column for each of these words.
+								It holds two kinds of row, and the two do not make the same kind of claim. This is
+								the difference:
+							</p>
+							<dl class="deflist">
+								<div>
+									<dt>point</dt>
+									<dd>
+										One sound. It is one syllable measured out of one recording, or one render of a
+										documented call. Every mark in the cloud is one point.
+									</dd>
+								</div>
+								<div>
+									<dt>type</dt>
+									<dd>
+										A kind of syllable that belongs to one species. A point is one example of a
+										type. This build holds {assets.centroids.k.toLocaleString()} types.
+									</dd>
+								</div>
+								<div>
+									<dt>knot</dt>
+									<dd>
+										The place in the cloud that holds every point of one type. The
+										<b class="mono">knot</b> column gives its number. A type with no knot still
+										sounds, and it lights nothing.
+									</dd>
+								</div>
+								<div>
+									<dt>id</dt>
+									<dd>
+										The name of the type in the corpus. Its shape tells you where the type came
+										from. <b class="mono">jar</b>, <b class="mono">feebee</b> and
+										<b class="mono">hawkPerched</b> are the words the literature uses for those
+										calls. <b class="mono">L07</b> and <b class="mono">L33</b> are serial numbers.
+										The fitting gives those out in order.
+									</dd>
+								</div>
+								<div>
+									<dt>doc</dt>
+									<dd>
+										<b>Documented.</b> A person read a study and took the call, its function and the
+										citation out of it. The <b class="mono">sound</b> column holds the name that
+										study gave the call. That name means something.
+									</dd>
+								</div>
+								<div>
+									<dt>fit</dt>
+									<dd>
+										<b>Fitted.</b> The pipeline found this type by clustering real field recordings.
+										<b>No source has ever said what it is for.</b> So the
+										<b class="mono">sound</b> column describes the waveform instead, as in
+										<i>buzzy trilled rise</i>. That description comes from four measurements: the
+										timbre class, the depth of the modulation, its rate, and the shape of the pitch
+										track. It describes a noise. It does not translate one, and it is the most this
+										app can honestly say.
+									</dd>
+								</div>
+								<div>
+									<dt>Hz · ms</dt>
+									<dd>
+										The median of the pitch track of the type, and the length of one syllable of it.
+										Both numbers are the values given to the synthesizer. Neither is measured off a
+										rendered sound.
+									</dd>
+								</div>
+								<div>
+									<dt>fit</dt>
+									<dd>
+										<i>(the number.)</i> The cosine between the resynthesis of this type and its own
+										cluster in the {assets.featureSpace.dims}-dimensional descriptor space. It says
+										how closely the oscillator reproduces the sound it was fitted to. It is a
+										clustering match. It is <b>not</b> a guarantee that the sound is audibly
+										faithful. The two correlate at about 0.1, and the pipeline measures audible
+										fidelity separately. This column is blank on a documented call, because nothing
+										fitted that call.
+									</dd>
+								</div>
+								<div>
+									<dt>from</dt>
+									<dd>
+										The number of field syllables behind the fit. Three is thin evidence for a type.
+										Forty is not. This column is blank on a documented call, for the same reason.
+									</dd>
+								</div>
+								<div>
+									<dt>bout</dt>
+									<dd>{BOUT_GLOSS}</dd>
+								</div>
+								<div>
+									<dt>match</dt>
+									<dd>
+										How much a sound at the microphone is like its nearest knot. The ramp belongs to
+										this corpus and travels with it: {matchFloor != null && matchCeiling != null
+											? `${Math.round(matchFloor * 100)} % to ${Math.round(matchCeiling * 100)} % here`
+											: 'measured per build'}. Those two figures are the fifth and ninetieth
+										percentiles of the scores of real harvested field syllables.
+									</dd>
+								</div>
+							</dl>
+						</section>
+
+						<section class="pagesection">
+							<h3><span class="num">§4</span> What a direction means</h3>
+							<p class="note measure">
+								The axes are not named quantities, and nothing was arranged to make them so. A
+								least-squares fit over every knot finds the direction each acoustic quantity
+								increases fastest along, and how much of that quantity the direction explains.
+								Read the share before the name: under about 10 % there is no direction worth
 								pointing at, which is where duration sits on this build.
 							</p>
-						{/if}
-					</section>
+							{#if axes.length}
+								<dl class="axistable mono">
+									{#each axes as a (a.name)}
+										<div><dt>{a.name}</dt><dd>{Math.round(a.r2 * 100)} %</dd></div>
+									{/each}
+								</dl>
+							{/if}
+						</section>
 
-					<section class="pagecol">
-						<h3 class="blocktitle">Legend</h3>
-						<section class="block">
-							<!--
-								**The key is where the picture explains itself, so every line in it has to be
-								a claim the build can support.** Three could not. "Distance is acoustic
-								similarity" was stated flatly while the manifest's own faithfulness for this
-								build is 0.667; nothing said what SIZE means, so a mark that grew read as a
-								value when it is an event; and nothing said why the points MOVE, which left a
-								permanent slow drift looking like it was reporting something. All three are
-								answered here, and the numbers are read from the loaded build rather than
-								written into the prose.
-							-->
+						<section class="pagesection">
+							<h3><span class="num">§5</span> What the picture is worth</h3>
+							<p class="note measure">
+								Read from the loaded build's own manifest, not written into this page. Every one of
+								these is a cost of squeezing {assets.featureSpace.dims} dimensions into three, and
+								the reason they are all here is that any one of them alone flatters it.
+							</p>
+							<dl class="claims">
+								<div>
+									<dt>Neighbours on screen share the mark's own type</dt>
+									<dd>
+										{projQuality?.knn != null ? `${Math.round(projQuality.knn * 100)} %` : '—'} of a
+										point's {projQuality?.knnK ?? 10} nearest marks. Chance on this corpus is far
+										under one percent, so this is real structure — and it is also the limit on
+										reading two neighbouring marks as the same sound.
+									</dd>
+								</div>
+								<div>
+									<dt>Coarse distance follows measured distance</dt>
+									<dd>
+										r = {faithfulness?.toFixed(3) ?? '—'} over random pairs. Dominated by far pairs,
+										which is why it is not the number to read when two marks sit together.
+									</dd>
+								</div>
+								{#if projQuality?.trust != null && projQuality?.continuity != null}
+									<div>
+										<dt>Neighbours it invents, and neighbours it hides</dt>
+										<dd>
+											trustworthiness {projQuality.trust.toFixed(4)} — of the marks drawn near a
+											point, the share that belong near it. continuity
+											{projQuality.continuity.toFixed(4)} — of the marks that belong near it, the
+											share actually drawn near it. 1 is perfect and about 0.5 is what a random
+											arrangement scores.
+										</dd>
+									</div>
+								{/if}
+								{#if projQuality?.torn != null}
+									<div>
+										<dt>Knots drawn in two places at once</dt>
+										<dd>
+											{projQuality.torn.toLocaleString()}{projQuality.tornOf
+												? ` of ${projQuality.tornOf.toLocaleString()} measured`
+												: ''}. The flattening splits some knots across the cloud. Both patches are
+											named rather than one being left lit and anonymous — the legend says how.
+										</dd>
+									</div>
+								{/if}
+								{#if coverage}
+									<div>
+										<dt>Types that have a knot to light</dt>
+										<dd>
+											{coverage.withCluster.toLocaleString()} of {coverage.types.toLocaleString()}. A
+											type without one still sings. It lights nothing, and the inventory table
+											marks it.
+										</dd>
+									</div>
+								{/if}
+							</dl>
+						</section>
+
+					</div>
+					<div class="pagecolumn">
+						<section class="pagesection">
+							<h3><span class="num">§3</span> Reading the picture</h3>
+							<figure class="figure">
+								<img
+									src="{base}/figures/fig-stage.png"
+									alt="The Lyrebird stage: a cloud of pale marks with panels down each side and a ruled border."
+									loading="lazy"
+								/>
+								<figcaption>
+									<b>Fig 1</b> The whole instrument. The cloud in the middle is the corpus; the panel
+									on the left makes a sound, the panel on the right reports one. Nothing in the cloud
+									is coloured until it sounds, which is why it arrives grey.
+								</figcaption>
+							</figure>
+							<p class="note measure">
+								A knot lights when a sound of its type is heard or sung. It is named at that
+								moment, a thread is drawn through the knots of the phrase in the order they were
+								sung, and a bead runs along the thread on the note.
+							</p>
+							<figure class="figure">
+								<img
+									src="{base}/figures/fig-thread.png"
+									alt="Two lit knots joined by a beaded thread, each labelled with its species, type id and documented function."
+									loading="lazy"
+								/>
+								<figcaption>
+									<b>Fig 2</b> A lit knot, named. The tag is filled with that bird's own colour and
+									carries the knot number, the bird, how many sounds fell into it and how strongly a
+									live sound is matching it. A documented call adds its function underneath; a fitted
+									type adds nothing there, because there is nothing to add. Where a phrase runs
+									through several knots, a thread joins them in the order they were sung.
+								</figcaption>
+							</figure>
+							<figure class="figure">
+								<img
+									src="{base}/figures/fig-ruler.png"
+									alt="The ruler along the bottom edge of the stage, with tick marks and a caption naming the unit."
+									loading="lazy"
+								/>
+								<figcaption>
+									<b>Fig 3</b> The ruler along the stage's edge. Its caption says what one tick is
+									worth at the current zoom, and the fitted directions named in §4 are what the axes
+									of the same frame mean.
+								</figcaption>
+							</figure>
+							<figure class="figure">
+								<img
+									src="{base}/figures/fig-table.png"
+									alt="The inventory table: rows for the Japanese great tit, Black-capped chickadee and Siberian jay, some marked doc and some fit."
+									loading="lazy"
+								/>
+								<figcaption>
+									<b>Fig 4</b> The inventory on the <b>learn</b> page, which is §2 as rows. Note the
+									two kinds together on one bird: the Japanese great tit's <b class="mono">jar</b> and
+									<b class="mono">tsupi</b> are named by Suzuki 2014; its <b class="mono">L32</b> and
+									<b class="mono">L33</b> were fitted from recordings and are described rather than
+									named. While something is singing, the row of the sounding note is marked and the
+									list scrolls to it.
+								</figcaption>
+							</figure>
+						</section>
+
+						<section class="pagesection">
+							<h3><span class="num">§6</span> The legend</h3>
 							<ul class="legend key">
 								<li>
 									<i style:background="var(--ink-dim)"></i>
@@ -2180,175 +2619,243 @@ uv run birdy-pipeline build</pre>
 											<b>A knot is one call type</b> — every sound the pipeline gave that type's
 											name. On this build the knots are the labels, not a second, independent
 											finding.
-										{:else}
-											<b>A knot is a group of sounds too alike to separate</b>, found by clustering
-											the space rather than by reading the labels.
-										{/if}
-										A documented one also carries its function and its source. Its tag and its
-										threads attach at its centre.
-									</span>
-								</li>
-								{#if knotOverlap}
-									<li>
-										<i class="wide"></i>
-										<!--
-											The measured answer to "I cannot see the structure of the knots", which
-											nothing in this interface had ever said. It is a property of the build,
-											not of the renderer, and it is the first thing anyone hunting for beads
-											in this cloud needs to know.
-										-->
-										<span>
-											<b>Knots overlap, heavily.</b> The average knot is {knotOverlap.ratio.toFixed(1)}×
-											wider than the gap to its nearest neighbour on this build, so the cloud reads as
-											one mass rather than as separated beads. The ruler's unit is that gap.
-										</span>
-									</li>
-								{/if}
-								<li>
-									<i class="pair"></i>
-									<span>
-										<b>Closer is more alike — roughly.</b>
-										{#if projQuality?.pearson != null}
-											Drawn distance follows measured distance at r&nbsp;=&nbsp;{projQuality.pearson.toFixed(2)}
-											over {(assets?.manifest?.faithfulness?.pairs ?? 0).toLocaleString()} random pairs{#if projQuality.knn != null}, and
-											{(projQuality.knn * 100).toFixed(0)}&nbsp;% of a point's {projQuality.knnK} nearest
-											neighbours on screen share its call type — far above chance among {(assets?.manifest?.clusters ?? 0).toLocaleString()}
-											knots, and still most neighbours belong to something else{/if}.
-										{/if}
-										Read the arrangement, not the exact gap.
-									</span>
-								</li>
-								<li>
-									<i class="grow"></i>
-									<span>
-										<b>Size is an event, not a value.</b> At rest every mark is the same size —
-										except a sound in no knot, drawn smaller, because it is a measurement and not
-										structure. A mark grows only while something is happening to it: its knot
-										answering, a front passing through it, the pipeline working on it, or its bird
-										being the one you selected.
-									</span>
-								</li>
-								<li>
-									<i class="ring"></i>
-									<span>
-										<b>Movement, when a sound lands.</b> The knot it matched swells from the inside
-										out — each member moves as the front reaches its own true distance from the
-										landing point, so what you see is the knot's internal geometry, not an
-										animation. A wave then travels out from that knot across about four
-										knot-spacings; two waves crossing add and cancel like real ones, which is the
-										only mark on screen of two calls arriving in the same region.
-									</span>
-								</li>
-								<li>
-									<i class="drift"></i>
-									<span>
-										<b>The slow drift in silence carries nothing.</b> It keeps the depth readable on
-										a still frame and fades out as soon as a wave comes up. Rotation (Display) is
-										the same kind of thing: a way of seeing the volume, not a reading of it.
-									</span>
-								</li>
-								<li>
-									<i class="clade"></i>
-									<!--
-										The hue is the GENUS, not the species. Hashing the whole id spent the
-										colour circle on 2 423 unrelated numbers, so two thrushes were as far
-										apart as a thrush and an owl and the one thing a colour could have said
-										— what kind of bird just answered — was the one thing it did not say.
-										Genus is also as deep as this corpus goes: family and order are not
-										collected, so the limit is stated here rather than implied.
-									-->
-									<span>
-										<b>A bird's colour is its genus.</b> Every species in a genus wears one hue and
-										differs only in shade, so what answers tells you what kind of bird it was before
-										you read the name. Only <i>the same hue</i> means anything — neighbouring hues
-										are not neighbouring clades — and genus is as deep as this corpus goes: family
-										and order are not collected.
-									</span>
-								</li>
-								<li>
-									<i class="hue"></i>
-									<span>
-										<b>Colour says one thing at a time.</b> Off — the points are neutral, and hue is
-										left to the tags and to whatever is sounding, in its bird's hue. On (Provenance
-										colours, in Display) — every point, tag and thread takes its class colour
-										instead, and the class list below becomes the key to it.
-									</span>
-								</li>
-								<li>
-									<i class="line"></i>
-									<!--
-										Where the word is defined. `bout` is the unit the whole syntax layer is
-										counted within, and it appeared a dozen times in this interface without
-										once being said — which makes every sentence carrying it unreadable to
-										anyone who has not read the pipeline. It is glossed here, on its first
-										appearance; every later use carries the same string as a tooltip.
-									-->
-									<span>
-										<b>A thread is one <b class="term" title={BOUT_GLOSS}>bout</b></b> — one burst of
-										singing, syllables less than a second apart — drawn through its knots in the
-										order they were sung.
-									</span>
-								</li>
-								<li>
-									<i class="breath"></i>
-									<span>
-										<b>Heard, but nothing claimed.</b> The nearest region breathes grey: the sound
-										was under the match floor, and the panel says so rather than naming a call.
-									</span>
-								</li>
-								<li>
-									<i style:background="var(--signal)"></i>
-									<span>
-										<b>One loud colour marks what you asked for</b> — the note sounding now, in its
-										bird's hue (violet when nothing names a who), or the points of the bird you
-										selected.
-									</span>
-								</li>
-							</ul>
-							<p class="note faint">
-								{#if localKnots}
-									Three display transforms, all disclosed. A knot is drawn where the projection put
-									its most typical sound, and its members are arranged around it by a projection of
-									that knot's own feature space rather than of the whole corpus — otherwise the
-									global flattening splits some knots across the galaxy (below). Close up — and
-									always for the selected bird — a knot's marks spread out to fill its measured
-									extent, like the jitter in a scatterplot. And knots are drawn twice as far apart
-									as the projection puts them, so there is room between them for a response to
-									happen in. Each knot keeps its measured extent, and none of it moves the corpus
-									positions. Direction inside a knot carries no meaning between knots; distance
-									from its centre does.
-								{:else}
-									Two display transforms, both disclosed: close up — and always for the selected
-									bird — a knot's marks spread out to fill its measured extent, like the jitter in
-									a scatterplot; and knots are drawn twice as far apart as the projection puts
-									them, so there is room between them for a response to happen in. Each knot keeps
-									its own size and shape, and neither transform moves the corpus positions.
-								{/if}
-							</p>
-							{#if projQuality?.torn}
-								<!--
-									The build measures this and the app had never shown it, so the one thing a
-									viewer is most likely to read as a rendering fault — a thread that ends in
-									empty space — had a measured explanation nobody could see. It now also says
-									what the layout does about it, because "we know and we fixed most of it" and
-									"we know" are different sentences.
-								-->
-								<p class="note faint">
-									{projQuality.torn} of {(projQuality.tornOf ?? 0).toLocaleString()} measured knots are
-									drawn by this projection in two places at once — the price this arrangement pays for
-									putting similar sounds together, and it is paid deliberately. <b>Both places are
-									named.</b> A torn knot gets an anchor in each of its two patches, each one sitting on
-									that patch's own most central member rather than on a mean between them, so no lit
-									patch is left without a label. The thread of a song still runs through the larger of
-									the two, because a bird sang one syllable and a forked line would say otherwise.{#if localKnots}
-										Local knot shape (Display) additionally reshapes each knot from its own members, so
-										what you see inside one is that knot's own variation rather than the residue of a
-										fit dominated by everything else.
+									{:else}
+										<b>A knot is a group of sounds too alike to separate</b>, found by clustering
+										the space rather than by reading the labels.
 									{/if}
-								</p>
+									A documented one also carries its function and its source. Its tag and its
+									threads attach at its centre.
+								</span>
+							</li>
+							{#if knotOverlap}
+								<li>
+									<i class="wide"></i>
+									<!--
+										The measured answer to "I cannot see the structure of the knots", which
+										nothing in this interface had ever said. It is a property of the build,
+										not of the renderer, and it is the first thing anyone hunting for beads
+										in this cloud needs to know.
+									-->
+									<span>
+										<b>Knots overlap, heavily.</b> The average knot is {knotOverlap.ratio.toFixed(1)}×
+										wider than the gap to its nearest neighbour on this build, so the cloud reads as
+										one mass rather than as separated beads. The ruler's unit is that gap.
+									</span>
+								</li>
 							{/if}
-						</section>
+							<li>
+								<i class="pair"></i>
+								<span>
+									<b>Closer is more alike — roughly.</b>
+									{#if projQuality?.pearson != null}
+										Drawn distance follows measured distance at r&nbsp;=&nbsp;{projQuality.pearson.toFixed(2)}
+										over {(assets?.manifest?.faithfulness?.pairs ?? 0).toLocaleString()} random pairs{#if projQuality.knn != null}, and
+										{(projQuality.knn * 100).toFixed(0)}&nbsp;% of a point's {projQuality.knnK} nearest
+										neighbours on screen share its call type — far above chance among {(assets?.manifest?.clusters ?? 0).toLocaleString()}
+										knots, and still most neighbours belong to something else{/if}.
+									{/if}
+									Read the arrangement, not the exact gap.
+								</span>
+							</li>
+							<li>
+								<i class="grow"></i>
+								<span>
+									<b>Size is an event, not a value.</b> At rest every mark is the same size —
+									except a sound in no knot, drawn smaller, because it is a measurement and not
+									structure. A mark grows only while something is happening to it: its knot
+									answering, a front passing through it, the pipeline working on it, or its bird
+									being the one you selected.
+								</span>
+							</li>
+							<li>
+								<i class="ring"></i>
+								<span>
+									<b>Movement, when a sound lands.</b> The knot it matched swells from the inside
+									out — each member moves as the front reaches its own true distance from the
+									landing point, so what you see is the knot's internal geometry, not an
+									animation. A wave then travels out from that knot across about four
+									knot-spacings; two waves crossing add and cancel like real ones, which is the
+									only mark on screen of two calls arriving in the same region.
+								</span>
+							</li>
+							<li>
+								<i class="drift"></i>
+								<span>
+									<b>The slow drift in silence carries nothing.</b> It keeps the depth readable on
+									a still frame and fades out as soon as a wave comes up. Rotation (Display) is
+									the same kind of thing: a way of seeing the volume, not a reading of it.
+								</span>
+							</li>
+							<li>
+								<i class="clade"></i>
+								<!--
+									The hue is the GENUS, not the species. Hashing the whole id spent the
+									colour circle on 2 423 unrelated numbers, so two thrushes were as far
+									apart as a thrush and an owl and the one thing a colour could have said
+									— what kind of bird just answered — was the one thing it did not say.
+									Genus is also as deep as this corpus goes: family and order are not
+									collected, so the limit is stated here rather than implied.
+								-->
+								<span>
+									<b>A bird's colour is its genus.</b> Every species in a genus wears one hue and
+									differs only in shade, so what answers tells you what kind of bird it was before
+									you read the name. Only <i>the same hue</i> means anything — neighbouring hues
+									are not neighbouring clades — and genus is as deep as this corpus goes: family
+									and order are not collected.
+								</span>
+							</li>
+							<li>
+								<i class="hue"></i>
+								<span>
+									<b>Colour says one thing at a time.</b> Off — the points are neutral, and hue is
+									left to the tags and to whatever is sounding, in its bird's hue. On (Provenance
+									colours, in Display) — every point, tag and thread takes its class colour
+									instead, and the class list below becomes the key to it.
+								</span>
+							</li>
+							<li>
+								<i class="line"></i>
+								<!--
+									Where the word is defined. `bout` is the unit the whole syntax layer is
+									counted within, and it appeared a dozen times in this interface without
+									once being said — which makes every sentence carrying it unreadable to
+									anyone who has not read the pipeline. It is glossed here, on its first
+									appearance; every later use carries the same string as a tooltip.
+								-->
+								<span>
+									<b>A thread is one <b class="term" title={BOUT_GLOSS}>bout</b></b> — one burst of
+									singing, syllables less than a second apart — drawn through its knots in the
+									order they were sung.
+								</span>
+							</li>
+							<li>
+								<i class="breath"></i>
+								<span>
+									<b>Heard, but nothing claimed.</b> The nearest region breathes grey: the sound
+									was under the match floor, and the panel says so rather than naming a call.
+								</span>
+							</li>
+							<li>
+								<i style:background="var(--signal)"></i>
+								<span>
+									<b>One loud colour marks what you asked for</b> — the note sounding now, in its
+									bird's hue (violet when nothing names a who), or the points of the bird you
+									selected.
+								</span>
+							</li>
+						</ul>
 					</section>
+					</div>
+				</div>
+				</div>
+			</div>
+		{/if}
+
+		<!--
+			The Learn page. Same page furniture as `info`, and a different shape inside it:
+			this one does not scroll as a document, because the table it holds has to keep its
+			own scrollbar — a windowed list inside a scrolling page has two offsets and only
+			one of them is the one the row arithmetic is computed from.
+
+			Left column: the pipeline, its running job, and the controls that were the Learn
+			tab. Right column: the inventory. That way round because the table is the thing
+			that wants the width, and because on this page you are either driving a run or
+			reading what the last one produced.
+		-->
+		{#if page === 'learn'}
+			<div class="stagepage tall" role="region" aria-label="The pipeline and the learned inventory">
+				<header class="pagehead">
+					<div>
+						<h2>Learn</h2>
+						<p class="strap">
+							harvest · fit · rebuild — and every syllable type the fitting produced
+						</p>
+					</div>
+					<button class="pageclose" title="Back to the galaxy" onclick={() => (page = '')}
+						>close</button
+					>
+				</header>
+
+				<div class="learngrid">
+					<div class="learncol">
+						<!--
+							The running job first, because it is the only thing on this page that
+							changes on its own. It used to sit in the right-hand readout panel,
+							where it displaced the reading of whatever was singing.
+						-->
+						{#if job}
+							<section class="block">
+								<h3 class="blocktitle">
+									Running
+									<span class="mono faint">{job.name} · {job.state} · {job.seconds}s</span>
+								</h3>
+								<div class="loopstatus">
+									<p class="doing mono">{jobDoing || '…'}</p>
+									{#if jobRunning}
+										<pre class="stream mono">{job.log.slice(-14).join('\n') || '…'}</pre>
+									{/if}
+									{#if learningSpecies}
+										<p class="note">
+											Working on <b style:color={speciesColourOf(learningSpecies)}
+												>{species.find((s) => s.id === learningSpecies)?.common ??
+													learningSpecies}</b
+											> — its knots are breathing in the galaxy.
+										</p>
+									{/if}
+									{#if job.error}<p class="error note">{job.error}</p>{/if}
+									<details class="loglines">
+										<summary class="mono faint">full log · {job.log.length} lines</summary>
+										<pre class="joblog mono">{job.log.slice(-200).join('\n') || '…'}</pre>
+									</details>
+									{#if jobRunning}
+										<button
+											class="wide"
+											disabled={job.state === 'stopping'}
+											onclick={() => runPipeline(() => pipeline.stop())}
+										>
+											{job.state === 'stopping' ? 'Stopping…' : 'Stop'}
+										</button>
+									{/if}
+								</div>
+							</section>
+						{/if}
+						{@render learnControls()}
+					</div>
+
+					<div class="learncol tablecol">
+						<div class="tablehead">
+							<h3 class="blocktitle">The inventory</h3>
+							<label class="check follow">
+								<input type="checkbox" bind:checked={followPlayback} /> follow what is singing
+							</label>
+						</div>
+						<!--
+							What the count is of, said plainly: these are the rows the app has, which
+							is not the same as the rows the build has until the whole corpus has
+							loaded. It loads in one fetch when the whole-corpus chorus starts, which
+							is the default, so the two agree within a second of opening the app — but
+							a number that quietly means "so far" is the kind that gets quoted.
+						-->
+						<p class="note faint">
+							{inventoryRows.length.toLocaleString()} syllable type{inventoryRows.length === 1
+								? ''
+								: 's'} loaded, of
+							{assets.inventoryIndex.reduce((n, s) => n + (s.types ?? 0), 0).toLocaleString()} in
+							this build.
+							<b class="mono">fit</b> is the cosine between a fitted syllable's resynthesis and
+							its own cluster in the {assets.featureSpace.dims}-d space, and
+							<b class="mono">from</b> is how many field syllables were behind the fit. Both are
+							blank on a documented call, which was never fitted to anything. A row with no
+							knot sounds and lights nothing.
+						</p>
+						<InventoryTable
+							rows={inventoryRows}
+							active={soundingRow}
+							follow={followPlayback}
+							colourOf={speciesColourOf}
+							onpick={pickRow}
+						/>
+					</div>
 				</div>
 			</div>
 		{/if}
@@ -2602,56 +3109,13 @@ uv run birdy-pipeline build</pre>
 				</div>
 			{/if}
 
+			<!--
+				The reading, always. It used to answer to the tab — the learning run displaced it
+				whenever Learn was selected — and the learning run is on its own page now, which
+				is where a thing that outlives every selection belongs. The panel beside the
+				stage is for what is sounding on the stage.
+			-->
 			<aside class="panel readout">
-			{#if tab === 'learn'}
-				<!--
-					The right-hand panel answers to the tab: everywhere else it is the reading,
-					on Learn it is the learning run itself. A loop runs for as long as you let it,
-					and its status used to be buried at the bottom of the control column, under
-					every knob that drives it.
-				-->
-				<h2>
-					Learning
-					{#if job}<span class="mono faint">{job.name} · {job.state} · {job.seconds}s</span>{/if}
-				</h2>
-				<div class="cardbody">
-					{#if job}
-						<div class="loopstatus">
-							<p class="doing mono">{jobDoing || '…'}</p>
-							{#if jobRunning}
-								<pre class="stream mono">{job.log.slice(-14).join('\n') || '…'}</pre>
-							{/if}
-							{#if learningSpecies}
-								<p class="note">
-									Working on <b style:color={speciesColourOf(learningSpecies)}
-										>{species.find((s) => s.id === learningSpecies)?.common ??
-											learningSpecies}</b
-									> — its knots are breathing in the galaxy.
-								</p>
-							{/if}
-							{#if job.error}<p class="error note">{job.error}</p>{/if}
-							<details class="loglines">
-								<summary class="mono faint">full log · {job.log.length} lines</summary>
-								<pre class="joblog mono">{job.log.slice(-200).join('\n') || '…'}</pre>
-							</details>
-							{#if jobRunning}
-								<button
-									class="wide"
-									disabled={job.state === 'stopping'}
-									onclick={() => runPipeline(() => pipeline.stop())}
-								>
-									{job.state === 'stopping' ? 'Stopping…' : 'Stop'}
-								</button>
-							{/if}
-						</div>
-					{:else}
-						<p class="note faint standfirst">
-							No learning run yet. Start one under <b>Keep learning</b> and its progress
-							reports here, pass by pass.
-						</p>
-					{/if}
-				</div>
-			{:else}
 				<h2>
 					Reading
 					{#if selectedSung !== null || pinnedCluster >= 0}
@@ -2872,15 +3336,15 @@ uv run birdy-pipeline build</pre>
 						'Lyrebird reports documented call functions with a confidence label. Machine learning can characterise repertoires and link calls to behaviour. It cannot translate them into sentences.'}
 				</p>
 				</div>
-			{/if}
 			</aside>
 
 			<aside class="panel controls">
+			<!-- Three, and all three are ways of making or hearing a sound. Learn was the odd
+			     one and is a page off the header now. -->
 			<nav class="tabs">
 				<button class:active={tab === 'sing'} onclick={() => (tab = 'sing')}>Sing</button>
 				<button class:active={tab === 'words'} onclick={() => (tab = 'words')}>Compose</button>
 				<button class:active={tab === 'listen'} onclick={() => (tab = 'listen')}>Listen</button>
-				<button class:active={tab === 'learn'} onclick={() => (tab = 'learn')}>Learn</button>
 			</nav>
 
 			<div class="tabbody">
@@ -3488,8 +3952,8 @@ uv run birdy-pipeline build</pre>
 							{/each}
 							<p class="note faint">
 								{#if pipelineStatus}
-									Segmented into syllables and folded into the learning store; fit them in the
-									Learn tab.
+									Segmented into syllables and folded into the learning store; fit them on the
+									<b>learn</b> page, from the header.
 								{:else}
 									Start <span class="mono">birdy-pipeline serve</span> to send a recording into
 									the learning store.
@@ -3510,507 +3974,6 @@ uv run birdy-pipeline build</pre>
 							<p class="note">{pinned.function || 'No documented function.'}</p>
 							<button onclick={() => (pinnedCluster = -1)}>Unpin</button>
 						</section>
-					{/if}
-				{:else}
-					<section class="block">
-						<h3 class="blocktitle">Pipeline</h3>
-						{#if !pipelineChecked}
-							<p class="note faint mono">checking…</p>
-						{:else if !pipelineStatus && pipelineWaited < PIPELINE_START_GRACE_S}
-							<p class="note">
-								Starting the control process… <span class="mono faint"
-									>{pipelineWaited.toFixed(0)}s</span
-								>
-							</p>
-							<p class="note faint">
-								The first start compiles the oscillator kernels.
-							</p>
-						{:else if !pipelineStatus}
-							<p class="note">
-								No control process — usually <span class="mono">uv</span> is not on the dev
-								server's PATH. Start it yourself and this tab picks it up. The galaxy needs no
-								backend and is unaffected.
-							</p>
-							<pre class="mono">cd pipeline
-uv run birdy-pipeline serve</pre>
-							<p class="note faint">Binds to 127.0.0.1 only.</p>
-							<button onclick={refreshPipeline}>Check again</button>
-						{:else}
-							<!--
-								The path, first: a server started without --store holds the *old*
-								default store, and every learn/build job then runs against it — the
-								trap AGENTS.md warns about was invisible here because only counts
-								were shown. If this is not the store you meant, restart serve with
-								--store.
-							-->
-							{#if pipelineStatus.store.path}
-								<p class="note faint mono" title="The harvest store this server is holding">
-									{pipelineStatus.store.path}
-								</p>
-							{/if}
-							<dl class="facts mono">
-								<div><dt>store</dt><dd>{pipelineStatus.store.descriptors ?? 0} kept</dd></div>
-								<div><dt>seen</dt><dd>{pipelineStatus.store.descriptorsSeen ?? 0}</dd></div>
-								<div><dt>syllables</dt><dd>{pipelineStatus.store.syllables ?? 0}</dd></div>
-								<div><dt>recordings</dt><dd>{pipelineStatus.store.recordings ?? 0}</dd></div>
-							</dl>
-							{#if pipelineStatus.store.exists}
-								<p
-									class="note faint"
-									title="Near 0 and 1 mean the retained sample is a faithful miniature of everything that was discarded."
-								>
-									drift <b class="mono">{pipelineStatus.store.meanDrift?.toFixed(3)}</b> sd · spread
-									<b class="mono">{pipelineStatus.store.stdRatio?.toFixed(3)}</b>
-								</p>
-							{/if}
-							<!--
-								Which basis the next fit will use to decide what a syllable *type* is.
-								Worth its own line because it is not a setting, it is a claim about the
-								numbers: types clustered in the learned embedding are not the same types
-								as ones clustered by the seven hand-weighted values in
-								`learn._observation_vector`, so the resynthesis cosines beside them are
-								not comparable across a switch. Silently changing that basis and leaving
-								the old figures on screen would be the misleading version of this.
-							-->
-							{#if pipelineStatus.critic?.exists}
-								<p
-									class="note faint"
-									title="A small CNN trained on mel patches of the harvested syllables. It scores and embeds. It never generates audio, and nothing of it reaches this browser. Every note you hear still comes from the syrinx model."
-								>
-									typing <b class="mono"
-										>{pipelineStatus.critic.embedTyping ? 'learned embedding' : 'hand-written'}</b
-									>
-									{#if pipelineStatus.critic.report?.realism_auc_holdout}
-										· critic AUC
-										<b class="mono"
-											>{pipelineStatus.critic.report.realism_auc_holdout.toFixed(3)}</b
-										> on held-out species
-									{/if}
-								</p>
-							{:else}
-								<p
-									class="note faint"
-									title="Run `birdy-pipeline critic train` to learn a syllable embedding from the harvested patches. Until then, syllable types are decided by seven hand-weighted numbers."
-								>
-									typing <b class="mono">hand-written</b> · no critic trained
-								</p>
-							{/if}
-							<!--
-								"This bird just sang something new", as a count rather than a claim.
-								A flagged syllable is far from every known type centroid at a threshold
-								calibrated to a chosen 5 % false-positive rate (docs/09 §9.7) — that is a
-								detection, not an identification, and the line says so: the syllable stays
-								`unlabelled` (§8.5). Absent on a control process older than the scorer.
-							-->
-							{#if pipelineStatus.novelCount !== undefined}
-								<p
-									class="note faint"
-									title="Cosine distance in the critic's embedding to the nearest known type centroid, past a threshold calibrated to a chosen false-positive rate. ROC AUC 0.825 measured on species the critic never trained on (docs/09 §9.7)."
-								>
-									unheard syllables <b class="mono">{pipelineStatus.novelCount}</b>
-									{#if pipelineStatus.novelCount}
-										— real acoustics, no documented function: detecting that a sound is
-										new is not knowing what it means
-									{:else}
-										· none flagged yet
-									{/if}
-								</p>
-								{#if pipelineStatus.recentNovel?.length}
-									<dl class="facts mono">
-										{#each pipelineStatus.recentNovel as n (`${n.recordingId}/${n.order}`)}
-											<div>
-												<dt>{n.speciesId}</dt>
-												<dd>{n.typeId || 'no type yet'}</dd>
-											</div>
-										{/each}
-									</dl>
-								{/if}
-							{/if}
-						{/if}
-					</section>
-
-					{#if pipelineStatus}
-						<!--
-							The loop is the headline, because harvesting once is not what learning
-							from the wild is: a corpus of field recordings is never finished, and
-							the three manual steps below are that same cycle done by hand. One
-							switch runs it; everything under it is for driving a single step.
-						-->
-						<section class="block">
-						{#if pipelineStatus.discovered?.length}
-							<details class="rollup">
-								<summary class="mono faint">
-									{pipelineStatus.discovered.length} discovered species
-								</summary>
-								<p class="note faint discovered-note">
-									Harvested alongside the {pipelineStatus.inventorySpecies.length} documented
-									birds. No voice until enough audio arrives to fit one.
-								</p>
-								<ul class="discovered">
-									{#each pipelineStatus.discovered as d (d.id)}
-										<li class:live={jobRunning && learningSpecies === d.id}>
-											<span class="disc-name">{d.common}</span>
-											<span class="disc-pts mono">{d.descriptors} pts</span>
-											<span
-												class="disc-chip"
-												class:fitted={d.stage === 'fitted'}
-												class:collecting={d.stage === 'collecting'}
-												class:waiting={d.stage === 'waiting for audio'}
-											>
-												{d.stage === 'waiting for audio' ? 'waiting' : d.stage}
-											</span>
-										</li>
-									{/each}
-								</ul>
-							</details>
-						{/if}
-						<h3 class="blocktitle">Keep learning</h3>
-							<div class="row">
-								<button
-									class="primary"
-									class:on={job?.name === 'loop' && jobRunning}
-									disabled={pipelineBusy || (jobRunning && job?.name !== 'loop')}
-									title="Each pass harvests a few recordings, fits what came in, and grows the galaxy around what is already there. Runs in the control process, so closing the tab does not stop it."
-									onclick={() =>
-										runPipeline(() =>
-											job?.name === 'loop' && jobRunning
-												? pipeline.stop()
-												: pipeline.loop({
-											perSpecies: loopPerPass,
-											types: learnTypes,
-											discover: loopDiscover
-										})
-										)}
-								>
-									{job?.name === 'loop' && jobRunning ? 'Stop learning' : 'Start learning'}
-								</button>
-							</div>
-							<label class="field">
-								<span class="lbl">
-									Per pass <b class="mono">{loopPerPass}</b>
-								</span>
-								<input
-									type="range"
-									min="1"
-									max="10"
-									step="1"
-									bind:value={loopPerPass}
-									title="Recordings per species per pass. Small on purpose — a long harvest and one enormous rebuild is the discontinuity growing exists to remove."
-								/>
-							</label>
-							<label class="field">
-								<span class="lbl">
-									New species per pass <b class="mono">{loopDiscover}</b>
-								</span>
-								<input
-									type="range"
-									min="0"
-									max="6"
-									step="1"
-									bind:value={loopDiscover}
-									title="Look for this many birds xeno-canto has that the inventory does not, at the start of each pass — by default congeners of the species already modelled. 0 keeps the loop to the birds it already knows."
-								/>
-							</label>
-						</section>
-
-						<details class="rollup block">
-							<summary class="mono faint">run one step by hand</summary>
-
-						<section class="block">
-							<h3 class="blocktitle">Harvest</h3>
-							{#if !pipelineStatus.hasKey && !harvestFromDir}
-								<p class="note faint">
-									No <span class="mono">XC_API_KEY</span> in the server's environment. Set one to
-									download from xeno-canto, or point at a folder you already have.
-								</p>
-							{/if}
-							<label class="field">
-								<span class="lbl">Species</span>
-								<select bind:value={harvestSpecies}>
-									<option value="">every species the pipeline knows</option>
-									{#each harvestOptions as s (s.id)}
-										<option value={s.id}>{s.common}</option>
-									{/each}
-								</select>
-							</label>
-							<div class="sliders two">
-								<label class="field">
-									<span class="lbl">Per species <b class="mono">{harvestPerSpecies}</b></span>
-									<input type="range" min="1" max="60" step="1" bind:value={harvestPerSpecies} />
-								</label>
-								<label class="field">
-									<span class="lbl">Quality</span>
-									<select bind:value={harvestQuality}>
-										<option value="A">A only</option>
-										<option value="&gt;B">B and better</option>
-										<option value="&gt;C">C and better</option>
-									</select>
-								</label>
-							</div>
-							<div class="sliders two">
-								<label class="field">
-									<span class="lbl"
-										>Analysed per recording <b class="mono">{harvestMaxSeconds}s</b></span
-									>
-									<input
-										type="range"
-										min="15"
-										max="300"
-										step="15"
-										bind:value={harvestMaxSeconds}
-									/>
-								</label>
-								<label class="field">
-									<span class="lbl"
-										>Store cap <b class="mono">{harvestCap.toLocaleString()}</b> kept</span
-									>
-									<input
-										type="range"
-										min="5000"
-										max="100000"
-										step="5000"
-										bind:value={harvestCap}
-									/>
-								</label>
-							</div>
-							<label class="field">
-								<span class="lbl">Or a local folder</span>
-								<input type="text" placeholder="/path/to/recordings" bind:value={harvestFromDir} />
-							</label>
-							<div class="row">
-								<button
-									disabled={jobRunning || pipelineBusy}
-									onclick={() =>
-										runPipeline(() =>
-											pipeline.harvest({
-												species: harvestSpecies || null,
-												perSpecies: harvestPerSpecies,
-												quality: harvestQuality,
-												cap: harvestCap,
-												maxSeconds: harvestMaxSeconds,
-												fromDir: harvestFromDir || null,
-												dryRun: true
-											})
-										)}>Dry run</button
-								>
-								<button
-									class="primary"
-									disabled={jobRunning || pipelineBusy}
-									title="Fetched and analysed one at a time, then deleted unless its licence allows keeping it. Only the measurements go into the store, and no audio is ever shipped."
-									onclick={() =>
-										runPipeline(() =>
-											pipeline.harvest({
-												species: harvestSpecies || null,
-												perSpecies: harvestPerSpecies,
-												quality: harvestQuality,
-												cap: harvestCap,
-												maxSeconds: harvestMaxSeconds,
-												fromDir: harvestFromDir || null
-											})
-										)}>Harvest</button
-								>
-							</div>
-						</section>
-
-						<section class="block">
-							<h3 class="blocktitle">Learn</h3>
-							<label class="field">
-								<span class="lbl">Fewest types per species <b class="mono">{learnTypes}</b></span>
-								<input
-									type="range"
-									min="2"
-									max="24"
-									step="1"
-									bind:value={learnTypes}
-									title="A floor, not the answer. The repertoire size is chosen per species by silhouette over a sweep, so a well-recorded bird gets more types than a thinly recorded one; this is only where that sweep starts."
-								/>
-							</label>
-							<button
-								class="wide"
-								disabled={jobRunning || pipelineBusy || !pipelineStatus.store.syllables}
-								title="Fitted syllables are written next to the documented calls, never instead of them: ids start with L and carry no function."
-								onclick={() => runPipeline(() => pipeline.learn({ types: learnTypes }))}
-								>Fit syllables and syntax</button
-							>
-							{#if pipelineStatus.learned.exists}
-								<dl
-									class="facts mono"
-									title="Cosine between each fitted syllable's resynthesis and its type's cluster in the 28-d descriptor space — a clustering match, not an audible-fidelity guarantee: docs/19 measured its correlation with audible distortion at ≈ 0.1. Audible fidelity is measured separately (MCD, on the bench), and is not shown here."
-								>
-									<div><dt>median cosine</dt><dd>{pipelineStatus.learned.medianCosine ?? '—'}</dd></div>
-									<div><dt>worst</dt><dd>{pipelineStatus.learned.worstCosine ?? '—'}</dd></div>
-								</dl>
-								{#if learnedTotals}
-									<details class="rollup">
-										<summary class="mono faint"
-											>{learnedTotals.species} species · {learnedTotals.types} types fitted</summary
-										>
-										<div class="fitted">
-											{#each pipelineStatus.learned.species ?? [] as sp (sp.id)}
-												<div
-													class="fit"
-													title={sp.bout.length
-														? `one sampled bout — a burst of singing, syllables under a second apart: ${sp.bout.join(' ')}`
-														: 'no bout sampled'}
-												>
-													<span class="fit-name">{sp.common}</span>
-													<span class="mono faint">{sp.types}t · {sp.states}s</span>
-												</div>
-											{/each}
-										</div>
-									</details>
-								{/if}
-							{:else}
-								<p class="note faint">Nothing fitted yet. Harvest some recordings first.</p>
-							{/if}
-						</section>
-
-						<section class="block">
-							<h3
-								class="blocktitle help"
-								title="Renders {pipelineStatus.learned.exists
-									? `${learnedTypeCount} fitted + 44 documented`
-									: '44 documented'} syllables and folds in the whole harvest. Both always."
-							>
-								Rebuild the galaxy
-							</h3>
-							<div class="segmented">
-								<button
-									class:on={buildClustering === 'kmeans'}
-									onclick={() => (buildClustering = 'kmeans')}
-									title="One cluster per syllable type, seeded at that type's own centre, every point assigned. This is what lets the app name, label and draw a path for anything it sings — it cannot report an unidentified sound."
-									>Name everything</button
-								>
-								<button
-									class:on={buildClustering === 'hdbscan'}
-									onclick={() => (buildClustering = 'hdbscan')}
-									title="Find however many dense regions there are and leave the rest unassigned. Regions of real audio with nothing documented in them are flagged `unknown` — candidate new syllables. Coverage is not guaranteed, so this is for discovery rather than for the galaxy you listen in."
-									>Find the unknown</button
-								>
-								<button
-									class:on={buildClustering === 'label'}
-									onclick={() => (buildClustering = 'label')}
-									title="Skip the clustering for every sound that already carries a type and give each type its own knot; k-means runs only over the sounds with no label. Every type gets a knot, so nothing sings without lighting — but the knots are then the labels rather than a second, independent finding, and this view still cannot report an unidentified sound. This is the answer at full-corpus scale and it is what the shipped build uses: 348 461 sounds in 14 003 knots, every type covered. Asking k-means for tens of thousands of groups is the wrong instrument (docs/22 §22.5)."
-									>Use the labels</button
-								>
-							</div>
-							{#if buildClustering === 'label'}
-								<!--
-									Said on the surface that offers it, because it is the one honesty
-									difference between this and "Name everything": coverage becomes
-									certain and purity stops being a measurement (docs/22 §22.8).
-								-->
-								<p class="note faint">
-									Every type gets its own knot, so type coverage will read 100 % — by
-									construction, not as a finding. Cluster purity stops measuring the map for
-									the same reason; what still measures it is whether a live sound's nearest
-									knot is its own type.
-								</p>
-							{/if}
-							{#if buildClustering === 'hdbscan'}
-								<label class="field">
-									<span class="lbl">
-										Smallest type <b class="mono">{buildMinCluster}</b>
-									</span>
-									<input
-										type="range"
-										min="5"
-										max="200"
-										step="5"
-										bind:value={buildMinCluster}
-										title="Fewest points that may be called a syllable type. Lower finds more, smaller groups and calls less of the corpus noise."
-									/>
-								</label>
-							{/if}
-							<details class="diag">
-								<summary
-									class="note faint"
-									title="For reading a measurement, not for a galaxy to use: leaving a half out of the corpus is how you verify a figure, at the price of a galaxy that is missing it."
-								>
-									Leave one out (diagnostic)
-								</summary>
-								<div class="checks">
-									<label
-										class="check"
-										title="Off: build the documented repertoire alone, without the syllables fitted to real recordings."
-									>
-										<input
-											type="checkbox"
-											bind:checked={buildUseLearned}
-											disabled={!pipelineStatus.learned.exists}
-										/> Fitted syllables
-									</label>
-									<label
-										class="check"
-										title="Off: build the renders alone. Useful for reading verify:features; the galaxy loses the real repertoire's shape."
-									>
-										<input type="checkbox" bind:checked={buildIncludeHarvest} /> Harvested audio
-									</label>
-								</div>
-							</details>
-							<button
-								class="wide"
-								disabled={jobRunning || pipelineBusy}
-								title="Each learning pass rebuilds when the repertoire has moved on; this only forces it now. Clustering and the projection are computed over the whole corpus at once, so a syllable learned a minute ago has no position until the next build."
-								onclick={() =>
-									runPipeline(() =>
-										pipeline.build({
-											useLearned: buildUseLearned,
-											includeHarvest: buildIncludeHarvest,
-											clustering: buildClustering,
-											minClusterSize: buildMinCluster
-										})
-									)}>Rebuild</button
-							>
-							{#if pipelineStatus.built.exists}
-								<dl class="facts mono">
-									<div><dt>points</dt><dd>{pipelineStatus.built.points ?? '—'}</dd></div>
-									<div><dt>clusters</dt><dd>{pipelineStatus.built.clusters ?? '—'}</dd></div>
-									{#if coverage}
-										<div>
-											<dt>named</dt>
-											<dd class:warn={coverage.share < 0.98}>
-												{coverage.withCluster}/{coverage.types}
-											</dd>
-										</div>
-									{/if}
-								</dl>
-								{#if coverage && coverage.orphans.length}
-									<p class="note faint">
-										{coverage.orphans.length} type{coverage.orphans.length === 1 ? '' : 's'} with
-										no cluster, so nothing lights when they are sung:
-										<span class="mono">{coverage.orphans.slice(0, 4).join(', ')}</span
-										>{coverage.orphans.length > 4 ? ` +${coverage.orphans.length - 4}` : ''}
-									</p>
-								{/if}
-								{#if relationHeadline}
-									<p class="note faint">Geometry: {relationHeadline}</p>
-								{/if}
-							{/if}
-							{#if corpusHealth}
-								<dl
-									class="facts mono"
-									title="Knots that carry a documented function, and knots a syllable can be sung into. A corpus with none of the second draws no threads at all, because nothing resolves to a place."
-								>
-									<div><dt>documented</dt><dd>{corpusHealth.documented}/{corpusHealth.clusters}</dd></div>
-									<div><dt>singable</dt><dd>{corpusHealth.mapped}</dd></div>
-								</dl>
-								{#if corpusHealth.mapped === 0}
-									<p class="note faint">
-										<b>No knot in this galaxy is tied to a syllable</b>, so nothing draws a
-										thread and nothing lights when a bird sings. A harvest-only build has that
-										shape: it is real audio with no documented calls in it. Rebuild with
-										<b>synthetic renders</b> — with <b>Harvested</b> still ticked — to get a
-										corpus that carries both.
-									</p>
-								{/if}
-							{/if}
-							{#if reloading}
-								<p class="note faint">Loading the new galaxy…</p>
-							{/if}
-						</section>
-
-						</details>
 					{/if}
 				{/if}
 			</div>
@@ -4040,6 +4003,517 @@ uv run birdy-pipeline serve</pre>
 		</div>
 	{/if}
 {/if}
+
+<!--
+	The pipeline controls, as a snippet.
+
+	A snippet rather than markup in place because the page that renders it is defined
+	before the `{:else if !assets}` branches that hold the stage, and a five-hundred-line
+	block of range sliders in the middle of the stage's markup buries the stage. It is
+	rendered once, from the Learn page.
+-->
+{#snippet learnControls()}
+	<section class="block">
+		<h3 class="blocktitle">Pipeline</h3>
+		{#if !pipelineChecked}
+			<p class="note faint mono">checking…</p>
+		{:else if !pipelineStatus && pipelineWaited < PIPELINE_START_GRACE_S}
+			<p class="note">
+				Starting the control process… <span class="mono faint"
+					>{pipelineWaited.toFixed(0)}s</span
+				>
+			</p>
+			<p class="note faint">
+				The first start compiles the oscillator kernels.
+			</p>
+		{:else if !pipelineStatus}
+			<p class="note">
+				No control process — usually <span class="mono">uv</span> is not on the dev
+				server's PATH. Start it yourself and this tab picks it up. The galaxy needs no
+				backend and is unaffected.
+			</p>
+			<pre class="mono">cd pipeline
+uv run birdy-pipeline serve</pre>
+			<p class="note faint">Binds to 127.0.0.1 only.</p>
+			<button onclick={refreshPipeline}>Check again</button>
+		{:else}
+			<!--
+				The path, first: a server started without --store holds the *old*
+				default store, and every learn/build job then runs against it — the
+				trap AGENTS.md warns about was invisible here because only counts
+				were shown. If this is not the store you meant, restart serve with
+				--store.
+			-->
+			{#if pipelineStatus.store.path}
+				<p class="note faint mono" title="The harvest store this server is holding">
+					{pipelineStatus.store.path}
+				</p>
+			{/if}
+			<dl class="facts mono">
+				<div><dt>store</dt><dd>{pipelineStatus.store.descriptors ?? 0} kept</dd></div>
+				<div><dt>seen</dt><dd>{pipelineStatus.store.descriptorsSeen ?? 0}</dd></div>
+				<div><dt>syllables</dt><dd>{pipelineStatus.store.syllables ?? 0}</dd></div>
+				<div><dt>recordings</dt><dd>{pipelineStatus.store.recordings ?? 0}</dd></div>
+			</dl>
+			{#if pipelineStatus.store.exists}
+				<p
+					class="note faint"
+					title="Near 0 and 1 mean the retained sample is a faithful miniature of everything that was discarded."
+				>
+					drift <b class="mono">{pipelineStatus.store.meanDrift?.toFixed(3)}</b> sd · spread
+					<b class="mono">{pipelineStatus.store.stdRatio?.toFixed(3)}</b>
+				</p>
+			{/if}
+			<!--
+				Which basis the next fit will use to decide what a syllable *type* is.
+				Worth its own line because it is not a setting, it is a claim about the
+				numbers: types clustered in the learned embedding are not the same types
+				as ones clustered by the seven hand-weighted values in
+				`learn._observation_vector`, so the resynthesis cosines beside them are
+				not comparable across a switch. Silently changing that basis and leaving
+				the old figures on screen would be the misleading version of this.
+			-->
+			{#if pipelineStatus.critic?.exists}
+				<p
+					class="note faint"
+					title="A small CNN trained on mel patches of the harvested syllables. It scores and embeds. It never generates audio, and nothing of it reaches this browser. Every note you hear still comes from the syrinx model."
+				>
+					typing <b class="mono"
+						>{pipelineStatus.critic.embedTyping ? 'learned embedding' : 'hand-written'}</b
+					>
+					{#if pipelineStatus.critic.report?.realism_auc_holdout}
+						· critic AUC
+						<b class="mono"
+							>{pipelineStatus.critic.report.realism_auc_holdout.toFixed(3)}</b
+						> on held-out species
+					{/if}
+				</p>
+			{:else}
+				<p
+					class="note faint"
+					title="Run `birdy-pipeline critic train` to learn a syllable embedding from the harvested patches. Until then, syllable types are decided by seven hand-weighted numbers."
+				>
+					typing <b class="mono">hand-written</b> · no critic trained
+				</p>
+			{/if}
+			<!--
+				"This bird just sang something new", as a count rather than a claim.
+				A flagged syllable is far from every known type centroid at a threshold
+				calibrated to a chosen 5 % false-positive rate (docs/09 §9.7) — that is a
+				detection, not an identification, and the line says so: the syllable stays
+				`unlabelled` (§8.5). Absent on a control process older than the scorer.
+			-->
+			{#if pipelineStatus.novelCount !== undefined}
+				<p
+					class="note faint"
+					title="Cosine distance in the critic's embedding to the nearest known type centroid, past a threshold calibrated to a chosen false-positive rate. ROC AUC 0.825 measured on species the critic never trained on (docs/09 §9.7)."
+				>
+					unheard syllables <b class="mono">{pipelineStatus.novelCount}</b>
+					{#if pipelineStatus.novelCount}
+						— real acoustics, no documented function: detecting that a sound is
+						new is not knowing what it means
+					{:else}
+						· none flagged yet
+					{/if}
+				</p>
+				{#if pipelineStatus.recentNovel?.length}
+					<dl class="facts mono">
+						{#each pipelineStatus.recentNovel as n (`${n.recordingId}/${n.order}`)}
+							<div>
+								<dt>{n.speciesId}</dt>
+								<dd>{n.typeId || 'no type yet'}</dd>
+							</div>
+						{/each}
+					</dl>
+				{/if}
+			{/if}
+		{/if}
+	</section>
+
+	{#if pipelineStatus}
+		<!--
+			The loop is the headline, because harvesting once is not what learning
+			from the wild is: a corpus of field recordings is never finished, and
+			the three manual steps below are that same cycle done by hand. One
+			switch runs it; everything under it is for driving a single step.
+		-->
+		<section class="block">
+		{#if pipelineStatus.discovered?.length}
+			<details class="rollup">
+				<summary class="mono faint">
+					{pipelineStatus.discovered.length} discovered species
+				</summary>
+				<p class="note faint discovered-note">
+					Harvested alongside the {pipelineStatus.inventorySpecies.length} documented
+					birds. No voice until enough audio arrives to fit one.
+				</p>
+				<ul class="discovered">
+					{#each pipelineStatus.discovered as d (d.id)}
+						<li class:live={jobRunning && learningSpecies === d.id}>
+							<span class="disc-name">{d.common}</span>
+							<span class="disc-pts mono">{d.descriptors} pts</span>
+							<span
+								class="disc-chip"
+								class:fitted={d.stage === 'fitted'}
+								class:collecting={d.stage === 'collecting'}
+								class:waiting={d.stage === 'waiting for audio'}
+							>
+								{d.stage === 'waiting for audio' ? 'waiting' : d.stage}
+							</span>
+						</li>
+					{/each}
+				</ul>
+			</details>
+		{/if}
+		<h3 class="blocktitle">Keep learning</h3>
+			<div class="row">
+				<button
+					class="primary"
+					class:on={job?.name === 'loop' && jobRunning}
+					disabled={pipelineBusy || (jobRunning && job?.name !== 'loop')}
+					title="Each pass harvests a few recordings, fits what came in, and grows the galaxy around what is already there. Runs in the control process, so closing the tab does not stop it."
+					onclick={() =>
+						runPipeline(() =>
+							job?.name === 'loop' && jobRunning
+								? pipeline.stop()
+								: pipeline.loop({
+							perSpecies: loopPerPass,
+							types: learnTypes,
+							discover: loopDiscover
+						})
+						)}
+				>
+					{job?.name === 'loop' && jobRunning ? 'Stop learning' : 'Start learning'}
+				</button>
+			</div>
+			<label class="field">
+				<span class="lbl">
+					Per pass <b class="mono">{loopPerPass}</b>
+				</span>
+				<input
+					type="range"
+					min="1"
+					max="10"
+					step="1"
+					bind:value={loopPerPass}
+					title="Recordings per species per pass. Small on purpose — a long harvest and one enormous rebuild is the discontinuity growing exists to remove."
+				/>
+			</label>
+			<label class="field">
+				<span class="lbl">
+					New species per pass <b class="mono">{loopDiscover}</b>
+				</span>
+				<input
+					type="range"
+					min="0"
+					max="6"
+					step="1"
+					bind:value={loopDiscover}
+					title="Look for this many birds xeno-canto has that the inventory does not, at the start of each pass — by default congeners of the species already modelled. 0 keeps the loop to the birds it already knows."
+				/>
+			</label>
+		</section>
+
+		<details class="rollup block">
+			<summary class="mono faint">run one step by hand</summary>
+
+		<section class="block">
+			<h3 class="blocktitle">Harvest</h3>
+			{#if !pipelineStatus.hasKey && !harvestFromDir}
+				<p class="note faint">
+					No <span class="mono">XC_API_KEY</span> in the server's environment. Set one to
+					download from xeno-canto, or point at a folder you already have.
+				</p>
+			{/if}
+			<label class="field">
+				<span class="lbl">Species</span>
+				<select bind:value={harvestSpecies}>
+					<option value="">every species the pipeline knows</option>
+					{#each harvestOptions as s (s.id)}
+						<option value={s.id}>{s.common}</option>
+					{/each}
+				</select>
+			</label>
+			<div class="sliders two">
+				<label class="field">
+					<span class="lbl">Per species <b class="mono">{harvestPerSpecies}</b></span>
+					<input type="range" min="1" max="60" step="1" bind:value={harvestPerSpecies} />
+				</label>
+				<label class="field">
+					<span class="lbl">Quality</span>
+					<select bind:value={harvestQuality}>
+						<option value="A">A only</option>
+						<option value="&gt;B">B and better</option>
+						<option value="&gt;C">C and better</option>
+					</select>
+				</label>
+			</div>
+			<div class="sliders two">
+				<label class="field">
+					<span class="lbl"
+						>Analysed per recording <b class="mono">{harvestMaxSeconds}s</b></span
+					>
+					<input
+						type="range"
+						min="15"
+						max="300"
+						step="15"
+						bind:value={harvestMaxSeconds}
+					/>
+				</label>
+				<label class="field">
+					<span class="lbl"
+						>Store cap <b class="mono">{harvestCap.toLocaleString()}</b> kept</span
+					>
+					<input
+						type="range"
+						min="5000"
+						max="100000"
+						step="5000"
+						bind:value={harvestCap}
+					/>
+				</label>
+			</div>
+			<label class="field">
+				<span class="lbl">Or a local folder</span>
+				<input type="text" placeholder="/path/to/recordings" bind:value={harvestFromDir} />
+			</label>
+			<div class="row">
+				<button
+					disabled={jobRunning || pipelineBusy}
+					onclick={() =>
+						runPipeline(() =>
+							pipeline.harvest({
+								species: harvestSpecies || null,
+								perSpecies: harvestPerSpecies,
+								quality: harvestQuality,
+								cap: harvestCap,
+								maxSeconds: harvestMaxSeconds,
+								fromDir: harvestFromDir || null,
+								dryRun: true
+							})
+						)}>Dry run</button
+				>
+				<button
+					class="primary"
+					disabled={jobRunning || pipelineBusy}
+					title="Fetched and analysed one at a time, then deleted unless its licence allows keeping it. Only the measurements go into the store, and no audio is ever shipped."
+					onclick={() =>
+						runPipeline(() =>
+							pipeline.harvest({
+								species: harvestSpecies || null,
+								perSpecies: harvestPerSpecies,
+								quality: harvestQuality,
+								cap: harvestCap,
+								maxSeconds: harvestMaxSeconds,
+								fromDir: harvestFromDir || null
+							})
+						)}>Harvest</button
+				>
+			</div>
+		</section>
+
+		<section class="block">
+			<h3 class="blocktitle">Learn</h3>
+			<label class="field">
+				<span class="lbl">Fewest types per species <b class="mono">{learnTypes}</b></span>
+				<input
+					type="range"
+					min="2"
+					max="24"
+					step="1"
+					bind:value={learnTypes}
+					title="A floor, not the answer. The repertoire size is chosen per species by silhouette over a sweep, so a well-recorded bird gets more types than a thinly recorded one; this is only where that sweep starts."
+				/>
+			</label>
+			<button
+				class="wide"
+				disabled={jobRunning || pipelineBusy || !pipelineStatus.store.syllables}
+				title="Fitted syllables are written next to the documented calls, never instead of them: ids start with L and carry no function."
+				onclick={() => runPipeline(() => pipeline.learn({ types: learnTypes }))}
+				>Fit syllables and syntax</button
+			>
+			{#if pipelineStatus.learned.exists}
+				<dl
+					class="facts mono"
+					title="Cosine between each fitted syllable's resynthesis and its type's cluster in the 28-d descriptor space — a clustering match, not an audible-fidelity guarantee: docs/19 measured its correlation with audible distortion at ≈ 0.1. Audible fidelity is measured separately (MCD, on the bench), and is not shown here."
+				>
+					<div><dt>median cosine</dt><dd>{pipelineStatus.learned.medianCosine ?? '—'}</dd></div>
+					<div><dt>worst</dt><dd>{pipelineStatus.learned.worstCosine ?? '—'}</dd></div>
+				</dl>
+				{#if learnedTotals}
+					<details class="rollup">
+						<summary class="mono faint"
+							>{learnedTotals.species} species · {learnedTotals.types} types fitted</summary
+						>
+						<div class="fitted">
+							{#each pipelineStatus.learned.species ?? [] as sp (sp.id)}
+								<div
+									class="fit"
+									title={sp.bout.length
+										? `one sampled bout — a burst of singing, syllables under a second apart: ${sp.bout.join(' ')}`
+										: 'no bout sampled'}
+								>
+									<span class="fit-name">{sp.common}</span>
+									<span class="mono faint">{sp.types}t · {sp.states}s</span>
+								</div>
+							{/each}
+						</div>
+					</details>
+				{/if}
+			{:else}
+				<p class="note faint">Nothing fitted yet. Harvest some recordings first.</p>
+			{/if}
+		</section>
+
+		<section class="block">
+			<h3
+				class="blocktitle help"
+				title="Renders {pipelineStatus.learned.exists
+					? `${learnedTypeCount} fitted + 44 documented`
+					: '44 documented'} syllables and folds in the whole harvest. Both always."
+			>
+				Rebuild the galaxy
+			</h3>
+			<div class="segmented">
+				<button
+					class:on={buildClustering === 'kmeans'}
+					onclick={() => (buildClustering = 'kmeans')}
+					title="One cluster per syllable type, seeded at that type's own centre, every point assigned. This is what lets the app name, label and draw a path for anything it sings — it cannot report an unidentified sound."
+					>Name everything</button
+				>
+				<button
+					class:on={buildClustering === 'hdbscan'}
+					onclick={() => (buildClustering = 'hdbscan')}
+					title="Find however many dense regions there are and leave the rest unassigned. Regions of real audio with nothing documented in them are flagged `unknown` — candidate new syllables. Coverage is not guaranteed, so this is for discovery rather than for the galaxy you listen in."
+					>Find the unknown</button
+				>
+				<button
+					class:on={buildClustering === 'label'}
+					onclick={() => (buildClustering = 'label')}
+					title="Skip the clustering for every sound that already carries a type and give each type its own knot; k-means runs only over the sounds with no label. Every type gets a knot, so nothing sings without lighting — but the knots are then the labels rather than a second, independent finding, and this view still cannot report an unidentified sound. This is the answer at full-corpus scale and it is what the shipped build uses: 348 461 sounds in 14 003 knots, every type covered. Asking k-means for tens of thousands of groups is the wrong instrument (docs/22 §22.5)."
+					>Use the labels</button
+				>
+			</div>
+			{#if buildClustering === 'label'}
+				<!--
+					Said on the surface that offers it, because it is the one honesty
+					difference between this and "Name everything": coverage becomes
+					certain and purity stops being a measurement (docs/22 §22.8).
+				-->
+				<p class="note faint">
+					Every type gets its own knot, so type coverage will read 100 % — by
+					construction, not as a finding. Cluster purity stops measuring the map for
+					the same reason; what still measures it is whether a live sound's nearest
+					knot is its own type.
+				</p>
+			{/if}
+			{#if buildClustering === 'hdbscan'}
+				<label class="field">
+					<span class="lbl">
+						Smallest type <b class="mono">{buildMinCluster}</b>
+					</span>
+					<input
+						type="range"
+						min="5"
+						max="200"
+						step="5"
+						bind:value={buildMinCluster}
+						title="Fewest points that may be called a syllable type. Lower finds more, smaller groups and calls less of the corpus noise."
+					/>
+				</label>
+			{/if}
+			<details class="diag">
+				<summary
+					class="note faint"
+					title="For reading a measurement, not for a galaxy to use: leaving a half out of the corpus is how you verify a figure, at the price of a galaxy that is missing it."
+				>
+					Leave one out (diagnostic)
+				</summary>
+				<div class="checks">
+					<label
+						class="check"
+						title="Off: build the documented repertoire alone, without the syllables fitted to real recordings."
+					>
+						<input
+							type="checkbox"
+							bind:checked={buildUseLearned}
+							disabled={!pipelineStatus.learned.exists}
+						/> Fitted syllables
+					</label>
+					<label
+						class="check"
+						title="Off: build the renders alone. Useful for reading verify:features; the galaxy loses the real repertoire's shape."
+					>
+						<input type="checkbox" bind:checked={buildIncludeHarvest} /> Harvested audio
+					</label>
+				</div>
+			</details>
+			<button
+				class="wide"
+				disabled={jobRunning || pipelineBusy}
+				title="Each learning pass rebuilds when the repertoire has moved on; this only forces it now. Clustering and the projection are computed over the whole corpus at once, so a syllable learned a minute ago has no position until the next build."
+				onclick={() =>
+					runPipeline(() =>
+						pipeline.build({
+							useLearned: buildUseLearned,
+							includeHarvest: buildIncludeHarvest,
+							clustering: buildClustering,
+							minClusterSize: buildMinCluster
+						})
+					)}>Rebuild</button
+			>
+			{#if pipelineStatus.built.exists}
+				<dl class="facts mono">
+					<div><dt>points</dt><dd>{pipelineStatus.built.points ?? '—'}</dd></div>
+					<div><dt>clusters</dt><dd>{pipelineStatus.built.clusters ?? '—'}</dd></div>
+					{#if coverage}
+						<div>
+							<dt>named</dt>
+							<dd class:warn={coverage.share < 0.98}>
+								{coverage.withCluster}/{coverage.types}
+							</dd>
+						</div>
+					{/if}
+				</dl>
+				{#if coverage && coverage.orphans.length}
+					<p class="note faint">
+						{coverage.orphans.length} type{coverage.orphans.length === 1 ? '' : 's'} with
+						no cluster, so nothing lights when they are sung:
+						<span class="mono">{coverage.orphans.slice(0, 4).join(', ')}</span
+						>{coverage.orphans.length > 4 ? ` +${coverage.orphans.length - 4}` : ''}
+					</p>
+				{/if}
+				{#if relationHeadline}
+					<p class="note faint">Geometry: {relationHeadline}</p>
+				{/if}
+			{/if}
+			{#if corpusHealth}
+				<dl
+					class="facts mono"
+					title="Knots that carry a documented function, and knots a syllable can be sung into. A corpus with none of the second draws no threads at all, because nothing resolves to a place."
+				>
+					<div><dt>documented</dt><dd>{corpusHealth.documented}/{corpusHealth.clusters}</dd></div>
+					<div><dt>singable</dt><dd>{corpusHealth.mapped}</dd></div>
+				</dl>
+				{#if corpusHealth.mapped === 0}
+					<p class="note faint">
+						<b>No knot in this galaxy is tied to a syllable</b>, so nothing draws a
+						thread and nothing lights when a bird sings. A harvest-only build has that
+						shape: it is real audio with no documented calls in it. Rebuild with
+						<b>synthetic renders</b> — with <b>Harvested</b> still ticked — to get a
+						corpus that carries both.
+					</p>
+				{/if}
+			{/if}
+			{#if reloading}
+				<p class="note faint">Loading the new galaxy…</p>
+			{/if}
+		</section>
+
+		</details>
+	{/if}
+{/snippet}
 
 <style>
 	/* A bench, not a page: a rule across the top, an instrument panel down each side and
@@ -4087,7 +4561,13 @@ uv run birdy-pipeline serve</pre>
 		font-size: 0.68rem;
 	}
 
-	.readings > div {
+	/* Every cell of the row, including the two that open a page.
+	   **The openers used to be excluded from this**, because a `> div` selector does not
+	   match a `<button>` — so they had no padding and no divider, and `info close` ran
+	   straight into `learn open` as one word. A cell of the readings row is a cell of the
+	   readings row whichever element it is. */
+	.readings > div,
+	.readings > .reading-open {
 		display: grid;
 		gap: 0.1rem;
 		padding: 0 0.75rem;
@@ -4181,40 +4661,117 @@ uv run birdy-pipeline serve</pre>
 	   the instrument over rather than leaving it for a document. Nothing here is a card:
 	   the panels elsewhere float above the stage, and a page that floats above a page
 	   would just be the popover this replaced, bigger. */
+	/* **No ruling on a page of text.** The grid was here so that opening a page read as
+	   turning the same instrument over — but a rule running through every line of body copy
+	   is not a metaphor, it is an unreadable paragraph. The stage keeps its graph; a document
+	   is paper. */
 	.stagepage {
 		position: absolute;
 		inset: 0;
 		z-index: 6;
 		overflow-y: auto;
-		padding: 1.4rem 1.8rem 3rem;
-		background:
-			linear-gradient(var(--rule) 1px, transparent 1px) 0 0 / 100% 2.4rem,
-			linear-gradient(90deg, var(--rule) 1px, transparent 1px) 0 0 / 2.4rem 100%,
-			var(--paper);
+		padding: 0;
+		background: var(--paper-raised);
 	}
 
+	/* Full width, because two columns of reference material at 78rem in the middle of a
+	   1600 px screen wastes the half of the screen that would have held the second column.
+	   The padding is what keeps it off the edges. */
+	.pagesheet {
+		min-height: 100%;
+	}
+
+	/* Sticky, because these are long documents: on a page you scroll for a minute, a close
+	   button at the top is a close button you have to scroll back to. */
 	.pagehead {
+		position: sticky;
+		top: 0;
+		z-index: 2;
 		display: flex;
-		align-items: flex-start;
+		align-items: baseline;
 		justify-content: space-between;
-		gap: 1rem;
-		padding-bottom: 0.8rem;
+		gap: 1.5rem;
+		padding: 1.1rem 2.6rem 0.9rem;
+		background: var(--paper-raised);
 		border-bottom: 1px solid var(--ink);
-		margin-bottom: 1.6rem;
 	}
 
 	.pagehead h2 {
 		margin: 0;
-		font-size: 1.15rem;
-		letter-spacing: 0.01em;
+		font-size: 1.05rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+	}
+
+	.pagehead .strap {
+		margin: 0.25rem 0 0;
 	}
 
 	.pageclose {
 		flex: initial;
 		padding: 0.3rem 0.7rem;
-		font-size: 0.7rem;
-		letter-spacing: 0.04em;
+		font-size: 0.66rem;
+		letter-spacing: 0.08em;
 		text-transform: uppercase;
+	}
+
+	/**
+	 * Two columns across the whole width, and the columns are what give prose its measure.
+	 *
+	 * A paragraph running the full width of a 1600 px screen is one long line the eye loses
+	 * its place in — which is what the first version did — and a single centred 38rem column
+	 * leaves two thirds of the screen empty. Two columns solve both at once: each is about a
+	 * paragraph wide, and together they fill the page.
+	 *
+	 * `align-content: start` so a short right column does not stretch its sections, and the
+	 * gap is wide enough (3.5rem) that the two columns cannot be read as one wrapped line.
+	 */
+	.pagebody {
+		padding: 2rem 2.6rem 4rem;
+		display: grid;
+		gap: 0 3.5rem;
+		grid-template-columns: 1fr;
+		align-content: start;
+	}
+
+	@media (min-width: 68rem) {
+		.pagebody.twocol {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		}
+	}
+
+	/* Inside a column the measure is the column, so this only caps the widest case. */
+	.measure {
+		max-width: 44rem;
+	}
+
+	/* Numbered sections, because this is a document about measurements and a reader who
+	   wants to point at one needs something to point at. */
+	.pagesection {
+		padding: 0 0 2.4rem;
+		min-width: 0;
+	}
+
+	.pagesection > h3 {
+		display: flex;
+		align-items: baseline;
+		gap: 0.7rem;
+		margin: 0 0 1rem;
+		font-size: 0.9rem;
+		letter-spacing: 0.02em;
+		padding-bottom: 0.45rem;
+		border-bottom: 1px solid var(--rule);
+	}
+
+	.pagesection > h3 .num {
+		flex: none;
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+		color: var(--ink-faint);
+	}
+
+	.pagesection :global(p) {
+		margin: 0 0 0.9rem;
 	}
 
 	/* Two columns once there is room for two: prose on the left, reference on the right,
@@ -4223,17 +4780,222 @@ uv run birdy-pipeline serve</pre>
 		display: grid;
 		gap: 1.6rem 2.6rem;
 		grid-template-columns: 1fr;
-		max-width: 78rem;
 	}
 
-	@media (min-width: 60rem) {
+	@media (min-width: 66rem) {
 		.pagegrid {
-			grid-template-columns: minmax(0, 24rem) minmax(0, 1fr);
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 		}
 	}
 
 	.pagecol > :global(section.block) {
 		margin-bottom: 1.2rem;
+	}
+
+	/* A figure is a screenshot of the instrument, so it is framed like the stage: a rule
+	   around it and the caption under it in the same voice as the readings. Numbered, and
+	   the number is referenced from the prose, because "as shown above" stops being true
+	   the moment the layout reflows. */
+	.figure {
+		margin: 0 0 1.4rem;
+		max-width: 44rem;
+	}
+
+	.figure img {
+		display: block;
+		width: 100%;
+		height: auto;
+		border: 1px solid var(--rule);
+		background: var(--paper);
+	}
+
+	.figure figcaption {
+		margin-top: 0.5rem;
+		font-size: 0.72rem;
+		line-height: 1.55;
+		color: var(--ink-dim);
+	}
+
+	.figure figcaption b {
+		font-family: var(--font-mono);
+		font-size: 0.68rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--ink-faint);
+		font-weight: 400;
+		margin-right: 0.4rem;
+	}
+
+	/* The vocabulary. A word, then what it is — as a list of terms rather than as prose,
+	   because a reader arrives at it with one word in mind and wants to find that word. */
+	.deflist {
+		margin: 0 0 1rem;
+		max-width: 40rem;
+	}
+
+	.deflist > div {
+		display: grid;
+		grid-template-columns: 7rem minmax(0, 1fr);
+		gap: 0.2rem 1rem;
+		padding: 0.55rem 0;
+		border-top: 1px solid var(--rule);
+	}
+
+	.deflist > div:last-child {
+		border-bottom: 1px solid var(--rule);
+	}
+
+	@media (max-width: 40rem) {
+		.deflist > div {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	.deflist dt {
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		color: var(--ink);
+	}
+
+	.deflist dd {
+		margin: 0;
+		font-size: 0.78rem;
+		line-height: 1.6;
+		color: var(--ink-dim);
+	}
+
+	/* A claim and its warrant, side by side. The point of the pair is that no claim on this
+	   page appears without the thing that licenses it. */
+	.claims {
+		margin: 0 0 1.2rem;
+		max-width: 46rem;
+		border-top: 1px solid var(--rule);
+	}
+
+	.claims > div {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: 0.9rem;
+		padding: 0.6rem 0;
+		border-bottom: 1px solid var(--rule);
+		font-size: 0.76rem;
+		line-height: 1.55;
+	}
+
+	@media (max-width: 46rem) {
+		.claims > div {
+			grid-template-columns: 1fr;
+			gap: 0.2rem;
+		}
+	}
+
+	.claims dt {
+		color: var(--ink);
+	}
+
+	.claims dd {
+		margin: 0;
+		color: var(--ink-dim);
+	}
+
+	.claims .no {
+		color: var(--invented);
+	}
+
+	/* The Learn page does not scroll as a document. The table inside it is a windowed list
+	   whose slice is computed from one scroll offset, and a scrolling page would give it a
+	   second — the row under the cursor would then be placed against the wrong one. So the
+	   page is a fixed-height column and each of its two columns scrolls on its own. */
+	.stagepage.tall {
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	.learngrid {
+		display: grid;
+		gap: 1.2rem 2.6rem;
+		grid-template-columns: 1fr;
+		min-height: 0;
+		flex: 1;
+		/* Its own padding rather than `.pagebody`'s, because this one is a fixed-height
+		   two-pane layout and that one is a scrolling document; sharing a class would mean
+		   one of them fighting the other's grid template. */
+		padding: 1.6rem 2.6rem 1.8rem;
+	}
+
+	/* The controls beside the table rather than above it, once there is room. The controls
+	   keep a column's width because that is what a strip of range sliders is legible at;
+	   everything else goes to the table, which is the thing with nine columns. */
+	@media (min-width: 66rem) {
+		.learngrid {
+			grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
+		}
+	}
+
+	.learncol {
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+		/* `min-width: 0` is the fix, not a tidy-up: a grid item's default minimum is its
+		   content's, so the store path — one unbreakable 52-character string — was widening
+		   this column past its own track and having the overflow clipped. Both halves are
+		   needed, because the path has no break opportunity for the column to use. */
+		min-width: 0;
+		overflow-y: auto;
+	}
+
+	.learncol :global(.mono),
+	.learncol :global(.facts dd),
+	.learncol :global(p) {
+		overflow-wrap: anywhere;
+	}
+
+	.learncol > :global(section.block),
+	.learncol > :global(details.block) {
+		margin-bottom: 1.2rem;
+	}
+
+	/* The table's own column does not scroll — the table does. */
+	.tablecol {
+		overflow: hidden;
+	}
+
+	.tablehead {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.tablehead .blocktitle {
+		margin-bottom: 0;
+	}
+
+	.follow {
+		flex: initial;
+		font-size: 0.72rem;
+	}
+
+	/* A running job, on the opener, while the galaxy is what you are looking at. */
+	.joblive {
+		display: inline-block;
+		width: 5px;
+		height: 5px;
+		margin-right: 0.3rem;
+		border-radius: 50%;
+		background: var(--arrival);
+		animation: joblive 1.6s ease-in-out infinite;
+	}
+
+	@keyframes joblive {
+		0%,
+		100% {
+			opacity: 0.25;
+		}
+		50% {
+			opacity: 1;
+		}
 	}
 
 	/* The fitted directions, as a table rather than a sentence: five names and five shares
@@ -4834,16 +5596,13 @@ uv run birdy-pipeline serve</pre>
 		font-size: 0.7rem;
 	}
 
-	/* The learning run, reporting in the right-hand panel while the Learn tab is up. */
+	/* The running job, at the top of the Learn page. It used to report in the right-hand
+	   readout panel, where it displaced the reading of whatever was singing. No padding of
+	   its own any more: on the page it sits inside a `.block`, which has its own. */
 	.loopstatus {
 		display: grid;
 		gap: 0.6rem;
-		padding: 0.9rem 1rem;
 		align-content: start;
-	}
-
-	.standfirst {
-		padding: 0.9rem 1rem;
 	}
 
 	/* Discovered birds, one row each: the name, what has arrived, and how far it has got

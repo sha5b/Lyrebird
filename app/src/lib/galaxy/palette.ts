@@ -220,5 +220,3 @@ export function speciesColourScaled(id: string, lightScale: number): string {
 	const scale = Math.min(1.2, Math.max(0.8, lightScale));
 	return `hsl(${speciesHue(id).toFixed(1)}, ${speciesSaturation(id)}%, ${(45 * scale).toFixed(1)}%)`;
 }
-
-
