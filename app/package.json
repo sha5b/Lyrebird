@@ -21,7 +21,8 @@
 		"verify:inventory-table": "node --experimental-strip-types scripts/verify-inventory-table.mjs",
 		"measure:layout": "node --experimental-strip-types --max-old-space-size=4096 scripts/measure-layout.mjs",
 		"verify:biplot": "node --experimental-strip-types scripts/verify-biplot.mjs",
-		"verify:performance": "node --experimental-strip-types scripts/verify-performance.mjs"
+		"verify:performance": "node --experimental-strip-types scripts/verify-performance.mjs",
+		"verify:context-threads": "node --experimental-strip-types scripts/verify-context-threads.mjs"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^7.0.1",

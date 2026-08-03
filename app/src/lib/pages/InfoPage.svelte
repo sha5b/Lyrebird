@@ -534,6 +534,44 @@
 							order they were sung.
 						</span>
 					</li>
+					<!--
+						The three faint kinds, and why they are three rows rather than one.
+
+						Selecting a bird draws a web of hairlines around it, and all of it used to be
+						one identical grey: its documented songs, its measured grammar, and the
+						relations out to other species. Three answers to three different questions at
+						one weight, with nothing anywhere saying which was which — so it read as
+						decoration. It was not that the lines meant nothing; the picture refused to
+						say which meaning each line had. Each now has its own ink and its own row.
+					-->
+					<li>
+						<i class="line song"></i>
+						<span>
+							<b>A slate hairline is a song this bird sings</b> — a sequence somebody
+							authored or recorded, through its knots in order. All of them are drawn at
+							one weight, because a documented song is not a statistic: it is in the
+							corpus or it is not.
+						</span>
+					</li>
+					<li>
+						<i class="line grammar"></i>
+						<span>
+							<b>An amber hairline is a measured transition</b> — one syllable following
+							another, counted from this bird's own field recordings, and
+							<b>drawn stronger the more likely it is</b>. Faintest is about one time in
+							twelve, which is the floor below which nothing is drawn at all; solid is
+							nearly always. Amber because it is fitted rather than authored, which is
+							the ink this app already uses for a learned thing.
+						</span>
+					</li>
+					<li>
+						<i class="line relation"></i>
+						<span>
+							<b>A hairline ending in another bird's colour</b> goes out to a species that
+							shares a call shape with this one. It is a measured distance and never a
+							claim of borrowing or of kinship.
+						</span>
+					</li>
 					<li>
 						<i class="breath"></i>
 						<span>
@@ -659,6 +697,26 @@
 		margin-top: 0.42rem;
 		border-radius: 1px;
 		background: var(--ink-dim);
+	}
+
+	/* The three faint kinds. Each swatch *is* its ink, which is the rule the rest of this
+	   key follows, and the grammar swatch is a gradient because the weight is the whole
+	   reading: one amber, fainter where the transition is less likely.
+
+	   These two values mirror ContextPaths' NEUTRAL and palette.ts's PROV_LEARNED. CSS
+	   cannot read either, so they are repeated here on purpose — and a legend that
+	   disagrees with the stage is worse than no legend, so they are named in both places. */
+
+	.legend.key i.line.song {
+		background: #8595ae;
+	}
+
+	.legend.key i.line.grammar {
+		background: linear-gradient(to right, rgba(217, 119, 6, 0.24), #d97706);
+	}
+
+	.legend.key i.line.relation {
+		background: linear-gradient(to right, #8595ae, #7a4fa3);
 	}
 
 	/* Size as an event: a small mark and a large one, the difference the channel

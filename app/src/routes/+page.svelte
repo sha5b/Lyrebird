@@ -47,7 +47,7 @@
 		type Token
 	} from '$lib/lang/compose';
 	import { citationsFor, confidenceLabel, type Reading } from '$lib/lang/translate';
-	import { createSignal, type VisualSignal } from '$lib/galaxy/shaders';
+	import { createSignal, type ContextPath, type VisualSignal } from '$lib/galaxy/shaders';
 	import { createStats, type GalaxyStats } from '$lib/galaxy/stats';
 	import {
 		MONO_HOT,
@@ -1006,15 +1006,19 @@
 
 	/** Every song this species sings, as the faint backdrop behind the selected one. */
 	/** Every song one bird sings, as paths through the cloud. */
-	function songPathsOf(id: string): number[][] {
+	function songPathsOf(id: string): ContextPath[] {
 		if (!assets || !clusters) return [];
 		const bird = speciesById(assets.inventory, id);
 		if (!bird) return [];
 		return bird.songs.map((song) => {
 			const resolved = songSyllables(bird, song.id);
-			return resolved
-				? resolved.syllables.map((syl) => clusterIndexFor(clusters, id, syl.id))
-				: [];
+			return {
+				nodes: resolved
+					? resolved.syllables.map((syl) => clusterIndexFor(clusters, id, syl.id))
+					: [],
+				kind: 'song' as const,
+				weight: 1
+			};
 		});
 	}
 
@@ -1041,20 +1045,25 @@
 	 *
 	 * These are two-node threads rather than paths: a first-order grammar is a set of
 	 * pairs, and stringing them into a route would assert an order that was never measured.
+	 *
+	 * Each pair **carries its measured probability out to the draw**. It used to be read
+	 * here, compared against the floor and then dropped, so a transition this bird makes
+	 * nine times in ten was drawn exactly like one it makes once in twelve — the picture
+	 * discarded the one number that made it a reading rather than a diagram.
 	 */
-	function grammarPathsOf(id: string): number[][] {
+	function grammarPathsOf(id: string): ContextPath[] {
 		if (!assets || !clusters) return [];
 		const bird = speciesById(assets.inventory, id);
 		const transitions = bird?.grammar?.transitions;
 		if (!transitions) return [];
-		const out: number[][] = [];
+		const out: ContextPath[] = [];
 		for (const [from, nexts] of Object.entries(transitions)) {
 			const a = clusterIndexFor(clusters, id, from);
 			if (a < 0) continue;
 			for (const [to, p] of Object.entries(nexts)) {
 				if (to === 'end' || p < GRAMMAR_FLOOR) continue;
 				const b = clusterIndexFor(clusters, id, to);
-				if (b >= 0 && b !== a) out.push([a, b]);
+				if (b >= 0 && b !== a) out.push({ nodes: [a, b], kind: 'grammar', weight: p });
 			}
 		}
 		return out;
@@ -1070,11 +1079,11 @@
 	 * other threads. Restricting the backdrop to the segments that actually touch the
 	 * picked node leaves the connection visible on its own.
 	 */
-	function nodePathsOf(id: string, cluster: number): number[][] {
-		const touching = (path: number[]) => path.includes(cluster);
+	function nodePathsOf(id: string, cluster: number): ContextPath[] {
+		const touching = (p: ContextPath) => p.nodes.includes(cluster);
 		const songs = songPathsOf(id)
-			.map((p) => p.filter((n) => n >= 0))
-			.filter((p) => p.length > 1 && touching(p));
+			.map((p) => ({ ...p, nodes: p.nodes.filter((n) => n >= 0) }))
+			.filter((p) => p.nodes.length > 1 && touching(p));
 		const grammar = grammarPathsOf(id).filter(touching);
 		return [...songs, ...grammar];
 	}

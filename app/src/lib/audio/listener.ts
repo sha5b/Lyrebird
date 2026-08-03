@@ -8,7 +8,14 @@ import {
 	standardise
 } from './features.ts';
 import { readActivations, type Reading } from '$lib/lang/translate';
-import { createSignal, MAX_PATHS, unmatchedCluster, type LivePath, type VisualSignal } from '$lib/galaxy/shaders';
+import {
+	createSignal,
+	MAX_PATHS,
+	unmatchedCluster,
+	type ContextPath,
+	type LivePath,
+	type VisualSignal
+} from '$lib/galaxy/shaders';
 import type { BirdyAssets } from '$lib/data/types';
 import type { BirdyEngine } from './engine';
 
@@ -270,9 +277,11 @@ export class Listener {
 		this.orphanWasActive = true;
 	}
 
-	/** The faint backdrop of every song this bird sings; drops nodes the corpus lacks. */
-	setContext(paths: number[][]): void {
-		this.signal.context = paths.map((p) => p.filter((n) => n >= 0)).filter((p) => p.length > 1);
+	/** The faint backdrop around this bird; drops nodes the corpus lacks. */
+	setContext(paths: ContextPath[]): void {
+		this.signal.context = paths
+			.map((p) => ({ ...p, nodes: p.nodes.filter((n) => n >= 0) }))
+			.filter((p) => p.nodes.length > 1);
 		this.signal.contextVersion++;
 	}
 

@@ -1,3 +1,127 @@
+# Lyrebird — the grammar gets its weight back, and the synthetic space gets an answer (2026-08-03)
+
+The chain is **still in stage 1 (`learn`)** at 14:39, about three hours in: `learned-v8.json.partial`
+is 16.5 MB against the 21.1 MB of prior inventory stage 0 seeded, so roughly four fifths through.
+On that rate learn ends about 15:25 and the chain about 16:00, later than the ~15:20 the
+READ-THIS-FIRST section estimated for the whole run. Nothing here touches the pipeline or the
+installed assets.
+
+## 1. The one experiment the last round said to run first, and it has a sharper answer than expected
+
+`pipeline/analysis/interp_heldout.py`. Hold out a real fitted type, interpolate between that
+species' remaining types in the shipped 32-d critic embedding, and ask whether the interpolant
+lands nearer the held-out type than chance. Pre-registered in the docstring, four arms on one
+query population, over the **installed** assets — so it measures the build the app is drawing.
+
+12 736 held-out trials over the 1 937 species with at least three fitted types. The candidate
+pool is the held-out knot plus every knot of every other species — the species' *remaining*
+types are excluded from the pool, because a midpoint of two vectors is trivially nearest to
+those two vectors and scoring against them would measure the construction rather than the space.
+
+```
+arm                            rank pct    top-1   top-10
+interpolant (midpoints)          0.9771   0.5525   0.6975
+sibling (the types)              0.9776   0.5403   0.6996
+centroid (the mean)              0.9586   0.3894   0.5438
+shuffled (another species)       0.5049   0.0002   0.0005
+chance                           0.5      0.00007  0.0007
+```
+
+**The geometry is emphatically real.** The shuffle sits at chance on all three statistics, and a
+species' own types find the held-out one at top-1 **0.55 against a chance of 0.00007** — about
+7 700x. So the 32-d space is not a plausible-looking smear, and that half of the question is
+settled.
+
+**Interpolation itself is another matter, and the average hides the answer.** A midpoint beats
+the sibling types by +0.0122 on top-1 and *loses* by 0.0004 on rank percentile — a gate passing
+on one statistic while the other moves the other way, which is a thin pass and is reported as
+one. Broken out by how many anchors the query is built from, the margin is monotone and
+**crosses zero at about six**:
+
+```
+anchors  trials   A top-1   B top-1     A - B
+      2    1131    0.3033    0.3307   -0.0274
+      3    1164    0.4149    0.4459   -0.0309
+    4-5    2344    0.5307    0.5320   -0.0013
+    6-8    4963    0.6053    0.5932   +0.0121
+     9+    3134    0.6264    0.5734   +0.0530
+```
+
+So the honest finding is not "interpolation works" or "it does not". **Below about six anchors a
+midpoint is worse than simply using the bird's real types** — with two anchors there is one guess
+and it is the mean, and the mean is the weakest arm in the table. Above six the guesses start to
+sketch a hull and it pays, reaching +0.053 at nine or more. 8 097 of the 12 736 trials, about two
+thirds, are in the paying region.
+
+**What that licenses, and what it does not.** Filling gaps by interpolation is warranted for
+well-sampled birds and is not warranted for thin ones, and the anchor count is known before any
+fill is attempted — so the gate is cheap and it is per species, not global. It does **not**
+license the synthetic space in general: this measures whether the geometry can find a type it
+already holds, which is a weaker claim than whether `inverse.py` renders something a bird would
+sing. That still needs `specbench`, which is still unrun.
+
+## 2. Three claims, three inks, and the grammar's probability reaches the draw
+
+The previous round's §4 asked what the faint lines between the knots are and answered: three
+different claims drawn in one identical grey, with the grammar's measured probability **thrown
+away at draw time**. Both halves are fixed.
+
+`ContextPath` (`shaders.ts`) replaces `number[][]` on the signal — `nodes`, `kind`, `weight` —
+so `setContext` carries what each thread claims and how strongly. A song's weight is 1 and that
+is not a probability standing in for one: an authored sequence is in the corpus or it is not, so
+there is no measured uncertainty to draw and only the grammar varies.
+
+```
+song     slate, even weight            the established backdrop ink, unchanged
+grammar  PROV_LEARNED amber, weighted  alpha 0.12 at the floor to 0.5 at p = 1
+relation partner's hue at the far end  already distinct, untouched
+```
+
+Two things worth keeping in view. The amber is **not a new colour**: the app already says amber
+for a fitted thing wherever provenance is the language, so a grammar thread borrowing it makes
+the stage agree with the legend instead of inventing a fourth vocabulary. And songs deliberately
+**keep the slate** rather than taking `PROV_DOCUMENTED` blue — colouring every thread was tried
+on the tags and the verdict was "too dominant", which was right. One ink added is what the
+reading needs.
+
+The band is 0.12–0.5 rather than the bare probability because `GRAMMAR_FLOOR` is 0.08: alpha = p
+would draw most surviving transitions under 0.2 and the weighting would read as *the grammar
+faded out*. Weight is carried as **per-vertex alpha**, not line width — `linewidth` is ignored by
+every WebGL renderer, so width is not a channel this project has. Checked against the installed
+three 0.185 rather than assumed: `vertexAlphas` is exactly `vertexColors && color.itemSize === 4`,
+which is what sets `USE_COLOR_ALPHA`.
+
+**The legend now says which is which**, in three rows whose swatches are the inks they name —
+because an ink nobody can look up is still mute, which was the actual complaint.
+
+### `verify:context-threads`: 33 checks, and all four mutations are named
+
+`context-threads.ts` holds the pass split and the weight mapping, out of the component for the
+reason `inventory-rows.ts` is out of the page: **a wrong alpha shows up as a thread that looks
+slightly faint, never as an error** — the most expensive kind of wrong, because it is legible.
+
+Proven by mutation:
+
+```
+throw the probability away again (alpha = 0.28)   10 checks fail
+draw both kinds in one pass                      10 checks fail
+alpha = p, no readable band                       7 checks fail
+drop the clamp                                    2 checks fail
+```
+
+The second mutation originally *crashed* the script instead of failing it, which is a detection
+that tells whoever runs it nothing. The checks read through `?.` and NaN now, so an empty pass
+reports which claim stopped being made.
+
+## 3. Tests
+
+`npm run check` clean apart from the four pre-existing `syrinx-processor.js` errors, zero
+warnings. `build`, `verify:layout`, `verify:split-knots`, `verify:trajectory`,
+`verify:inventory-table`, `verify:biplot`, `verify:performance` and `verify:context-threads` all
+pass. **Not yet looked at in a browser** — the three inks and the weighted alpha are a rendering
+change, and this project's own record says a rendering change is not verified until somebody has
+seen it.
+
 # Lyrebird — the performance is one value now (2026-08-03)
 
 The chain is still in stage 1 (`learn`). This round is the refactor the previous one said should
@@ -512,9 +636,9 @@ Stages: learn (~3 h) -> docrefit (23 s) -> respfit (~8 min) -> build with
 3. Compare the projection line against the installed v7: knnAgreement 0.4685,
    faithfulness 0.4745, torn 1864/5320.
 4. Only then decide about installing. `app/static/birdy` currently holds **v7**, which is
-   PaCMAP over v6's inventory. v6 is backed up at `/tmp/birdy-prod/v6-INSTALLED-backup`;
-   note that is **tmpfs and will not survive a reboot** — copy it somewhere real if it
-   matters. v7 is reproducible from `pipeline/out/v7-prod/assets`.
+   PaCMAP over v6's inventory. Every build is reproducible from the pipeline — v7 from
+   `pipeline/out/v7-prod/assets` — so a build is never backed up by copying it about. Git
+   and the pipeline are the record.
 
 **Two things the chain will not settle**, so they are not surprises: the production
 cMDS-versus-PaCMAP bake-off (skipped for time — `--compare-projections` would add UMAP over
@@ -832,8 +956,6 @@ brightness as a direction   0.402        0.618
 `drawnLobes` at production scale: **1 750 second anchors, 18 188 members that would
 otherwise light unnamed, 63 ms** — against `localShapes`' 197 ms, and agreeing with the
 pipeline's independent k-means count of 1 864.
-
-v6 is backed up at `/tmp/birdy-prod/v6-INSTALLED-backup`; revert is one `rsync`.
 
 **Still not measured at production scale:** the split-gate A/B and the cMDS-versus-PaCMAP
 bake-off were both run on the 40-species descriptor-space corpus. The *ranking* transfers;
@@ -1894,9 +2016,8 @@ weakest available GPU.**
 **v6 IS NOW INSTALLED** (this supersedes the "parked" entry below, which is kept for its
 measurements). `app/static/birdy` = 348 461 points, **13 848 clusters**, built
 2026-08-02T09:27; `data/learned-inventory.json` = 13 748 syllables. Owner accepted the
-song-layer trade with the measurement in hand. **v5 backed up at
-`/tmp/birdy-prod/v5-INSTALLED-backup` + `v5-learned-inventory.backup.json`** (and in git) —
-revert is one `rsync`. Whole suite green: parity **18/18** at 2.78e-08, synth **44/44** at
+song-layer trade with the measurement in hand. v5 is in git, which is where a revert comes
+from. Whole suite green: parity **18/18** at 2.78e-08, synth **44/44** at
 0.3 %, `verify:features` exit 0, shards + provenance buffers OK, pipeline `verify` clean,
 `npm run check` at the 4 baseline errors. One thing improved: field-knot in-manifold
 agreement **3.17 → 2.95** median, 74.7 % → **84.8 %** under threshold.

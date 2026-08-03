@@ -931,6 +931,44 @@ export interface LivePath {
 	label: string;
 }
 
+/**
+ * One thread in the backdrop, and **which claim it makes**.
+ *
+ * The three kinds of faint line around a selected bird used to be drawn in one identical
+ * grey: its documented songs (sequences a person authored or recorded), its measured
+ * grammar (transitions counted from its own field audio), and — from `RelationThreads` —
+ * hairlines out to other species that share call shapes. Three answers to three different
+ * questions at one weight, which is why the web read as decoration: not that the lines
+ * meant nothing, but that the picture refused to say which meaning each line had.
+ *
+ * `kind` is what the segment is claiming. `weight` is how strongly, and it exists because
+ * the grammar already carries a measured probability that was **thrown away at draw
+ * time** — the number was computed, filtered against `GRAMMAR_FLOOR`, and then every
+ * surviving transition was drawn identically whether it happens nine times in ten or once
+ * in twelve.
+ */
+export interface ContextPath {
+	/** Cluster indices. Two for a grammar pair, the whole route for a song. */
+	nodes: number[];
+	/**
+	 * `song` — an authored or recorded sequence. `grammar` — one measured transition.
+	 *
+	 * They are separated here rather than at the draw call because a song is a *fact about
+	 * a recording* and a grammar pair is a *statistic over many*, and nothing downstream
+	 * can recover the difference from a list of node indices.
+	 */
+	kind: 'song' | 'grammar';
+	/**
+	 * 0..1. The measured transition probability for `grammar`.
+	 *
+	 * 1 for a song, and that is not a probability standing in for one: an authored
+	 * sequence either is this bird's song or is not in the corpus, so there is no measured
+	 * uncertainty to draw. A song is therefore drawn at full backdrop strength and only
+	 * the grammar varies, which keeps the weight channel meaning one thing.
+	 */
+	weight: number;
+}
+
 /** Per-frame signal shared between the audio loop and the renderer. Mutated in place. */
 export interface VisualSignal {
 	activations: Float32Array;
@@ -983,11 +1021,11 @@ export interface VisualSignal {
 	/** Bumped whenever the set of paths changes, so the renderer rebuilds its geometry. */
 	pathsVersion: number;
 	/**
-	 * Every song of the selected species, drawn faintly behind the selected one. Segments
-	 * shared between songs overlap and so read stronger, which shows at a glance which
-	 * transitions this bird reuses.
+	 * The web around the selected bird: its documented songs and its measured grammar.
+	 * Segments shared between songs overlap and so read stronger, which shows at a glance
+	 * which transitions this bird reuses.
 	 */
-	context: number[][];
+	context: ContextPath[];
 	contextVersion: number;
 	/** Species index to keep at full strength; -1 shows every species equally. */
 	focus: number;
