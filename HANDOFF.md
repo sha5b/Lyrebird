@@ -76,10 +76,13 @@ HANDOFF §5 left two things "not done, both need a rebuild". Both are now built 
 Neither turned out to be the thing it was described as, and in both cases the measurement is
 the deliverable.
 
-**Neither is installed.** `--space embed` needs the store's `typing.json`, which
-`pipeline/out/harvest` does not have — it needs `learn`, ~3 h. So the code is in, tested, and
-waiting on that run. `pipeline/out/harvest-gan` does carry typing.json + embeddings.f32 and is
-the cheapest route to a real end-to-end build when someone wants one.
+**Neither is installed, and neither is the default.** `learn` has since been run on
+`pipeline/out/harvest` (25 min — it is a 40-species store, not the one v6 came from) and two
+builds done from it, so both changes are now exercised end to end. `cmds` stays the default
+projector and `--type-split` is opt-in; §1 and §2 say why, and in both cases the reason is a
+measurement rather than caution. `pipeline/out/harvest-gan` is the only store carrying
+typing.json *and* embeddings.f32, so it is the route to a production-scale `--space embed`
+check when someone wants one.
 
 ## 1. cMDS and the "honest" metric: it trades worse, and the number behind the ask means
    something else
@@ -234,20 +237,26 @@ here — the bug is *in the lookup*, so a test that reimplements it would reprod
   metric really does move the points, so the round-trip is not vacuous.
 - `verify --out` reports the match ramp and fails on an inverted one.
 
+Found on the way and fixed: **`birdy-pipeline build --help` has been crashing**, on a single
+unescaped `%` in one help string (`type coverage 100 %)`) among a dozen correctly doubled ones.
+argparse only formats help when it prints it, so nobody had ever run it.
+
 `npm run check` clean apart from the four pre-existing `syrinx-processor.js` errors;
-`npm run build`, `verify:layout`, `verify:split-knots`, `check-provenance-buffers`,
-`verify-inventory-shards`, `galaxy.self_test` and pipeline `verify` all pass. **Not run: a real
-build with either change in it** — see the note at the top.
+`npm run build`, `verify:layout`, `verify:split-knots` (against the 58-split build as well as
+the shipped one), `verify:trajectory`, `check-provenance-buffers`, `verify-inventory-shards`,
+`galaxy.self_test`, `build --help` and pipeline `verify` all pass. The build's own `match ramp`
+line and `verify`'s ramp check both fired on the new assets, which is the ramp round proven
+end to end.
 
 ## 5. What I would do next
 
-1. **`learn` on `pipeline/out/harvest`, then build.** Everything above is waiting on it, and it
-   is the only way to see the split in the picture.
+1. **Re-target the split gate, or drop it.** Bimodal-in-features and torn-in-3-d are close to
+   disjoint; the gate wants the intersection, which means measuring per-type tearing before the
+   partition is chosen. Until then it is off, and the A/B above is the reason.
 2. **Re-derive the "genuinely torn" count** with the effect-size statistic, in the 32-d
    clustering space rather than the 8-d shadow. `tear_dims.py` needs the new statistic and a
    `--dump-points` matrix.
-3. **Re-measure the ramp after that build** (`thresholds --write` runs automatically in `build`
-   now, so this is just reading it).
+3. **Look at the ribbon threads in a browser** — the one thing in this session no test reaches.
 
 # Lyrebird — the match ramp round (2026-08-03): the ramp ships with the assets it measures
 
