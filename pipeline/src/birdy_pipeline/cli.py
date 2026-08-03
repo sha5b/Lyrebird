@@ -894,6 +894,26 @@ def cmd_sources_fetch(args: argparse.Namespace) -> int:
         syllable_cap=getattr(args, "syllable_cap", harvest.DEFAULT_SYLLABLE_CAP),
     )
     t0 = time.time()
+    # **A list of species, so one sweep serves all of them.** `inat-sounds` streams a single
+    # 81 GB archive and re-downloads its index per call, so asking for one bird costs a whole
+    # sweep to reach its first file — fifteen minutes, measured. The 1 160 species under
+    # `learn`'s fitting floor need one pass, not 1 160 of them.
+    species: Any = args.species
+    if getattr(args, "species_file", None):
+        names = [
+            line.strip()
+            for line in Path(args.species_file).read_text(encoding="utf-8").splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        ]
+        if not names:
+            log(f"{args.species_file} lists no species")
+            return 2
+        if args.species:
+            log("--species and --species-file are two answers to one question; pass one")
+            return 2
+        species = names
+        log(f"  {len(names)} species from {args.species_file}")
+
     fetch_kw: dict[str, Any] = {}
     if getattr(args, "per_species", None) is not None:
         # Only the sources whose archive order is biased (iNatSounds streams
@@ -906,7 +926,7 @@ def cmd_sources_fetch(args: argparse.Namespace) -> int:
         fetch_kw["keep_audio"] = Path(args.keep_audio)
     report = src.fetch(
         store,
-        species=args.species,
+        species=species,
         limit=args.limit,
         max_seconds=args.max_seconds,
         item=args.item,
@@ -3479,6 +3499,11 @@ def build_parser() -> argparse.ArgumentParser:
                     help='"Genus species" (zenodo/internet-archive/inat-sounds/gbif), '
                          "an eBird folder code or prefix (kaggle), or a BirdSet "
                          "member-path species id (huggingface)")
+    sf.add_argument("--species-file", default=None, metavar="FILE",
+                    help="inat-sounds: a file of species, one per line, as ids or "
+                         '"Genus species" (# comments allowed). One sweep serves all of '
+                         "them — the archive is a single 81 GB stream and asking for one "
+                         "bird at a time costs a whole sweep each")
     sf.add_argument("--limit", type=int, default=5,
                     help="recordings to fetch (default %(default)s; these are proofs and "
                          "production top-ups, not bulk harvests)")

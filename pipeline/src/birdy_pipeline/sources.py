@@ -40,6 +40,7 @@ import tempfile
 import urllib.parse
 import urllib.request
 import zipfile
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -739,8 +740,17 @@ class InatSoundsSource(Source):
     def available(self) -> tuple[bool, str]:
         return True, "no key needed (AWS Open Data); ~131 GB of archives, streamed"
 
-    def _wanted(self, staging: Path, species: str | None) -> dict[str, dict[str, Any]]:
-        """Member path → ingest info, for every Aves recording with an acceptable licence."""
+    def _wanted(
+        self, staging: Path, species: str | Sequence[str] | None
+    ) -> dict[str, dict[str, Any]]:
+        """Member path → ingest info, for every Aves recording with an acceptable licence.
+
+        `species` takes **one name or many**, and taking many is what makes a real top-up
+        possible. The archive is one 81 GB sequential stream and the index costs a download and
+        a parse per call, so asking for a single species costs a whole sweep to find its first
+        file: measured at fifteen minutes for one bird, which is weeks for the 1 160 that sit
+        under `learn`'s fitting floor. With a set, one sweep serves all of them.
+        """
         archive = _download(f"{self.BASE}/train.json.tar.gz", staging / "train.json.tar.gz")
         with tarfile.open(archive) as tar:
             member = tar.extractfile("train.json")
@@ -748,7 +758,15 @@ class InatSoundsSource(Source):
         categories = {c["id"]: c for c in meta["categories"]}
         licences = {lic["id"]: lic for lic in meta["licenses"]}
         category_of = {a["audio_id"]: a["category_id"] for a in meta["annotations"]}
-        wanted_species = species_id_for(species) if species else ""
+        # A bare string stays one species; anything iterable becomes a set of ids. Both go
+        # through `species_id_for`, so "Genus species" and `genus_species` are the same ask.
+        if not species:
+            wanted_ids: set[str] = set()
+        elif isinstance(species, str):
+            wanted_ids = {species_id_for(species)}
+        else:
+            wanted_ids = {species_id_for(s) for s in species if s}
+        wanted_ids.discard("")
         out: dict[str, dict[str, Any]] = {}
         for audio in meta["audio"]:
             cat = categories.get(category_of.get(audio["id"]))
@@ -758,7 +776,7 @@ class InatSoundsSource(Source):
             if audio["license"] not in self.LICENCES_OK:
                 continue
             sid = species_id_for(cat["name"]) or "unlabelled"
-            if wanted_species and sid != wanted_species:
+            if wanted_ids and sid not in wanted_ids:
                 continue
             out[audio["file_name"]] = {
                 "speciesId": sid,
@@ -785,7 +803,7 @@ class InatSoundsSource(Source):
             wanted = self._wanted(staging, species)
             if not wanted:
                 log("  no acceptable Aves recordings"
-                    + (f" for {species!r}" if species else "")
+                    + (f" for {species!r}" if isinstance(species, str) else "")
                     + " in iNatSounds train")
                 return report
             # Members stream in taxonomic order (the tar is laid out by category
@@ -797,8 +815,13 @@ class InatSoundsSource(Source):
             if per_species is not None:
                 for info in wanted.values():
                     budget[info["speciesId"]] = int(per_species)
+            asked = (
+                "" if not species
+                else f" for {species!r}" if isinstance(species, str)
+                else f" for {len(species)} named species"
+            )
             log(f"  iNatSounds train: {len(wanted)} acceptable Aves recordings"
-                + (f" for {species!r}" if species else "")
+                + asked
                 + (f", at most {per_species} per species" if per_species is not None else "")
                 + f"; streaming the 81 GB archive until {limit} ingested"
                 + (f"; audio cached to {keep_audio}" if keep_audio else ""))
