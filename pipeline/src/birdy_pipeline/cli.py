@@ -638,6 +638,9 @@ def cmd_build(
             projection=args.projection,
             compare_projections=not args.no_compare_projections,
             separation=args.separation,
+            type_split_separation=(
+                args.type_split_separation if args.type_split else float("inf")
+            ),
             build_info={
                 "source": args.source,
                 "audioDir": str(args.audio_dir) if args.audio_dir else None,
@@ -3299,7 +3302,7 @@ def build_parser() -> argparse.ArgumentParser:
              "the points with no label (docs/22 §22.5 — the answer at production scale, "
              "where the pre-W5 corpus had kmeans wanting 27 862 clusters over 694 936 "
              "points and the vote losing every documented call. This is what the shipped "
-             "production build uses: 348 461 points, k = 14 003, type coverage 100 %). "
+             "production build uses: 348 461 points, k = 14 003, type coverage 100 %%). "
              "'both' renders the corpus once and writes the "
              "kmeans map to <out>/known and the hdbscan map to <out>/unknown — the pair "
              "the known-vs-unknown comparison always wants, for one render",
@@ -3335,6 +3338,14 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--min-dist", type=float, default=None,
                    help="UMAP min_dist; visual spread only, does not affect clustering "
                         "(default %s)" % galaxy.UMAP_MIN_DIST)
+    b.add_argument("--type-split", action="store_true",
+                   help="draw a type as two knots when its own sounds are two groups. "
+                        "OFF by default and measured: on the 2026-08-03 A/B it split 58 "
+                        "types and changed the torn count by zero, because 54 of the 58 "
+                        "were already drawn as one place (see TYPE_SPLIT_SEPARATION)")
+    b.add_argument("--type-split-separation", type=float,
+                   default=galaxy.TYPE_SPLIT_SEPARATION,
+                   help="effect size past which --type-split draws a type as two knots")
     b.add_argument("--separation", type=float, default=galaxy.DEFAULT_SEPARATION,
                    help="push cluster centres this far apart relative to knot size "
                         "(1.0 = the raw projection)")

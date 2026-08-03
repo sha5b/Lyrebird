@@ -111,6 +111,28 @@ SOURCE_SEED_GATE = 0.9
 #: 6.0 is where the false-split rate on a single heavy-tailed blob is about 1 % at the
 #: 40-member floor and 0 % by 80 members. Below 40 members it is 12 % and the floor is
 #: what keeps it out, not the gate.
+#:
+#: **THE GATE IS OFF BY DEFAULT, AND THE REASON IS AN A/B, NOT CAUTION.** It was built to
+#: repair the knots the picture draws in two places — a centroid in the void between two
+#: real blobs, which is the "one note shines and there is no label and no connection"
+#: report. Two builds of the same corpus, gate on and off:
+#:
+#:     split ON    k=742   58 types split   533 measured   18 torn   4 severe   median 2.289
+#:     split OFF   k=684    0 types split   493 measured   18 torn   4 severe   median 2.283
+#:
+#: **The torn count did not move.** The diagnostic says why: of the 58 types the gate
+#: split, only **4** were torn in the drawn 3-d positions at all, and their median 3-d
+#: ratio was 2.38 against a null of 2. So it is firing almost entirely on types that are
+#: bimodal in the 28-d feature space and *already drawn as one place* — adding 58 knots
+#: and a claim of a distinction the picture cannot show, which is the opposite of the
+#: thing it was for.
+#:
+#: The statistic is right and the calibration holds; the **targeting** is wrong. A type
+#: wants splitting when it is bimodal in the features **and** torn in the projection, and
+#: those are close to disjoint here. Doing that means measuring 3-d tearing per type
+#: before choosing the partition, which inverts the build's clustering-then-projection
+#: order — a real change, not a tweak. Until then: `build --type-split` to turn it on,
+#: and re-run the A/B before believing it does anything.
 TYPE_SPLIT_SEPARATION = 6.0
 #: Members a type needs before its shape is allowed to argue for two knots at all.
 TYPE_SPLIT_MIN_MEMBERS = 40
@@ -962,6 +984,7 @@ def label_assign(
     gate: float = SOURCE_SEED_GATE,
     seed: int = 0,
     allowance: int | None = None,
+    split_separation: float = TYPE_SPLIT_SEPARATION,
 ) -> tuple[np.ndarray, np.ndarray, int, dict[str, Any]]:
     """Clusters read off the labels the build already holds; k-means only where there are
     none.
@@ -997,7 +1020,7 @@ def label_assign(
 
     Returns the per-point cluster id, the centroid matrix, `k`, and the plan report.
     """
-    blobs = _type_blobs(z, points, gate)
+    blobs = _type_blobs(z, points, gate, split_separation)
     if not blobs:
         raise RuntimeError(
             "label assignment needs typed points and this corpus has none — build with "
@@ -1342,6 +1365,10 @@ def build_galaxy(
     projection: str = DEFAULT_PROJECTION,
     compare_projections: bool = True,
     separation: float = DEFAULT_SEPARATION,
+    #: Effect size past which a type is drawn as two knots. **Defaults to `inf` — off —
+    #: because the A/B says it does not do its job**; see `TYPE_SPLIT_SEPARATION`. Pass
+    #: `TYPE_SPLIT_SEPARATION` (or `build --type-split`) to turn it on.
+    type_split_separation: float = float("inf"),
     build_info: dict[str, Any] | None = None,
     verbose: bool = True,
     recordings: dict[str, Any] | None = None,
@@ -1507,7 +1534,9 @@ def build_galaxy(
                 "clusters there are (one per type, two where its sources disagree) plus "
                 "the sqrt allowance for the points that have none"
             )
-        cluster_id, centre_vectors, k_final, plan_report = label_assign(z, kept, seed=seed)
+        cluster_id, centre_vectors, k_final, plan_report = label_assign(
+            z, kept, seed=seed, split_separation=type_split_separation
+        )
         anchors = None
         if verbose:
             print(

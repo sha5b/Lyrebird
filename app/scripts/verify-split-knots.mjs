@@ -124,7 +124,10 @@ ok('a negative companion is dropped, not lit',
 
 console.log('\nthe shipped assets');
 
-const dir = new URL('../static/birdy/', import.meta.url).pathname;
+// An asset root can be named, because the shipped one predates the split gates and the
+// interesting case is a build that actually has split knots in it.
+const dir = process.argv[2] ?? new URL('../static/birdy/', import.meta.url).pathname;
+console.log(`  (${dir})`);
 const centroids = JSON.parse(readFileSync(join(dir, 'centroids.json'), 'utf8'));
 const shipped = buildClusterLookup(centroids);
 

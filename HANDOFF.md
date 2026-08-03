@@ -160,6 +160,39 @@ of all knots but **13.6 % of all points**, since these are the big ones.
 The blob tuple now carries *why* it split, and the manifest separates `sourceSplitTypes` from
 `bimodalSplitTypes`. Each centroid carries `blobRank` / `blobCount`.
 
+### …and then the A/B said it does not do its job, so it is off by default
+
+`learn` on `pipeline/out/harvest` finished in 25 minutes, not 3 hours — that store is **40
+species / 675 types**, not the 2 423-species one v6 came from (that is almost certainly
+`harvest-gan`, which is the only store carrying typing.json *and* embeddings.f32). It has no
+`embeddings.f32`, so this is a descriptor-space build. But it exercises every line of the
+change, and it made the control cheap. Two builds of one corpus:
+
+```
+split ON    k=742   58 types split   533 measured   18 torn   4 severe   median 2.289
+split OFF   k=684    0 types split   493 measured   18 torn   4 severe   median 2.283
+```
+
+**The torn count did not move.** The diagnostic says why: of the 58 types the gate split, only
+**4 were torn in the drawn 3-d positions at all**, and their median 3-d ratio was 2.38 against a
+null of 2. It is firing almost entirely on types that are bimodal in the 28-d feature space and
+**already drawn as one place** — adding 58 knots, and a claim of a distinction the picture
+cannot show. That is the opposite of the thing it was built for.
+
+The statistic is right and the calibration holds. The **targeting** is wrong: a type wants
+splitting when it is bimodal in the features *and* torn in the projection, and on this corpus
+those two sets are close to disjoint. Doing it properly means measuring per-type 3-d tearing
+*before* choosing the partition, which inverts the build's clustering-then-projection order —
+a real change, not a tweak.
+
+So `--type-split` is **opt-in**, the default behaviour is byte-for-byte what it was, and the
+measurement is in the constant's docstring where the next person will find it. The 317-knot
+estimate from the 8-d shipped features still stands as an estimate of how often the gate
+*fires*; this says nothing it fires on is worth drawing differently.
+
+**This is the honest outcome of the ask rather than a failure to deliver it:** the gate is
+built, calibrated, switchable and measured, and what it measured is that it should not be on.
+
 ## 3. The app could not have addressed a split knot, and that was a live landmine
 
 `buildClusterLookup` kept the **first** cluster it saw per `(species, syllable)` and dropped the
