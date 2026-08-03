@@ -87,7 +87,9 @@
 	<div class="thead mono" aria-hidden="true">
 		<span class="c-bird">bird</span>
 		<span class="c-type">id</span>
-		<span class="c-src">source</span>
+		<!-- `src`, not `source`: the column is 2.4rem because its values are three letters,
+		     and the longer heading was clipped to `sourc`. -->
+		<span class="c-src">src</span>
 		<span class="c-label">sound</span>
 		<span class="c-num">Hz</span>
 		<span class="c-num">ms</span>

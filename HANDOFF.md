@@ -1,3 +1,201 @@
+# Lyrebird — two selection bugs, two choruses, and the stylesheet comes out of the page (2026-08-03)
+
+The v8 chain is still in stage 1 (`learn`, started 11:41, still going at 13:32). Nothing here
+touches the pipeline.
+
+## 1. Two selection bugs, both measured in a browser before and after
+
+Owner: *"the selection is a bit broken when we select with the tags on the bottom — the cam
+sometimes doesn't focus, and when we click away it is still selected and nothing plays."* Both
+real, and neither was what it looked like.
+
+**"The cam doesn't focus" — it focused correctly, on the wrong bird.** The newest phrase is
+*prepended* to the history strip, so every chip shifts one place right each time the chorus
+sings, about once every two seconds during a whole-aviary chorus. Reaching for a chip selected
+whichever phrase had slid under the cursor by the time the click landed. Proven: hovering a
+chip, waiting six seconds and clicking it used to select a different species. The strip now
+**freezes its rendered list while a pointer is inside it** and releases on the way out —
+`history` keeps filling, only the display is held, so nothing is dropped. After: the chip under
+the cursor was unchanged after six seconds and the bird selected was the bird aimed at.
+
+**"Nothing plays" — the chorus was left stuck silent, and the cause was a toggle called
+programmatically.** `setChorus` read `chorus = chorus === mode ? 'off' : mode`, which is button
+behaviour, and four effects called it with a mode they merely wanted to be *in*. Two resume
+paths raced — `chorusToResume` in `clearSelection` and `resumeGlobal` in the `speciesId`
+effect — and whichever arrived second asked for the mode already running, which the toggle read
+as *stop*.
+
+Measured, phrases scheduled in 14 s:
+
+```
+                       before   after
+whole-aviary chorus        8       (baseline)
+after clicking away        0        3
+```
+
+and it stayed at 0 afterwards — every later selection was silent too. Fixes: `setChorus` is a
+**setter**, `toggleChorus` is the button and the only caller allowed to stop a chorus by asking
+for it again, and there is **one** resume flag instead of two.
+
+## 2. Two choruses for a selected bird, and no Stop
+
+Owner: *"in the bird selected we want 2 modes of chorus, one with the songs one improvised, and
+delete the stop button — it stops anyway when we deselect."*
+
+`Songs` is the chorus this app has always had: three voices drawing from the repertoire.
+`Improvise` walks the bird's **measured grammar** instead — the transitions counted from its own
+field recordings, sampled fresh each phrase, so none of them is a phrase anybody recorded. Two
+modes rather than a checkbox because they are two different claims: one plays back a repertoire,
+the other generates from a statistic.
+
+The improvised chorus is an `$effect` rather than a hand-started timer, because it has to end on
+the chorus stopping, the mode changing, the bird changing, the tempo changing and a galaxy
+reload. An effect's teardown covers all five; four scattered `clearInterval` calls is how §1
+happened. Floored at 1.5 s between phrases — an improvised bout runs about a second, and asking
+faster stacks voices instead of making a chorus.
+
+Stop is gone, and the owner is right that it was redundant: clicking the stage clears the bird
+and the `speciesId` effect hands the air back to whatever had it. Measured: improvise voices
+17/56 samples, and clicking the same button again gives 0/56.
+
+**Known gap, not a regression:** improvised phrases go through `singPhrase`, which calls
+`addLive` but not `recordSung`, so they draw a thread and never appear in the history strip. The
+same has always been true of `Sing it` and `Improvise`.
+
+## 3. The stylesheet comes out of the page
+
+Owner: *"we have to refactor, get rid of the monoliths, make global css variables with reset and
+typo and layout and make modules."*
+
+`app.css` was one 183-line block holding four different kinds of thing. It is an index now:
+
+```
+src/styles/tokens.css       57   every colour, both typefaces, the one radius. No selectors.
+src/styles/reset.css        35   the ground: paper, type, quiet scrollbars.
+src/styles/typography.css   15   .mono and code.
+src/styles/controls.css    102   buttons, selects, inputs, ranges, checkboxes, .primary, .on.
+src/styles/layout.css      699   the vocabulary the whole app shares.
+src/app.css                 22   five @imports and the reasoning.
+```
+
+**`layout.css` is the one that mattered, and it fixed a real bug rather than tidying.** 91 rules
+moved out of `+page.svelte` (5 637 lines now, from 6 286). Svelte scopes a component's CSS to
+that component, so `.note`, `.block`, `.field`, `.segmented` and the rest — defined in the page —
+reached nothing inside a component extracted *from* the page. The first extraction hit it
+immediately: `InventoryTable.svelte` had to redefine a paragraph style that already existed a
+thousand lines away in the file it came out of. **A vocabulary only one file can speak is what
+made the page a monolith** — every new surface had to be built inside it to look like the rest of
+the app.
+
+What stayed scoped: everything about the *stage* — the bench grid, the hud, the floating panels,
+the history strip, the legend, the ruler captions. Those are one screen's arrangement, not a
+vocabulary, and globalising them would move the monolith into the stylesheet.
+
+**One regression, found and fixed: `:global(...)` is Svelte-only syntax.** Two moved rules used
+it (`.pagesection :global(p)`, `.pagecol > :global(section.block)`) and it is not a selector in a
+plain stylesheet, so the info page lost every paragraph gap. Unwrapped.
+
+**How it was verified, because screenshot diffing could not do it.** Diffing before/after showed
+5–21 % of pixels differing on every surface — all of it the live cloud, the churning inventory
+table and font rasterisation, none of it localisable. So the check is a **computed-style probe**
+instead: open each surface, read the one property each moved rule uniquely sets, assert it is
+still set. 24 properties across the stage, the sing panel, the learn page and the info page, all
+correct — `.pagesection p` back to 11.7 px (0.9 rem), `.measure` 44 rem, `.deflist`/`.claims`/
+`.pagebody` all two columns, `.segmented button` radius 3 px, `.blocktitle` uppercase. That probe
+is worth keeping the next time CSS moves.
+
+## 4. Asked: what are the faint lines between the knots?
+
+Owner: *"what are the connections besides the knots connected? what do they say? I don't get it,
+they never animate or do shit."* Answered here rather than changed, because the answer is that
+**three different claims are drawn in one identical grey**.
+
+`showContext` builds `listener.setContext([...songPathsOf(id), ...grammarPathsOf(id)])` — so the
+web around a selected bird is:
+
+1. its **documented songs**, as sequences a person authored or recorded;
+2. its **measured grammar**, the transitions counted from its own field audio above
+   `GRAMMAR_FLOOR = 0.08`;
+
+and beside them `RelationThreads` draws a third thing entirely — hairlines out to **other
+species that share call shapes** (`relations.json`, capped at 64 pairs).
+
+Three answers to three different questions, at one weight, all static, with nothing on the stage
+saying which is which. The grammar segments even **carry a probability that is thrown away at
+draw time**. That is why it reads as decoration: it is not that the lines mean nothing, it is
+that the picture refuses to say which meaning each line has.
+
+The bounded fix, not done: **weight each grammar segment by its measured transition
+probability** and give the three kinds three distinguishable inks. That turns the web into a
+reading — *this bird's syntax, heavier where the transition is more likely* — from data already
+in the assets. It needs a weight channel through `listener.setContext` and `ContextPaths`, which
+is a real change rather than a styling tweak. It is also the natural surface for the predictive
+work in the previous round's §9: a predicted continuation is an edge with a probability, and this
+is the channel that would draw it.
+
+## 6. The refactor, continued: two pages out of the monolith
+
+`+page.svelte` is **4 211 lines, from 6 286** — a third gone, and none of it deleted.
+
+```
+src/lib/pages/InfoPage.svelte    699   §1-§6, the legend, and its swatch CSS
+src/lib/pages/LearnPage.svelte   909   the pipeline surface, its form state, its layout
+src/lib/lang/glossary.ts          22   BOUT_GLOSS
+```
+
+**`InfoPage` was the easy one and it is pure.** Nothing in it starts a sound, moves the camera
+or holds state; every number it prints is a prop read from the loaded manifest by the page
+above. That is the property worth having on the one surface whose whole job is to state what
+the app does and does not claim — it cannot invent a figure.
+
+**`LearnPage` is worth more than its line count.** Sixteen `$state` declarations went with it:
+`harvestQuality`, `buildMinCluster`, `loopPerPass` and thirteen more were form fields for one
+surface sitting in the same scope as the camera, the chorus and the matcher. `harvestOptions`,
+`learnedTotals` and `learnedTypeCount` moved too — pure functions of `pipelineStatus`, and a
+derived value belongs beside its only reader. What stayed in the page is everything the *poll*
+owns: a learning run outlives the page you started it from, so `pipelineStatus` and `job` are
+props.
+
+`BOUT_GLOSS` became a module for the reason its own docstring gave: it was held as one string
+so the gloss could not drift between the five places that carry it, and the moment a surface
+leaves the page a page-local constant stops being reachable.
+
+### Two regressions, both found by instruments rather than by looking
+
+1. **`:global(...)` is Svelte-only syntax.** Two rules moved into `layout.css` still used it, so
+   the info page silently lost every paragraph gap. A plain stylesheet needs the bare selector.
+2. **`.stagepage` stayed behind when its element left, and it broke the table.** Both
+   `.stagepage` rules were in the page's scoped CSS while the `<div>` moved into a component.
+   `.stagepage.tall` is the whole height chain the inventory table's windowing depends on:
+   without it `.tbody` grew to fit its content, its measured `clientHeight` became the height of
+   all 13 748 rows, and the window arithmetic faithfully drew **every one of them into the DOM**.
+   A missing `overflow: hidden` rendered the exact thing the windowing exists to prevent. Caught
+   by counting `.trow` elements in the browser: **13 748 drawn, then 48 after the fix.**
+
+Neither would have been caught by reading the diff, and the first would not have been caught by
+a screenshot either. The two instruments that found them are worth keeping: a **computed-style
+probe** (open each surface, read the one property each moved rule uniquely sets, assert it is
+still set — 24 of them) and a **DOM-count probe** on anything virtualised.
+
+Screenshot diffing was tried first and could not do the job: 5-21 % of pixels differed on every
+surface, all of it the live cloud, the churning inventory table and font rasterisation, none of
+it localisable.
+
+### Still monolithic, and the next cuts
+
+The page is still 4 211 lines and the three tab panels are most of it — Sing (~230), Compose
+(~490), Listen (~240). Those are harder than the two pages because they read and write the
+chorus, the camera and the selection, so extracting them means deciding what the chorus state
+machine's API is. **That is worth doing next and for the reason §1 exists:** two bugs this round
+came out of that machine being four effects and two flags in one scope.
+
+## 5. Tests
+
+`npm run check` clean apart from the four pre-existing `syrinx-processor.js` errors, zero
+warnings. `build`, `verify:layout`, `verify:split-knots`, `verify:trajectory`,
+`verify:inventory-table` and `verify:biplot` all pass. Both §1 fixes were measured in a real
+browser before and after, and the numbers are in §1.
+
 # Lyrebird — the learn page, and a name for a sound nobody named (2026-08-03)
 
 **The v8 chain is still running** — see the section below this one, which is still the first

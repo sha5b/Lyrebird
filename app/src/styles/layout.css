@@ -697,3 +697,45 @@ button.link {
 .rollup[open] > summary::before {
 	content: '▾ ';
 }
+
+/**
+ * The full-stage page root, shared by `InfoPage` and `LearnPage`.
+ *
+ * **Global because the elements moved and the rules did not.** Both were in `+page.svelte`'s
+ * scoped styles when the two pages were markup inside it; extracting them left the rules
+ * behind, and the failure was not cosmetic — `.stagepage.tall` is the whole height chain the
+ * inventory table's windowing depends on. Without it `.tbody` grew to fit its content, its
+ * measured `clientHeight` became the height of all 13 748 rows, and the window arithmetic
+ * faithfully drew every one of them into the DOM. A missing `overflow: hidden` rendered the
+ * thing the windowing exists to prevent.
+ */
+/* --- the stage page -------------------------------------------------------------
+   A page over the cloud, ruled like the cloud. The grid is the same faint graph the
+   stage draws behind the points, at the same weight, so opening this reads as turning
+   the instrument over rather than leaving it for a document. Nothing here is a card:
+   the panels elsewhere float above the stage, and a page that floats above a page
+   would just be the popover this replaced, bigger. */
+/* **No ruling on a page of text.** The grid was here so that opening a page read as
+   turning the same instrument over — but a rule running through every line of body copy
+   is not a metaphor, it is an unreadable paragraph. The stage keeps its graph; a document
+   is paper. */
+
+.stagepage {
+	position: absolute;
+	inset: 0;
+	z-index: 6;
+	overflow-y: auto;
+	padding: 0;
+	background: var(--paper-raised);
+}
+
+/* The Learn page does not scroll as a document. The table inside it is a windowed list
+   whose slice is computed from one scroll offset, and a scrolling page would give it a
+   second — the row under the cursor would then be placed against the wrong one. So the
+   page is a fixed-height column and each of its two columns scrolls on its own. */
+
+.stagepage.tall {
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
