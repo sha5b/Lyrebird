@@ -34,6 +34,8 @@ export class Listener {
 	readonly signal: VisualSignal;
 	readonly extractor: FeatureExtractor;
 	private readonly tracker: ActivationTracker;
+	/** Seconds clock of the previous `step`, for the activation ramps' elapsed time. */
+	private lastStep = 0;
 	private readonly points: PointTracker;
 	private readonly pitch: PitchDetector<Float32Array>;
 	private raf = 0;
@@ -365,6 +367,14 @@ export class Listener {
 		this.extractor.push(frame);
 		const active = this.extractor.active;
 		const now = performance.now() / 1000;
+		// **Real elapsed time, because the activation ramps are a duration and not a frame
+		// count.** This loop is driven by `requestAnimationFrame`, so passing nothing made the
+		// glow's attack and release scale with the monitor: the tuned 0.4 s half-life became
+		// 0.16 s at 144 Hz and 0.76 s when a heavy scene fell to 30. The scheduled pulse beside
+		// it has always been gaussians in seconds off the audio clock, so the two disagreed.
+		// First frame has no predecessor and takes the reference step.
+		const dt = this.lastStep > 0 ? now - this.lastStep : 1 / 60;
+		this.lastStep = now;
 
 		if (active && !this.wasActive) this.onsetTimes.push(now);
 		this.wasActive = active;
@@ -398,14 +408,14 @@ export class Listener {
 				// Flatness is the last element of the 28-d descriptor, and it has to be
 				// handed over raw: standardising turns "this is broadband noise" into a
 				// z-score whose meaning depends on how much noise the corpus contains.
-				this.tracker.update(z, descriptor[descriptor.length - 1]);
+				this.tracker.update(z, descriptor[descriptor.length - 1], dt);
 				this.signal.activations.set(this.tracker.activations);
 				this.signal.best = this.tracker.best().index;
 			}
 			const [f0, clarity] = this.pitch.findPitch(frame, this.engine.ctx.sampleRate);
 			if (clarity > 0.75 && f0 > 150) this.signal.f0 = f0;
 		} else {
-			this.tracker.decay();
+			this.tracker.decay(dt);
 			this.signal.activations.set(this.tracker.activations);
 			// The pitch readout is a live measurement, not a last-known-good value. Left
 			// latched it reports several kHz over a silent aviary, which is a lie the HUD

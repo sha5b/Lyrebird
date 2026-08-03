@@ -544,7 +544,11 @@ export class ActivationTracker {
 	 * @param flatness the same descriptor's raw spectral flatness, before standardising —
 	 *   the noise test needs the physical quantity, not its z-score
 	 */
-	update(zLive: Float32Array, flatness = 0): Float32Array {
+	update(
+		zLive: Float32Array,
+		flatness = 0,
+		dt = 1 / ActivationTracker.REFERENCE_FPS
+	): Float32Array {
 		// When the galaxy was built in the embedding space, first carry the live
 		// descriptor into it, then the same cosine the 28-d path uses.
 		let query = zLive;
@@ -586,7 +590,9 @@ export class ActivationTracker {
 		// the input is a tone at all. Either one alone lets noise through.
 		const tonal = 1 - smoothstep(TONAL_FLOOR, TONAL_CEILING, flatness);
 		const target = smoothstep(this.ramp.floor, this.ramp.ceiling, max) * tonal;
-		const smoothing = this.effectiveSmoothing();
+		// The same conversion as `decay`: an EMA coefficient applied per frame is a different
+		// attack on every display, and the attack has to agree with the release it hands over to.
+		const smoothing = ActivationTracker.overTime(this.effectiveSmoothing(), dt);
 		this.strength = smoothing * this.strength + (1 - smoothing) * target;
 
 		let sum = 0;
@@ -603,10 +609,49 @@ export class ActivationTracker {
 	}
 
 	/**
-	 * Release rate of the activations in `decay()`: 0.97 is a ~0.4 s half-life at
-	 * 60 fps, so a sung knot glows for ~0.8 s after its note instead of snapping off.
+	 * Release rate of the activations in `decay()`: 0.97 per 1/60 s is a ~0.4 s half-life,
+	 * so a sung knot glows for ~0.8 s after its note instead of snapping off.
 	 */
 	private static readonly RELEASE = 0.97;
+
+	/**
+	 * The frame rate the coefficients above and `smoothingBase` were tuned at.
+	 *
+	 * **Both were applied once per animation frame, which made the fade a function of the
+	 * monitor.** `RELEASE = 0.97` has a half-life of 22.8 *frames*: 0.38 s at 60 Hz, which is
+	 * what the comment claims and what was looked at — but 0.16 s at 144 Hz and 0.76 s when a
+	 * heavy scene drops to 30. So the same build glowed for less than half as long on a
+	 * high-refresh display, and got visibly laggier exactly when the frame rate fell. The
+	 * attack had the identical problem through `effectiveSmoothing`.
+	 *
+	 * It also disagreed with its own neighbours. The scheduled pulse in `listener.ts` is two
+	 * gaussians in *seconds* off the audio clock, and the accent's colour ease is already
+	 * delta-corrected — so on a 144 Hz screen a knot's glow fell away while the colour it was
+	 * easing toward, and the note that lit it, were still going.
+	 *
+	 * Raising each coefficient to `dt * 60` reproduces the tuned 60 Hz behaviour exactly and
+	 * makes every other rate match it, so the numbers above stay the numbers that were chosen.
+	 */
+	private static readonly REFERENCE_FPS = 60;
+
+	/**
+	 * A per-frame coefficient re-expressed for a real elapsed time.
+	 *
+	 * **Large gaps are not clamped, and that was a correction.** The first version capped `dt`
+	 * at a quarter second to keep the exponent small, which left a knot 63 % lit after a tab
+	 * had been in the background for thirty seconds — `verify:fade` asserts silence there and
+	 * caught it. Nothing needed the cap: `0.97 ** 1800` underflows to zero, which is exactly
+	 * the right answer for "nothing has been sounding for half a minute".
+	 *
+	 * The floor keeps a duplicated timestamp from freezing the fade, and a non-finite `dt`
+	 * falls back to one reference frame rather than poisoning every activation with NaN.
+	 */
+	private static overTime(coeff: number, dt: number): number {
+		const seconds = Number.isFinite(dt)
+			? Math.max(1 / 1000, dt)
+			: 1 / ActivationTracker.REFERENCE_FPS;
+		return Math.pow(coeff, seconds * ActivationTracker.REFERENCE_FPS);
+	}
 
 	/**
 	 * Pulls everything toward zero — used when the input goes quiet.
@@ -623,11 +668,12 @@ export class ActivationTracker {
 	 * the slow release can never blur one sounding note into the next; retargeting
 	 * during sound lives in `update()`, unchanged.
 	 */
-	decay(): Float32Array {
-		this.strength *= this.effectiveSmoothing();
+	decay(dt = 1 / ActivationTracker.REFERENCE_FPS): Float32Array {
+		this.strength *= ActivationTracker.overTime(this.effectiveSmoothing(), dt);
 		if (this.strength < 1e-3) this.strength = 0;
+		const release = ActivationTracker.overTime(ActivationTracker.RELEASE, dt);
 		for (let i = 0; i < this.activations.length; i++) {
-			const v = this.activations[i] * ActivationTracker.RELEASE;
+			const v = this.activations[i] * release;
 			this.activations[i] = v < 1e-3 ? 0 : v;
 		}
 		// `similarity` is a measurement, not a level: it holds the last cosine actually
