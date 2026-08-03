@@ -1,3 +1,262 @@
+# Lyrebird — READ THIS FIRST (2026-08-03, ~16:40): the corpus is not short of audio, it is short of a little audio for 1 160 birds
+
+**The single most useful measurement of the day, and it contradicts what this file said two
+sections down.** Parsing `out/harvest-gan/syllables.jsonl` — the retained observations, which is
+what `learn` actually reads:
+
+```
+retained syllable observations   340,079
+species with retained syllables    3,581
+  ... not in the inventory         1,160
+  ... of those, >= 24 retained         0      <- learn.MIN_OBSERVATIONS
+  largest unmodelled                  23      one short of the floor
+  median unmodelled                   11
+```
+
+**Every unmodelled species sits at or below 23.** `learn` already considered all 1 160 and
+skipped every one. That is the mechanism behind the v8 chain reproducing the installed inventory
+byte-for-byte: the inventory contains *exactly* the species that cleared 24, so a re-learn on an
+unchanged store cannot do anything else. **A re-learn today would produce the same file a third
+time. Do not run one.**
+
+What the corpus needs is not a harvest in general. It needs **a median of 13 more observations
+for 1 160 specific birds**, each of which is then modellable.
+
+## The trap that produced a wrong answer first, so nobody repeats it
+
+`state.json`'s `seenPerSpecies` counts **windows analysed**. Read as "observations we hold" it
+says 545 of the unmodelled species already clear the floor. The true answer from the retained
+data is **zero**. The two differ by a factor that is not constant, so `seenPerSpecies` is an
+upper bound and nothing else. `analysis/topup_underfloor.py` reads `syllables.jsonl` and its
+docstring says why.
+
+## The audio came from iNaturalist, not xeno-canto
+
+`out/harvest-gan/CREDITS.md` is full of `INAT…` ids against `visipedia/inat_sounds`, and
+`birdy-pipeline sources list` reports **iNatSounds 2024 (AWS Open Data): 111k Aves recordings,
+3 846 species, keyless** — which is the 3 581 in the store. So the top-up belongs to
+`sources fetch --source inat-sounds`, not to the xeno-canto harvest: same archive, no API key,
+no quota, and `--per-species` makes a balanced take instead of the archive's first species in
+taxonomic order.
+
+Owner's call: **iNat first, then add the same species to the xeno-canto registry** so a second
+archive can deepen them afterwards.
+
+## The cap is not the blocker, and the arithmetic says so
+
+```
+syllableCap             400,000
+held                    340,079   -> 59,921 headroom
+observations/recording      ~33   (340,079 / 10,184)
+1,160 birds x 1 recording ~38,000 -> fits, with room left
+```
+
+Past the cap `HarvestStore._trim` **does not refuse — it evicts**, retiring the oldest recording
+of whichever species currently holds the most, converging on an even split. Defensible on its
+own terms and the opposite of what a top-up wants, so `topup_underfloor.py` stops with 5 000
+observations of headroom still unspent and says so.
+
+## Three misconfigurations in the control server, all fixed
+
+Any one of these would have corrupted the corpus if a harvest had been started first. The
+`serve --store` help even warns that it "warns when a sibling store in out/ has moved more
+recently", which is the pipeline predicting this exact situation.
+
+```
+                  was                              now
+store   out/harvest        40 species     out/harvest-gan   3,581 species / 340,079 syllables
+inventory data/inventory.json  12 documented   learned-inventory.json   2,423
+queue   12 + 32 discovered = 44 species    2,423 + 32 = 2,455
+```
+
+`serve` defaults `--inventory` to `data/inventory.json` (cli.py, the twelve documented birds),
+which is why the Learn page's harvest queue was 44 species. Restarted with the learned inventory
+and the production store, `pipeline/.env` sourced so `hasKey` survived.
+
+**Launch them with `setsid`.** Two earlier restarts printed their banner and died: `( cmd & )`
+does not survive the shell exiting, and the port was silently free afterwards. The v8 chain used
+`setsid` for the same reason.
+
+## Ready to run, and unrun
+
+`pipeline/analysis/topup_underfloor.py` — under-floor species from the retained data, emptiest
+first, `inat-sounds`, cap-guarded, `--dry-run` and `--max-species` for a bounded proof. **It has
+never been executed** (the tooling was unavailable when it was written), so every number in it
+above is arithmetic rather than measurement. Run the dry pass first.
+
+Then, and only then, `learn` — which is what turns observations into fitted types, and could
+take the inventory from **2 423 toward ~3 583 species**.
+
+# Lyrebird — the browser finally looked at it, and it caught a fix that was fixing nothing (2026-08-03)
+
+`playwright` is a devDependency now and `npm run probe:stage` is the instrument. It asserts on
+console errors, computed styles and element counts — never screenshots, because pixel diffing was
+tried on this app and could not localise anything against the live cloud and font rasterisation.
+
+## 1. What only the browser could answer
+
+**The bird-colour shader compiles and links.** `shader errors: 0`, including after toggling the
+mode on. That was the real risk: three.js logs `THREE.WebGLProgram: Shader Error` and then draws
+*nothing*, and TypeScript never sees GLSL.
+
+```
+grid tile            87.1191 px, offset 43.5596 px  (exactly half)
+ruler caption        "1 tick = 20 knot-spacings"    (20 x 4.356 px/knot = 87.12)
+grid layers          3 — vignette + 2 lines, one lattice
+figure vs container  743 / 743
+downloads row        two 29 px bordered buttons
+learn order          PIPELINE · KEEP LEARNING · REFINE THE DATASET · REBUILD THE GALAXY · drawer
+"Local knot shape"   gone;  "Bird colours" present;  exclusion works both ways
+404s                 birdy/known|unknown/manifest.json — detectGalaxyMaps probing, benign
+```
+
+## 2. The fix that was fixing nothing
+
+The provenance key was reported as leading with an empty class. The morning's fix sorted
+`provLegend` by measured share — and **`provLegend` was rendered nowhere**. The list the app draws
+is an inline literal in the markup, so the sort was dead code and the visible order never moved.
+Caught only because the probe read the DOM:
+
+```
+before   documented 2% · synthesized none · recorded 94% · unlabelled none · unidentified 4%
+after    recorded 94% · unidentified 4% · documented 2% · synthesized none · unlabelled none
+```
+
+`provLegend` is gone and `provFilterOrder` feeds the markup. **A "fix" verified only by reading
+the diff is not verified**, and this is the round's evidence for it.
+
+## 3. What the probe cannot reach
+
+**The ring on a knot is still unverified.** A tag exists only for a knot that is sounding,
+selected or pinned, and headless chromium has no audio device, so nothing ever activates. One
+opportunistic sample while something happened to be singing read `5px`, fill `rgba(0,0,0,0)`,
+border alpha **0.780** — which is exactly `0.38 + 0.645 x 0.62`, so `--ring-on` was resolving
+against `--act ≈ 0.645`. Good evidence, one accidental sample, not a check.
+
+# Lyrebird — a third colour language, the ring on a knot, and two zeros explained (2026-08-03)
+
+## 1. Bird colours, and it costs no vertex attribute
+
+Owner wanted the points colourable by bird as a toggle. That mode **existed and was removed**, for
+two reasons in the source: at 2 423 species on a dense scatter the hues cannot be told apart, and
+its per-point hue attribute took the program to fifteen vertex attributes, which **failed to link
+on Mesa's Intel driver in Firefox**.
+
+The second reason no longer applies, and that is why this could come back: the knot's species hue
+already rides `uClusterState`'s **A channel**, because the accent reads it to light a singing knot
+in its own bird's colour. So `uBird` reads a value the shader already has — 10 attributes, no new
+slot. The legibility finding stands unchanged, which is why it is **off by default** and mutually
+exclusive with the provenance tint ("colour says one thing at a time" is the legend's own rule).
+
+Verified in a browser: 0 shader errors with it on, and the exclusion clears the other switch both
+ways. Written as two `onchange` handlers, not an effect on both flags — an effect that cleared
+`birdColours` whenever `provColours` was set makes the bird mode **unreachable**, because turning
+it on immediately satisfies the condition that turns it off.
+
+## 2. The ring on a knot: hollow, zoom-scaled, and centred at last
+
+It was a 7 px filled disc driven by a binary. Now:
+
+- **Hollow.** Owner: *"I thought it's a border colour and infill 0."* A filled mark is a bigger
+  claim than the data it annotates. Tried at 1.8em (~21 px) on a literal reading of "three times
+  the size" and that was wrong twice over — too large, and filled.
+- **Sized from the zoom**, `clamp(5, pxPerKnot, 22)` px, because a knot's drawn extent is about one
+  knot spacing (0.0417 against 0.0419) so `pxPerKnot` *is* roughly the knot's diameter on screen.
+- **Centred on the knot, and this was a real off-by-half that predates today.** `margin-top: 0.26em`
+  (~3 px) was pushing the ring *below* the projected position, so the point sat at its lower edge —
+  invisible at 7 px, and outside the ring entirely at particle size. `.tag` is transformed onto the
+  knot and `translate(-50%,-50%)` does the rest; the card now carries the offset instead, because
+  **the card is what moves to meet the mark, never the other way round**.
+- **On `--act`, not `--hot`.** NodeProjector writes both — a binary "card is open" and the eased
+  0..1 activation — and the ring was on the binary, so the one mark sitting on the data snapped
+  while everything around it ramped. `max(--act, --hot * 0.4)` keeps a pinned knot findable.
+- **No CSS transition, deliberately.** `--act` is rewritten per frame and already eased upstream; a
+  transition would smooth a smoothed value and add 120 ms of lag, so the ring would trail the
+  points it sits among. The match meter beside it sets `width` from `--act` the same way.
+
+Audited the other anchored marks while there: the ruler's `.tick` is edge-anchored (a 1 px line at
+`left: at`, so its centre is 0.5 px past the value) while `.num` *is* centred. Sub-pixel, reported,
+not changed.
+
+## 3. The two zeros in the two vocabularies
+
+Owner: why so few recorded, why so few synthesized? Both are zeros, in two different filters that
+share three words — and the answer is one sentence read from opposite ends.
+
+```
+                recorded            our own
+sounds (points) 327,164  94 %       0  synthesized
+songs                 0             2,426  99.3 %  invented
+```
+
+- **`recorded` is 0 in the chorus filter** because it maps to song confidence `unlabelled`, and the
+  pipeline writes `unlabelled` onto **syllables and knots, never onto a song**. Real audio enters as
+  points, not as arranged sequences — the class names a kind of song no code path produces.
+- **`synthesized` is 0 in the provenance key** because of `corpus.py`'s `if not anchor: continue`.
+  With `--member-anchor` off a fitted type that has field members renders nothing, since putting our
+  own synthesiser on the map would be *"a claim about our synthesiser rather than about a bird"*.
+  Only the 44 documented syllables render, and those are classed `documented`.
+- Those 2 421 `invented` songs are one `learned_bout` per species from `learn.py`, commented *"the
+  sequence is ours even though the syllables are measured."*
+
+**The bird made the sounds; we chose the orders.** The chorus panel now prints each class's *share*,
+because a working toggle with 0.7 % of the pool to act on is indistinguishable from a broken one.
+
+**And a real bug behind that:** the class counts were computed over *loaded shards*, and a zero
+**disabled** the checkbox. Load one bird whose only song is `invented` and "documented" went
+unclickable although sixteen exist. It now disables only on a complete count and shows `…` while
+shards arrive.
+
+## 4. Smaller
+
+- **Grid bursts merge when they land together.** Repeat strikes on the same knot were already
+  folded; two *different* knots a few pixels apart drew two crosses whose rules lay on top of each
+  other. Within 8 % of the rule's half-length the live cross is refreshed instead — measured
+  against `reachNow()` rather than in cloud units, because "near" here is a judgement about the
+  picture and the rule's length already tracks the zoom.
+- **Clicking a label selects the song and the bird.** `pickKnot` already took the bird; the song is
+  a second dispatch rather than a widened transition, because `chooseSong` owns everything that
+  must follow a song change (pin released, epoch bumped, running solo re-pooled) and duplicating
+  any of it would be the second copy this machine exists to avoid. Clicking a pinned knot still
+  releases rather than re-selecting.
+- **"Local knot shape" is gone.** Always on: the comparison it existed for is settled (torn knots
+  379 → 245, severe 77 → 37, median extent unchanged). It was also the one Display switch that
+  rebuilt the cloud, so flipping it read as the points turning off and on.
+
+# Lyrebird — the fade was measured in frames, not seconds (2026-08-03)
+
+Owner asked whether the activation fades were right. They were not, and the defect never threw.
+
+`ActivationTracker`'s attack and release were EMA coefficients applied once per
+`requestAnimationFrame`, so the glow's duration was a function of the monitor. `RELEASE = 0.97`
+has a half-life of 22.8 **frames**:
+
+```
+        per frame (was)    per second (now)
+ 24 fps     0.958 s            0.417 s
+ 60 fps     0.383 s  <- tuned  0.383 s
+144 fps     0.160 s            0.382 s
+240 fps     0.096 s            0.383 s
+```
+
+A **10x spread**, and the comment claiming "~0.4 s" was right about exactly one refresh rate. It
+also disagreed with its neighbours, which is what makes it correctness and not taste: the
+scheduled pulse in `listener.ts` is two gaussians in *seconds* off the audio clock, and
+NodeProjector's ease is already `1 - 0.8 ** (delta * 60)` with a comment saying "as fast at
+120 Hz as at 60 Hz". **`features.ts` was the outlier, not the convention.**
+
+Fixed by raising each coefficient to `dt * 60`, which reproduces the tuned 60 Hz behaviour
+exactly — the numbers that were chosen do not move — and makes every other rate match it.
+
+**`verify:fade`, 12 checks over 10 frame rates.** Reverting to per-frame fails 4, including
+"144 fps is not faster than 60". Self-contained on a synthetic two-knot corpus, so it does not
+depend on which build is installed.
+
+**And it caught a mistake inside the fix.** The first version clamped `dt` at 0.25 s "to keep the
+exponent sane", which left a knot **63 % lit after thirty seconds in a background tab**. Nothing
+needed the clamp: `0.97 ** 1800` underflows to zero, which is the right answer for "nothing has
+sounded for half a minute". Only the lower bound and a NaN guard remain.
+
 # Lyrebird — one scale on the stage, and Learn's three main actions (2026-08-03)
 
 ## 1. The stage had two scales and only one of them meant anything
