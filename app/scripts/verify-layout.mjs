@@ -13,7 +13,7 @@
  *
  * Run with `npm run verify:layout`. Exits non-zero on any disagreement.
  */
-import { buildLayout, nearestNeighbourDistances } from '../src/lib/galaxy/layouts.ts';
+import { buildLayout, drawnLobes, nearestNeighbourDistances } from '../src/lib/galaxy/layouts.ts';
 
 /** The `k²` loop this replaced, kept verbatim as the thing being checked against. */
 function brute(cents, counts, k) {
@@ -316,6 +316,69 @@ function tornRatio(pos, idx) {
 		console.log(`FAIL extent: wide knot ${wide.toFixed(4)} against tight knot ${tight.toFixed(4)}`);
 		failures++;
 	}
+}
+
+/**
+ * The knots this projection draws in two places (`drawnLobes`).
+ *
+ * **This is what makes a locally-faithful projector usable.** PaCMAP puts 3.2x more of a
+ * point's drawn neighbours on its own type than cMDS did, and tears 217 of 438 measurable
+ * knots instead of 18 — and only 14 of those are outliers, while 120 are real second lobes
+ * holding a median 21.7 % of the knot. Every instrument in the app draws a knot as one
+ * place, so an unhandled second lobe lights with no name on it. Each lobe therefore gets
+ * its own anchor, and the anchor has to sit ON members, never between them.
+ */
+console.log('\ntorn knots drawn in two places (drawnLobes)');
+{
+	const check = (name, cond, detail = '') => {
+		if (cond) console.log(`  ${name.padEnd(46)} ok${detail ? ` (${detail})` : ''}`);
+		else {
+			console.log(`FAIL ${name} ${detail}`);
+			failures++;
+		}
+	};
+	// knot 0: two tight lobes far apart. knot 1: one blob as wide as that gap.
+	// knot 2: two lobes but only 8 members, under the floor.
+	const pos = [];
+	const cid = [];
+	const put = (x, y, z, c) => { pos.push(x, y, z); cid.push(c); };
+	// Deliberately unequal — 25 against 15 — so "the smaller lobe" is well defined. The
+	// first version of this planted 20 and 20, and the tie made the assertion meaningless.
+	for (let i = 0; i < 25; i++) put(0 + i * 1e-3, 0, 0, 0);
+	for (let i = 0; i < 15; i++) put(1 + i * 1e-3, 0, 0, 0);
+	for (let i = 0; i < 40; i++) put(Math.cos(i) * 0.5, Math.sin(i) * 0.5, Math.sin(i * 2) * 0.5, 1);
+	for (let i = 0; i < 4; i++) put(0 + i * 1e-3, 3, 0, 2);
+	for (let i = 0; i < 4; i++) put(1 + i * 1e-3, 3, 0, 2);
+	const P = Float32Array.from(pos);
+	const l = drawnLobes(P, cid, 3);
+
+	check('a knot drawn in two places is found', l.has[0] === 1);
+	check('a wide single blob is not split', l.has[1] === 0);
+	check('an 8-member knot is under the floor', l.has[2] === 0);
+	check('the second lobe is the smaller one', l.counts[0] === 15, `got ${l.counts[0]}`);
+	check('the report counts it', l.report.split === 1 && l.report.measured >= 2,
+		`split ${l.report.split}, measured ${l.report.measured}`);
+
+	// The anchor must land ON a member of the second lobe. This is the whole point: a mean
+	// between two lobes is the void, which is the bug being fixed.
+	const ax = l.anchors[0];
+	const onMember = cid.some((c, i) => c === 0 && Math.abs(pos[i * 3] - ax) < 1e-6);
+	check('the second anchor sits on a real member', onMember, `x=${ax.toFixed(4)}`);
+	check('...and in the smaller lobe, not the larger', Math.abs(ax - 1) < 0.05, `x=${ax.toFixed(4)}`);
+	// An unsplit knot must leave a zeroed anchor that no consumer will read, because `has`
+	// gates it — a stale non-zero there would put a tag in the middle of the box.
+	check('an unsplit knot leaves its anchor at zero',
+		l.anchors[3] === 0 && l.anchors[4] === 0 && l.anchors[5] === 0);
+
+	// Determinism: a reload must draw the same two places, or tags move on their own.
+	const again = drawnLobes(P, cid, 3);
+	check('the pass is deterministic',
+		again.anchors.every((v, i) => v === l.anchors[i]) &&
+		again.has.every((v, i) => v === l.has[i]));
+
+	// An empty corpus must not throw — a knot with no members is a real shipped case.
+	const none = drawnLobes(new Float32Array(0), [], 2);
+	check('no points is not an error', none.report.split === 0 && none.has.length === 2);
 }
 
 if (failures) {

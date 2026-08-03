@@ -23,6 +23,12 @@ export interface LayoutView {
 	 * (wave, grid cross, unmatched breath) may fire for it; they all check this.
 	 */
 	counts: Uint32Array;
+	/**
+	 * Second drawn places for the knots this projection tears — see `drawnLobes`. A knot
+	 * with `has[c]` set is drawn in two patches, and both of them light when it sings, so
+	 * both need a name or the second one is the "lit, no label, no connection" report.
+	 */
+	lobes: Lobes;
 	/** Bumped whenever `centroids` moves, so consumers know to rebuild geometry. */
 	version: number;
 }
@@ -31,6 +37,15 @@ export function createLayoutView(assets: BirdyAssets): LayoutView {
 	return {
 		centroids: Float32Array.from(assets.centroids.items.flatMap((c) => c.position)),
 		counts: Uint32Array.from(assets.centroids.items.map((c) => c.count ?? 0)),
+		// Empty until the first real layout writes one: the shipped centroid positions are
+		// means, and asking which of them are torn before the arrangement exists would be
+		// answering about a picture nobody is looking at.
+		lobes: {
+			anchors: new Float32Array(assets.centroids.k * 3),
+			has: new Uint8Array(assets.centroids.k),
+			counts: new Uint32Array(assets.centroids.k),
+			report: { measured: 0, split: 0, medianShare: 0, ms: 0 }
+		},
 		version: 0
 	};
 }
@@ -44,6 +59,8 @@ export interface Layout {
 	counts: Uint32Array;
 	/** What the local pass did, or null when it was off / unavailable. See `localShapes`. */
 	local: LocalReport | null;
+	/** Second drawn places for the knots this projection tears. See `drawnLobes`. */
+	lobes: Lobes;
 }
 
 /** What the two-level pass actually did, for the interface to be able to say so. */
@@ -575,6 +592,204 @@ function localShapes(assets: BirdyAssets, positions: Float32Array): LocalReport 
  * matters: the members are placed around their knot's centre first, and KNOT_GAP then
  * moves the whole knot as one — exactly what it did to the projection's knots.
  */
+/** Fewest members before a knot's shape is allowed to argue it is drawn in two places. */
+const LOBE_MIN_MEMBERS = 12;
+/** And fewest in the smaller lobe, so three stragglers cannot found a second place. */
+const LOBE_MIN_SIDE = 3;
+/**
+ * Gap between the two halves over their own mean radius, past which the knot is drawn as
+ * two places rather than one.
+ *
+ * Splitting a single blob scores about 2, so 2 is the null and 5 is the pipeline's own
+ * threshold in `torn_clusters`. **It is used here and nowhere else on purpose: this
+ * statistic is only calibrated in three dimensions.** A blob's mean radius grows like
+ * sqrt(d) while the gap between its halves does not, so the same 5 is unreachable in 8-d
+ * (two blobs a full 180 degrees apart score 3.61) and meaningless in 32-d. The equivalent
+ * gate in the pipeline's `_type_blobs` measures the *features* and is switched off for
+ * exactly that reason — it fires on knots the picture already draws as one place.
+ * Measured on the drawn positions it fires on the knots that are actually drawn in two.
+ */
+const LOBE_RATIO = 5;
+
+/** A knot's second drawn place, when the projection put its members in two. */
+export interface Lobes {
+	/** `3 * k` — the secondary anchor. Only meaningful where `has[c]` is 1. */
+	anchors: Float32Array;
+	has: Uint8Array;
+	/** Members in the secondary lobe, so the interface can say how much of the knot it is. */
+	counts: Uint32Array;
+	/** Knots measured, knots split, and the median share the smaller lobe holds. */
+	report: { measured: number; split: number; medianShare: number; ms: number };
+}
+
+/**
+ * The knots this projection draws in two places, and a real anchor for each place.
+ *
+ * **This is what makes a locally-faithful projection usable.** The 2026-08-03 bake-off
+ * measured the trade: PaCMAP puts 68.5 % of a point's drawn neighbours on its own type
+ * against cMDS's 21.4 %, and tears 217 of 438 measurable knots against cMDS's 18. The
+ * tearing is not a rounding error and not outliers — only 14 of the 217 are a few flung
+ * members, while **120 are genuine second lobes holding a median 21.7 % of the knot at a
+ * median 0.464 box units**. A knot is drawn as one place by every instrument in the app:
+ * the tag, the thread, the grid strike and the wave all read one position. Left alone,
+ * those second lobes light when the knot sings and carry no name — which is the report
+ * this whole line of work started from.
+ *
+ * So a two-lobed knot gets **two** anchors, and each one sits on its own lobe's most
+ * central member rather than on a mean, because a mean between two lobes is the void.
+ * The larger lobe is the primary: it keeps the knot's identity for anything that needs a
+ * single place (a song's thread runs through it, a fly-to frames it), and the secondary
+ * exists so the other lit patch can be named.
+ *
+ * The split is deterministic — a principal-axis cut refined by two Lloyd steps, no random
+ * seeding — so a reload draws the same two places. `torn_clusters` in the pipeline uses
+ * k-means with a fixed seed; the two agree on genuinely separated lobes, which is the only
+ * case that gets past the ratio.
+ */
+export function drawnLobes(positions: Float32Array, clusterId: number[], k: number): Lobes {
+	const started = typeof performance === 'undefined' ? 0 : performance.now();
+	const anchors = new Float32Array(k * 3);
+	const has = new Uint8Array(k);
+	const counts = new Uint32Array(k);
+
+	// members per knot, in one pass
+	const members: number[][] = Array.from({ length: k }, () => []);
+	for (let i = 0; i < clusterId.length; i++) {
+		const c = clusterId[i];
+		if (c >= 0 && c < k) members[c].push(i);
+	}
+
+	const shares: number[] = [];
+	let measured = 0;
+	const centre = (ix: number[]) => {
+		const m = [0, 0, 0];
+		for (const i of ix) {
+			m[0] += positions[i * 3];
+			m[1] += positions[i * 3 + 1];
+			m[2] += positions[i * 3 + 2];
+		}
+		return [m[0] / ix.length, m[1] / ix.length, m[2] / ix.length];
+	};
+	const meanRadius = (ix: number[], c: number[]) => {
+		let s = 0;
+		for (const i of ix) {
+			const dx = positions[i * 3] - c[0];
+			const dy = positions[i * 3 + 1] - c[1];
+			const dz = positions[i * 3 + 2] - c[2];
+			s += Math.hypot(dx, dy, dz);
+		}
+		return s / ix.length;
+	};
+	/** The member nearest a lobe's own centre — always a real place, never the gap. */
+	const medoid = (ix: number[], c: number[]) => {
+		let best = ix[0];
+		let bestD = Infinity;
+		for (const i of ix) {
+			const d =
+				(positions[i * 3] - c[0]) ** 2 +
+				(positions[i * 3 + 1] - c[1]) ** 2 +
+				(positions[i * 3 + 2] - c[2]) ** 2;
+			if (d < bestD) {
+				bestD = d;
+				best = i;
+			}
+		}
+		return best;
+	};
+
+	for (let c = 0; c < k; c++) {
+		const ix = members[c];
+		if (ix.length < LOBE_MIN_MEMBERS) continue;
+
+		// Deterministic two-way cut: the knot's longest direction, then two Lloyd steps.
+		// Power iteration on the covariance would be the textbook axis; the difference
+		// between the two blobs' own separation and the leading eigenvector is nil once a
+		// knot is bimodal enough to clear the ratio, and the farthest-pair axis needs no
+		// eigen-solver and cannot fail to converge.
+		const mid = centre(ix);
+		let far = ix[0];
+		let farD = -1;
+		for (const i of ix) {
+			const d =
+				(positions[i * 3] - mid[0]) ** 2 +
+				(positions[i * 3 + 1] - mid[1]) ** 2 +
+				(positions[i * 3 + 2] - mid[2]) ** 2;
+			if (d > farD) {
+				farD = d;
+				far = i;
+			}
+		}
+		let a = [positions[far * 3], positions[far * 3 + 1], positions[far * 3 + 2]];
+		// the member farthest from that one is the other seed
+		let opp = ix[0];
+		let oppD = -1;
+		for (const i of ix) {
+			const d =
+				(positions[i * 3] - a[0]) ** 2 +
+				(positions[i * 3 + 1] - a[1]) ** 2 +
+				(positions[i * 3 + 2] - a[2]) ** 2;
+			if (d > oppD) {
+				oppD = d;
+				opp = i;
+			}
+		}
+		let b = [positions[opp * 3], positions[opp * 3 + 1], positions[opp * 3 + 2]];
+		let left: number[] = [];
+		let right: number[] = [];
+		for (let pass = 0; pass < 3; pass++) {
+			left = [];
+			right = [];
+			for (const i of ix) {
+				const da =
+					(positions[i * 3] - a[0]) ** 2 +
+					(positions[i * 3 + 1] - a[1]) ** 2 +
+					(positions[i * 3 + 2] - a[2]) ** 2;
+				const db =
+					(positions[i * 3] - b[0]) ** 2 +
+					(positions[i * 3 + 1] - b[1]) ** 2 +
+					(positions[i * 3 + 2] - b[2]) ** 2;
+				(da <= db ? left : right).push(i);
+			}
+			if (!left.length || !right.length) break;
+			a = centre(left);
+			b = centre(right);
+		}
+		if (left.length < LOBE_MIN_SIDE || right.length < LOBE_MIN_SIDE) continue;
+
+		measured++;
+		const gap = Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+		const spread = 0.5 * (meanRadius(left, a) + meanRadius(right, b));
+		if (gap / Math.max(spread, 1e-9) <= LOBE_RATIO) continue;
+
+		// Larger lobe is the primary and keeps the knot's single-place identity.
+		const [bigIx, bigC, smallIx, smallC] =
+			left.length >= right.length ? [left, a, right, b] : [right, b, left, a];
+		const at = medoid(smallIx, smallC);
+		anchors[c * 3] = positions[at * 3];
+		anchors[c * 3 + 1] = positions[at * 3 + 1];
+		anchors[c * 3 + 2] = positions[at * 3 + 2];
+		has[c] = 1;
+		counts[c] = smallIx.length;
+		shares.push(smallIx.length / ix.length);
+		void bigIx;
+		void bigC;
+	}
+
+	shares.sort((x, y) => x - y);
+	const ms = typeof performance === 'undefined' ? 0 : performance.now() - started;
+	return {
+		anchors,
+		has,
+		counts,
+		report: {
+			measured,
+			split: shares.length,
+			medianShare: shares.length ? shares[shares.length >> 1] : 0,
+			ms
+		}
+	};
+}
+
 export function buildLayout(assets: BirdyAssets, local = true): Layout {
 	const base = expandClusters(
 		assets.positions,
@@ -602,7 +817,8 @@ export function buildLayout(assets: BirdyAssets, local = true): Layout {
 		positions,
 		centroids: centroidsOf(positions, assets.points.clusterId, assets.centroids.k),
 		counts,
-		local: report
+		local: report,
+		lobes: drawnLobes(positions, assets.points.clusterId, assets.centroids.k)
 	};
 }
 

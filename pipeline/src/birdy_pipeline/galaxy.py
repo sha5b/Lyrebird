@@ -142,7 +142,35 @@ TYPE_SPLIT_MIN_MEMBERS = 40
 TYPE_SPLIT_MIN_SIDE = 8
 
 PROJECTIONS = ("umap", "pca", "cmds", "cmds-chord", "pacmap")
-DEFAULT_PROJECTION = "cmds"  # most distance-faithful; see README "Galaxy shape"
+#: **`pacmap` since 2026-08-03, and the trade it makes is measured on both sides.**
+#:
+#: cMDS held this seat because distance faithfulness was the only thing the build scored,
+#: and it wins that outright. But faithfulness is a correlation over random pairs and so is
+#: a *global* measure; on the local one that a viewer actually reads — two marks drawn
+#: together — cMDS is close to uninformative. The bake-off, same corpus, all five:
+#:
+#:     projector    pearson  spearman   trust    cont   knn10      torn
+#:     umap           0.341     0.328   0.931   0.947   65.7%   156/447
+#:     pca            0.589     0.568   0.845   0.941   22.2%    15/502
+#:     cmds           0.767     0.742   0.850   0.956   21.4%    18/493
+#:     cmds-chord     0.722     0.699   0.861   0.961   23.2%    19/493
+#:     pacmap         0.324     0.284   0.936   0.933   68.5%   217/438
+#:
+#: PaCMAP puts **68.5 %** of a point's ten drawn neighbours on its own type against cMDS's
+#: 21.4 % — a 3.2x gain on the thing the picture is for — and pays with global faithfulness
+#: and with tearing: 217 of 438 measurable knots drawn in two lobes against cMDS's 18.
+#:
+#: **The tearing is not outliers and could not be papered over.** Of those 217, only 14
+#: are a handful of flung members; **120 are genuine second lobes holding a median 21.7 %
+#: of the knot at a median 0.464 box units.** Anchoring a knot's label at its nearest
+#: member — which the layout does — stops the label floating in the void but would leave
+#: those second lobes lit and unnamed, which is the report this whole round began with.
+#: So the app splits a two-lobed knot **in its layout pass**, from the drawn positions,
+#: and gives each lobe its own anchor and its own label (`layouts.ts::drawnLobes`). That
+#: is the test at the one dimensionality where its threshold is calibrated, and it is why
+#: the equivalent gate in `_type_blobs` is off: measured in the features, it fires on
+#: knots the picture already draws as one place.
+DEFAULT_PROJECTION = "pacmap"
 
 #: PaCMAP's mid-near pair ratio and far-pair ratio, at the library's defaults.
 #:

@@ -470,6 +470,11 @@
 		geometry.computeBoundingSphere();
 		view.centroids.set(layout.centroids);
 		view.counts.set(layout.counts);
+		// The torn knots' second anchors, so the tag pass can name the other patch.
+		view.lobes.anchors.set(layout.lobes.anchors);
+		view.lobes.has.set(layout.lobes.has);
+		view.lobes.counts.set(layout.lobes.counts);
+		view.lobes.report = layout.lobes.report;
 		view.version++;
 	});
 

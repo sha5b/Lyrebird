@@ -163,6 +163,12 @@
 
 	/** Scratch, reused every frame: the knots that could carry a tag this frame. */
 	const candidates: number[] = [];
+	/**
+	 * Per candidate, which of its knot's drawn patches this site is: 0 the knot's own
+	 * anchor, 1 the second lobe of a knot the projection tore. Parallel to `candidates`
+	 * and only ever written through `addSite`, so the two cannot come out of step.
+	 */
+	const candidateLobe: number[] = [];
 	/** Scratch: one entry per tag that survived culling, in draw order. */
 	interface Chosen {
 		ci: number;
@@ -219,6 +225,26 @@
 		// work, no DOM, no allocation. A knot at rest with nothing lingering costs one
 		// comparison, and on a quiet frame that is the whole corpus.
 		candidates.length = 0;
+		candidateLobe.length = 0;
+		/**
+		 * Add a knot as a tag site — and its second patch too, when the projection drew it
+		 * in two places (`layouts.ts::drawnLobes`).
+		 *
+		 * Both patches light when the knot sings, because `pulseCluster` lights by cluster
+		 * id and knows nothing about position. Naming only the first is what leaves the
+		 * other one lit and anonymous, which is the report this exists to answer. Every
+		 * per-knot array below is still indexed by the knot, which is correct: the two
+		 * patches are the same type, the same bird and the same activation. Only the
+		 * position differs.
+		 */
+		const addSite = (i: number) => {
+			candidates.push(i);
+			candidateLobe.push(0);
+			if (view.lobes.has[i]) {
+				candidates.push(i);
+				candidateLobe.push(1);
+			}
+		};
 		for (let i = 0; i < shown.length; i++) {
 			const act = acts[i] ?? 0;
 			if (act === 0 && shown[i] === 0 && linger[i] === 0) continue;
@@ -226,7 +252,7 @@
 			const decayed = linger[i] - delta / LINGER_SECONDS;
 			linger[i] = Math.max(shown[i], decayed > 0 ? decayed : 0);
 			if (linger[i] > 0) {
-				candidates.push(i);
+				addSite(i);
 			} else if (act === 0 && shown[i] < REST_EPSILON) {
 				// Snap to exact rest so the skip test above catches this knot from now on.
 				shown[i] = 0;
@@ -238,7 +264,7 @@
 		// the set: everything above has `linger > 0`, and these are the ones that do not.
 		if (focus >= 0) {
 			for (const i of knotsBySpecies.get(focus) ?? []) {
-				if (linger[i] <= 0 && i !== pinned) candidates.push(i);
+				if (linger[i] <= 0 && i !== pinned) addSite(i);
 			}
 		}
 		// The selection's relations join at the same rule: a knot a thread ends at may
@@ -249,14 +275,18 @@
 				if (i < shown.length && (linger[i] ?? 0) <= 0 && i !== pinned) candidates.push(i);
 			}
 		}
-		if (pinned >= 0 && pinned < shown.length && linger[pinned] <= 0) candidates.push(pinned);
+		if (pinned >= 0 && pinned < shown.length && linger[pinned] <= 0) addSite(pinned);
 
 		// **Pass two: project the candidates only.** Two matrix multiplies each, and the
 		// set is bounded by what is sounding plus one bird's repertoire.
 		for (let c = 0; c < candidates.length; c++) {
 			const i = candidates[c];
 			// read from the shared view, so a tag stays on its knot through a rearrangement
-			world.set(view.centroids[i * 3], view.centroids[i * 3 + 1], view.centroids[i * 3 + 2]);
+			// A torn knot's second patch is drawn at its own lobe's most central member;
+			// the primary is the knot's own anchor. Both are real places with points under
+			// them, which a mean between two lobes is not.
+			const src = candidateLobe[c] === 1 ? view.lobes.anchors : view.centroids;
+			world.set(src[i * 3], src[i * 3 + 1], src[i * 3 + 2]);
 			projected[c] ??= new THREE.Vector3();
 			projected[c].copy(world).applyMatrix4(matrix).project(cam);
 		}
