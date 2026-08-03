@@ -1,3 +1,162 @@
+# Lyrebird — what the 3-d picture says, and four attempts to make it say more (2026-08-03)
+
+Owner: *"does the 3d representation make any sense, does it tell us anything important? Is
+there a better way to display it so visually we can read things out?"* Then: research first.
+
+## 0. What it says today, measured
+
+Share of a point's ten nearest neighbours **in the drawn picture** that share its label,
+against the chance of two random points sharing it (40 000 of 348 461 points):
+
+```
+                in the picture    chance     lift
+syllable type            6.0 %     0.05 %    120x
+species                  9.8 %     0.31 %     31x
+genus                   10.1 %     0.49 %     21x
+```
+
+So it is emphatically not noise. It is also not a local map: **nine of every ten
+neighbours are a different bird.** Global distance faithfulness is r = 0.667. The picture
+is a trustworthy coarse map and an untrustworthy local one.
+
+**And the projection was the bottleneck, not the corpus.** The same test in the shipped
+8-d features: type **12.9 %**, species **25.5 %** — 2.1x and 2.6x what the drawing shows,
+and 8-d is only a linear PCA of the 32-d space, so the real space holds at least that.
+
+## 1. The research (August 2026)
+
+- **The critique is real and we reproduced it from the other side.** Chari & Pachter's
+  Picasso forces data into any 2-d shape; an embedding shaped like an **elephant** scores
+  as well as UMAP and t-SNE on distance metrics. The shape of a scatter is not evidence.
+  (Contested — a 2024 rebuttal shows UMAP/t-SNE do preserve neighbourhoods — but the
+  contested part is "how bad", not "lossy".)
+- **cMDS is a global-only method**, which is exactly our measured failure: classical MDS
+  fits pairwise distances and has no local-neighbourhood term at all. PaCMAP was built for
+  the split (near / **mid-near** / far pairs) and benches first among the modern methods.
+  DREAMS (Aug 2025) beats it but is 2-d only.
+- **Hyperbolic space suits a taxonomy** — Poincaré embeddings match high-dimensional
+  Euclidean baselines at 2–4 dimensions, and we have 1 043 genera over 2 423 species.
+- **Interpretable axes have a literature**: generalized biplots for stress-based
+  projections, DimReader, FeatMAP. *Annotate* the projection rather than replace it.
+- **3-d on a flat monitor buys less than assumed** — depth cues reduce to occlusion,
+  parallax and shading, and one study found parallax did not help size judgement. 3-d pays
+  off with stereo, or **combined with cues like point size**.
+- **Supervised UMAP would be a trap.** We have labels for 96 % of points; it would make the
+  picture look far better and destroy its evidential value, because it shows you the labels
+  you fed it. Argued against, not adopted.
+- **The field's practice** (bacpipe, EcoScape) is 2-d UMAP + click-a-point-for-spectrogram:
+  the *interaction* carries the local question, the map only carries the coarse one.
+
+## 2. PaCMAP is now the projector, and the bake-off is why
+
+Scoring gained **trustworthiness and continuity** (Venna & Kaski), because faithfulness is
+a correlation over random pairs and therefore blind to the thing a viewer reads when two
+marks sit together. Verified against known answers: 1.0 for an identity embedding, ~0.50
+for a random one. All six candidates, same corpus:
+
+```
+projector    pearson  spearman   trust    cont   knn10      torn
+umap           0.341     0.328   0.931   0.947   65.7%   156/447
+pca            0.589     0.568   0.845   0.941   22.2%    15/502
+cmds           0.767     0.742   0.850   0.956   21.4%    18/493
+cmds-chord     0.722     0.699   0.861   0.961   23.2%    19/493
+pacmap         0.324     0.284   0.936   0.933   68.5%   217/438
+```
+
+cMDS held the default only because faithfulness was the only thing scored. **PaCMAP puts
+68.5 % of a point's drawn neighbours on its own type against cMDS's 21.4 %.**
+
+**It pays in tearing, and that could not be papered over.** Of its 217 torn knots only 14
+are flung outliers; **120 are genuine second lobes holding a median 21.7 % of the knot at a
+median 0.464 box units.** Anchoring a label at the nearest member stops it floating in the
+void but leaves those lobes lit and anonymous — the report this whole line of work began
+from.
+
+So `layouts.ts::drawnLobes` splits a two-lobed knot **in the layout pass, from the drawn
+positions** — the one dimensionality where the gap/spread threshold of 5 is calibrated,
+which is why the equivalent gate in `_type_blobs` stays off. Each lobe gets its own anchor
+on its own most central member, and `NodeProjector` emits a tag site per lobe, so both lit
+patches carry the name. The larger lobe keeps the knot's single identity for the thread and
+the fly-to. Measured: **197 second anchors over 396 measurable knots, 2 928 members that
+would otherwise have lit unnamed, 27 ms.** The deterministic axis-cut agrees with the
+pipeline's k-means test (197/396 against 217/438; median lobe 20.7 % against 21.7 %).
+
+## 3. The picture now says what its directions mean
+
+"I cannot read anything off this" was true: correlating each drawn axis against every
+nameable quantity, the strongest was knot member count at **+0.26**, duration at **+0.05**.
+
+**The meaning is there and it is not axis-aligned**, which is why it needed a biplot.
+Fitting each attribute's gradient obliquely against the drawn coordinates:
+
+```
+              shipped cMDS   PaCMAP
+brightness           0.402    0.796
+noisiness            0.375    0.571
+loudness             0.639    0.507
+movement             0.240    0.425
+duration             0.015    0.035
+```
+
+The ruler caption names each screen direction with the share it explains, rewritten as the
+camera settles. r² travels with every name, because an arrow without it is a confident
+claim about an unknown amount — and duration, which this picture genuinely does not carry,
+falls below the threshold and never appears. Only quantities a person can hear are offered:
+26 of the 28 descriptor dimensions are MFCC coefficients, and "mfcc7_mean" is a label, not
+an explanation. **PaCMAP is also markedly more readable** (brightness 0.80 against 0.40),
+which nobody had measured.
+
+## 4. The hyperbolic branch: a clean no
+
+`poincare` is a sixth projector — Riemannian SGD on sampled-pair stress in the 3-d Poincaré
+ball, rather than h-MDS, whose `cosh` of the full matrix overflows and whose recovery step
+eigendecomposes an indefinite matrix. Against the shipped 13 848 knot vectors:
+
+```
+poincare     0.6836   (hyperbolic distance, the one it fits)
+cmds         0.7239
+cmds-chord   0.6827
+pca          0.5870
+pacmap       0.4041
+```
+
+On a **planted** three-level tree it wins as the literature predicts (0.602 against cMDS's
+0.580). On the real corpus it loses. The premise breaks: the corpus is a taxonomy, but the
+thing being embedded is the **acoustic** space, and that space carries taxonomy only
+weakly — 9.8 % species agreement against 0.31 % chance is 31x chance and still nine
+neighbours in ten from another bird. The fit says so itself: it settles at a maximum radius
+of 0.68, never reaching for the room near the boundary that is the whole point.
+
+Two limits on that: it is a hand-rolled sampled-pair optimiser, so "did not win" is weaker
+than "cannot win"; and a hyperbolic embedding of the **taxonomy** rather than the acoustics
+was never tried — a clade map instead of an acoustic one, a different question.
+
+## 5. One thing dropped, and the reason
+
+"Knot weight: size by log(count), edge by cohesion" was chosen and then **not built**, after
+checking. It came off a miss-list that predates two later rounds: the knot pins were deleted
+on the owner's call ("marks that are not sounds"), so there is no per-knot mark to size;
+member count is already visible as the number of points drawn; and `localShapes` already
+scales each knot by its own feature spread, which is what `radius`/`cohesion` measure. What
+is genuinely still undrawn — `meanDuration`, `speciesMix`, the per-knot source mix — has no
+channel left, since hue is spent on genus and size on LOD and events.
+
+## 6. Not verified, and it needs to be
+
+**Nothing in this round has been looked at.** `app/static/birdy` is still the cMDS v6 build,
+so PaCMAP and the lobe tags are not on screen; a production rebuild needs `harvest-gan`, the
+only store with typing.json *and* embeddings.f32. Every figure above except the shipped-build
+ones comes from the 40-species descriptor-space corpus — the *ranking* transfers, the
+absolutes do not. And three renderer changes now stand untested by any browser: the ribbon
+threads, the per-lobe tags, and the axis caption.
+
+New instruments: `npm run verify:biplot`, `verify:trajectory`, `verify:split-knots`;
+`neighbourhood_quality` in the pipeline; `pipeline/analysis/mds_metric.py`.
+
+`npm run check` clean apart from the four pre-existing `syrinx-processor.js` errors;
+`build`, `verify:layout`, `verify:biplot`, `verify:trajectory`, `verify:split-knots`,
+`check-provenance-buffers` and `galaxy.self_test` all pass.
+
 # Lyrebird — the song lines (2026-08-03): the thread was one pixel wide, and it is not a styling choice
 
 Owner asks 4b and 6 from the WORK QUEUE: *"make the song lines legible — they are currently
