@@ -141,8 +141,27 @@ TYPE_SPLIT_MIN_MEMBERS = 40
 #: of sounds a type anywhere else either.
 TYPE_SPLIT_MIN_SIDE = 8
 
-PROJECTIONS = ("umap", "pca", "cmds", "cmds-chord")
+PROJECTIONS = ("umap", "pca", "cmds", "cmds-chord", "pacmap")
 DEFAULT_PROJECTION = "cmds"  # most distance-faithful; see README "Galaxy shape"
+
+#: PaCMAP's mid-near pair ratio and far-pair ratio, at the library's defaults.
+#:
+#: **The reason this projector is here is a measured gap that is structural, not tuned.**
+#: Classical MDS fits pairwise distances and has no local-neighbourhood term at all, so
+#: it is a global-only method — and the shipped galaxy measures exactly like one: global
+#: distance faithfulness r = 0.667, but only **6.0 %** of a point's ten drawn neighbours
+#: share its type where the 8-d features hold **12.9 %**. Half the local structure the
+#: corpus has is lost in the squeeze, and cMDS has no mechanism that would keep it.
+#:
+#: PaCMAP is built for that split: near pairs hold the neighbourhood, **mid-near** pairs
+#: hold the mid-range shape that t-SNE and UMAP drop, and far pairs keep the global
+#: arrangement (Wang et al., JMLR 22, 2021). A 2025 benchmark of the modern methods puts
+#: it first overall. It is added as a *candidate*, not as the default — which one ships is
+#: `--compare-projections`' answer, on the metrics below, and cMDS has held the seat on
+#: distance faithfulness alone until now because that was the only thing measured.
+PACMAP_MN_RATIO = 0.5
+PACMAP_FP_RATIO = 2.0
+PACMAP_N_NEIGHBORS = 10
 FAITHFULNESS_PAIRS = 200_000
 KNN_AGREEMENT_K = 10
 # above this many points the full n x n cMDS matrix gets expensive in memory
@@ -474,6 +493,35 @@ def project(
             "metric": UMAP_METRIC,
         }
 
+    if method == "pacmap":
+        from pacmap import PaCMAP
+
+        n_neighbors = min(PACMAP_N_NEIGHBORS, max(2, n - 1))
+        if verbose:
+            print(
+                f"projection pacmap: n_neighbors={n_neighbors}, MN={PACMAP_MN_RATIO}, "
+                f"FP={PACMAP_FP_RATIO}, seed={seed}",
+                file=sys.stderr,
+            )
+        # Unit rows, so the euclidean distance PaCMAP uses is the chord distance — the
+        # same geometry `cmds-chord` fits, and monotone in the cosine the matcher uses.
+        # Passing raw standardised rows instead would let a loud descriptor dominate the
+        # neighbour graph, which is the one thing the whole space is normalised to avoid.
+        reducer = PaCMAP(
+            n_components=3,
+            n_neighbors=n_neighbors,
+            MN_ratio=PACMAP_MN_RATIO,
+            FP_ratio=PACMAP_FP_RATIO,
+            random_state=seed,
+        )
+        pos = np.asarray(reducer.fit_transform(_unit_rows(z)), dtype=np.float64)
+        return canonical_signs(pos), {
+            "nNeighbors": n_neighbors,
+            "mnRatio": PACMAP_MN_RATIO,
+            "fpRatio": PACMAP_FP_RATIO,
+            "metric": "chord",
+        }
+
     if method == "pca":
         if verbose:
             print("projection pca: first 3 principal components", file=sys.stderr)
@@ -750,6 +798,78 @@ def torn_clusters(pos: np.ndarray, cluster_id: np.ndarray, k: int) -> dict[str, 
     }
 
 
+#: Points sampled for trustworthiness/continuity. Both are O(m^2) in memory for the rank
+#: matrices, so the whole corpus is out of the question; 4000 puts the standard error on
+#: a 0..1 mean well under 0.01, which is far finer than the differences between projectors.
+NEIGHBOURHOOD_SAMPLE = 4000
+
+
+def neighbourhood_quality(
+    z: np.ndarray, pos: np.ndarray, k: int = KNN_AGREEMENT_K, seed: int = 0
+) -> dict[str, float]:
+    """Trustworthiness and continuity: the two ways a projection can lie about neighbours.
+
+    **The build has only ever scored global distance faithfulness, and that is why cMDS
+    holds the default.** A correlation over random pairs is dominated by far pairs — it
+    says whether the coarse map is right and is almost blind to whether a point's own
+    neighbours are its neighbours. Measured on the shipped galaxy the two answers are very
+    different: r = 0.667 globally, but only 6.0 % of a point's ten drawn neighbours share
+    its type where the 8-d features hold 12.9 %.
+
+    The standard pair (Venna & Kaski) separates the two failures, and they are not the
+    same failure:
+
+    - **trustworthiness** — of the points drawn near you, how many belong near you? Low
+      means the picture invents neighbours, which is the one that misleads a viewer,
+      because a mark you can see next to another mark is a claim.
+    - **continuity** — of the points that belong near you, how many are drawn near you?
+      Low means the picture hides neighbours, which is a loss rather than a lie.
+
+    Both are 1.0 for a perfect embedding and about `k/(n-1)` for a random one. Reported
+    per candidate so `--compare-projections` can be decided on local *and* global quality
+    instead of on the global half alone.
+    """
+    rng = np.random.default_rng(seed)
+    n = z.shape[0]
+    m = min(NEIGHBOURHOOD_SAMPLE, n)
+    idx = rng.choice(n, size=m, replace=False) if m < n else np.arange(n)
+    k_eff = min(k, m - 2)
+    if k_eff < 1:
+        return {"trustworthiness": 1.0, "continuity": 1.0, "sampled": int(m), "k": 0}
+
+    u = _unit_rows(z[idx])
+    d_hi = np.maximum(1.0 - u @ u.T, 0.0)
+    lo = pos[idx]
+    d_lo = np.linalg.norm(lo[:, None, :] - lo[None, :, :], axis=2)
+    np.fill_diagonal(d_hi, np.inf)
+    np.fill_diagonal(d_lo, np.inf)
+
+    # rank[i, j] = how far j is from i in that space, 1 = nearest
+    def ranks_of(d: np.ndarray) -> np.ndarray:
+        order = np.argsort(d, axis=1, kind="stable")
+        r = np.empty_like(order)
+        rows = np.arange(d.shape[0])[:, None]
+        r[rows, order] = np.arange(1, d.shape[1] + 1)[None, :]
+        return r
+
+    r_hi, r_lo = ranks_of(d_hi), ranks_of(d_lo)
+    nn_hi = np.argsort(d_hi, axis=1, kind="stable")[:, :k_eff]
+    nn_lo = np.argsort(d_lo, axis=1, kind="stable")[:, :k_eff]
+    rows = np.arange(m)[:, None]
+
+    # intrusions: drawn near, actually far — penalised by how far
+    intr = np.maximum(r_hi[rows, nn_lo] - k_eff, 0).sum()
+    # extrusions: actually near, drawn far
+    extr = np.maximum(r_lo[rows, nn_hi] - k_eff, 0).sum()
+    norm = 2.0 / (m * k_eff * (2 * m - 3 * k_eff - 1)) if m > (3 * k_eff + 1) / 2 else 0.0
+    return {
+        "trustworthiness": round(float(1.0 - norm * intr), 4),
+        "continuity": round(float(1.0 - norm * extr), 4),
+        "sampled": int(m),
+        "k": int(k_eff),
+    }
+
+
 def knn_label_agreement(
     pos: np.ndarray, labels: Sequence[Any], k: int = KNN_AGREEMENT_K
 ) -> float:
@@ -784,7 +904,7 @@ def _purity(cluster_id: np.ndarray, types: Sequence[Any], k: int) -> float:
 def _print_projection_table(results: dict[str, dict[str, Any]], chosen: str) -> None:
     print("", file=sys.stderr)
     print(
-        "  projection   pearson  spearman   purity  knn10   meanR    torn   notes",
+        "  projection   pearson  spearman    trust     cont   knn10    torn   notes",
         file=sys.stderr,
     )
     for method, r in results.items():
@@ -800,15 +920,23 @@ def _print_projection_table(results: dict[str, dict[str, Any]], chosen: str) -> 
         mark = " <- shipped" if method == chosen else ""
         f = r["faithfulness"]
         t = r["tearing"]
+        q = r.get("neighbourhood") or {}
         print(
             f"  {method:11} {f['pearson']:8.3f} {f['spearman']:9.3f} "
-            f"{r['purity'] * 100:7.1f}% {r['knnAgreement'] * 100:5.1f}% "
-            f"{r['meanRadius']:7.3f} {t['torn']:4d}/{t['measured']:<4d} {note}{mark}",
+            f"{q.get('trustworthiness', float('nan')):8.3f} {q.get('continuity', float('nan')):8.3f} "
+            f"{r['knnAgreement'] * 100:6.1f}% {t['torn']:4d}/{t['measured']:<4d} {note}{mark}",
             file=sys.stderr,
         )
     print(
         "  pearson/spearman = feature-space cosine distance vs 3D euclidean distance over "
-        f"{next(iter(results.values()))['faithfulness']['pairs']} random pairs",
+        f"{next(iter(results.values()))['faithfulness']['pairs']} random pairs — GLOBAL, and"
+        " dominated by far pairs",
+        file=sys.stderr,
+    )
+    print(
+        "  trust/cont = trustworthiness and continuity (1 = perfect, ~0.5 = random): of the"
+        " points drawn near you how many belong there, and the reverse — LOCAL, and the"
+        " thing a viewer reads when two marks sit together",
         file=sys.stderr,
     )
     print("", file=sys.stderr)
@@ -1669,6 +1797,10 @@ def build_galaxy(
             "info": info,
             "faithfulness": faithfulness(z, candidate, seed=seed),
             "knnAgreement": round(knn_label_agreement(candidate, type_of), 4),
+            # Local quality, which distance faithfulness cannot see — see
+            # `neighbourhood_quality` for why the two disagree and which one a viewer
+            # is actually reading when two marks are drawn next to each other.
+            "neighbourhood": neighbourhood_quality(z, candidate, seed=seed),
             "purity": round(_purity(cluster_id, type_of, k_final), 4),
             "meanRadius": round(float(np.mean(np.linalg.norm(candidate, axis=1))), 4),
             "tearing": torn_clusters(candidate, cluster_id, k_final),
@@ -2195,6 +2327,20 @@ def build_galaxy(
             "k": KNN_AGREEMENT_K,
             "value": round(float(chosen["knnAgreement"]), 4),
             "definition": "share of a point's 3D k nearest neighbours sharing its type",
+        },
+        # The local half of the picture's honesty, which distance faithfulness cannot
+        # see. Faithfulness is a correlation over random pairs and so is dominated by far
+        # ones: on the shipped galaxy it reads 0.667 while only 6 % of a point's drawn
+        # neighbours share its type. Two marks drawn together is the claim a viewer
+        # actually reads, and this is the number that scores it.
+        "neighbourhood": {
+            **chosen["neighbourhood"],
+            "definition": (
+                "trustworthiness = of the points drawn near a point, the share that "
+                "belong near it (the picture inventing neighbours); continuity = of the "
+                "points that belong near it, the share drawn near it (the picture hiding "
+                "them). 1 is perfect, about 0.5 is what a random arrangement scores"
+            ),
         },
         "tearing": {
             **chosen["tearing"],
