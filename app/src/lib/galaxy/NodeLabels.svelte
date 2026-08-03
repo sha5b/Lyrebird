@@ -46,10 +46,39 @@
 		 * switch the viewer flips, so the tags have to follow it live.
 		 */
 		prov?: boolean;
+		/**
+		 * The stage's scale — pixels per knot spacing — so the ring on a knot can be the size
+		 * of the knot rather than a fixed number of pixels.
+		 *
+		 * A knot's drawn extent is about one knot spacing wide on the shipped build (extent
+		 * 0.0417 against spacing 0.0419), so `pxPerKnot` *is*, near enough, the knot's diameter
+		 * on screen. That makes the ring a measured mark: it circles the thing it names at every
+		 * zoom instead of being a dot that means one size close up and another far out.
+		 */
+		pxPerKnot?: number;
 		onpick?: (cluster: number) => void;
 	}
 
-	let { assets, slots, elements = $bindable(), prov = false, onpick }: Props = $props();
+	let {
+		assets,
+		slots,
+		elements = $bindable(),
+		prov = false,
+		pxPerKnot = 0,
+		onpick
+	}: Props = $props();
+
+	/**
+	 * The ring's diameter in pixels, tracking the zoom and clamped at both ends.
+	 *
+	 * Floor 5 px: below that it stops reading as a ring around a 3 px particle and becomes a
+	 * second particle. Ceiling 22 px: framed on a single knot `pxPerKnot` runs into the
+	 * hundreds, and a ring that large stops annotating the cloud and starts hiding it — which
+	 * is the objection that removed the filled version.
+	 */
+	const RING_MIN = 5;
+	const RING_MAX = 22;
+	const ringPx = $derived(Math.min(RING_MAX, Math.max(RING_MIN, pxPerKnot)));
 
 	// The corpus does not change while this is mounted, so the lookups are built once.
 	// Names come from the inventory index: a tag must name its bird without fetching
@@ -126,7 +155,7 @@
 	};
 </script>
 
-<div class="layer" aria-hidden="true">
+<div class="layer" aria-hidden="true" style:--ring={`${ringPx}px`}>
 	{#each slots as ci, s (s)}
 		<!-- `--hot` (0 or 1) and `--act` (0..1) are written per frame by NodeProjector.
 		     The wrapper is keyed by slot, so it is created once and only its contents
@@ -196,6 +225,10 @@
 		display: flex;
 		align-items: flex-start;
 		gap: 0.4rem;
+		/* The tag's own type size, declared so the dot can be sized in `em` against it.
+		   It matches `.name`, which is the tag's dominant text; every other part of the card
+		   sets its size in rem and so is unaffected by this. */
+		font-size: 0.72rem;
 		/* moved every frame by NodeProjector; the element sits at the node and the card
 		   hangs off to its right */
 		will-change: transform, opacity;
@@ -206,27 +239,71 @@
 	   class, so the transitions are the browser's and no state has to cross into Svelte.
 	   The dot's colour comes from --accent (written per frame by the projector): the
 	   identity hue — the bird's in ink mode, the class's in provenance — at every
-	   state, with --hot driving how much of it shows; the inline style is only the
-	   first frame's fallback. */
+	   state, carried on the ring's border since nothing fills; the inline style is only
+	   the first frame's fallback. */
+	/* An outline the size of a particle, not a disc.
+
+	   Tried at 1.8em (about 21 px, three times the old 7 px) on a literal reading of "three
+	   times the size", and it was wrong twice over: a filled circle that large is a bigger mark
+	   than anything in the data it annotates, and the mark for a knot centre should read as a
+	   ring *around* the point rather than as a blob covering it. Owner, on seeing it: *"the dots
+	   are way [too big] — just make them a tad bigger than the particles or the same. I thought
+	   it's a border colour and infill 0."*
+
+	   So: hollow at every state, and 0.45em — about 5 px against a point cloud drawn at 3 px, so
+	   it sits just outside a particle instead of replacing it. Still in `em`, which was the part
+	   of the original ask that holds: the mark keeps its relation to the type beside it rather
+	   than being the one thing on the tag that does not move when the label does.
+
+	   The identity hue is now carried entirely by the border, and `--hot` is left to the scale
+	   below. Nothing fills, so a lit knot grows and brightens its ring rather than blocking out
+	   the sound it is naming. */
 	.dot {
 		flex: none;
-		width: 7px;
-		height: 7px;
-		margin-top: 3px;
+		/* Sized from the zoom by `--ring`, so the ring is the knot's own diameter on screen
+		   rather than a fixed number of pixels. */
+		width: var(--ring, 5px);
+		height: var(--ring, 5px);
+		/* **No vertical offset, and that is a fix.** `.tag` is transformed so its origin sits
+		   exactly on the knot's projected position, and `translate(-50%, -50%)` below puts the
+		   ring's centre on that origin — but a `margin-top: 0.26em` (about 3 px) was pushing it
+		   down first. At the old 7 px dot that left the knot near the ring's lower edge; at a
+		   ring the size of a particle it left the point *outside* the ring altogether, which is
+		   what "it seems like it's not the centre of the circle but the edge" was. The offset
+		   existed to line the ring up with the first line of the card, which is the card's
+		   business — `.card` has its own `margin-top` for exactly that, and it is the thing that
+		   may move, because the ring is the mark that has to be true. */
+		margin-top: 0;
 		padding: 0;
 		border-radius: 50%;
-		border: 1px solid var(--accent, currentColor);
-		background: color-mix(
-			in srgb,
-			var(--accent, currentColor) calc(var(--hot, 0) * 100%),
-			var(--paper)
-		);
+		/* Transparent enough that the points inside it still read.
+		   The ring is an annotation on the cloud and the cloud is the data, so it must not be
+		   the strongest mark at the place it is pointing at. At rest it is a little over a
+		   third of its hue and it comes up to full only when its knot is answering, which is
+		   the one moment the ring is the subject rather than the frame. */
+		border: 1px solid
+			color-mix(
+				in srgb,
+				var(--accent, currentColor) calc(38% + var(--hot, 0) * 62%),
+				transparent
+			);
+		background: none;
+		/* The nearest thing to "the particles stay in front".
+		   These tags are DOM over a WebGL canvas, so a point can never actually occlude one —
+		   the browser composites the whole layer above the canvas whatever the depth. Multiply
+		   is what buys most of the effect back: the paper is near-white so the ring's colour
+		   survives, while any particle under it darkens *through* the stroke instead of being
+		   painted over. Drawing the ring inside the scene would give real occlusion and is a
+		   different job — a depth-tested pass, with the tag's text still on top. */
+		mix-blend-mode: multiply;
 		pointer-events: auto;
 		cursor: pointer;
-		transform: translate(-50%, -50%) scale(calc(1 + var(--hot, 0) * 0.7));
+		/* A little more growth than before, because the fill used to carry the state change
+		   and now the size and the border are all there is. */
+		transform: translate(-50%, -50%) scale(calc(1 + var(--hot, 0) * 0.9));
 		transition:
 			transform 120ms ease,
-			background 120ms ease;
+			border-color 120ms ease;
 	}
 
 	/**
@@ -241,7 +318,9 @@
 	 * all along, and only a filled card made it visible.
 	 */
 	.card {
-		margin-top: -0.35rem;
+		/* Lifted so the first line reads level with the ring's centre, which is now the knot
+		   itself. The card is what moves to meet the mark, never the other way round. */
+		margin-top: -0.55rem;
 		padding: 0.15rem 0.4rem;
 		max-width: 15rem;
 		overflow: hidden;

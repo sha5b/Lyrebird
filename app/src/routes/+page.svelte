@@ -215,27 +215,32 @@
 	 * (`localShapes` in layouts.ts). Off: the raw global projection, which is what every
 	 * build before this one drew.
 	 *
-	 * The switch exists because this changes what the picture *claims* and the two
-	 * should be comparable side by side rather than argued about. Measured on the
-	 * shipped build: knots drawn in two blobs fall from **379 to 245** (severe 77 → 37),
-	 * the widest split inside one knot from **1.27 to 0.80 box units**, and the median
-	 * knot's extent is unchanged (0.134 → 0.1336), so everything calibrated against it
-	 * — KNOT_GAP, the wave's reach, the ruler's unit — stays where it was.
+	 * **Always on, and the switch is gone.** It existed so the two arrangements could be
+	 * compared side by side rather than argued about, and the comparison is settled: knots
+	 * drawn in two blobs fall from **379 to 245** (severe 77 → 37), the widest split inside
+	 * one knot from **1.27 to 0.80 box units**, and the median knot's extent is unchanged
+	 * (0.134 → 0.1336), so everything calibrated against it — KNOT_GAP, the wave's reach, the
+	 * ruler's unit — stays where it was. A control whose answer is known is a way to make the
+	 * picture worse.
 	 *
-	 * It is read once, when the cloud is built, so flipping it remounts the canvas — the
-	 * same path a map switch takes.
+	 * It was also the one Display checkbox that rebuilt the cloud, because the arrangement is
+	 * read once at build time — so flipping it blanked and remounted the canvas, which read as
+	 * the points turning off and on rather than as a layout change. `Galaxy` and `PointCloud`
+	 * keep the parameter: `localShapes` is still switchable in code, which is how those numbers
+	 * were measured, and is where a future comparison would happen.
 	 */
-	let localKnots = $state(true);
 	/**
 	 * The points' colour language: off is neutral ink, on tints every point by where
 	 * its sound came from (the provenance classes). Default off — the corpus is one
 	 * cloud first, and the class tint is a layer you ask for.
 	 *
-	 * There used to be a third language — every point in its species' hue — and it read
-	 * as confetti: a hundred hues on a dense scatter cannot be told apart, so "who"
-	 * moved to where hue can be read (the tags, and the response itself, which lights
-	 * in the singing bird's hue). The tags and threads follow this switch too, because
-	 * two hue readings of one stage invite the idea that they are related.
+	 * The third language — every point in its species' hue — is back as `birdColours`
+	 * below, and the finding that removed it still stands: at 2 423 species on a dense
+	 * scatter the hues cannot be told apart, which is why "who" normally lives where hue
+	 * can be read (the tags, and the response, which lights in the singing bird's hue).
+	 * It is opt-in for that reason and never the default. The tags and threads follow this
+	 * switch too, because two hue readings of one stage invite the idea that they are
+	 * related.
 	 *
 	 * **One checkbox, not a two-row radio group inside a rollup.** It is a binary, and
 	 * it was dressed as a mode chooser folded behind a disclosure — three clicks and a
@@ -243,6 +248,41 @@
 	 * not the points were wearing them.
 	 */
 	let provColours = $state(false);
+	/**
+	 * The third colour language: every resting point in its own bird's hue.
+	 *
+	 * Revived on the owner's ask, and it costs nothing it used to. The mode that was removed
+	 * carried a **per-point hue attribute**, which took the point program to fifteen vertex
+	 * attributes and failed to link on Mesa's Intel driver in Firefox — that was the reason it
+	 * could not simply be left in. It does not need one now: the knot's species hue already
+	 * rides the cluster texture's A channel, because the accent reads it to light a singing
+	 * knot in its own bird's colour, so the resting point reads a value the shader already has.
+	 *
+	 * **Mutually exclusive with the provenance tint**, and that is the legend's own rule rather
+	 * than a convenience — "colour says one thing at a time". Hue cannot answer "what kind of
+	 * thing" and "which bird" in one picture without the reader having to know which question
+	 * was asked.
+	 *
+	 * The legibility finding that removed it is unchanged and is why it is off by default: a
+	 * hue circle shared by 2 423 species is not a key anybody can read at this density. What it
+	 * is good for is the shape of one *genus* against the rest, since the hue is the genus's.
+	 */
+	let birdColours = $state(false);
+
+	/**
+	 * One language at a time: whichever switch was just pressed wins and the other clears.
+	 *
+	 * Written as a pair of handlers rather than as an effect on both flags. An effect that
+	 * cleared `birdColours` whenever `provColours` was set looks equivalent and is not — it
+	 * makes the bird mode *unreachable* while provenance is on, because turning it on
+	 * immediately satisfies the condition that turns it off again.
+	 */
+	function useProvColours() {
+		if (provColours) birdColours = false;
+	}
+	function useBirdColours() {
+		if (birdColours) provColours = false;
+	}
 	/**
 	 * Per-class point visibility in PROVENANCE order (documented, learned, field,
 	 * unlabelled, candidate). The arrivals live view is the two-class isolate —
@@ -327,18 +367,31 @@
 	 * `null` while the inventory is unread — in shard mode `species` starts empty and a
 	 * count of zero would be a statement about the loader, not about the corpus.
 	 */
-	const chorusClassSongs = $derived.by<Record<string, number> | null>(() => {
+	const chorusClassSongs = $derived.by<{
+		counts: Record<string, number>;
+		songs: number;
+		/** True while only some shards have arrived, so a zero means "not yet" not "none". */
+		partial: boolean;
+	} | null>(() => {
 		const species = assets?.inventory.species ?? [];
 		if (!species.length) return null;
 		const out: Record<string, number> = { documented: 0, synthesized: 0, recorded: 0 };
+		let songs = 0;
 		for (const sp of species) {
 			for (const song of sp.songs ?? []) {
+				songs++;
 				for (const [cls, values] of Object.entries(CHORUS_CLASS_CONFIDENCE)) {
 					if (values.includes(song.confidence)) out[cls]++;
 				}
 			}
 		}
-		return out;
+		// **A count over the shards that happen to be loaded is not a count over the corpus**,
+		// and treating it as one disabled a live class: load one bird whose only song is
+		// `invented` and `documented` read 0, so the checkbox for the sixteen documented songs
+		// in the corpus went unclickable until something else was fetched. The flag is what
+		// lets a zero mean "none" only when everything has actually been read.
+		const total = assets?.inventoryIndex.length ?? 0;
+		return { counts: out, songs, partial: species.length < total };
 	});
 	let tempo = $state(1);
 	// How often the chorus starts a song, as a multiplier on its Poisson rate. Read by
@@ -1595,6 +1648,26 @@
 	 * *and* recomputed there through `showContext`, which now reads the pin. Clicking the
 	 * same node again unpins it and the bird's whole repertoire comes back.
 	 */
+	/**
+	 * The first song of `speciesId` that runs through `syllableId`, or `''`.
+	 *
+	 * First and not "best", because a syllable can appear in several songs and this has no
+	 * basis for preferring one — the picker still lists them all, and the point is to land on
+	 * a song that actually contains the sound that was clicked rather than on "all songs".
+	 * Empty while the bird's shard is still loading, which is the honest answer: the songs are
+	 * in the shard, so before it arrives there is nothing to choose.
+	 */
+	function songThrough(speciesId: string, syllableId: string): string {
+		if (!assets || !speciesId || !syllableId) return '';
+		const bird = speciesById(assets.inventory, speciesId);
+		if (!bird) return '';
+		for (const song of bird.songs) {
+			const resolved = songSyllables(bird, song.id);
+			if (resolved?.syllables.some((syl) => syl.id === syllableId)) return song.id;
+		}
+		return '';
+	}
+
 	function pickCluster(index: number) {
 		if (!assets) return;
 		const centroid = assets.centroids.items[index];
@@ -1603,7 +1676,21 @@
 			centroid && species.some((sp) => sp.id === centroid.speciesId) ? centroid.speciesId : '';
 		// Clicking a knot is a Sing-tab question, and `pickCluster` is reachable from Listen.
 		if (owner && tab === 'listen') tab = 'sing';
+		// Clicking the pinned knot again *releases* it, and a release must not then go and
+		// select a song — that would make the second click do the opposite of nothing.
+		const releasing = pinnedCluster === index;
 		dispatch({ k: 'pickKnot', knot: index, speciesId: owner });
+		// **A knot names a sound, and clicking one selects the song that sound belongs to.**
+		// Owner's ask: clicking a label in the cloud should land on this song and this bird.
+		// `pickKnot` already takes the bird — a narrower question implies the broader one —
+		// and this adds the song, as a second event rather than by widening that transition:
+		// `chooseSong` already owns everything that has to follow a song change (the pin
+		// released, the sung phrase cleared, the epoch bumped, a running solo chorus
+		// re-pooled), and reproducing any of that inside `pickKnot` would be the second copy
+		// of a rule that this machine exists to have exactly one of.
+		if (releasing) return;
+		const song = songThrough(owner, centroid?.syllableId ?? '');
+		if (song) dispatch({ k: 'chooseSong', id: song });
 	}
 
 	// --- the optional local pipeline control surface ---
@@ -2168,10 +2255,7 @@ uv run birdy-pipeline build</pre>
 		</header>
 
 		<div class="stage-wrap">
-			<!-- `localKnots` joins the key because the arrangement is read once, when the
-			     cloud is built: flipping it has to rebuild the layout, the wave's graph,
-			     the LOD cells and the ruler's unit, which is exactly what a remount does. -->
-			{#key `${galaxyVersion}:${localKnots}`}
+			{#key galaxyVersion}
 			<Galaxy
 				{assets}
 				{signal}
@@ -2182,8 +2266,8 @@ uv run birdy-pipeline build</pre>
 				speed={tempo}
 				labels={showLabels}
 				plain={!provColours}
+				{birdColours}
 				adaptive={adaptiveDetail}
-				{localKnots}
 				selectedSpecies={focus >= 0 ? (currentSpecies?.id ?? '') : ''}
 				{provShown}
 				pinned={pinnedCluster}
@@ -2307,13 +2391,7 @@ uv run birdy-pipeline build</pre>
 									<label class="check" title="Name tags on the knots a syllable can be sung into.">
 										<input type="checkbox" bind:checked={showLabels} /> Labels
 									</label>
-									<label
-										class="check"
-										title="A knot is drawn where the projection put its most typical sound, and its members are arranged by a local projection of their own feature space. Off draws the raw global projection, which splits some knots across the galaxy. Rebuilds the cloud."
-									>
-										<input type="checkbox" bind:checked={localKnots} /> Local knot shape
-									</label>
-									<!--
+										<!--
 										One bit, one checkbox, sitting with the other two display bits — it was
 										a two-row radio group folded inside a disclosure, which is three clicks
 										and a paragraph to flip a boolean.
@@ -2329,7 +2407,30 @@ uv run birdy-pipeline build</pre>
 										class="check"
 										title="Colour every point, tag and thread by where its sound came from. Off, the points are neutral ink and hue is left to say which bird. On this build 94 % of the points are field recordings, so expect one class to dominate."
 									>
-										<input type="checkbox" bind:checked={provColours} /> Provenance colours
+										<input
+											type="checkbox"
+											bind:checked={provColours}
+											onchange={useProvColours}
+										/> Provenance colours
+									</label>
+									<!--
+										The third language, and it is opt-in for a measured reason rather than a
+										cautious one: 2 423 species share one hue circle, so at this density the
+										cloud reads as confetti and no reader can hold the key. What it is good
+										for is one *genus* against the rest, since the hue is the genus's — and
+										for that it is the only channel that answers over the whole corpus at
+										once. Mutually exclusive with the tint above: hue cannot answer two
+										questions in one picture.
+									-->
+									<label
+										class="check"
+										title="Colour every point by its bird — the same genus hue the tags carry, so a species' points and its labels agree. Hue is the genus and shade the species within it. Turns the provenance tint off: colour says one thing at a time."
+									>
+										<input
+											type="checkbox"
+											bind:checked={birdColours}
+											onchange={useBirdColours}
+										/> Bird colours
 									</label>
 								</div>
 							</section>
@@ -2969,12 +3070,17 @@ uv run birdy-pipeline build</pre>
 											: cls === 'synthesized'
 												? 'Our own mapping: fitted from recordings or composed from them. Not a claim about real birds.'
 												: 'Real audio of this species with no documented function attached.'}
-									{@const have = chorusClassSongs === null ? null : chorusClassSongs[cls]}
-									<label class="check" class:absent={have === 0} title={hint}>
+									{@const have = chorusClassSongs === null ? null : chorusClassSongs.counts[cls]}
+									{@const settled = chorusClassSongs !== null && !chorusClassSongs.partial}
+									{@const share =
+										have !== null && chorusClassSongs && chorusClassSongs.songs > 0
+											? (100 * have) / chorusClassSongs.songs
+											: null}
+									<label class="check" class:absent={settled && have === 0} title={hint}>
 										<input
 											type="checkbox"
 											bind:checked={chorusClasses[cls]}
-											disabled={have === 0}
+											disabled={settled && have === 0}
 										/>
 										<i
 											class="swatch"
@@ -2983,8 +3089,24 @@ uv run birdy-pipeline build</pre>
 											)}
 										></i>
 										{cls}
+										<!--
+											**The share, not just the count.** On this corpus 99.3 % of songs are
+											`invented` and so fall under `synthesized`, `documented` covers 16 and
+											`recorded` none at all — so switching two of the three off changes
+											nothing anybody can hear, which reads exactly like a broken control.
+											The number is what tells you a working toggle has almost nothing to
+											act on.
+										-->
 										{#if have !== null}
-											<span class="mono faint">{have === 0 ? 'none' : have}</span>
+											<span class="mono faint">
+												{have === 0
+													? chorusClassSongs?.partial
+														? '…'
+														: 'none'
+													: share !== null && share < 99.5
+														? `${have} · ${share < 1 ? share.toFixed(1) : Math.round(share)}%`
+														: `${have}`}
+											</span>
 										{/if}
 									</label>
 								{/each}
@@ -2992,6 +3114,13 @@ uv run birdy-pipeline build</pre>
 							<p class="note faint">
 								Which songs the chorus may draw from. Off re-pools the next song;
 								nothing already playing is cut.
+								{#if chorusClassSongs && !chorusClassSongs.partial}
+									Nearly every song in this corpus is our own arrangement, so
+									<b>synthesized</b> is almost the whole pool — switching the other two off
+									is a real filter with almost nothing to remove.
+								{:else if chorusClassSongs?.partial}
+									Counts are over the birds loaded so far.
+								{/if}
 							</p>
 						{/if}
 					</section>

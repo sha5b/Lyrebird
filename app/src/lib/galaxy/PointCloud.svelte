@@ -60,6 +60,16 @@
 		 */
 		plain?: boolean;
 		/**
+		 * Tint every resting point with its own bird's hue — a third colour language beside
+		 * neutral ink and the provenance classes.
+		 *
+		 * Costs no vertex attribute: the species hue already rides the cluster texture's A
+		 * channel for the accent, and the resting point reads the same value. The mode this
+		 * revives once carried a per-point hue attribute, which took the program to fifteen
+		 * attributes and failed to link on Mesa's Intel driver in Firefox.
+		 */
+		birdColours?: boolean;
+		/**
 		 * Per-class visibility in PROVENANCE order (documented, learned, field,
 		 * unlabelled, candidate); false hides the class outright. The Display
 		 * panel's filter — isolating the unidentified is the arrivals live view.
@@ -101,6 +111,7 @@
 		spread = 1,
 		learning = [],
 		plain = false,
+		birdColours = false,
 		provShown = [true, true, true, true, true],
 		adaptive = true,
 		localKnots = true,
@@ -345,6 +356,7 @@
 			uProvArrivals: { value: new THREE.Color(PROV_ARRIVALS) },
 			uProvCand: { value: new THREE.Color(PROV_CANDIDATE) },
 			uPlain: { value: untrack(() => (plain ? 1 : 0)) },
+			uBird: { value: untrack(() => (birdColours ? 1 : 0)) },
 			// "Heard, but nothing claimed": where the nearest region breathes, and how
 			// strongly. Eased in the frame task; 0 means silent.
 			uUnmatchedOrigin: { value: new THREE.Vector3() },
@@ -443,6 +455,7 @@
 
 	$effect(() => {
 		material.uniforms.uPlain.value = plain ? 1 : 0;
+		material.uniforms.uBird.value = birdColours ? 1 : 0;
 	});
 
 	$effect(() => {

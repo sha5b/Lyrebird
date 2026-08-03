@@ -6,7 +6,7 @@
 	import type { OrbitControls as OrbitControlsInstance } from 'three/examples/jsm/controls/OrbitControls.js';
 	import type { BirdyAssets } from '$lib/data/types';
 	import { biplotAxes, type ScreenReading } from './biplot';
-	import { FINE_DIVISIONS, TARGET_PX, gridOffsetPx, tickStep } from './ticks';
+	import { TARGET_PX, gridOffsetPx, tickStep } from './ticks';
 	import ContextPaths from './ContextPaths.svelte';
 	import Framing from './Framing.svelte';
 	import GridBurst from './GridBurst.svelte';
@@ -62,6 +62,17 @@
 		 * thing in both.
 		 */
 		plain?: boolean;
+		/**
+		 * A third colour language for the points: each one in its own bird's hue. A toggle and
+		 * never the default — 2 423 species share one hue circle, so at this density it reads
+		 * as confetti rather than as an answer. Offered because "where does this species sit"
+		 * is a real question and nothing else answers it for the whole corpus at once.
+		 *
+		 * Only the *points* take it. The tags already carry the bird's hue and the accent
+		 * already lights in it, so this is the resting field joining a language the rest of
+		 * the stage was already speaking.
+		 */
+		birdColours?: boolean;
 		/** Per-class point visibility in PROVENANCE order; false hides the class. */
 		provShown?: boolean[];
 		/**
@@ -110,6 +121,7 @@
 		frame = [],
 		learning = [],
 		plain = true,
+		birdColours = false,
 		provShown = [true, true, true, true, true],
 		adaptive = true,
 		localKnots = true,
@@ -201,17 +213,16 @@
 	/**
 	 * The background grid, in the ruler's own divisions.
 	 *
-	 * One coarse square is one labelled tick and one fine square is a fifth of it, so the
-	 * lattice behind the cloud is the same measure the numbers along the edges are counting —
-	 * and it re-scales with the zoom because the step does. A gap of two squares is two ticks
-	 * at any zoom, which is what a grid on a plot is for.
+	 * One square is one labelled tick, so the lattice behind the cloud is the same measure the
+	 * numbers along the edges are counting, and it re-scales with the zoom because the step
+	 * does. A gap of two squares is two ticks at any zoom, which is what a grid on a plot is
+	 * for. One lattice only — see the `.stage` rule for why the fifth-divisions came out.
 	 *
 	 * Falls back to the ruler's target spacing before `Scale` has reported, so the stage never
 	 * flashes an enormous or a zero-sized lattice on the first frame.
 	 */
 	const gridStep = $derived(tickStep(pxPerKnot));
 	const gridCoarsePx = $derived(pxPerKnot > 0 ? gridStep * pxPerKnot : TARGET_PX);
-	const gridFinePx = $derived(gridCoarsePx / FINE_DIVISIONS);
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -220,9 +231,7 @@
 	{onpointerdown}
 	{onpointerup}
 	style:--grid-coarse-px={`${gridCoarsePx}px`}
-	style:--grid-fine-px={`${gridFinePx}px`}
 	style:--grid-coarse-at={`${gridOffsetPx(gridCoarsePx)}px`}
-	style:--grid-fine-at={`${gridOffsetPx(gridFinePx)}px`}
 >
 	<Canvas>
 		<!--
@@ -286,7 +295,7 @@
 			<GridBurst {assets} {signal} {view} prov={!plain} />
 			<ContextPaths {assets} {signal} {view} prov={!plain} />
 			<RelationThreads {assets} {view} speciesId={selectedSpecies} />
-			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} {provShown} {adaptive} {localKnots} bind:knotSpacing {stats} />
+			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} {birdColours} {provShown} {adaptive} {localKnots} bind:knotSpacing {stats} />
 			<Trajectory {assets} {signal} {view} {spread} {pointSize} prov={!plain} />
 			{#if labels}
 				<NodeProjector {assets} {signal} elements={labelElements} bind:slots={labelSlots} {focus} {pinned} {view} prov={!plain} related={relatedKnots} {stats} />
@@ -295,7 +304,14 @@
 	</Canvas>
 
 	{#if labels}
-		<NodeLabels {assets} slots={labelSlots} bind:elements={labelElements} prov={!plain} {onpick} />
+		<NodeLabels
+			{assets}
+			slots={labelSlots}
+			bind:elements={labelElements}
+			prov={!plain}
+			{pxPerKnot}
+			{onpick}
+		/>
 	{/if}
 
 	<!--
@@ -312,8 +328,7 @@
 		position: absolute;
 		inset: 0;
 		background: var(--paper);
-		/* Graph paper in the ruler's divisions, so the lattice is a measure rather than a
-		   texture.
+		/* One lattice, in the ruler's divisions: a square is a labelled tick.
 
 		   It was `120px 120px` — fixed pixels, changing with nothing — while the ruler's
 		   divisions changed as you zoomed. Two scales on one picture, and only one of them
@@ -321,33 +336,34 @@
 		   of one. A reader reads a grid as a measure whether or not it is one, so the squares
 		   were answering "how big is that gap" with a number that had no referent.
 
-		   Now a coarse square is one labelled tick and a fine square a fifth of it, both from
-		   `ticks.ts`, and both offset half a tile so a line lands on the ruler's zero at the
-		   centre of the view — the ruler counts outward from the middle, so `50%` alone would
-		   put every line exactly *between* two ticks.
+		   **One lattice and not two, and that is a correction.** The first version of this drew
+		   fifth-divisions under the ticks in `--grid-fine`, which produced exactly the
+		   "irregular line thickness" it was reported as — and by arithmetic rather than by
+		   rasterisation. `--grid-fine` is 0.035 of ink against `--grid-coarse`'s 0.03, so the
+		   *finer* lines were the heavier ones; and every fifth fine line sits under a coarse
+		   line by construction, so those positions were painted twice, at about 0.065. Every
+		   fifth line was double the ink of its neighbours. Two lattices anchored to one origin
+		   cannot avoid that overlap, so the subdivision is gone rather than re-weighted.
 
-		   Fine under coarse, and both well under the point cloud: `--grid-fine` is 0.035 of ink
-		   and `--grid-coarse` 0.03, which is a sheet of paper rather than a lit lattice. The
-		   first layer is a vignette — 4 % at the corners, none past 55 % of the way out. Pure
-		   CSS under the canvas: zero GPU, and the hairlines stay visible through it. */
+		   Offset half a tile so a line lands on the ruler's zero at the centre of the view: the
+		   ruler counts outward from the middle, so `50%` alone would put every line exactly
+		   *between* two ticks.
+
+		   The first layer is a vignette — 4 % of ink at the corners, none past 55 % of the way
+		   out — so the stage reads as a printed sheet rather than a lit screen. Pure CSS on the
+		   paper under the canvas: zero GPU, and the hairlines stay visible through it. */
 		background-image:
 			radial-gradient(ellipse at center, transparent 55%, rgba(16, 22, 31, 0.04) 100%),
 			linear-gradient(var(--grid-coarse) 1px, transparent 1px),
-			linear-gradient(90deg, var(--grid-coarse) 1px, transparent 1px),
-			linear-gradient(var(--grid-fine) 1px, transparent 1px),
-			linear-gradient(90deg, var(--grid-fine) 1px, transparent 1px);
+			linear-gradient(90deg, var(--grid-coarse) 1px, transparent 1px);
 		background-size:
 			100% 100%,
 			var(--grid-coarse-px) var(--grid-coarse-px),
-			var(--grid-coarse-px) var(--grid-coarse-px),
-			var(--grid-fine-px) var(--grid-fine-px),
-			var(--grid-fine-px) var(--grid-fine-px);
+			var(--grid-coarse-px) var(--grid-coarse-px);
 		background-position:
 			center,
 			calc(50% + var(--grid-coarse-at)) calc(50% + var(--grid-coarse-at)),
-			calc(50% + var(--grid-coarse-at)) calc(50% + var(--grid-coarse-at)),
-			calc(50% + var(--grid-fine-at)) calc(50% + var(--grid-fine-at)),
-			calc(50% + var(--grid-fine-at)) calc(50% + var(--grid-fine-at));
+			calc(50% + var(--grid-coarse-at)) calc(50% + var(--grid-coarse-at));
 		opacity: 1;
 	}
 </style>

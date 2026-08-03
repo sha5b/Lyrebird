@@ -15,13 +15,7 @@
  *
  * Run with `npm run verify:ticks`. Exits non-zero on any disagreement.
  */
-import {
-	FINE_DIVISIONS,
-	TARGET_PX,
-	gridOffsetPx,
-	tickLabel,
-	tickStep
-} from '../src/lib/galaxy/ticks.ts';
+import { TARGET_PX, gridOffsetPx, tickLabel, tickStep } from '../src/lib/galaxy/ticks.ts';
 
 let failures = 0;
 const ok = (name, cond, detail = '') => {
@@ -166,46 +160,6 @@ console.log('\nevery grid line is a ruler tick');
 	const naive = gridLines(extent, tile, 0);
 	const centred = naive.some((l) => Math.abs(l - extent / 2) < 0.01);
 	ok('and without the offset it would not', !centred, `tile ${tile} px`);
-}
-
-// --- the fine divisions ----------------------------------------------------------------
-console.log('\nthe fine grid subdivides the coarse one');
-
-{
-	let bad = null;
-	for (const z of ZOOMS) {
-		const coarse = tickStep(z) * z;
-		const fine = coarse / FINE_DIVISIONS;
-		// Every coarse line must also be a fine line, or the two lattices beat against
-		// each other and the finer one reads as noise rather than as a subdivision.
-		if (Math.abs(coarse / fine - Math.round(coarse / fine)) > 1e-9) bad = z;
-	}
-	ok('the coarse step is a whole number of fine ones', !bad, `${FINE_DIVISIONS} per tick`);
-	ok('five divisions, so 1, 2 and 5 all divide', FINE_DIVISIONS === 5);
-}
-
-{
-	const extent = 1280;
-	let bad = null;
-	for (const z of ZOOMS) {
-		const coarse = tickStep(z) * z;
-		const fine = coarse / FINE_DIVISIONS;
-		const coarseLines = gridLines(extent, coarse, gridOffsetPx(coarse));
-		const fineLines = gridLines(extent, fine, gridOffsetPx(fine));
-		for (const c of coarseLines) {
-			if (!fineLines.some((f) => Math.abs(f - c) < 0.01)) bad ??= { z, c };
-		}
-	}
-	ok('every coarse line has a fine line under it', !bad,
-		bad ? `${bad.c.toFixed(2)} at ${bad.z.toFixed(1)} px/knot` : '');
-}
-
-{
-	// The fine grid must not become texture. At the tightest drawn spacing a fifth of a tick
-	// is still the smallest thing on screen that is supposed to be countable.
-	let lo = Infinity;
-	for (const z of ZOOMS) lo = Math.min(lo, (tickStep(z) * z) / FINE_DIVISIONS);
-	ok('the finest division stays above 6 px', lo > 6, `min ${lo.toFixed(1)} px`);
 }
 
 // --- the labels ------------------------------------------------------------------------

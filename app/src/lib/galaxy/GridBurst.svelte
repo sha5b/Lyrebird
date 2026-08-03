@@ -203,8 +203,46 @@
 		return true;
 	}
 
+	/**
+	 * Two strikes closer than this share one cross, as a share of the rule's half-length.
+	 *
+	 * Repeat strikes on the *same* knot were already folded together (`best !== lastCluster`
+	 * below), which left the case the owner reported: two *different* knots a few pixels apart
+	 * both struck, so the stage drew two crosses whose three rules each lay almost on top of
+	 * the other's. That does not read as two events, it reads as one event drawn badly —
+	 * doubled ink on six near-coincident lines.
+	 *
+	 * Measured against `reachNow()` rather than in the cloud's units, because "near" here is a
+	 * judgement about the *picture*: the same two knots are far apart framed on one bird and
+	 * indistinguishable framed on the whole corpus, and the rule's own length is what already
+	 * tracks that. 8 % of the half-length is about a centimetre on a laptop screen — close
+	 * enough that no reader could tell the two crosses apart.
+	 */
+	const MERGE_OF_REACH = 0.08;
+	const candidate = new THREE.Vector3();
+
 	function strike(cluster: number, strength: number) {
 		if (cluster < 0 || cluster * 3 + 2 >= view.centroids.length || !view.counts[cluster]) return;
+		candidate.set(
+			view.centroids[cluster * 3],
+			view.centroids[cluster * 3 + 1],
+			view.centroids[cluster * 3 + 2]
+		);
+		// A live cross close enough to be the same mark is refreshed instead of joined by a
+		// second one. It keeps its own knot and tint: the rules are already drawn through a
+		// place, and re-pointing them at a neighbour would move lines the eye is already on.
+		// The louder of the two notes wins the brightness, so folding never makes a strike
+		// weaker than it would have been.
+		const near = MERGE_OF_REACH * reachNow();
+		for (const b of bursts) {
+			if (b.age >= LIFETIME || b.strength <= 0) continue;
+			if (!follow(b)) continue;
+			if (b.centre.distanceTo(candidate) <= near) {
+				b.age = 0;
+				b.strength = Math.max(b.strength, strength);
+				return;
+			}
+		}
 		const b = bursts[next];
 		next = (next + 1) % MAX_BURSTS;
 		b.cluster = cluster;

@@ -540,6 +540,21 @@ export const fragmentShader = /* glsl */ `
 	uniform vec3 uProvField;
 	uniform vec3 uProvArrivals;
 	uniform vec3 uProvCand;
+	/**
+	 * 1 tints every resting point with its own bird's hue.
+	 *
+	 * A third colour language beside neutral ink and the provenance classes, and it costs no
+	 * vertex attribute: the knot's species hue already rides uClusterState's A channel for
+	 * the accent, so the resting point can read the same value. That matters, because the
+	 * mode this replaces carried a per-point hue attribute and took the program to fifteen
+	 * attributes, which failed to link on Mesa's Intel driver in Firefox.
+	 *
+	 * Off by default and it should stay that way: 2 423 species share one hue circle, so at
+	 * this density the cloud reads as confetti rather than as an answer to "which bird". It is
+	 * offered because the question "where does this species sit" is a real one and no other
+	 * channel answers it for the whole corpus at once.
+	 */
+	uniform float uBird;
 	/** 1 for neutral ink/plain points, 0 for the provenance class tint. */
 	uniform float uPlain;
 	/** The same clock the vertex stage pulses by; the orphan pulse breathes on it. */
@@ -742,8 +757,20 @@ export const fragmentShader = /* glsl */ `
 		// colours off also quietly faded the cloud by ten lightness units and the plain
 		// mode read as a haze. Matching the mean puts the two modes at the same weight,
 		// which is what "only the colour language changes" was always supposed to mean.
-		vec3 ink = mix(classCol, vec3(0.13, 0.16, 0.21), uPlain);
-		vec3 rest = mix(uSurface, mix(classCol, vec3(0.45, 0.47, 0.50), uPlain), 0.5);
+		// The bird mode substitutes the species hue for whatever the identity colour would
+		// otherwise be, at both weights, so it inherits the same wash toward the surface that
+		// keeps the three languages at one lightness — the comment above is the measurement
+		// that wash exists for. vHue of 0 means "no bird on this knot", and those points stay
+		// in the language they were already speaking rather than going black.
+		float hueTurns = (vHue - ${HUE_FLOOR}) / (1.0 - ${HUE_FLOOR});
+		vec3 birdCol = speciesHueColour(hueTurns);
+		float bird = uBird * step(0.0001, vHue);
+		vec3 ink = mix(mix(classCol, vec3(0.13, 0.16, 0.21), uPlain), birdCol, bird);
+		vec3 rest = mix(
+			uSurface,
+			mix(mix(classCol, vec3(0.45, 0.47, 0.50), uPlain), birdCol, bird),
+			0.5
+		);
 		// **The accent is this knot's bird, not the frame's loudest bird.**
 		//
 		// uAccent is one eased colour for the whole stage, chosen from whichever knot
@@ -755,10 +782,9 @@ export const fragmentShader = /* glsl */ `
 		// uniform: there the accent is a *class* colour and the class is the subject's,
 		// not the knot's. Hue 0 means the knot has no bird (or an older build), and the
 		// uniform stands in.
-		// The A channel is written with a floor so 0 can mean "no bird" (HUE_FLOOR), so
-		// the floor comes back off here before the value is read as turns.
-		float hueTurns = (vHue - ${HUE_FLOOR}) / (1.0 - ${HUE_FLOOR});
-		vec3 accent = (uPlain > 0.5 && vHue > 0.0) ? speciesHueColour(hueTurns) : uAccent;
+		// The A channel is written with a floor so 0 can mean "no bird" (HUE_FLOOR); the floor
+		// comes back off in hueTurns above, where the bird mode also reads it.
+		vec3 accent = (uPlain > 0.5 && vHue > 0.0) ? birdCol : uAccent;
 		vec3 end = mix(ink, accent, clamp(vAccent, 0.0, 1.0));
 
 		// A chosen bird's points sit most of the way along their own ramp even at rest, so

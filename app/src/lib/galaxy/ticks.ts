@@ -19,20 +19,9 @@
  * Named a target for a long time, and `verify:ticks` established it is a floor: `tickStep`
  * rounds up to the next 1-2-5 value, so the drawn spacing is never under this and reaches
  * about 2.4x it just before each step change. Worth having written down, because it is what
- * bounds the grid — a coarse square is 78 to 190 px and a fine one 16 to 38 px, which is why
- * the fine division can be five without becoming texture.
+ * bounds the grid: one square is 78 to 190 px, which is a countable lattice at every zoom.
  */
 export const TARGET_PX = 78;
-
-/**
- * How many fine divisions each tick is drawn in.
- *
- * Five, because every step this returns is 1, 2 or 5 times a power of ten, and five divides
- * all three into something a reader can count: a 1-step becomes fifths, a 5-step becomes
- * whole units. Ten would put a line every 8 px at the target spacing, which is texture rather
- * than a scale.
- */
-export const FINE_DIVISIONS = 5;
 
 /**
  * A tick step in knot spacings, from the 1-2-5 sequence, so labels stay round at every zoom.
