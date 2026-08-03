@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { base } from '$app/paths';
+	import { biplotAxes } from '$lib/galaxy/biplot';
 	import { onMount, untrack } from 'svelte';
 	import Galaxy from '$lib/galaxy/Galaxy.svelte';
 	import SpeciesPicker from '$lib/SpeciesPicker.svelte';
@@ -149,7 +151,15 @@
 	let recording = $state(false);
 	let recordings = $state<{ url: string; name: string }[]>([]);
 	let viewOpen = $state(false);
-	let helpOpen = $state(false);
+	/**
+	 * Which full-stage page is open, or `''` for the galaxy.
+	 *
+	 * These are pages, not panels. The legend used to live in a 16 rem popover hanging off a
+	 * question-mark icon on the right edge — too small for the material and named after
+	 * nothing. It reads as a page because it is one: it replaces the stage instead of
+	 * covering a corner of it.
+	 */
+	let page = $state<'' | 'info'>('');
 	/**
 	 * The known/unknown map switcher. `mapsAvailable` is probed once at startup: a
 	 * `--clustering both` build ships `known/` and `unknown/` next to the root asset set,
@@ -337,6 +347,15 @@
 	 * a Map rebuilt on every scheduled note.
 	 */
 
+	/**
+	 * Which acoustic quantity each direction in the picture carries, and how much of it.
+	 *
+	 * Fitted over the knots' shipped positions rather than the drawn ones: this is a
+	 * property of the build, and it must not change as the camera moves or the cloud
+	 * rearranges. The Info page is the only reader — it was in the ruler caption and read as
+	 * clutter there, because a share of 19 % beside a name is an explanation, not a label.
+	 */
+	const axes = $derived(assets ? biplotAxes(assets, Float32Array.from(assets.centroids.items.flatMap((c) => c.position))) : []);
 	const clusters = $derived<ClusterLookup | null>(assets ? buildClusterLookup(assets.centroids) : null);
 	const speciesIndex = $derived(assets ? buildSpeciesIndex(assets) : null);
 	// The pickers' species list: id + common + counts from the inventory index, complete
@@ -1979,6 +1998,11 @@ uv run birdy-pipeline build</pre>
 				<p class="strap">syrinx model · documented call functions · no samples</p>
 			</div>
 			<dl class="readings mono">
+				<!--
+					A page opener in the shape of a reading. The row is already where a viewer looks
+					for what the build is, so what the build MEANS belongs at the end of it rather
+					than behind an icon on the far edge of the stage.
+				-->
 				<div><dt>points</dt><dd>{assets.points.n.toLocaleString()}</dd></div>
 				<div><dt>clusters</dt><dd>{assets.centroids.k}</dd></div>
 				<!--
@@ -2006,6 +2030,16 @@ uv run birdy-pipeline build</pre>
 						<span class="level"><span class="hot" style:width={`${strength * 100}%`}></span></span>
 					</dd>
 				</div>
+				<button
+					class="reading-open"
+					class:on={page === 'info'}
+					aria-pressed={page === 'info'}
+					title="The paper, what this is, and what every mark on the stage means."
+					onclick={() => (page = page === 'info' ? '' : 'info')}
+				>
+					<dt>info</dt>
+					<dd>{page === 'info' ? 'close' : 'open'}</dd>
+				</button>
 			</dl>
 		</header>
 
@@ -2036,6 +2070,288 @@ uv run birdy-pipeline build</pre>
 				onbackground={backgroundClicked}
 				bind:knotSpacing
 			/>
+
+		<!--
+			A page over the stage, not a panel beside it.
+			Grid-ruled like the cloud it replaces, so opening it reads as turning the same
+			instrument over rather than leaving it. Two columns at width: the paper and the
+			summary read as prose, the legend reads as a reference, and neither has to be
+			scrolled past to reach the other.
+		-->
+		{#if page === 'info'}
+			<div class="stagepage" role="region" aria-label="Paper, summary and legend">
+				<header class="pagehead">
+					<div>
+						<h2>Lyrebird</h2>
+						<p class="strap">syrinx model · documented call functions · no samples</p>
+					</div>
+					<button class="pageclose" title="Back to the galaxy" onclick={() => (page = '')}
+						>close</button
+					>
+				</header>
+
+				<div class="pagegrid">
+					<section class="pagecol">
+						<h3 class="blocktitle">The paper</h3>
+						<p class="note">
+							<a class="paperlink" href="{base}/lyrebird-whitepaper.pdf" download
+								>Download the whitepaper — PDF, 0.7 MB</a
+							>
+						</p>
+
+						<h3 class="blocktitle">What this is</h3>
+						<p class="note">
+							Lyrebird makes bird sound from a model of the syrinx. It holds no recordings of
+							birds as samples. A physical oscillator produces every note you hear.
+						</p>
+						<p class="note">
+							Each call in the inventory carries a function taken from the literature, with the
+							citation and a statement of how well the literature supports it. The app never
+							states a meaning the sources do not give.
+						</p>
+						<p class="note">
+							The cloud draws {assets.points.n.toLocaleString()} sounds in
+							{assets.centroids.k.toLocaleString()} knots. A knot holds every sound that carries
+							one syllable type's name. Its three axes are a projection of a
+							{assets.featureSpace.dims}-dimensional acoustic space, so the picture keeps part of
+							that space and loses the rest.
+						</p>
+						<p class="note">
+							Two numbers in the header say how much it keeps. <b>distance r</b> scores the coarse
+							arrangement over random pairs. <b>neighbours</b> is the share of a point's ten
+							nearest marks on screen that carry its own type. The second is the one to read when
+							two marks sit together.
+						</p>
+
+						<h3 class="blocktitle">What a direction means</h3>
+						<p class="note">
+							The axes are not named quantities. A least-squares fit over every knot finds the
+							direction each acoustic quantity increases fastest along, and how much of it that
+							direction explains.
+						</p>
+						{#if axes.length}
+							<dl class="axistable mono">
+								{#each axes as a (a.name)}
+									<div><dt>{a.name}</dt><dd>{Math.round(a.r2 * 100)} %</dd></div>
+								{/each}
+							</dl>
+							<p class="note faint">
+								Read the share before the name. A quantity under about 10 % has no direction worth
+								pointing at, which is where duration sits on this build.
+							</p>
+						{/if}
+					</section>
+
+					<section class="pagecol">
+						<h3 class="blocktitle">Legend</h3>
+						<section class="block">
+							<!--
+								**The key is where the picture explains itself, so every line in it has to be
+								a claim the build can support.** Three could not. "Distance is acoustic
+								similarity" was stated flatly while the manifest's own faithfulness for this
+								build is 0.667; nothing said what SIZE means, so a mark that grew read as a
+								value when it is an event; and nothing said why the points MOVE, which left a
+								permanent slow drift looking like it was reporting something. All three are
+								answered here, and the numbers are read from the loaded build rather than
+								written into the prose.
+							-->
+							<ul class="legend key">
+								<li>
+									<i style:background="var(--ink-dim)"></i>
+									<span>
+										<b>A point is one sound</b> — a recorded syllable, or one synthesized from a
+										fitted type.
+									</span>
+								</li>
+								<li>
+									<i class="hollow"></i>
+									<!--
+										**This line was wrong for the build that is loaded.** It said a knot is
+										"a cluster of similar sounds", which is what a knot is under `kmeans` or
+										`hdbscan` — and the shipped build is `label`, where every sound goes to
+										the knot of the type it already carries and the clustering never runs on
+										it. There the knots ARE the labels (docs/22 §22.8), and a type's sounds
+										are under no obligation to land together, so "cluster" promised a
+										spatial finding the build does not make. The mode decides which sentence
+										is true, so the key reads it instead of asserting one.
+									-->
+									<span>
+										{#if assets?.manifest?.clustering === 'label'}
+											<b>A knot is one call type</b> — every sound the pipeline gave that type's
+											name. On this build the knots are the labels, not a second, independent
+											finding.
+										{:else}
+											<b>A knot is a group of sounds too alike to separate</b>, found by clustering
+											the space rather than by reading the labels.
+										{/if}
+										A documented one also carries its function and its source. Its tag and its
+										threads attach at its centre.
+									</span>
+								</li>
+								{#if knotOverlap}
+									<li>
+										<i class="wide"></i>
+										<!--
+											The measured answer to "I cannot see the structure of the knots", which
+											nothing in this interface had ever said. It is a property of the build,
+											not of the renderer, and it is the first thing anyone hunting for beads
+											in this cloud needs to know.
+										-->
+										<span>
+											<b>Knots overlap, heavily.</b> The average knot is {knotOverlap.ratio.toFixed(1)}×
+											wider than the gap to its nearest neighbour on this build, so the cloud reads as
+											one mass rather than as separated beads. The ruler's unit is that gap.
+										</span>
+									</li>
+								{/if}
+								<li>
+									<i class="pair"></i>
+									<span>
+										<b>Closer is more alike — roughly.</b>
+										{#if projQuality?.pearson != null}
+											Drawn distance follows measured distance at r&nbsp;=&nbsp;{projQuality.pearson.toFixed(2)}
+											over {(assets?.manifest?.faithfulness?.pairs ?? 0).toLocaleString()} random pairs{#if projQuality.knn != null}, and
+											{(projQuality.knn * 100).toFixed(0)}&nbsp;% of a point's {projQuality.knnK} nearest
+											neighbours on screen share its call type — far above chance among {(assets?.manifest?.clusters ?? 0).toLocaleString()}
+											knots, and still most neighbours belong to something else{/if}.
+										{/if}
+										Read the arrangement, not the exact gap.
+									</span>
+								</li>
+								<li>
+									<i class="grow"></i>
+									<span>
+										<b>Size is an event, not a value.</b> At rest every mark is the same size —
+										except a sound in no knot, drawn smaller, because it is a measurement and not
+										structure. A mark grows only while something is happening to it: its knot
+										answering, a front passing through it, the pipeline working on it, or its bird
+										being the one you selected.
+									</span>
+								</li>
+								<li>
+									<i class="ring"></i>
+									<span>
+										<b>Movement, when a sound lands.</b> The knot it matched swells from the inside
+										out — each member moves as the front reaches its own true distance from the
+										landing point, so what you see is the knot's internal geometry, not an
+										animation. A wave then travels out from that knot across about four
+										knot-spacings; two waves crossing add and cancel like real ones, which is the
+										only mark on screen of two calls arriving in the same region.
+									</span>
+								</li>
+								<li>
+									<i class="drift"></i>
+									<span>
+										<b>The slow drift in silence carries nothing.</b> It keeps the depth readable on
+										a still frame and fades out as soon as a wave comes up. Rotation (Display) is
+										the same kind of thing: a way of seeing the volume, not a reading of it.
+									</span>
+								</li>
+								<li>
+									<i class="clade"></i>
+									<!--
+										The hue is the GENUS, not the species. Hashing the whole id spent the
+										colour circle on 2 423 unrelated numbers, so two thrushes were as far
+										apart as a thrush and an owl and the one thing a colour could have said
+										— what kind of bird just answered — was the one thing it did not say.
+										Genus is also as deep as this corpus goes: family and order are not
+										collected, so the limit is stated here rather than implied.
+									-->
+									<span>
+										<b>A bird's colour is its genus.</b> Every species in a genus wears one hue and
+										differs only in shade, so what answers tells you what kind of bird it was before
+										you read the name. Only <i>the same hue</i> means anything — neighbouring hues
+										are not neighbouring clades — and genus is as deep as this corpus goes: family
+										and order are not collected.
+									</span>
+								</li>
+								<li>
+									<i class="hue"></i>
+									<span>
+										<b>Colour says one thing at a time.</b> Off — the points are neutral, and hue is
+										left to the tags and to whatever is sounding, in its bird's hue. On (Provenance
+										colours, in Display) — every point, tag and thread takes its class colour
+										instead, and the class list below becomes the key to it.
+									</span>
+								</li>
+								<li>
+									<i class="line"></i>
+									<!--
+										Where the word is defined. `bout` is the unit the whole syntax layer is
+										counted within, and it appeared a dozen times in this interface without
+										once being said — which makes every sentence carrying it unreadable to
+										anyone who has not read the pipeline. It is glossed here, on its first
+										appearance; every later use carries the same string as a tooltip.
+									-->
+									<span>
+										<b>A thread is one <b class="term" title={BOUT_GLOSS}>bout</b></b> — one burst of
+										singing, syllables less than a second apart — drawn through its knots in the
+										order they were sung.
+									</span>
+								</li>
+								<li>
+									<i class="breath"></i>
+									<span>
+										<b>Heard, but nothing claimed.</b> The nearest region breathes grey: the sound
+										was under the match floor, and the panel says so rather than naming a call.
+									</span>
+								</li>
+								<li>
+									<i style:background="var(--signal)"></i>
+									<span>
+										<b>One loud colour marks what you asked for</b> — the note sounding now, in its
+										bird's hue (violet when nothing names a who), or the points of the bird you
+										selected.
+									</span>
+								</li>
+							</ul>
+							<p class="note faint">
+								{#if localKnots}
+									Three display transforms, all disclosed. A knot is drawn where the projection put
+									its most typical sound, and its members are arranged around it by a projection of
+									that knot's own feature space rather than of the whole corpus — otherwise the
+									global flattening splits some knots across the galaxy (below). Close up — and
+									always for the selected bird — a knot's marks spread out to fill its measured
+									extent, like the jitter in a scatterplot. And knots are drawn twice as far apart
+									as the projection puts them, so there is room between them for a response to
+									happen in. Each knot keeps its measured extent, and none of it moves the corpus
+									positions. Direction inside a knot carries no meaning between knots; distance
+									from its centre does.
+								{:else}
+									Two display transforms, both disclosed: close up — and always for the selected
+									bird — a knot's marks spread out to fill its measured extent, like the jitter in
+									a scatterplot; and knots are drawn twice as far apart as the projection puts
+									them, so there is room between them for a response to happen in. Each knot keeps
+									its own size and shape, and neither transform moves the corpus positions.
+								{/if}
+							</p>
+							{#if projQuality?.torn}
+								<!--
+									The build measures this and the app had never shown it, so the one thing a
+									viewer is most likely to read as a rendering fault — a thread that ends in
+									empty space — had a measured explanation nobody could see. It now also says
+									what the layout does about it, because "we know and we fixed most of it" and
+									"we know" are different sentences.
+								-->
+								<p class="note faint">
+									{projQuality.torn} of {(projQuality.tornOf ?? 0).toLocaleString()} measured knots are
+									drawn by this projection in two places at once — the price this arrangement pays for
+									putting similar sounds together, and it is paid deliberately. <b>Both places are
+									named.</b> A torn knot gets an anchor in each of its two patches, each one sitting on
+									that patch's own most central member rather than on a mean between them, so no lit
+									patch is left without a label. The thread of a song still runs through the larger of
+									the two, because a bird sang one syllable and a forked line would say otherwise.{#if localKnots}
+										Local knot shape (Display) additionally reshapes each knot from its own members, so
+										what you see inside one is that knot's own variation rather than the residue of a
+										fit dominated by everything else.
+									{/if}
+								</p>
+							{/if}
+						</section>
+					</section>
+				</div>
+			</div>
+		{/if}
 			{/key}
 
 			<!-- Display settings belong on the thing they change, not in the tab strip. -->
@@ -2252,236 +2568,6 @@ uv run birdy-pipeline build</pre>
 									{:else}
 										<p class="note faint">Waiting for the first frame.</p>
 									{/if}
-								{/if}
-							</section>
-						</div>
-					</div>
-				{/if}
-				<button
-					class="viewbtn"
-					class:open={helpOpen}
-					aria-label="Reading the galaxy"
-					aria-expanded={helpOpen}
-					title="What am I looking at?"
-					onclick={() => (helpOpen = !helpOpen)}
-				>
-					<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
-						<path
-							d="M6.2 5.6c.2-1.1 1-1.9 2.1-1.9 1.2 0 2.1.9 2.1 2 0 1.6-1.6 1.9-1.9 3v.5"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.3"
-							stroke-linecap="round"
-						/>
-						<circle cx="8.4" cy="12.2" r="0.9" fill="currentColor" />
-					</svg>
-				</button>
-				{#if helpOpen}
-					<div class="panel viewpanel">
-						<h2>Reading the galaxy</h2>
-						<div class="cardbody">
-							<section class="block">
-								<!--
-									**The key is where the picture explains itself, so every line in it has to be
-									a claim the build can support.** Three could not. "Distance is acoustic
-									similarity" was stated flatly while the manifest's own faithfulness for this
-									build is 0.667; nothing said what SIZE means, so a mark that grew read as a
-									value when it is an event; and nothing said why the points MOVE, which left a
-									permanent slow drift looking like it was reporting something. All three are
-									answered here, and the numbers are read from the loaded build rather than
-									written into the prose.
-								-->
-								<ul class="legend key">
-									<li>
-										<i style:background="var(--ink-dim)"></i>
-										<span>
-											<b>A point is one sound</b> — a recorded syllable, or one synthesized from a
-											fitted type.
-										</span>
-									</li>
-									<li>
-										<i class="hollow"></i>
-										<!--
-											**This line was wrong for the build that is loaded.** It said a knot is
-											"a cluster of similar sounds", which is what a knot is under `kmeans` or
-											`hdbscan` — and the shipped build is `label`, where every sound goes to
-											the knot of the type it already carries and the clustering never runs on
-											it. There the knots ARE the labels (docs/22 §22.8), and a type's sounds
-											are under no obligation to land together, so "cluster" promised a
-											spatial finding the build does not make. The mode decides which sentence
-											is true, so the key reads it instead of asserting one.
-										-->
-										<span>
-											{#if assets?.manifest?.clustering === 'label'}
-												<b>A knot is one call type</b> — every sound the pipeline gave that type's
-												name. On this build the knots are the labels, not a second, independent
-												finding.
-											{:else}
-												<b>A knot is a group of sounds too alike to separate</b>, found by clustering
-												the space rather than by reading the labels.
-											{/if}
-											A documented one also carries its function and its source. Its tag and its
-											threads attach at its centre.
-										</span>
-									</li>
-									{#if knotOverlap}
-										<li>
-											<i class="wide"></i>
-											<!--
-												The measured answer to "I cannot see the structure of the knots", which
-												nothing in this interface had ever said. It is a property of the build,
-												not of the renderer, and it is the first thing anyone hunting for beads
-												in this cloud needs to know.
-											-->
-											<span>
-												<b>Knots overlap, heavily.</b> The average knot is {knotOverlap.ratio.toFixed(1)}×
-												wider than the gap to its nearest neighbour on this build, so the cloud reads as
-												one mass rather than as separated beads. The ruler's unit is that gap.
-											</span>
-										</li>
-									{/if}
-									<li>
-										<i class="pair"></i>
-										<span>
-											<b>Closer is more alike — roughly.</b>
-											{#if projQuality?.pearson != null}
-												Drawn distance follows measured distance at r&nbsp;=&nbsp;{projQuality.pearson.toFixed(2)}
-												over {(assets?.manifest?.faithfulness?.pairs ?? 0).toLocaleString()} random pairs{#if projQuality.knn != null}, and
-												{(projQuality.knn * 100).toFixed(0)}&nbsp;% of a point's {projQuality.knnK} nearest
-												neighbours on screen share its call type — far above chance among {(assets?.manifest?.clusters ?? 0).toLocaleString()}
-												knots, and still most neighbours belong to something else{/if}.
-											{/if}
-											Read the arrangement, not the exact gap.
-										</span>
-									</li>
-									<li>
-										<i class="grow"></i>
-										<span>
-											<b>Size is an event, not a value.</b> At rest every mark is the same size —
-											except a sound in no knot, drawn smaller, because it is a measurement and not
-											structure. A mark grows only while something is happening to it: its knot
-											answering, a front passing through it, the pipeline working on it, or its bird
-											being the one you selected.
-										</span>
-									</li>
-									<li>
-										<i class="ring"></i>
-										<span>
-											<b>Movement, when a sound lands.</b> The knot it matched swells from the inside
-											out — each member moves as the front reaches its own true distance from the
-											landing point, so what you see is the knot's internal geometry, not an
-											animation. A wave then travels out from that knot across about four
-											knot-spacings; two waves crossing add and cancel like real ones, which is the
-											only mark on screen of two calls arriving in the same region.
-										</span>
-									</li>
-									<li>
-										<i class="drift"></i>
-										<span>
-											<b>The slow drift in silence carries nothing.</b> It keeps the depth readable on
-											a still frame and fades out as soon as a wave comes up. Rotation (Display) is
-											the same kind of thing: a way of seeing the volume, not a reading of it.
-										</span>
-									</li>
-									<li>
-										<i class="clade"></i>
-										<!--
-											The hue is the GENUS, not the species. Hashing the whole id spent the
-											colour circle on 2 423 unrelated numbers, so two thrushes were as far
-											apart as a thrush and an owl and the one thing a colour could have said
-											— what kind of bird just answered — was the one thing it did not say.
-											Genus is also as deep as this corpus goes: family and order are not
-											collected, so the limit is stated here rather than implied.
-										-->
-										<span>
-											<b>A bird's colour is its genus.</b> Every species in a genus wears one hue and
-											differs only in shade, so what answers tells you what kind of bird it was before
-											you read the name. Only <i>the same hue</i> means anything — neighbouring hues
-											are not neighbouring clades — and genus is as deep as this corpus goes: family
-											and order are not collected.
-										</span>
-									</li>
-									<li>
-										<i class="hue"></i>
-										<span>
-											<b>Colour says one thing at a time.</b> Off — the points are neutral, and hue is
-											left to the tags and to whatever is sounding, in its bird's hue. On (Provenance
-											colours, in Display) — every point, tag and thread takes its class colour
-											instead, and the class list below becomes the key to it.
-										</span>
-									</li>
-									<li>
-										<i class="line"></i>
-										<!--
-											Where the word is defined. `bout` is the unit the whole syntax layer is
-											counted within, and it appeared a dozen times in this interface without
-											once being said — which makes every sentence carrying it unreadable to
-											anyone who has not read the pipeline. It is glossed here, on its first
-											appearance; every later use carries the same string as a tooltip.
-										-->
-										<span>
-											<b>A thread is one <b class="term" title={BOUT_GLOSS}>bout</b></b> — one burst of
-											singing, syllables less than a second apart — drawn through its knots in the
-											order they were sung.
-										</span>
-									</li>
-									<li>
-										<i class="breath"></i>
-										<span>
-											<b>Heard, but nothing claimed.</b> The nearest region breathes grey: the sound
-											was under the match floor, and the panel says so rather than naming a call.
-										</span>
-									</li>
-									<li>
-										<i style:background="var(--signal)"></i>
-										<span>
-											<b>One loud colour marks what you asked for</b> — the note sounding now, in its
-											bird's hue (violet when nothing names a who), or the points of the bird you
-											selected.
-										</span>
-									</li>
-								</ul>
-								<p class="note faint">
-									{#if localKnots}
-										Three display transforms, all disclosed. A knot is drawn where the projection put
-										its most typical sound, and its members are arranged around it by a projection of
-										that knot's own feature space rather than of the whole corpus — otherwise the
-										global flattening splits some knots across the galaxy (below). Close up — and
-										always for the selected bird — a knot's marks spread out to fill its measured
-										extent, like the jitter in a scatterplot. And knots are drawn twice as far apart
-										as the projection puts them, so there is room between them for a response to
-										happen in. Each knot keeps its measured extent, and none of it moves the corpus
-										positions. Direction inside a knot carries no meaning between knots; distance
-										from its centre does.
-									{:else}
-										Two display transforms, both disclosed: close up — and always for the selected
-										bird — a knot's marks spread out to fill its measured extent, like the jitter in
-										a scatterplot; and knots are drawn twice as far apart as the projection puts
-										them, so there is room between them for a response to happen in. Each knot keeps
-										its own size and shape, and neither transform moves the corpus positions.
-									{/if}
-								</p>
-								{#if projQuality?.torn}
-									<!--
-										The build measures this and the app had never shown it, so the one thing a
-										viewer is most likely to read as a rendering fault — a thread that ends in
-										empty space — had a measured explanation nobody could see. It now also says
-										what the layout does about it, because "we know and we fixed most of it" and
-										"we know" are different sentences.
-									-->
-									<p class="note faint">
-										{projQuality.torn} of {(projQuality.tornOf ?? 0).toLocaleString()} measured knots are
-										drawn by this projection in two places at once — the price this arrangement pays for
-										putting similar sounds together, and it is paid deliberately. <b>Both places are
-										named.</b> A torn knot gets an anchor in each of its two patches, each one sitting on
-										that patch's own most central member rather than on a mean between them, so no lit
-										patch is left without a label. The thread of a song still runs through the larger of
-										the two, because a bird sang one syllable and a forked line would say otherwise.{#if localKnots}
-											Local knot shape (Display) additionally reshapes each knot from its own members, so
-											what you see inside one is that knot's own variation rather than the residue of a
-											fit dominated by everything else.
-										{/if}
-									</p>
 								{/if}
 							</section>
 						</div>
@@ -4087,6 +4173,129 @@ uv run birdy-pipeline serve</pre>
 		position: static;
 		width: 16rem;
 		max-height: calc(100vh - 8rem);
+	}
+
+	/* --- the stage page -------------------------------------------------------------
+	   A page over the cloud, ruled like the cloud. The grid is the same faint graph the
+	   stage draws behind the points, at the same weight, so opening this reads as turning
+	   the instrument over rather than leaving it for a document. Nothing here is a card:
+	   the panels elsewhere float above the stage, and a page that floats above a page
+	   would just be the popover this replaced, bigger. */
+	.stagepage {
+		position: absolute;
+		inset: 0;
+		z-index: 6;
+		overflow-y: auto;
+		padding: 1.4rem 1.8rem 3rem;
+		background:
+			linear-gradient(var(--rule) 1px, transparent 1px) 0 0 / 100% 2.4rem,
+			linear-gradient(90deg, var(--rule) 1px, transparent 1px) 0 0 / 2.4rem 100%,
+			var(--paper);
+	}
+
+	.pagehead {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 1rem;
+		padding-bottom: 0.8rem;
+		border-bottom: 1px solid var(--ink);
+		margin-bottom: 1.6rem;
+	}
+
+	.pagehead h2 {
+		margin: 0;
+		font-size: 1.15rem;
+		letter-spacing: 0.01em;
+	}
+
+	.pageclose {
+		flex: initial;
+		padding: 0.3rem 0.7rem;
+		font-size: 0.7rem;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+	}
+
+	/* Two columns once there is room for two: prose on the left, reference on the right,
+	   so the legend is never something to scroll past to reach the summary. */
+	.pagegrid {
+		display: grid;
+		gap: 1.6rem 2.6rem;
+		grid-template-columns: 1fr;
+		max-width: 78rem;
+	}
+
+	@media (min-width: 60rem) {
+		.pagegrid {
+			grid-template-columns: minmax(0, 24rem) minmax(0, 1fr);
+		}
+	}
+
+	.pagecol > :global(section.block) {
+		margin-bottom: 1.2rem;
+	}
+
+	/* The fitted directions, as a table rather than a sentence: five names and five shares
+	   are a reading, and a reading is a column of numbers. */
+	.axistable {
+		display: grid;
+		grid-template-columns: 1fr auto;
+		gap: 0.15rem 1rem;
+		margin: 0.4rem 0 0.6rem;
+		font-size: 0.72rem;
+	}
+
+	.axistable div {
+		display: contents;
+	}
+
+	.axistable dt {
+		color: var(--ink-dim);
+	}
+
+	.axistable dd {
+		margin: 0;
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* A page opener wearing a reading's clothes: same stack, same type, no button chrome
+	   until it is hovered or open, so the header row stays a row of facts. */
+	.reading-open {
+		display: block;
+		flex: initial;
+		padding: 0;
+		border: 0;
+		background: none;
+		text-align: left;
+		font: inherit;
+		color: inherit;
+		cursor: pointer;
+	}
+
+	.reading-open dt {
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
+		text-decoration-color: var(--rule);
+	}
+
+	.reading-open:hover dt,
+	.reading-open.on dt {
+		color: var(--signal);
+		text-decoration-color: var(--signal);
+	}
+
+	.reading-open.on dd {
+		color: var(--signal);
+	}
+
+	/* The one outbound link on the stage. Underlined rather than coloured: the accent is
+	   spoken for and means "this is responding to sound". */
+	.paperlink {
+		color: var(--ink);
+		text-decoration: underline;
+		text-underline-offset: 0.15em;
 	}
 
 	.level {

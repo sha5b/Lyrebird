@@ -1,3 +1,97 @@
+# Lyrebird — READ THIS FIRST (2026-08-03, ~11:55): the v8 chain is running unattended
+
+**A full production chain started at 11:41 and nobody has checked it.** It is
+`pipeline/analysis/run_production_v8.sh`, detached with `setsid`, and it takes about
+3 h 40 m — so it should be finished by roughly **15:20**.
+
+    tail -f pipeline/out/v8-chain.out        # the stage-by-stage narration
+    tail -f pipeline/out/v8/learn.log        # stage 1, the long one
+    ls pipeline/out/v8/assets                # exists only once stage 4 starts writing
+
+Stages: learn (~3 h) -> docrefit (23 s) -> respfit (~8 min) -> build with
+`--projection pacmap` (~25 min) -> verify -> **stage 6, the song funnel**.
+
+**What to do when it lands, in order:**
+
+1. **Read stage 6 before anything else.** It compares the re-learned inventory against the
+   installed one on species-with-a-song, song types, repeat classes, motifs and grammar
+   chunks, and says loudly if any watched count fell more than 20 %. The v6 re-learn cost
+   repeat classes 68 % and grammar chunks 77 % while improving every syllable number it was
+   gated on. **If stage 6 shouts, that is the expected trade and not a failure — it is a
+   decision.** Nothing is installed either way.
+2. Check `pipeline/out/v8/verify.log` says `all checks passed`.
+3. Compare the projection line against the installed v7: knnAgreement 0.4685,
+   faithfulness 0.4745, torn 1864/5320.
+4. Only then decide about installing. `app/static/birdy` currently holds **v7**, which is
+   PaCMAP over v6's inventory. v6 is backed up at `/tmp/birdy-prod/v6-INSTALLED-backup`;
+   note that is **tmpfs and will not survive a reboot** — copy it somewhere real if it
+   matters. v7 is reproducible from `pipeline/out/v7-prod/assets`.
+
+**Two things the chain will not settle**, so they are not surprises: the production
+cMDS-versus-PaCMAP bake-off (skipped for time — `--compare-projections` would add UMAP over
+348 461 points), and `grow` stays unavailable on any PaCMAP build.
+
+# Lyrebird — the interface round (2026-08-03): a page instead of a popover, and a ruler that says one thing
+
+## Done
+
+**The ruler caption.** Owner: *"delete this line, it means nothing — we just need to know
+what the unit on the ruler means when we zoom in, and place it correctly. It is not on the
+left side, the panel with Sing is before that."* Both halves were real. The caption sat at
+`left: --ruler + 20rem + 2.6rem`, a hard-coded guess at the width of the controls column,
+and the column outgrew the guess, so the text ran back under the Sing panel. It is anchored
+to the **right** edge now, which cannot be wrong about a left-hand panel's width. It carries
+the tick unit and nothing else. 53 lines of caption machinery went with the rest — the stats
+sampler that fed only the removed spans, and the `widthKnots` and `reading` props.
+
+**The legend button is gone, and the legend is a page.** The `?` icon on the right edge and
+its 16 rem popover are deleted. Its 205 lines of legend moved into a **full-stage page**
+opened from an `info` item in the header readings row, beside `points` and `clusters` —
+because that row is already where a viewer looks for what the build is, so what the build
+*means* belongs at the end of it rather than behind an icon in a corner. The page is ruled
+with the same faint graph the stage draws behind the points, at the same weight, so opening
+it reads as turning the instrument over rather than leaving it for a document. Two columns
+once there is room: the paper and the summary as prose, the legend as reference.
+
+It also carries the **whitepaper** (`app/static/lyrebird-whitepaper.pdf`, 0.7 MB, copied
+from `docs/whitepaper/arxiv/`) and the **fitted axis directions** as a table of shares. Those
+were in the ruler caption and read as clutter there — a share of 19 % beside a name is an
+explanation, not a label.
+
+## Not done — the owner asked for these and they are next
+
+1. **Move the Learn tab out of the left column and into the header**, as a second full-stage
+   page in the same shape as `info`. Owner: *"we have a learn tab, I want to move it into the
+   top and make that what you proposed, instead of the learning in the tab left."* The left
+   tab strip then reads Sing / Compose / Listen.
+2. **A data table on that page, which follows playback** — *"while it plays it jumps around
+   in the list."* The learned inventory as rows, and the sounding row scrolled to and marked
+   as each note fires. `onScheduled` already fires per note and is where the cursor comes
+   from.
+3. **The tone pass.** The new page copy was written STE-flavored; the 205 lines of legend
+   moved into it verbatim and have not been through `/ste-writing`.
+
+## Ideas for the cloud, from the owner asking what would make it look better
+
+Recorded because they follow from measurements rather than taste:
+
+- **The core is still one mass.** `KNOT_GAP` 3.0 moved every knot apart by one factor, which
+  fixed the median and not the core, and packing the core is PaCMAP's signature. A **radial
+  decompression** — push each knot outward as a function of its distance from the centre —
+  would open the middle and leave the rim alone. It is monotone in radius, so it preserves
+  every neighbour relation and stays the same kind of honest display transform `KNOT_GAP` is.
+- **Depth is barely reading.** The perspective exponent (0.82) and the aerial gradient (0.62)
+  were tuned when the cloud was 30 % tighter and knots overlapped. With real gaps they have
+  more room to work.
+- **A knot's shape is now drawable.** Earlier rounds rejected a hull or a ring at the measured
+  `radius` because knots interpenetrated 3.3x. At 0.99x they are separate objects, so the
+  thing that could not land before now can.
+- **The diagonal red and blue streaks look wrong** in a resting frame. Worth checking whether
+  `GridBurst` fires continuously rather than on response.
+- **Argued against, for the record:** tinting knots by genus at rest would make the map read
+  as regions immediately, and it spends the rule that nothing is coloured until it sounds.
+  That rule has earned its place.
+
 # Lyrebird — room to breathe (2026-08-03): KNOT_GAP 2.0 -> 3.0 on the PaCMAP build
 
 Owner, on the installed v7: *"it tends to dense up a lot and we nearly can't see the
