@@ -115,8 +115,8 @@
 	 *
 	 * **`label` is the default because it is what shipped and what measured best.** It is
 	 * worth +4.3 points of field-point retrieval over k-means on the same corpus, in both
-	 * anchor conditions, and the shipped production build is a `label` build — 387 287
-	 * points, 16 380 knots, every type covered (docs/22 §22.8). Defaulting to `kmeans` here
+	 * anchor conditions, and the shipped production build is a `label` build, every type
+	 * covered (docs/22 §22.8). Defaulting to `kmeans` here
 	 * meant the one button most likely to be pressed rebuilt the galaxy with the arm the
 	 * evidence rejected, and quietly disagreed with the build the app was loading.
 	 * Discovery still needs `hdbscan` and coverage-at-any-cost still needs `kmeans`; both
@@ -130,6 +130,16 @@
 	 * Shown because the number is the whole point of the loop: it is what grows as audio
 	 * arrives, and a Learn page that never showed it made "keep learning" unfalsifiable.
 	 */
+	/**
+	 * The two counts the `label` clustering tooltip quotes, read from the build that is
+	 * actually loaded rather than written into the sentence. They were literals, and a
+	 * literal here is wrong by construction: pressing Learn rebuilds the galaxy, so the
+	 * only build whose point and knot counts this page can honestly name is the one in
+	 * front of the reader.
+	 */
+	const loadedPoints = $derived(assets.points.n.toLocaleString());
+	const loadedKnots = $derived(assets.centroids.items.length.toLocaleString());
+
 	const learnedTypeCount = $derived(
 		(pipelineStatus?.learned?.species ?? []).reduce((n, s) => n + (s.types ?? 0), 0)
 	);
@@ -578,7 +588,7 @@ uv run birdy-pipeline serve</pre>
 			<button
 				class:on={buildClustering === 'label'}
 				onclick={() => (buildClustering = 'label')}
-				title="Skip the clustering for every sound that already carries a type and give each type its own knot; k-means runs only over the sounds with no label. Every type gets a knot, so nothing sings without lighting — but the knots are then the labels rather than a second, independent finding, and this view still cannot report an unidentified sound. This is the answer at full-corpus scale and it is what the shipped build uses: 387 287 sounds in 16 380 knots, every type covered. Asking k-means for tens of thousands of groups is the wrong instrument (docs/22 §22.5)."
+				title="Skip the clustering for every sound that already carries a type and give each type its own knot; k-means runs only over the sounds with no label. Every type gets a knot, so nothing sings without lighting — but the knots are then the labels rather than a second, independent finding, and this view still cannot report an unidentified sound. This is the answer at full-corpus scale and it is what this build uses: {loadedPoints} sounds in {loadedKnots} knots, every type covered. Asking k-means for tens of thousands of groups is the wrong instrument (docs/22 §22.5)."
 				>Use the labels</button
 			>
 		</div>

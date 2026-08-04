@@ -284,7 +284,7 @@
 	 * The three per-cluster channels as one RGB texture (see `uClusterState` in
 	 * shaders.ts for why it is not three uniform arrays). Width is capped at 1024 so
 	 * the texture stays within every implementation's 2D limit whatever the corpus
-	 * asks for: 1 024 knots is one row, the shipped build's 16 380 is fourteen.
+	 * asks for: 1 024 knots is one row, and a build of k knots is ceil(k / 1024) rows.
 	 */
 	const clusterTexWidth = Math.min(1024, Math.max(1, clusterCount));
 	const clusterTexHeight = Math.max(1, Math.ceil(Math.max(1, clusterCount) / clusterTexWidth));
@@ -547,7 +547,7 @@
 		 * It used to be `4 × medianKnotSpacing` outright, on the reasoning that a
 		 * denser build should get a tighter ripple. That is true up to a point and it
 		 * broke past it: the spacing collapsed from 0.135 on the 149- and 1024-knot
-		 * builds to **0.0395** on v6's 16 380, so the same rule silently shrank the
+		 * builds to **0.0395** on v6's 13 848, so the same rule silently shrank the
 		 * wave by 3.4× and the front now died inside 0.16 box units — about **5 % of
 		 * the cloud's radius**, and ~2 % of the opening view's width once the framing
 		 * bug was fixed and the whole corpus came into frame. Everything else about

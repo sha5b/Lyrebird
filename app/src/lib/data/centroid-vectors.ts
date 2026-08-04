@@ -4,7 +4,7 @@
  * `vector32`, `vector` and `featuresLo` were **64 % of centroids.json's bytes** (744 of
  * 1 159 per cluster, measured), and the file is fetched and parsed whole before the first
  * frame. At the pre-W5 production cluster count of 27 862 that would have been a 44 MB
- * parse; the shipped k = 16 380 build measures 7.69 MB of JSON beside a 3.81 MB binary
+ * parse; a production build measured 7.69 MB of JSON beside a 3.81 MB binary
  * that never goes through `JSON.parse`. The pipeline writes
  * `centroid-vectors.f32` and describes its layout in centroids.json's own `vectors`
  * block, so nothing here has to know the field order in advance.

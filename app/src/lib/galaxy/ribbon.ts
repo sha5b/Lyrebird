@@ -4,7 +4,7 @@
  * **The owner's "the song lines are hard to see at all" is a WebGL limitation, not a
  * styling choice.** `THREE.LineSegments` rasterises `gl.LINES`, and `lineWidth` is
  * ignored by every desktop driver worth naming — a thread is exactly one pixel however
- * close the camera gets, and one pixel at 0.55 alpha over a 387 287-point cloud is
+ * close the camera gets, and one pixel at 0.55 alpha over a corpus-scale point cloud is
  * invisible. The bead run beside it exists only to compensate, and its own comment says
  * so: *"a GL line is capped at one pixel wide, which disappears against the cloud, so the
  * path is also drawn as a run of small sprites"*.
