@@ -529,6 +529,44 @@ its syllables, yet the bench reads stored cosines from it successfully. Where th
 lives, and which of these five `learned-inventory-*.json` files corresponds to `respfit-gan-report.json`'s
 12 680 records, decides whether the re-judgment is a file diff or a re-render.
 
+## Both papers were swept for stale claims after today's four findings
+
+Writing a finding into its own section leaves the rest of the paper asserting the old version.
+An audit of both documents found the stale text concentrated in the abstract, Limitations,
+Conclusion, Discussion, the appendix ledger and the mid-paper cross-references. All fixed:
+
+```
+abstract        "carries almost no information ... r ~ 0.1 ... n = 200" -> the n = 1200
+                wrong-signed result, plus the respiration re-judgment, the W0 gate and the
+                dose curve. "Three results run against the design" -> four.
+Limitations     "over 200 types", "correlates with neither metric", and "every cosine-gated
+                adoption owes a re-judgment" -> one has been re-judged and lost; three owe it.
+Conclusion      "does not rank audible fidelity" -> ranks it inversely, with the adoption.
+Discussion      "Three of this paper's results generalise" -> four. The new one is the most
+                transferable thing here: a gated proxy can be anti-correlated with what you
+                care about and pass its own gate throughout. Also added the n=200 -> n=1200
+                sign-significance story to "Small samples flatter the arm you hoped for".
+cross-refs      3 places said "does not rank audible fidelity"; 1 said the re-judgment was
+                "recorded as owed". All now carry the actual result.
+captions        fig:ruler now says its panels are SUPERSEDED and points at the n=1200 table;
+                fig:spectral's "not a ranking" -> "ranks inversely".
+ledger          the respiration row carries the bench re-judgment; the mel-path row carries
+                the n = 1200 figures with the n = 200 ones kept as history.
+```
+
+**One thing deliberately NOT touched, and it needs the owner.** Five places state the gate
+tally: "58 gates, 20 passed, 36 ended in a written refusal, 2 unrun" (abstract L149, L210,
+L1107, the Conclusion, and the ledger preamble). W0's verdict flipped from NOT MET to MET
+today. **W0 is not a row in the appendix ledger** -- it lives only in the phase-0 table -- so the
+tally is probably unaffected, but confirming that means recounting 58 rows by hand and a wrong
+number in five places is worse than a flagged one. Left alone on purpose.
+
+**And a stale parallel copy.** `docs/whitepaper/arxiv/main-docx.tex` is the Word-route copy of the
+manuscript and is four findings behind, with no W0 section at all. It now carries a banner saying
+DO NOT SHIP, and the arxiv README says the same about `lyrebird-whitepaper.docx` / `.odt`, which
+are built from it and date from 1 August. Bringing it back means porting four findings, not
+patching one number.
+
 ## There is a publishing plan now, in `publish/`
 
 Every venue in it is free. arXiv is deliberately absent. Two constraints from `NOTICE.md` drove

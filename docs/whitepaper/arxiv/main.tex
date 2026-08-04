@@ -135,14 +135,21 @@ trials, a species' own types find the held-out type at top-1 0.540 against a cha
 bouts. Fourth, the physical model reproduces the median measured type at a 28-dimensional
 descriptor cosine of 0.699.
 %
-Three results run against the design, and we report them at the same weight. The scalar the
-pipeline optimises is a cosine in a 28-dimensional descriptor space. That scalar carries
-almost no information about audible spectral distortion ($r \approx 0.1$ against two metrics
-that agree with each other at 0.925, $n = 200$ types). The learned embedding organises by
-recordist before it organises by bird, at a nearest-neighbour lift of $+0.488$ against
-$+0.196$. Four independent attempts to remove that confound failed. Two of them used
-archive-scale external models, which disagree with each other by more than either differs
-from ours. With every type granted its own cluster, 0.602 of syllables have a nearest
+Four results run against the design, and we report them at the same weight. The scalar the
+pipeline optimises is a cosine in a 28-dimensional descriptor space, and over 1\,200 fitted
+types it is \emph{positively} correlated with audible spectral distortion --- Spearman $+0.200$
+against mel-cepstral distortion at $p = 3\times10^{-12}$, and $+0.186$ against multi-resolution
+spectral error, two metrics that agree with each other at 0.925. Higher cosine goes with a worse
+sounding fit. Second, that is not hypothetical: the one cosine-gated adoption that can be
+re-judged without refitting gained $+0.034$ of median cosine and \emph{cost} 4.18\,dB of median
+distortion, improving only 33\,\% of the 175 types it shipped on. Third, the learned embedding
+organises by recordist before it organises by bird, at a nearest-neighbour lift of $+0.488$
+against $+0.196$, and four independent attempts to remove that confound failed --- two of them
+using archive-scale external models, which disagree with each other by more than either differs
+from ours. That confound has a threshold: the cost of blocking an evaluation split by recordist
+falls from 30.8 points of top-1 at two recordists per species to 3.1 at six or more, and the
+\emph{same individual} recordists are the identifiable ones in Perch and BirdNET alike
+($r = +0.85$ partial). Fourth, with every type granted its own cluster, 0.602 of syllables have a nearest
 centroid belonging to their own type. That number is the ceiling on
 ``sing and the right region lights''.
 %
@@ -593,7 +600,8 @@ duration are excluded from the search deliberately: the pitch tracker reaches th
 The objective is a cosine between the resynthesis's 28-dimensional descriptor and the
 type's mean-member reference, in the standardised harvest population frame. That single
 scalar decides the gesture search, the respiration and two-voice ship gates, and the
-fricative routing. Section~\ref{sec:walls} reports that it does not rank audible fidelity.
+fricative routing. Section~\ref{sec:walls} reports that it ranks audible fidelity inversely,
+and that the respiration gate it decided made the sound measurably worse.
 
 Two per-species fits sit beside the per-type one. The tracheal comb's fundamental $f_1$ is
 \emph{measured}, not searched: per-syllable cepstral means are averaged over all of a
@@ -974,8 +982,9 @@ median gain $+0.148$, with the caveat that the median cosine afterwards is still
 % docs/16 §16.4, §16.7
 
 Every one of those gates was read on the descriptor cosine, and Section~\ref{sec:walls} says
-that cosine does not rank audible fidelity. A re-judgment of the shipped set on the spectral
-bench is therefore owed, and is recorded as owed.
+that cosine ranks audible fidelity inversely. The respiration gate has since been re-judged
+there and it lost, at 33.1\,\% of types improved and $-4.18$\,dB of median distortion. The
+other three still owe that re-judgment.
 
 \subsection{Novelty detection improves with corpus breadth, but its threshold does not transfer}
 
@@ -1083,7 +1092,7 @@ Section~\ref{sec:walls} makes any such claim uninterpretable until it is address
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{spectral-examples}
-\caption{What the physical model reproduces, and what it misses. Three fitted types, taken from the top, the middle and the bottom of the resynthesis-cosine ordering over the types whose members have cached audio; the corpus median is 0.699 over 16\,239 types, so the middle row is a median type, not a chosen success. Top: a clean descending whistle, which the oscillator and its tracking tract reproduce closely. Middle: the median case. The pitch is right, and the pulse train that carries the real syllable's timbre is replaced by a steady tone. Bottom: a failure, and the third panel says why. The type's member contours disagree by kilohertz, so the cluster median the fit starts from describes no member well. The cosine is the objective the fit optimised and is \emph{not} a ranking of audible fidelity (Section~\ref{sec:walls}).}
+\caption{What the physical model reproduces, and what it misses. Three fitted types, taken from the top, the middle and the bottom of the resynthesis-cosine ordering over the types whose members have cached audio; the corpus median is 0.699 over 16\,239 types, so the middle row is a median type, not a chosen success. Top: a clean descending whistle, which the oscillator and its tracking tract reproduce closely. Middle: the median case. The pitch is right, and the pulse train that carries the real syllable's timbre is replaced by a steady tone. Bottom: a failure, and the third panel says why. The type's member contours disagree by kilohertz, so the cluster median the fit starts from describes no member well. The cosine is the objective the fit optimised and ranks audible fidelity \emph{inversely} (Section~\ref{sec:walls}).}
 \label{fig:spectral}
 \end{figure*}
 
@@ -1162,7 +1171,9 @@ whose members survived the audio cache, and nothing here corrects for that.
 \caption{Left: correlation with audible distortion for the incumbent objective and its
 proposed replacement, $n = 200$ types on the 100-species debug store against the cached
 audio. Right: the replacement's win share at exploratory scale and at pre-registered gate
-scale. Both panels are debug-scale.}
+scale. Both panels are debug-scale, and both are \emph{superseded}: the table above this
+figure carries the same comparison at $n = 1\,200$ on the production store, where the
+incumbent's correlation with distortion becomes significant and keeps the wrong sign.}
 \label{fig:ruler}
 \end{figure*}
 
@@ -1182,8 +1193,8 @@ $\Delta$MCD of exactly 0.0\,dB and a maximum cosine loss of 0.120. A ten-type pr
 The project therefore measures spectrally and optimises
 descriptor-wise. Every cosine-gated adoption inherits that caveat, and we
 record it here. The respiration and two-voice fit winners, the fricative routing and the
-one-tone texture re-fit were all decided by a proxy that does not rank audible fit at type
-level. Each of them also improved the descriptor match, and ``improved the proxy'' is a weaker
+one-tone texture re-fit were all decided by a proxy that ranks audible fit at type level
+\emph{inversely}. Each of them also improved the descriptor match, and ``improved the proxy'' is a weaker
 claim than it reads.
 
 \paragraph{One of those four adoptions has now been re-judged on the bench, and it made the
@@ -2126,7 +2137,18 @@ evidence behind every claim built on it.
 \section{Discussion}
 \label{sec:discussion}
 
-Three of this paper's results generalise past the system that produced them.
+Four of this paper's results generalise past the system that produced them.
+
+\textbf{A gated proxy can be anti-correlated with the thing you actually care about, and pass
+its own gate the whole time.} Every fit, sweep and ship decision in this pipeline was judged on
+one scalar. Over 1\,200 types that scalar is significantly correlated with audible distortion in
+the \emph{wrong} direction, and the one adoption it gated that could be re-judged cheaply turned
+out to have degraded the sound by 4\,dB while gaining a third of a cosine point. Neither fact was
+visible from inside the gate, because a gate cannot audit its own metric. What made it visible
+was building a second instrument that owed nothing to the first, and then spending the effort to
+re-judge a decision already shipped. Any project with one number in the loop --- a reward model,
+a learned critic, a perceptual loss --- can be in this position and cannot find out from the
+inside.
 
 \textbf{Recording-condition confounding is a property of the public bioacoustic archives, not
 of any one model's loss.} It has now been attacked from four independent directions. A
@@ -2152,7 +2174,11 @@ learned-metric-in-the-loop setup.
 this twice, at similar cost. A cross-domain contrastive mechanism worth $+13.4$ points on 12
 species with a 3-species holdout was worth $+1.7$ on 63 species with 16 held out; in the same
 re-test the arm it was compared against also shrank, and one of its metrics reversed sign. An
-objective change winning 7 of 10 types won 25 of 80. In both cases the corrective was a
+objective change winning 7 of 10 types won 25 of 80. And a correlation that was
+``indistinguishable from zero'' at $n = 200$ was significant at $p = 3\times10^{-12}$ at
+$n = 1\,200$, with the sign it had always had --- the small sample hid a real effect by leaving
+it inside the error bars, which is the same failure wearing the opposite face. In each case the
+corrective was a
 pre-registered re-test at scale and not an argument about whether the first result was
 noise.
 
@@ -2182,9 +2208,10 @@ nothing forces it, so type retrieval is the figure we quote.
 
 \emph{No audible evaluation.} We ran no listening test, no mean-opinion score and no playback
 experiment. The fidelity claims rest on mel-cepstral distortion and multi-resolution spectral
-distance against cached audio, over 200 types. The objective that produced those fits
-correlates with neither metric. Every cosine-gated adoption therefore owes a re-judgment on the
-spectral bench.
+distance against cached audio, over 1\,200 types. The objective that produced those fits is
+positively correlated with both metrics, meaning it ranks audible fidelity \emph{backwards}. One
+of the four cosine-gated adoptions has since been re-judged on the bench and lost. The other
+three still owe that re-judgment, and two of them need a refit to get it.
 
 \emph{Unresolved internal conflicts.} T1's verdict rests on a coverage tie-break between two
 populations that disagree. The fixed-waveguide tract improves everything in isolation, fails
@@ -2474,7 +2501,8 @@ which establishes that the tokens are units. Repeat classes take the corpus from
 species with a measured song while the shuffle control does not move. A second order is not
 supported, and 217 of 2\,421 species have enough bouts to ask. Type retrieval tops out at
 0.602, so for two syllables in five the nearest region is the wrong one. The objective that
-produced every fit does not rank audible fidelity. And the embedding organises by recordist
+produced every fit ranks audible fidelity \emph{inversely}, and one adoption it gated has been
+measured degrading the sound. And the embedding organises by recordist
 before it organises by bird. A property of the archives, established four independent ways,
 including from outside our own loss entirely.
 
@@ -2565,7 +2593,7 @@ Fricative route: noise through fitted formants & resynthesis beats the tonal fit
 Tracheal comb per species & comb improves the resynthesis & won 10 of 22 species & \textbf{ships where it wins} \\
 Measured texture on authored one-tone calls & gain against the same bird's learned types & 14 of 15, median $+0.148$ & \textbf{ships} \\
 Respiratory oscillator, hand-set default & beat the envelope on median cosine & 0.343 $\to$ 0.336 & fails, parked \\
-Respiratory oscillator, per-species fit & win the type, gate held everywhere & won 445 of 12\,680 scored types & \textbf{ships per species} \\
+Respiratory oscillator, per-species fit & win the type, gate held everywhere & won 445 of 12\,680 scored types on the cosine. \textbf{Re-judged on the bench and lost}: 33.1\,\% of 175 types improved, median $-4.18$\,dB MCD, despite $+0.034$ median cosine & \textbf{ships}, and the gate that shipped it is now known to read fidelity backwards \\
 Two-voice coupling, hand-set default & beat the single voice & 0.343 $\to$ 0.294 & fails, parked \\
 Two-voice coupling, per-species fit & win the type & won 2\,027 of 5\,922 screened & \textbf{ships per species} \\
 Fixed-waveguide tract & placement and cosine both up & $+6.2$ pts on 5 species; regression over 22 (23.1 $\to$ 22.2\,\%) & refuted, gated off \\
@@ -2575,7 +2603,7 @@ Global spectral-tilt correction & placement up & tilt corrected exactly, placeme
 % --- objectives
 Realism logit as the fit objective & placement and cosine hold & cosine 0.762 $\to$ 0.335, placement 17.3\,\%; replicated at 40\,k & \textbf{refuted twice} \\
 Mel-path objective at $w = 0.5$ & $\ge 60\,\%$ MCD wins, $\Delta$MCD $> +1$\,dB, cosine drop $\le 0.02$ / max 0.05 & 31\,\% wins ($n = 80$), 0.0\,dB, max drop 0.120 & fails and not adopted \\
-Mel-path as a \emph{measurement} & $|r| \ge 0.4$ against MCD & Spearman $-0.420$, Pearson $-0.305$ ($n = 200$) & \textbf{adopted as the bench} \\
+Mel-path as a \emph{measurement} & $|r| \ge 0.4$ against MCD & Spearman $-0.456$, Pearson $-0.346$ ($n = 1\,200$; was $-0.420 / -0.305$ at $n = 200$) & \textbf{adopted as the bench} \\
 Path-cosine mel form & see the damaged-half fixture & drop 0.017 against exp$(-$LSD$)$'s 0.540 & refuted \\
 
 % --- bridge

@@ -255,3 +255,11 @@ Every quantitative claim carries its internal provenance as a LaTeX comment next
 occurrence, per the project's evidence discipline.
 
 British spelling throughout, matching the repository.
+
+## `main-docx.tex` and the .docx/.odt are STALE
+
+`main.tex` is the live manuscript. `main-docx.tex` is a parallel copy for the Word route and is
+four measured findings behind as of 2026-08-04 — the objective's wrong-signed correlation at
+n = 1200, the respiration re-judgment that lost on the bench, W0's gate being met on both models,
+and the recordist dose curve. The file carries a banner saying so. Do not ship it or
+`lyrebird-whitepaper.docx` / `.odt` without porting those four.
