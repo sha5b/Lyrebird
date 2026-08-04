@@ -1,0 +1,30 @@
+{
+ "adoption": "two-voice, per-type fit (respfit stage 2)",
+ "isolating_field": "voices",
+ "isolation_audit": {
+  "shipped": 2144,
+  "report_winners": 2144,
+  "shipped_not_winner": 0,
+  "winner_not_shipped": 0,
+  "block_mismatch": 0
+ },
+ "adopted_types": 2144,
+ "benched_both_arms": 1737,
+ "mcd_win_share_percent": 55.613126079447326,
+ "mcd_wins": 966,
+ "median_delta_mcd_db": 1.134999999999991,
+ "mean_delta_mcd_db": 3.3497864133563615,
+ "median_delta_stft_db": 0.02799999999999958,
+ "stft_win_share_percent": 55.613126079447326,
+ "median_delta_cosine": 0.07050000000000001,
+ "min_delta_cosine": 0.020000000000000018,
+ "significance": {
+  "sign_test_mcd_p": 3.170634276491548e-06,
+  "wilcoxon_mcd_p": 6.4120071900746e-12,
+  "wilcoxon_stft_p": 1.4496936826254095e-09,
+  "spearman_dcosine_vs_dmcd": 0.0625279383577412,
+  "spearman_dcosine_vs_dmcd_p": 0.009142674491518128
+ },
+ "prediction": "win share < 50.0 % and median dMCD <= 0",
+ "prediction_held": false
+}

@@ -1,4 +1,166 @@
-# Lyrebird — READ THIS FIRST (2026-08-04, later): Phase 0 ran, the comparative biology is closed, and the whitepaper now carries the findings and a replication table
+# Lyrebird — READ THIS FIRST (2026-08-04, evening): two items the last handoff parked for the owner are closed, and one of them reverses a published claim's reach
+
+Both were parked as "needs a human": the gate tally, and which inventory pairs with which
+store. Neither needed one. **The second turned into a result: the two-voice adoption survives
+the spectral bench, on twelve times the population where respiration lost it.**
+
+```
+rejudge_twovoice  the two-voice adoption HELD    55.6 % of 1 737 types, +1.13 dB median MCD
+                                                 sign test p 3.2e-6, Wilcoxon p 6.4e-12
+                                                 the pre-registered prediction FAILED
+ledger_tally      the paper's tally was wrong    58 gates and 20 passes right; the split is
+                                                 37 refusals / 1 unrun, not 36 / 2
+fricative route   NOT payable without a refit    the pre-adoption snapshot exists and its
+                                                 store does not, measured not argued
+docrefit          below any measurable floor     ships on 10 types in the v9 inventory
+```
+
+New, and none of it writes to the store:
+
+```
+pipeline/analysis/rejudge_twovoice.py  / .json   the second re-judgment
+pipeline/analysis/ledger_tally.py      / .json   the tally, from the manuscript's own table
+```
+
+## 1. `rejudge_respfit.py` said the two-voice adoption could not be isolated. It was reading the wrong field
+
+That script's docstring: *"The two-voice adoption is not usable this way --- `two` is present
+on winners and non-winners alike, so stripping it does not reconstruct a clean control."*
+True about `two`, and `two` is not the adoption. **`two` is a boolean axis of the gesture
+descent** (`learn.py`'s axis list), searched for every type. The fitted second voice is
+**`voices`**, and `respfit.fit_type_two_voice` writes it exactly the way the respiratory block
+is written — `trial = dict(syl); trial["voices"] = block`, kept only where the gain clears
+`--margin`. Additively reversible on the identical argument.
+
+Checked against the run's own report instead of argued, and this check is inside the script so
+it cannot be skipped — it exits rather than reporting a number if the field is not exactly the
+winner set:
+
+```
+shipped syllables carrying `voices`   2 144
+out/v9/respfit-report.json twoVoiceWon 2 144
+shipped but not a winner                  0
+winners lacking `voices`                  0
+block differing from the report's         0
+smallest dcosine among benched types  +0.020   <- the gate's own margin, so the arms pair
+```
+
+**The result, and it goes the other way from respiration.** 1 737 of the 2 144 benched in both
+arms:
+
+```
+                        two-voice        respiration (for contrast)
+median dcosine            +0.071             +0.034
+MCD win share             55.6 %  (966)      33.1 %  (58/175)
+median dMCD               +1.13 dB           -4.18 dB
+median dSTFT              +0.03 dB           -2.34 dB
+sign test / Wilcoxon      3.2e-6 / 6.4e-12   (not needed at 33 %)
+```
+
+**The pre-registered prediction failed, and it was registered before the run in the script's
+docstring** — the same one respiration's used, made for the same reason and deliberately not
+adjusted after watching respiration lose: win share below 50 % with median dMCD <= 0. Both
+halves are wrong.
+
+**Three things this is not.** Not large: +1.13 dB at the median and +0.03 dB on STFT, with p10
+-11.2 and p90 +20.1, so the mean +3.35 is a tail. Not a contradiction of the n = 1200
+anti-correlation: that is absolute cosine against absolute MCD across types, this is deltas
+within one adoption on types selected for winning its gate (Spearman +0.063 between them here,
+p 0.009). And **not an acquittal of the cosine gate** — the point in the paper is now that a
+bad proxy does not corrupt every decision it gates, so the audit cannot be skipped in either
+direction. The arm that held is the larger by a factor of ten, which is the uncomfortable
+direction for the finding, and it is written that way.
+
+Rebench is ~10 min; the script reuses a completed arm unless you pass `--refresh`.
+
+## 2. The other two adoptions: one has no control on disk, the other has no population
+
+**The fricative route is not field-reversible, and the reason is in `fricative_seed`.** It
+re-searches the noise axis and re-seeds the formants on the winning path
+(`t.syllable = best_syl`), so a shipped fricative type no longer carries its pre-adoption
+`noise` and `formants`. Stripping the flag renders fricative-tuned parameters through the
+tonal path, which is not the control.
+
+**The snapshot that would settle it exists and is unusable, and that was measured.**
+`data/learned-inventory-pre-fricative.json` is byte-identical to `-pre-respfit.json` (same
+md5) — 2 423 species, 12 724 syllables, no `fricative`, no `voices`, no `respiration`. It
+cannot be benched, because the typing it was learned from was overwritten by v9 on 08-03:
+
+```
+specbench --inventory data/learned-inventory-respfit.json --store out/harvest-gan --limit 30
+  -> skipped 82 of 112: noMembers 55, noCachedAudio 19, tooShort 8
+  -> stored vs recomputed cosine 0.133/0.122, 0.689/0.648, 0.936/0.953   <- disagree
+```
+
+That is the wrong-store signature the earlier entry warned about, now demonstrated on this
+pairing. So the fricative re-judgment costs a refit with the stage disabled, and nothing less.
+
+**`docrefit` ships on 10 types** in the v9 inventory (33 records, 10 species in
+`out/v9/docrefit-report.json`), below `rejudge_*`'s own n >= 20 floor and below anything worth
+a verdict.
+
+**And the pairing question the last handoff put to the owner is answered.** Only
+`data/learned-inventory.json` pairs with the current store: 2 650 species, 16 283 syllables,
+`respiration` on 204 and `voices` on 2 144, matching `out/v9/respfit-report.json` exactly. The
+four Jul 30–31 files are one dead generation (2 423 species, 12 724 syllables, `learned` on
+12 680 = the *pre-v9* `respfit-gan-report.json`'s `typesScored`). The fitted cosine lives in
+the respfit reports' per-record `before`/`after`, not on the inventory's syllables.
+
+## 3. The gate tally was wrong, and not for the reason it was flagged
+
+It was left alone because W0's verdict had flipped and "a wrong number in five places is worse
+than a flagged one". **W0 was not the cause.** The sentence has been identical in all 13
+commits that touch `main.tex`, back to the file's first appearance on 08-01, so it never
+matched its own table.
+
+```
+                 stated   in the table
+gates              58         58
+passed             20         20
+written refusal    36         37
+unrun               2          1
+```
+
+Only one row carries an unrun verdict (T2, external novelty AUC). `analysis/ledger_tally.py`
+parses the longtable and classifies the verdict column by a rule stated before it counts: an
+adoption word is a pass unless the cell also says the gate failed, so "fails; ships as an
+honesty gate" is a refusal — which is the appendix's own reading two sentences later. **The
+totals are robust**: the two arguable rows ("wins the rule; not adopted" and "superseded by the
+above") sit on opposite sides of the rule, so swapping either leaves 20 / 37 / 1. Fixed in
+`main.tex` twice, plus `docs/24`, `w0-arxiv/main.tex`'s header comment and README, and
+`publish/preprint/README.md`. The appendix now names the script, and the script asserts against
+the manuscript, so this cannot silently rot again.
+
+**One judgment call inside the ledger, and it is the owner's to keep or revert.** The two-voice
+row read *"Two-voice coupling, per-species fit ... ships per species"*. Its own gate column says
+"win the type" and `fit_type_two_voice`'s docstring says per type and says why, so the row now
+reads per-type. Its historical numbers (2 027 of 5 922) are untouched, and the verdict stays a
+pass, so the tally is unaffected either way.
+
+## 4. Where the papers stand after this
+
+```
+docs/whitepaper/arxiv/    42 pages, builds clean. 0 undefined refs, 0 undefined cites,
+                          0 overfull vboxes, 2 overfull hboxes at 1.7 pt and 1.5 pt.
+docs/whitepaper/w0-arxiv/  8 pages, unchanged except the header comment's 36 -> 37.
+```
+
+Limit 1 was rewritten rather than appended to: the paragraph is now "Two of those four
+adoptions have now been re-judged. They disagree", the abstract's second finding carries both
+outcomes, and the Discussion's transferable claim is no longer "a gated proxy corrupts what it
+gates" but "a gated proxy removes the guarantee, so each gate has to be re-judged on its own".
+Four other places that asserted the one-adoption version were swept: abstract, the fit-gates
+section, Discussion, Limitations, and the ledger row.
+
+**Still the owner's, and unchanged:** the Zenodo DOI, the ORCID in `CITATION.cff` and
+`publish/zenodo/`, acknowledgements, and the two community drafts that should go out in the
+owner's voice. `main-docx.tex` is now five findings behind and still carries its DO NOT SHIP
+banner; its two tally numbers were left stale on purpose rather than patched, because patching
+one number would make a four-findings-stale document look current.
+
+---
+
+# Lyrebird — (2026-08-04, later): Phase 0 ran, the comparative biology is closed, and the whitepaper now carries the findings and a replication table
 
 Phase 0 of `docs/24` was run end to end. **The headline: paper three does not exist. Paper
 two is stronger than it was this morning.** Every gate was pre-registered before the run and

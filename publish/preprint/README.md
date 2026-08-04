@@ -20,7 +20,7 @@ evolution and conservation. Three reasons it fits better than the alternatives:
 1. It already hosts bioacoustics and passive-acoustic-monitoring work, so the readership is
    the one that would care about a syllable inventory over 2,650 species.
 2. **It accepts reports and postprints**, not only manuscripts destined for a journal. This
-   paper is a system, a resource and a ledger of 36 refusals. It is not obviously on its way
+   paper is a system, a resource and a ledger of 37 refusals. It is not obviously on its way
    to a journal, and most preprint servers assume it is.
 3. Accepting CC BY-NC-SA is not a problem there.
 

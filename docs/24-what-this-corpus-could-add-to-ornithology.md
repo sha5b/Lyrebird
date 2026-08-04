@@ -762,7 +762,7 @@ leakage, on public corpora with public models. It needs no part of our pipeline 
 and it is the result other groups would act on.
 
 **Paper two, ready now.** The system, the resource and the refusals. 58 pre-registered gates
-with 36 written refusals, the recordist confound closed at four ends including two
+with 37 written refusals, the recordist confound closed at four ends including two
 archive-scale foundation models, and the five noise gates measured dead. This is a methods
 and resource contribution and it is honest about being one.
 

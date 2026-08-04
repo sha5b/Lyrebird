@@ -140,9 +140,12 @@ pipeline optimises is a cosine in a 28-dimensional descriptor space, and over 1\
 types it is \emph{positively} correlated with audible spectral distortion --- Spearman $+0.200$
 against mel-cepstral distortion at $p = 3\times10^{-12}$, and $+0.186$ against multi-resolution
 spectral error, two metrics that agree with each other at 0.925. Higher cosine goes with a worse
-sounding fit. Second, that is not hypothetical: the one cosine-gated adoption that can be
-re-judged without refitting gained $+0.034$ of median cosine and \emph{cost} 4.18\,dB of median
-distortion, improving only 33\,\% of the 175 types it shipped on. Third, the learned embedding
+sounding fit. Second, that is not hypothetical, and it is not uniform either: of the two
+cosine-gated adoptions that can be re-judged without refitting, the respiratory block gained
+$+0.034$ of median cosine and \emph{cost} 4.18\,dB of median distortion, improving only 33\,\%
+of 175 types, while the two-voice block gained $+0.071$ and \emph{won} 1.13\,dB on 55.6\,\% of
+1\,737 types. A proxy anti-correlated with fidelity across types removes the guarantee that a
+gate built on it is safe; it does not make every such gate harmful. Third, the learned embedding
 organises by recordist before it organises by bird, at a nearest-neighbour lift of $+0.488$
 against $+0.196$, and four independent attempts to remove that confound failed --- two of them
 using archive-scale external models, which disagree with each other by more than either differs
@@ -154,7 +157,7 @@ centroid belonging to their own type. That number is the ceiling on
 ``sing and the right region lights''.
 %
 Appendix~\ref{app:ledger} lists all 58 pre-registered gates and their outcomes. 20 passed,
-36 ended in a written refusal, and 2 are unrun. The refusals are as much of the contribution
+37 ended in a written refusal, and 1 is unrun. The refusals are as much of the contribution
 as the system is.
 \end{abstract}
 
@@ -982,9 +985,10 @@ median gain $+0.148$, with the caveat that the median cosine afterwards is still
 % docs/16 §16.4, §16.7
 
 Every one of those gates was read on the descriptor cosine, and Section~\ref{sec:walls} says
-that cosine ranks audible fidelity inversely. The respiration gate has since been re-judged
-there and it lost, at 33.1\,\% of types improved and $-4.18$\,dB of median distortion. The
-other three still owe that re-judgment.
+that cosine ranks audible fidelity inversely. Two of those gates have since been re-judged
+there and they disagreed: respiration lost, at 33.1\,\% of 175 types improved and $-4.18$\,dB of
+median distortion, while the two-voice fit held, at 55.6\,\% of 1\,737 and $+1.13$\,dB. The other
+two still owe that re-judgment and both need a refit to get it.
 
 \subsection{Novelty detection improves with corpus breadth, but its threshold does not transfer}
 
@@ -1197,9 +1201,9 @@ one-tone texture re-fit were all decided by a proxy that ranks audible fit at ty
 \emph{inversely}. Each of them also improved the descriptor match, and ``improved the proxy'' is a weaker
 claim than it reads.
 
-\paragraph{One of those four adoptions has now been re-judged on the bench, and it made the
-sound worse.} The respiratory block is the one adoption that can be re-judged without
-refitting: \texttt{respfit} ships it on a type only where it beats that type's cosine by 0.02,
+\paragraph{Two of those four adoptions have now been re-judged on the bench. They disagree.}
+The respiratory block was the first, and it made the sound worse. \texttt{respfit} ships it on
+a type only where it beats that type's cosine by 0.02,
 and in the shipped inventory the field is present on \emph{exactly} the 204 types where it won
 and on none of the others. So stripping the field reconstructs the pre-adoption syllable and
 leaves everything else identical. Both arms were rendered and benched. Of the 175 types that
@@ -1228,12 +1232,72 @@ $\Delta$MCD at or below zero, and both held.
 
 Two things this does not say. It does not say the respiratory model is wrong: the physics is
 from \citet{fainstein2025} and this measures a gate, not a mechanism. And it does not
-generalise to the other three adoptions, which remain owed --- the two-voice block cannot be
-stripped this way, because \texttt{two} is present on winners and non-winners alike, and
-\texttt{docrefit} and the fricative routing each need their own reversibility argument. What it
-does say is that the caveat above is not hypothetical. One measured instance of it went the
-wrong way.
+generalise, which the second re-judgment then demonstrated.
 % analysis/rejudge_respfit.py / .json — 204 adopted types, 175 benched both arms
+
+\paragraph{The two-voice adoption was re-judged next, on twelve times the population, and it
+held.} An earlier version of this section reported that the two-voice block could not be
+stripped, because \texttt{two} is present on winners and non-winners alike. That was the wrong
+field. \texttt{two} is a boolean axis of the gesture descent, searched for every type; the
+\emph{fitted} second voice is \texttt{voices}, and \texttt{respfit} writes it exactly the way
+it writes the respiratory block --- onto a copy of the syllable, kept only where the gain clears
+the margin. So it is additively reversible on the same argument. That is checked against the
+run's own report rather than asserted: 2\,144 shipped syllables carry \texttt{voices}, the
+report records 2\,144 two-voice winners, and the sets agree with no member on either side alone
+and no block differing. Of the 2\,144, 1\,737 benched in both arms, and the smallest
+$\Delta$cosine among them is $+0.020$ --- the gate's own margin, which is what says the arms are
+paired correctly.
+
+\begin{center}\footnotesize
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}l r@{}}
+\toprule
+median $\Delta$cosine (the gate's own number) & $\mathbf{+0.071}$ \\
+\midrule
+MCD win share & $\mathbf{55.6\,\%}$ (966/1\,737) \\
+median $\Delta$MCD & $\mathbf{+1.13}$ dB \\
+mean $\Delta$MCD & $+3.35$ dB \\
+median $\Delta$STFT error & $+0.03$ dB \\
+sign test, win count & $p = 3.2 \times 10^{-6}$ \\
+Wilcoxon, $\Delta$MCD & $p = 6.4 \times 10^{-12}$ \\
+Wilcoxon, $\Delta$STFT & $p = 1.4 \times 10^{-9}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Every sign is the opposite of the respiration arm's, and the same pre-registered prediction ---
+win share below 50\,\% with a median $\Delta$MCD at or below zero, made before the run and not
+adjusted after watching respiration lose --- \textbf{failed}. Both metrics improve, and on a
+population large enough that a 5.6-point majority is not a coin: the sign test and the Wilcoxon
+both reject at the margins above, and the two metrics happen to return the same win count from
+different type sets (294 types win on MCD alone and 294 on STFT alone).
+
+The size of the effect should not be oversold. A median of $+1.13$\,dB MCD and $+0.03$\,dB STFT
+is small, the distribution is wide in both directions (10th percentile $-11.2$\,dB, 90th
+$+20.1$\,dB), and the mean is carried by a helpful tail. The claim is that this adoption is
+significantly \emph{not} harmful, not that it is worth much.
+
+\textbf{So the caveat is real and it is not a law.} One measured instance of a cosine-gated
+adoption went the wrong way and one went the right way, and the population sizes run against
+the comfortable reading: the arm that held is the larger by a factor of ten. A proxy that is
+anti-correlated with what you care about \emph{across} types does not have to damage every
+decision it gates; it removes the guarantee that it does not. Which of the two outcomes a given
+adoption got could not be predicted from the proxy, and was not.
+% analysis/rejudge_twovoice.py / .json — 2 144 adopted types, 1 737 benched both arms
+
+\paragraph{The remaining two cannot be paid without a refit, and the reason is on disk.} The
+fricative route is not reversible by stripping its field: \texttt{fricative\_seed} re-searches
+the noise axis and re-seeds the formants on the winning path, so a shipped fricative type no
+longer carries the values it had before the route was taken, and removing the flag alone renders
+fricative-tuned parameters through the tonal path rather than reconstructing the control. The
+pre-adoption snapshot that would settle it does exist
+(\texttt{data/learned-\allowbreak inventory-\allowbreak pre-\allowbreak fricative.json}), and it
+cannot be used, because the typing
+it was learned from was overwritten by the current production run: benched against the current
+store it skips 82 of 112 types for having no members and recomputes cosines that disagree with
+its own stored ones, which is the wrong-store signature. \texttt{docrefit} ships on 10 types in
+the current inventory, which is below any population worth a verdict. Both remain owed, and both
+now have a named cost --- a refit with the stage disabled --- rather than an open question.
 
 \subsection{Limit 2. The embedding sorts by recordist, not by bird}
 
@@ -2142,11 +2206,14 @@ Four of this paper's results generalise past the system that produced them.
 \textbf{A gated proxy can be anti-correlated with the thing you actually care about, and pass
 its own gate the whole time.} Every fit, sweep and ship decision in this pipeline was judged on
 one scalar. Over 1\,200 types that scalar is significantly correlated with audible distortion in
-the \emph{wrong} direction, and the one adoption it gated that could be re-judged cheaply turned
+the \emph{wrong} direction, and the first adoption it gated that could be re-judged cheaply turned
 out to have degraded the sound by 4\,dB while gaining a third of a cosine point. Neither fact was
 visible from inside the gate, because a gate cannot audit its own metric. What made it visible
 was building a second instrument that owed nothing to the first, and then spending the effort to
-re-judge a decision already shipped. Any project with one number in the loop --- a reward model,
+re-judge a decision already shipped. The second adoption re-judged the same way then
+\emph{survived} it, which is the part worth carrying: a bad proxy does not corrupt every decision
+it gates, so the audit cannot be skipped in either direction. One instance is not a rule, and one
+counter-instance is not an acquittal --- each shipped gate has to be re-judged on its own. Any project with one number in the loop --- a reward model,
 a learned critic, a perceptual loss --- can be in this position and cannot find out from the
 inside.
 
@@ -2209,9 +2276,10 @@ nothing forces it, so type retrieval is the figure we quote.
 \emph{No audible evaluation.} We ran no listening test, no mean-opinion score and no playback
 experiment. The fidelity claims rest on mel-cepstral distortion and multi-resolution spectral
 distance against cached audio, over 1\,200 types. The objective that produced those fits is
-positively correlated with both metrics, meaning it ranks audible fidelity \emph{backwards}. One
-of the four cosine-gated adoptions has since been re-judged on the bench and lost. The other
-three still owe that re-judgment, and two of them need a refit to get it.
+positively correlated with both metrics, meaning it ranks audible fidelity \emph{backwards}. Two
+of the four cosine-gated adoptions have since been re-judged on the bench: respiration lost and
+the two-voice fit held. The other two still owe that re-judgment and both need a refit to get
+it.
 
 \emph{Unresolved internal conflicts.} T1's verdict rests on a coverage tie-break between two
 populations that disagree. The fixed-waveguide tract improves everything in isolation, fails
@@ -2555,7 +2623,10 @@ This is a non-commercial research project.
 Table~\ref{tab:ledger} lists every gate the project registered before its run, the outcome,
 and the verdict. It is complete: refuted arms are not omitted, and arms whose machinery was
 subsequently deleted keep their row, because the measurement is what survives a deleted flag.
-Of 58 gates, 20 passed, 36 ended in a written refusal, and 2 are unrun or pending. Four
+Of 58 gates, 20 passed, 37 ended in a written refusal, and 1 is unrun. That count is
+reproduced from this table by \texttt{analysis/ledger\_tally.py}, which states its
+classification rule before it counts: a verdict naming an adoption is a pass unless it also
+says the gate failed, so ``fails; ships as an honesty gate'' is a refusal. Four
 refusals still produced an asset: the map-flip lever became an honesty gate, the mel target
 became the verdict instrument for future fit gates, label assignment became a build flag, and
 the source-axis deflation produced the finding that the recorded/synthesised difference is
@@ -2595,7 +2666,7 @@ Measured texture on authored one-tone calls & gain against the same bird's learn
 Respiratory oscillator, hand-set default & beat the envelope on median cosine & 0.343 $\to$ 0.336 & fails, parked \\
 Respiratory oscillator, per-species fit & win the type, gate held everywhere & won 445 of 12\,680 scored types on the cosine. \textbf{Re-judged on the bench and lost}: 33.1\,\% of 175 types improved, median $-4.18$\,dB MCD, despite $+0.034$ median cosine & \textbf{ships}, and the gate that shipped it is now known to read fidelity backwards \\
 Two-voice coupling, hand-set default & beat the single voice & 0.343 $\to$ 0.294 & fails, parked \\
-Two-voice coupling, per-species fit & win the type & won 2\,027 of 5\,922 screened & \textbf{ships per species} \\
+Two-voice coupling, per-type fit & win the type & won 2\,027 of 5\,922 screened. \textbf{Re-judged on the bench and held}: 55.6\,\% of 1\,737 types improved, median $+1.13$\,dB MCD, sign test $p = 3.2\times10^{-6}$ & \textbf{ships per type} \\
 Fixed-waveguide tract & placement and cosine both up & $+6.2$ pts on 5 species; regression over 22 (23.1 $\to$ 22.2\,\%) & refuted, gated off \\
 Measured partial series as fit evidence & cosine and placement up & cosine 0.776 $\to$ 0.768, placement 61.7 $\to$ 55.6\,\% & refuted \\
 Global spectral-tilt correction & placement up & tilt corrected exactly, placement 23.1 $\to$ 20.2\,\% & refuted \\

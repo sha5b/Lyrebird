@@ -4,7 +4,7 @@ This is **not** the system paper. `docs/24` §24.3 separates the two on purpose:
 
 | | what it claims | depends on our pipeline being correct? |
 |---|---|---|
-| `../arxiv/` | the system, the resource, and 36 written refusals | **yes** |
+| `../arxiv/` | the system, the resource, and 37 written refusals | **yes** |
 | `w0-arxiv/` (here) | what a recordist-blocked split costs Perch 2.0 and BirdNET V2.4 | **no** |
 
 The independence is the point. This paper needs no part of the Lyrebird pipeline to be
