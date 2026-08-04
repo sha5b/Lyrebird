@@ -9,6 +9,32 @@ about function, meaning or behaviour survives anywhere in the build.
 This document names the biological questions this corpus can actually answer, the gates each
 must clear first, and the order to attempt them in.
 
+## Results first — Phase 0 ran on 2026-08-04
+
+Every gate below was written before it was run, and the thresholds were not moved
+afterwards. Three of the four ran; the fourth was closed by the third's result. The plan
+that follows is left standing as it was written, with each gate's outcome attached to it,
+because a pre-registration edited after the fact is not one.
+
+```
+G1  fitted tract length vs body mass      FAIL      partial r +0.194, gate > 0.4
+G2  the textbook mass/frequency result    PASS      r -0.542 on well-sampled species
+G3  recordist confound after aggregation  PASS      species +0.229 vs recordist +0.196
+W0  step-zero literature check            MOVED     the practice exists; the number does not
+W1  phylogenetic signal in production      CLOSED    by G1, per this document's own rule
+W2  learners vs non-learners              REFUSED   the measures cannot carry the question
+```
+
+**The one-sentence version: the comparative biology does not exist, and Phase 0 is what
+establishes that rather than what was hoped to open it.** The three scripts are
+`pipeline/analysis/g1_g2_avonet.py`, `g3_recordist_aggregation.py` and `w2_learners.py`.
+Details sit with each gate below.
+
+**G2 is what makes G1's failure worth reading.** A pipeline that failed both gates would
+just be broken. This one recovers a textbook relationship at the published effect size and
+still cannot find anatomy in its own fitted tract, which narrows the finding from "the
+corpus is bad" to "this particular parameter is not a measurement".
+
 ## 24.0 What we hold that nobody else does
 
 The plan follows from the asset, so the asset has to be stated precisely.
@@ -74,6 +100,31 @@ must sit in the upper decile.
 question that leans on production mechanics, and the honest write-up is a negative result
 about inferring anatomy from song at scale. That is publishable and it is worth knowing.
 
+**RESULT, 2026-08-04: FAIL.** AVONET joined 1 578 of the 1 621 fitted species on eBird
+taxonomy, leaving 1 187 unpinned, so the sample half of the gate cleared easily.
+
+```
+r          log L_eff ~ log mass                 +0.241
+partial r  log L_eff ~ log mass | log f0        +0.194     gate > 0.4     p 1.5e-11
+```
+
+Real, in the right direction, significant past any reasonable doubt, and less than half
+the gate. **The two excuses available for a weak correlation were both measured and both
+closed before the verdict was written.**
+
+```
+quantization   a PERFECT predictor snapped to the same 39 levels reaches r +0.998
+               so 39 values are ample; the grid is not what is limiting this
+thin sampling  r by per-species syllable count: +0.241 / +0.263 / +0.226 / +0.299
+               flat. More audio per species does not sharpen it.
+```
+
+The clade half is the one encouraging fragment: **cranes sit 2 of 2 in the upper decile at
+a median 10.6 cm**, and Cracidae, Anatidae and Phasianidae all beat the 10 % base rate.
+Every one of those families is a handful of species here, so it is a hint and not a
+result. `L_eff` carries a little anatomical information and is dominated by fitting
+artefact. It cannot support comparative biology.
+
 ### G2 — Can we reproduce a relationship the field already agrees on?
 
 **Why.** A pipeline that cannot recover a textbook result has not earned the right to report
@@ -86,6 +137,29 @@ with an effect size inside the range the comparative literature already reports.
 
 **If it fails.** Something upstream is broken, and no result from this corpus should be
 believed until it is found.
+
+**RESULT, 2026-08-04: PASS.** Negative, significant, and the effect size lands where the
+literature puts it once the per-species sample is deep enough to measure.
+
+```
+                              slope    r
+all 1 578 species            -0.130   -0.247
+n_syllables >= 100            -0.109   -0.213
+n_syllables >= 400 (53 spp)   -0.193   -0.542
+```
+
+The comparable published figure is a **standardised** slope, so it is our r that has to
+be held against it and not our OLS slope: Mikula et al. 2021 (Ecology Letters, PGLS over
+5 085 passerines) report beta = -0.51 for peak frequency on body mass. On the species we
+have actually sampled deeply we get -0.542.
+
+**The contrast with G1 is the point, and it is what turns a failure into a finding.** f0
+is a direct measurement and it sharpens as the sample grows, exactly as a measurement
+should. `L_eff` is a fitted parameter and it stayed flat. The dilution at low syllable
+counts is sampling, not a broken pipeline.
+
+Still owed: PGLS. This is OLS, and the BirdTree download that W2 later used is now on
+disk, so the phylogenetic version is cheap and should be run before anything is published.
 
 ### G3 — Does the recordist confound survive species-level aggregation?
 
@@ -102,6 +176,42 @@ Report the species lift and the recordist lift under both.
 **If it fails.** Every comparative question below must be restricted to species with
 recordings from three or more independent recordists, and the sample shrinks to whatever
 that leaves. Report that number before running anything else.
+
+**RESULT, 2026-08-04: PASS on all three arms, and it inverts the project's own headline
+number.** At syllable level the confound is recordist +0.488 against species +0.196. One
+point per recording reverses it.
+
+```
+ARM A  all 9 026 recordings                 species +0.221   recordist +0.155   +0.066
+ARM B  recordist-blocked resample           species +0.156   recordist +0.138   +0.018
+ARM C  matched rows, the fair margin        species +0.229   recordist +0.196   +0.033
+```
+
+**Arm C exists because Arms A and B do not compare like with like.** `geometry.measure`
+drops any group under 8 members, and "species with >= 8 recordings" is a different
+population from "recordist with >= 8 recordings" — 25.9 % against 57.7 % coverage in Arm
+A. Subtracting two lifts computed on different rows is not the margin this gate asks
+about. Arm C keeps only recordings whose species *and* recordist both clear 8, so both
+lifts come off one identical row set at 100 % coverage. It is the number to quote.
+
+**What it means, and it cuts against us.** Most of the recordist confound was
+same-recording pseudo-replication: syllables from one recording are neighbours, and one
+recording has one recordist. That is a weaker claim than the project has been making, and
+it weakens W0's premise as well as this gate's threat.
+
+Two deviations, both forced and both stated rather than absorbed. "Species means" taken
+literally is one point per species, which makes species lift untestable by construction;
+one point per *recording* is the aggregation that removes the pseudo-replication while
+leaving both groupings measurable, and it is what `w6_t1_perch_recordist.py` already uses.
+And the margins are thin. +0.033 is a pass, not a comfortable one.
+
+The fallback population, reported either way as this gate requires:
+
+```
+species with >= 3 independent recordists     743 of 3 636
+species with >= 2                          1 940
+species with exactly 1                     1 696
+```
 
 ## Phase 1a — The one result that would reach the whole field
 
@@ -157,6 +267,37 @@ generalisation are known problems in this field. Recordist-blocked evaluation ma
 exist somewhere under another name. The novelty claim has to be checked before the run, not
 after, and if it is already known the correct action is to cite it and move to Phase 1.
 
+**RESULT of step zero, 2026-08-04: the claim has to move, and the run is still worth
+doing.** Half of W0 as written above is twelve years old.
+
+- **The practice exists.** Stowell & Plumbley 2014 (PeerJ 488, `doi:10.7717/peerj.488`)
+  held out one recordist at a time on the British Library dawn-chorus set, with our exact
+  rationale in their words: it "tests whether the system can generalise to recordings from
+  unknown recordists, rather than adapting to any specifics of the known recordists". The
+  Cornell CBI dataset is likewise split so that no recordist spans two partitions.
+- **The quantity does not.** Checked against the sources rather than against an abstract:
+  Stowell & Plumbley report no random-against-blocked comparison; neither does the 2026
+  foundation-model comparative review (arXiv 2508.01277) nor Earth Species' 2025 training
+  recipe (arXiv 2508.11845). Nobody has published what a recordist-blocked split costs a
+  current foundation model.
+
+So W0's deliverable is no longer *block your splits*, which is known and ignored. It is
+**here is the number, on Perch 2.0 and BirdNET, on public corpora** — a measurement whose
+absence is what lets the practice keep being ignored.
+
+**A design constraint found in the same pass, and it breaks the method as written.**
+BirdNET is excluded from BirdSet evaluation for training-set leakage: it was trained on
+xeno-canto, which is what BirdSet's XCM/XCL are drawn from. "Reproduced on both models"
+therefore cannot use an XC-derived corpus for BirdNET. Either find a corpus BirdNET was
+not trained on, report BirdNET separately with the contamination stated, or replace the
+second model. This has to be settled before the run, not discovered during it.
+
+**And G3 has since undercut the premise.** If most of the recordist structure we measured
+was same-recording pseudo-replication, the leakage W0 predicts is smaller than we thought.
+That does not retire the question — a random split still puts one recordist on both sides
+— but the expected effect should be revised down before the gate of "more than 10 points"
+is treated as likely.
+
 ## Phase 1 — The four questions worth asking
 
 Ordered by how much new biology a positive result would add, against how exposed each is to
@@ -185,6 +326,12 @@ throughout, because size is the obvious confound and is exactly what G1 measures
 **What a positive result says.** Song production mechanics carry phylogenetic signal
 independent of body size. That is a genuinely new comparative finding.
 
+**RESULT, 2026-08-04: CLOSED, not run.** G1 failed, and §24.1 of this document closes
+Phase 1 for "any question that leans on production mechanics". W1 is that question in its
+purest form. Running it anyway would produce a number, and the number would be the
+phylogenetic structure of our own fitting artefacts — which is precisely the failure mode
+this document was written to prevent. It stays closed until a tract estimate passes G1.
+
 ### W2 — Vocal learners against non-learners
 
 **The open question.** Oscines learn their songs, suboscines mostly do not, and
@@ -208,6 +355,44 @@ clusters, so it is a repertoire *proxy*. It is applied identically to every spec
 what a comparative contrast needs. It is not a count any field ornithologist would recognise
 as a repertoire, and the write-up must say so in those words.
 
+**RESULT, 2026-08-04: REFUSED. Not a null result about vocal learning — a statement that
+our measures cannot carry the question.** W2 does not depend on G1 (its three measures come
+from segmentation, typing and transition counting, none of which touch the fitted
+oscillator), so it ran, and it ran at full scale: 2 059 species, learner status from
+BirdTree's own `OscSubOsc` column rather than a hand-typed family list, PGLS over 10
+posterior Ericson trees, body mass **and sampling effort** as covariates.
+
+All three measures came back flat under both codings. But the diagnostic that runs *before*
+the model is what decides how to report it:
+
+```
+repertoire vs sampling effort        r = +0.852
+repeat_types is zero on              97.7 % of species
+repertoire  median 5,  p90 10,  max 64   (field oscine repertoires reach dozens)
+
+median repertoire by how much audio we hold for the species:
+    0-30 syllables    median 2.0
+   30-100             median 4.0
+  100-300             median 8.0
+  300+                median 8.0
+```
+
+One of the three measures is degenerate. Another is 85 % a count of our own audio. A
+2-of-3 gate cannot be cleared by the one that is left, so the flat coefficients are
+evidence about this corpus's depth — median 69 syllables per species — and not about
+birds. **Reporting them as a null about vocal learning would be the most attractive
+available mistake**, because the null is publishable-sounding and the sample is large.
+
+**One covariate this section did not ask for and should have.** Repertoire and entropy both
+rise with how much audio a species has, and learners are not sampled at the same rate as
+non-learners in citizen-science archives. Without `log(n_syllables)` in the model, W2
+measures collection effort. It is in every fit; the r = +0.852 above is why.
+
+**What would make W2 answerable.** Depth, not breadth. The measure saturates around 8
+types by 100-300 syllables, so the binding constraint is syllables per species and not
+species count. That is the same decision named in the handoff as "988 species under the
+fitting floor", seen from the other end.
+
 ### W3 — How independent are the source and the filter?
 
 **The open question.** Birds were long treated as lacking a strong source-filter separation.
@@ -225,6 +410,9 @@ whose tract sits still scores near zero. Compare the distribution across clades.
 **Gate.** Conditional on G1. Without an anatomically valid tract estimate this measures
 nothing.
 
+**RESULT, 2026-08-04: CLOSED by G1, and this one was already written as conditional.** The
+gate above is doing its job. Nothing to run.
+
 ### W4 — Acoustic adaptation, at a scale it has never been tested
 
 **The open question.** Whether habitat shapes song structure is contested, and the tests are
@@ -236,6 +424,12 @@ four to be wrong about, and the most attractive to publish, which is a dangerous
 
 **Gate.** Runs only if G3 passes cleanly, and only on species with three or more independent
 recordists.
+
+**RESULT, 2026-08-04: still open, and the gate is not satisfied.** G3 passed, but "cleanly"
+is the operative word and a +0.033 margin is not clean. The population this gate confines
+W4 to is now measured: **743 species of 3 636** carry three or more independent recordists.
+W4 is the most attractive result in this document and the easiest to be wrong about, so it
+stays last and it stays behind a margin that is currently thin.
 
 ## Phase 2 — The only route to function
 
@@ -263,7 +457,23 @@ They are independent on purpose. **W0 needs no part of our pipeline to be correc
 runs public models over public corpora. **G1 decides whether any comparative biology exists.**
 Each costs about a day. Neither blocks the other.
 
+**Settled, 2026-08-04.** G1 ran and failed, so the question it decided is answered: no
+comparative biology. W0 is still live, at about half the cost, because its step-zero
+literature check retired the half of it that was already published in 2014. The
+independence held — G1's failure cost W0 nothing, which is why they were run this way.
+
 ## 24.2 Order, and why
+
+**The order below was the plan. It has been run down to step 4, and what remains is short
+enough to state before restating the original reasoning.**
+
+```
+still to run    W0        the run itself, with the corpus/model pairing fixed first
+                G2-PGLS   cheap now; BirdTree is on disk
+                W4        only behind a G3 margin better than +0.033
+closed          W1, W3    by G1
+refused         W2        by its own measures, until the corpus is deeper per species
+```
 
 0. **W0**, because it is the widest-reaching result available and it depends on none of the
    gates below. It uses public corpora and public models, so it stands even if every
@@ -296,3 +506,34 @@ may never. Whether it does is decided by G1, and G1 costs an afternoon.
 The failure mode to avoid is putting a thin comparative result into the system paper to make
 it look like biology. The refusals are the contribution there. Diluting them would cost the
 thing that makes it worth reading.
+
+### 24.3b What Phase 0 did to that plan, 2026-08-04
+
+**Paper three is decided, and the answer is no.** G1 cost an afternoon, as predicted, and
+it failed. The comparative biology does not exist. It is not deferred, it is closed until
+some future tract estimate passes G1.
+
+**Paper two got better, not worse, and this is the substantive change.** Phase 0 was
+supposed to be a licence to write paper three. What it actually produced is three results
+that belong in paper two:
+
+- a **negative result with both excuses closed** — the fitted tract does not measure the
+  windpipe, and it is neither the 39-value quantization nor thin sampling;
+- a **positive control that makes the negative one credible** — the same pipeline recovers
+  the mass/frequency relationship at the published effect size, so "our corpus is broken"
+  is not available as an explanation;
+- a **correction to our own loudest claim** — the recordist confound largely does not
+  survive aggregation past same-recording pseudo-replication.
+
+The third is uncomfortable and is the reason to trust the other two. A methods-and-refusals
+paper that also retracts its own headline number is doing the thing it claims to be for.
+
+**Paper one is unchanged in value and changed in framing.** W0 stops being "recordist-blocked
+splits are a good idea", which Stowell & Plumbley published in 2014, and becomes "here is
+what one costs a current foundation model", which nobody has measured. Smaller claim,
+still nobody else's, and now with a corpus/model contamination problem to solve first.
+
+**The failure mode named above is now the live risk rather than a hypothetical one.** There
+is a large, tidy, phylogenetically corrected null sitting in `w2_learners.json` that would
+look like biology in a table. It is not. Whatever else paper two says about W2, it says
+r = +0.852 in the same paragraph.

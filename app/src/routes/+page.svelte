@@ -35,7 +35,7 @@
 	import InventoryTable from '$lib/InventoryTable.svelte';
 	import { buildInventoryRows, indexRows } from '$lib/data/inventory-rows';
 	import { createIndividual } from '$lib/audio/individual';
-	import { compilePhrase, improvise, type Phrase } from '$lib/lang/grammar';
+	import { compilePhrase, improvise, songPhrase, type Phrase } from '$lib/lang/grammar';
 	import { BOUT_GLOSS } from '$lib/lang/glossary';
 	import {
 		applyTextRhythm,
@@ -47,6 +47,16 @@
 		type Token
 	} from '$lib/lang/compose';
 	import { citationsFor, confidenceLabel, type Reading } from '$lib/lang/translate';
+	import {
+		CATEGORIES,
+		callsFor,
+		categoriesFor,
+		classify,
+		intensityNote,
+		refusal,
+		speciesWithFunctions,
+		type FunctionCategory
+	} from '$lib/lang/functions';
 	import { createSignal, type ContextPath, type VisualSignal } from '$lib/galaxy/shaders';
 	import { createStats, type GalaxyStats } from '$lib/galaxy/stats';
 	import {
@@ -1241,6 +1251,12 @@
 		singPhrase(compilePhrase(assets.inventory, text, { speciesId }));
 	}
 
+	/** Play one authored call chosen by the functional reading, exactly as authored. */
+	function singCall(songId: string) {
+		if (!assets || !currentSpecies) return;
+		singPhrase(songPhrase(assets.inventory, speciesId, songId, autoReading?.matched ?? []));
+	}
+
 	function singImprovisation() {
 		if (!assets || !currentSpecies) return;
 		singPhrase(improvise(assets.inventory, speciesId));
@@ -2072,6 +2088,38 @@
 			? compilePhrase(assets.inventory, text, { speciesId })
 			: null
 	);
+
+	// --- Words: the functional reading ------------------------------------------------
+	// The chain is two links with different evidence, and the interface shows both:
+	// typed English -> category is ours and always `invented`; category -> this species'
+	// call is the corpus's and carries the call's own confidence and citations
+	// (`lang/functions.ts` opens with why). `categoryOverride` is set only by the user
+	// clicking a different category, and it is cleared whenever the text or the bird
+	// changes — an override is a correction of *this* reading, not a standing preference.
+	let categoryOverride = $state<FunctionCategory | null>(null);
+	const autoReading = $derived(text.trim() ? classify(text) : null);
+	const readCategory = $derived<FunctionCategory | null>(
+		categoryOverride ?? autoReading?.category ?? null
+	);
+	const readCalls = $derived(
+		assets && currentSpecies && readCategory ? callsFor(assets.inventory, speciesId, readCategory) : []
+	);
+	const speciesHasFunctions = $derived(assets ? speciesWithFunctions(assets.inventory) : new Set<string>());
+	const speciesCategories = $derived(
+		assets && currentSpecies ? categoriesFor(assets.inventory, speciesId) : []
+	);
+	const readRefusal = $derived(
+		assets && currentSpecies && text.trim() && !readCalls.length
+			? refusal(assets.inventory, speciesId, categoryOverride ? { category: categoryOverride, matched: [], alternatives: [] } : autoReading)
+			: null
+	);
+	const readIntensity = $derived(readCategory ? intensityNote(speciesId, readCategory) : null);
+	$effect(() => {
+		// Depend on both so either one clears a stale override.
+		text;
+		speciesId;
+		categoryOverride = null;
+	});
 
 	// --- Compose tab derived state ---------------------------------------------------
 	// Suggestions and chunk offers re-derive from the strip itself, so the context row
@@ -3178,12 +3226,21 @@ uv run birdy-pipeline build</pre>
 							     only `dispatch` may write it. `chooseBird` is also where the tab guard lives:
 							     a pick on this tab records the bird and does not take the air, because this
 							     tab has no chorus controls to give it back with. -->
+						<!-- All 2 650 stay in the list. Narrowing it to the 12 with authored
+							     functions would work nearly always and would quietly present the best
+							     0.45 % of the corpus as if it were the corpus. The dot marks them
+							     instead, so the working set is findable without the scale being lost. -->
 							<select value={speciesId} onchange={(e) => chooseBird(e.currentTarget.value)}>
 								{#each species as s (s.id)}
-									<option value={s.id}>{s.common}</option>
+									<option value={s.id}>{speciesHasFunctions.has(s.id) ? '• ' : ''}{s.common}</option>
 								{/each}
 							</select>
 						</label>
+						<p class="note faint">
+							• marks the {speciesHasFunctions.size} species with a call whose function is
+							described in the literature. The other {species.length - speciesHasFunctions.size}
+							have measured syllables and no documented function — real audio, no meaning attached.
+						</p>
 						<!--
 							Text survives as rhythm only. splitSyllables yields the token count and
 							word boundaries; syllable choice comes from the measured grammar, never
@@ -3194,21 +3251,81 @@ uv run birdy-pipeline build</pre>
 							<span class="lbl">Words for the bird to sing</span>
 							<textarea bind:value={text} placeholder="danger — come here"></textarea>
 						</label>
-						{#if preview?.source === 'documented'}
-							<div class="callout">
-								<span class="badge {preview.confidence}">{confidenceLabel(preview.confidence).text}</span>
-								<p class="note">
-									Matched <span class="mono">{preview.matched.join(', ')}</span> → {preview.label}
+						<!--
+							The functional reading. Two links, shown separately and never merged:
+							the reading of the words is ours and says so in its own line; each call
+							underneath keeps its own evidence badge and citations. When the species
+							has nothing in the read category, the refusal *is* the answer — it is the
+							majority case (99.55 % on a randomly picked bird), so it is designed
+							rather than defaulted.
+						-->
+						{#if text.trim()}
+							<div class="callout reading">
+								{#if readCategory}
+									<p class="note">
+										We read this as <strong>{readCategory}</strong>
+										{#if autoReading?.matched.length && !categoryOverride}
+											<span class="mono faint">({autoReading.matched.join(', ')})</span>
+										{/if}
+										<span class="badge invented">{confidenceLabel('invented').text}</span>
+									</p>
+								{:else}
+									<p class="note">These words do not read as any function this build holds.</p>
+								{/if}
+								<!-- The override is the honest half of the classifier: the machine's
+									     reading is a guess, so the human gets the last word, and every
+									     correction is a labelled datum for the lexicon. -->
+								<p class="note faint">
+									That reading is ours, not the bird's. Meant something else?
+									{#each CATEGORIES as c (c.id)}
+										<button
+											class="link"
+											class:on={readCategory === c.id}
+											title="{c.blurb}{speciesCategories.includes(c.id) ? '' : ' — this species has no documented call here'}"
+											onclick={() => (categoryOverride = c.id)}
+										>{c.label}{speciesCategories.includes(c.id) ? '' : '*'}</button>
+									{/each}
 								</p>
-								<p class="note faint">{preview.note}</p>
-								<button
-									class="primary wide"
-									disabled={!engine}
-									onclick={singWords}
-									title="Render the playback-verified call, unchanged by the composer."
-								>Sing the documented call</button>
+
+								{#if readCalls.length}
+									{#each readCalls as call (call.song.id)}
+										<div class="callout nested">
+											<span class="badge {call.confidence}">{confidenceLabel(call.confidence).text}</span>
+											<p class="note">
+												{call.song.label} — {call.song.function}
+											</p>
+											{#if call.song.refs.length && assets}
+												{#each citationsFor(assets.inventory, call.song.refs) as ref (ref)}
+													<p class="note faint">{ref}</p>
+												{/each}
+											{/if}
+											<button
+												class="primary wide"
+												disabled={!engine}
+												onclick={() => singCall(call.song.id)}
+												title="Render this call exactly as authored — the composer does not touch it."
+											>Sing this call</button>
+										</div>
+									{/each}
+									{#if readIntensity}
+										<p class="note faint">{readIntensity}</p>
+									{/if}
+									<p class="note faint">
+										The category is the bird's; the decision that your words belong in it is
+										ours. We are not claiming these are the words the bird would be saying.
+									</p>
+								{:else if readRefusal}
+									<p class="note faint">{readRefusal}</p>
+								{/if}
 							</div>
-						{:else if preview}
+						{/if}
+						<!--
+							The old keyword branch is gone: the reading above subsumes it, and it
+							renders the same authored calls by a route that also has a refusal state.
+							What is left here is the invented-rendering notice, which still applies
+							whenever there is a phrase and no authored call was offered.
+						-->
+						{#if preview && preview.source !== 'documented' && !readCalls.length}
 							<!--
 								The inverse case is said out loud: no keyword matched, so what
 								plays is the words' rhythm in this bird's own syllables — labelled

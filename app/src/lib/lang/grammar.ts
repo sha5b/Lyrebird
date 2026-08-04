@@ -249,6 +249,24 @@ function documentedPhrase(
 	};
 }
 
+/**
+ * One authored call, rendered as itself.
+ *
+ * The Words tab's functional reading needs this: it decides *which* call to offer by a
+ * route of its own (`lang/functions.ts`), and then wants the same untouched render the
+ * keyword path has always produced. Exported rather than duplicated so there is one place
+ * where an authored song becomes a playable phrase, and so `matched` keeps meaning "the
+ * words that produced this", whoever matched them.
+ */
+export function songPhrase(
+	inventory: Inventory,
+	speciesId: string,
+	songId: string,
+	matched: string[] = []
+): Phrase | null {
+	return documentedPhrase(inventory, { speciesId, songId, keywords: [] }, matched);
+}
+
 export interface CompileOptions {
 	/** Species used for invented renderings; documented matches use their own species. */
 	speciesId: string;

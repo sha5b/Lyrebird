@@ -1,4 +1,174 @@
-# Lyrebird — READ THIS FIRST (2026-08-04): v9 is installed, five noise gates are measured dead, and the whitepaper leads with its findings
+# Lyrebird — READ THIS FIRST (2026-08-04, later): Phase 0 ran, the comparative biology is closed, and the methods paper got better
+
+Phase 0 of `docs/24` was run end to end. **The headline: paper three does not exist. Paper
+two is stronger than it was this morning.** Every gate was pre-registered before the run and
+no threshold was moved afterwards. Full detail sits with each gate in `docs/24`, which now
+carries a RESULT block under every one.
+
+```
+G1  fitted tract length vs body mass      FAIL      partial r +0.194, gate > 0.4
+G2  the textbook mass/frequency result    PASS      r -0.542 on well-sampled species
+G3  recordist confound after aggregation  PASS      species +0.229 vs recordist +0.196
+W0  step-zero literature check            MOVED     the practice exists; the number does not
+W1  phylogenetic signal in production      CLOSED    by G1, per docs/24's own rule
+W3  source-filter independence            CLOSED    by G1, and it was written conditional
+W2  learners vs non-learners              REFUSED   the measures cannot carry the question
+W4  acoustic adaptation                   HELD      743 of 3 636 species qualify; margin thin
+```
+
+New, and none of it writes to the store:
+
+```
+pipeline/analysis/g1_g2_avonet.py            G1 and G2, with both excuses measured
+pipeline/analysis/g3_recordist_aggregation.py  three arms, incl. the matched-row one
+pipeline/analysis/w2_learners.py             PGLS over 10 BirdTree posterior trees
+pipeline/out/external/AVONET.xlsx            11 009 species, Tobias et al. 2022
+pipeline/out/external/BLIOCPhyloMasterTax.csv  BirdTree taxonomy + OscSubOsc
+pipeline/out/external/EricsonStage2.zip      1 000 posterior trees, 194 MB
+pipeline/out/external/species-f0.json        per-species median f0 and syllable count
+```
+
+## The four things worth knowing before anything else
+
+**1. G1 failed, and it failed past both available excuses.** `L_eff` correlates with body
+mass at partial r = +0.194 controlling f0 — right direction, p = 1.5e-11, less than half
+the gate. A *perfect* predictor snapped to the same 39 discrete levels reaches r = +0.998,
+so the quantization is not the ceiling; and r stays flat (+0.241 → +0.299) as per-species
+syllable counts rise, so it is not thin sampling. Cranes do land 2 of 2 in the upper decile
+at median 10.6 cm, which is a hint at n = 2 and nothing more.
+
+**2. G2 passing is what makes G1's failure publishable.** The same pipeline recovers the
+textbook mass/frequency relationship at the published effect size (our r = -0.542 on the 53
+best-sampled species against Mikula et al. 2021's standardised -0.51). So "the corpus is
+broken" is not available as an explanation for G1. A direct measurement sharpened with more
+data; the fitted parameter did not. That contrast is the finding.
+
+**3. G3 passed, and it retracts our loudest number.** At syllable level the confound is
+recordist +0.488 against species +0.196. One point per *recording* reverses it: species
++0.229 against recordist +0.196 on matched rows. **Most of the recordist confound was
+same-recording pseudo-replication.** Arms A and B were comparing lifts computed on
+different populations (25.9 % against 57.7 % coverage, because `geometry.measure` drops
+groups under 8), so Arm C restricts to rows where species *and* recordist both clear 8 and
+measures both at 100 % coverage. That +0.033 is the number to quote, and it is thin.
+
+**4. W2 is a refusal, not a null, and the difference matters commercially.** It ran at full
+scale — 2 059 species, 10 posterior trees, learner status from BirdTree's own `OscSubOsc`,
+mass and sampling effort as covariates — and every coefficient came back flat. Do not report
+that as a null about vocal learning:
+
+```
+repertoire vs sampling effort     r = +0.852
+repeat_types is zero on           97.7 % of species
+repertoire median 5, p90 10       field oscine repertoires reach dozens
+```
+
+One measure is degenerate, another is 85 % a count of our own audio. **There is a large,
+tidy, phylogenetically corrected null sitting in `w2_learners.json` that would look like
+biology in a table.** It is a statement about a corpus with a median of 69 syllables per
+species. Whatever gets written about W2 says r = +0.852 in the same paragraph.
+
+## Two things found on the way that are not about the science
+
+**`embeddings.f32` was stale and silently so.** It held 340 079 rows against the store's
+378 224 syllables, written 2026-07-31, before the topup ingest. The v9 build *did* detect
+this, refuse the file and re-embed in memory — and then never wrote it back, so the on-disk
+sidecar stayed stale and every analysis script that reads it, `w6_t1_perch_recordist.py`
+included, was quietly working on 90 % of the store. Regenerated with
+`birdy-pipeline critic embed --store out/harvest-gan`: 378 224 x 32, 0 NaN, 5.3 s. **Any
+recordist or species number produced by those scripts before 2026-08-04 was computed on a
+partial store and should be re-run rather than trusted.**
+
+**`descriptors.f32` is aligned to `points.jsonl`, not to `syllables.jsonl`.** 293 757 rows
+of 28, which matches `points.jsonl` exactly. This is correct and not a bug, but it looks
+like a third count that disagrees with the other two, and it cost time to rule out.
+
+## What is next, and W0 changed shape
+
+**W0's claim has to move, and the run is still worth doing.** Half of it is twelve years
+old: Stowell & Plumbley 2014 (PeerJ 488) held out one recordist at a time with our exact
+rationale in their words, and the Cornell CBI dataset is split the same way. What nobody
+has published — checked against the sources, not the abstracts — is **what a
+recordist-blocked split costs a current foundation model.** So W0 stops being "block your
+splits" and becomes "here is the number".
+
+Two constraints on that run, both discovered in the literature pass:
+
+- **BirdNET cannot be evaluated on an XC-derived corpus.** It is excluded from BirdSet for
+  training-set leakage, having been trained on xeno-canto. "Reproduced on both models" needs
+  a different corpus, a separate BirdNET report with the contamination stated, or a
+  different second model. Settle this before the run.
+- **G3 revised the expected effect down.** If most of the structure was same-recording
+  pseudo-replication, the leakage W0 predicts is smaller than we assumed. The gate of "more
+  than 10 points" should not be treated as likely.
+
+Cheap and still owed: **G2 under PGLS.** It is OLS today; BirdTree is now on disk and
+`w2_learners.py` already has a working VCV and GLS, so this is an hour.
+
+## The Words tab was reworked, and it now refuses on purpose
+
+Owner's ask: typing should be read for *meaning*, and the bird's notes should say what the
+utterance could be. **What the tab did before was less than it looked like** — the primary
+"Sing the words" button ran a path where the text contributes exactly two numbers, a
+syllable count and which indexes start a word. Semantics existed only as a hand-written
+table of 68 keywords across 5 species.
+
+It now classifies into one of **five functional categories** and reports what *this*
+species' authored calls in that category are documented to do, with their own evidence
+badges and citations. The design rule, and `docs/03` §3.6 is the long form:
+
+```
+link 1   typed English -> category      OURS.  always `invented`, said on its own line
+link 2   category -> this species' call  THE CORPUS'S. keeps its own badge and refs
+```
+
+The claim is *"the functional category is real to the bird; the assignment of your words to
+it is ours"*. The first half is defensible on Elie et al. 2025 (Science 389:1210-1215):
+zebra finches' own confusion errors between call types cluster by behavioural context
+rather than acoustic similarity. The second half has no literature behind it and there is a
+structural reason it cannot — call form is non-arbitrary, so there is no arbitrary
+signifier to attach an English word to.
+
+**The refusal is the majority path and is designed as one.** 12 species of 2 650 carry any
+authored function, so a randomly picked bird refuses 99.55 % of the time. The picker keeps
+all 2 650 and marks the 12 with a dot; narrowing it would have made the feature work nearly
+always while presenting the best 0.45 % of the corpus as if it were the corpus.
+
+```
+app/src/lib/lang/functions.ts        categories, lexicon, classifier, refusal text
+app/scripts/verify-functions.mjs     46 checks, `npm run verify:functions`
+app/src/lib/lang/grammar.ts          songPhrase() exported; the keyword table is now dead
+app/src/routes/+page.svelte          the reading, the one-click category override
+docs/03-decoding-science.md §3.6     what the tab may and may not claim, with sources
+```
+
+`functions.ts` deliberately imports **no** framework path. `data/assets.ts` pulls in
+`$app/paths`, which only resolves inside SvelteKit, so depending on it would have put the
+module out of reach of the bare-node verify harnesses; `speciesById` is a one-line find and
+is local. That is what lets all 46 checks run against the real shipped inventory.
+
+Three things refused in writing, each because someone will ask: the 16 239 `unlabelled`
+fitted types may not be recruited to widen coverage (no sender state, no receiver, no
+context — Rutz et al. 2023's own caution about archives); `d_abc`, the reversed great tit
+control, is not offered as a message because in playback it elicits neither response; and
+embedding typed text against the fitted types is refused outright, because with no parallel
+data a fluent hallucination scores identically to a correct answer.
+
+**Still open on this, and it is the owner's call.** The lexicon is a few hundred hand-written
+terms. It will miscategorise — "I miss you" reads as contact and produces a plausible-sounding
+wrong answer with a real citation attached, which is the failure mode that matters here. The
+one-click category override is the mitigation and it is also free instrumentation: every
+correction is a labelled datum. Nothing currently records those corrections.
+
+## Carried over from the entry below, still true
+
+- `fig_corpus`'s clay annotation overruns its panel.
+- 988 species under the fitting floor. **W2 gives this a second reason to matter**: the
+  repertoire measure saturates near 8 types by 100-300 syllables, so depth per species, not
+  species count, is what would make W2 answerable.
+- `fig_song_funnel` is pinned to the pre-v9 store.
+- Two `\todo` items in `main.tex`, both needing the owner; `main.tex` has never been compiled.
+
+# Lyrebird — (2026-08-04): v9 is installed, five noise gates are measured dead, and the whitepaper leads with its findings
 
 ## START HERE NEXT CHAT
 
@@ -78,7 +248,9 @@ store        pipeline/out/harvest-gan   378 224 observations, 3 636 species with
              headroom 21 776 of syllableCap 400 000
 installed    app/static/birdy = v9: 387 287 points, 16 380 knots, verify passes
              data/learned-inventory.json = 2 650 species, 16 283 types
-             committed as 569ddef; ROLLBACK IS HEAD~1 (348 461 points, 2 423 species)
+             committed as 569ddef; ROLLBACK IS 94c4ad8 (348 461 points, 2 423 species)
+             — named explicitly because HEAD has since moved and "HEAD~1" no longer
+             points at the pre-v9 build
 audio cache  pipeline/out/audio-cache, 6 453 wavs, 6.3 GB, iNat only
 perch        runs; weights in the HF cache; analysis/perch_presence.py works
 whitepaper   findings section now BEFORE the walls; 0 em dashes in prose; author set;
