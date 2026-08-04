@@ -301,12 +301,13 @@
 							<dt>fit</dt>
 							<dd>
 								<i>(the number.)</i> The cosine between the resynthesis of this type and its own
-								cluster in the {assets.featureSpace.dims}-dimensional descriptor space. It says
-								how closely the oscillator reproduces the sound it was fitted to. It is a
-								clustering match. It is <b>not</b> a guarantee that the sound is audibly
-								faithful. The two correlate at about 0.1, and the pipeline measures audible
-								fidelity separately. This column is blank on a documented call, because nothing
-								fitted that call.
+								cluster in the {assets.featureSpace.dims}-dimensional descriptor space — how
+								closely the oscillator reproduces the <em>descriptor</em> it was fitted to. Read
+								it as the fit's own objective. Audible fidelity is measured separately, and over
+								1&thinsp;200 fitted types the two run in opposite directions: a higher cosine
+								goes with slightly <em>more</em> audible distortion (Spearman +0.20 against
+								mel-cepstral distortion). This column is blank on a documented call, because
+								nothing fitted that call.
 							</dd>
 						</div>
 						<div>

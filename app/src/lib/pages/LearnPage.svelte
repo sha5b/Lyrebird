@@ -563,9 +563,9 @@ uv run birdy-pipeline serve</pre>
 			Rebuild the galaxy
 		</h3>
 		<p class="note faint">
-			<b>This one is not incremental.</b> Harvest and Learn add to what exists. Rebuild
-			re-clusters and re-projects the whole corpus, so every point and every knot moves and
-			the galaxy on screen is replaced.
+			<b>Rebuild replaces the galaxy.</b> Harvest and Learn accrete onto what is already
+			drawn; Rebuild re-clusters and re-projects the whole corpus, so every point and every
+			knot takes a new position and the galaxy on screen becomes the new one.
 			{#if pipelineStatus.built.points}
 				At this corpus's size — <b class="mono"
 					>{pipelineStatus.built.points.toLocaleString()}</b
@@ -576,19 +576,19 @@ uv run birdy-pipeline serve</pre>
 			<button
 				class:on={buildClustering === 'kmeans'}
 				onclick={() => (buildClustering = 'kmeans')}
-				title="One cluster per syllable type, seeded at that type's own centre, every point assigned. This is what lets the app name, label and draw a path for anything it sings — it cannot report an unidentified sound."
+				title="One cluster per syllable type, seeded at that type's own centre, with every point assigned to one of them. This is what lets the app name, label and draw a path for anything it sings. It answers 'which type is this closest to'; 'is this any known type at all' is what Find the unknown answers."
 				>Name everything</button
 			>
 			<button
 				class:on={buildClustering === 'hdbscan'}
 				onclick={() => (buildClustering = 'hdbscan')}
-				title="Find however many dense regions there are and leave the rest unassigned. Regions of real audio with nothing documented in them are flagged `unknown` — candidate new syllables. Coverage is not guaranteed, so this is for discovery rather than for the galaxy you listen in."
+				title="Discovers how many dense regions the corpus actually holds and leaves the sparse points honestly unassigned. A region of real audio with nothing documented in it comes out flagged `unknown` — a candidate new syllable. This is the one map where a sound can answer 'none of these', which makes it the discovery instrument; the galaxy you listen in is built from one of the other two."
 				>Find the unknown</button
 			>
 			<button
 				class:on={buildClustering === 'label'}
 				onclick={() => (buildClustering = 'label')}
-				title="Skip the clustering for every sound that already carries a type and give each type its own knot; k-means runs only over the sounds with no label. Every type gets a knot, so nothing sings without lighting — but the knots are then the labels rather than a second, independent finding, and this view still cannot report an unidentified sound. This is the answer at full-corpus scale and it is what this build uses: {loadedPoints} sounds in {loadedKnots} knots, every type covered. Asking k-means for tens of thousands of groups is the wrong instrument (docs/22 §22.5)."
+				title="Every sound that already carries a type goes straight to its own type's knot, and k-means runs over the sounds with no label. Every type therefore owns a knot and everything sings with something lit. The knots here restate the labels, so the statistic that measures this map is whether a live sound's nearest knot is its own type — 48.95 % on this build. It answers 'which type is this closest to'; 'is this any known type at all' is what Find the unknown answers. This is the answer at full-corpus scale and what this build uses: {loadedPoints} sounds in {loadedKnots} knots, every type covered. Asking k-means for tens of thousands of groups is the wrong instrument (docs/22 §22.5)."
 				>Use the labels</button
 			>
 		</div>
@@ -599,10 +599,10 @@ uv run birdy-pipeline serve</pre>
 				certain and purity stops being a measurement (docs/22 §22.8).
 			-->
 			<p class="note faint">
-				Every type gets its own knot, so type coverage will read 100 % — by
-				construction, not as a finding. Cluster purity stops measuring the map for
-				the same reason; what still measures it is whether a live sound's nearest
-				knot is its own type.
+				Every type gets its own knot, so type coverage reads 100 % by
+				construction here, and cluster purity reads 1.0 for the same reason. The
+				statistic that measures this map is whether a live sound's nearest knot is
+				its own type.
 			</p>
 		{/if}
 		{#if buildClustering === 'hdbscan'}

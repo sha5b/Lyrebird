@@ -610,8 +610,15 @@ def cmd_build(
     # corpus above is the expensive half (rendering the inventory) and is built once;
     # clustering, projection and asset-writing run per map into `known/`/`unknown/`
     # subdirectories, each a complete, verifiable asset set.
+    #
+    # **The known side is `label`, not `kmeans`, and that is deliberate.** `label` is what
+    # the production build ships and what every map number in the whitepaper was measured
+    # on, so pairing `hdbscan` with `kmeans` here would hand the app a known map that no
+    # measurement describes. At production scale kmeans is the wrong instrument anyway
+    # (docs/22 §22.5 — 27 862 clusters wanted over 694 936 points, losing every documented
+    # call). `--clustering kmeans` still selects it explicitly for the bake-off arm.
     modes: list[tuple[str, Path]] = (
-        [("kmeans", out / "known"), ("hdbscan", out / "unknown")]
+        [("label", out / "known"), ("hdbscan", out / "unknown")]
         if args.clustering == "both"
         else [(args.clustering, out)]
     )
@@ -623,7 +630,7 @@ def cmd_build(
                 (out / CALIBRATION_NAME).read_bytes()
             )
         if len(modes) > 1:
-            log(f"--- the {'known' if mode == 'kmeans' else 'unknown'} map "
+            log(f"--- the {'unknown' if mode == 'hdbscan' else 'known'} map "
                 f"({mode_out}) ---")
         map_stats[mode] = build_galaxy(
             points,
@@ -726,7 +733,7 @@ def cmd_build(
         stats = map_stats[mode]
         log("")
         if len(modes) > 1:
-            log(f"--- {'known' if mode == 'kmeans' else 'unknown'} map ---")
+            log(f"--- {'unknown' if mode == 'hdbscan' else 'known'} map ---")
         log(f"built {stats.n_points} points in {stats.k} clusters "
             f"({stats.n_dropped} clips dropped, {time.time() - t0:.1f}s)")
         log(f"durations {stats.duration_range[0]:.3f}..{stats.duration_range[1]:.3f} s, "
@@ -3356,10 +3363,12 @@ def build_parser() -> argparse.ArgumentParser:
              "the points with no label (docs/22 §22.5 — the answer at production scale, "
              "where the pre-W5 corpus had kmeans wanting 27 862 clusters over 694 936 "
              "points and the vote losing every documented call. This is what the shipped "
-             "production build uses: 348 461 points, k = 14 003, type coverage 100 %%). "
-             "'both' renders the corpus once and writes the "
-             "kmeans map to <out>/known and the hdbscan map to <out>/unknown — the pair "
-             "the known-vs-unknown comparison always wants, for one render",
+             "production build uses: 387 287 points, k = 16 380, type coverage 100 %%). "
+             "'both' renders the corpus once and writes the label map to <out>/known and "
+             "the hdbscan map to <out>/unknown — the pair the known-vs-unknown comparison "
+             "always wants, for one render, and the pair the app shows as a live toggle. "
+             "The known side of 'both' is the label map because that is what ships and "
+             "what the whitepaper measured; ask for kmeans by name to get it",
     )
     b.add_argument(
         "--min-cluster-size",
