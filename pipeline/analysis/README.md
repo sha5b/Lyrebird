@@ -27,6 +27,18 @@ constants changed and nothing else.
 | `w2_learners.py` | do vocal learners have larger repertoires and more complex syntax? | **refused, not null.** repertoire correlates with sampling effort at r +0.852 and repeat-classes are zero on 97.7 % of species, so the measures cannot carry the question | docs/24 W2 |
 | `w6_t1b_perch_postcutoff.py` | does Perch's recordist structure survive on audio it provably never trained on? | **yes** — recordist lift +0.441 ("strong") on matched rows over 2 158 post-cutoff recordings. The contamination alarm was overcautious | docs/24 W0 |
 | `w0_recordist_split.py` | what does a recordist-blocked split cost a probe over frozen Perch features? | **9.68 points** (93.29 % -> 83.61 %), gate wanted > 10 so NOT met — but 2.44x the errors, worse in 20 of 20 folds. `--self-test` validates the split logic first | docs/24 W0 |
+| `w0_full_catalogue.py` | how big is the post-cutoff population really? | **21 928** recordings, not the pilot's 6 000 — that was `SEARCH_PAGES = 60` x 100 a page. 4 305 species, 961 recordists, and 886 species clear W0's floor | docs/24 W0 |
+| `w0_full_fetch.py` | stage 1 of the full run: select the scorable population and embed it through both models | 8 321 recordings over 886 species and 649 recordists, after a recordist-aware cap of 12 per species. Resumable; audio is kept because the download is the expensive half | docs/24 W0 |
+| `w0_probe.py` | is the GPU probe the same estimator as the pilot's scikit-learn one? | **yes, to 0.91 accuracy points** on the pilot's own features. `--verify` fails loudly if not. It exists because 886 classes in 1 536 dims is not a tractable CPU fit | docs/24 W0 |
+| `w0_full.py` | stage 2: the same experiment at 886 species on Perch **and** BirdNET | **PENDING — the fetch was still running when this row was written.** `w0_full.json` currently holds an INCOMPLETE placeholder and must not be read as a result | docs/24 W0 |
+| `song_funnel.py` | did a re-learn quietly narrow the syntax layer? | prints the trade rather than deciding it, and alarms past a fifth. v9: species with a song 80, repeat classes 91, grammar chunks 2 389 | docs/22 §22.1-2 |
+| `song_funnel_stages.py` (+ `.json`) | the whole funnel, stage by stage, on whatever store is current | **wider early, narrower late.** v9 against pre-v9: bouts 34 696 -> 40 526 and candidates 10 550 -> 17 140, but species with a song 98 -> **80** and placed bouts 3 741 -> **2 299**. Imports the build's own bout rule; cross-checks its species count against `song_funnel.py` | docs/22 §22.1-2 |
+
+**Not in the table above, and their verdicts are not restated here because they were not
+re-read when this note was written:** `function_transfer.py`, `interp_heldout.py`,
+`mds_metric.py`, `perch_presence.py`, `periodicity.py`, `tear_dims.py`,
+`topup_underfloor.py`. Each still carries its own gate in its own docstring, which is the
+rule this directory runs on. Adding a row means reading the file, not guessing from the name.
 
 `w5_field_retrieval.py` and `w6_t3_perch_species.py` import helpers from their siblings, so
 run them from this directory (or with it on `sys.path`; the W6 pair does that itself).

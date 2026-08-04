@@ -288,15 +288,95 @@ merely produce overfull boxes. **Both halves were wrong**: `tectonic` is on this
 now at 39 pages. Do not trust the "never compiled" line if it reappears anywhere in this
 file — it is stale in two older entries below.
 
+## The W0 full run is BUILT AND RUNNING, and paper one exists
+
+Read this before the "still open" list below, which it partly supersedes.
+
+**The pilot's two limits were ours, not the archive's.** Its catalogue held exactly 6 000
+recordings, which was `SEARCH_PAGES = 60` times 100 a page. The same query reports **21 928**.
+And it selected by *recordist*, a rule inherited from `w6_t1b_perch_postcutoff.py` whose unit
+was the recordist. W0's unit is the species, and that is what left 62 scorable classes out of
+827 species fetched.
+
+```
+886 species clear W0's floor (>=6 recordings from >=2 recordists), over 13 646 recordings.
+MAX_PER_SPECIES = 12 trims that to 8 321 without losing a single species: the pool is
+skewed 6 / median 9 / max 338, so uncapped a handful of species would supply a fifth of
+the probe's training rows. The cap is recordist-aware by round-robin -- a plain sample of
+12 would strip a 19/1 species down to one recordist and make it unscorable AFTER it had
+been counted as scorable. An assertion checks the scorable set is unchanged.
+```
+
+**BirdNET is no longer blocked, and this is the methodological point.** docs/24 recorded that
+"reproduced on both models" could not use an XC-derived corpus, because BirdSet excludes
+BirdNET for training on xeno-canto. BirdNET **V2.4 was released June 2023** (EfficientNetB0,
+1024-d, which matches the backbone `w6_birdnet_arms.py` already runs). Uploads after
+2025-09-01 postdate it by two years and Perch 2.0 by a month, so the discriminator is *upload
+date* and not archive provenance, and the constraint dissolves rather than being worked around.
+
+**Measured before optimising, twice.** CPU embedding is 0.43 s per recording for *both* models
+against a 2.3 s download pace, so `onnxruntime-gpu` would buy nothing and was not installed.
+The probe is the opposite: 886 classes in 1 536 dimensions is ~$10^{10}$ multiply-adds per
+lbfgs iteration, so it moved to torch on the GPU at **1.0 s a fold**. `w0_probe.py --verify`
+is the check that it is the same estimator as the pilot's scikit-learn one -- they agree to
+**0.91 points** on the pilot's real features, and it fails loudly if they do not.
+
+```
+analysis/w0_full_catalogue.py   pages the complete catalogue and reports what it supports
+analysis/w0_full_fetch.py       selects, downloads, embeds through both models, resumable
+analysis/w0_probe.py            the GPU probe + --verify against sklearn
+analysis/w0_full.py             three arms, the gate, and a class-count sweep
+docs/whitepaper/w0-arxiv/       PAPER ONE. 6 pages, builds clean. Results are \todo.
+```
+
+**Do not read `analysis/w0_full.json` yet.** It currently holds an INCOMPLETE placeholder.
+An early run is not merely underpowered, it is **biased low**: at 20 % embedded only 32
+species cleared the floor, and the ones that clear first are those with the most recordings,
+which correlate with recordists per species at r = +0.923. That is G3's trap exactly -- the
+floor that makes the test possible removes what it is testing for.
+
+**Also fixed while there:** the pilot scored **730** recordings, not 2 158. The larger figure
+was the embedded population before the two-recordist floor, and the whitepaper said "On 2 158
+recordings ... reaches 93.29 %". Corrected in both papers.
+
+## The song funnel was re-measured on v9, and it narrowed
+
+`fig_song_funnel` carried a note saying it was pinned to the 340 079-observation store and
+that the figure "moves as a unit or not at all". `analysis/song_funnel_stages.py` now
+recomputes every count it draws, from one store in one pass, **importing**
+`learn.bout_sequences` and `learn._collapse_runs` so there is only one definition of a bout.
+
+```
+                       pre-v9      v9
+observations          340 079   378 224
+bouts                  34 696    40 526
+candidates             10 550    17 140
+species with a song        98        80   <- NARROWED
+placed bouts            3 741     2 299   <- NARROWED
+```
+
+Wider early, narrower late: a finer typing splits one physical repeat across several type ids,
+so fewer bouts clear `SONG_MIN_CLUSTER = 6`. This is the trade `song_funnel.py` was written to
+catch. Repeat classes still roughly double the songs (46 species to 80, 96 song types to 187),
+so the adoption stands, but **"double" is a pre-v9 number and the v9 factor is 1.7** -- the
+subsection title now says "roughly".
+
+The sequence-statistics and grammar-order numbers, the song-detector arms table and the gate
+ledger were **left at their pre-v9 values on purpose**. Those are different studies and a
+historical record. Updating them would claim re-runs that never happened, so the findings
+section carries an explicit reconciliation paragraph instead.
+
+`fig_corpus`'s clay annotation is also fixed: it ran off the panel ("...twelve sp") and its
+leader started where the "13" label sits, so it struck the number through.
+
 ## What is still open, in the order I would take it
 
 **Science**
 
 ```
-W0 full run   the pilot is one model at pilot scale. A publishable version needs BirdNET
-              as the second model and tens of thousands of recordings. The design is
-              settled (frozen model + linear probe, post-cutoff audio) and the pilot says
-              the effect is ~2.4x the errors, so this is the one worth building.
+W0 full run   RUNNING as of 2026-08-04 12:10, ~2.5 h of downloads left. See the section
+              above. Stage 1 is `w0_full_fetch.py`, stage 2 `w0_full.py`, and paper one is
+              drafted with the results section marked \todo. Nothing to decide.
 W4            BLOCKED, not thin. G3 only passes on the 77-of-3 636 well-sampled species,
               which is the population selected against the confound. Do not run it behind
               a "+0.033 margin" reading; that reading is retracted.

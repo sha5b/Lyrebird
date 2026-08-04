@@ -226,10 +226,10 @@ for signs.
 
 - **width** full (target 7.0 in, drawn 7.00 x 2.45 in), 14 kB
 - **shows** the song funnel stage by stage, in the three units it passes through: syllable observations, bouts, and species with a measured song
-- **source** docs/22 §22.1, §22.2; docs/12 §12.2-§12.3 - the 340 079-observation store, pre-v9
+- **source** analysis/song_funnel_stages.json - the v9 store (378 224 observations), all three panels recomputed together; docs/22 §22.1, §22.2; docs/12 §12.2-§12.3
 - **caption**
 
-  > The song funnel drawn in the three units it actually changes through rather than on one axis. Of 340\,079 syllable observations, 327\,164 are typed and form 34\,696 bouts, of which 56.9\,\% collapse to a single token and 30.4\,\% survive as candidates; 366 species have enough candidates to ask the question and 48 got a motif song type. Adding a repeat class --- one collapsed string heard at least six times, matched by equality --- takes that to 98 species with the permutation control unmoved to the bout. Measured on the 340\,079-observation store, before the v9 top-up.
+  > The song funnel drawn in the three units it actually changes through, not on one axis. Of 378\,224 syllable observations, 367\,196 are typed and form 40\,526 bouts. Of those bouts 42.1\,\% collapse to a single token and 42.3\,\% survive as candidates. 685 species hold enough candidates to ask the question, and 46 got a motif song type. Adding a repeat class --- one collapsed string heard at least six times, matched by equality --- takes that to 80 species. 	extbf{The funnel widened at the bout stage and narrowed at the song stage}: against the pre-v9 store, bouts rose from 34\,696 and candidates from 10\,550, while species with a song fell from 98 and placed bouts from 3\,741 to 2\,299. A finer typing splits one physical repeat across several type ids, so fewer bouts clear the six-rendition floor.
 
 ### `external-spaces.pdf`
 

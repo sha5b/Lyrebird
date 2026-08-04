@@ -849,10 +849,16 @@ def fig_corpus():
     a2.set_xlabel("species in the store (log scale)")
     a2.set_title("breadth: species", color=INK)
     vgrid(a2)
-    a2.annotate("a store-trim bug deleted twelve species",
-                xy=(16, ys[1]), xytext=(90, ys[1]), fontsize=6.5, color=CLAY,
-                ha="left", va="center",
-                arrowprops=dict(arrowstyle="-", color=CLAY, lw=0.6))
+    # One line of this at x=90 ran off the panel (it rendered as "...twelve sp"), and its
+    # leader started at x=16, which is exactly where the "13" value label sits — so the line
+    # struck through the number and made 13 look deleted. Two shorter lines start further
+    # right, and the leader now aims at the top corner of the clay bar so it passes above the
+    # label instead of through it. The caption carries the full sentence.
+    a2.annotate("a store-trim bug\ndeleted 12 species",
+                xy=(13, ys[1] + 0.24), xytext=(150, ys[1]), fontsize=6.5, color=CLAY,
+                ha="left", va="center", linespacing=1.25,
+                arrowprops=dict(arrowstyle="-", color=CLAY, lw=0.6,
+                                shrinkA=1.5, shrinkB=0.5))
 
     a3.barh([0], [71], color=VIOLET, height=0.40, edgecolor="white", linewidth=1.0)
     a3.barh([0], [29], left=[71], color=SLATE_W, height=0.40, edgecolor="white",
@@ -1694,20 +1700,24 @@ def fig_song_funnel():
     """FULL WIDTH. The song funnel in the three units it changes through.
     docs/22 §22.1, §22.2; docs/12 §12.2-12.3.
 
-    **Pinned to the 340 079-observation store, which is no longer the current one.**
-    These are one study's numbers and the panels only mean anything together, so the
-    figure moves as a unit or not at all; updating the syllable panel alone to v9's
-    378 224 would put three panels on two different stores. The v9 re-learn was scored
-    on the funnel (`analysis/song_funnel.py`, which exists because a re-learn can
-    quietly narrow it) and it widened: species with a song 68 -> 80, repeat classes
-    82 -> 91, grammar chunks 1 272 -> 2 389. Re-running the full funnel is what this
-    figure needs, not a patched number.
+    **Now on the v9 store, all three panels together.** The figure used to be pinned to the
+    340 079-observation store and said so, because the panels only mean anything as a set and
+    patching the syllable panel alone would have put three panels on two stores.
+    `analysis/song_funnel_stages.py` re-runs the whole funnel from one store in one pass,
+    importing `learn.bout_sequences` and `learn._collapse_runs` so the bout rule here is the
+    build's own. Every number below comes from `analysis/song_funnel_stages.json`.
+
+    The funnel widened at the bout stage and **narrowed at the song stage**: bouts
+    34 696 -> 40 526 and candidates 10 550 -> 17 140, but species with a song 98 -> 80 and
+    placed bouts 3 741 -> 2 299. That is the finer-typing trade `song_funnel.py` was written
+    to catch - a finer typing splits one physical repeat across several ids, so fewer bouts
+    clear `SONG_MIN_CLUSTER`.
     """
     fig, (a1, a2, a3) = plt.subplots(
         1, 3, figsize=(W_FULL, 2.45), gridspec_kw={"width_ratios": [1, 1, 1.1]}
     )
 
-    s1 = [(340079, SLATE_W), (327164, VIOLET)]
+    s1 = [(378224, SLATE_W), (367196, VIOLET)]
     ys = [1, 0]
     a1.barh(ys, [s[0] for s in s1], height=0.46, color=[s[1] for s in s1],
             edgecolor="none")
@@ -1715,38 +1725,41 @@ def fig_song_funnel():
         a1.text(s[0] * 0.97, yy, num(s[0]), va="center", ha="right", fontsize=7.6,
                 color="white" if s[1] is VIOLET else BODY)
     a1.set_yticks(ys)
-    a1.set_yticklabels(["syllable\nobservations", "typed\n(96.2 %)"], fontsize=7.4,
+    a1.set_yticklabels(["syllable\nobservations", "typed\n(97.1 %)"], fontsize=7.4,
                        linespacing=1.35)
-    a1.set_xlim(0, 3.9e5)
+    a1.set_xlim(0, 4.3e5)
     a1.set_ylim(-0.55, 1.55)
     a1.set_xticks([0, 2e5])
     a1.set_xticklabels(["0", "200 000"])
     a1.set_title("syllables", color=INK)
     vgrid(a1)
 
-    s2 = [(34696, SLATE_W), (19738, CLAY_W), (10550, VIOLET)]
+    s2 = [(40526, SLATE_W), (17060, CLAY_W), (17140, VIOLET)]
     ys = [2, 1, 0]
     a2.barh(ys, [s[0] for s in s2], height=0.46, color=[s[1] for s in s2],
             edgecolor="none")
     for yy, s in zip(ys, s2):
-        # a value label goes inside its bar only where the bar is long enough
-        inside = s[0] > 0.40 * 4.1e4
+        # A value label goes inside its bar only where the bar is long enough. Outside, the
+        # label takes the bar's *full-strength* shade: on v9 the collapse bar fell below the
+        # threshold and its pale fill colour left "17 060" almost invisible against white.
+        inside = s[0] > 0.40 * 4.8e4
+        outside_ink = {CLAY_W: CLAY, VIOLET_W: VIOLET, SLATE_W: BODY}.get(s[1], s[1])
         a2.text(s[0] * 0.97 if inside else s[0] + 900, yy, num(s[0]), va="center",
                 ha="right" if inside else "left", fontsize=7.6,
-                color=("white" if s[1] is VIOLET else BODY) if inside else s[1])
+                color=("white" if s[1] is VIOLET else BODY) if inside else outside_ink)
     a2.set_yticks(ys)
     a2.set_yticklabels(["bouts\n(a 1.0 s gap breaks one)",
-                        "collapse to one token\n(56.9 %)",
-                        "candidates, 3 tokens\nor more (30.4 %)"], fontsize=7.4,
+                        "collapse to one token\n(42.1 %)",
+                        "candidates, 3 tokens\nor more (42.3 %)"], fontsize=7.4,
                        linespacing=1.35)
-    a2.set_xlim(0, 4.1e4)
+    a2.set_xlim(0, 4.8e4)
     a2.set_ylim(-0.55, 2.55)
     a2.set_xticks([0, 2e4, 4e4])
     a2.set_xticklabels(["0", "20 000", "40 000"])
     a2.set_title("bouts", color=INK)
     vgrid(a2)
 
-    s3 = [(366, SLATE_W), (48, SLATE), (98, VIOLET)]
+    s3 = [(685, SLATE_W), (46, SLATE), (80, VIOLET)]
     ys = [2, 1, 0]
     a3.barh(ys, [s[0] for s in s3], height=0.46, color=[s[1] for s in s3],
             edgecolor="none")
@@ -1754,41 +1767,45 @@ def fig_song_funnel():
         a3.text(s[0] + 8, yy, num(s[0]), va="center", fontsize=7.6,
                 color=s[1] if s[1] is not SLATE_W else BODY)
     a3.set_yticks(ys)
-    a3.set_yticklabels(["can be asked at all\n(15.1 % of species)",
+    a3.set_yticklabels(["can be asked at all\n(18.8 % of species)",
                         "shipped: motifs only",
                         "$+$ repeat classes:\nadopted"], fontsize=7.4,
                        linespacing=1.35)
-    a3.set_xlim(0, 430)
+    a3.set_xlim(0, 800)
     a3.set_ylim(-0.55, 2.55)
-    a3.set_xticks([0, 100, 200, 300, 400])
+    a3.set_xticks([0, 200, 400, 600, 800])
     a3.set_title("species with a measured song", color=INK)
     vgrid(a3)
 
     footnote(fig,
-             "The funnel is drawn in the three units it actually changes through "
-             "rather than on one axis. The loss is accounting, not machinery: 6 940 of "
-             "the collapsing bouts are three syllables or more, a bird\nrepeating one "
-             "sound, which is a repertoire fact and not a measurement error. Repeat "
-             "classes - one collapsed string heard at least six times, matched by "
-             "equality - take song types from 96 to 356 (96\nmotifs, 260 repeats) and "
-             "placed bouts from 1 052 to 3 741, with the within-species shuffle "
-             "control unchanged to the bout at 0.170 % against a 0.2 % bar. "
-             "Ninety-eight of 2 421 species is 4.0 %. Production store.",
+             "The funnel is drawn in the three units it actually changes through, not on "
+             "one axis. The loss is accounting and not machinery: 3 215 of the collapsing "
+             "bouts hold three syllables or more, a bird\nrepeating one sound, which is a "
+             "repertoire fact and not a measurement error. Repeat classes - one collapsed "
+             "string heard at least six times, matched by equality - make 91 of the 187 "
+             "song types, beside\n96 motifs, and the song layer places 2 299 bouts. Eighty "
+             "of 2 650 fitted species is 3.0 %. v9 store, every panel recomputed together "
+             "by analysis/song_funnel_stages.py; the\nwithin-species shuffle control was "
+             "measured pre-v9 at 0.170 % against a 0.2 % bar and has not been re-run.",
              left=0.150, right=0.985, bottom_in=0.28, wspace=1.18)
     return save(
         fig, "song-funnel", width="full",
         shows="the song funnel stage by stage, in the three units it passes through: "
               "syllable observations, bouts, and species with a measured song",
-        source="docs/22 §22.1, §22.2; docs/12 §12.2-§12.3 - the 340 079-observation store, pre-v9",
+        source="analysis/song_funnel_stages.json - the v9 store (378 224 observations), all "
+               "three panels recomputed together; docs/22 §22.1, §22.2; docs/12 §12.2-§12.3",
         caption="The song funnel drawn in the three units it "
-                "actually changes through rather than on one axis. Of 340\\,079 "
-                "syllable observations, 327\\,164 are typed and form 34\\,696 bouts, "
-                "of which 56.9\\,\\% collapse to a single token and 30.4\\,\\% survive "
-                "as candidates; 366 species have enough candidates to ask the question "
-                "and 48 got a motif song type. Adding a repeat class --- one collapsed "
+                "actually changes through, not on one axis. Of 378\\,224 "
+                "syllable observations, 367\\,196 are typed and form 40\\,526 bouts. "
+                "Of those bouts 42.1\\,\\% collapse to a single token and 42.3\\,\\% survive "
+                "as candidates. 685 species hold enough candidates to ask the question, "
+                "and 46 got a motif song type. Adding a repeat class --- one collapsed "
                 "string heard at least six times, matched by equality --- takes that "
-                "to 98 species with the permutation control unmoved to the bout. Measured "
-                "on the 340\\,079-observation store, before the v9 top-up.",
+                "to 80 species. \\textbf{The funnel widened at the bout stage and narrowed "
+                "at the song stage}: against the pre-v9 store, bouts rose from 34\\,696 and "
+                "candidates from 10\\,550, while species with a song fell from 98 and placed "
+                "bouts from 3\\,741 to 2\\,299. A finer typing splits one physical repeat "
+                "across several type ids, so fewer bouts clear the six-rendition floor.",
     )
 
 
