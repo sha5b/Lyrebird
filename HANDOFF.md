@@ -1,4 +1,4 @@
-# Lyrebird — READ THIS FIRST (2026-08-03, ~19:40): the noise was getting in below 400 Hz, and five gates are measured dead
+# Lyrebird — READ THIS FIRST (2026-08-04): v9 is installed, five noise gates are measured dead, and the whitepaper leads with its findings
 
 The section below asked what filtering would keep a noise-only recording out and offered an
 SNR floor or a tonality test as the answer. **Both are measured dead, a third candidate is
@@ -384,6 +384,91 @@ running app**, and the interface has not changed. What it does need is the numbe
 `2 423` and `340 079` are also written into prose and comments in `+page.svelte`,
 `InventoryTable.svelte`, `inventory-rows.ts`, `palette.ts`, `shaders.ts`, `Galaxy.svelte`
 and `types.ts`.
+
+## 6e. v9 is INSTALLED, and the whitepaper was rewritten
+
+The chain finished at 23:18, 3 h 31 m. Every gate passed and the song funnel, which is the
+one that matters for a typing change, **widened** where the v6 re-learn had cost it 68 %:
+
+```
+                    installed(v8)  candidate(v9)   change
+species                     2423           2650      +9 %
+types                      13748          16283     +18 %
+species with a song           68             80     +18 %
+repeat classes                82             91     +11 %
+motifs                        82             96     +17 %
+grammar chunks              1272           2389     +88 %
+  -> the syntax layer held: nothing watched fell more than 20 %
+```
+
+`learn` took 10 683 s for 2 648 species / 16 239 types. `verify` on the installed assets:
+387 287 points, 16 380 clusters, PaCMAP purity 95.3 %, all checks passed.
+
+**Installed** (owner's call, on those numbers): `out/v9/assets` -> `app/static/birdy/`,
+`learned-v9.json` -> `data/learned-inventory.json`, re-verified in place. The install is
+**committed** as `569ddef`, whose `manifest.json` is byte-identical to the built one
+(sha256 `c83c2ee5...`), so `git status` is clean for those paths and git is no longer the
+rollback point. **`HEAD~1` is**: it carries 348 461 points / 13 848 clusters / 2 423
+species, so `git checkout HEAD~1 -- app/static/birdy data/learned-inventory.json` puts v8
+back. One reason install was the right way and not merely the nicer
+one: `learn` writes `typing.json` **into the store**, so after the chain the store described
+v9 while the installed inventory was v8, and only 91.4 % of v8's types still had typed
+members. Leaving it would have kept an inventory and a typing that disagree.
+
+App prose numbers swept across 17 files (2 423 -> 2 650, 13 748 -> 16 283, 1 043 -> 1 089
+genera, 340 079 -> 378 224, 348 461 -> 387 287, 13 848/14 003 -> 16 380). `npm run check`
+reports the same 4 pre-existing errors as a clean tree, all in `syrinx-processor.js`.
+
+### The whitepaper, on the owner's three complaints
+
+Owner: *"i still see alot of dashes and false positiv formulations i tells us all the time
+what it cant in the same sentences in what i can. this is very bad ... and one big part is
+missing, what did we genuinaly find in the data."*
+
+1. **Dashes: 192 -> 0 in prose.** 123 lines fixed by pattern, then **17 by hand**, because a
+   line-by-line pass broke every appositive pair that spanned a line break: the first dash
+   became a period and left a fragment (`Two scalar control curves. Air-sac pressure and
+   labial tension ---`). Each of those 17 is a judgement, not a substitution.
+2. **The bundled claim-and-limit sentence: the dash WAS the joiner.** Splitting the dashes
+   fixed most of it mechanically. A scan for a claim and a negation inside one sentence now
+   returns 6, and most of those are a result paired with its control, which is the honest
+   form. The convention is now stated in the findings preamble: the result first, the ceiling
+   in a following sentence, never the same claim.
+3. **"What did we genuinely find" was not missing. It was buried and hedged.** The section
+   `What the data supports` already existed at line 1645 of 2100, so a reader met every wall
+   and every refutation before reaching a single positive result. **It now sits directly after
+   `The system` and before the walls**, and opens with six numbered findings stated plainly.
+
+Also: the abstract was rewritten around the same order (what holds, then what runs against
+the design), and the stale totals were updated **only where a sentence describes the corpus
+now**. Historical measurements keep their own store's numbers, and one disclosure sentence in
+the findings preamble says so, instead of twenty hedges. Restating a 340 079-store result
+under 378 224 would be a claim nobody made.
+
+`main.tex` validates the way the README requires (no TeX toolchain here): braces balanced,
+environments nested, 0 dangling refs, 19 figures with PDFs, 22 800 words.
+
+### `figures.py` runs to completion again
+
+The pre-existing abort is fixed. `EXAMPLES` was re-derived under its own documented rule
+against the installed inventory, and the comment now records that **any re-learn invalidates
+those three ids** and how to regenerate them:
+
+```
+top     diuca_diuca                 L34  cos  0.9711
+middle  caryothraustes_poliogaster  L07  cos  0.7245     (corpus median 0.6985)
+bottom  zimmerius_bolivianus        L13  cos -0.3282
+```
+
+So `write_manifest()` runs and **MANIFEST.md tracks all 19 figures** for the first time since
+the pinned type vanished. `fig_corpus` gained a sixth row, `fig_claim_ladder` now carries v9's
+region mix, and `fig_song_funnel` is **pinned to the pre-v9 store in its own docstring and
+caption** rather than half-updated: its three panels are one study and only mean anything
+together.
+
+**Not fixed, and pre-existing:** `fig_corpus`'s clay annotation ("a store-trim bug deleted
+twelve species") overruns its panel. Checked against `git show HEAD` and it is byte-identical
+there, so the sixth row did not cause it.
 
 ## 7. Also not done
 

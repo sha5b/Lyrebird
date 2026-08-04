@@ -4,7 +4,7 @@
  * **Why there is a pool at all.** The tag layer used to render one tag per knot and
  * move every one of them every frame. That was written when a build had 44 knots and
  * survived 176; the debug-100 build has 4 298 and the shipped production build has
- * 14 003. At 4 298 it is ~77 000 DOM elements, each carrying `will-change: transform`
+ * 16 380. At 4 298 it is ~77 000 DOM elements, each carrying `will-change: transform`
  * — so the compositor is asked for 4 298 layers — and the projector wrote seven style
  * properties to every one of them per frame, which is ~30 000 style mutations a frame
  * for a picture that shows at most 26 tags. It is the reason the browser fell to about

@@ -523,7 +523,7 @@ export interface Manifest {
 	/**
 	 * The same question locally and much harsher: the share of a point's `k` nearest
 	 * neighbours *on screen* that carry its own type. 0.0849 on the shipped build —
-	 * far above the 1-in-13 748 a shuffle would give, and still nine neighbours in ten
+	 * far above the 1-in-16 283 a shuffle would give, and still nine neighbours in ten
 	 * belonging to some other call.
 	 */
 	knnAgreement?: { k: number; value: number; definition?: string };
@@ -677,7 +677,7 @@ export interface RelationsDoc {
 	 * Present when this file is the browser's trimmed copy rather than the whole finding
 	 * (`relations.shipped_relations`, since 2026-08-01). The complete document is every
 	 * unordered pair of species, which is quadratic: 2 929 410 pairs and **760 MB** at the
-	 * production build's 2 423 species, fetched before the first frame. The shipped copy
+	 * production build's 2 650 species, fetched before the first frame. The shipped copy
 	 * keeps each species' eight nearest partners — 14 425 pairs, 5.6 MB, and byte-identical
 	 * answers to every query `relationsOf` makes — and records here what it dropped.
 	 *

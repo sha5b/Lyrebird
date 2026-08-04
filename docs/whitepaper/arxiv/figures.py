@@ -395,7 +395,7 @@ def fig_architecture():
         ("store", "340 079 syllables\n2 421 species\nno audio", "white", SLATE),
         ("learn", "types in the 32-d\nembedding, then\ngesture inversion",
          "white", VIOLET),
-        ("build", "galaxy assets\nJSON and float32\n14 003 regions",
+        ("build", "galaxy assets\nJSON and float32\n16 380 regions",
          VIOLET_W, VIOLET),
         ("app", "3-D galaxy, synth,\nmicrophone,\nsession gate", VIOLET_W, VIOLET),
     ]
@@ -520,16 +520,16 @@ def fig_signal_chain():
 def fig_claim_ladder():
     """FULL WIDTH. The evidence labels with the production region counts.
 
-    docs/08 §8.5 for the levels; HANDOFF 2026-08-01 for the v5 region mix
-    (13 919 unlabelled, 27 documented, 10 experimental, 16 inferred, 31 invented
-    over 14 003 regions).
+    docs/08 §8.5 for the levels; the region mix is the installed v9 build's, read
+    from `birdy-pipeline verify app/static/birdy` (16 291 unlabelled, 28 documented,
+    9 experimental, 16 inferred, 36 invented over 16 380 regions).
     """
     rows = [
-        ("experimental", RAMP[0], "a bird was played this sound and responded", 10),
-        ("documented", RAMP[1], "the function is in the peer-reviewed literature", 27),
+        ("experimental", RAMP[0], "a bird was played this sound and responded", 9),
+        ("documented", RAMP[1], "the function is in the peer-reviewed literature", 28),
         ("inferred", RAMP[2], "measured in this corpus, function not established", 16),
-        ("invented", RAMP[3], "a designed mapping, always named as designed", 31),
-        ("unlabelled", SLATE, "real acoustics, no documented function", 13919),
+        ("invented", RAMP[3], "a designed mapping, always named as designed", 36),
+        ("unlabelled", SLATE, "real acoustics, no documented function", 16291),
     ]
     fig, (a1, a2) = plt.subplots(
         1, 2, figsize=(W_FULL, 2.10), gridspec_kw={"width_ratios": [2.15, 1]}
@@ -566,16 +566,16 @@ def fig_claim_ladder():
              "Every phrase the application speaks carries one of these five labels; "
              "nothing renders without one, and the weakest level is protected, "
              "because detecting that a sound is new is not\nknowing what it means. "
-             "The distribution is the point: 13 919 of the production build's "
-             "14 003 regions are unlabelled, and the interface is required to keep "
+             "The distribution is the point: 16 291 of the production build's "
+             "16 380 regions are unlabelled, and the interface is required to keep "
              "saying so.",
              left=0.005, right=0.985, top_in=0.30, bottom_in=0.40, wspace=0.16)
     return save(
         fig, "claim-ladder", width="full",
         shows="the five evidence labels, what each requires, and how many map regions "
               "the production build places at each level",
-        source="docs/08 §8.5 for the levels; HANDOFF.md 2026-08-01 for the v5 region "
-               "mix over 14 003 regions",
+        source="docs/08 §8.5 for the levels; the installed v9 build's region mix over "
+               "16 380 regions",
         caption="The five evidence labels, the requirement for each, and the "
                 "production build's region counts. Every phrase the application "
                 "speaks carries one of them; nothing renders without one. The "
@@ -811,6 +811,7 @@ def fig_corpus():
         ("+ multi-source ingest", 39874, 121, False),
         ("+ iNatSounds 2024", 226264, 3811, False),
         ("+ depth harvest (P0)", 340079, 3811, False),
+        ("+ under-floor top-up (v9)", 378224, 3812, False),
     ]
     fig, (a1, a2, a3) = plt.subplots(
         1, 3, figsize=(W_FULL, 2.45),
@@ -818,7 +819,7 @@ def fig_corpus():
     )
     ys = list(range(len(stores)))[::-1]
 
-    shades = [SLATE_W, CLAY_W, SLATE_W, VIOLET_W, VIOLET]
+    shades = [SLATE_W, CLAY_W, SLATE_W, VIOLET_W, VIOLET_W, VIOLET]
     a1.barh(ys, [s[1] for s in stores], height=0.56, color=shades, edgecolor="none")
     for yy, s, c in zip(ys, stores, shades):
         a1.text(s[1] * 1.10, yy, num(s[1]), va="center", fontsize=7.4,
@@ -1692,6 +1693,15 @@ def fig_syntax_depth():
 def fig_song_funnel():
     """FULL WIDTH. The song funnel in the three units it changes through.
     docs/22 §22.1, §22.2; docs/12 §12.2-12.3.
+
+    **Pinned to the 340 079-observation store, which is no longer the current one.**
+    These are one study's numbers and the panels only mean anything together, so the
+    figure moves as a unit or not at all; updating the syllable panel alone to v9's
+    378 224 would put three panels on two different stores. The v9 re-learn was scored
+    on the funnel (`analysis/song_funnel.py`, which exists because a re-learn can
+    quietly narrow it) and it widened: species with a song 68 -> 80, repeat classes
+    82 -> 91, grammar chunks 1 272 -> 2 389. Re-running the full funnel is what this
+    figure needs, not a patched number.
     """
     fig, (a1, a2, a3) = plt.subplots(
         1, 3, figsize=(W_FULL, 2.45), gridspec_kw={"width_ratios": [1, 1, 1.1]}
@@ -1769,15 +1779,16 @@ def fig_song_funnel():
         fig, "song-funnel", width="full",
         shows="the song funnel stage by stage, in the three units it passes through: "
               "syllable observations, bouts, and species with a measured song",
-        source="docs/22 §22.1, §22.2; docs/12 §12.2-§12.3 - production store",
-        caption="The song funnel on the production store, drawn in the three units it "
+        source="docs/22 §22.1, §22.2; docs/12 §12.2-§12.3 - the 340 079-observation store, pre-v9",
+        caption="The song funnel drawn in the three units it "
                 "actually changes through rather than on one axis. Of 340\\,079 "
                 "syllable observations, 327\\,164 are typed and form 34\\,696 bouts, "
                 "of which 56.9\\,\\% collapse to a single token and 30.4\\,\\% survive "
                 "as candidates; 366 species have enough candidates to ask the question "
                 "and 48 got a motif song type. Adding a repeat class --- one collapsed "
                 "string heard at least six times, matched by equality --- takes that "
-                "to 98 species with the permutation control unmoved to the bout.",
+                "to 98 species with the permutation control unmoved to the bout. Measured "
+                "on the 340\\,079-observation store, before the v9 top-up.",
     )
 
 
@@ -1886,20 +1897,28 @@ def fig_external_spaces():
 # Three fitted types, chosen once and pinned here so the figure is reproducible.
 #
 # Selection rule, applied to `data/learned-inventory.json` joined to the audio
-# cache: of the 2 773 fitted types that have at least 8 member syllables in a
+# cache: of the 2 627 fitted types that have at least 8 member syllables in a
 # cached recording and a fitted duration between 0.10 s and 0.45 s, these are taken
 # from the top, the middle and the bottom of the resynthesis-cosine ordering, with
 # the additional requirement that the syllable's energy lies above 1 kHz so that a
-# 22.05 kHz cache can show it. The corpus median cosine is 0.6477 over 13 859
+# 22.05 kHz cache can show it. The corpus median cosine is 0.6985 over 16 239
 # types, so the middle row is a median type and not a chosen success.
+#
+# **Re-derived for v9 (2026-08-03), and the previous set is why this comment now says
+# how.** The pinned trio was `monarcha_melanopsis/L02`, `arundinax_aedon/L06` and
+# `pellorneum_tickelli/L02`; a re-learn renumbers types, `arundinax_aedon` came back
+# as L01-L11 with no L06, and `_load_examples` raises `SystemExit` on a missing pin.
+# That aborted the whole script before `write_manifest()`, so MANIFEST.md silently
+# stopped tracking every figure added after the type vanished. **Any re-learn
+# invalidates these three ids**; re-run the rule above rather than editing one id.
 #
 # The cosine is the objective the fit was run under. docs/19 measured its
 # correlation with audible distortion at about +0.1, so it does NOT rank audible
 # fidelity, and the figure and the caption both say so.
 EXAMPLES = [
-    ("monarcha_melanopsis", "L02", "the model reproduces this one"),
-    ("arundinax_aedon", "L06", "a median type"),
-    ("pellorneum_tickelli", "L02", "the model does not reproduce this one"),
+    ("diuca_diuca", "L34", "the model reproduces this one"),
+    ("caryothraustes_poliogaster", "L07", "a median type"),
+    ("zimmerius_bolivianus", "L13", "the model does not reproduce this one"),
 ]
 
 STORE = "harvest-gan"
@@ -2127,7 +2146,7 @@ def fig_spectral_examples(fitted, measured, calibration):
         caption="What the physical model reproduces, and what it misses. Three fitted "
                 "types, taken from the top, the middle and the bottom of the "
                 "resynthesis-cosine ordering over the types whose members have cached "
-                "audio; the corpus median is 0.648 over 13\\,859 types, so the middle "
+                "audio; the corpus median is 0.699 over 16\\,239 types, so the middle "
                 "row is a median type rather than a chosen success. Top: a clean "
                 "descending whistle, which the oscillator and its tracking tract "
                 "reproduce closely. Middle: the median case --- the pitch is right, "

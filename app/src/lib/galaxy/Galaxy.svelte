@@ -64,7 +64,7 @@
 		plain?: boolean;
 		/**
 		 * A third colour language for the points: each one in its own bird's hue. A toggle and
-		 * never the default — 2 423 species share one hue circle, so at this density it reads
+		 * never the default — 2 650 species share one hue circle, so at this density it reads
 		 * as confetti rather than as an answer. Offered because "where does this species sit"
 		 * is a real question and nothing else answers it for the whole corpus at once.
 		 *

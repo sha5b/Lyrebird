@@ -375,7 +375,7 @@ function localShapes(assets: BirdyAssets, positions: Float32Array): LocalReport 
 
 	const mean = new Float64Array(d);
 	const cov = new Float64Array(d * d);
-	// Scratch for the eigensolver, hoisted: 13 848 knots is 13 848 allocations otherwise.
+	// Scratch for the eigensolver, hoisted: 16 380 knots is 16 380 allocations otherwise.
 	const eigA = new Float64Array(d * d);
 	const eigV = new Float64Array(d * d);
 	const eigValues = new Float64Array(d);
@@ -843,7 +843,7 @@ export function buildLayout(assets: BirdyAssets, local = true): Layout {
  *
  * **Why this is a grid and not two nested loops.** It used to be the obvious `k²` scan,
  * which is 18 million distance tests at the debug-100 4 298-knot build (about a second of
- * a frozen tab at load) and **196 million at the shipped production build's 14 003**, where it
+ * a frozen tab at load) and **196 million at the shipped production build's 16 380**, where it
  * becomes a load-time stall long enough to read as a hang. A uniform grid sized to one
  * cell per knot answers the same question exactly in roughly linear time: bucket the
  * knots, then for each one walk outward a ring of cells at a time and stop as soon as the

@@ -8,8 +8,8 @@
 	 * measured by the pipeline and, until now, was only reachable by reading
 	 * `learned-v*.json` by hand.
 	 *
-	 * **Windowed, not paged.** 13 748 rows over 2 423 species, drawn over a canvas already
-	 * spending its budget on 348 461 points: one DOM node per row costs more than the
+	 * **Windowed, not paged.** 16 283 rows over 2 650 species, drawn over a canvas already
+	 * spending its budget on 387 287 points: one DOM node per row costs more than the
 	 * picture behind it. Only the visible slice exists, held in place by two spacers, so
 	 * the scrollbar still measures the whole corpus and the browser's own find-in-page is
 	 * the price. The arithmetic is in `inventory-rows.ts` and `verify:inventory-table`

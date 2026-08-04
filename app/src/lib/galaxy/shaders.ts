@@ -549,7 +549,7 @@ export const fragmentShader = /* glsl */ `
 	 * mode this replaces carried a per-point hue attribute and took the program to fifteen
 	 * attributes, which failed to link on Mesa's Intel driver in Firefox.
 	 *
-	 * Off by default and it should stay that way: 2 423 species share one hue circle, so at
+	 * Off by default and it should stay that way: 2 650 species share one hue circle, so at
 	 * this density the cloud reads as confetti rather than as an answer to "which bird". It is
 	 * offered because the question "where does this species sit" is a real one and no other
 	 * channel answers it for the whole corpus at once.
@@ -915,7 +915,7 @@ export const fragmentShader = /* glsl */ `
 		// This is the one place where fill can be cut without changing the picture: at
 		// 1/255 the mark is already below what an 8-bit framebuffer can represent, so
 		// discarding is not an approximation — the blend it replaces is a no-op. Fill is
-		// the dominant cost here (roughly 45 M blended fragments a frame at 348 461 points
+		// the dominant cost here (roughly 45 M blended fragments a frame at 387 287 points
 		// against ~20 MB of vertex fetch per pass), and a dimmed corpus is exactly the
 		// state the galaxy spends most of its time in.
 		if (alpha < 0.004) discard;

@@ -573,7 +573,7 @@
 						<i class="clade"></i>
 						<!--
 							The hue is the GENUS, not the species. Hashing the whole id spent the
-							colour circle on 2 423 unrelated numbers, so two thrushes were as far
+							colour circle on 2 650 unrelated numbers, so two thrushes were as far
 							apart as a thrush and an owl and the one thing a colour could have said
 							— what kind of bird just answered — was the one thing it did not say.
 							Genus is also as deep as this corpus goes: family and order are not

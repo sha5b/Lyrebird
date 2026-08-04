@@ -2,9 +2,9 @@
  * The learned inventory as a flat list of rows, and the arithmetic a windowed list needs
  * to draw a slice of it.
  *
- * **Why this is a module and not markup.** The table is 13 748 rows over 2 423 species on
+ * **Why this is a module and not markup.** The table is 16 283 rows over 2 650 species on
  * the shipped build, drawn over a WebGL canvas that is already spending its frame budget
- * on 348 461 points. That rules out one DOM node per row, so the list is windowed — and
+ * on 387 287 points. That rules out one DOM node per row, so the list is windowed — and
  * window arithmetic is exactly the kind of code that is wrong by one and looks right:
  * an off-by-one in `first` shows as a row that never highlights, and a `padTop` that
  * disagrees with `first` shows as a list that drifts as you scroll. Both are invisible in

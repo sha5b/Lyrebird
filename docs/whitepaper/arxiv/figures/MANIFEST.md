@@ -109,10 +109,19 @@ for signs.
 
 - **width** full (target 7.0 in, drawn 7.00 x 2.10 in), 13 kB
 - **shows** the five evidence labels, what each requires, and how many map regions the production build places at each level
-- **source** docs/08 §8.5 for the levels; HANDOFF.md 2026-08-01 for the v5 region mix over 14 003 regions
+- **source** docs/08 §8.5 for the levels; the installed v9 build's region mix over 16 380 regions
 - **caption**
 
   > The five evidence labels, the requirement for each, and the production build's region counts. Every phrase the application speaks carries one of them; nothing renders without one. The distribution is the point: 13\,919 of 14\,003 regions are \emph{unlabelled}, and the interface is required to keep saying so.
+
+### `noise-gates.pdf`
+
+- **width** full (target 7.0 in, drawn 7.00 x 2.60 in), 16 kB
+- **shows** five candidate ingest gates for noise, the percentile the one by-ear-flagged recording occupies on each, and the share of the corpus a threshold at its own value would reject
+- **source** docs/23 §23.9; HANDOFF.md 2026-08-03 (~19:40); pipeline/analysis/perch_presence.py and periodicity.py over pipeline/out/harvest-gan and out/audio-cache
+- **caption**
+
+  > Five candidate noise gates against the one recording identified by ear as noise. Four of them place it mid-distribution or in the wrong tail --- it reads as \emph{more} tonal than average, and Perch~2.0 calls it a bird at the 88th percentile of confidence --- so catching it costs 43 to 89\,\% of the corpus. The only statistic on which it is extreme is the share of energy below 400\,Hz, which was a bug rather than a gate: the segmenter thresholded on the full band while every description used 400\,Hz--12\,kHz. Loudness, tonality, harmonicity, model presence and rhythm each name a property some real bird has in the extreme.
 
 ### `spaces-bridge.pdf`
 
@@ -217,10 +226,10 @@ for signs.
 
 - **width** full (target 7.0 in, drawn 7.00 x 2.45 in), 14 kB
 - **shows** the song funnel stage by stage, in the three units it passes through: syllable observations, bouts, and species with a measured song
-- **source** docs/22 §22.1, §22.2; docs/12 §12.2-§12.3 - production store
+- **source** docs/22 §22.1, §22.2; docs/12 §12.2-§12.3 - the 340 079-observation store, pre-v9
 - **caption**
 
-  > The song funnel on the production store, drawn in the three units it actually changes through rather than on one axis. Of 340\,079 syllable observations, 327\,164 are typed and form 34\,696 bouts, of which 56.9\,\% collapse to a single token and 30.4\,\% survive as candidates; 366 species have enough candidates to ask the question and 48 got a motif song type. Adding a repeat class --- one collapsed string heard at least six times, matched by equality --- takes that to 98 species with the permutation control unmoved to the bout.
+  > The song funnel drawn in the three units it actually changes through rather than on one axis. Of 340\,079 syllable observations, 327\,164 are typed and form 34\,696 bouts, of which 56.9\,\% collapse to a single token and 30.4\,\% survive as candidates; 366 species have enough candidates to ask the question and 48 got a motif song type. Adding a repeat class --- one collapsed string heard at least six times, matched by equality --- takes that to 98 species with the permutation control unmoved to the bout. Measured on the 340\,079-observation store, before the v9 top-up.
 
 ### `external-spaces.pdf`
 
@@ -233,16 +242,16 @@ for signs.
 
 ### `spectral-examples.pdf`
 
-- **width** full (target 7.0 in, drawn 7.00 x 5.85 in), 115 kB
+- **width** full (target 7.0 in, drawn 7.00 x 5.85 in), 97 kB
 - **shows** for three fitted types spanning the corpus's fit quality, the original recording's syllable, our resynthesis of the type on the same axes and colour scale, and the measured pitch contours of every cached member against the contour the fit ships
 - **source** pipeline/out/harvest-gan/{typing.json,syllables.jsonl}, data/learned-inventory.json, pipeline/out/audio-cache/, rendered through birdy_pipeline.syrinx.render_syllable with app/static/birdy/syrinx-calibration.json
 - **caption**
 
-  > What the physical model reproduces, and what it misses. Three fitted types, taken from the top, the middle and the bottom of the resynthesis-cosine ordering over the types whose members have cached audio; the corpus median is 0.648 over 13\,859 types, so the middle row is a median type rather than a chosen success. Top: a clean descending whistle, which the oscillator and its tracking tract reproduce closely. Middle: the median case --- the pitch is right, and the pulse train that carries the real syllable's timbre is replaced by a steady tone. Bottom: a failure, and the third panel says why --- the type's member contours disagree by kilohertz, so the cluster median the fit starts from describes no member well. The cosine is the objective the fit optimised and is \emph{not} a ranking of audible fidelity (Section~\ref{sec:walls}).
+  > What the physical model reproduces, and what it misses. Three fitted types, taken from the top, the middle and the bottom of the resynthesis-cosine ordering over the types whose members have cached audio; the corpus median is 0.699 over 16\,239 types, so the middle row is a median type rather than a chosen success. Top: a clean descending whistle, which the oscillator and its tracking tract reproduce closely. Middle: the median case --- the pitch is right, and the pulse train that carries the real syllable's timbre is replaced by a steady tone. Bottom: a failure, and the third panel says why --- the type's member contours disagree by kilohertz, so the cluster median the fit starts from describes no member well. The cosine is the objective the fit optimised and is \emph{not} a ranking of audible fidelity (Section~\ref{sec:walls}).
 
 ### `gestures.pdf`
 
-- **width** full (target 7.0 in, drawn 7.00 x 2.95 in), 24 kB
+- **width** full (target 7.0 in, drawn 7.00 x 2.95 in), 20 kB
 - **shows** the fitted air-sac pressure and labial-tension contours behind the three acoustic examples, with the measured tension-clamp incidence for each
 - **source** data/learned-inventory.json rendered through birdy_pipeline.syrinx.render_plan / beta_for / clamp_incidence with app/static/birdy/syrinx-calibration.json; the corpus-wide clamp total from cli.py report_reachability
 - **caption**

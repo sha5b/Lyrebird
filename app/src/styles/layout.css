@@ -775,7 +775,7 @@ button.link {
  * scoped styles when the two pages were markup inside it; extracting them left the rules
  * behind, and the failure was not cosmetic — `.stagepage.tall` is the whole height chain the
  * inventory table's windowing depends on. Without it `.tbody` grew to fit its content, its
- * measured `clientHeight` became the height of all 13 748 rows, and the window arithmetic
+ * measured `clientHeight` became the height of all 16 283 rows, and the window arithmetic
  * faithfully drew every one of them into the DOM. A missing `overflow: hidden` rendered the
  * thing the windowing exists to prevent.
  */

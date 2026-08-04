@@ -187,7 +187,7 @@
 	 * covering a corner of it.
 	 *
 	 * `learn` joined it for the same reason from the other direction — it was a tab in a
-	 * 20 rem column, and what it has to show is a pipeline's state and 13 748 fitted
+	 * 20 rem column, and what it has to show is a pipeline's state and 16 283 fitted
 	 * syllables. Both openers sit in the header's readings row, at the end, because that row
 	 * is already where a viewer looks for what the build is.
 	 */
@@ -235,7 +235,7 @@
 	 * cloud first, and the class tint is a layer you ask for.
 	 *
 	 * The third language — every point in its species' hue — is back as `birdColours`
-	 * below, and the finding that removed it still stands: at 2 423 species on a dense
+	 * below, and the finding that removed it still stands: at 2 650 species on a dense
 	 * scatter the hues cannot be told apart, which is why "who" normally lives where hue
 	 * can be read (the tags, and the response, which lights in the singing bird's hue).
 	 * It is opt-in for that reason and never the default. The tags and threads follow this
@@ -264,7 +264,7 @@
 	 * was asked.
 	 *
 	 * The legibility finding that removed it is unchanged and is why it is off by default: a
-	 * hue circle shared by 2 423 species is not a key anybody can read at this density. What it
+	 * hue circle shared by 2 650 species is not a key anybody can read at this density. What it
 	 * is good for is the shape of one *genus* against the rest, since the hue is the genus's.
 	 */
 	let birdColours = $state(false);
@@ -296,7 +296,7 @@
 	 * This is here because the renderer's cost has twice scaled with the corpus in a way
 	 * nobody could see from inside the app — most recently the label layer, which built a
 	 * DOM tag for every one of the debug build's 4 298 knots and moved all of them every
-	 * frame to draw at most 26 — the shipped production build has 14 003. "It feels slow"
+	 * frame to draw at most 26 — the shipped production build has 16 380. "It feels slow"
 	 * does not name a cause; `points 4 298 / 214 154 · tags 3 · 58 fps` does, and so does the GPU line, because on a laptop with two of them the
 	 * browser routinely picks the integrated one and then the whole fill-rate budget is a
 	 * fraction of the machine's.
@@ -1499,7 +1499,7 @@
 				return;
 			case 'showContext': {
 				// `contextSpecies` is a cache, not state: half a dozen things refresh the
-				// backdrop and redrawing the same one is wasted work on 13 848 knots.
+				// backdrop and redrawing the same one is wasted work on 16 380 knots.
 				const want = command.speciesId || null;
 				if (contextSpecies === want) return;
 				contextSpecies = want;
@@ -1708,7 +1708,7 @@
 	 * `assets.inventory.species` is a plain array mutated in place by `loadSpecies`, and
 	 * `assets` is `$state.raw`, so nothing here would ever re-run on its own. The whole
 	 * corpus lands in one fetch when the global chorus starts (`ensureSpecies()`), so in
-	 * practice this fills once and then holds 13 748 rows.
+	 * practice this fills once and then holds 16 283 rows.
 	 */
 	const inventoryRows = $derived.by(() => {
 		void inventoryVersion;
@@ -1912,7 +1912,7 @@
 	 * How much of the corpus is measured field audio and how much is this synthesiser's own
 	 * render of the documented repertoire.
 	 *
-	 * On the page because "no samples" and "340 079 measurements of real recordings" are both
+	 * On the page because "no samples" and "378 224 measurements of real recordings" are both
 	 * true and sound contradictory: what is kept is the measurement, never the audio. A page
 	 * that says the first without the second invites the reader to discover the second and
 	 * conclude they were misled.
@@ -2403,7 +2403,7 @@ uv run birdy-pipeline build</pre>
 									</label>
 									<!--
 										The third language, and it is opt-in for a measured reason rather than a
-										cautious one: 2 423 species share one hue circle, so at this density the
+										cautious one: 2 650 species share one hue circle, so at this density the
 										cloud reads as confetti and no reader can hold the key. What it is good
 										for is one *genus* against the rest, since the hue is the genus's — and
 										for that it is the only channel that answers over the whole corpus at

@@ -146,10 +146,10 @@ export function provenanceColourScaled(cls: number, lightScale: number): string 
  *
  * **What is hashed is the GENUS, not the species** (owner, 2026-08-02: "colour them by
  * the genome stuff so we can see where the birds derive from"). Hashing the whole id
- * spent the hue circle on 2 423 unrelated numbers: two thrushes were as far apart as a
+ * spent the hue circle on 2 650 unrelated numbers: two thrushes were as far apart as a
  * thrush and an owl, so the one thing a colour could have told you — *what kind of bird
  * just answered* — was the one thing it did not. The species id is `genus_species`, so
- * the genus is free, and on this corpus it is worth having: **1 043 genera over 2 423
+ * the genus is free, and on this corpus it is worth having: **1 089 genera over 2 650
  * species, and 75.5 % of species sit in a genus with at least one sibling.**
  *
  * So: **hue is the clade, and the shade is the bird.** A genus takes one hue; each of

@@ -113,40 +113,41 @@ of what the archives support}}
 \maketitle
 \begin{abstract}
 \noindent
-Lyrebird measures syllables in wild bird recordings harvested from xeno-canto and
-iNaturalist, fits the Laje--Mindlin normal-form syrinx oscillator to each measured
-syllable type by coordinate descent, learns a per-species type inventory and a
-first-order grammar over it, and ships the result as a browser application in which
-live or synthesised sound illuminates the acoustically nearest regions of a
-three-dimensional map. The corpus is 340\,079 measured syllables from 10\,184 recordings, and
-the fit covers 2\,421 species and 13\,859 syllable types. Recordings are decoded, described as
-numbers and deleted, so no audio is redistributed and no model weights reach the browser. Every
-claim the interface makes carries one of five evidence labels.
+Lyrebird measures syllables in wild bird recordings from xeno-canto and iNaturalist. It
+fits the Laje--Mindlin normal-form syrinx oscillator to each measured syllable type by
+coordinate descent. It learns a per-species type inventory and a first-order grammar over
+that inventory. It ships the result as a browser application, where live or synthesised
+sound lights the acoustically nearest regions of a three-dimensional map. The corpus holds
+378\,224 measured syllables from 11\,687 recordings. The fit covers 2\,650 species and
+16\,283 syllable types. The pipeline decodes each recording, describes it as numbers, and
+deletes it. No audio is redistributed and no model weights reach the browser. Every claim
+the interface makes carries one of five evidence labels.
 %
-We report what the corpus supports and where it stops. A first-order transition model
-over the learned token inventory buys 0.98 bits per token on held-out bouts while
-costing 0.75 bits on a within-species shuffle of the same tokens (34\,696 bouts,
-327\,164 tokens, 2\,421 species) --- an unbiased estimator paying for parameters it
-cannot use is the clean form of the claim that the tokens are units. A second order is
-not supported: going from order 1 to order 2 the median species loses 0.091 bits per token, and
-only 217 of 2\,421 species have enough bouts to ask. Adding repeat classes to the song detector takes the
-corpus from 48 to 98 species with a measured song while the shuffle control stays at
-0.170\,\% of candidate bouts.
+Four things in this corpus are measured and hold up. First, the learned tokens behave as
+units: a first-order transition model buys 0.98 bits per token on held-out bouts and
+\emph{costs} 0.75 bits on a within-species shuffle of the same tokens. An unbiased
+estimator that pays for parameters it cannot use is the clean form of that claim. Second,
+the 32-dimensional embedding carries real per-species geometry: over 12\,736 held-out
+trials, a species' own types find the held-out type at top-1 0.540 against a chance rate of
+0.00007. A shuffled control sits at chance. Third, repeat classes take the corpus from 48 to
+98 species with a measured song, and the permutation control stays at 0.170\,\% of candidate
+bouts. Fourth, the physical model reproduces the median measured type at a 28-dimensional
+descriptor cosine of 0.699.
 %
-Three results run against the design. The scalar the pipeline optimises --- a cosine in
-a 28-dimensional descriptor space --- carries essentially no information about audible
-spectral distortion ($r \approx 0.1$ against two metrics that agree with each other at
-0.925, $n = 200$ types). The learned embedding organises by recordist before it
-organises by bird (nearest-neighbour lift $+0.488$ against $+0.196$), and four
-independent attempts to remove that confound failed, including two archive-scale
-external models that disagree with each other by more than either differs from ours.
-And with every type granted its own cluster, the share of syllables whose nearest
-centroid belongs to their own type is 0.602, which is the honest ceiling on
+Three results run against the design, and we report them at the same weight. The scalar the
+pipeline optimises is a cosine in a 28-dimensional descriptor space. That scalar carries
+almost no information about audible spectral distortion ($r \approx 0.1$ against two metrics
+that agree with each other at 0.925, $n = 200$ types). The learned embedding organises by
+recordist before it organises by bird, at a nearest-neighbour lift of $+0.488$ against
+$+0.196$. Four independent attempts to remove that confound failed. Two of them used
+archive-scale external models, which disagree with each other by more than either differs
+from ours. With every type granted its own cluster, 0.602 of syllables have a nearest
+centroid belonging to their own type. That number is the ceiling on
 ``sing and the right region lights''.
 %
-Appendix~\ref{app:ledger} lists all 58 pre-registered gates and their outcomes; 20 passed,
-36 ended in a written refusal, and 2 are unrun. The refusals are as much of the
-contribution as the system is.
+Appendix~\ref{app:ledger} lists all 58 pre-registered gates and their outcomes. 20 passed,
+36 ended in a written refusal, and 2 are unrun. The refusals are as much of the contribution
+as the system is.
 \end{abstract}
 
 \noindent\textbf{Keywords:} bioacoustics; birdsong; syrinx model; gesture inversion;
@@ -179,15 +180,15 @@ that produce a given note are the parameters a physiologist would name.
 It \emph{remembers} without keeping audio. The harvester fetches a recording, decodes it,
 segments it into syllables, describes each syllable as a 28-dimensional acoustic
 descriptor and a $32 \times 23$ log-mel patch, and deletes the file. The production store
-holds 340\,079 such measurements over 10\,184 recordings and 3\,811 species, of which
-2\,421 species carry a fitted inventory of 13\,859 syllable types.
+holds 378\,224 such measurements over 11\,687 recordings and 3\,812 species, of which
+2\,650 species carry a fitted inventory of 16\,283 syllable types.
 % HANDOFF 2026-07-31 (production learn); docs/22 opening (store totals)
 The measurements are not invertible to recognisable audio, so the store is a description
 of an archive rather than a copy of one.
 
 It \emph{shows} the result as a map. One point is one measured syllable. Points are placed
-by projecting the space in which syllable identity is actually decided --- a learned
-32-dimensional embedding --- down to three dimensions, and clusters in that space are
+by projecting the space in which syllable identity is actually decided. A learned
+32-dimensional embedding. Down to three dimensions, and clusters in that space are
 labelled with the syllable type, the documented behavioural function where one exists, and
 the citation for it. When a microphone hears a sound, or when the synthesiser sings one,
 the regions of the map nearest to it in the acoustic space light up.
@@ -217,15 +218,15 @@ to~\ref{sec:findings} are organised around what survived and what the failures r
 
 The immediate provocation was a piece of viral content: an unindexed reel captioned
 \emph{AI is decoding what birds have been saying all along}, composited from three real
-things --- the media cycle around machine learning for animal communication, a photograph
+things. The media cycle around machine learning for animal communication, a photograph
 of a nightingale, and a Sainburg-style two-dimensional embedding of a vocal
 repertoire \citep{sainburg2020}. The composite implies a translator. None of its three
 ingredients is one.
 % docs/01 §1.1
 
 Every ingredient, however, is buildable, and the honest version of the promise is worth
-building. Repertoire characterisation works. Functional decoding --- linking a signal to a
-context or a behaviour --- works for the handful of systems where playback experiments
+building. Repertoire characterisation works. Functional decoding. Linking a signal to a
+context or a behaviour. Works for the handful of systems where playback experiments
 exist. Recovering propositional content does not work and is not close
 \citep{rutz2023}. There is also a structural asymmetry that any such system runs into:
 birdsong carries rich syntax and weak or absent reference, while calls carry reference and
@@ -280,7 +281,7 @@ excised syrinx show period doubling, mode locking and chaos, so the source is no
 whistle \citep{fee1998}. The minimal dynamical system reproducing that behaviour sits at
 the Takens--Bogdanov point of the labial model, where a Hopf line is tangent to a
 saddle-node curve \citep{laje2002a,laje2002b}; the book-length account is
-\citet{mindlin2005}. Two scalar control curves --- air-sac pressure and labial tension ---
+\citet{mindlin2005}. Two scalar control curves, air-sac pressure and labial tension,
 suffice to reproduce canary song \citep{gardner2001}, and the bifurcation structure
 carries the timbre: oscillations born in a Hopf are tonal, those born in a
 saddle-node-on-a-limit-cycle are pulse-like and harmonically dense, and the spectral
@@ -306,7 +307,7 @@ controlled \citep{suthers1990,goller1996a}, they couple through the shared
 trachea \citep{laje2005}, and two-voice complexity can arise from one side
 alone \citep{zollinger2008}. Finally, the model needs noise in the right place: matching
 the fundamental and the filters was not enough to drive song-selective forebrain neurons,
-and noise on \emph{tension} --- at an intermediate magnitude --- was
+and noise on \emph{tension} (at an intermediate magnitude) was
 required \citep{amador2021}. Real crystallised song carries about 1\,\% rendition-to-rendition
 fundamental-frequency variation \citep{tumer2007} with slow within-day
 drift \citep{wood2013}, and syringeal muscle can follow modulation to
@@ -328,7 +329,7 @@ behaviour \citep{griesser2008}, and the black-capped chickadee's \emph{chick-a-d
 four note types in strict order with D-count scaling to
 threat \citep{freeberg2003}. \citet{berwick2011} is the standard cautionary reading on how
 far the analogy to human syntax can be pushed, and argues that what is called birdsong syntax
-is phonological rather than semantically compositional --- which is the reading this work
+is phonological rather than semantically compositional, which is the reading this work
 adopts, since it makes no claim above the level of sequence structure. Beyond birds, sperm-whale codas have been
 factorised into a combinatorial alphabet using structure-first
 methods \citep{sharma2024}, which is the template for doing this without playback. And
@@ -342,8 +343,8 @@ perceptually equivalent by the animals concerned.
 Unsupervised repertoire mapping is an established method. \citet{sainburg2020} project
 diverse animal vocal repertoires into two dimensions and quantify latent structure across
 species; \citet{goffinet2021} learn low-dimensional features that resolve individual and
-group differences. The interactive descendants of this line --- Google Creative Lab's
-\emph{Bird Sounds}, the TensorFlow Embedding Projector, Apple's Embedding Atlas --- are
+group differences. The interactive descendants of this line. Google Creative Lab's
+\emph{Bird Sounds}, the TensorFlow Embedding Projector, Apple's Embedding Atlas. Are
 where the visual language of the ``galaxy'' comes from.
 
 The supervised and self-supervised model line has moved faster. BirdNET is an open
@@ -361,8 +362,8 @@ domains \citep{moummad2024}; the closest available prior on the recording channe
 from \emph{outside} bioacoustics, where convolving training audio with recorded device impulse
 responses and mixing frequency-band statistics improves generalisation to unseen recording
 devices in acoustic scene classification \citep{morocutti2023}. Second, and against the grain
-of the first, the AVEX study --- an empirical sweep of data diversity, scale, architecture and
-training recipe over 26 datasets --- finds that data diversity dominates: more genuinely
+of the first, the AVEX study. An empirical sweep of data diversity, scale, architecture and
+training recipe over 26 datasets. Finds that data diversity dominates: more genuinely
 different domains per species buys more than the architecture or the loss
 does \citep{avex2025}.
 
@@ -416,7 +417,7 @@ its middle, which amputates the spectrally rich tail (Section~\ref{sec:walls}).
 % docs/08 §8.1, §8.1a
 
 \textbf{At archive scale, from measurements only.} The literature fits one bird at a time
-from retained audio. Here the fit runs over 13\,859 types across 2\,421 species from
+from retained audio. Here the fit runs over 16\,283 types across 2\,650 species from
 descriptors and log-mel patches, with the audio deleted. That forces the objective to be a
 function of what the store kept, which turns out to be the binding constraint on fidelity.
 
@@ -518,8 +519,8 @@ tail: it reads as \emph{more} tonal than average, and Perch~2.0 identifies a bir
 the 88th percentile of confidence in the corpus. A threshold that catches it rejects between
 43 and 89\,\% of everything else. The reason is structural rather than unlucky: loudness,
 tonality, harmonicity, model presence and rhythm each name a property that some real bird has
-in the extreme --- the most metronomic recordings in this corpus are tapaculos, a snipe and a
-wryneck, not insects --- so over 3\,581 species no one-dimensional gate has a tail belonging
+in the extreme. The most metronomic recordings in this corpus are tapaculos, a snipe and a
+wryneck, not insects, so over 3\,581 species no one-dimensional gate has a tail belonging
 only to noise. Each threshold was also fitted against a single labelled example, which is a
 description of that example and not a rule. Ingest quality is therefore carried as a
 \emph{weight} and not as a filter: a signal-to-noise ratio and a clipping flag ride on every
@@ -560,7 +561,7 @@ classifier over the training species, and a contrastive head under a
 normalised temperature-scaled loss at $\tau = 0.2$ \citep{simclr2020}. Species are held
 out entirely for the realism evaluation, because a network that has seen every species can
 report identity instead of realism. Augmentations are small time stretches, gain changes
-and added noise --- never pitch shifts, since pitch is type-diagnostic here.
+and added noise. Never pitch shifts, since pitch is type-diagnostic here.
 % docs/09 §9.2b; critic.py docstring
 
 Forcing all three tasks through one 32-dimensional bottleneck is the point: the embedding
@@ -582,8 +583,8 @@ with the embedding is the largest single accuracy gain in the project
 
 Each type is then fitted to the oscillator. The cluster median supplies a measured pitch
 contour, duration, timbre class, attack and modulation depths. Coordinate descent
-(\texttt{invert\_gestures}) then searches thirteen gesture axes --- including
-\texttt{gammaScale}, \texttt{tractQ}, \texttt{noise} and \texttt{rough} --- over three
+(\texttt{invert\_gestures}) then searches thirteen gesture axes. Including
+\texttt{gammaScale}, \texttt{tractQ}, \texttt{noise} and \texttt{rough}. Over three
 passes, a few hundred renders per type, moving only on an improvement. Measured contour and
 duration are excluded from the search deliberately: the pitch tracker reaches them to about
 1\,\%, and a search should not overwrite a measurement.
@@ -599,7 +600,7 @@ Two per-species fits sit beside the per-type one. The tracheal comb's fundamenta
 species' observations, inverted to a 26-band log spectral envelope, detrended, and scanned
 for the $f_1$ whose odd-harmonic series best aligns with the residual. Because those
 syllables span many recordings and a wide pitch range, pitch-dependent structure averages
-away and only resonances fixed in hertz survive --- the long-term-average-spectrum argument
+away and only resonances fixed in hertz survive. The long-term-average-spectrum argument
 applied to a store that kept no audio. The measurement proposes and the resynthesis
 decides: a species whose recordings show no tracheal colour keeps none. Implied effective
 tube lengths came out at 1.7--6.6\,cm against 3.4--4.5\,cm measured in the
@@ -648,8 +649,8 @@ these''. Label assignment sends every point that already carries a type to its o
 cluster and fits $k$-means only over the unlabelled remainder; Section~\ref{sec:internal}
 reports what that is and is not worth.
 
-The browser cannot run the critic --- no weights ship, which is a hard constraint rather
-than a packaging detail --- so the live path needs a bridge from the 28-dimensional
+The browser cannot run the critic. No weights ship, which is a hard constraint rather
+than a packaging detail, so the live path needs a bridge from the 28-dimensional
 descriptor it can compute to the 32-dimensional space the map lives in. That bridge is a
 kernel ridge over random Fourier features ($D = 2048$, $\sigma = 4$, $\lambda = 1$),
 fitted offline and shipped as plain numbers \citep{rff2007}. It is gated on held-out
@@ -661,8 +662,8 @@ and fell to 0.7997 once the embedding grew finer.
 
 Live activation is a cosine against every centroid, a softmax at a shipped temperature, and
 an exponential moving average at $0.82/0.18$, which is about 120\,ms of smoothing at
-60\,Hz. A per-point brightness term makes a cluster light from the inside out --- the
-members nearest the live sound brighten first --- so an active region shows its internal
+60\,Hz. A per-point brightness term makes a cluster light from the inside out. The
+members nearest the live sound brighten first, so an active region shows its internal
 structure instead of switching on as one blob.
 % docs/08 §8.2; app/src/lib/galaxy/shaders.ts
 
@@ -690,6 +691,374 @@ without one.}
 \label{fig:claimladder}
 \end{figure*}
 
+\section{What the data supports}
+\label{sec:findings}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{song-funnel}
+\caption{The song funnel on the production store, drawn in the three units it actually changes through rather than on one axis. Of 340\,079 syllable observations, 327\,164 are typed and form 34\,696 bouts, of which 56.9\,\% collapse to a single token and 30.4\,\% survive as candidates; 366 species have enough candidates to ask the question and 48 got a motif song type. Adding a repeat class (one collapsed string heard at least six times, matched by equality) takes that to 98 species with the permutation control unmoved to the bout.}
+\label{fig:funnel}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{orders}
+\caption{Held-out order scaling. A first-order transition model over the learned syllable-type inventory buys 0.98 bits per token on bouts it has not seen, while on a within-species shuffle of the same tokens, with bout lengths and marginals preserved, the same model \emph{costs} 0.75 bits. The estimator is unbiased by construction, so a model can only win if the transitions are real. A second order is not supported: the median species loses 0.091 bits per token, which fails the magnitude criterion, while a quarter of species gain something, which passes the share criterion. Production scale.}
+\label{fig:orders}
+\end{figure*}
+
+This section is the answer to one question: what does this corpus actually show. Six things
+are measured, reproducible, and survive their controls. We state each one first, and put its
+ceiling in a separate sentence after it, so that a result and its limit are not the same
+claim.
+
+\begin{enumerate}
+\item \textbf{The learned tokens are units.} A first-order model gains 0.98 bits per token on
+held-out bouts and loses 0.75 bits on a shuffle of the same tokens.
+\item \textbf{The embedding holds real per-species geometry.} A species' own types find a
+held-out type at top-1 0.540 against a chance rate of 0.00007, and the shuffled control sits
+at chance.
+\item \textbf{Repeat structure doubles the measurable songs.} Repeat classes take the corpus
+from 48 to 98 species with a song, and the permutation control does not move.
+\item \textbf{The published oscillator reproduces the median type} at a descriptor cosine of
+0.699 over 16\,239 fitted types.
+\item \textbf{Recording sessions leave a detectable signature}, which is what makes the
+recordist confound measurable rather than suspected.
+\item \textbf{The corpus has a hard ceiling that is the archive's, not the method's.} Every
+species below the fitting floor sits at or under 23 observations.
+\end{enumerate}
+
+Two conventions apply throughout. Numbers from the 100-species debug subset are marked
+\emph{debug-scale}, and numbers from twelve-species or ten-type samples are marked as such,
+because this project has twice measured an effect at small scale that did not survive
+replication, in both directions. Where a result was measured before the 2026-08-03 top-up, it
+carries that store's totals of 340\,079 observations and 2\,421 fitted species. Those
+measurements were not re-run, and restating them under the current totals would be a claim
+nobody made.
+
+\subsection{The tokens are units. This is the strongest result in the paper.}
+
+A first-order transition model over the learned syllable-type inventory buys \textbf{0.98
+bits per token} on held-out bouts, a cross-entropy of 3.284 down to 2.301. On a
+within-species shuffle of the same tokens, with bout lengths and marginals preserved, the
+same model \emph{costs} 0.75 bits, 2.879 up to 3.634. The corpus is 34\,696 bouts, 327\,164
+tokens and 2\,421 species; the estimator is unbiased by construction, which the plug-in
+estimator this replaced was not.
+% docs/23 §23.2.2
+
+The logic is what makes it strong. An unbiased estimator paying for parameters it cannot use
+is the clean form of the claim that the tokens are units: the model can only win if the
+transitions are real, and it wins by a bit per token. This holds a load-bearing assumption
+that everything above the syllable rests on. The syllable inventory is produced by $k$-means
+in a learned embedding, which is a clustering; the question of whether it is also a
+\emph{unit system} is not answerable by comparing two models, and it is answered here in the
+affirmative. A model-free estimate on the same corpus agrees: conditional entropy of the next
+token given one previous is 0.941 bits against the shuffle's 3.343.
+% docs/23 §23.2.1
+
+Two artefacts belong with the number. The control's unigram cross-entropy sits \emph{below}
+the real corpus's (2.879 against 3.284), because shuffling spreads each species' tokens
+evenly across its bouts so that train and test marginals nearly coincide, whereas real bouts
+are clumped (a bout tends to repeat one type) so a held-out real bout can be mostly a
+type the train half barely saw. That clumping is itself structure, and it is why the gate
+reads within-corpus deltas rather than the two absolute curves against each other. And the
+same behaviour is pinned in a self-test: a planted second-order process must be found, a
+first-order process must not show depth, and the shuffle of the planted process must not gain
+from a longer context.
+
+\subsection{Repeat classes double the corpus's songs, with the control unmoved}
+
+The song funnel was counted stage by stage on the production store, and the loss is
+accounting rather than machinery. Of 340\,079 syllable observations, 327\,164 (96.2\,\%) are
+typed. Those form 34\,696 bouts. \textbf{19\,738 of those bouts (56.9\,\%) collapse to a
+single token}, and 6\,940 of them are three syllables or more. A bird repeating one sound,
+which is a repertoire fact and not a measurement error. Only 10\,550 bouts (30.4\,\%) survive
+as candidates, 366 species have enough of them to ask the question, and 48 species got a song
+type.
+% docs/22 §22.1
+
+The collapse is correct for a motif distance. A trill sung twice at two speeds must not
+sit twenty edits apart, and wrong as a filter. Until this was fixed, \emph{a bird whose
+song is a trill could not have a song type at any recurrence bar.} Adding repeat classes takes
+the corpus from \textbf{48 species with a measured song to 98}, song types from 96 to 356
+(96 motifs, 260 repeats), and placed bouts from 1\,052 to 3\,741, with the shuffle control
+\textbf{unchanged to the bout at 0.170\,\%} against a 0.2\,\% bar.
+% docs/22 §22.2
+
+The control is the reason to believe it. Shuffling a species' tokens destroys runs, so the
+control finds no repeat classes \emph{at all}. A statistic whose null yields zero, on a
+corpus where the real version yields 260 types, is about as sharp as evidence gets from a
+permutation design. And the comparison is a comparison: the baseline arm reproduces the
+shipped corpus exactly, at 48 species, 96 types and 1\,052 placed bouts.
+
+The 0.2\,\% bar those arms are judged against was itself set on a control sweep rather than
+chosen, and the sweep is worth quoting because it shows the shape of the trade-off. On an
+earlier 35-species store, lowering the minimum cluster size from 6 to 4 took the real yield
+from 50 song types to 113 and the control's from 1 spurious type (6 of 3\,386 bouts, 0.2\,\%)
+to 17 (103 of 3\,386, 3.0\,\%). Raising it to 8 gained the control nothing and lost half the
+real types. Six is the knee, and the residual 0.2\,\% is reported rather than tuned to zero,
+because the price of zero was half the signal. Two further constants exist for measured
+reasons: bouts collapsing below three tokens are set aside because chance two-token strings
+sit at normalised edit distance 0.5, and a cluster whose members' weighted mean distance to
+their medoid exceeds 0.5 is demoted to noise, because five random six-token strings were once
+reported as one song type.
+% docs/12 §12.2, §12.3
+
+The ceiling is equally clear. Ninety-eight of 2\,421 species is 4.0\,\%. Two attempts to
+raise it by loosening a threshold both bought chance strings faster than songs
+(Table~\ref{tab:songdetector}). The remaining route is depth, and depth has an archive
+ceiling.
+
+\subsection{A second order is not supported, and 217 species can be asked}
+
+The median species \emph{loses} 0.091 bits per token going from order 1 to order 2 on bouts
+it has not seen, at three independent splits ($-0.091 / -0.116 / -0.142$). For the median
+species a second-order model is worse out of sample: the corpus cannot estimate the contexts
+it asks for.
+% docs/23 §23.2.2
+
+The share criterion tells the other half. 25.3\,\% of species gain something at order
+$1 \to 2$, against the shuffle's 4.1\,\%. A six-fold rate that clears the pre-registered
+20-point margin. So the honest single sentence is: \emph{there is no second-order structure
+this corpus can support, and a quarter of species hint at one.} The hint is not nothing; it
+is also not what the gate asked for, and the gate was written first.
+
+What this settles is the diagnosis. The depth question is \textbf{data-limited, not
+method-limited}: 217 of 2\,421 species have enough bouts to ask it at all. Given that the
+literature is unambiguous that birdsong is not first-order \citep{jin2011,lu2025}, the 25\,\%
+that hint at a second order are an argument for depth on more species rather than for a
+cleverer sequence model. The post-depth-harvest bake-off supports the same reading from the
+other side: with qualifying species at 104 rather than 30, a hidden-state model beats even a
+smoothing-repaired first-order baseline by about $+0.37$ nats per token, where at debug depth
+its entire advantage was smoothing shape.
+% docs/18 P1 re-run
+
+\subsection{The map's own confusion is the honest bound on the interaction}
+
+With every type granted its own cluster, so that no type can fail to be retrieved for want
+of one, \textbf{type retrieval is 0.602}. For 40\,\% of points the nearest centroid by cosine, which is the exact lookup the
+browser performs on live audio, belongs to \emph{another type}.
+This is debug-scale, on a fixed 214\,154-point matrix over 2\,143 types.
+% docs/22 §22.8
+
+This is the number to quote when asked whether singing at the system lights the right region.
+It is not the clustering's failure and it is not the projection's: it is the embedding's own
+confusion between types, and it was invisible under $k$-means because a type with no cluster
+cannot be retrieved at all. Raising it is a representation problem, which is where
+Section~\ref{sec:external}'s external comparison points.
+
+Two related numbers complete the picture and are better than the headline suggests. On the
+field points alone. The population the question is about, since a recorded syllable must
+light its own region. Retrieval is 0.7604 under label assignment and 0.7176 under the
+shipped $k$-means (Table~\ref{tab:w5}). And the browser's bridge, which is a second and
+independent source of error, loses 38.6\,\% of region agreement of which 76.4\,\% is boundary
+near-ties: tie-adjusted agreement is 0.91, and species-level agreement, which is the honest
+single-label claim, is 0.781 against chance 0.033.
+% docs/20 §20.1
+
+\subsection{Pathological recording sessions are detectable from the browser's side}
+
+Eight of 45 held-out recordings carry 22.9\,\% of the map's total flip loss, all eight from
+xeno-canto and none from iNaturalist, with one session alone carrying 9.3\,\%. They separate
+cleanly on a statistic the browser can compute from the 28-dimensional side alone: the mean
+5-nearest-neighbour distance of a session's standardised descriptors to the fit-side cloud
+separates them at \textbf{AUC 0.953}, and a shipped cloud of 256 random anchors holds
+AUC $\ge 0.92$ over draws at a cost of 28\,kB. The pre-registered adoption gate for using it
+as a \emph{lever} (raising the remaining rows' agreement by 5 points) failed at $+3.5$
+points raw, so the pre-registered fallback fired and it ships as an \emph{honesty} gate: the
+interface says the session is off everything the map knows instead of lighting regions. At
+the shipped operating point it flags 8 of 45 sessions, catches 5 of the 8 bad ones including
+the three worst loss-carriers, and produces 3 clean false flags all within 0.02 of the bad
+line.
+% docs/20 §20.3.1, §20.3.2 — end-to-end debug build
+
+Two calibration facts belong with it. A threshold calibrated on fit sessions does not
+transfer to unseen sessions even when the session's own rows are excluded, because sibling
+sessions of the same recordists deflate every fit session's distance. The 95th-percentile
+fit-side threshold flags 29\,\% of held-out sessions. The shipped threshold is calibrated
+cross-wise, each fit session judged against the other seeded half. And the mirror-image
+action fails: pruning the sessions this signal flags from the \emph{fit} costs $-0.0147$ and
+$-0.0062$ of evaluation cosine on two stores against a 0.005 allowance. The pathological
+sessions are manifold coverage, and removing them hurts the next unseen pathological session.
+
+\subsection{The physical model is right and the fit is what fails}
+
+The audit's conclusion holds and is unusually well supported for a negative:
+\emph{nothing the project has measured points at the oscillator}. The ODE is the published
+normal form term for term, agreeing with Runge--Kutta to 2\,\% of $f_0$, reproducing the
+reference measurements to 0.1\,\% on $f_0$ and 2\,\% on amplitude, holding at 18 of 18
+two-sided parity fixtures, and collapsing into period doubling exactly where the coupling
+literature says the weak-coupling approximation dies. Every recorded deviation is in
+parameterisation, in the periphery, or in the objective.
+% docs/21 §21.1
+
+The concrete state of the fit, at production scale: median resynthesis cosine \textbf{0.699}
+over 2\,650 species and 16\,283 types. The path to that number
+is worth stating because it is not monotone and the reasons differ: the 12\,724-type learn
+scored 0.650, the per-species respiration and two-voice fit passes took it to 0.6623 across
+12\,680 scored types, and it then fell to 0.648 when the corpus deepened, which is the expected
+direction. The added species are harder. On the original 22-species store the equivalent
+figure reached 0.775 after the naturalness fields were added, from 0.533 before, with the share
+of types above 0.7 going from 26.2\,\% to 66\,\% and the share below 0.5 from 44.2\,\% to
+11\,\%.
+% docs/16 §16.3, §16.4; HANDOFF 2026-07-31; docs/08 §8.1a
+
+The single most stubborn number in the project is cross-species placement. On the original
+22-species store a resynthesis lands nearest its \emph{own} species 23.1\,\% of the time
+against chance 4.5\,\%. Four hypotheses for the remaining 77\,\% were each tested and each
+refuted, and they are worth listing because each cost real work: the envelopes are not
+collapsed (we express 103\,\% of the real between-species spread and 106\,\% of the spectral
+detail. They vary along different axes); there is a systematic spectral tilt and
+correcting it \emph{exactly} drops placement to 20.2\,\%; the harmonic structure is not
+missing, because real syllables resolve to a mean of 2.2 partials and feeding measured
+partial amplitudes to the fit moved the cosine 0.776 to 0.768; and a time-resolved objective
+improves its own metric by 36\,\% while dropping 28-dimensional placement from 61.7\,\% to
+43.2\,\%.
+% docs/08 §8.1a; docs/09 §9.1
+
+That last refutation is the informative one, and its mechanism was found afterwards. The two
+objectives conflicted because the $f_0$-tracking tract locks spectral shape to pitch, so the
+only lever the fit had for moving a spectral trajectory was bending the pitch contour, and
+the pitch contour is strongly species-diagnostic. Under a fixed waveguide the conflict
+disappears and all three metrics improve together. That the waveguide then failed to
+generalise across 22 species, while winning under learned typing on a different store, is
+recorded as unresolved.
+
+One further reading of the placement metric is required, and it is the reason it is not the
+paper's headline. \emph{Placement degrades in absolute terms as the corpus broadens, while
+improving relative to chance.} On the ingest that took the store from 36 to 121 species, own-species
+placement fell from 24.6\,\% to 11.5\,\%, while chance fell from 2.8\,\% to 0.9\,\%, so the
+ratio to chance rose from 8.8-fold to 12.8-fold. The pre-registered target for that gate was an
+absolute 35\,\%, and it \textbf{failed}. Own-type placement held at 62.6\,\% and the median cosine
+held, barely, at 0.742 against a 0.74 bar, with the reason named at the time: 85 of the newly
+added species carried about three recordings each, which fits thin types. Type coverage in the
+same build fell from 94.6\,\% to 54.1\,\% and cluster purity from 56.7\,\% to 30.3\,\%, and
+both are harvest depth rather than machinery: 651 orphan types belong mostly to those
+three-recording species, which cannot meet the map's minimum cluster size. Any absolute
+placement or purity figure in this paper is therefore only interpretable against its own
+species count.
+% docs/14 §14.3, §14.5
+
+\subsection{Extensions ship only where a fit wins them, and the ones that ship are countable}
+
+The pattern is consistent enough to state as a result about method. \textbf{Hand-set
+physical defaults lose bake-offs, however correct the published physics.} The respiratory
+oscillator's hand-set default set moved median cosine from 0.343 to 0.336, with losses
+concentrated in sub-50\,ms notes whose onsets the physically correct 20--40\,ms attack eats.
+The two-voice coupling's hand-set default moved it from 0.343 to 0.294, while the two
+worst-fitting low-pitched species \emph{improved}, which is why it was kept rather than
+deleted. Both are parked off by default.
+% docs/15 §1, §5
+
+The per-species fit passes are the version that wins, and they win narrowly and
+specifically: respiration took 445 of 12\,680 scored types and the second voice 2\,027 of
+5\,922 screened types, with the ship gate holding everywhere. The tracheal comb won 10 of 22
+species on the original corpus. The fricative route. Turbulence routed around the
+$f_0$-tracking band into the syllable's own fitted formants, because a fricative is a noise
+burst filtered by the tract and not a tone with noise added. Moved the bench from 0.584 to
+0.656 with 13 wins and 0 losses, and ships per type. A one-tone re-fit of the authored calls
+against the same bird's learned types shipped a measured noise/roughness texture to 14 of 15,
+median gain $+0.148$, with the honest caveat that the median cosine afterwards is still
+0.270.
+% docs/16 §16.4, §16.7
+
+Every one of those gates was read on the descriptor cosine, and Section~\ref{sec:walls} says
+that cosine does not rank audible fidelity. A re-judgment of the shipped set on the spectral
+bench is therefore owed, and is recorded as owed.
+
+\subsection{Novelty detection improves with corpus breadth, and its threshold does not transfer}
+
+Novelty detection is a distance question in the embedding, and it is evaluated by holding
+entire species out of training and asking whether their syllables are flagged. The honest
+figure improved monotonically as the corpus broadened, and every step changed the test as well
+as the model, so the four numbers are a trend rather than a paired comparison. On the
+9\,000-syllable store with six species held out: ROC AUC 0.596 at 7.4\,\% true positives at
+the 5\,\% false-positive operating point. On the 47\,000-syllable retrain with five held out:
+0.672 and 14.8\,\%. On the 121-species store, evaluated against 25\,892 syllables of 105
+genuinely non-training species rather than a handful of chosen holdouts: 0.786 and 22.3\,\%. On
+the production critic, with 895 whole species held out. The hardest test run: \textbf{0.846
+and 32.2\,\%}. The novel side of the test got larger and more honest at each step, and the doc
+that reports each pair says so.
+% docs/10 §10.3; docs/11 §11.2; docs/14 §14.3; docs/16 §16.2
+
+An earlier and much higher figure, ROC 0.825 on the 9\,000-syllable store, is a different
+measurement. It scored held-back syllables of training species against held-out species'
+syllables, and the 0.596 above superseded it in place. Both are on the record. The low-false-positive
+end of the curve is the weak end in every version.
+% docs/09 §9.7 superseded by docs/10 §10.3
+
+The per-species pattern refutes the obvious explanation. Detection rate is not about taxonomy.
+On the 9\,000-syllable store the idea that congeners are harder fits five of six held-out
+species. The sixth contradicts it, because a wren with no relative in the training set is the
+\emph{worst} detected of the six at 8.2\,\%. The ordering differs on the 47\,000-syllable store,
+which is itself the point: the embedding measures acoustic neighbourhood, not relatedness. A
+loud broadband trill sits near other species' trills whatever the family tree. That is
+arguably the correct behaviour for the question being asked, and it means ``hold out a
+species'' is a harder test than ``hear a genuinely new sound''.
+
+The operational finding is a warning. \emph{A novelty threshold holds only for the corpus that
+calibrated it.} A threshold calibrated for 5\,\% false positives on the 9\,000-syllable store
+flagged 29.8\,\% of the 47\,000-syllable store, including 29\,\% of \emph{training} species'
+syllables. Recalibration without retraining returns the store-wide rate to 5.6\,\%. The
+shipped threshold has moved through 0.1048, 0.1558, 0.1912, 0.1737 and 0.1323 across five
+harvest epochs. Thresholds do not transfer, and treating one as a constant is how a map starts
+confidently reporting novelty about sounds it already knows.
+% docs/10 §10.3; docs/11 §11.2; docs/14 §14.3; docs/16 §16.2
+
+\subsection{One example of ground truth from outside, at n = 31}
+
+Vocal mimics are the only source of labelled cross-species acoustic similarity available to a
+corpus like this one, because a lyrebird singing a grey shrike-thrush produces syllables whose
+acoustics are shrike-thrush and whose label is lyrebird, and the accuracy of the imitation
+has been certified by the receiving birds rather than by us \citep{dalziell2012}.
+
+The pilot is a well-formed test on an empty corpus, and is reported as such. The store holds
+\textbf{31} lyrebird syllables. Against the 12\,393 type centroids of the production fit,
+those 31 match \textbf{13 distinct non-lyrebird species}, where random syllables of the corpus
+match 29.9 (sd 1.0). Concentrated, in the direction mimicry predicts. Two of the top
+matches are Australian species that co-occur with lyrebirds and are plausible models; the rest
+are Neotropical and African and cannot be mimicry. The accompanying figure of 83.9\,\% for
+``nearest centroid is its own type'' is circular by construction, since those syllables are
+inside those centroids, and is not evidence.
+% docs/23 §23.7
+
+At $n = 31$ this licenses nothing beyond a direction. The action it names is a targeted
+harvest rather than a method: xeno-canto's lyrebird recordings frequently name the mimicked
+species in the remarks, so such a harvest returns \emph{labelled} mimic-to-model pairs, and
+other mimics extend the same set. The reason to pursue it is that it would also supply a
+fidelity yardstick for the objective problem of Section~\ref{sec:walls} that owes nothing to
+our synthesiser and nothing to our cosine.
+
+\subsection{What the corpus cannot be asked}
+
+Stated as a list, because each item is a boundary rather than a shortcoming to be worked
+around.
+
+\emph{Function, for almost everything.} Playback is the only proof, there is none here, and
+every recording is one bird with no interaction and no receiver. The interface correctly
+reports ``real acoustics, no documented function'' for the overwhelming majority of the
+corpus: at the production build, 13\,919 of 14\,003 regions are \emph{unlabelled} against 27
+\emph{documented}, 10 \emph{experimental}, 16 \emph{inferred} and 31 \emph{invented}. The
+store holds 23\,697 syllables the novelty detector has flagged, of which 841 are reported as
+\emph{unlabelable} even by an external model, because their xeno-canto audio was deleted by
+design. A cost of the retention policy, stated rather than absorbed.
+% HANDOFF 2026-08-01 (v5 confidence mix); docs/16 §16.5
+
+\emph{Species replication on retained audio.} The cache holds at most two recordings per
+species, so any test needing several recordings of one species requires a re-fetch.
+
+\emph{Geographic priors.} BirdNET's occurrence meta-model takes latitude, longitude and week,
+and the store keeps date and country but \emph{no coordinates}. Both archives return them; the
+harvester never recorded them. That is a metadata-only re-fetch and it is the gate on the only
+part of the external comparison still unanswered.
+% docs/23 §23.6.3
+
+\emph{Individual identity and dialect.} The corpus now has the depth in principle, 10 to 16
+individuals per species is literature-proven separable, and the recordist confound of
+Section~\ref{sec:walls} makes any such claim uninterpretable until it is addressed in the data.
+
+% =====================================================================
 % =====================================================================
 \section{What is done differently, and where it stops}
 \label{sec:walls}
@@ -697,14 +1066,14 @@ without one.}
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{gestures}
-\caption{The fitted gestures behind the three acoustic examples. Every syllable in the corpus is two named physical contours --- air-sac pressure and labial tension --- rather than a latent code, and this is the whole of the interpretability claim. The dashed line is the tension clamp of the parameterisation; a contour that rides it is at a limit of the parameterisation rather than at a fitted value, which happens in 6\,617 of 12\,724 types across the production learn.}
+\caption{The fitted gestures behind the three acoustic examples. Every syllable in the corpus is two named physical contours (air-sac pressure and labial tension) rather than a latent code, and this is the whole of the interpretability claim. The dashed line is the tension clamp of the parameterisation; a contour that rides it is at a limit of the parameterisation rather than at a fitted value, which happens in 6\,617 of 12\,724 types across the production learn.}
 \label{fig:gestures}
 \end{figure*}
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{spectral-examples}
-\caption{What the physical model reproduces, and what it misses. Three fitted types, taken from the top, the middle and the bottom of the resynthesis-cosine ordering over the types whose members have cached audio; the corpus median is 0.648 over 13\,859 types, so the middle row is a median type rather than a chosen success. Top: a clean descending whistle, which the oscillator and its tracking tract reproduce closely. Middle: the median case --- the pitch is right, and the pulse train that carries the real syllable's timbre is replaced by a steady tone. Bottom: a failure, and the third panel says why --- the type's member contours disagree by kilohertz, so the cluster median the fit starts from describes no member well. The cosine is the objective the fit optimised and is \emph{not} a ranking of audible fidelity (Section~\ref{sec:walls}).}
+\caption{What the physical model reproduces, and what it misses. Three fitted types, taken from the top, the middle and the bottom of the resynthesis-cosine ordering over the types whose members have cached audio; the corpus median is 0.699 over 16\,239 types, so the middle row is a median type rather than a chosen success. Top: a clean descending whistle, which the oscillator and its tracking tract reproduce closely. Middle: the median case. The pitch is right, and the pulse train that carries the real syllable's timbre is replaced by a steady tone. Bottom: a failure, and the third panel says why. The type's member contours disagree by kilohertz, so the cluster median the fit starts from describes no member well. The cosine is the objective the fit optimised and is \emph{not} a ranking of audible fidelity (Section~\ref{sec:walls}).}
 \label{fig:spectral}
 \end{figure*}
 
@@ -712,7 +1081,7 @@ without one.}
 
 Four things here are not standard practice in this area.
 
-\emph{A physical inventory at archive scale.} 13\,859 syllable types across 2\,421 species,
+\emph{A physical inventory at archive scale.} 16\,283 syllable types across 2\,650 species,
 each one an interpretable parameter vector for a published oscillator rather than a latent
 code. To our knowledge no comparable inventory exists; the physical-model literature fits
 individual birds.
@@ -732,8 +1101,8 @@ what the data does not support.
 \subsection{Wall 1: the objective cannot hear}
 
 The pipeline's universal fit objective is a 28-dimensional descriptor cosine. Measured
-against two independent audible-distance metrics on 200 fitted types --- mel-cepstral
-distortion \citep{kubichek1993} and multi-resolution log-spectral distance --- it carries
+against two independent audible-distance metrics on 200 fitted types. Mel-cepstral
+distortion \citep{kubichek1993} and multi-resolution log-spectral distance. It carries
 essentially no information: Pearson $+0.106$ and Spearman $+0.100$ against MCD, Pearson
 $+0.102$ and Spearman $+0.111$ against STFT error. Neither is distinguishable from zero and
 both point estimates lean the wrong way. This is not an instrument artefact: the recomputed
@@ -768,8 +1137,8 @@ The honest state is therefore that the project measures spectrally and optimises
 descriptor-wise. Every cosine-gated adoption in the system inherits that caveat, which is
 recorded rather than hidden: the respiration and two-voice fit winners, the fricative
 routing and the one-tone texture re-fit were all decided by a proxy that does not rank
-audible fit at type level. They are not necessarily wrong --- each also improved the
-descriptor match --- but ``improved the proxy'' is a weaker claim than it reads.
+audible fit at type level. They are not necessarily wrong. Each also improved the
+descriptor match, but ``improved the proxy'' is a weaker claim than it reads.
 
 \subsection{Wall 2: the recordist, not the bird}
 
@@ -828,8 +1197,8 @@ the 100 deepest species is 5 recordings, which is what the archive holds.
 
 Two ceilings sit on the claim ``sing, and the right region lights''.
 
-The first is in the embedding. With every type granted its own cluster --- so that no type
-can fail to be retrieved for lack of a cluster --- the share of labelled points whose
+The first is in the embedding. With every type granted its own cluster, so that no type
+can fail to be retrieved for lack of a cluster. The share of labelled points whose
 nearest centroid by cosine belongs to their own type is 0.602. For 40\,\% of points the
 nearest centroid is another type's. That is the embedding's confusion between types, not
 the clustering's, and it was invisible until label assignment removed the competing
@@ -863,8 +1232,8 @@ End-to-end debug build; debug-scale.}
 An audit against the canonical literature found no deviation inside the oscillator
 equations. The implemented ODE is the published normal form term for term, validated
 against Runge--Kutta, against the reference oscillator measurements, against a two-sided
-parity harness, and against the literature's own stated coupling-approximation boundary ---
-the two-voice kernel's measured collapse into period doubling occurs exactly where
+parity harness, and against the literature's own stated coupling-approximation boundary. The
+two-voice kernel's measured collapse into period doubling occurs exactly where
 \citet{laje2005} says the weak-coupling approximation dies.
 % docs/21 §21.1
 
@@ -897,8 +1266,8 @@ it.}
 Two reading notes follow. First, ``noisy'' and ``machine-like'' are opposite failure modes
 of one cause family: the representation has one noise axis and one envelope, so a fricative
 collapses to unshaped hiss and a tonal note to a metronomic sine. Real syringes live
-between the regimes, and the model contains that middle --- period-doubled and chaotic
-solutions are in the equations \citep{sitt2008,amador2008} --- but the fit cannot find its
+between the regimes, and the model contains that middle. Period-doubled and chaotic
+solutions are in the equations \citep{sitt2008,amador2008}, but the fit cannot find its
 way there under the current objective. Second, the diagnosis is now sharper than ``the fit
 fails'', because the starting point has been ruled out: an amortised inverse encoder that
 proposes a full parameter vector in one forward pass reaches a comparable basin about as
@@ -912,7 +1281,7 @@ objective and the physics beyond the oscillator.
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{retrieval-population}
-\caption{Type retrieval against the cluster budget, and against the query population. The question is the one the browser asks of live audio: is the nearest centroid by cosine the point's own type? Left: scored over all points, label assignment beats the shipped $k$-means by 2.5 points against a pre-registered 10, and fails --- on a corpus that fits under the cluster cap, seeded $k$-means is nearly as good as knowing the answer. Right: scored on the field points every arm holds unchanged, which is the population the question is about. The query population changes the same arm's answer by more than any arm changes it. Debug-scale.}
+\caption{Type retrieval against the cluster budget, and against the query population. The question is the one the browser asks of live audio: is the nearest centroid by cosine the point's own type? Left: scored over all points, label assignment beats the shipped $k$-means by 2.5 points against a pre-registered 10, and fails. On a corpus that fits under the cluster cap, seeded $k$-means is nearly as good as knowing the answer. Right: scored on the field points every arm holds unchanged, which is the population the question is about. The query population changes the same arm's answer by more than any arm changes it. Debug-scale.}
 \label{fig:retrieval}
 \end{figure*}
 
@@ -946,11 +1315,11 @@ store-trim bug deleted twelve species, so chance there is 7.7\,\% rather than 4.
 arm & types & species & cosine & $|f_0|$ & types & species & cosine & $|f_0|$ \\
 \midrule
 hand typing, cosine objective & 346 & 26.6\,\% & 0.762 & 5.4\,\% & 138 & 38.4\,\% & 0.807 & 3.3\,\% \\
-\;+ realism objective, $w = 0.25$ & 346 & 27.2\,\% & 0.686 & 6.6\,\% & --- & --- & --- & --- \\
+\;+ realism objective, $w = 0.25$ & 346 & 27.2\,\% & 0.686 & 6.6\,\% & (&) & (&) \\
 \;+ realism objective, $w = 0.50$ & 346 & 23.7\,\% & 0.655 & 6.5\,\% & 138 & 31.9\,\% & 0.642 & 4.0\,\% \\
-\;+ realism objective, $w = 1.00$ & 346 & 17.3\,\% & 0.335 & 5.7\,\% & --- & --- & --- & --- \\
+\;+ realism objective, $w = 1.00$ & 346 & 17.3\,\% & 0.335 & 5.7\,\% & (&) & (&) \\
 \textbf{learned-embedding typing} & 319 & \textbf{32.9\,\%} & 0.755 & 3.1\,\% & 294 & \textbf{51.7\,\%} & 0.796 & 2.2\,\% \\
-hand typing $+$ waveguide tract & 346 & 30.1\,\% & 0.719 & 5.4\,\% & --- & --- & --- & --- \\
+hand typing $+$ waveguide tract & 346 & 30.1\,\% & 0.719 & 5.4\,\% & (&) & (&) \\
 learned typing $+$ waveguide tract & 319 & 37.0\,\% & 0.706 & 3.6\,\% & 294 & 57.1\,\% & 0.723 & 2.1\,\% \\
 \bottomrule
 \end{tabular}
@@ -988,14 +1357,14 @@ promising and unconfirmed, and it is gated off.
 \subsection{Two spaces: the 28-dimensional descriptor against the 32-dimensional embedding}
 
 The two spaces are not interchangeable and the choice is measured, not assumed. On a
-controlled subset --- 625 field syllables, three species, identical points, one seed, only
-the space changed --- moving the build into the embedding takes cluster purity from
+controlled subset, 625 field syllables, three species, identical points, one seed, only
+the space changed. Moving the build into the embedding takes cluster purity from
 70.9\,\% to 90.9\,\%, type coverage from 12/14 to 14/14, three-dimensional 10-nearest-neighbour
 agreement from 64.5\,\% to 83.2\,\% and distance faithfulness from 0.874 to 0.940.
 % docs/10 §10.2
 On the 100-species debug corpus the descriptor-space discovery map degenerated to three
-clusters with one holding 95\,\% of points --- iNaturalist soundscape audio is one density
-blob in 28 dimensions --- where the embedding gives 98 clusters with real structure.
+clusters with one holding 95\,\% of points. INaturalist soundscape audio is one density
+blob in 28 dimensions. Where the embedding gives 98 clusters with real structure.
 % HANDOFF 2026-07-31
 
 Two honest counterweights sit against that. A render-free placement check scores the
@@ -1034,8 +1403,8 @@ the space geometrically, and asks each partition to vote a name back by point-co
 majority. Label assignment takes the other side of that design decision: every labelled
 point goes to its own type's cluster and $k$-means fits only the unlabelled remainder.
 
-All arms in Table~\ref{tab:clustering} run on one fixed matrix --- 214\,154 points, 2\,143
-types, 160\,279 of the points from field recordings --- dumped from a 100-species debug
+All arms in Table~\ref{tab:clustering} run on one fixed matrix, 214\,154 points, 2\,143
+types, 160\,279 of the points from field recordings. Dumped from a 100-species debug
 build, and every arm is scored through the shipped clustering, seeding and purity functions.
 The harness was validated twice before any arm was read: the $k = 1024$ row reproduces the
 earlier baseline exactly, and the $k = 4298$ row reproduces the shipped debug build's own
@@ -1045,8 +1414,8 @@ manifest.
 \centering
 \small
 \caption{Clustering arms on one fixed 100-species debug matrix (214\,154 points, 2\,143
-types). \emph{Type retrieval} asks, for each point, whether the nearest centroid by cosine
---- the lookup the browser performs on live audio --- belongs to that point's own type.
+types). \emph{Type retrieval} asks, for each point, whether the nearest centroid by cosine, the lookup the browser
+performs on live audio, belongs to that point's own type.
 Purity and coverage are identities under label assignment, not measurements. Debug-scale.}
 \label{tab:clustering}
 \begin{tabular}{L{6.6cm} r r r r r}
@@ -1067,7 +1436,7 @@ $k$-means build. It measured $+2.5$ and \textbf{failed}. The failure is the usef
 mechanism the gate was predicted from is types shedding their only cluster, and under the
 raised cluster cap this corpus wants 4\,298 clusters and gets all 4\,298, so that mechanism
 never fires. \emph{On a corpus that fits under the cap, seeded $k$-means is nearly as good
-as knowing the answer} --- a real result about the seeding, and the argument against making
+as knowing the answer}. A real result about the seeding, and the argument against making
 label assignment the default. Placing this corpus in production's shedding ratio
 ($k = 1264$) and at $k = 1024$ gives $+14.2$ and $+17.9$ points. The scope of the claim is
 therefore exact: label assignment is worth what the cluster cap costs, and nothing more.
@@ -1082,7 +1451,7 @@ same corpus, region-level agreement through the bridge falls from 0.6572 to 0.63
 species-level agreement from 0.7421 to 0.6831, while the tie-adjusted figure \emph{rises}
 from 0.8032 to 0.8136. Read together that is more near-ties rather than worse decisions:
 centroids placed at label means are less separated than centroids Lloyd's iteration pushed
-apart, so more live sounds land between two regions --- and the ones that land decisively
+apart, so more live sounds land between two regions, and the ones that land decisively
 land better. A build whose headline is the species claim should read that row first.
 % docs/22 §22.8
 
@@ -1098,7 +1467,7 @@ cluster budget bound at twice the type count.
 % docs/22 §22.5
 
 Three arms were run on the fixed matrix. Reducing member variants to the anchor alone moved
-seeds per type from 2.000 to 1.993, i.e.\ not at all --- the source split is
+seeds per type from 2.000 to 1.993, i.e.\ not at all. The source split is
 \emph{binary}, splitting whenever a type holds points on both sides, so 24 renders and one
 render split it equally. Deflating the source axis worked exactly as specified, removing
 42.0\,\% of the space's energy and driving the gap between the two source means from 7.233 to
@@ -1114,8 +1483,8 @@ The follow-up changed what that arm is \emph{for}, and it is the cleanest method
 lesson in this section. Type retrieval over \emph{all} points is not comparable between arms
 that hold different points: dropping the synthetic copies drops the hard queries, so the arm
 flatters itself by 18 points. Scored instead on the 160\,279 field points every arm holds
-unchanged --- which is the population the question is about, since a recorded syllable must
-light its own region --- the picture is different.
+unchanged, which is the population the question is about, since a recorded syllable must
+light its own region. The picture is different.
 
 \begin{table*}[t]
 \centering
@@ -1142,7 +1511,7 @@ $k$-means $+$ no synthetic anchor & 160\,579 & 2\,155 & 0.7156 & 15.2 \\
 The anchor was removed on the size argument, not the accuracy argument, and the decision is
 recorded as such. It halves the region count and removes a quarter of the points, taking the
 production build from a wanted 27\,862 clusters to 14\,003 and the centroid asset from a
-projected 44\,MB to 7.69\,MB of JSON plus 3.81\,MB of binary sidecar --- the difference
+projected 44\,MB to 7.69\,MB of JSON plus 3.81\,MB of binary sidecar. The difference
 between ``needs a new asset format'' and ``ships''. It costs the rendered voice its own
 place on the map, which is a claim about our synthesiser rather than about a bird. One
 number moved the wrong way and it is a picture number: three-dimensional distance
@@ -1179,9 +1548,9 @@ Debug-scale.}
 & baseline & encoder & gate \\
 \midrule
 median resynthesis cosine & 0.7411 & 0.7546 \; ($+0.0135$) & $\ge +0.02$ \quad \textbf{fail} \\
-mean resynthesis cosine & 0.6824 & 0.6997 \; ($+0.0173$) & --- \\
-share of types improved & --- & 877/1\,661 $=$ 52.8\,\% & $\ge 60\,\%$ \quad \textbf{fail} \\
-worst species' median change & --- & $-0.0816$ & $\ge -0.05$ \quad \textbf{fail} \\
+mean resynthesis cosine & 0.6824 & 0.6997 \; ($+0.0173$) &, \\
+share of types improved &, & 877/1\,661 $=$ 52.8\,\% & $\ge 60\,\%$ \quad \textbf{fail} \\
+worst species' median change &, & $-0.0816$ & $\ge -0.05$ \quad \textbf{fail} \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -1198,8 +1567,8 @@ unable to escape a bad basin. So the remaining fit error is mostly not a basin p
 what is left of ``the model is right and the fit is what fails'' lives in the objective and
 in the physics beyond the oscillator. The mechanism of the encoder's losses is visible in a
 separate arm: an encoder-only start scores \emph{below} the cluster median it replaces (0.342
-against 0.442), because on the fields the median already measures --- timbre, attack, hold,
-harmonic, the modulations --- a regression estimate is worse than a measurement. Its only
+against 0.442), because on the fields the median already measures. Timbre, attack, hold,
+harmonic, the modulations. A regression estimate is worse than a measurement. Its only
 new information is on the four gesture axes the median carries no value for, and the wins
 cluster exactly there.
 % inverse.py results table
@@ -1223,9 +1592,8 @@ first two-start run cleared the median bar at $+0.0320$ and \emph{failed} on 48 
 types coming out worse, by up to 0.049. Since a two-start cannot regress by construction, the
 pre-registration had already named that outcome a bug in the selection rather than a trade,
 so it was diagnosed rather than excused. Three candidate explanations were eliminated by
-measurement --- the search objective and the reported metric are the same computation; the
-fricative refinement is monotone in its own input; the two arms fitted identical inventories
---- and a fourth by direct test: the renderer is bit-identical for fixed parameters, so the
+measurement. The search objective and the reported metric are the same computation; the
+fricative refinement is monotone in its own input; the two arms fitted identical inventories. A fourth check was direct: the renderer is bit-identical for fixed parameters, so the
 reported cosine is a value and not a draw. The cause was that the selection compared
 candidates \emph{before} the fricative refinement while the shipped and gated number comes
 \emph{after} it, and that refinement's benefit depends on the basin: 19.3\,\% of types carry
@@ -1238,7 +1606,7 @@ license an audible claim, because the gate reads the same 28-d cosine whose corr
 spectral distance is about $0.1$ (\S\ref{sec:ruler}), so a bench run on cached audio is what
 an audible improvement would need. And the single-start arm's published worst-species figure
 of $-0.0816$ was scored through the same pre-refinement comparison, so part of it is that
-artefact rather than the encoder's fault --- which does not rescue that arm, since it failed
+artefact rather than the encoder's fault, which does not rescue that arm, since it failed
 on the median alone.
 
 \subsection{Grammar order on held-out bouts}
@@ -1255,8 +1623,8 @@ pinned against the shipped bout function and refuses to run if the bout rule has
 \small
 \caption{Held-out cross-entropy by Markov order, real corpus against its within-species
 shuffle. 34\,696 bouts, 327\,164 tokens, 2\,421 species; 217 species clear the 20-bout bar.
-The gate --- median gain $\ge 0.05$ bits/token at order $1 \to 2$, $\ge 0.05$ more than its
-own shuffle, and share of species gaining $\ge$ control $+ 20$ points --- fails on the
+The gate. Median gain $\ge 0.05$ bits/token at order $1 \to 2$, $\ge 0.05$ more than its
+own shuffle, and share of species gaining $\ge$ control $+ 20$ points. Fails on the
 magnitude criterion and passes on the share criterion, at three seeds.}
 \label{tab:orders}
 \begin{tabular}{L{7.4cm} r r}
@@ -1282,12 +1650,12 @@ clearest negatives, and Section~\ref{sec:findings} reads it in full.
 A separate bake-off compared model \emph{classes} at first order and above. A
 repeat-count-dependent model in the style of \citet{jin2011} lost decisively at $-0.348$
 nats per token, winning 0 of 30 species. A hidden-state HMM won the pre-registered rule at
-$+0.422$ nats and 29 of 30 species --- and the decomposition reversed the adoption. Splitting
+$+0.422$ nats and 29 of 30 species, and the decomposition reversed the adoption. Splitting
 held-out tokens by whether the transition was seen in training, first-order is the better
 model on the 90\,\% seen ($-1.525$ against $-1.624$ nats/token, better in 15 of 30 species),
 and the HMM's entire advantage is the 10\,\% unseen tail, where first-order pays $-9.25$ and
-the HMM $-4.16$. That is a property of smoothing \emph{shape} --- a mixture predictive is
-heavy-tailed --- not of recovered hidden structure. Adopting a heavier model for a smoothing
+the HMM $-4.16$. That is a property of smoothing \emph{shape}. A mixture predictive is
+heavy-tailed, not of recovered hidden structure. Adopting a heavier model for a smoothing
 artefact would be the wrong lesson, so first order stayed and the smoothing was repaired
 instead: a Kneser--Ney continuation backoff \citep{kneser1995} gains $+1.90$ and $+2.32$
 nats per token on unseen-\emph{context} transitions across two debug stores with the seen
@@ -1326,7 +1694,7 @@ the same bouts. It fails both pre-registered gates on both debug stores: species
 nearest-neighbour lift $+0.877$ against bag-of-types' $+0.924$ on the 37-species store and
 $+0.050$ against $+0.081$ on the 100-species store, with recordist lift $+0.264$ and
 $+0.087$ against a $<0.05$ bar. Three measured details survive the failure. Within-species
-song structure exists --- all 18 deep species separate their own recordings --- and lives
+song structure exists (all 18 deep species separate their own recordings) and lives
 entirely in the token marginals, so order and rhythm add nothing measurable at current
 depth. The rhythm term actively \emph{costs} species lift. And the bar for any learned song
 encoder is bag-of-types, not the edit kernel.
@@ -1336,16 +1704,16 @@ encoder is bag-of-types, not the edit kernel.
 
 Three statistics that fit nothing, run on the production corpus against the same
 within-species permutation control. Conditional entropy of the next token given one previous
-is 0.941 bits against the shuffle's 3.343 --- not a subtle effect. The Menzerath--Altmann
+is 0.941 bits against the shuffle's 3.343, not a subtle effect. The Menzerath--Altmann
 exponent's median is $+0.019$ where the law predicts negative, with 45.7\,\% of species
 negative against the control's 8.5\,\%: a weak effect in the law's direction, not the law, and
 not the shape reported for geladas or penguins \citep{gustison2016,favaro2020}. The control's
-own exponent is consistently positive, which is a sampling artefact rather than a finding --- a
-mean over more draws sits closer to the species mean and its logarithm rises with the count ---
-and that artefact is exactly why the control is run.
+own exponent is consistently positive, which is a sampling artefact rather than a finding. A
+mean over more draws sits closer to the species mean and its logarithm rises with the count.
+That artefact is exactly why the control is run.
 Normalised compression distance \citep{cilibrasi2005} is refuted outright, because the control
-separates species \emph{better} than the real corpus does (0.038 against 0.018) ---
-compression distance here reads alphabet and marginals, which the shuffle preserves, and
+separates species \emph{better} than the real corpus does, 0.038 against 0.018.
+Compression distance here reads alphabet and marginals, which the shuffle preserves, and
 not order. No learned song encoder should be measured against it.
 % docs/23 §23.2.1
 
@@ -1355,7 +1723,7 @@ is not a valid test when the two curves start 2.4 bits apart, and past $k=3$ the
 plug-in curve falls \emph{below} the real one because a plug-in estimator reports
 near-unique contexts as determined. Both effects are bias. The verdict function now refuses
 that comparison rather than returning the answer it would have returned, and the honest
-instrument --- held-out cross-entropy, unbiased by construction --- is
+instrument (held-out cross-entropy, unbiased by construction) is
 Table~\ref{tab:orders}.
 
 \subsection{Detector configurations against a permutation control}
@@ -1377,8 +1745,8 @@ arm & species with a song & song types & placed bouts & control yield & verdict 
 \midrule
 shipped, motifs only & 48 & 96 & 1\,052 & 0.170\,\% & baseline \\
 \textbf{$+$ repeat classes} & \textbf{98} & \textbf{356} & \textbf{3\,741} & \textbf{0.170\,\%} & adopted \\
-per-species recurrence bar & 99--202 & 452--636 & --- & 0.266--0.442\,\% & refuted \\
-per-species bout rule & 105 & 449 & --- & 0.628\,\% & refuted \\
+per-species recurrence bar & 99--202 & 452--636 &, & 0.266--0.442\,\% & refuted \\
+per-species bout rule & 105 & 449 &, & 0.628\,\% & refuted \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -1386,13 +1754,13 @@ per-species bout rule & 105 & 449 & --- & 0.628\,\% & refuted \\
 
 Repeat classes pass on both halves of their gate and are adopted. The control is unchanged
 to the bout, because shuffling a species' tokens destroys runs, so the control finds no
-repeat classes at all --- the sharpest evidence available that the ones found are real.
+repeat classes at all. The sharpest evidence available that the ones found are real.
 
 The two refuted arms are instructive in the same way. Letting each species set its own
 recurrence bar on the evidence of its own shuffled tokens let 2\,398 of 2\,421 species take
 the loosest bar, because a species with eight candidate bouts has a control that cannot place
 a bout at any size: ``the control found nothing'' meant ``the control had nothing to work
-with''. Adding a power requirement repairs the mechanism but not the verdict --- no candidate
+with''. Adding a power requirement repairs the mechanism but not the verdict. No candidate
 threshold in $\{10, 15, 20, 30, 50\}$ returns the control to 0.2\,\%, and the rows that come
 closest gain almost nothing over the 98 species repeat classes already reach. A per-species
 bout rule at five times the species' own median gap reaches 105 species at nearly four times
@@ -1424,15 +1792,15 @@ because it eliminates one of the two remaining explanations for the fit's failur
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{external-spaces}
-\caption{Three spaces, two populations. Recordist and species nearest-neighbour lift over a permutation null, per recording, for our 32-dimensional critic and two archive-scale external models. Perch 2.0 --- trained on the same archives at roughly a hundred times our scale and never asked to tell our resynthesis from a bird --- still carries five sixths of the recordist structure ours does, and BirdNET carries more than ours in both populations. If archive-scale training conferred recorder invariance the two largest models trained on these archives would both have it and they would agree; one is better than ours and one is worse, which locates the property in the archives. The right panel is the comparison we lose, and lose clearly. Hue carries model identity here, not a verdict.}
+\caption{Three spaces, two populations. Recordist and species nearest-neighbour lift over a permutation null, per recording, for our 32-dimensional critic and two archive-scale external models. Perch 2.0 (trained on the same archives at roughly a hundred times our scale and never asked to tell our resynthesis from a bird) still carries five sixths of the recordist structure ours does, and BirdNET carries more than ours in both populations. If archive-scale training conferred recorder invariance the two largest models trained on these archives would both have it and they would agree; one is better than ours and one is worse, which locates the property in the archives. The right panel is the comparison we lose, and lose clearly. Hue carries model identity here, not a verdict.}
 \label{fig:external}
 \end{figure*}
 
 \subsection{What is and is not a fair comparison}
 
 The external comparisons in this section are all read-only tests on a fixed store, through
-one estimator --- nearest-neighbour lift over a label permutation null, blocked by recording
---- with no training and no new data. That makes them directly comparable to every lift this
+one estimator. Nearest-neighbour lift over a label permutation null, blocked by recording, with no
+training and no new data. That makes them directly comparable to every lift this
 project has published. Three limits apply and are stated before the numbers, because they
 change what the numbers mean.
 
@@ -1457,8 +1825,8 @@ for the species question, and they disagree about the recordist verdict. The tie
 fixed on coverage before the disagreement appeared.
 
 Third, \textbf{the audio cache constrains what can be asked at all}. It holds at most two
-recordings per species --- 2\,616 species with exactly two, 1\,221 with one, none with three
---- because the iNaturalist ingest took no more and the xeno-canto audio was deleted at
+recordings per species, 2\,616 species with exactly two, 1\,221 with one, none with three,
+because the iNaturalist ingest took no more and the xeno-canto audio was deleted at
 harvest by design. No species group of eight recordings exists on any audio this machine
 holds, so a species-stratified draw returns zero recordings and no selection rule can produce
 one. Anything needing several recordings of one species needs audio re-fetched first.
@@ -1494,10 +1862,10 @@ BirdNET & 1\,024 & 0.1755 & 0.0393 \\
 \end{table*}
 % docs/23 §23.6.1, §23.6.2, §23.6.3
 
-\textbf{T1 fails, and it is the fourth independent closure of the same road.} Perch 2.0 ---
+\textbf{T1 fails, and it is the fourth independent closure of the same road.} Perch 2.0 is
 trained on the same archives at roughly a hundred times our scale, never asked to tell our
 resynthesis from a bird, and therefore structurally incapable of having learned the axis that
-splits our types in two --- still carries five sixths of the recordist structure our own
+splits our types in two. Still carries five sixths of the recordist structure our own
 critic carries. The gate asked for $-30\,\%$ and measured $-16.5\,\%$. The prediction was
 written in advance and is worth quoting rather than softening: \emph{if a model trained on
 the same archives at a hundred times the scale is no more recorder-invariant than ours, the
@@ -1509,7 +1877,7 @@ in both populations ($+24\,\%$ and $+4\,\%$). Perch reads $-16.5\,\%$ and BirdNE
 on the same rows. If archive-scale training conferred recorder invariance, the two largest
 models trained on these archives would both have it and they would agree. One is better than
 ours and one is worse, which locates the property in the archives rather than in any model's
-loss --- the same conclusion the batch-effect analysis reached from the inside, now reached
+loss. The same conclusion the batch-effect analysis reached from the inside, now reached
 from outside with two independent instruments.
 
 \textbf{T3 passes decisively, within its stated scope.} Perch retrieves a species' other
@@ -1530,8 +1898,8 @@ is}.
 Two things are explicitly not settled. T1's own verdict rests on a coverage tie-break: it
 passes at $-31.4\,\%$ on the T3 population and fails at $-16.5\,\%$ on the T1 population,
 and the T1 population's recordist estimate covers 0.907 of rows against the other's 0.329, so
-the instrument built for the question wins and the verdict is fail. And the novelty
-comparison --- Perch against our critic's novelty ROC of 0.846 --- was never run. Retiring
+the instrument built for the question wins and the verdict is fail. The novelty
+comparison, Perch against our critic's novelty ROC of 0.846, was never run. Retiring
 the critic's species head was made conditional on T1 \emph{and} T3 landing; T3 landed and T1
 did not, so it stays.
 
@@ -1574,13 +1942,13 @@ attacked the confound during training where nothing can be inspected. Harmony
 \citep{korsunsky2019} reaches it and pays exactly the price a gradient-reversed adversarial
 head paid: $-71\,\%$ recordist, $-70\,\%$ species. Two unrelated mechanisms landing on the
 same exchange rate is evidence about the data rather than about either mechanism. And
-correcting by recording removes both because the labels are nearly nested --- a recording
-normally holds one bird of one species --- which is a statement about how the corpus was
+correcting by recording removes both because the labels are nearly nested. A recording
+normally holds one bird of one species, which is a statement about how the corpus was
 collected.
 
 Against that, the data road works and its effect size shrank honestly when re-tested.
-Figure~\ref{fig:avex} shows both scales. Merging two genuinely different recording domains
---- iNaturalist soundscape and xeno-canto focal --- bought $+14.4$ points of cross-domain
+Figure~\ref{fig:avex} shows both scales. Merging two genuinely different recording domains,
+iNaturalist soundscape and xeno-canto focal, bought $+14.4$ points of cross-domain
 species retrieval on the 12 species present in both stores, with a 3-species holdout. The
 pre-registered bigger re-test on 63 both-domain species with 16 held out took that to
 $+3.6$. A cross-domain contrastive mechanism on top reached $+13.4$ at the small scale and
@@ -1627,7 +1995,7 @@ NatureLM-audio \citep{naturelm2024} & audio-language model for bioacoustics & no
 \citet{sainburg2020} & projected latent space across repertoires & no & latent, not physiological & not documented & no \\
 \citet{goffinet2021} & learned low-dimensional vocal features & no & no & not documented & no \\
 generative audio models & waveform generators & yes & no & no & no \\
-\textbf{Lyrebird} & physical syrinx $+$ a corpus with no audio in it & \textbf{yes} & \textbf{yes} --- pressure, tension, tract geometry & \textbf{yes} --- no audio retained, no weights shipped & \textbf{yes} --- five levels \\
+\textbf{Lyrebird} & physical syrinx $+$ a corpus with no audio in it & \textbf{yes} & \textbf{yes} (pressure, tension, tract geometry & \textbf{yes}) no audio retained, no weights shipped & \textbf{yes}. Five levels \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -1641,367 +2009,22 @@ that is fitted to field audio at archive scale, together with an explicit statem
 evidence behind every claim built on it.
 
 % =====================================================================
-\section{What the data supports}
-\label{sec:findings}
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\linewidth]{song-funnel}
-\caption{The song funnel on the production store, drawn in the three units it actually changes through rather than on one axis. Of 340\,079 syllable observations, 327\,164 are typed and form 34\,696 bouts, of which 56.9\,\% collapse to a single token and 30.4\,\% survive as candidates; 366 species have enough candidates to ask the question and 48 got a motif song type. Adding a repeat class --- one collapsed string heard at least six times, matched by equality --- takes that to 98 species with the permutation control unmoved to the bout.}
-\label{fig:funnel}
-\end{figure*}
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\linewidth]{orders}
-\caption{Held-out order scaling. A first-order transition model over the learned syllable-type inventory buys 0.98 bits per token on bouts it has not seen, while on a within-species shuffle of the same tokens, with bout lengths and marginals preserved, the same model \emph{costs} 0.75 bits. The estimator is unbiased by construction, so a model can only win if the transitions are real. A second order is not supported: the median species loses 0.091 bits per token, which fails the magnitude criterion, while a quarter of species gain something, which passes the share criterion. Production scale.}
-\label{fig:orders}
-\end{figure*}
-
-This section states what can be read out of the corpus, at what strength, with the ceiling
-attached to each claim. Numbers from the 100-species debug subset are marked
-\emph{debug-scale}; numbers from twelve-species or ten-type samples are marked as such,
-because the project has twice measured an effect at small scale that did not survive
-replication, in both directions.
-
-\subsection{The tokens are units. This is the strongest result in the paper.}
-
-A first-order transition model over the learned syllable-type inventory buys \textbf{0.98
-bits per token} on held-out bouts --- cross-entropy 3.284 down to 2.301 --- while on a
-within-species shuffle of the same tokens, with bout lengths and marginals preserved, the
-same model \emph{costs} 0.75 bits (2.879 up to 3.634). The corpus is 34\,696 bouts, 327\,164
-tokens and 2\,421 species; the estimator is unbiased by construction, which the plug-in
-estimator this replaced was not.
-% docs/23 §23.2.2
-
-The logic is what makes it strong. An unbiased estimator paying for parameters it cannot use
-is the clean form of the claim that the tokens are units: the model can only win if the
-transitions are real, and it wins by a bit per token. This holds a load-bearing assumption
-that everything above the syllable rests on. The syllable inventory is produced by $k$-means
-in a learned embedding, which is a clustering; the question of whether it is also a
-\emph{unit system} is not answerable by comparing two models, and it is answered here in the
-affirmative. A model-free estimate on the same corpus agrees: conditional entropy of the next
-token given one previous is 0.941 bits against the shuffle's 3.343.
-% docs/23 §23.2.1
-
-Two artefacts belong with the number. The control's unigram cross-entropy sits \emph{below}
-the real corpus's (2.879 against 3.284), because shuffling spreads each species' tokens
-evenly across its bouts so that train and test marginals nearly coincide, whereas real bouts
-are clumped --- a bout tends to repeat one type --- so a held-out real bout can be mostly a
-type the train half barely saw. That clumping is itself structure, and it is why the gate
-reads within-corpus deltas rather than the two absolute curves against each other. And the
-same behaviour is pinned in a self-test: a planted second-order process must be found, a
-first-order process must not show depth, and the shuffle of the planted process must not gain
-from a longer context.
-
-\subsection{Repeat classes double the corpus's songs, with the control unmoved}
-
-The song funnel was counted stage by stage on the production store, and the loss is
-accounting rather than machinery. Of 340\,079 syllable observations, 327\,164 (96.2\,\%) are
-typed. Those form 34\,696 bouts. \textbf{19\,738 of those bouts (56.9\,\%) collapse to a
-single token}, and 6\,940 of them are three syllables or more --- a bird repeating one sound,
-which is a repertoire fact and not a measurement error. Only 10\,550 bouts (30.4\,\%) survive
-as candidates, 366 species have enough of them to ask the question, and 48 species got a song
-type.
-% docs/22 §22.1
-
-The collapse is correct for a motif distance --- a trill sung twice at two speeds must not
-sit twenty edits apart --- and wrong as a filter. Until this was fixed, \emph{a bird whose
-song is a trill could not have a song type at any recurrence bar.} Adding repeat classes takes
-the corpus from \textbf{48 species with a measured song to 98}, song types from 96 to 356
-(96 motifs, 260 repeats), and placed bouts from 1\,052 to 3\,741 --- with the shuffle control
-\textbf{unchanged to the bout at 0.170\,\%} against a 0.2\,\% bar.
-% docs/22 §22.2
-
-The control is the reason to believe it. Shuffling a species' tokens destroys runs, so the
-control finds no repeat classes \emph{at all}. A statistic whose null yields zero, on a
-corpus where the real version yields 260 types, is about as sharp as evidence gets from a
-permutation design. And the comparison is a comparison: the baseline arm reproduces the
-shipped corpus exactly, at 48 species, 96 types and 1\,052 placed bouts.
-
-The 0.2\,\% bar those arms are judged against was itself set on a control sweep rather than
-chosen, and the sweep is worth quoting because it shows the shape of the trade-off. On an
-earlier 35-species store, lowering the minimum cluster size from 6 to 4 took the real yield
-from 50 song types to 113 and the control's from 1 spurious type (6 of 3\,386 bouts, 0.2\,\%)
-to 17 (103 of 3\,386, 3.0\,\%). Raising it to 8 gained the control nothing and lost half the
-real types. Six is the knee, and the residual 0.2\,\% is reported rather than tuned to zero,
-because the price of zero was half the signal. Two further constants exist for measured
-reasons: bouts collapsing below three tokens are set aside because chance two-token strings
-sit at normalised edit distance 0.5, and a cluster whose members' weighted mean distance to
-their medoid exceeds 0.5 is demoted to noise, because five random six-token strings were once
-reported as one song type.
-% docs/12 §12.2, §12.3
-
-The ceiling is equally clear. Ninety-eight of 2\,421 species is 4.0\,\%. Two attempts to
-raise it by loosening a threshold both bought chance strings faster than songs
-(Table~\ref{tab:songdetector}). The remaining route is depth, and depth has an archive
-ceiling.
-
-\subsection{A second order is not supported, and 217 species can be asked}
-
-The median species \emph{loses} 0.091 bits per token going from order 1 to order 2 on bouts
-it has not seen, at three independent splits ($-0.091 / -0.116 / -0.142$). For the median
-species a second-order model is worse out of sample: the corpus cannot estimate the contexts
-it asks for.
-% docs/23 §23.2.2
-
-The share criterion tells the other half. 25.3\,\% of species gain something at order
-$1 \to 2$, against the shuffle's 4.1\,\% --- a six-fold rate that clears the pre-registered
-20-point margin. So the honest single sentence is: \emph{there is no second-order structure
-this corpus can support, and a quarter of species hint at one.} The hint is not nothing; it
-is also not what the gate asked for, and the gate was written first.
-
-What this settles is the diagnosis. The depth question is \textbf{data-limited, not
-method-limited}: 217 of 2\,421 species have enough bouts to ask it at all. Given that the
-literature is unambiguous that birdsong is not first-order \citep{jin2011,lu2025}, the 25\,\%
-that hint at a second order are an argument for depth on more species rather than for a
-cleverer sequence model. The post-depth-harvest bake-off supports the same reading from the
-other side: with qualifying species at 104 rather than 30, a hidden-state model beats even a
-smoothing-repaired first-order baseline by about $+0.37$ nats per token, where at debug depth
-its entire advantage was smoothing shape.
-% docs/18 P1 re-run
-
-\subsection{The map's own confusion is the honest bound on the interaction}
-
-With every type granted its own cluster, so that no type can fail to be retrieved for want
-of one, \textbf{type retrieval is 0.602}. For 40\,\% of points the nearest centroid by cosine
---- the exact lookup the browser performs on live audio --- belongs to \emph{another type}.
-This is debug-scale, on a fixed 214\,154-point matrix over 2\,143 types.
-% docs/22 §22.8
-
-This is the number to quote when asked whether singing at the system lights the right region.
-It is not the clustering's failure and it is not the projection's: it is the embedding's own
-confusion between types, and it was invisible under $k$-means because a type with no cluster
-cannot be retrieved at all. Raising it is a representation problem, which is where
-Section~\ref{sec:external}'s external comparison points.
-
-Two related numbers complete the picture and are better than the headline suggests. On the
-field points alone --- the population the question is about, since a recorded syllable must
-light its own region --- retrieval is 0.7604 under label assignment and 0.7176 under the
-shipped $k$-means (Table~\ref{tab:w5}). And the browser's bridge, which is a second and
-independent source of error, loses 38.6\,\% of region agreement of which 76.4\,\% is boundary
-near-ties: tie-adjusted agreement is 0.91, and species-level agreement, which is the honest
-single-label claim, is 0.781 against chance 0.033.
-% docs/20 §20.1
-
-\subsection{Pathological recording sessions are detectable from the browser's side}
-
-Eight of 45 held-out recordings carry 22.9\,\% of the map's total flip loss, all eight from
-xeno-canto and none from iNaturalist, with one session alone carrying 9.3\,\%. They separate
-cleanly on a statistic the browser can compute from the 28-dimensional side alone: the mean
-5-nearest-neighbour distance of a session's standardised descriptors to the fit-side cloud
-separates them at \textbf{AUC 0.953}, and a shipped cloud of 256 random anchors holds
-AUC $\ge 0.92$ over draws at a cost of 28\,kB. The pre-registered adoption gate for using it
-as a \emph{lever} --- raising the remaining rows' agreement by 5 points --- failed at $+3.5$
-points raw, so the pre-registered fallback fired and it ships as an \emph{honesty} gate: the
-interface says the session is off everything the map knows instead of lighting regions. At
-the shipped operating point it flags 8 of 45 sessions, catches 5 of the 8 bad ones including
-the three worst loss-carriers, and produces 3 clean false flags all within 0.02 of the bad
-line.
-% docs/20 §20.3.1, §20.3.2 — end-to-end debug build
-
-Two calibration facts belong with it. A threshold calibrated on fit sessions does not
-transfer to unseen sessions even when the session's own rows are excluded, because sibling
-sessions of the same recordists deflate every fit session's distance --- the 95th-percentile
-fit-side threshold flags 29\,\% of held-out sessions. The shipped threshold is calibrated
-cross-wise, each fit session judged against the other seeded half. And the mirror-image
-action fails: pruning the sessions this signal flags from the \emph{fit} costs $-0.0147$ and
-$-0.0062$ of evaluation cosine on two stores against a 0.005 allowance. The pathological
-sessions are manifold coverage, and removing them hurts the next unseen pathological session.
-
-\subsection{The physical model is right and the fit is what fails}
-
-The audit's conclusion holds and is unusually well supported for a negative:
-\emph{nothing the project has measured points at the oscillator}. The ODE is the published
-normal form term for term, agreeing with Runge--Kutta to 2\,\% of $f_0$, reproducing the
-reference measurements to 0.1\,\% on $f_0$ and 2\,\% on amplitude, holding at 18 of 18
-two-sided parity fixtures, and collapsing into period doubling exactly where the coupling
-literature says the weak-coupling approximation dies. Every recorded deviation is in
-parameterisation, in the periphery, or in the objective.
-% docs/21 §21.1
-
-The concrete state of the fit, at production scale: median resynthesis cosine \textbf{0.648}
-over 2\,421 species and 13\,859 types, with the worst type at $-0.445$. The path to that number
-is worth stating because it is not monotone and the reasons differ: the 12\,724-type learn
-scored 0.650, the per-species respiration and two-voice fit passes took it to 0.6623 across
-12\,680 scored types, and it then fell to 0.648 when the corpus deepened, which is the expected
-direction --- the added species are harder. On the original 22-species store the equivalent
-figure reached 0.775 after the naturalness fields were added, from 0.533 before, with the share
-of types above 0.7 going from 26.2\,\% to 66\,\% and the share below 0.5 from 44.2\,\% to
-11\,\%.
-% docs/16 §16.3, §16.4; HANDOFF 2026-07-31; docs/08 §8.1a
-
-The single most stubborn number in the project is cross-species placement. On the original
-22-species store a resynthesis lands nearest its \emph{own} species 23.1\,\% of the time
-against chance 4.5\,\%. Four hypotheses for the remaining 77\,\% were each tested and each
-refuted, and they are worth listing because each cost real work: the envelopes are not
-collapsed (we express 103\,\% of the real between-species spread and 106\,\% of the spectral
-detail --- they vary along different axes); there is a systematic spectral tilt and
-correcting it \emph{exactly} drops placement to 20.2\,\%; the harmonic structure is not
-missing, because real syllables resolve to a mean of 2.2 partials and feeding measured
-partial amplitudes to the fit moved the cosine 0.776 to 0.768; and a time-resolved objective
-improves its own metric by 36\,\% while dropping 28-dimensional placement from 61.7\,\% to
-43.2\,\%.
-% docs/08 §8.1a; docs/09 §9.1
-
-That last refutation is the informative one, and its mechanism was found afterwards. The two
-objectives conflicted because the $f_0$-tracking tract locks spectral shape to pitch, so the
-only lever the fit had for moving a spectral trajectory was bending the pitch contour --- and
-the pitch contour is strongly species-diagnostic. Under a fixed waveguide the conflict
-disappears and all three metrics improve together. That the waveguide then failed to
-generalise across 22 species, while winning under learned typing on a different store, is
-recorded as unresolved.
-
-One further reading of the placement metric is required, and it is the reason it is not the
-paper's headline. \emph{Placement degrades in absolute terms as the corpus broadens, while
-improving relative to chance.} On the ingest that took the store from 36 to 121 species, own-species
-placement fell from 24.6\,\% to 11.5\,\% --- while chance fell from 2.8\,\% to 0.9\,\%, so the
-ratio to chance rose from 8.8-fold to 12.8-fold. The pre-registered target for that gate was an
-absolute 35\,\%, and it \textbf{failed}. Own-type placement held at 62.6\,\% and the median cosine
-held, barely, at 0.742 against a 0.74 bar, with the reason named at the time: 85 of the newly
-added species carried about three recordings each, which fits thin types. Type coverage in the
-same build fell from 94.6\,\% to 54.1\,\% and cluster purity from 56.7\,\% to 30.3\,\%, and
-both are harvest depth rather than machinery: 651 orphan types belong mostly to those
-three-recording species, which cannot meet the map's minimum cluster size. Any absolute
-placement or purity figure in this paper is therefore only interpretable against its own
-species count.
-% docs/14 §14.3, §14.5
-
-\subsection{Extensions ship only where a fit wins them, and the ones that ship are countable}
-
-The pattern is consistent enough to state as a result about method. \textbf{Hand-set
-physical defaults lose bake-offs, however correct the published physics.} The respiratory
-oscillator's hand-set default set moved median cosine from 0.343 to 0.336, with losses
-concentrated in sub-50\,ms notes whose onsets the physically correct 20--40\,ms attack eats.
-The two-voice coupling's hand-set default moved it from 0.343 to 0.294 --- while the two
-worst-fitting low-pitched species \emph{improved}, which is why it was kept rather than
-deleted. Both are parked off by default.
-% docs/15 §1, §5
-
-The per-species fit passes are the version that wins, and they win narrowly and
-specifically: respiration took 445 of 12\,680 scored types and the second voice 2\,027 of
-5\,922 screened types, with the ship gate holding everywhere. The tracheal comb won 10 of 22
-species on the original corpus. The fricative route --- turbulence routed around the
-$f_0$-tracking band into the syllable's own fitted formants, because a fricative is a noise
-burst filtered by the tract and not a tone with noise added --- moved the bench from 0.584 to
-0.656 with 13 wins and 0 losses, and ships per type. A one-tone re-fit of the authored calls
-against the same bird's learned types shipped a measured noise/roughness texture to 14 of 15,
-median gain $+0.148$, with the honest caveat that the median cosine afterwards is still
-0.270.
-% docs/16 §16.4, §16.7
-
-Every one of those gates was read on the descriptor cosine, and Section~\ref{sec:walls} says
-that cosine does not rank audible fidelity. A re-judgment of the shipped set on the spectral
-bench is therefore owed, and is recorded as owed.
-
-\subsection{Novelty detection improves with corpus breadth, and its threshold does not transfer}
-
-Novelty detection is a distance question in the embedding, and it is evaluated by holding
-entire species out of training and asking whether their syllables are flagged. The honest
-figure improved monotonically as the corpus broadened, and every step changed the test as well
-as the model, so the four numbers are a trend rather than a paired comparison. On the
-9\,000-syllable store with six species held out: ROC AUC 0.596 at 7.4\,\% true positives at
-the 5\,\% false-positive operating point. On the 47\,000-syllable retrain with five held out:
-0.672 and 14.8\,\%. On the 121-species store, evaluated against 25\,892 syllables of 105
-genuinely non-training species rather than a handful of chosen holdouts: 0.786 and 22.3\,\%. On
-the production critic, with 895 whole species held out --- the hardest test run: \textbf{0.846
-and 32.2\,\%}. The novel side of the test got larger and more honest at each step, and the doc
-that reports each pair says so.
-% docs/10 §10.3; docs/11 §11.2; docs/14 §14.3; docs/16 §16.2
-
-An earlier and much higher figure, ROC 0.825 on the 9\,000-syllable store, is a different
-measurement --- held-back syllables of training species against held-out species' syllables ---
-and was superseded in place by the 0.596 above. Both are on the record. The low-false-positive
-end of the curve is the weak end in every version.
-% docs/09 §9.7 superseded by docs/10 §10.3
-
-The per-species pattern refutes the obvious explanation. Detection rate is not about taxonomy.
-On the 9\,000-syllable store it fits five of six held-out species --- congeners are harder ---
-and the sixth contradicts it, because a wren with no relative in the training set is the
-\emph{worst} detected of the six at 8.2\,\%. The ordering differs on the 47\,000-syllable store,
-which is itself the point: the embedding measures acoustic neighbourhood, not relatedness. A
-loud broadband trill sits near other species' trills whatever the family tree. That is
-arguably the correct behaviour for the question being asked, and it means ``hold out a
-species'' is a harder test than ``hear a genuinely new sound''.
-
-The operational finding is a warning. \emph{A novelty threshold holds only for the corpus that
-calibrated it.} A threshold calibrated for 5\,\% false positives on the 9\,000-syllable store
-flagged 29.8\,\% of the 47\,000-syllable store, including 29\,\% of \emph{training} species'
-syllables. Recalibration without retraining returns the store-wide rate to 5.6\,\%. The
-shipped threshold has moved through 0.1048, 0.1558, 0.1912, 0.1737 and 0.1323 across five
-harvest epochs. Thresholds do not transfer, and treating one as a constant is how a map starts
-confidently reporting novelty about sounds it already knows.
-% docs/10 §10.3; docs/11 §11.2; docs/14 §14.3; docs/16 §16.2
-
-\subsection{One example of ground truth from outside, at n = 31}
-
-Vocal mimics are the only source of labelled cross-species acoustic similarity available to a
-corpus like this one, because a lyrebird singing a grey shrike-thrush produces syllables whose
-acoustics are shrike-thrush and whose label is lyrebird --- and the accuracy of the imitation
-has been certified by the receiving birds rather than by us \citep{dalziell2012}.
-
-The pilot is a well-formed test on an empty corpus, and is reported as such. The store holds
-\textbf{31} lyrebird syllables. Against the 12\,393 type centroids of the production fit,
-those 31 match \textbf{13 distinct non-lyrebird species}, where random syllables of the corpus
-match 29.9 (sd 1.0) --- concentrated, in the direction mimicry predicts. Two of the top
-matches are Australian species that co-occur with lyrebirds and are plausible models; the rest
-are Neotropical and African and cannot be mimicry. The accompanying figure of 83.9\,\% for
-``nearest centroid is its own type'' is circular by construction, since those syllables are
-inside those centroids, and is not evidence.
-% docs/23 §23.7
-
-At $n = 31$ this licenses nothing beyond a direction. The action it names is a targeted
-harvest rather than a method: xeno-canto's lyrebird recordings frequently name the mimicked
-species in the remarks, so such a harvest returns \emph{labelled} mimic-to-model pairs, and
-other mimics extend the same set. The reason to pursue it is that it would also supply a
-fidelity yardstick for the objective problem of Section~\ref{sec:walls} that owes nothing to
-our synthesiser and nothing to our cosine.
-
-\subsection{What the corpus cannot be asked}
-
-Stated as a list, because each item is a boundary rather than a shortcoming to be worked
-around.
-
-\emph{Function, for almost everything.} Playback is the only proof, there is none here, and
-every recording is one bird with no interaction and no receiver. The interface correctly
-reports ``real acoustics, no documented function'' for the overwhelming majority of the
-corpus: at the production build, 13\,919 of 14\,003 regions are \emph{unlabelled} against 27
-\emph{documented}, 10 \emph{experimental}, 16 \emph{inferred} and 31 \emph{invented}. The
-store holds 23\,697 syllables the novelty detector has flagged, of which 841 are reported as
-\emph{unlabelable} even by an external model, because their xeno-canto audio was deleted by
-design --- a cost of the retention policy, stated rather than absorbed.
-% HANDOFF 2026-08-01 (v5 confidence mix); docs/16 §16.5
-
-\emph{Species replication on retained audio.} The cache holds at most two recordings per
-species, so any test needing several recordings of one species requires a re-fetch.
-
-\emph{Geographic priors.} BirdNET's occurrence meta-model takes latitude, longitude and week,
-and the store keeps date and country but \emph{no coordinates}. Both archives return them; the
-harvester never recorded them. That is a metadata-only re-fetch and it is the gate on the only
-part of the external comparison still unanswered.
-% docs/23 §23.6.3
-
-\emph{Individual identity and dialect.} The corpus now has the depth in principle --- 10 to 16
-individuals per species is literature-proven separable --- and the recordist confound of
-Section~\ref{sec:walls} makes any such claim uninterpretable until it is addressed in the data.
-
-% =====================================================================
 \section{Discussion}
 \label{sec:discussion}
 
 Three of this paper's results generalise past the system that produced them.
 
 \textbf{Recording-condition confounding is a property of the public bioacoustic archives, not
-of any one model's loss.} It has now been attacked from four independent directions --- a
+of any one model's loss.} It has now been attacked from four independent directions. A
 gradient-reversed adversarial head, a species-factored version of the same, the post-hoc
 genomics batch-effect toolkit including its strongest member, and two archive-scale external
-embeddings --- and every route either fails to reach it or pays for it one-for-one in species
+embeddings, and every route either fails to reach it or pays for it one-for-one in species
 structure. The two external models disagree with each other by more than either differs from
 ours, which is the decisive form of the argument: if archive-scale training conferred the
 property, both would have it and they would agree. Since most species in these archives are
 carried by a handful of recordists, no method that sees only an embedding can separate labels
-the sample never separated. The prescription is a data action --- more recordists, and more
-genuinely different recording domains, per species --- and it now has two independent
+the sample never separated. The prescription is a data action. More recordists, and more
+genuinely different recording domains, per species, and it now has two independent
 derivations, one from domain merging and one from batch correction.
 
 \textbf{An excellent discriminator is not an objective.} A critic that separates real from
@@ -2023,7 +2046,7 @@ For anyone building a comparable system, the ordering the evidence supports is: 
 representation before the clustering, fix the corpus before the loss, and do not spend
 anything on the search's starting point. And write the gate down first, because three of this
 project's most useful findings are gates that failed in ways that identified the real
-constraint --- the label-assignment arm, whose failure showed that seeded $k$-means is nearly
+constraint. The label-assignment arm, whose failure showed that seeded $k$-means is nearly
 as good as knowing the answer where the cluster budget does not bind; the inverse encoder,
 whose failure eliminated the starting point as an explanation; and the second-order syntax
 arm, whose failure converted a method question into a countable data question.
@@ -2033,8 +2056,8 @@ arm, whose failure converted a method question into a countable data question.
 \label{sec:limitations}
 
 \emph{Scale of the evidence.} A large share of the comparative numbers in this paper are
-measured on a 100-species debug subset, on a 37-species store, or --- for the domain-merge
-arms --- on 12 or 63 species. That is a deliberate operating rule, adopted after a
+measured on a 100-species debug subset, on a 37-species store, or, for the domain-merge
+arms. On 12 or 63 species. That is a deliberate operating rule, adopted after a
 full-corpus build exhausted the machine's memory, and it is marked at every occurrence. The
 production-scale claims are the corpus counts, the fit medians, the sequence statistics and
 the built asset set; the arm-versus-arm comparisons are mostly not.
@@ -2061,7 +2084,7 @@ decomposition had only been measured on a debug build, and its own note said to 
 the production store before any production decision. The production build carries the figures
 and they are markedly worse than the debug build predicted: region agreement
 \textbf{0.4909} against the debug build's 0.6316, tie-adjusted \textbf{0.7056} against
-0.8136, and species-level \textbf{0.5619} against 0.6831 --- between 12 and 14 points lost on
+0.8136, and species-level \textbf{0.5619} against 0.6831. Between 12 and 14 points lost on
 every one of the three. The direction is explicable rather than mysterious: agreement is a
 nearest-centroid lookup, and this build has 14\,003 knots where the debug build had 4\,298, so
 a held-out syllable has three times as many near neighbours available to be confused with the
@@ -2070,7 +2093,7 @@ shipped production build, a live syllable routed through the descriptor map reac
 region the embedding itself would choose \textbf{less than half the time}, and the same species
 just over half. The tie-adjusted figure says most of the disagreement is a near-miss between
 adjacent knots rather than an unrelated region, which is the difference between a blurred
-answer and a wrong one --- but it does not make the raw figure larger, and the raw figure is
+answer and a wrong one, but it does not make the raw figure larger, and the raw figure is
 what a reader should hold. Taken with the 0.602 retrieval ceiling of
 \S\ref{sec:internal}, the honest bound on ``sing and the right region lights'' at
 production scale is lower than any debug number in this paper.
@@ -2086,10 +2109,10 @@ project's plan document.
 % =====================================================================
 \section{Conclusion}
 
-Lyrebird measures 340\,079 syllables from wild recordings without keeping the recordings,
-fits a published physical syrinx model to 13\,859 syllable types over 2\,421 species, learns a
+Lyrebird measures 378\,224 syllables from wild recordings without keeping the recordings,
+fits a published physical syrinx model to 16\,283 syllable types over 2\,650 species, learns a
 measured grammar over those types, and displays the result as a map in which live sound lights
-the acoustically nearest regions --- with an evidence label on every claim.
+the acoustically nearest regions, with an evidence label on every claim.
 
 The results that survive scrutiny are narrower than the system. A first-order transition model
 over the learned tokens buys 0.98 bits per token held out while costing 0.75 on the shuffle,
@@ -2098,7 +2121,7 @@ species with a measured song while the shuffle control does not move. A second o
 supported, and 217 of 2\,421 species have enough bouts to ask. Type retrieval tops out at
 0.602, so for two syllables in five the nearest region is the wrong one. The objective that
 produced every fit does not rank audible fidelity. And the embedding organises by recordist
-before it organises by bird --- a property of the archives, established four independent ways,
+before it organises by bird. A property of the archives, established four independent ways,
 including from outside our own loss entirely.
 
 Thirty-six of fifty-eight pre-registered gates failed. The complete ledger is
@@ -2116,7 +2139,7 @@ they contain no audio, but they were gathered under archive rate limits and are 
 copies. Every one-off measurement in Sections~\ref{sec:internal} and~\ref{sec:external} is a
 committed script whose pre-registered gate is the docstring at the top of the file, on the
 principle that a result whose gate cannot be re-read is not evidence. Two fixed artefacts the
-comparative arms depend on --- a dumped clustering matrix and a local audio cache --- sit
+comparative arms depend on (a dumped clustering matrix and a local audio cache) sit
 outside the repository by design, so absolute numbers will move on regeneration while the
 arm-against-arm comparisons hold.
 
@@ -2278,26 +2301,27 @@ the same at 40\,k & 39\,993 & 25, 13 after a fixed trim bug & the $+13.3$-point 
 $+$ multi-source ingest & 39\,874 & 121 & the first non-xeno-canto fetch \\
 $+$ iNatSounds & 226\,264 & 3\,811 & 6\,453 recordings in one pass, zero failures \\
 \textbf{$+$ depth harvest} & \textbf{340\,079} & \textbf{3\,811} & $+139\,440$ syllables, 7\,992 $\to$ 10\,184 recordings \\
-\textbf{current fit} & \textbf{327\,164 typed} & \textbf{2\,421 fitted, 13\,859 types} & median resynthesis cosine 0.648, 23 minutes \\
+$+$ under-floor top-up & 378\,224 & 3\,812 & 1\,500 recordings, segmentation band applied \\
+\textbf{current fit} & \textbf{367\,196 typed} & \textbf{2\,650 fitted, 16\,283 types} & median resynthesis cosine 0.699 \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
-The current production build holds 348\,461 points in 14\,003 regions --- 13\,903 type
+The current production build holds 348\,461 points in 14\,003 regions, 13\,903 type
 clusters with zero source splits, plus 100 $k$-means clusters for the 20\,241 points that
-carry no label --- at 100\,\% type coverage, built in 1\,136.8\,s with every verification
+carry no label. At 100\,\% type coverage, built in 1\,136.8\,s with every verification
 check passing. Its three-dimensional projection reproduces high-dimensional distances at
 Pearson 0.691 and Spearman 0.689 over 200\,000 sampled pairs. Centroid assets are 7.69\,MB of
 JSON plus a 3.81\,MB binary sidecar, against the 44\,MB whole-file parse that blocked an
-earlier build. Cluster purity reads 94.5\,\% and is \emph{not} a measurement on this build ---
-it is 1.0 by construction on the labelled clusters, and the manifest says so.
+earlier build. Cluster purity reads 94.5\,\% and is \emph{not} a measurement on this build.
+It is 1.0 by construction on the labelled clusters, and the manifest says so.
 % HANDOFF 2026-08-01 (night)
 
 A separate scaling result belongs here because it is a reproducible engineering fact rather
 than a finding about birds. The cross-species relations document is quadratic in species
 count: at 2\,421 species it is 2\,929\,410 unordered pairs and 760\,MB, of which only 12\,762
 pairs (0.44\,\%) carry a shared type at all. The shipped form writes each species' eight
-nearest partners, deduplicated --- 14\,425 pairs, 5.6\,MB, a 135-fold reduction --- and was
+nearest partners, deduplicated, 14\,425 pairs, 5.6\,MB, a 135-fold reduction. It was
 checked against the complete document across all 2\,421 species at the application's query
 limit with zero mismatches. The file declares the retention rule and both totals, and states
 in as many words that the kept shared-type count is not the corpus's shared-type count.
@@ -2360,7 +2384,7 @@ air-sac dynamics \citep{fainstein2025},
 \end{align}
 with $x_s$ the air-sac wall displacement, $p$ the gauge pressure, $\alpha_r$ a Heaviside
 conductance giving inflow and outflow different damping, and the tract driven by
-$\sqrt{p_s}\,y$ --- the inertive low-frequency limit of \citet{laje2005}, not the acceleration
+$\sqrt{p_s}\,y$. The inertive low-frequency limit of \citet{laje2005}, not the acceleration
 injection some reference implementations use. It is off by default.
 
 Thirteen gesture axes are searched per type by coordinate descent; the measured pitch contour
