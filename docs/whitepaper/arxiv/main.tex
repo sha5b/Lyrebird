@@ -1190,13 +1190,33 @@ not a per-dimension gain either.
 % docs/23 §23.1.1
 The named action is more recordists per species, in the data.
 
-Two later measurements sharpen this limit without moving it. Both are reported in
-full in Section~\ref{sec:phase0}. \textbf{The structure is not an artefact of any model
+\textbf{That action now has a threshold, which is the one place in this paper where a limit
+moved.} Measuring the cost of a recordist-blocked split separately by how many recordists carry
+the species --- label-set size equalised at 115 species a stratum, recordings per species flat
+between 8.2 and 10.9 --- gives 30.82 points of drop at two recordists, 20.92 at three, 18.52 at
+four, 11.12 at five and \textbf{3.08 at six or more}. A factor of ten, monotonic. So the slogan
+resolves to a number: at six independent recordists a species is close to safe under a random
+split, and at two it is not usable for benchmarking at all without blocking. It is observational
+rather than causal --- species are not assigned recordists at random --- but it is the only
+intervention we have found that removes this confound instead of measuring it, and it belongs to
+the archives rather than to any model.
+% analysis/w0_confound_anatomy.py, 884 species / 646 recordists on post-cutoff audio
+
+\textbf{And the confound is those recordists, individually, in both external models.} Per
+recordist findability --- how much more often a recording's nearest neighbour is also theirs than
+chance allows --- correlates between Perch 2.0 and BirdNET V2.4 at a partial $r$ of
+$\mathbf{+0.852}$ over 212 recordists, after the number of recordings each contributed is removed
+from both sides, against a shuffled null 95th percentile of $+0.140$. 83\,\% of recordists are
+findable in both spaces. Two architectures trained by different groups agree about \emph{which
+people} are identifiable, which locates the structure in the recordists' equipment, sites and
+habits and not in either model's inductive bias.
+
+Two earlier measurements sharpen the same limit. Both are reported in full in
+Section~\ref{sec:phase0}. \textbf{The structure is not an artefact of any model
 having memorised these archives}: on 2\,158 recordings uploaded to xeno-canto after Perch
 2.0's training snapshot, that model's recordist lift is $+0.441$ against a species lift of
-$+0.750$, both scored on identical rows at full coverage. And \textbf{the sentence above
-about recordists per species now has a number}: recordings per species correlates with
-distinct recordists per species at $r = +0.923$ over 3\,853 species, with a median of 17
+$+0.750$, both scored on identical rows at full coverage. And recordings per species correlates
+with distinct recordists per species at $r = +0.923$ over 3\,853 species, with a median of 17
 recordists for species holding at least eight recordings against 2 for the rest. That
 correlation is also a warning about test design, because any analysis requiring several
 recordings per species selects the part of the corpus where this limit binds least.
@@ -2212,24 +2232,38 @@ the same mechanism, and both recover together with depth. The shortfall against 
 full sample is ours and not the birds'.
 
 \paragraph{A recordist-blocked split costs a probe over frozen foundation-model features
-9.68 points of top-1, which is just under the gate we set.} Of 2\,158 quality-A recordings
-uploaded to xeno-canto \emph{after} Perch 2.0's publication --- audio the model provably
-could not have trained on --- the \textbf{730} that cleared the two-recordist floor were
-scored, and a linear probe over frozen Perch features reaches 93.29\,\%
-under a random split and 83.61\,\% under a recordist-blocked one, across 62 species carried
-by two or more recordists. The pre-registered gate asked for more than 10 points and is
-therefore not met, and the threshold is not being moved.
+18.51 points of top-1 on Perch and 21.59 on BirdNET, and the gate is met on both.} The
+population is \textbf{8\,287} recordings over \textbf{884} species from \textbf{646} recordists,
+all uploaded to xeno-canto after both models' training snapshots. A linear probe over frozen
+Perch~2.0 features reaches 81.68\,\% under a random split and 63.16\,\% under a
+recordist-blocked one. On frozen BirdNET~V2.4 features it is 79.08\,\% and 57.49\,\%. Blocking
+was worse in \textbf{20 of 20 paired folds} on both models, per-fold standard deviation under 3
+points, and the two agree on the error ratio to two decimal places --- $2.01\times$ and
+$2.03\times$ --- while differing by 3 points in the raw figure. The pre-registered bar was more
+than 10 points reproduced on both models, so it is met.
 
-Two things belong beside that verdict, not instead of it. Blocking was worse in
-\textbf{20 of 20 paired folds}, and 9.68 points at 93\,\% accuracy is \textbf{2.44 times the
-errors} ($6.71\,\% \to 16.39\,\%$) --- a gate written in accuracy points is a far harsher bar
-near the ceiling than in the middle of the range, which is a flaw in how we wrote it rather
-than a property of the effect. A re-registration should state the bar as an error-rate ratio.
+\textbf{The pilot said 9.68 points and failed the gate, and its population is why.} It read a
+catalogue of exactly 6\,000 recordings, which was its own 60-page search limit and not the
+archive: the same query holds 21\,928. And it selected by \emph{recordist}, a rule inherited
+from the T1b arm whose unit was the recordist, which left 62 scorable species out of 827
+fetched. Run at 62 classes on this population the same procedure gives 12.75 points, so part of
+the pilot's shortfall was its label set and part was its sample.
+
+\textbf{The gate was written in the wrong unit, and the full run shows why more clearly than
+the pilot did.} Across nested label sets of 62 to 884 species on the same recordings and folds,
+the drop climbs from 12.75 to 18.51 points while the error ratio \emph{falls} from $2.97\times$
+to $2.01\times$. We had predicted the ratio would be flat. It is not, so there is no unit in
+which this effect is one number independent of the label set, and any figure quoted without its
+class count cannot be compared against. The bar should have been an error-rate ratio with the
+label-set size stated. It is not being moved after the fact.
+
 The design also had to change before it could run at all: \emph{both} candidate models train
 on xeno-canto, and Perch additionally on iNaturalist, so a top-1 comparison on archive audio
 cannot separate leakage from memorisation. Freezing the model and training only a linear
 probe puts identical contamination on both sides of the comparison, and post-cutoff audio
-removes it entirely.
+removes it entirely. Because the discriminator is upload date and not archive provenance, this
+also makes BirdNET testable on an xeno-canto corpus, which the registered method had ruled
+out: V2.4 was released in June 2023, two years before the cutoff.
 
 \paragraph{The recordist structure is visible to an outside model on recordings it has never
 seen.} On that same post-cutoff population, Perch's nearest-neighbour recordist lift is
@@ -2309,9 +2343,19 @@ $\lambda$ fitted at $0.130$ overall and $0.000$ at shallow depth
 
 W0 --- cost of a recordist-blocked split
 & $>10$ points of top-1 drop, on a public corpus, on both models
-& 9.68 points ($93.29 \to 83.61$), 20 of 20 folds, $2.44\times$ the errors. One model,
-pilot scale
-& \texttt{analysis/w0\_recordist\_split.py}; \texttt{-{}-self-test} first
+& \textbf{MET.} 18.51 points on Perch ($81.68 \to 63.16$) and 21.59 on BirdNET
+($79.08 \to 57.49$), 20 of 20 folds each, $2.01\times$ and $2.03\times$ the errors, over 884
+species and 646 recordists. The pilot's 9.68 was one model at pilot scale
+& \texttt{analysis/w0\_full\_fetch.py} then \texttt{w0\_full.py}; the pilot is
+\texttt{w0\_recordist\_split.py}
+\\[2pt]
+
+W0b --- how many recordists per species it takes
+& none; this was not registered, and it is reported as exploratory
+& 30.82 points of drop at 2 recordists per species falling to 3.08 at $\ge 6$, with label-set
+size and recordings per species held flat. The same recordists are findable in both models at
+a partial $r$ of $+0.852$
+& \texttt{analysis/w0\_confound\_anatomy.py}
 \\[2pt]
 
 T1b --- Perch's recordist lift on unseen audio

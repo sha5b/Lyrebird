@@ -76,8 +76,12 @@ nothing. See [`community/`](community/).
 - [ ] Read `community/benchmark-maintainers.md` before sending it — it names other people's
       models and says their evaluation is optimistic. That should go out in your voice, not mine.
 
-## What is not ready yet
+## Both papers are ready
 
-The W0 paper's results section is still `\todo` because the full run was fetching when this
-was written. **Do not submit paper one until `analysis/w0_full.json` is complete and its
-numbers are in the text.** The system paper is complete and could go today.
+The W0 full run finished and the gate is met on both models. Paper one's results, class-count
+sweep, dose-response curve and cross-model recordist section are all written; paper two's
+Table 10, phase-0 section and Limit 2 carry the new numbers. Both build clean with zero
+undefined references.
+
+The only `\todo` left in either is the **Zenodo DOI** and the **acknowledgements**, which is
+why Zenodo is step 1 above.

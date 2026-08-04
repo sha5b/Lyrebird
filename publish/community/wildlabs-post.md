@@ -25,8 +25,9 @@ the transition we all know goes badly.
 
 **What we measured.** On xeno-canto recordings uploaded *after* both models' training snapshots
 — so neither Perch 2.0 nor BirdNET V2.4 can have seen them — a linear probe over frozen
-features loses **[DROP] points of top-1** when the split is blocked by recordist instead of
-random. [RATIO]x the errors. On [S] species from [R] recordists.
+features loses **18.5 points of top-1 on Perch and 21.6 on BirdNET** when the split is blocked by
+recordist instead of random. Both are about **2.0x the errors**. On 884 species from 646
+recordists, and blocking was worse in 20 of 20 paired folds on both models.
 
 **Two things worth knowing if you evaluate your own models.**
 
@@ -54,7 +55,8 @@ whether the gap looks like what you see going from archive training to field dep
 
 ## Notes before posting
 
-- Fill `[DROP]` `[RATIO]` `[S]` `[R]` `[HF LINK]` `[ZENODO DOI]`.
+- The numbers are filled in from `pipeline/analysis/w0_full.json`. Only `[HF LINK]` and
+  `[ZENODO DOI]` are still open, and both need accounts.
 - The closing question is deliberate. This community has field experience that the paper does
   not, and their answer is worth more than the post.
 - Do not lead with the syllable inventory. It is the larger project but it is not what this

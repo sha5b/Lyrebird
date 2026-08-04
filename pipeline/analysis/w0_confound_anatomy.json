@@ -1,0 +1,152 @@
+{
+ "census": {
+  "catalogue": 21928,
+  "playable": 21709,
+  "species_all": 4305,
+  "species_scorable": 886,
+  "recordings_scorable": 8321,
+  "max_per_species": 12,
+  "recordists_all": 961
+ },
+ "recordings": 8287,
+ "species": 884,
+ "recordists": 646,
+ "dose_response": {
+  "stratum_sizes": {
+   "2": 141,
+   "3": 151,
+   "4": 131,
+   "5": 115,
+   "6+": 346
+  },
+  "species_per_stratum": 115,
+  "strata": {
+   "2": {
+    "species": 115,
+    "recordings": 942,
+    "mean_recordings_per_species": 8.191304347826087,
+    "mean_recordists_per_species": 2.0,
+    "perch": {
+     "random_top1": 93.62245900036321,
+     "blocked_top1": 62.80419974402718,
+     "drop_points": 30.818259256336027,
+     "error_ratio": 5.832310644195178,
+     "folds": 20,
+     "classes": 49.15
+    },
+    "birdnet": {
+     "random_top1": 91.58768419589592,
+     "blocked_top1": 52.24905761097352,
+     "drop_points": 39.338626584922395,
+     "error_ratio": 5.676313574168295,
+     "folds": 20,
+     "classes": 49.15
+    }
+   },
+   "3": {
+    "species": 115,
+    "recordings": 989,
+    "mean_recordings_per_species": 8.6,
+    "mean_recordists_per_species": 3.0,
+    "perch": {
+     "random_top1": 90.32842818740289,
+     "blocked_top1": 69.41106465804987,
+     "drop_points": 20.917363529353025,
+     "error_ratio": 3.162767741858506,
+     "folds": 20,
+     "classes": 74.55
+    },
+    "birdnet": {
+     "random_top1": 88.98697642877916,
+     "blocked_top1": 62.91466648538901,
+     "drop_points": 26.072309943390145,
+     "error_ratio": 3.367407077155644,
+     "folds": 20,
+     "classes": 74.55
+    }
+   },
+   "4": {
+    "species": 115,
+    "recordings": 938,
+    "mean_recordings_per_species": 8.156521739130435,
+    "mean_recordists_per_species": 4.0,
+    "perch": {
+     "random_top1": 88.35435258004549,
+     "blocked_top1": 69.83247420561473,
+     "drop_points": 18.521878374430756,
+     "error_ratio": 2.5904550177857866,
+     "folds": 20,
+     "classes": 86.2
+    },
+    "birdnet": {
+     "random_top1": 85.16281315312997,
+     "blocked_top1": 61.16094907454983,
+     "drop_points": 24.00186407858014,
+     "error_ratio": 2.617682942615463,
+     "folds": 20,
+     "classes": 86.2
+    }
+   },
+   "5": {
+    "species": 115,
+    "recordings": 1018,
+    "mean_recordings_per_species": 8.852173913043478,
+    "mean_recordists_per_species": 5.0,
+    "perch": {
+     "random_top1": 89.41252551074038,
+     "blocked_top1": 78.29705438886843,
+     "drop_points": 11.115471121871948,
+     "error_ratio": 2.0498699319793356,
+     "folds": 20,
+     "classes": 94.35
+    },
+    "birdnet": {
+     "random_top1": 88.0938189873882,
+     "blocked_top1": 73.10622057441634,
+     "drop_points": 14.987598412971863,
+     "error_ratio": 2.2588082103821563,
+     "folds": 20,
+     "classes": 94.35
+    }
+   },
+   "6+": {
+    "species": 115,
+    "recordings": 1248,
+    "mean_recordings_per_species": 10.852173913043478,
+    "mean_recordists_per_species": 8.556521739130435,
+    "perch": {
+     "random_top1": 89.36894431362295,
+     "blocked_top1": 86.28406118088205,
+     "drop_points": 3.0848831327408988,
+     "error_ratio": 1.290176556660686,
+     "folds": 20,
+     "classes": 107.15
+    },
+    "birdnet": {
+     "random_top1": 87.15983347968597,
+     "blocked_top1": 83.58492651477005,
+     "drop_points": 3.5749069649159253,
+     "error_ratio": 1.2784159348136317,
+     "folds": 20,
+     "classes": 107.15
+    }
+   }
+  }
+ },
+ "cross_model_recordist_agreement": {
+  "recordists": 212,
+  "min_recordings_per_recordist": 6,
+  "mean_findability_perch": 0.3609365593666551,
+  "mean_findability_birdnet": 0.4382645379710384,
+  "pearson_raw": 0.8736855563292099,
+  "spearman_raw": 0.880112293181426,
+  "pearson_partial_log_recordings": 0.8523628703960247,
+  "null_pearson_mean": 0.0063707849179013044,
+  "null_pearson_p95": 0.10717279985092883,
+  "null_partial_p95": 0.1399263880235822,
+  "findability_vs_log_recordings_perch": 0.3742109939203666,
+  "findability_vs_log_recordings_birdnet": 0.38755572481643524,
+  "share_positive_both": 0.8301886792452831
+ },
+ "seconds": 27.4
+}

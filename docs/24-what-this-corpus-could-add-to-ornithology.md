@@ -26,7 +26,25 @@ W0  step-zero literature check            MOVED     the practice exists; the num
 W0  method as pre-registered              BROKEN    both models trained on the eval corpus;
                                                     redesigned as a frozen-embedding probe
 W0  pilot, frozen Perch, post-cutoff      NOT MET   9.68 points, gate > 10 -- but 2.44x the
-                                                    errors, worse in 20 of 20 folds
+                                                    errors, worse in 20 of 20 folds. Its
+                                                    catalogue was capped at 6 000 by its own
+                                                    SEARCH_PAGES and it selected by recordist,
+                                                    not species: 62 scorable classes of 827
+W0  FULL RUN, both models, post-cutoff    **MET**   18.51 points on Perch (81.68 -> 63.16) and
+                                                    21.59 on BirdNET (79.08 -> 57.49); 2.01x and
+                                                    2.03x the errors; 20 of 20 folds each; 8 287
+                                                    recordings / 884 species / 646 recordists.
+                                                    At 62 classes on this population: 12.75 pts
+W0  the gate's unit                       WRONG     points climb 12.75 -> 18.51 with class count
+                                                    while the ratio FALLS 2.97x -> 2.01x. We
+                                                    predicted a flat ratio; neither unit is
+                                                    invariant. Bar not moved after the fact
+W0b recordists per species needed         n/a       exploratory, not registered. 30.82 pts of
+                                                    drop at 2 recordists -> 3.08 at >=6, label
+                                                    set and recordings/species held flat
+W0c same recordists in both models?       n/a       exploratory. partial r = +0.852 over 212
+                                                    recordists (null p95 +0.140); 83 % positive
+                                                    in both spaces
 T1b Perch recordist lift, unseen audio    CONFIRMED +0.441 on matched rows; the earlier
                                                     contamination alarm was overcautious
 W1  phylogenetic signal in production      CLOSED    by G1, per this document's own rule

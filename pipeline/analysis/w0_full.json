@@ -8,27 +8,162 @@
   "max_per_species": 12,
   "recordists_all": 961
  },
- "recordings_scored": 7,
- "species_scored": 1,
- "recordists": 2,
- "single_recordist_species_dropped": 5,
- "folds_per_arm": 5,
+ "recordings_scored": 8287,
+ "species_scored": 884,
+ "recordists": 646,
+ "single_recordist_species_dropped": 0,
+ "folds_per_arm": 20,
  "gate_points": 10.0,
- "gate_met_both_models": false,
- "incomplete_models": [
-  "perch",
-  "birdnet"
- ],
+ "gate_met_both_models": true,
+ "incomplete_models": [],
  "results": {
   "perch": {
    "space": "perch",
    "dims": 1536,
-   "status": "no usable folds"
+   "unpaired": {
+    "random_top1": 81.35,
+    "blocked_top1": 63.16329273759995,
+    "drop_points": 18.18670726240004,
+    "random_folds": 20,
+    "blocked_folds": 20,
+    "random_classes": 884.0,
+    "blocked_classes": 663.6
+   },
+   "paired": {
+    "random_top1": 81.67787208553551,
+    "blocked_top1": 63.16329273759995,
+    "drop_points": 18.51457934793556,
+    "folds": 20,
+    "classes": 663.6,
+    "per_fold_mean": 18.51457934793556,
+    "per_fold_sd": 2.778611732280344,
+    "folds_blocked_worse": 20,
+    "error_rate_random": 18.322127914464488,
+    "error_rate_blocked": 36.83670726240005,
+    "error_ratio": 2.010503770870366,
+    "gate_met": true
+   },
+   "class_sweep": [
+    {
+     "species_target": 62,
+     "folds": 20,
+     "random_top1": 93.52964972460039,
+     "blocked_top1": 80.77566241483723,
+     "drop_points": 12.753987309763161,
+     "error_ratio": 2.971143256069776,
+     "gate_met": true
+    },
+    {
+     "species_target": 150,
+     "folds": 20,
+     "random_top1": 90.79528441493541,
+     "blocked_top1": 75.51903311566367,
+     "drop_points": 15.276251299271735,
+     "error_ratio": 2.659611441341948,
+     "gate_met": true
+    },
+    {
+     "species_target": 300,
+     "folds": 20,
+     "random_top1": 87.75788058070756,
+     "blocked_top1": 70.60458596724857,
+     "drop_points": 17.153294613458996,
+     "error_ratio": 2.401170338726398,
+     "gate_met": true
+    },
+    {
+     "species_target": 500,
+     "folds": 20,
+     "random_top1": 84.77753717353076,
+     "blocked_top1": 66.0220212463281,
+     "drop_points": 18.755515927202666,
+     "error_ratio": 2.232094710363822,
+     "gate_met": true
+    },
+    {
+     "species_target": 884,
+     "folds": 20,
+     "random_top1": 81.67787208553551,
+     "blocked_top1": 63.16329273759995,
+     "drop_points": 18.51457934793556,
+     "error_ratio": 2.010503770870366,
+     "gate_met": true
+    }
+   ]
   },
   "birdnet": {
    "space": "birdnet",
    "dims": 1024,
-   "status": "no usable folds"
+   "unpaired": {
+    "random_top1": 78.87307692307692,
+    "blocked_top1": 57.494556596840816,
+    "drop_points": 21.378520326236107,
+    "random_folds": 20,
+    "blocked_folds": 20,
+    "random_classes": 884.0,
+    "blocked_classes": 663.6
+   },
+   "paired": {
+    "random_top1": 79.08468954598928,
+    "blocked_top1": 57.494556596840816,
+    "drop_points": 21.59013294914846,
+    "folds": 20,
+    "classes": 663.6,
+    "per_fold_mean": 21.59013294914845,
+    "per_fold_sd": 2.9580783631811727,
+    "folds_blocked_worse": 20,
+    "error_rate_random": 20.915310454010722,
+    "error_rate_blocked": 42.505443403159184,
+    "error_ratio": 2.0322645220409976,
+    "gate_met": true
+   },
+   "class_sweep": [
+    {
+     "species_target": 62,
+     "folds": 20,
+     "random_top1": 91.6616416021801,
+     "blocked_top1": 75.59600220045212,
+     "drop_points": 16.065639401727978,
+     "error_ratio": 2.9267149042104506,
+     "gate_met": true
+    },
+    {
+     "species_target": 150,
+     "folds": 20,
+     "random_top1": 88.48098380493472,
+     "blocked_top1": 69.42695471985384,
+     "drop_points": 19.054029085080884,
+     "error_ratio": 2.6541368431484273,
+     "gate_met": true
+    },
+    {
+     "species_target": 300,
+     "folds": 20,
+     "random_top1": 85.17352508903835,
+     "blocked_top1": 64.56214140503135,
+     "drop_points": 20.611383684006995,
+     "error_ratio": 2.390174253002539,
+     "gate_met": true
+    },
+    {
+     "species_target": 500,
+     "folds": 20,
+     "random_top1": 82.44889373107587,
+     "blocked_top1": 60.83263492780973,
+     "drop_points": 21.616258803266142,
+     "error_ratio": 2.2316180229356677,
+     "gate_met": true
+    },
+    {
+     "species_target": 884,
+     "folds": 20,
+     "random_top1": 79.08468954598928,
+     "blocked_top1": 57.494556596840816,
+     "drop_points": 21.59013294914846,
+     "error_ratio": 2.0322645220409976,
+     "gate_met": true
+    }
+   ]
   }
  },
  "audio": "xeno-canto uploads after Perch 2.0 (since 2025-09-01), q:A, grp:birds",

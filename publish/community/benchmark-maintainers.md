@@ -5,8 +5,7 @@ optimistic, and the people who can change a protocol are its maintainers.
 
 **Read these before sending them.** They name other people's models and say their published
 numbers are flattering. That is a defensible claim and it should go out in your voice, not in
-mine. Send them only once the results section is filled in — a number is the whole point, and
-without it these read as an opinion.
+mine. The numbers are in now, so these are ready on that count.
 
 Send them **after** the Zenodo DOI exists, so each one can link something permanent.
 
@@ -31,9 +30,16 @@ they have thought about exactly this problem and will recognise the design immed
 > puts identical contamination on both sides of any comparison, so whatever either memorised
 > cancels out of a difference.
 >
-> On that population — [N] recordings, [S] species, [R] recordists — a recordist-blocked split
-> costs a linear probe [DROP] points of top-1 against a random split, on both models. As an
-> error ratio that is [RATIO]x.
+> On that population — 8,287 recordings, 884 species, 646 recordists — a recordist-blocked split
+> costs a linear probe **18.51 points** of top-1 on frozen Perch 2.0 features and **21.59** on
+> frozen BirdNET V2.4 features, against a random split. Blocking was worse in 20 of 20 paired
+> folds on both. As error rates that is 2.01x and 2.03x — the two models agree on the ratio to
+> two decimal places while differing by three points in the raw figure.
+>
+> One caution we would pass on: the effect is not a single number. Across nested label sets of
+> 62 to 884 species on the same recordings, the points climb from 12.75 to 18.51 while the error
+> ratio *falls* from 2.97x to 2.01x. Neither unit is invariant, so a figure without its class
+> count cannot be compared against.
 >
 > Two things we would flag for anyone repeating it. Species carried by a single recordist have
 > to be dropped rather than scored: under blocking they land wholly on one side and become an
@@ -63,7 +69,14 @@ structure than our own 32-d space. Lead with that; it is true and it makes the r
 > two of you disagree with each other more than either differs from ours, which we read as the
 > structure being a property of the archives rather than of any model's loss.
 >
-> The cost of blocking itself is [DROP] points of top-1 ([RATIO]x the errors) on [S] species.
+> The cost of blocking itself is **18.51 points** of top-1 on frozen Perch features, 2.01x the
+> errors, over 884 species and 646 recordists, worse in 20 of 20 paired folds.
+>
+> Separately: per-recordist findability correlates at +0.85 between your space and BirdNET's after
+> removing how many recordings each contributed. The same *individual* recordists are the
+> identifiable ones in both, which is why we read this as the archives rather than as either
+> model's loss.
+>
 > Details, embeddings and code: [LINKS].
 
 ---
@@ -103,6 +116,6 @@ See [`wildlabs-post.md`](wildlabs-post.md).
 
 ## Placeholders to fill before any of this goes out
 
-`[N]` `[S]` `[R]` `[DROP]` `[RATIO]` from `pipeline/analysis/w0_full.json`, and `[HF LINK]`
-`[ZENODO DOI]` once those exist. The cross-model numbers (16.5 %, 24 %, 40 %) are already
-measured and in `docs/23` §23.6.3.
+All the measured numbers are filled in from `pipeline/analysis/w0_full.json` and
+`w0_confound_anatomy.json`. Only `[HF LINK]`, `[ZENODO DOI]` and `[LINKS]` remain, and those need
+accounts. The cross-model lift figures (16.5 %, 24 %, 40 %) come from `docs/23` §23.6.3.

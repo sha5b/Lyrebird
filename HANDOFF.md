@@ -288,7 +288,72 @@ merely produce overfull boxes. **Both halves were wrong**: `tectonic` is on this
 now at 39 pages. Do not trust the "never compiled" line if it reappears anywhere in this
 file — it is stale in two older entries below.
 
-## The W0 full run is BUILT AND RUNNING, and paper one exists
+## W0 IS DONE. The gate is met on both models, and two new findings came with it
+
+```
+                    Perch 2.0        BirdNET V2.4
+random split        81.68 %          79.08 %
+recordist-blocked   63.16 %          57.49 %
+DROP                18.51 points     21.59 points     gate was >10 on both -> MET
+as error rate       2.01x            2.03x
+blocked worse in    20/20 folds      20/20 folds      per-fold sd 2.78 / 2.96
+population          8 287 recordings, 884 species, 646 recordists
+```
+
+The two models agree on the error ratio to two decimal places while differing by three points in
+the raw figure, which is the sense in which the ratio is the more transferable statistic.
+
+**The pilot's 9.68 was its population, not the effect.** Run at 62 classes on this population the
+same procedure gives 12.75 points. The rest of the gap is the label set.
+
+**The gate was written in the wrong unit, and now we can prove it.** Across nested label sets of
+62 to 884 species on the same recordings and folds, the drop climbs 12.75 -> 18.51 points while
+the error ratio *falls* 2.97x -> 2.01x. We had predicted the ratio would be flat. **It is not.**
+So there is no unit in which this effect is one number independent of the label set, and any
+figure quoted without its class count cannot be compared against. The bar was not moved.
+
+### Two findings nobody has published, and one of them moves a limit
+
+**A. Limit 2's "named action" now has a threshold.** The cost of blocking, by how many recordists
+carry the species, with label-set size equalised at 115 species a stratum and recordings per
+species flat at 8.2-10.9:
+
+```
+2 recordists   30.82 points   5.83x errors
+3              20.92          3.16x
+4              18.52          2.59x
+5              11.12          2.05x
+6+              3.08          1.29x   <- essentially gone
+```
+
+A factor of ten, monotonic. "More recordists per species" was a slogan for the whole project;
+it is now **six**. Observational rather than causal -- species are not assigned recordists at
+random -- but it is the only intervention found so far that removes this confound instead of
+pricing it, and it belongs to the archives rather than to any model.
+
+**B. It is the same individual recordists in both models.** Per-recordist findability correlates
+between Perch and BirdNET at a partial r of **+0.852** over 212 recordists, after log(recordings)
+is removed from both sides, against a shuffled-null 95th percentile of +0.140. 83 % of recordists
+are findable in both spaces. The nuisance variable is real and nearly irrelevant: findability
+correlates with log(recordings) at ~+0.38, and partialling it out moves the correlation only from
++0.874 to +0.852.
+
+Both are in `analysis/w0_confound_anatomy.py` / `.json`, both are marked exploratory rather than
+pre-registered, and both are written into paper one (\S\ref{sec:dose}, \S\ref{sec:samepeople})
+and into the system paper's Limit 2.
+
+### State of the two papers
+
+```
+docs/whitepaper/arxiv/       40 pages, builds clean. Table 10 W0 row now MET, W0b row added,
+                             sec:phase0 rewritten, Limit 2 carries the threshold.
+docs/whitepaper/w0-arxiv/     8 pages, builds clean. Results, sweep, dose curve and the
+                             cross-model recordist section all written.
+Both: 0 undefined refs, 0 undefined cites. Only \todo left in each is the Zenodo DOI and
+acknowledgements, which are the owner's.
+```
+
+## How the run was built (kept for reproduction)
 
 Read this before the "still open" list below, which it partly supersedes.
 

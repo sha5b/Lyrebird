@@ -72,13 +72,25 @@ guarantee rather than an estimate. Because the discriminator is upload date rath
 archive provenance, ``reproduced on both models'' becomes possible on a xeno-canto corpus,
 which the pre-registered design had ruled out.
 %
-On \todo{N} recordings uploaded after 2025-09-01, covering \todo{S} species from \todo{R}
-recordists, a linear probe over frozen features loses \todo{drop} points of top-1 accuracy
-under a recordist-blocked split relative to a random one \todo{on both models / and the
-models disagree}. \todo{error-ratio sentence.} We also report the drop as a function of how
-many species are in the label set, because a bar written in accuracy points is far harsher
-near the ceiling than in the middle of the range, and a 62-class result and an 886-class
-result are not comparable in points.
+On 8\,287 recordings uploaded after 2025-09-01, covering 884 species from 646 recordists, a
+linear probe over frozen features loses \textbf{18.51} points of top-1 accuracy on Perch and
+\textbf{21.59} on BirdNET when the split is blocked by recordist, and blocking is worse in 20 of
+20 paired folds on both. As error rates that is 2.01$\times$ and 2.03$\times$ --- the two models
+agree on the ratio to two decimal places while differing by three points in the raw figure. The
+pre-registered bar was more than 10 points on both models, so the gate is met.
+%
+The drop is not a single number, and we say so: across nested label sets of 62 to 884 species on
+the same recordings, the points climb from 12.75 to 18.51 while the error ratio falls from 2.97 to
+2.01. Neither unit is invariant, so a figure quoted without its label-set size cannot be compared
+against.
+%
+Two further measurements say what to do about it. The cost falls monotonically with how many
+recordists a species has --- \textbf{30.8 points at two recordists against 3.1 at six or more},
+with recordings per species and label-set size both held flat --- which turns ``more recordists
+per species'' from a slogan into a target. And the \emph{same individual recordists} are the
+findable ones in both models: per-recordist findability correlates at \textbf{+0.85} between
+Perch and BirdNET after removing the effect of how many recordings each contributed, against a
+shuffled null of +0.14.
 %
 Separately, and on identical rows, the two foundation models disagree about the size of the
 recordist confound by more than either differs from a 32-dimensional space trained on one
@@ -128,7 +140,15 @@ makes it measurable at all. Specifically:
   \item \textbf{The observation that the pre-registered gate was written in the wrong unit.}
     Accuracy points are not comparable across label-set sizes, and we show the drop's
     dependence on class count directly (\S\ref{sec:sweep}).
-  \item \textbf{Evidence that the structure is in the archives rather than in one model}
+  \item \textbf{A dose-response curve, and therefore a target} (\S\ref{sec:dose}): the cost falls
+    from 30.8 points at two recordists per species to 3.1 at six or more, with label-set size and
+    recordings per species held flat. This is the only result here that removes the problem
+    instead of pricing it.
+  \item \textbf{Evidence that the same individual recordists are findable in both models}
+    (\S\ref{sec:samepeople}): per-recordist findability correlates at $+0.85$ between Perch and
+    BirdNET after the number of recordings is partialled out, against a shuffled null of $+0.14$.
+    The structure belongs to those recordists, not to either architecture.
+  \item \textbf{Evidence that the structure is in the archives, not in one model}
     (\S\ref{sec:archives}): read on identical rows, Perch and BirdNET disagree about the size
     of the recordist confound by more than either differs from a 32-d space trained on one
     small corpus. Recorder invariance is not conferred by archive-scale training.
@@ -263,12 +283,15 @@ therefore round-robins across a species' recordists, which keeps every recordist
 as the cap allows, and an assertion checks that the scorable species set is unchanged by
 capping.
 
-\paragraph{The population actually scored} is \textbf{8\,321} recordings over \textbf{886}
-species and \textbf{649} recordists, with 6 to 12 recordings per species and at least 2
-recordists each. For scale, the pilot that preceded this run scored 62 species over 2\,158
-recordings on one model --- and of those 2\,158 only \textbf{730} cleared its floor and were
-actually scored, a distinction worth keeping because the larger number is the one easily
-mistaken for the sample size. Table~\ref{tab:pilot} sets the two runs side by side.
+\paragraph{Selected, then scored.} The cap selects \textbf{8\,321} recordings over 886 species
+and 649 recordists, with 6 to 12 recordings per species and at least 2 recordists each. Of those,
+24 were lost --- 13 that no decoder would read and 11 that returned an HTTP error --- so the
+population \emph{scored} is \textbf{8\,287} recordings over \textbf{884} species from
+\textbf{646} recordists. No species fell below the floor as a result of those losses.
+
+We keep the two figures apart because the pilot did not. It fetched 2\,158 recordings and is
+usually described by that number, but only \textbf{730} cleared its floor and were scored, over
+62 species on one model. Table~\ref{tab:pilot} sets the two runs side by side.
 
 % =====================================================================
 \section{Method}
@@ -285,7 +308,7 @@ exports run without gradients; neither is updated at any point.
 Standardising over both sides would leak the test set's statistics across the partition,
 which is the same class of error the paper is about.
 
-\paragraph{The probe runs on the GPU, and that required a check.} At 886 classes in 1536
+\paragraph{The probe runs on the GPU, and that required a check.} At 884 classes in 1536
 dimensions a full-batch multinomial fit costs on the order of $10^{10}$ multiply--adds per
 iteration, which is not tractable on CPU across 20 folds, two arms and two models. The probe
 is therefore implemented in PyTorch with full-batch L-BFGS, minimising the same objective
@@ -326,25 +349,192 @@ points figure does as the label set grows.
 \section{Results}
 \label{sec:results}
 
-\todo{This section is filled from pipeline/analysis/w0\_full.json when the run completes.
-Nothing below this marker should be read as measured until then.}
+The population scored is \textbf{8\,287} recordings over \textbf{884} species from
+\textbf{646} recordists. Of the 8\,321 selected, 24 were lost --- 13 that no decoder would
+read and 11 that returned an HTTP error --- and no species fell below the floor as a result.
 
-% -- headline table, both models, paired arm
-% -- per-fold spread and folds-blocked-worse
-% -- error ratio
-% -- cross-model agreement
+\paragraph{The gate is met, on both models, and not narrowly.} A recordist-blocked split costs
+a linear probe over frozen Perch~2.0 features \textbf{18.51 points} of top-1 accuracy, and one
+over frozen BirdNET~V2.4 features \textbf{21.59 points}. The pre-registered bar was more than
+10 points reproduced on both models. Table~\ref{tab:headline} is the paired arm, which is the
+one to quote.
+
+\begin{table}[t]
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{The paired arm: each fold's blocked class set reused for a random fold, so the two
+differ only in whether a recordist may appear on both sides. 20 folds, 664 classes a fold.}
+\label{tab:headline}
+\begin{tabular}{L{2.5cm} r r}
+\toprule
+ & Perch 2.0 & BirdNET V2.4 \\
+ & 1536-d & 1024-d \\
+\midrule
+random split      & 81.68\,\%  & 79.08\,\% \\
+recordist-blocked & 63.16\,\%  & 57.49\,\% \\
+\textbf{drop}     & \textbf{18.51} & \textbf{21.59} \\
+per-fold sd       & 2.78       & 2.96 \\
+blocked worse in  & 20/20      & 20/20 \\
+error rate        & 18.32 $\to$ 36.84\,\% & 20.92 $\to$ 42.51\,\% \\
+as a ratio        & 2.01$\times$ & 2.03$\times$ \\
+\midrule
+gate $>10$ points & \textbf{met} & \textbf{met} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three things about the shape of that result. Blocking was worse in \textbf{20 of 20 paired
+folds} for both models, with a per-fold standard deviation under 3 points, so this is not a
+mean hiding a mixed picture. The two models agree on the error ratio to two decimal places
+(2.01 and 2.03) while differing by 3 points in the raw figure, which is the sense in which the
+ratio is the more transferable statistic. And BirdNET starts lower and falls further, so the
+ordering of the two models is the same under both splits --- blocking does not reverse which
+model looks better.
+
+\paragraph{The pilot understated it, and the reason is its population.} The pilot measured 9.68
+points on 62 species and recorded that as failing the gate. At 62 classes drawn from this
+population the same procedure gives \textbf{12.75} points on Perch. The remainder of the gap
+between 9.68 and 18.51 is the label-set size, which \S\ref{sec:sweep} takes apart.
 
 \subsection{The drop depends on how many species are in the label set}
 \label{sec:sweep}
 
-\todo{class-count sweep table: 62 / 150 / 300 / 500 / 886 classes, drop in points and error
-ratio at each, on the same recordings and the same folds.}
+Table~\ref{tab:sweep} runs the paired arm on nested label sets drawn from the same recordings
+with the same folds, so the only thing changing is how many species the probe must separate.
 
-The reason to report this is that it decides how the pre-registered gate should be read. If
-the points-drop climbs with class count while the error ratio stays roughly flat, then the
-ratio is the invariant and a bar written in points was partly a bar on how many species
-happened to clear our sampling floor --- which is a fact about corpus depth, not about
-recordists.
+\begin{table}[t]
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\caption{The same experiment at five label-set sizes. Points climb with class count. The error
+ratio falls. \textbf{Neither is invariant}, which is a caution against quoting either alone.}
+\label{tab:sweep}
+\begin{tabular}{r rr rr}
+\toprule
+ & \multicolumn{2}{c}{Perch} & \multicolumn{2}{c}{BirdNET} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+species & points & ratio & points & ratio \\
+\midrule
+62  & 12.75 & 2.97$\times$ & 16.07 & 2.93$\times$ \\
+150 & 15.28 & 2.66$\times$ & 19.05 & 2.65$\times$ \\
+300 & 17.15 & 2.40$\times$ & 20.61 & 2.39$\times$ \\
+500 & 18.76 & 2.23$\times$ & 21.62 & 2.23$\times$ \\
+884 & 18.51 & 2.01$\times$ & 21.59 & 2.03$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+We predicted that the ratio would be flat and the points would climb. \textbf{Half of that is
+wrong.} The points do climb, steeply from 62 to 500 and then flat. But the ratio falls
+monotonically too, from about 2.95 to about 2.02. So there is no unit in which this effect is
+a single number independent of the label set, and a paper reporting one figure without its
+class count is not saying enough to be compared against.
+
+What survives is narrower and still useful. The two models track each other almost exactly at
+every size --- the ratio columns agree to within 0.02 at four of the five sizes --- so the
+label-set dependence is a property of the task and not of a model. And a bar written in
+accuracy points is the more treacherous of the two: our own pre-registered 10-point gate is
+failed at 62 species by the pilot and cleared at every size here, on the same effect.
+
+\paragraph{So the gate was a bad instrument that happened to give the right answer.} It should
+have been registered as an error-rate ratio with the label-set size stated. We are not moving
+it after the fact, and we are recording that it was written in the wrong unit.
+
+% =====================================================================
+\section{How many recordists per species does it take?}
+\label{sec:dose}
+
+The recommendation that follows from a leakage result is normally ``block your splits''. That
+prices the problem without fixing it. If the leakage comes from a species being carried by too
+few people, the fix is more people --- and that is only actionable with a number attached.
+
+Table~\ref{tab:dose} measures the paired drop separately for species carried by 2, 3, 4, 5 and
+6 or more recordists. Two confounds are held down. Every stratum is subsampled to the same
+\textbf{115 species}, so a drop in points is comparable between them. And the per-species cap of
+12 keeps recordings per species between 8.2 and 10.9 across all five strata, so the trend is not
+simply more training rows.
+
+\begin{table}[t]
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\caption{The cost of blocking, by how many recordists carry the species. 115 species a stratum,
+recordings per species held flat. \textbf{The effect falls by a factor of ten.}}
+\label{tab:dose}
+\begin{tabular}{c rr r}
+\toprule
+recordists & drop & error ratio & rec./species \\
+\midrule
+2        & 30.82 & 5.83$\times$ & 8.2 \\
+3        & 20.92 & 3.16$\times$ & 8.6 \\
+4        & 18.52 & 2.59$\times$ & 8.2 \\
+5        & 11.12 & 2.05$\times$ & 8.9 \\
+\textbf{6+} & \textbf{3.08} & \textbf{1.29$\times$} & 10.9 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{At six recordists the leakage is essentially gone.} 3.08 points and 1.29 times the
+errors, against 30.82 points and 5.83 times at two. The decline is monotonic and steepest between
+4 and 6. The 6+ stratum does carry slightly more recordings per species (10.9 against about 8.4),
+so a small part of its advantage may be sample size --- but the fall from 30.82 to 11.12 happens
+across strata whose recordings per species are 8.2, 8.6, 8.2 and 8.9, which is flat. Sample size
+is not what moves this.
+
+\paragraph{What that licenses as advice.} A species already covered by six or more independent
+recordists is close to safe under a random split. A species covered by two is not usable for
+benchmarking without blocking. And for an archive, one additional recording of a two-recordist
+species by a \emph{third} person is worth far more than a fourth recording by one of the existing
+two. That is a concrete collection priority, and it is the only intervention here that removes the
+problem instead of measuring it.
+
+% =====================================================================
+\section{The same recordists are findable in both models}
+\label{sec:samepeople}
+
+Both models carrying an aggregate recordist lift is weak evidence for a mechanism, because two
+models can show the same aggregate for unrelated reasons. The sharper question is whether the
+\emph{same individuals} are the easy ones.
+
+For each of the 212 recordists with at least 6 recordings in the population, we measure
+findability: how much more often a recording's nearest neighbour by cosine is also theirs than
+chance allows. Then we correlate that per-recordist score between the two models.
+
+\begin{table}[t]
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\caption{Per-recordist findability, Perch against BirdNET, over 212 recordists. The partial
+correlation is the headline: it removes the number of recordings each contributed, which inflates
+findability in both spaces at once.}
+\label{tab:samepeople}
+\begin{tabular}{L{4.6cm} r}
+\toprule
+mean findability, Perch & $+0.361$ \\
+mean findability, BirdNET & $+0.438$ \\
+\midrule
+Pearson, raw & $+0.874$ \\
+Spearman, raw & $+0.880$ \\
+\textbf{Pearson, log(recordings) removed} & $\mathbf{+0.852}$ \\
+\midrule
+shuffled null, 95th percentile & $+0.140$ \\
+findability vs.\ log(recordings) & $+0.37$, $+0.39$ \\
+positive in both spaces & 83.0\,\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{The nuisance variable, and why the partial correlation is the number.} A recordist with
+20 recordings is easier to find than one with 6 in \emph{either} space, because more same-label
+neighbours exist to be found. That inflates both scores together and would manufacture agreement
+with no shared mechanism behind it. The effect is real --- findability correlates with
+log(recordings) at about $+0.38$ in both spaces --- and it accounts for almost none of the
+agreement. Partialling it out moves the correlation from $+0.874$ to $+0.852$, still six times the
+shuffled null's 95th percentile.
+
+\paragraph{What this settles.} Two architectures, trained by different groups on overlapping
+archives, agree at $+0.85$ about \emph{which people} are identifiable, and 83\,\% of recordists are
+identifiable in both. The structure is a property of those recordists --- their microphone, their
+sites, their habits --- and not of either model's inductive bias. A model cannot be blamed for it
+and, as \S\ref{sec:archives} shows, cannot be trained out of it either. \S\ref{sec:dose} is where
+the remedy is.
 
 % =====================================================================
 \section{The structure is in the archives, not in one model}
@@ -442,9 +632,17 @@ experiment.
 as two recordists and weakens blocking; two people sharing an account reads as one and
 strengthens it. Both push in known directions but neither is quantified here.
 
-\paragraph{The class-count dependence cuts both ways.} It is a finding about the gate's unit,
-but it also means our own headline number is a statement about an 886-class problem. A reader
-comparing it to a benchmark with a different label-set size should compare error ratios.
+\paragraph{Neither unit is invariant, including ours.} \S\ref{sec:sweep} shows the points
+climbing and the ratio falling as the label set grows, so our own headline is a statement about an
+884-class problem and nothing more general. We predicted the ratio would be flat and it is not.
+A reader comparing against a benchmark of a different size should treat both figures as
+size-dependent and quote the class count alongside either.
+
+\paragraph{The dose curve is observational.} Species are not assigned recordists at random. A
+species carried by six recordists may differ from a two-recordist species in ways that also affect
+difficulty --- how common it is, how loud, how widely distributed. Holding label-set size and
+recordings per species flat removes the two most obvious of those, not all of them. The curve is
+strong enough to act on and not strong enough to call causal.
 
 % =====================================================================
 \section{Recommendations}
@@ -459,7 +657,14 @@ the gap is the informative quantity.
 which is most deployments --- the blocked figure is the closer estimate, and the gap measured
 here is the scale of the optimism in the random one.
 
-\paragraph{For corpus builders.} Recordist metadata is what makes any of this measurable.
+\paragraph{For corpus builders, and this is the actionable one.} Count recordists per species,
+not recordings per species. \S\ref{sec:dose} puts the threshold at about six: below it a species
+carries leakage worth 11 to 31 points, at or above it about 3. A species covered by two people is
+not usable for benchmarking without blocking, however many recordings it has. When choosing what
+to collect, one recording of a thinly-covered species by a \emph{new} recordist is worth more than
+several more by an existing one.
+
+\paragraph{And keep the metadata.} Recordist identity is what makes any of this measurable.
 Archives that keep it, and evaluations that use it, cost little and are the precondition for
 pricing this failure at all.
 
@@ -486,9 +691,9 @@ unit was the recordist.}
 catalogue read      & 6\,000        & 21\,928 \\
 selection unit      & recordist     & species \\
 recordings embedded & 2\,158        & 8\,321 \\
-recordings scored   & 730           & \todo{N} \\
-species scored      & 62            & 886 \\
-recordists          & 137           & 649 \\
+recordings scored   & 730           & 8\,287 \\
+species scored      & 62            & 884 \\
+recordists          & 137           & 646 \\
 models              & Perch only    & Perch + BirdNET \\
 probe               & CPU, sklearn  & GPU, verified equivalent \\
 \bottomrule
