@@ -51,16 +51,13 @@
    "amDepth": 0.6,
    "gammaScale": 2.0,
    "tractQ": 0.0,
-   "noise": 0.4,
+   "noise": 0.85,
    "rough": 0.65,
-   "vib": {
-    "rate": 14.0,
-    "depth": 0.01
-   },
+   "two": true,
    "learned": {
     "members": 3,
-    "resynthesisCosine": 0.6125,
-    "rivalCosine": 0.1478,
+    "resynthesisCosine": 0.6168,
+    "rivalCosine": 0.1205,
     "nearestOwn": true,
     "f0ErrorPercent": 17.22
    }
@@ -98,18 +95,18 @@
    "gammaScale": 3.0,
    "tractQ": 30.0,
    "noise": 0.0,
-   "rough": 0.0,
+   "rough": 0.08,
    "am": 45.0,
    "amDepth": 0.125,
-   "two": false,
+   "two": true,
    "vib": {
     "rate": 34.0,
     "depth": 0.09
    },
    "learned": {
     "members": 11,
-    "resynthesisCosine": 0.5794,
-    "rivalCosine": 0.5075,
+    "resynthesisCosine": 0.5847,
+    "rivalCosine": 0.5202,
     "nearestOwn": true,
     "f0ErrorPercent": -7.31
    }
@@ -148,20 +145,20 @@
    "attack": 0.06,
    "hold": true,
    "harmonic": 0.0,
-   "am": 80.0,
-   "amDepth": 0.15,
+   "am": 12.0,
+   "amDepth": 0.0,
    "gammaScale": 1.5,
    "tractQ": 6.0,
    "noise": 0.0,
    "rough": 0.65,
    "vib": {
-    "rate": 8.0,
+    "rate": 12.0,
     "depth": 0.025
    },
    "learned": {
     "members": 22,
-    "resynthesisCosine": 0.472,
-    "rivalCosine": 0.4186,
+    "resynthesisCosine": 0.4818,
+    "rivalCosine": 0.4213,
     "nearestOwn": true,
     "f0ErrorPercent": -29.16
    }
@@ -196,8 +193,8 @@
    "gammaScale": 0.5,
    "learned": {
     "members": 13,
-    "resynthesisCosine": 0.6392,
-    "rivalCosine": 0.0625,
+    "resynthesisCosine": 0.6375,
+    "rivalCosine": 0.0595,
     "nearestOwn": true,
     "f0ErrorPercent": -0.81
    }
@@ -268,6 +265,87 @@
    "L05>L02": 0.628,
    "L05>L05": 0.061
   },
+  "chunks": [
+   {
+    "sequence": [
+     "L05",
+     "L02",
+     "L05",
+     "L05"
+    ],
+    "count": 91,
+    "species": [
+     "amazona_ochrocephala",
+     "anabacerthia_amaurotis",
+     "anser_anser",
+     "aratinga_nenday",
+     "arremon_brunneinucha",
+     "attila_spadiceus",
+     "batis_pririt",
+     "cairina_moschata",
+     "carpococcyx_radiceus",
+     "catharus_bicknelli",
+     "chenonetta_jubata",
+     "cinnyris_usambaricus",
+     "clytoctantes_alixii",
+     "coturnix_coturnix",
+     "cyanoramphus_novaezelandiae",
+     "dendrortyx_barbatus",
+     "diglossa_baritula",
+     "dromococcyx_pavoninus",
+     "dryobates_scalaris",
+     "dysithamnus_stictothorax",
+     "euphagus_carolinus",
+     "ficedula_narcissina",
+     "fringilla_coelebs",
+     "fulica_cristata",
+     "geothlypis_philadelphia",
+     "gracupica_nigricollis",
+     "grallaricula_nana",
+     "halcyon_senegalensis",
+     "hieraaetus_pennatus",
+     "hypocnemis_hypoxantha",
+     "lanius_collurio",
+     "macronus_ptilosus",
+     "malacoptila_striata",
+     "melanerpes_cactorum",
+     "mesembrinibis_cayennensis",
+     "mniotilta_varia",
+     "mohoua_albicilla",
+     "mulleripicus_pulverulentus",
+     "myadestes_ralloides",
+     "notopholia_corusca",
+     "ocyphaps_lophotes",
+     "otus_gurneyi",
+     "oxyura_jamaicensis",
+     "pachycare_flavogriseum",
+     "pachyramphus_major",
+     "phylloscopus_plumbeitarsus",
+     "pipilo_ocai",
+     "progne_tapera",
+     "psarocolius_viridis",
+     "pyrrhura_calliptera",
+     "quiscalus_niger",
+     "rallus_aquaticus",
+     "rufirallus_castaneiceps",
+     "saltator_orenocensis",
+     "sipia_nigricauda",
+     "sitta_ledanti",
+     "spatula_clypeata",
+     "sphyrapicus_nuchalis",
+     "sphyrapicus_thyroideus",
+     "synallaxis_fuscorufa",
+     "syndactyla_ruficollis",
+     "tringa_glareola",
+     "turdus_falcklandii",
+     "tyrannus_savana",
+     "vanellus_chilensis",
+     "vireo_cassinii",
+     "zosterops_erythropleurus"
+    ],
+    "pmi": 0.652
+   }
+  ],
   "songTyping": {
    "bouts": 12,
    "short": 7,

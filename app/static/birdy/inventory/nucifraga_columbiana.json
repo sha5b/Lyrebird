@@ -3,25 +3,25 @@
  "common": "Clark's Nutcracker",
  "scientific": "Nucifraga columbiana",
  "bank": "learned",
- "summary": "Learned from 1 field recordings: 2 syllable types fitted from 24 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 33 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
-   "label": "learned L00 \u00b7 558 Hz \u00b7 101 ms",
+   "label": "learned L00 \u00b7 555 Hz \u00b7 112 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.1013,
-   "level": 0.3,
-   "timbre": "pure",
+   "dur": 0.112,
+   "level": 0.45,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
-     525.2
+     521.5
     ],
     [
      0.125,
-     552.9
+     549.0
     ],
     [
      0.25,
@@ -29,88 +29,127 @@
     ],
     [
      0.375,
-     580.9
+     601.0
+    ],
+    [
+     0.5,
+     559.1
     ],
     [
      0.625,
-     558.6
+     551.6
     ],
     [
      0.75,
-     587.1
+     575.5
     ],
     [
      0.875,
-     517.7
+     526.7
     ],
     [
      1.0,
-     627.0
+     596.7
     ]
    ],
    "attack": 0.004,
    "hold": true,
    "harmonic": 0.0,
-   "gammaScale": 1.0,
-   "tractQ": 20.0,
-   "noise": 0.0,
-   "rough": 0.65,
    "am": 140.0,
-   "amDepth": 0.6,
-   "two": true,
+   "amDepth": 0.8,
+   "tractQ": 3.0,
+   "rough": 0.65,
    "vib": {
-    "rate": 14.0,
-    "depth": 0.05
+    "rate": 12.0,
+    "depth": 0.01
    },
    "learned": {
-    "members": 20,
-    "resynthesisCosine": 0.2535,
-    "rivalCosine": -0.2104,
+    "members": 21,
+    "resynthesisCosine": 0.4217,
+    "rivalCosine": 0.2816,
     "nearestOwn": true,
-    "f0ErrorPercent": -2.71
+    "f0ErrorPercent": 0.45
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      260.75
+     ],
+     [
+      0.125,
+      274.5
+     ],
+     [
+      0.25,
+      262.0
+     ],
+     [
+      0.375,
+      300.5
+     ],
+     [
+      0.5,
+      279.55
+     ],
+     [
+      0.625,
+      275.8
+     ],
+     [
+      0.75,
+      287.75
+     ],
+     [
+      0.875,
+      263.35
+     ],
+     [
+      1.0,
+      298.35
+     ]
+    ],
+    "gamma": 3255.4260448519353,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.2
    }
   },
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 2075 Hz \u00b7 60 ms",
+   "label": "learned L01 \u00b7 1979 Hz \u00b7 88 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.06,
-   "level": 1.2,
-   "timbre": "buzz",
+   "dur": 0.088,
+   "level": 0.3,
+   "timbre": "pure",
    "contour": [
     [
      0.0,
-     2047.1
-    ],
-    [
-     0.25,
-     2140.5
-    ],
-    [
-     0.75,
-     2098.6
+     1972.5
     ],
     [
      1.0,
-     2017.6
+     1985.3
     ]
    ],
-   "attack": 0.028,
-   "hold": false,
+   "attack": 0.03,
+   "hold": true,
    "harmonic": 0.0,
-   "am": 45.0,
-   "amDepth": 0.15,
+   "gammaScale": 1.0,
+   "tractQ": 30.0,
    "noise": 0.05,
-   "rough": 0.65,
-   "tractQ": 6.0,
+   "rough": 0.08,
+   "am": 12.0,
+   "amDepth": 0.3,
    "learned": {
-    "members": 4,
-    "resynthesisCosine": 0.325,
-    "rivalCosine": 0.0668,
+    "members": 12,
+    "resynthesisCosine": 0.4908,
+    "rivalCosine": 0.2111,
     "nearestOwn": true,
-    "f0ErrorPercent": 4.49
+    "f0ErrorPercent": 0.53
    }
   }
  ],
@@ -146,20 +185,21 @@
     "end": 0.15
    },
    "L01": {
-    "L01": 0.5,
-    "L00": 0.5
+    "L01": 0.5833,
+    "end": 0.25,
+    "L00": 0.1667
    }
   },
   "gaps": {
    "L00>L00": 0.085,
    "L01>L00": 0.372,
-   "L01>L01": 0.176
+   "L01>L01": 0.08
   },
   "songTyping": {
-   "bouts": 3,
-   "short": 3,
+   "bouts": 6,
+   "short": 6,
    "candidates": 0,
-   "repeatCandidates": 3,
+   "repeatCandidates": 4,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,

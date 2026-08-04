@@ -1,0 +1,189 @@
+{
+ "id": "crotophaga_ani",
+ "common": "Smooth-billed Ani",
+ "scientific": "Crotophaga ani",
+ "bank": "learned",
+ "summary": "Learned from 3 field recordings: 2 syllable types fitted from 26 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 801 Hz \u00b7 93 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0933,
+   "level": 0.9,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     798.3
+    ],
+    [
+     1.0,
+     804.4
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     2696.4,
+     6.0,
+     1.0
+    ],
+    [
+     8089.2,
+     6.0,
+     0.3333
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 0.35980945818556465,
+   "noise": 0.25,
+   "rough": 0.4,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.7322,
+    "rivalCosine": -0.1337,
+    "nearestOwn": true,
+    "f0ErrorPercent": 27.09
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      399.15
+     ],
+     [
+      1.0,
+      402.2
+     ]
+    ],
+    "gamma": 2348.467838084466,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.02
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2749 Hz \u00b7 273 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2733,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2730.8
+    ],
+    [
+     1.0,
+     2767.0
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.6,
+   "formants": [
+    [
+     2696.4,
+     6.0,
+     1.0
+    ],
+    [
+     8089.2,
+     6.0,
+     0.3333
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 30.0,
+   "rough": 0.4,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
+   "two": true,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.932,
+    "rivalCosine": -0.5035,
+    "nearestOwn": true,
+    "f0ErrorPercent": 12.37
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5,
+    "end": 0.3,
+    "L01": 0.2
+   },
+   "L01": {
+    "L01": 0.8667,
+    "L00": 0.1333
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.024,
+   "L00>L01": 0.64,
+   "L01>L00": 0.16,
+   "L01>L01": 0.307
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 2,
+   "candidates": 2,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6
+  }
+ }
+}

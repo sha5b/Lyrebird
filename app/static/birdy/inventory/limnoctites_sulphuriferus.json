@@ -1,0 +1,173 @@
+{
+ "id": "limnoctites_sulphuriferus",
+ "common": "Sulphur-throated Spinetail",
+ "scientific": "Limnoctites sulphuriferus",
+ "bank": "learned",
+ "summary": "Learned from 3 field recordings: 2 syllable types fitted from 24 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 440 Hz \u00b7 123 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1227,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     454.5
+    ],
+    [
+     0.25,
+     433.3
+    ],
+    [
+     0.375,
+     446.5
+    ],
+    [
+     1.0,
+     426.0
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.45,
+   "gammaScale": 0.5,
+   "tractQ": 6.0,
+   "two": true,
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.708,
+    "rivalCosine": -0.2515,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.75
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2921 Hz \u00b7 68 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.068,
+   "level": 1.2,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3455.6
+    ],
+    [
+     0.375,
+     3493.3
+    ],
+    [
+     0.5,
+     1393.6
+    ],
+    [
+     0.625,
+     3124.9
+    ],
+    [
+     0.75,
+     2659.2
+    ],
+    [
+     0.875,
+     3474.1
+    ],
+    [
+     1.0,
+     3732.2
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.2,
+   "am": 29.74,
+   "amDepth": 0.0,
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "noise": 0.12,
+   "rough": 0.08,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.09
+   },
+   "fricative": true,
+   "formants": [
+    [
+     3741.776844777196,
+     2.0,
+     2.0
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.3866,
+    "rivalCosine": -0.6991,
+    "nearestOwn": true,
+    "f0ErrorPercent": 11.33
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.9,
+    "end": 0.1
+   },
+   "L01": {
+    "L01": 0.5,
+    "end": 0.5
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.043,
+   "L01>L01": 0.031
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 4,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

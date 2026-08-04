@@ -1,0 +1,157 @@
+{
+ "id": "ardea_alba",
+ "common": "Great Egret",
+ "scientific": "Ardea alba",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 537 Hz \u00b7 85 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0853,
+   "level": 0.6,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     535.6
+    ],
+    [
+     0.625,
+     542.9
+    ],
+    [
+     1.0,
+     531.2
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.7,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "amDepth": 0.15,
+   "am": 30.0,
+   "gammaScale": 1.5,
+   "rough": 0.4,
+   "learned": {
+    "members": 23,
+    "resynthesisCosine": 0.8188,
+    "rivalCosine": -0.3047,
+    "nearestOwn": true,
+    "f0ErrorPercent": 14.76
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1021 Hz \u00b7 112 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.112,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1015.6
+    ],
+    [
+     0.25,
+     1170.8
+    ],
+    [
+     0.625,
+     1087.5
+    ],
+    [
+     0.875,
+     928.3
+    ],
+    [
+     1.0,
+     924.8
+    ]
+   ],
+   "attack": 0.06,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 20.0,
+   "noise": 0.0,
+   "rough": 0.0,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.5246,
+    "rivalCosine": -0.376,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.71
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01"
+   ],
+   "gaps": []
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "end": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.027
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 4,
+   "candidates": 0,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

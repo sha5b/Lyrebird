@@ -1,0 +1,281 @@
+{
+ "id": "selasphorus_rufus",
+ "common": "Rufous Hummingbird",
+ "scientific": "Selasphorus rufus",
+ "bank": "learned",
+ "summary": "Learned from 3 field recordings: 3 syllable types fitted from 42 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1068 Hz \u00b7 200 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1075.4
+    ],
+    [
+     1.0,
+     1059.7
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.5,
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
+   "noise": 0.8500000238418579,
+   "rough": 0.2,
+   "two": true,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.025
+   },
+   "fricative": true,
+   "formants": [
+    [
+     1063.304792525682,
+     2.0,
+     0.5
+    ],
+    [
+     6830.618534315889,
+     2.0,
+     0.5
+    ]
+   ],
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.5824,
+    "rivalCosine": 0.5687,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.47
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2322 Hz \u00b7 101 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1013,
+   "level": 1.2,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2446.5
+    ],
+    [
+     0.125,
+     1940.4
+    ],
+    [
+     0.25,
+     2726.9
+    ],
+    [
+     0.625,
+     2100.4
+    ],
+    [
+     0.75,
+     2544.2
+    ],
+    [
+     0.875,
+     2290.2
+    ],
+    [
+     1.0,
+     2298.6
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.0,
+   "gammaScale": 2.0,
+   "tractQ": 3.0,
+   "noise": 0.4,
+   "rough": 0.65,
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.2488,
+    "rivalCosine": 0.2341,
+    "nearestOwn": true,
+    "f0ErrorPercent": -10.73
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      1223.25
+     ],
+     [
+      0.125,
+      970.2
+     ],
+     [
+      0.25,
+      1363.45
+     ],
+     [
+      0.625,
+      1050.2
+     ],
+     [
+      0.75,
+      1272.1
+     ],
+     [
+      0.875,
+      1145.1
+     ],
+     [
+      1.0,
+      1149.3
+     ]
+    ],
+    "gamma": 13611.15289707597,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.2
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 5770 Hz \u00b7 63 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0626,
+   "level": 0.356,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     6056.2
+    ],
+    [
+     0.125,
+     5767.4
+    ],
+    [
+     0.375,
+     6362.9
+    ],
+    [
+     0.75,
+     5323.7
+    ],
+    [
+     1.0,
+     5404.0
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.7,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "gammaScale": 4.5,
+   "noise": 0.4,
+   "rough": 0.0,
+   "two": true,
+   "fricative": true,
+   "formants": [
+    [
+     1919.8885853658714,
+     2.0,
+     2.0
+    ],
+    [
+     6830.618534315889,
+     2.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.7186,
+    "rivalCosine": 0.4838,
+    "nearestOwn": true,
+    "f0ErrorPercent": -12.79
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L02",
+    "L02",
+    "L00",
+    "L02",
+    "L02"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.4444,
+    "L02": 0.3333,
+    "L00": 0.2222
+   },
+   "L01": {
+    "L01": 0.8462,
+    "end": 0.1538
+   },
+   "L02": {
+    "L02": 0.75,
+    "L00": 0.15,
+    "end": 0.1
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.02,
+   "L00>L02": 0.24,
+   "L01>L01": 0.083,
+   "L02>L00": 0.149,
+   "L02>L02": 0.056
+  },
+  "songTyping": {
+   "bouts": 8,
+   "short": 6,
+   "candidates": 2,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6
+  }
+ }
+}

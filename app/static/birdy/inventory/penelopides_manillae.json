@@ -1,0 +1,231 @@
+{
+ "id": "penelopides_manillae",
+ "common": "Luzon Hornbill",
+ "scientific": "Penelopides manillae",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 37 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2995 Hz \u00b7 227 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2267,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2517.9
+    ],
+    [
+     0.25,
+     2527.0
+    ],
+    [
+     0.375,
+     2865.0
+    ],
+    [
+     0.5,
+     4600.2
+    ],
+    [
+     0.625,
+     3405.7
+    ],
+    [
+     1.0,
+     2528.7
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "gammaScale": 6.0,
+   "tractQ": 12.0,
+   "noise": 0.0,
+   "rough": 0.4,
+   "two": true,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.4826,
+    "rivalCosine": 0.5472,
+    "nearestOwn": false,
+    "f0ErrorPercent": 14.61
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3445 Hz \u00b7 325 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.3253,
+   "level": 0.9,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2824.2
+    ],
+    [
+     0.125,
+     3191.6
+    ],
+    [
+     0.875,
+     3401.1
+    ],
+    [
+     1.0,
+     4596.0
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.5,
+   "am": 12.0,
+   "amDepth": 0.157,
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "noise": 0.0,
+   "rough": 0.08,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.574,
+    "rivalCosine": 0.4524,
+    "nearestOwn": true,
+    "f0ErrorPercent": -9.2
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 4828 Hz \u00b7 96 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.096,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4931.4
+    ],
+    [
+     0.375,
+     5001.8
+    ],
+    [
+     0.625,
+     4627.1
+    ],
+    [
+     1.0,
+     4759.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.9,
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "noise": 0.25,
+   "rough": 0.08,
+   "fricative": true,
+   "formants": [
+    [
+     845.2861410183435,
+     2.0,
+     1.0
+    ],
+    [
+     5083.5393171114765,
+     2.0,
+     1.0
+    ]
+   ],
+   "learned": {
+    "members": 25,
+    "resynthesisCosine": 0.5465,
+    "rivalCosine": 0.0385,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.19
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L02",
+    "L01",
+    "L02",
+    "L02",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.3333,
+    "L01": 0.3333,
+    "L02": 0.3333
+   },
+   "L01": {
+    "L02": 1.0
+   },
+   "L02": {
+    "L02": 0.625,
+    "L01": 0.2917,
+    "L00": 0.0833
+   }
+  },
+  "gaps": {
+   "L01>L02": 0.136,
+   "L02>L00": 0.395,
+   "L02>L01": 0.125,
+   "L02>L02": 0.139
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 0,
+   "candidates": 3,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 3,
+   "minClusterSize": 6
+  }
+ }
+}

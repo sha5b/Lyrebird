@@ -3,40 +3,32 @@
  "common": "Black-throated Grosbeak",
  "scientific": "Saltator fuliginosus",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 3 field recordings: 3 syllable types fitted from 36 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L02",
-   "label": "learned L02 \u00b7 1944 Hz \u00b7 136 ms",
+   "label": "learned L02 \u00b7 1932 Hz \u00b7 113 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.136,
+   "dur": 0.1134,
    "level": 1.35,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     1941.9
+     1964.5
     ],
     [
      0.5,
-     1817.7
-    ],
-    [
-     0.75,
-     1872.8
-    ],
-    [
-     0.875,
-     2055.2
+     1825.9
     ],
     [
      1.0,
-     2044.8
+     2010.1
     ]
    ],
-   "attack": 0.008,
+   "attack": 0.004,
    "hold": true,
    "harmonic": 0.0,
    "formants": [
@@ -57,18 +49,65 @@
    "rough": 0.65,
    "two": true,
    "vib": {
-    "rate": 22.0,
-    "depth": 0.01
+    "rate": 14.0,
+    "depth": 0.025
    },
    "amDepth": 0.15,
-   "am": 30.0,
+   "am": 140.0,
    "fricative": true,
    "learned": {
-    "members": 7,
-    "resynthesisCosine": 0.8753,
-    "rivalCosine": 0.5586,
+    "members": 8,
+    "resynthesisCosine": 0.837,
+    "rivalCosine": 0.525,
     "nearestOwn": true,
-    "f0ErrorPercent": -2.61
+    "f0ErrorPercent": -3.03
+   }
+  },
+  {
+   "id": "L03",
+   "label": "learned L03 \u00b7 2183 Hz \u00b7 29 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0293,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2174.1
+    ],
+    [
+     1.0,
+     2192.2
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 2.0,
+   "noise": 0.85,
+   "rough": 0.0,
+   "amDepth": 0.3,
+   "am": 45.0,
+   "tractQ": 3.0,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.8621,
+    "rivalCosine": 0.4832,
+    "nearestOwn": true,
+    "f0ErrorPercent": 5.44
    }
   },
   {
@@ -111,8 +150,8 @@
    },
    "learned": {
     "members": 21,
-    "resynthesisCosine": 0.8918,
-    "rivalCosine": 0.5169,
+    "resynthesisCosine": 0.8897,
+    "rivalCosine": 0.4663,
     "nearestOwn": true,
     "f0ErrorPercent": -10.49
    }
@@ -146,7 +185,8 @@
  "grammar": {
   "start": [
    "L01",
-   "L02"
+   "L02",
+   "L03"
   ],
   "transitions": {
    "L01": {
@@ -155,21 +195,26 @@
     "L02": 0.1429
    },
    "L02": {
-    "L01": 0.5,
-    "L02": 0.5
+    "end": 0.4286,
+    "L01": 0.2857,
+    "L02": 0.2857
+   },
+   "L03": {
+    "L03": 1.0
    }
   },
   "gaps": {
    "L01>L01": 0.109,
    "L01>L02": 0.109,
-   "L02>L01": 0.16,
-   "L02>L02": 0.149
+   "L02>L01": 0.151,
+   "L02>L02": 0.156,
+   "L03>L03": 0.331
   },
   "songTyping": {
-   "bouts": 5,
-   "short": 3,
+   "bouts": 8,
+   "short": 6,
    "candidates": 2,
-   "repeatCandidates": 0,
+   "repeatCandidates": 2,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,

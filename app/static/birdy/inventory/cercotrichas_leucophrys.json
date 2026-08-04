@@ -12,7 +12,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0987,
-   "level": 0.6,
+   "level": 0.45,
    "timbre": "buzz",
    "contour": [
     [
@@ -63,11 +63,11 @@
    ],
    "gammaScale": 0.5,
    "tractQ": 3.0,
-   "rough": 0.4,
+   "rough": 0.65,
    "learned": {
     "members": 13,
-    "resynthesisCosine": 0.7356,
-    "rivalCosine": 0.4095,
+    "resynthesisCosine": 0.7365,
+    "rivalCosine": 0.4174,
     "nearestOwn": true,
     "f0ErrorPercent": -11.38
    },
@@ -156,7 +156,7 @@
    "noise": 0.0,
    "rough": 0.65,
    "am": 25.0,
-   "amDepth": 0.6,
+   "amDepth": 0.8,
    "vib": {
     "rate": 34.0,
     "depth": 0.05
@@ -164,35 +164,10 @@
    "two": true,
    "learned": {
     "members": 7,
-    "resynthesisCosine": 0.5186,
-    "rivalCosine": 0.4382,
+    "resynthesisCosine": 0.4773,
+    "rivalCosine": 0.3052,
     "nearestOwn": true,
     "f0ErrorPercent": -7.64
-   },
-   "voices": {
-    "contour": [
-     [
-      0.0,
-      301.45
-     ],
-     [
-      0.5,
-      302.5
-     ],
-     [
-      0.75,
-      347.25
-     ],
-     [
-      1.0,
-      359.5
-     ]
-    ],
-    "gamma": 3829.09346082164,
-    "level": 0.7,
-    "tracheaCm": 2.0,
-    "refl": 0.9,
-    "betaInj": 0.2
    }
   },
   {
@@ -202,7 +177,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.036,
-   "level": 1.35,
+   "level": 0.3,
    "timbre": "buzz",
    "contour": [
     [
@@ -216,7 +191,9 @@
    ],
    "attack": 0.016,
    "hold": false,
-   "harmonic": 0.2,
+   "harmonic": 0.5,
+   "am": 45.0,
+   "amDepth": 0.0,
    "formants": [
     [
      3195.0,
@@ -229,22 +206,20 @@
      0.1
     ]
    ],
-   "gammaScale": 0.5,
-   "tractQ": 12.0,
+   "gammaScale": 1.0,
    "noise": 0.05,
-   "rough": 0.0,
-   "am": 12.0,
-   "amDepth": 0.3,
+   "rough": 0.08,
    "vib": {
     "rate": 14.0,
-    "depth": 0.05
+    "depth": 0.09
    },
+   "tractQ": 0.0,
    "learned": {
     "members": 8,
     "resynthesisCosine": 0.6695,
-    "rivalCosine": 0.5227,
+    "rivalCosine": 0.5748,
     "nearestOwn": true,
-    "f0ErrorPercent": 3.2
+    "f0ErrorPercent": 8.5
    }
   },
   {
@@ -293,8 +268,8 @@
    "amDepth": 0.3,
    "learned": {
     "members": 11,
-    "resynthesisCosine": 0.7248,
-    "rivalCosine": 0.5951,
+    "resynthesisCosine": 0.7288,
+    "rivalCosine": 0.5957,
     "nearestOwn": true,
     "f0ErrorPercent": 3.15
    }
@@ -346,8 +321,8 @@
    "am": 30.0,
    "learned": {
     "members": 14,
-    "resynthesisCosine": 0.6649,
-    "rivalCosine": 0.5146,
+    "resynthesisCosine": 0.6742,
+    "rivalCosine": 0.519,
     "nearestOwn": true,
     "f0ErrorPercent": 9.72
    }
@@ -393,8 +368,8 @@
    "two": true,
    "learned": {
     "members": 21,
-    "resynthesisCosine": 0.7657,
-    "rivalCosine": 0.7123,
+    "resynthesisCosine": 0.7683,
+    "rivalCosine": 0.7151,
     "nearestOwn": true,
     "f0ErrorPercent": 6.65
    }
@@ -445,8 +420,8 @@
    },
    "learned": {
     "members": 27,
-    "resynthesisCosine": 0.6927,
-    "rivalCosine": 0.5958,
+    "resynthesisCosine": 0.6946,
+    "rivalCosine": 0.5966,
     "nearestOwn": true,
     "f0ErrorPercent": 2.97
    }
@@ -458,7 +433,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.032,
-   "level": 1.05,
+   "level": 0.3,
    "timbre": "reed",
    "contour": [
     [
@@ -474,11 +449,11 @@
      6343.1
     ]
    ],
-   "attack": 0.0107,
+   "attack": 0.004,
    "hold": false,
-   "harmonic": 0.35,
-   "am": 45.0,
-   "amDepth": 0.39,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.8,
    "formants": [
     [
      3195.0,
@@ -491,15 +466,20 @@
      0.1
     ]
    ],
-   "gammaScale": 6.0,
-   "rough": 0.0,
+   "gammaScale": 0.5,
+   "noise": 0.25,
+   "rough": 0.65,
    "tractQ": 3.0,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.01
+   },
    "learned": {
     "members": 1,
-    "resynthesisCosine": 0.89,
-    "rivalCosine": 0.1305,
+    "resynthesisCosine": 0.8018,
+    "rivalCosine": 0.2807,
     "nearestOwn": true,
-    "f0ErrorPercent": -21.56
+    "f0ErrorPercent": -23.74
    }
   }
  ],
@@ -593,100 +573,6 @@
    "L08>L05": 0.572,
    "L09>L04": 0.189
   },
-  "chunks": [
-   {
-    "sequence": [
-     "L08",
-     "L01",
-     "L08"
-    ],
-    "count": 161,
-    "species": [
-     "acanthiza_reguloides",
-     "accipiter_fasciatus",
-     "acrocephalus_australis",
-     "aix_sponsa",
-     "amazilia_rutila",
-     "ammospiza_leconteii",
-     "anthus_correndera",
-     "anthus_hodgsoni",
-     "archilochus_colubris",
-     "athene_noctua",
-     "buteo_albonotatus",
-     "cacicus_chrysonotus",
-     "cairina_moschata",
-     "cercotrichas_leucophrys",
-     "chamaeza_meruloides",
-     "columba_vitiensis",
-     "corvus_corone",
-     "curruca_conspicillata",
-     "curruca_hortensis",
-     "curruca_melanocephala",
-     "cyanolyca_armillata",
-     "diopsittaca_nobilis",
-     "emberiza_cia",
-     "emberiza_elegans",
-     "emberiza_sahari",
-     "entomodestes_leucotis",
-     "galbula_tombacea",
-     "geopelia_striata",
-     "hemixos_castanonotus",
-     "icterus_pectoralis",
-     "inezia_tenuirostris",
-     "ketupa_sumatrana",
-     "leptotila_rufaxilla",
-     "leptotila_verreauxi",
-     "malurus_cyaneus",
-     "melanopareia_maximiliani",
-     "merops_philippinus",
-     "micrastur_mirandollei",
-     "microcerculus_marginatus",
-     "mycteria_americana",
-     "myiarchus_crinitus",
-     "myiarchus_tyrannulus",
-     "myornis_senilis",
-     "ninox_philippensis",
-     "nothura_maculosa",
-     "notiomystis_cincta",
-     "nyctibius_griseus",
-     "oncostoma_olivaceum",
-     "parvipsitta_pusilla",
-     "passer_montanus",
-     "passerina_caerulea",
-     "passerina_ciris",
-     "pellorneum_nigrocapitatum",
-     "penelope_albipennis",
-     "penelope_montagnii",
-     "periparus_elegans",
-     "phasianus_versicolor",
-     "phoenicurus_fuliginosus",
-     "phoenicurus_phoenicurus",
-     "phylloscopus_examinandus",
-     "phylloscopus_ibericus",
-     "pitta_steerii",
-     "pityriasis_gymnocephala",
-     "poecilotriccus_ruficeps",
-     "psarocolius_atrovirens",
-     "pteroptochos_castaneus",
-     "saltator_grandis",
-     "saltator_orenocensis",
-     "scytalopus_parvirostris",
-     "scytalopus_stilesi",
-     "synallaxis_ruficapilla",
-     "synallaxis_spixi",
-     "telophorus_zeylonus",
-     "terpsiphone_paradisi",
-     "trogon_comptus",
-     "turdus_grayi",
-     "turdus_plumbeus",
-     "turtur_tympanistria",
-     "tyrannus_melancholicus",
-     "vireo_vicinior",
-     "zosterops_hamlini"
-    ],
-    "pmi": 0.526
-   }
-  ],
   "songTyping": {
    "bouts": 11,
    "short": 1,

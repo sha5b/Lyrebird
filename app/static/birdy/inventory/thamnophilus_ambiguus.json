@@ -13,7 +13,7 @@
    "refs": [],
    "dur": 0.0814,
    "level": 0.3,
-   "timbre": "reed",
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
@@ -54,7 +54,7 @@
    ],
    "attack": 0.016,
    "hold": false,
-   "harmonic": 0.0,
+   "harmonic": 0.35,
    "am": 22.06,
    "amDepth": 0.8,
    "formants": [
@@ -70,11 +70,10 @@
     "depth": 0.09
    },
    "tractQ": 3.0,
-   "two": true,
    "learned": {
     "members": 30,
-    "resynthesisCosine": 0.2408,
-    "rivalCosine": 0.1438,
+    "resynthesisCosine": 0.251,
+    "rivalCosine": 0.1623,
     "nearestOwn": true,
     "f0ErrorPercent": -15.35
    }
@@ -132,8 +131,8 @@
    "tractQ": 6.0,
    "learned": {
     "members": 9,
-    "resynthesisCosine": 0.4575,
-    "rivalCosine": 0.4039,
+    "resynthesisCosine": 0.4592,
+    "rivalCosine": 0.4059,
     "nearestOwn": true,
     "f0ErrorPercent": 22.47
    }
@@ -178,10 +177,10 @@
     ]
    ],
    "attack": 0.12,
-   "hold": false,
+   "hold": true,
    "harmonic": 0.0,
    "am": 45.0,
-   "amDepth": 0.267,
+   "amDepth": 0.3,
    "vib": {
     "rate": 34.0,
     "depth": 0.132
@@ -200,13 +199,14 @@
    ],
    "gammaScale": 6.0,
    "rough": 0.65,
+   "two": true,
    "fricative": true,
    "learned": {
     "members": 6,
-    "resynthesisCosine": 0.6414,
-    "rivalCosine": -0.4349,
+    "resynthesisCosine": 0.6758,
+    "rivalCosine": -0.477,
     "nearestOwn": true,
-    "f0ErrorPercent": -0.42
+    "f0ErrorPercent": 8.26
    }
   },
   {
@@ -266,8 +266,8 @@
    "rough": 0.2,
    "learned": {
     "members": 9,
-    "resynthesisCosine": 0.0165,
-    "rivalCosine": 0.0007,
+    "resynthesisCosine": 0.0253,
+    "rivalCosine": 0.0092,
     "nearestOwn": true,
     "f0ErrorPercent": 20.22
    }
@@ -340,62 +340,67 @@
      "L04",
      "L06"
     ],
-    "count": 150,
+    "count": 147,
     "species": [
      "acanthorhynchus_tenuirostris",
      "alectoris_rufa",
-     "anisognathus_igniventris",
+     "amazona_aestiva",
      "anthreptes_malacensis",
-     "apaloderma_narina",
      "aviceda_subcristata",
      "berlepschia_rikeri",
      "brachypteryx_erythrogyna",
+     "bucephala_albeola",
+     "calidris_fuscicollis",
      "carpococcyx_radiceus",
      "ceratogymna_atrata",
      "cercomacroides_parkeri",
      "chlorophonia_elegantissima",
      "columba_oenas",
-     "cossypha_heuglini",
      "coturnicops_noveboracensis",
-     "cuculus_micropterus",
-     "curruca_iberiae",
-     "curruca_nisoria",
+     "crithagra_flaviventris",
+     "curruca_hortensis",
      "curruca_ruppeli",
      "drymornis_bridgesii",
-     "dysithamnus_stictothorax",
      "elaenia_spectabilis",
      "epinecrophylla_leucophthalma",
+     "euphagus_carolinus",
+     "euphonia_chlorotica",
+     "fluvicola_nengeta",
      "formicarius_colma",
-     "fulica_atra",
      "gampsonyx_swainsonii",
      "geothlypis_semiflava",
      "geranospiza_caerulescens",
      "grallaricula_leymebambae",
+     "lanius_collurio",
      "larus_cachinnans",
-     "melanopareia_maximiliani",
-     "myioborus_melanocephalus",
+     "locustella_alishanensis",
+     "meliphaga_lewinii",
      "myiornis_auricularis",
+     "numida_meleagris",
      "pachysylvia_muscicapina",
      "pardalotus_striatus",
-     "phacellodomus_rufifrons",
      "phaethornis_syrmatophorus",
+     "phylidonyris_pyrrhopterus",
      "picumnus_cirratus",
      "pitta_maxima",
-     "ploceus_capensis",
      "podiceps_grisegena",
      "pseudasthenes_humicola",
-     "rynchops_niger",
      "scytalopus_atratus",
+     "scytalopus_vicinior",
+     "sturnella_lilianae",
      "sylviorthorhynchus_desmursii",
      "synallaxis_azarae",
      "thamnophilus_ambiguus",
      "thamnophilus_doliatus",
      "thamnophilus_ruficapillus",
+     "tolmomyias_sulphurescens",
+     "turdus_subalaris",
      "tyranneutes_virescens",
+     "urosphena_squameiceps",
      "vireo_nelsoni",
      "zosterops_erythropleurus"
     ],
-    "pmi": 0.535
+    "pmi": 0.551
    },
    {
     "sequence": [
@@ -405,43 +410,47 @@
      "L04",
      "L06"
     ],
-    "count": 92,
+    "count": 96,
     "species": [
      "acanthorhynchus_tenuirostris",
      "alectoris_rufa",
+     "amazona_aestiva",
      "anthreptes_malacensis",
-     "apaloderma_narina",
      "aviceda_subcristata",
      "ceratogymna_atrata",
      "cercomacroides_parkeri",
      "chlorophonia_elegantissima",
      "columba_oenas",
      "coturnicops_noveboracensis",
-     "cuculus_micropterus",
-     "curruca_nisoria",
      "curruca_ruppeli",
      "drymornis_bridgesii",
-     "dysithamnus_stictothorax",
      "epinecrophylla_leucophthalma",
-     "fulica_atra",
+     "euphagus_carolinus",
+     "fluvicola_nengeta",
      "gampsonyx_swainsonii",
      "geranospiza_caerulescens",
      "grallaricula_leymebambae",
-     "melanopareia_maximiliani",
-     "myioborus_melanocephalus",
+     "lanius_collurio",
+     "larus_cachinnans",
+     "locustella_alishanensis",
+     "meliphaga_lewinii",
      "pardalotus_striatus",
-     "phacellodomus_rufifrons",
+     "phylidonyris_pyrrhopterus",
      "picumnus_cirratus",
      "pitta_maxima",
      "podiceps_grisegena",
      "pseudasthenes_humicola",
+     "sturnella_lilianae",
      "thamnophilus_ambiguus",
      "thamnophilus_doliatus",
+     "tolmomyias_sulphurescens",
+     "turdus_subalaris",
      "tyranneutes_virescens",
+     "urosphena_squameiceps",
      "vireo_nelsoni",
      "zosterops_erythropleurus"
     ],
-    "pmi": 0.829
+    "pmi": 0.88
    },
    {
     "sequence": [
@@ -452,28 +461,30 @@
      "L06",
      "L06"
     ],
-    "count": 55,
+    "count": 56,
     "species": [
      "alectoris_rufa",
+     "amazona_aestiva",
      "anthreptes_malacensis",
      "cercomacroides_parkeri",
      "chlorophonia_elegantissima",
-     "columba_oenas",
      "coturnicops_noveboracensis",
-     "cuculus_micropterus",
-     "fulica_atra",
+     "fluvicola_nengeta",
      "gampsonyx_swainsonii",
      "grallaricula_leymebambae",
-     "melanopareia_maximiliani",
+     "lanius_collurio",
      "pardalotus_striatus",
-     "phacellodomus_rufifrons",
+     "phylidonyris_pyrrhopterus",
      "picumnus_cirratus",
      "pitta_maxima",
+     "sturnella_lilianae",
      "thamnophilus_ambiguus",
      "thamnophilus_doliatus",
+     "turdus_subalaris",
+     "urosphena_squameiceps",
      "zosterops_erythropleurus"
     ],
-    "pmi": 0.833
+    "pmi": 0.816
    }
   ],
   "songTyping": {

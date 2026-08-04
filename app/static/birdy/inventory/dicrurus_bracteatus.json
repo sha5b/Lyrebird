@@ -1,0 +1,185 @@
+{
+ "id": "dicrurus_bracteatus",
+ "common": "Spangled Drongo",
+ "scientific": "Dicrurus bracteatus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 32 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 535 Hz \u00b7 53 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0533,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     417.5
+    ],
+    [
+     0.25,
+     456.6
+    ],
+    [
+     0.5,
+     428.8
+    ],
+    [
+     0.625,
+     558.6
+    ],
+    [
+     0.75,
+     727.7
+    ],
+    [
+     1.0,
+     707.6
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     4071.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 12.0,
+   "noise": 0.0,
+   "rough": 0.0,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.025
+   },
+   "two": true,
+   "learned": {
+    "members": 1,
+    "resynthesisCosine": 0.8222,
+    "rivalCosine": -0.0087,
+    "nearestOwn": true,
+    "f0ErrorPercent": -12.34
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3858 Hz \u00b7 115 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1147,
+   "level": 1.2,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3815.4
+    ],
+    [
+     1.0,
+     3900.7
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     1595.9601420802412,
+     2.0,
+     2.0
+    ],
+    [
+     3741.776844777196,
+     2.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 0.220024356374511,
+   "noise": 0.0,
+   "rough": 0.0,
+   "amDepth": 0.0,
+   "am": 140.0,
+   "fricative": true,
+   "learned": {
+    "members": 31,
+    "resynthesisCosine": 0.7193,
+    "rivalCosine": 0.1596,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.03
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      7630.8
+     ],
+     [
+      1.0,
+      7801.4
+     ]
+    ],
+    "gamma": 22611.888218906013,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.05
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "L01": 0.9032,
+    "end": 0.0968
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.108
+  },
+  "songTyping": {
+   "bouts": 4,
+   "short": 4,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

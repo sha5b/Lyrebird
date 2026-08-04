@@ -1,0 +1,229 @@
+{
+ "id": "parkesia_noveboracensis",
+ "common": "Northern Waterthrush",
+ "scientific": "Parkesia noveboracensis",
+ "bank": "learned",
+ "summary": "Learned from 3 field recordings: 3 syllable types fitted from 36 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 705 Hz \u00b7 27 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0267,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     709.2
+    ],
+    [
+     1.0,
+     701.1
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 0.26548174465119045,
+   "noise": 0.0,
+   "rough": 0.08,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "two": false,
+   "learned": {
+    "members": 2,
+    "resynthesisCosine": 0.856,
+    "rivalCosine": 0.133,
+    "nearestOwn": true,
+    "f0ErrorPercent": 32.69
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2399 Hz \u00b7 85 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0854,
+   "level": 0.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2367.0
+    ],
+    [
+     0.25,
+     2373.6
+    ],
+    [
+     0.375,
+     2499.4
+    ],
+    [
+     0.75,
+     2460.4
+    ],
+    [
+     0.875,
+     2334.7
+    ],
+    [
+     1.0,
+     2360.8
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 0.5,
+   "noise": 0.85,
+   "rough": 0.4,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "fricative": true,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.7848,
+    "rivalCosine": 0.3426,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.5
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 3816 Hz \u00b7 72 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.072,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4084.9
+    ],
+    [
+     0.25,
+     3626.6
+    ],
+    [
+     0.5,
+     4299.3
+    ],
+    [
+     0.75,
+     3976.6
+    ],
+    [
+     0.875,
+     3592.2
+    ],
+    [
+     1.0,
+     3395.9
+    ]
+   ],
+   "attack": 0.12,
+   "hold": true,
+   "harmonic": 0.35,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 30.0,
+   "noise": 0.0,
+   "rough": 0.08,
+   "two": true,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 24,
+    "resynthesisCosine": 0.7863,
+    "rivalCosine": -0.351,
+    "nearestOwn": true,
+    "f0ErrorPercent": 17.77
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L02",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5,
+    "end": 0.5
+   },
+   "L01": {
+    "L01": 0.8,
+    "end": 0.2
+   },
+   "L02": {
+    "L02": 0.9167,
+    "end": 0.0833
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.037,
+   "L02>L02": 0.073
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 5,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

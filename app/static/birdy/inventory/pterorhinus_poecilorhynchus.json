@@ -3,7 +3,7 @@
  "common": "Rusty Laughingthrush",
  "scientific": "Pterorhinus poecilorhynchus",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 5 syllable types fitted from 62 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 3 field recordings: 5 syllable types fitted from 63 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L05",
@@ -57,44 +57,38 @@
    "fricative": true,
    "learned": {
     "members": 2,
-    "resynthesisCosine": 0.896,
-    "rivalCosine": 0.8738,
+    "resynthesisCosine": 0.8942,
+    "rivalCosine": 0.872,
     "nearestOwn": true,
     "f0ErrorPercent": 10.83
    }
   },
   {
    "id": "L02",
-   "label": "learned L02 \u00b7 1688 Hz \u00b7 205 ms",
+   "label": "learned L02 \u00b7 1687 Hz \u00b7 207 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.2053,
-   "level": 0.3,
-   "timbre": "pure",
+   "dur": 0.2067,
+   "level": 1.35,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
-     1606.6
+     1616.6
     ],
     [
      0.125,
-     1741.3
+     1713.4
     ],
     [
      1.0,
-     1719.4
+     1734.6
     ]
    ],
-   "attack": 0.06,
-   "hold": false,
-   "harmonic": 0.9,
-   "am": 12.0,
-   "amDepth": 0.6,
-   "vib": {
-    "rate": 22.0,
-    "depth": 0.09
-   },
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.5,
    "formants": [
     [
      4273.5,
@@ -103,14 +97,22 @@
     ]
    ],
    "gammaScale": 1.0,
-   "tractQ": 6.0,
+   "tractQ": 12.0,
+   "noise": 0.05,
+   "rough": 0.0,
+   "amDepth": 0.6,
+   "am": 80.0,
    "two": true,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
+   },
    "learned": {
-    "members": 17,
-    "resynthesisCosine": 0.7412,
-    "rivalCosine": -0.144,
+    "members": 18,
+    "resynthesisCosine": 0.8164,
+    "rivalCosine": 0.0928,
     "nearestOwn": true,
-    "f0ErrorPercent": 10.39
+    "f0ErrorPercent": -2.53
    }
   },
   {
@@ -160,8 +162,8 @@
    "fricative": true,
    "learned": {
     "members": 21,
-    "resynthesisCosine": 0.8842,
-    "rivalCosine": 0.8314,
+    "resynthesisCosine": 0.8823,
+    "rivalCosine": 0.8284,
     "nearestOwn": true,
     "f0ErrorPercent": 0.79
    }
@@ -236,8 +238,8 @@
    "fricative": true,
    "learned": {
     "members": 9,
-    "resynthesisCosine": 0.9058,
-    "rivalCosine": 0.8834,
+    "resynthesisCosine": 0.9038,
+    "rivalCosine": 0.8804,
     "nearestOwn": true,
     "f0ErrorPercent": -27.88
    }
@@ -281,8 +283,8 @@
    },
    "learned": {
     "members": 13,
-    "resynthesisCosine": 0.8181,
-    "rivalCosine": 0.5068,
+    "resynthesisCosine": 0.8191,
+    "rivalCosine": 0.5013,
     "nearestOwn": true,
     "f0ErrorPercent": 0.52
    },
@@ -344,9 +346,9 @@
     "end": 0.1053
    },
    "L02": {
-    "L02": 0.5294,
-    "end": 0.3529,
-    "L04": 0.1176
+    "L02": 0.5,
+    "end": 0.3889,
+    "L04": 0.1111
    },
    "L04": {
     "L04": 0.5,
@@ -374,8 +376,8 @@
    "L06>L06": 0.087
   },
   "songTyping": {
-   "bouts": 15,
-   "short": 11,
+   "bouts": 16,
+   "short": 12,
    "candidates": 4,
    "repeatCandidates": 4,
    "types": 0,

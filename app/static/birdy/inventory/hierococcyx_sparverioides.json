@@ -1,0 +1,157 @@
+{
+ "id": "hierococcyx_sparverioides",
+ "common": "Large Hawk-Cuckoo",
+ "scientific": "Hierococcyx sparverioides",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 32 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1805 Hz \u00b7 232 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.232,
+   "level": 0.6,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1848.9
+    ],
+    [
+     0.5,
+     1882.8
+    ],
+    [
+     0.625,
+     1769.8
+    ],
+    [
+     1.0,
+     1722.5
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "tractQ": 30.0,
+   "noise": 0.25,
+   "rough": 0.2,
+   "two": true,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.7819,
+    "rivalCosine": 0.2739,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.47
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2186 Hz \u00b7 201 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2014,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2206.9
+    ],
+    [
+     0.5,
+     2271.3
+    ],
+    [
+     0.625,
+     2165.3
+    ],
+    [
+     1.0,
+     2102.7
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.15,
+   "gammaScale": 2.0,
+   "tractQ": 3.0,
+   "noise": 0.25,
+   "rough": 0.08,
+   "fricative": true,
+   "formants": [
+    [
+     2289.5188831594724,
+     8.0,
+     2.0
+    ],
+    [
+     6830.618534315889,
+     8.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.7583,
+    "rivalCosine": 0.3638,
+    "nearestOwn": true,
+    "f0ErrorPercent": 6.23
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 0.55,
+    "end": 0.45
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.133,
+   "L01>L01": 0.144
+  },
+  "songTyping": {
+   "bouts": 9,
+   "short": 9,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

@@ -46,7 +46,7 @@
    ],
    "attack": 0.016,
    "hold": true,
-   "harmonic": 0.1,
+   "harmonic": 0.0,
    "am": 12.0,
    "amDepth": 0.6,
    "formants": [
@@ -66,8 +66,8 @@
    },
    "learned": {
     "members": 9,
-    "resynthesisCosine": 0.4117,
-    "rivalCosine": 0.6415,
+    "resynthesisCosine": 0.4007,
+    "rivalCosine": 0.6405,
     "nearestOwn": false,
     "f0ErrorPercent": 11.76
    }
@@ -118,8 +118,8 @@
    "fricative": true,
    "learned": {
     "members": 3,
-    "resynthesisCosine": 0.6856,
-    "rivalCosine": 0.3323,
+    "resynthesisCosine": 0.69,
+    "rivalCosine": 0.3301,
     "nearestOwn": true,
     "f0ErrorPercent": 12.9
    }
@@ -147,7 +147,7 @@
      4336.8
     ]
    ],
-   "attack": 0.008,
+   "attack": 0.004,
    "hold": true,
    "harmonic": 0.35,
    "formants": [
@@ -162,23 +162,19 @@
      0.5
     ]
    ],
-   "gammaScale": 1.0,
+   "gammaScale": 0.5,
    "tractQ": 3.0,
    "noise": 0.85,
-   "rough": 0.2,
+   "rough": 0.08,
    "amDepth": 0.0,
    "am": 80.0,
-   "vib": {
-    "rate": 22.0,
-    "depth": 0.01
-   },
    "fricative": true,
    "learned": {
     "members": 10,
-    "resynthesisCosine": 0.6848,
-    "rivalCosine": 0.5343,
+    "resynthesisCosine": 0.6864,
+    "rivalCosine": 0.5434,
     "nearestOwn": true,
-    "f0ErrorPercent": 3.2
+    "f0ErrorPercent": 2.28
    }
   },
   {
@@ -236,8 +232,8 @@
    "fricative": true,
    "learned": {
     "members": 12,
-    "resynthesisCosine": 0.6392,
-    "rivalCosine": 0.667,
+    "resynthesisCosine": 0.6355,
+    "rivalCosine": 0.6641,
     "nearestOwn": false,
     "f0ErrorPercent": 0.24
    }
@@ -279,8 +275,8 @@
    "am": 140.0,
    "learned": {
     "members": 23,
-    "resynthesisCosine": 0.8058,
-    "rivalCosine": 0.527,
+    "resynthesisCosine": 0.8063,
+    "rivalCosine": 0.5279,
     "nearestOwn": true,
     "f0ErrorPercent": -0.81
    }
@@ -331,8 +327,8 @@
    "fricative": true,
    "learned": {
     "members": 17,
-    "resynthesisCosine": 0.7915,
-    "rivalCosine": 0.596,
+    "resynthesisCosine": 0.7898,
+    "rivalCosine": 0.5933,
     "nearestOwn": true,
     "f0ErrorPercent": -0.51
    }
@@ -411,6 +407,87 @@
    "L05>L02": 0.187,
    "L05>L05": 0.135
   },
+  "chunks": [
+   {
+    "sequence": [
+     "L05",
+     "L02",
+     "L05",
+     "L05"
+    ],
+    "count": 91,
+    "species": [
+     "amazona_ochrocephala",
+     "anabacerthia_amaurotis",
+     "anser_anser",
+     "aratinga_nenday",
+     "arremon_brunneinucha",
+     "attila_spadiceus",
+     "batis_pririt",
+     "cairina_moschata",
+     "carpococcyx_radiceus",
+     "catharus_bicknelli",
+     "chenonetta_jubata",
+     "cinnyris_usambaricus",
+     "clytoctantes_alixii",
+     "coturnix_coturnix",
+     "cyanoramphus_novaezelandiae",
+     "dendrortyx_barbatus",
+     "diglossa_baritula",
+     "dromococcyx_pavoninus",
+     "dryobates_scalaris",
+     "dysithamnus_stictothorax",
+     "euphagus_carolinus",
+     "ficedula_narcissina",
+     "fringilla_coelebs",
+     "fulica_cristata",
+     "geothlypis_philadelphia",
+     "gracupica_nigricollis",
+     "grallaricula_nana",
+     "halcyon_senegalensis",
+     "hieraaetus_pennatus",
+     "hypocnemis_hypoxantha",
+     "lanius_collurio",
+     "macronus_ptilosus",
+     "malacoptila_striata",
+     "melanerpes_cactorum",
+     "mesembrinibis_cayennensis",
+     "mniotilta_varia",
+     "mohoua_albicilla",
+     "mulleripicus_pulverulentus",
+     "myadestes_ralloides",
+     "notopholia_corusca",
+     "ocyphaps_lophotes",
+     "otus_gurneyi",
+     "oxyura_jamaicensis",
+     "pachycare_flavogriseum",
+     "pachyramphus_major",
+     "phylloscopus_plumbeitarsus",
+     "pipilo_ocai",
+     "progne_tapera",
+     "psarocolius_viridis",
+     "pyrrhura_calliptera",
+     "quiscalus_niger",
+     "rallus_aquaticus",
+     "rufirallus_castaneiceps",
+     "saltator_orenocensis",
+     "sipia_nigricauda",
+     "sitta_ledanti",
+     "spatula_clypeata",
+     "sphyrapicus_nuchalis",
+     "sphyrapicus_thyroideus",
+     "synallaxis_fuscorufa",
+     "syndactyla_ruficollis",
+     "tringa_glareola",
+     "turdus_falcklandii",
+     "tyrannus_savana",
+     "vanellus_chilensis",
+     "vireo_cassinii",
+     "zosterops_erythropleurus"
+    ],
+    "pmi": 0.652
+   }
+  ],
   "songTyping": {
    "bouts": 12,
    "short": 6,

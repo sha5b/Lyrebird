@@ -48,8 +48,8 @@
    "rough": 0.4,
    "learned": {
     "members": 130,
-    "resynthesisCosine": 0.6494,
-    "rivalCosine": 0.5239,
+    "resynthesisCosine": 0.6486,
+    "rivalCosine": 0.5267,
     "nearestOwn": true,
     "f0ErrorPercent": 6.06
    }
@@ -61,7 +61,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0507,
-   "level": 0.9,
+   "level": 1.35,
    "timbre": "buzz",
    "contour": [
     [
@@ -84,7 +84,7 @@
    "attack": 0.004,
    "hold": true,
    "harmonic": 0.0,
-   "am": 140.0,
+   "am": 30.0,
    "amDepth": 0.15,
    "formants": [
     [
@@ -98,16 +98,20 @@
      0.05
     ]
    ],
+   "gammaScale": 1.0,
    "tractQ": 0.0,
-   "noise": 0.05,
-   "gammaScale": 1.5,
-   "rough": 0.2,
+   "noise": 0.12,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.05
+   },
+   "rough": 0.65,
    "learned": {
     "members": 119,
-    "resynthesisCosine": 0.592,
-    "rivalCosine": 0.6801,
+    "resynthesisCosine": 0.5539,
+    "rivalCosine": 0.6254,
     "nearestOwn": false,
-    "f0ErrorPercent": -27.5
+    "f0ErrorPercent": 6.84
    }
   },
   {
@@ -167,8 +171,8 @@
    "fricative": true,
    "learned": {
     "members": 249,
-    "resynthesisCosine": 0.9007,
-    "rivalCosine": 0.3746,
+    "resynthesisCosine": 0.9002,
+    "rivalCosine": 0.3755,
     "nearestOwn": true,
     "f0ErrorPercent": 4.51
    }
@@ -219,8 +223,8 @@
    "gammaScale": 1.5,
    "learned": {
     "members": 488,
-    "resynthesisCosine": 0.9222,
-    "rivalCosine": 0.6614,
+    "resynthesisCosine": 0.9232,
+    "rivalCosine": 0.662,
     "nearestOwn": true,
     "f0ErrorPercent": 0.63
    }
@@ -246,7 +250,7 @@
    ],
    "attack": 0.008,
    "hold": false,
-   "harmonic": 0.03,
+   "harmonic": 0.1,
    "am": 45.0,
    "amDepth": 0.8,
    "formants": [
@@ -262,7 +266,7 @@
     ]
    ],
    "gammaScale": 0.5,
-   "tractQ": 20.0,
+   "tractQ": 30.0,
    "noise": 0.05,
    "rough": 0.4,
    "vib": {
@@ -271,8 +275,8 @@
    },
    "learned": {
     "members": 1354,
-    "resynthesisCosine": 0.8698,
-    "rivalCosine": 0.6584,
+    "resynthesisCosine": 0.8729,
+    "rivalCosine": 0.643,
     "nearestOwn": true,
     "f0ErrorPercent": 3.55
    }
@@ -323,8 +327,8 @@
    "rough": 0.4,
    "learned": {
     "members": 586,
-    "resynthesisCosine": 0.893,
-    "rivalCosine": 0.8909,
+    "resynthesisCosine": 0.8944,
+    "rivalCosine": 0.8928,
     "nearestOwn": true,
     "f0ErrorPercent": -2.39
    }
@@ -375,8 +379,8 @@
    "rough": 0.65,
    "learned": {
     "members": 178,
-    "resynthesisCosine": 0.8714,
-    "rivalCosine": 0.8163,
+    "resynthesisCosine": 0.8755,
+    "rivalCosine": 0.8203,
     "nearestOwn": true,
     "f0ErrorPercent": 5.52
    }
@@ -389,7 +393,7 @@
    "refs": [],
    "dur": 0.08,
    "level": 0.75,
-   "timbre": "reed",
+   "timbre": "pure",
    "contour": [
     [
      0.0,
@@ -420,11 +424,11 @@
    "noise": 0.05,
    "rough": 0.65,
    "am": 80.0,
-   "amDepth": 0.45,
+   "amDepth": 0.8,
    "learned": {
     "members": 45,
-    "resynthesisCosine": 0.866,
-    "rivalCosine": 0.2152,
+    "resynthesisCosine": 0.8704,
+    "rivalCosine": 0.1947,
     "nearestOwn": true,
     "f0ErrorPercent": -0.4
    }
@@ -562,45 +566,6 @@
    "L22>L02": 0.149,
    "L22>L22": 0.124
   },
-  "chunks": [
-   {
-    "sequence": [
-     "L13",
-     "L14",
-     "L13"
-    ],
-    "count": 66,
-    "species": [
-     "arremon_virenticeps",
-     "atlapetes_albinucha",
-     "branta_canadensis",
-     "campylorhynchus_megalopterus",
-     "cuculus_clamosus",
-     "eurystomus_orientalis",
-     "gampsonyx_swainsonii",
-     "herpsilochmus_axillaris",
-     "hirundo_rustica",
-     "icterus_pustulatus",
-     "larvivora_sibilans",
-     "leucopternis_melanops",
-     "micrastur_buckleyi",
-     "micrastur_semitorquatus",
-     "myiothlypis_chrysogaster",
-     "odontophorus_gujanensis",
-     "orthotomus_sutorius",
-     "patagioenas_plumbea",
-     "perdix_perdix",
-     "phylloscopus_trochilus",
-     "psilopogon_asiaticus",
-     "scytalopus_vicinior",
-     "sturnus_unicolor",
-     "sturnus_vulgaris",
-     "tringa_brevipes",
-     "uropsila_leucogastra"
-    ],
-    "pmi": 0.781
-   }
-  ],
   "songTypes": [
    {
     "id": "S01",

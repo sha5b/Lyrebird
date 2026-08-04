@@ -74,8 +74,8 @@
    },
    "learned": {
     "members": 21,
-    "resynthesisCosine": 0.5963,
-    "rivalCosine": 0.6236,
+    "resynthesisCosine": 0.6015,
+    "rivalCosine": 0.6257,
     "nearestOwn": false,
     "f0ErrorPercent": 10.51
    }
@@ -143,8 +143,8 @@
    },
    "learned": {
     "members": 40,
-    "resynthesisCosine": 0.824,
-    "rivalCosine": 0.6544,
+    "resynthesisCosine": 0.8246,
+    "rivalCosine": 0.6579,
     "nearestOwn": true,
     "f0ErrorPercent": 3.65
    }
@@ -201,8 +201,8 @@
    "am": 25.0,
    "learned": {
     "members": 42,
-    "resynthesisCosine": 0.5264,
-    "rivalCosine": 0.6002,
+    "resynthesisCosine": 0.5313,
+    "rivalCosine": 0.6045,
     "nearestOwn": false,
     "f0ErrorPercent": 1.21
    }
@@ -254,13 +254,17 @@
    "gammaScale": 0.5,
    "tractQ": 3.0,
    "noise": 0.05,
-   "rough": 0.4,
+   "rough": 0.65,
    "amDepth": 0.8,
    "am": 140.0,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.01
+   },
    "learned": {
     "members": 14,
-    "resynthesisCosine": 0.7993,
-    "rivalCosine": 0.6222,
+    "resynthesisCosine": 0.7997,
+    "rivalCosine": 0.6232,
     "nearestOwn": true,
     "f0ErrorPercent": -4.73
    }
@@ -320,8 +324,8 @@
    },
    "learned": {
     "members": 51,
-    "resynthesisCosine": 0.6451,
-    "rivalCosine": 0.5619,
+    "resynthesisCosine": 0.6484,
+    "rivalCosine": 0.5647,
     "nearestOwn": true,
     "f0ErrorPercent": 1.32
    }
@@ -405,8 +409,8 @@
    "tractQ": 3.0,
    "learned": {
     "members": 4,
-    "resynthesisCosine": 0.6212,
-    "rivalCosine": 0.7013,
+    "resynthesisCosine": 0.6245,
+    "rivalCosine": 0.7035,
     "nearestOwn": false,
     "f0ErrorPercent": 7.96
    }
@@ -487,8 +491,8 @@
    "rough": 0.4,
    "learned": {
     "members": 3,
-    "resynthesisCosine": 0.2491,
-    "rivalCosine": 0.7315,
+    "resynthesisCosine": 0.255,
+    "rivalCosine": 0.7325,
     "nearestOwn": false,
     "f0ErrorPercent": 35.61
    }
@@ -500,8 +504,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0453,
-   "level": 0.9,
-   "timbre": "reed",
+   "level": 1.35,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
@@ -528,11 +532,9 @@
      3913.1
     ]
    ],
-   "attack": 0.008,
+   "attack": 0.004,
    "hold": true,
    "harmonic": 0.0,
-   "am": 140.0,
-   "amDepth": 0.3,
    "formants": [
     [
      863.1,
@@ -558,17 +560,20 @@
    "gammaScale": 3.0,
    "tractQ": 30.0,
    "noise": 0.12,
-   "rough": 0.65,
+   "rough": 0.0,
+   "am": 45.0,
+   "amDepth": 0.3,
+   "two": true,
    "vib": {
-    "rate": 8.0,
-    "depth": 0.05
+    "rate": 14.0,
+    "depth": 0.025
    },
    "learned": {
     "members": 1,
-    "resynthesisCosine": 0.2668,
-    "rivalCosine": 0.1812,
+    "resynthesisCosine": 0.1442,
+    "rivalCosine": 0.0696,
     "nearestOwn": true,
-    "f0ErrorPercent": -15.07
+    "f0ErrorPercent": -5.4
    }
   }
  ],
@@ -678,15 +683,16 @@
      "L07",
      "L00"
     ],
-    "count": 213,
+    "count": 220,
     "species": [
      "acanthorhynchus_tenuirostris",
      "accipiter_striatus",
      "acrocephalus_arundinaceus",
      "aegithina_tiphia",
+     "amblyramphus_holosericeus",
      "anser_cygnoides",
+     "anthus_rubescens",
      "anthus_spragueii",
-     "apaloderma_narina",
      "aphelocoma_coerulescens",
      "aquila_nipalensis",
      "arremon_atricapillus",
@@ -696,57 +702,54 @@
      "butastur_teesa",
      "calliope_calliope",
      "campylorhynchus_gularis",
+     "caprimulgus_macrurus",
      "catharus_fuscater",
      "chamaeza_mollissima",
-     "cisticola_chiniana",
+     "chlorospingus_flavopectus",
      "cisticola_juncidis",
      "coloeus_monedula",
-     "columba_livia",
      "copsychus_stricklandii",
-     "corvus_capensis",
      "cossypha_heuglini",
-     "coturnix_coturnix",
      "crotophaga_major",
      "crypturellus_bartletti",
      "curruca_subalpina",
      "cyanistes_teneriffae",
      "cyanocompsa_parellina",
      "cyanocorax_mystacalis",
+     "dacelo_novaeguineae",
      "dendroplex_kienerii",
+     "diglossa_humeralis",
+     "dryobates_minor",
      "emberiza_rustica",
-     "embernagra_platensis",
      "epinecrophylla_erythrura",
      "erythropitta_ussheri",
+     "euphagus_carolinus",
      "euphonia_xanthogaster",
-     "furnarius_figulus",
+     "eupsittula_canicularis",
      "gallinago_stenura",
      "gavia_adamsii",
-     "geothlypis_philadelphia",
+     "geopelia_placida",
      "grallaria_andicolus",
      "grallaria_rufocinerea",
      "grallaria_squamigera",
      "gymnorhinus_cyanocephalus",
      "herpsilochmus_rufimarginatus",
      "hylocichla_mustelina",
-     "icterus_parisorum",
+     "iduna_pallida",
      "iridosornis_porphyrocephalus",
      "lamprotornis_splendidus",
      "larus_crassirostris",
-     "lichmera_indistincta",
-     "machetornis_rixosa",
+     "larus_marinus",
      "mecocerculus_hellmayri",
-     "melaenornis_silens",
-     "melaniparus_afer",
      "melanodryas_cyanus",
      "merulaxis_ater",
      "morus_bassanus",
-     "myiopagis_viridicata",
      "myiothlypis_cinereicollis",
      "nothoprocta_cinerascens",
      "pachycephala_pectoralis",
      "pachyramphus_aglaiae",
-     "passerella_iliaca",
-     "piaya_cayana",
+     "petrochelidon_fulva",
+     "picoides_arcticus",
      "picumnus_cirratus",
      "poecile_carolinensis",
      "poecilotriccus_ruficeps",
@@ -754,22 +757,24 @@
      "psilopogon_oorti",
      "pterorhinus_treacheri",
      "pycnonotus_taivanus",
+     "riparia_riparia",
      "semnornis_ramphastinus",
+     "surniculus_lugubris",
      "surniculus_velutinus",
      "suthora_webbiana",
-     "tetrao_urogallus",
      "theristicus_caudatus",
-     "thraupis_abbas",
-     "thripadectes_holostictus",
      "todiramphus_funebris",
      "touit_surdus",
+     "trichoglossus_moluccanus",
+     "tringa_semipalmata",
+     "trogon_caligatus",
      "turtur_tympanistria",
-     "upupa_epops",
+     "uria_aalge",
      "vireo_altiloquus",
      "zentrygon_albifacies",
      "zoothera_heinei"
     ],
-    "pmi": 0.518
+    "pmi": 0.444
    },
    {
     "sequence": [
@@ -778,31 +783,33 @@
      "L00",
      "L07"
     ],
-    "count": 82,
+    "count": 83,
     "species": [
      "accipiter_striatus",
      "aegithina_tiphia",
+     "anthus_rubescens",
      "anthus_spragueii",
      "aphelocoma_coerulescens",
      "arremon_brunneinucha",
+     "calliope_calliope",
      "catharus_fuscater",
-     "corvus_capensis",
-     "cossypha_heuglini",
      "crotophaga_major",
      "cyanocompsa_parellina",
      "cyanocorax_mystacalis",
+     "diglossa_humeralis",
+     "geopelia_placida",
      "hylocichla_mustelina",
-     "icterus_parisorum",
-     "melaenornis_silens",
-     "piaya_cayana",
+     "iduna_pallida",
+     "picoides_arcticus",
      "psilopogon_asiaticus",
      "psilopogon_oorti",
      "semnornis_ramphastinus",
      "touit_surdus",
+     "tringa_semipalmata",
      "zentrygon_albifacies",
      "zoothera_heinei"
     ],
-    "pmi": 1.247
+    "pmi": 1.21
    }
   ],
   "songTyping": {

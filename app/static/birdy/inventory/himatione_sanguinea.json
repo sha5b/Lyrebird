@@ -1,0 +1,218 @@
+{
+ "id": "himatione_sanguinea",
+ "common": "\u02bbApapane",
+ "scientific": "Himatione sanguinea",
+ "bank": "learned",
+ "summary": "Learned from 3 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1398 Hz \u00b7 27 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0267,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1542.9
+    ],
+    [
+     0.75,
+     1544.5
+    ],
+    [
+     0.875,
+     1267.0
+    ],
+    [
+     1.0,
+     1266.7
+    ]
+   ],
+   "attack": 0.12,
+   "hold": false,
+   "harmonic": 0.23274001479148865,
+   "formants": [
+    [
+     600.0,
+     6.0,
+     1.0
+    ],
+    [
+     1800.0,
+     6.0,
+     0.3333
+    ],
+    [
+     3000.0,
+     6.0,
+     0.2
+    ],
+    [
+     4200.0,
+     6.0,
+     0.1429
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 30.0,
+   "noise": 0.8500000238418579,
+   "rough": 0.22142276167869568,
+   "am": 12.0,
+   "amDepth": 0.165,
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.9242,
+    "rivalCosine": 0.3377,
+    "nearestOwn": true,
+    "f0ErrorPercent": 13.74
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1988 Hz \u00b7 84 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.084,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1556.8
+    ],
+    [
+     0.125,
+     1688.7
+    ],
+    [
+     0.375,
+     2487.1
+    ],
+    [
+     0.625,
+     1593.2
+    ],
+    [
+     0.75,
+     1913.4
+    ],
+    [
+     0.875,
+     2337.6
+    ],
+    [
+     1.0,
+     2635.7
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     600.0,
+     6.0,
+     1.0
+    ],
+    [
+     1800.0,
+     6.0,
+     0.3333
+    ],
+    [
+     3000.0,
+     6.0,
+     0.2
+    ],
+    [
+     4200.0,
+     6.0,
+     0.1429
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 0.0,
+   "noise": 0.4,
+   "rough": 0.65,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "two": true,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.8945,
+    "rivalCosine": 0.3579,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.83
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.3333,
+    "end": 0.3333,
+    "L01": 0.3333
+   },
+   "L01": {
+    "L01": 0.625,
+    "L00": 0.1875,
+    "end": 0.1875
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.363,
+   "L00>L01": 0.112,
+   "L01>L00": 0.021,
+   "L01>L01": 0.055
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 4,
+   "candidates": 2,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6
+  }
+ }
+}

@@ -1,0 +1,247 @@
+{
+ "id": "pheugopedius_maculipectus",
+ "common": "Spot-breasted Wren",
+ "scientific": "Pheugopedius maculipectus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 44 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 604 Hz \u00b7 136 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.136,
+   "level": 1.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     874.7
+    ],
+    [
+     0.125,
+     878.2
+    ],
+    [
+     0.25,
+     508.6
+    ],
+    [
+     0.375,
+     596.8
+    ],
+    [
+     0.5,
+     508.3
+    ],
+    [
+     0.625,
+     556.9
+    ],
+    [
+     0.75,
+     510.9
+    ],
+    [
+     1.0,
+     525.3
+    ]
+   ],
+   "attack": 0.12,
+   "hold": false,
+   "harmonic": 0.35,
+   "am": 12.0,
+   "amDepth": 0.0,
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     0.15
+    ],
+    [
+     9584.9,
+     6.0,
+     0.05
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 30.0,
+   "noise": 0.4,
+   "rough": 0.08,
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.7622,
+    "rivalCosine": 0.3615,
+    "nearestOwn": true,
+    "f0ErrorPercent": -11.73
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2928 Hz \u00b7 99 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0987,
+   "level": 0.75,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2957.1
+    ],
+    [
+     1.0,
+     2898.4
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     0.15
+    ],
+    [
+     9584.9,
+     6.0,
+     0.05
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "noise": 0.05,
+   "rough": 0.65,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.025
+   },
+   "am": 12.0,
+   "amDepth": 0.3,
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.63,
+    "rivalCosine": -0.17,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.23
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 3379 Hz \u00b7 212 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.212,
+   "level": 0.9,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3370.5
+    ],
+    [
+     0.25,
+     3520.0
+    ],
+    [
+     1.0,
+     3251.4
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 45.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     0.15
+    ],
+    [
+     9584.9,
+     6.0,
+     0.05
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "noise": 0.12,
+   "rough": 0.4,
+   "two": true,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.5446,
+    "rivalCosine": 0.4797,
+    "nearestOwn": true,
+    "f0ErrorPercent": -5.43
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L02",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L02": 0.6,
+    "L00": 0.4
+   },
+   "L01": {
+    "L01": 0.8,
+    "end": 0.2
+   },
+   "L02": {
+    "L02": 0.7647,
+    "end": 0.1176,
+    "L00": 0.1176
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.084,
+   "L00>L02": 0.139,
+   "L01>L01": 0.065,
+   "L02>L00": 0.068,
+   "L02>L02": 0.099
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 5,
+   "candidates": 1,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6
+  }
+ }
+}

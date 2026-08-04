@@ -1,0 +1,270 @@
+{
+ "id": "leistes_bellicosus",
+ "common": "Peruvian Meadowlark",
+ "scientific": "Leistes bellicosus",
+ "bank": "learned",
+ "summary": "Learned from 3 field recordings: 3 syllable types fitted from 43 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 456 Hz \u00b7 67 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0667,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     420.8
+    ],
+    [
+     0.375,
+     415.7
+    ],
+    [
+     0.5,
+     458.7
+    ],
+    [
+     0.625,
+     442.2
+    ],
+    [
+     0.875,
+     505.1
+    ],
+    [
+     1.0,
+     501.3
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 20.83,
+   "amDepth": 0.0,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.8129,
+    "rivalCosine": -0.1542,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.38
+   },
+   "respiration": {
+    "tauX": 0.01,
+    "tauP": 0.07952707287670507,
+    "alphaI": 0.05,
+    "alphaRel": 0.08359253812205276,
+    "forcing": 112.46826503806983
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      210.4
+     ],
+     [
+      0.375,
+      207.85
+     ],
+     [
+      0.5,
+      229.35
+     ],
+     [
+      0.625,
+      221.1
+     ],
+     [
+      0.875,
+      252.55
+     ],
+     [
+      1.0,
+      250.65
+     ]
+    ],
+    "gamma": 1336.221860659357,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.05
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3388 Hz \u00b7 72 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.072,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3363.8
+    ],
+    [
+     0.125,
+     3216.0
+    ],
+    [
+     1.0,
+     3595.5
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 12.0,
+   "noise": 0.12,
+   "rough": 0.0,
+   "am": 25.0,
+   "amDepth": 0.0,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.7189,
+    "rivalCosine": 0.4559,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.44
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 6653 Hz \u00b7 77 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0773,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     6718.3
+    ],
+    [
+     0.875,
+     6837.1
+    ],
+    [
+     1.0,
+     6410.7
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 12.0,
+   "amDepth": 0.6,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "noise": 0.4,
+   "rough": 0.65,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
+   },
+   "gammaScale": 2.0,
+   "two": false,
+   "fricative": true,
+   "learned": {
+    "members": 25,
+    "resynthesisCosine": 0.8337,
+    "rivalCosine": 0.5737,
+    "nearestOwn": true,
+    "f0ErrorPercent": 7.45
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L01",
+    "L02",
+    "L01",
+    "L02",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "L02": 1.0
+   },
+   "L02": {
+    "L01": 0.48,
+    "end": 0.28,
+    "L02": 0.24
+   }
+  },
+  "gaps": {
+   "L01>L02": 0.088,
+   "L02>L01": 0.099,
+   "L02>L02": 0.123
+  },
+  "songTyping": {
+   "bouts": 10,
+   "short": 3,
+   "candidates": 7,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 7,
+   "minClusterSize": 6
+  }
+ }
+}

@@ -1,0 +1,257 @@
+{
+ "id": "catharus_maculatus",
+ "common": "Speckled nightingale-thrush",
+ "scientific": "Catharus maculatus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 40 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 491 Hz \u00b7 37 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0373,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     488.5
+    ],
+    [
+     0.25,
+     473.7
+    ],
+    [
+     0.375,
+     496.0
+    ],
+    [
+     0.5,
+     465.4
+    ],
+    [
+     1.0,
+     535.2
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 3.0,
+   "noise": 0.05,
+   "rough": 0.08,
+   "amDepth": 0.8,
+   "am": 140.0,
+   "two": true,
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.7947,
+    "rivalCosine": 0.0417,
+    "nearestOwn": true,
+    "f0ErrorPercent": 9.19
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2890 Hz \u00b7 191 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1906,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2906.7
+    ],
+    [
+     0.125,
+     2793.6
+    ],
+    [
+     0.25,
+     2969.6
+    ],
+    [
+     0.375,
+     2844.2
+    ],
+    [
+     0.5,
+     3166.4
+    ],
+    [
+     0.625,
+     2792.2
+    ],
+    [
+     1.0,
+     2776.9
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 80.0,
+   "amDepth": 0.45,
+   "formants": [
+    [
+     6000.0,
+     8.0,
+     0.5
+    ],
+    [
+     2711.2989394619476,
+     8.0,
+     0.5
+    ],
+    [
+     6830.618534315889,
+     8.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 6.0,
+   "rough": 0.65,
+   "two": true,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
+   "noise": 0.0,
+   "fricative": true,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.7603,
+    "rivalCosine": 0.3544,
+    "nearestOwn": true,
+    "f0ErrorPercent": -10.6
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 5771 Hz \u00b7 107 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1067,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5862.8
+    ],
+    [
+     0.875,
+     5464.7
+    ],
+    [
+     1.0,
+     5999.6
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 0.0,
+   "noise": 0.12,
+   "rough": 0.08,
+   "amDepth": 0.15,
+   "am": 30.0,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 25,
+    "resynthesisCosine": 0.8739,
+    "rivalCosine": 0.4286,
+    "nearestOwn": true,
+    "f0ErrorPercent": -7.32
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L02",
+    "L02",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "L01": 0.5455,
+    "L02": 0.4545
+   },
+   "L02": {
+    "L02": 0.72,
+    "end": 0.16,
+    "L01": 0.12
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.035,
+   "L01>L02": 0.08,
+   "L02>L01": 0.059,
+   "L02>L02": 0.085
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 5,
+   "candidates": 2,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6
+  }
+ }
+}

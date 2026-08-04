@@ -74,8 +74,8 @@
    ],
    "learned": {
     "members": 3,
-    "resynthesisCosine": 0.5182,
-    "rivalCosine": 0.6342,
+    "resynthesisCosine": 0.5049,
+    "rivalCosine": 0.6272,
     "nearestOwn": false,
     "f0ErrorPercent": -3.71
    }
@@ -87,7 +87,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.04,
-   "level": 0.3,
+   "level": 0.45,
    "timbre": "buzz",
    "contour": [
     [
@@ -121,18 +121,31 @@
    ],
    "attack": 0.004,
    "hold": true,
-   "harmonic": 0.0,
+   "harmonic": 0.1,
    "gammaScale": 4.5,
    "noise": 0.6,
+   "rough": 0.65,
    "amDepth": 0.3,
    "am": 80.0,
-   "rough": 0.4,
+   "fricative": true,
+   "formants": [
+    [
+     2711.2989394619476,
+     2.0,
+     2.0
+    ],
+    [
+     5083.5393171114765,
+     2.0,
+     2.0
+    ]
+   ],
    "learned": {
     "members": 5,
-    "resynthesisCosine": 0.7109,
-    "rivalCosine": 0.4912,
+    "resynthesisCosine": 0.6998,
+    "rivalCosine": 0.483,
     "nearestOwn": true,
-    "f0ErrorPercent": -16.42
+    "f0ErrorPercent": -18.32
    }
   },
   {
@@ -142,7 +155,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.1653,
-   "level": 1.35,
+   "level": 0.515,
    "timbre": "pure",
    "contour": [
     [
@@ -170,25 +183,31 @@
      3325.6
     ]
    ],
-   "attack": 0.03,
-   "hold": true,
+   "attack": 0.06,
+   "hold": false,
    "harmonic": 0.0,
-   "gammaScale": 3.0,
-   "tractQ": 0.0,
-   "noise": 0.0,
-   "rough": 0.2,
+   "am": 12.0,
+   "amDepth": 0.15,
    "vib": {
     "rate": 34.0,
-    "depth": 0.09
+    "depth": 0.132
    },
-   "amDepth": 0.15,
-   "am": 30.0,
+   "gammaScale": 4.5,
+   "tractQ": 12.0,
+   "rough": 0.2,
    "learned": {
     "members": 33,
-    "resynthesisCosine": 0.7146,
-    "rivalCosine": -0.4921,
+    "resynthesisCosine": 0.7281,
+    "rivalCosine": -0.5447,
     "nearestOwn": true,
-    "f0ErrorPercent": -9.03
+    "f0ErrorPercent": -11.15
+   },
+   "respiration": {
+    "tauX": 0.022360679774997897,
+    "tauP": 0.2,
+    "alphaI": 0.05,
+    "alphaRel": 0.025,
+    "forcing": 112.46826503806983
    }
   }
  ],

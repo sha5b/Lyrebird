@@ -1,0 +1,146 @@
+{
+ "id": "plegadis_falcinellus",
+ "common": "Glossy Ibis",
+ "scientific": "Plegadis falcinellus",
+ "bank": "learned",
+ "summary": "Learned from 3 field recordings: 2 syllable types fitted from 24 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1091 Hz \u00b7 116 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.116,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1155.5
+    ],
+    [
+     0.125,
+     1208.8
+    ],
+    [
+     0.625,
+     1168.4
+    ],
+    [
+     0.75,
+     1039.3
+    ],
+    [
+     0.875,
+     1175.8
+    ],
+    [
+     1.0,
+     843.8
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 1.0,
+   "tractQ": 20.0,
+   "noise": 0.12,
+   "rough": 0.0,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.3769,
+    "rivalCosine": -0.1388,
+    "nearestOwn": true,
+    "f0ErrorPercent": 10.67
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 5653 Hz \u00b7 33 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0334,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     5665.8
+    ],
+    [
+     1.0,
+     5639.7
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 25.0,
+   "amDepth": 0.15,
+   "gammaScale": 1.5,
+   "tractQ": 6.0,
+   "rough": 0.08,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.5545,
+    "rivalCosine": 0.0741,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.8
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6667,
+    "end": 0.3333
+   },
+   "L01": {
+    "L01": 0.5833,
+    "end": 0.4167
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.159,
+   "L01>L01": 0.277
+  },
+  "songTyping": {
+   "bouts": 9,
+   "short": 9,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

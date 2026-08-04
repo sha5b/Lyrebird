@@ -1,0 +1,147 @@
+{
+ "id": "ninox_boobook",
+ "common": "Southern Boobook",
+ "scientific": "Ninox boobook",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 24 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 657 Hz \u00b7 204 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.204,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     655.6
+    ],
+    [
+     0.25,
+     694.8
+    ],
+    [
+     1.0,
+     621.5
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 30.0,
+   "noise": 0.05,
+   "rough": 0.65,
+   "amDepth": 0.6,
+   "am": 12.0,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.09
+   },
+   "two": true,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.8459,
+    "rivalCosine": 0.0353,
+    "nearestOwn": true,
+    "f0ErrorPercent": 10.11
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4359 Hz \u00b7 92 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.092,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4364.1
+    ],
+    [
+     1.0,
+     4353.5
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.5,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.3
+    ]
+   ],
+   "amDepth": 0.8,
+   "am": 45.0,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.6785,
+    "rivalCosine": 0.106,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.29
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5,
+    "end": 0.5
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.161,
+   "L01>L01": 0.156
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 7,
+   "candidates": 0,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

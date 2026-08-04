@@ -1,0 +1,253 @@
+{
+ "id": "spilopelia_senegalensis",
+ "common": "Laughing Dove",
+ "scientific": "Spilopelia senegalensis",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 38 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 522 Hz \u00b7 48 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.048,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     535.7
+    ],
+    [
+     1.0,
+     508.5
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     645.3,
+     6.0,
+     1.0
+    ],
+    [
+     1935.8,
+     6.0,
+     0.3333
+    ],
+    [
+     3226.3,
+     6.0,
+     0.2
+    ],
+    [
+     4516.8,
+     6.0,
+     0.1429
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 6.0,
+   "noise": 0.12,
+   "am": 140.0,
+   "amDepth": 0.45,
+   "rough": 0.0,
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.9086,
+    "rivalCosine": 0.7164,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.14
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 563 Hz \u00b7 123 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1227,
+   "level": 0.75,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     562.1
+    ],
+    [
+     1.0,
+     563.4
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     645.3,
+     6.0,
+     1.0
+    ],
+    [
+     1935.8,
+     6.0,
+     0.3333
+    ],
+    [
+     3226.3,
+     6.0,
+     0.2
+    ],
+    [
+     4516.8,
+     6.0,
+     0.1429
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 20.0,
+   "noise": 0.0,
+   "rough": 0.65,
+   "two": true,
+   "learned": {
+    "members": 25,
+    "resynthesisCosine": 0.8506,
+    "rivalCosine": 0.6765,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.37
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2609 Hz \u00b7 105 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1053,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2593.9
+    ],
+    [
+     1.0,
+     2623.9
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.1,
+   "formants": [
+    [
+     645.3,
+     6.0,
+     1.0
+    ],
+    [
+     1935.8,
+     6.0,
+     0.3333
+    ],
+    [
+     3226.3,
+     6.0,
+     0.2
+    ],
+    [
+     4516.8,
+     6.0,
+     0.1429
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 20.0,
+   "noise": 0.05,
+   "rough": 0.65,
+   "am": 25.0,
+   "amDepth": 0.15,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.4986,
+    "rivalCosine": 0.4205,
+    "nearestOwn": true,
+    "f0ErrorPercent": 7.43
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L01",
+    "L01",
+    "L02",
+    "L02",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L01": 1.0
+   },
+   "L01": {
+    "L01": 0.6,
+    "end": 0.2,
+    "L02": 0.12,
+    "L00": 0.08
+   },
+   "L02": {
+    "L02": 0.625,
+    "L01": 0.375
+   }
+  },
+  "gaps": {
+   "L00>L01": 0.035,
+   "L01>L00": 0.044,
+   "L01>L01": 0.056,
+   "L01>L02": 0.12,
+   "L02>L01": 0.069,
+   "L02>L02": 0.36
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 4,
+   "candidates": 1,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6
+  }
+ }
+}

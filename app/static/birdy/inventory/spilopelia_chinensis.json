@@ -1,0 +1,129 @@
+{
+ "id": "spilopelia_chinensis",
+ "common": "Pearl-necked Dove",
+ "scientific": "Spilopelia chinensis",
+ "bank": "learned",
+ "summary": "Learned from 3 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 567 Hz \u00b7 177 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1773,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     567.4
+    ],
+    [
+     1.0,
+     565.7
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 0.5,
+   "tractQ": 12.0,
+   "noise": 0.4,
+   "rough": 0.2,
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.6874,
+    "rivalCosine": 0.0777,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.44
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2156 Hz \u00b7 75 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0747,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2203.6
+    ],
+    [
+     1.0,
+     2109.4
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 1.0,
+   "tractQ": 6.0,
+   "noise": 0.4,
+   "rough": 0.0,
+   "amDepth": 0.45,
+   "am": 30.0,
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.5533,
+    "rivalCosine": 0.1046,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.85
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6316,
+    "end": 0.3684
+   },
+   "L01": {
+    "L01": 0.4444,
+    "L00": 0.3333,
+    "end": 0.2222
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.067,
+   "L01>L00": 0.512,
+   "L01>L01": 0.089
+  },
+  "songTyping": {
+   "bouts": 9,
+   "short": 8,
+   "candidates": 1,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6
+  }
+ }
+}

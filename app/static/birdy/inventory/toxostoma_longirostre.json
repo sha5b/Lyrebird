@@ -3,7 +3,7 @@
  "common": "Long-billed Thrasher",
  "scientific": "Toxostoma longirostre",
  "bank": "learned",
- "summary": "Learned from 1 field recordings: 3 syllable types fitted from 45 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 46 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
@@ -45,53 +45,53 @@
    "rough": 0.2,
    "learned": {
     "members": 31,
-    "resynthesisCosine": 0.5524,
-    "rivalCosine": 0.1504,
+    "resynthesisCosine": 0.5545,
+    "rivalCosine": 0.1467,
     "nearestOwn": true,
     "f0ErrorPercent": -4.72
    }
   },
   {
    "id": "L02",
-   "label": "learned L02 \u00b7 2593 Hz \u00b7 57 ms",
+   "label": "learned L02 \u00b7 2611 Hz \u00b7 53 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0573,
-   "level": 0.45,
-   "timbre": "reed",
+   "dur": 0.0533,
+   "level": 0.35,
+   "timbre": "pure",
    "contour": [
     [
      0.0,
-     2586.1
+     2595.5
     ],
     [
      0.375,
-     2636.3
+     2695.1
+    ],
+    [
+     0.5,
+     2583.9
     ],
     [
      1.0,
-     2558.0
+     2570.4
     ]
    ],
-   "attack": 0.008,
+   "attack": 0.016,
    "hold": true,
    "harmonic": 0.0,
    "am": 12.0,
-   "amDepth": 0.3,
-   "gammaScale": 1.5,
+   "amDepth": 0.15,
+   "gammaScale": 2.0,
    "tractQ": 30.0,
-   "noise": 0.05,
-   "vib": {
-    "rate": 8.0,
-    "depth": 0.025
-   },
+   "two": true,
    "learned": {
-    "members": 8,
-    "resynthesisCosine": 0.5233,
-    "rivalCosine": -0.0036,
+    "members": 9,
+    "resynthesisCosine": 0.5732,
+    "rivalCosine": -0.0112,
     "nearestOwn": true,
-    "f0ErrorPercent": 4.42
+    "f0ErrorPercent": 7.83
    }
   },
   {
@@ -133,8 +133,8 @@
    "two": true,
    "learned": {
     "members": 6,
-    "resynthesisCosine": 0.8315,
-    "rivalCosine": 0.134,
+    "resynthesisCosine": 0.8303,
+    "rivalCosine": 0.0152,
     "nearestOwn": true,
     "f0ErrorPercent": -2.1
    }
@@ -149,12 +149,12 @@
    "confidence": "invented",
    "refs": [],
    "sequence": [
-    "L03",
-    "L03",
     "L02",
     "L02",
     "L00",
-    "L00"
+    "L00",
+    "L02",
+    "L02"
    ],
    "gaps": [
     0.06,
@@ -167,9 +167,9 @@
  ],
  "grammar": {
   "start": [
+   "L02",
    "L03",
-   "L00",
-   "L02"
+   "L00"
   ],
   "transitions": {
    "L00": {
@@ -178,9 +178,9 @@
     "end": 0.0667
    },
    "L02": {
-    "L02": 0.4286,
-    "L00": 0.2857,
-    "end": 0.2857
+    "end": 0.375,
+    "L02": 0.375,
+    "L00": 0.25
    },
    "L03": {
     "L03": 0.5,
@@ -196,8 +196,8 @@
    "L03>L03": 0.46
   },
   "songTyping": {
-   "bouts": 5,
-   "short": 2,
+   "bouts": 6,
+   "short": 3,
    "candidates": 3,
    "repeatCandidates": 1,
    "types": 0,

@@ -77,8 +77,8 @@
    "rough": 0.65,
    "learned": {
     "members": 4,
-    "resynthesisCosine": 0.8084,
-    "rivalCosine": 0.2979,
+    "resynthesisCosine": 0.8062,
+    "rivalCosine": 0.2874,
     "nearestOwn": true,
     "f0ErrorPercent": 0.98
    }
@@ -120,7 +120,7 @@
    ],
    "attack": 0.004,
    "hold": true,
-   "harmonic": 0.7,
+   "harmonic": 0.5,
    "am": 80.0,
    "amDepth": 0.3,
    "formants": [
@@ -151,13 +151,13 @@
    "rough": 0.65,
    "two": true,
    "vib": {
-    "rate": 8.0,
+    "rate": 4.0,
     "depth": 0.01
    },
    "learned": {
     "members": 19,
-    "resynthesisCosine": 0.719,
-    "rivalCosine": 0.6775,
+    "resynthesisCosine": 0.7242,
+    "rivalCosine": 0.6778,
     "nearestOwn": true,
     "f0ErrorPercent": 16.69
    }
@@ -215,7 +215,7 @@
    "learned": {
     "members": 19,
     "resynthesisCosine": 0.7612,
-    "rivalCosine": 0.7404,
+    "rivalCosine": 0.7412,
     "nearestOwn": true,
     "f0ErrorPercent": 12.87
    }
@@ -283,15 +283,48 @@
     ]
    ],
    "gammaScale": 1.5,
-   "tractQ": 20.0,
+   "tractQ": 12.0,
    "noise": 0.25,
    "rough": 0.4,
    "learned": {
     "members": 14,
-    "resynthesisCosine": 0.4388,
-    "rivalCosine": 0.2953,
-    "nearestOwn": true,
+    "resynthesisCosine": 0.4576,
+    "rivalCosine": 0.4854,
+    "nearestOwn": false,
     "f0ErrorPercent": -28.47
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      3698.2695165635046
+     ],
+     [
+      0.375,
+      3672.345231203469
+     ],
+     [
+      0.625,
+      3050.031451828466
+     ],
+     [
+      0.75,
+      2995.8261278938453
+     ],
+     [
+      0.875,
+      2412.2678458247547
+     ],
+     [
+      1.0,
+      2653.3113273794315
+     ]
+    ],
+    "gamma": 8918.564854515535,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.02
    }
   },
   {
@@ -367,8 +400,8 @@
    "two": true,
    "learned": {
     "members": 6,
-    "resynthesisCosine": 0.7063,
-    "rivalCosine": 0.2157,
+    "resynthesisCosine": 0.71,
+    "rivalCosine": 0.2163,
     "nearestOwn": true,
     "f0ErrorPercent": -11.7
    }

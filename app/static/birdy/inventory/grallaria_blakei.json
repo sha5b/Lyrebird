@@ -33,8 +33,8 @@
    "rough": 0.2,
    "learned": {
     "members": 265,
-    "resynthesisCosine": 0.8284,
-    "rivalCosine": 0.618,
+    "resynthesisCosine": 0.826,
+    "rivalCosine": 0.6121,
     "nearestOwn": true,
     "f0ErrorPercent": 31.98
    }
@@ -75,8 +75,8 @@
    "rough": 0.65,
    "learned": {
     "members": 171,
-    "resynthesisCosine": 0.6462,
-    "rivalCosine": 0.8194,
+    "resynthesisCosine": 0.6421,
+    "rivalCosine": 0.8178,
     "nearestOwn": false,
     "f0ErrorPercent": -26.64
    }
@@ -125,9 +125,9 @@
    "rough": 0.4,
    "learned": {
     "members": 112,
-    "resynthesisCosine": 0.1139,
-    "rivalCosine": 0.1176,
-    "nearestOwn": false,
+    "resynthesisCosine": 0.1308,
+    "rivalCosine": 0.1265,
+    "nearestOwn": true,
     "f0ErrorPercent": -0.96
    },
    "voices": {
@@ -199,8 +199,8 @@
    },
    "learned": {
     "members": 71,
-    "resynthesisCosine": 0.7922,
-    "rivalCosine": 0.6955,
+    "resynthesisCosine": 0.7949,
+    "rivalCosine": 0.6996,
     "nearestOwn": true,
     "f0ErrorPercent": 5.46
    }
@@ -235,8 +235,8 @@
    "am": 30.0,
    "learned": {
     "members": 98,
-    "resynthesisCosine": 0.7756,
-    "rivalCosine": 0.7266,
+    "resynthesisCosine": 0.7762,
+    "rivalCosine": 0.7291,
     "nearestOwn": true,
     "f0ErrorPercent": 2.01
    }
@@ -274,8 +274,8 @@
    },
    "learned": {
     "members": 414,
-    "resynthesisCosine": 0.6099,
-    "rivalCosine": 0.7151,
+    "resynthesisCosine": 0.6151,
+    "rivalCosine": 0.7178,
     "nearestOwn": false,
     "f0ErrorPercent": 10.86
    }
@@ -287,8 +287,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0507,
-   "level": 1.35,
-   "timbre": "pure",
+   "level": 0.45,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
@@ -299,23 +299,24 @@
      1935.6
     ]
    ],
-   "attack": 0.016,
-   "hold": false,
-   "harmonic": 0.045,
-   "am": 25.0,
-   "amDepth": 0.8,
-   "gammaScale": 0.5,
-   "tractQ": 30.0,
-   "noise": 0.05,
-   "rough": 0.0,
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 1.0,
+   "tractQ": 20.0,
+   "noise": 0.12,
+   "rough": 0.6499999761581421,
+   "amDepth": 0.6,
+   "am": 45.0,
+   "two": true,
    "vib": {
-    "rate": 8.0,
+    "rate": 22.0,
     "depth": 0.025
    },
    "learned": {
     "members": 942,
-    "resynthesisCosine": 0.8834,
-    "rivalCosine": 0.7577,
+    "resynthesisCosine": 0.9038,
+    "rivalCosine": 0.8265,
     "nearestOwn": true,
     "f0ErrorPercent": 0.02
    }
@@ -327,8 +328,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.064,
-   "level": 1.2,
-   "timbre": "buzz",
+   "level": 0.45,
+   "timbre": "pure",
    "contour": [
     [
      0.0,
@@ -339,26 +340,26 @@
      1970.7
     ]
    ],
-   "attack": 0.016,
+   "attack": 0.004,
    "hold": true,
    "harmonic": 0.0,
+   "am": 80.0,
+   "amDepth": 0.6,
    "gammaScale": 1.0,
-   "tractQ": 12.0,
-   "noise": 0.12,
-   "rough": 0.65,
-   "am": 25.0,
-   "amDepth": 0.0,
+   "tractQ": 20.0,
+   "noise": 0.85,
    "two": true,
    "vib": {
-    "rate": 22.0,
+    "rate": 12.0,
     "depth": 0.05
    },
+   "rough": 0.4,
    "learned": {
     "members": 508,
-    "resynthesisCosine": 0.8958,
-    "rivalCosine": 0.8693,
+    "resynthesisCosine": 0.8883,
+    "rivalCosine": 0.8804,
     "nearestOwn": true,
-    "f0ErrorPercent": -2.08
+    "f0ErrorPercent": 3.79
    }
   }
  ],
@@ -496,41 +497,6 @@
    "L25>L16": 0.021,
    "L25>L25": 0.024
   },
-  "chunks": [
-   {
-    "sequence": [
-     "L19",
-     "L16",
-     "L19"
-    ],
-    "count": 67,
-    "species": [
-     "grallaria_blakei",
-     "phyllastrephus_terrestris",
-     "psarocolius_wagleri",
-     "sclateria_naevia",
-     "thamnophilus_punctatus"
-    ],
-    "pmi": 1.176
-   },
-   {
-    "sequence": [
-     "L16",
-     "L19",
-     "L16"
-    ],
-    "count": 66,
-    "species": [
-     "grallaria_blakei",
-     "phyllastrephus_terrestris",
-     "poecile_cinctus",
-     "sclateria_naevia",
-     "thamnophilus_punctatus",
-     "zosterops_simplex"
-    ],
-    "pmi": 1.374
-   }
-  ],
   "songTypes": [
    {
     "id": "S01",

@@ -1,0 +1,214 @@
+{
+ "id": "pygochelidon_cyanoleuca",
+ "common": "Blue-and-white Swallow",
+ "scientific": "Pygochelidon cyanoleuca",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 38 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 789 Hz \u00b7 29 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0293,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     792.2
+    ],
+    [
+     1.0,
+     785.2
+    ]
+   ],
+   "attack": 0.12,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     5187.9,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 0.0,
+   "noise": 0.85,
+   "rough": 0.65,
+   "am": 12.0,
+   "amDepth": 0.15,
+   "learned": {
+    "members": 1,
+    "resynthesisCosine": 0.9434,
+    "rivalCosine": 0.6088,
+    "nearestOwn": true,
+    "f0ErrorPercent": 29.72
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 5227 Hz \u00b7 52 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.052,
+   "level": 0.9331428408622742,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5336.2
+    ],
+    [
+     1.0,
+     5120.5
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.2,
+   "formants": [
+    [
+     5187.9,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 0.0,
+   "noise": 0.12,
+   "rough": 0.0,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "two": true,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.7537,
+    "rivalCosine": 0.6836,
+    "nearestOwn": true,
+    "f0ErrorPercent": -14.52
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 5879 Hz \u00b7 147 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1467,
+   "level": 0.75,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     6035.2
+    ],
+    [
+     0.875,
+     5971.5
+    ],
+    [
+     1.0,
+     5639.5
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.7,
+   "formants": [
+    [
+     5187.9,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "rough": 0.4,
+   "two": true,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
+   "am": 140.0,
+   "amDepth": 0.3,
+   "learned": {
+    "members": 23,
+    "resynthesisCosine": 0.7908,
+    "rivalCosine": 0.6277,
+    "nearestOwn": true,
+    "f0ErrorPercent": 8.39
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L02",
+    "L02",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L01": 1.0
+   },
+   "L01": {
+    "L01": 0.5,
+    "L02": 0.3571,
+    "end": 0.1429
+   },
+   "L02": {
+    "L02": 0.7727,
+    "L01": 0.2273
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.115,
+   "L01>L02": 0.083,
+   "L02>L01": 0.131,
+   "L02>L02": 0.037
+  },
+  "songTyping": {
+   "bouts": 2,
+   "short": 0,
+   "candidates": 2,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6
+  }
+ }
+}

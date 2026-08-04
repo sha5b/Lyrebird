@@ -41,13 +41,13 @@
     "rate": 12.0,
     "depth": 0.05
    },
-   "tractQ": 12.0,
+   "tractQ": 20.0,
    "amDepth": 0.15,
-   "am": 45.0,
+   "am": 25.0,
    "learned": {
     "members": 16,
-    "resynthesisCosine": 0.731,
-    "rivalCosine": 0.7025,
+    "resynthesisCosine": 0.7299,
+    "rivalCosine": 0.7158,
     "nearestOwn": true,
     "f0ErrorPercent": 2.25
    }
@@ -59,8 +59,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.056,
-   "level": 1.05,
-   "timbre": "buzz",
+   "level": 1.2,
+   "timbre": "pure",
    "contour": [
     [
      0.0,
@@ -90,22 +90,22 @@
    "attack": 0.008,
    "hold": true,
    "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.15,
    "gammaScale": 1.0,
    "tractQ": 20.0,
    "noise": 0.6,
-   "rough": 0.65,
-   "am": 25.0,
-   "amDepth": 0.3,
+   "rough": 0.4,
    "vib": {
     "rate": 8.0,
-    "depth": 0.025
+    "depth": 0.01
    },
    "learned": {
     "members": 19,
-    "resynthesisCosine": 0.7392,
-    "rivalCosine": 0.7207,
+    "resynthesisCosine": 0.741,
+    "rivalCosine": 0.7032,
     "nearestOwn": true,
-    "f0ErrorPercent": 3.36
+    "f0ErrorPercent": -0.08
    }
   },
   {
@@ -149,19 +149,19 @@
    ],
    "attack": 0.06,
    "hold": true,
-   "harmonic": 0.1,
+   "harmonic": 0.2,
    "am": 80.0,
    "amDepth": 0.6,
    "gammaScale": 6.0,
-   "tractQ": 20.0,
+   "tractQ": 12.0,
    "rough": 0.65,
    "two": true,
    "learned": {
     "members": 17,
     "resynthesisCosine": 0.8354,
-    "rivalCosine": 0.7372,
+    "rivalCosine": 0.7259,
     "nearestOwn": true,
-    "f0ErrorPercent": 10.87
+    "f0ErrorPercent": 6.15
    }
   },
   {
@@ -171,8 +171,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.172,
-   "level": 0.9,
-   "timbre": "buzz",
+   "level": 0.45,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
@@ -203,26 +203,38 @@
      2032.3
     ]
    ],
-   "attack": 0.03,
+   "attack": 0.016,
    "hold": true,
    "harmonic": 0.0,
-   "gammaScale": 6.0,
-   "rough": 0.65,
-   "tractQ": 30.0,
-   "amDepth": 0.8,
-   "am": 45.0,
-   "two": true,
-   "noise": 0.05,
    "vib": {
-    "rate": 12.0,
-    "depth": 0.01
+    "rate": 4.0,
+    "depth": 0.09
    },
+   "gammaScale": 0.5,
+   "rough": 0.65,
+   "tractQ": 20.0,
+   "noise": 0.25,
+   "amDepth": 0.45,
+   "am": 80.0,
+   "fricative": true,
+   "formants": [
+    [
+     1919.8885853658714,
+     4.0,
+     1.0
+    ],
+    [
+     6830.618534315889,
+     4.0,
+     1.0
+    ]
+   ],
    "learned": {
     "members": 20,
-    "resynthesisCosine": 0.7927,
-    "rivalCosine": 0.809,
-    "nearestOwn": false,
-    "f0ErrorPercent": 1.64
+    "resynthesisCosine": 0.757,
+    "rivalCosine": 0.5553,
+    "nearestOwn": true,
+    "f0ErrorPercent": 8.0
    }
   },
   {
@@ -283,8 +295,8 @@
    "am": 25.0,
    "learned": {
     "members": 8,
-    "resynthesisCosine": 0.5944,
-    "rivalCosine": 0.5501,
+    "resynthesisCosine": 0.6032,
+    "rivalCosine": 0.5598,
     "nearestOwn": true,
     "f0ErrorPercent": -4.93
    }
@@ -319,8 +331,8 @@
    "am": 30.0,
    "learned": {
     "members": 1,
-    "resynthesisCosine": 0.7437,
-    "rivalCosine": 0.1293,
+    "resynthesisCosine": 0.7457,
+    "rivalCosine": 0.133,
     "nearestOwn": true,
     "f0ErrorPercent": -0.5
    },
@@ -432,19 +444,20 @@
      "L06",
      "L03"
     ],
-    "count": 242,
+    "count": 234,
     "species": [
      "acanthagenys_rufogularis",
      "acanthis_flammea",
+     "amazona_farinosa",
      "amblycercus_holosericeus",
      "anarhynchus_wilsonia",
      "ara_macao",
      "arachnothera_longirostra",
      "arborophila_crudigularis",
-     "asio_stygius",
      "atlapetes_forbesi",
      "aviceda_subcristata",
-     "basileuterus_tristriatus",
+     "aythya_collaris",
+     "cacicus_cela",
      "campochaera_sloetii",
      "campylorhynchus_zonatus",
      "ceratopipra_cornuta",
@@ -453,24 +466,25 @@
      "cinnyris_afer",
      "circus_aeruginosus",
      "clibanornis_rubiginosus",
+     "coccothraustes_vespertinus",
+     "columbina_squammata",
      "contopus_caribaeus",
-     "copsychus_saularis",
      "cossypha_dichroa",
      "culicicapa_ceylonensis",
      "curruca_nisoria",
      "cyanocompsa_parellina",
-     "dendrocitta_formosae",
      "diglossa_gloriosissima",
+     "dysithamnus_mentalis",
      "dysithamnus_puncticeps",
      "elaenia_spectabilis",
+     "elanoides_forficatus",
      "eubucco_richardsoni",
+     "eugenes_fulgens",
      "ficedula_albicollis",
-     "fulica_atra",
      "furnarius_leucopus",
      "gallirallus_wallacii",
      "gampsonyx_swainsonii",
      "garrulax_leucolophus",
-     "geopelia_placida",
      "geranospiza_caerulescens",
      "glaucidium_peruanum",
      "grallaria_albigula",
@@ -482,15 +496,12 @@
      "herpsilochmus_gentryi",
      "horizocerus_cassini",
      "hylophilus_pectoralis",
-     "ichthyaetus_melanocephalus",
      "icthyophaga_leucogaster",
      "jacamaralcyon_tridactyla",
      "lampornis_clemenciae",
-     "lamprotornis_nitens",
      "lanio_fulvus",
-     "larus_livens",
-     "leiothrix_lutea",
      "locustella_chengi",
+     "locustella_mandelli",
      "lonchura_punctulata",
      "lophostrix_cristata",
      "loxia_leucoptera",
@@ -498,6 +509,8 @@
      "macrosphenus_kempi",
      "megascops_albogularis",
      "megaxenops_parnaguae",
+     "melanerpes_uropygialis",
+     "melanopareia_torquata",
      "microspingus_cabanisi",
      "microspingus_melanoleucus",
      "mimus_saturninus",
@@ -505,7 +518,6 @@
      "motacilla_capensis",
      "motacilla_flava",
      "myiarchus_cephalotes",
-     "myioborus_melanocephalus",
      "myiothlypis_coronata",
      "myornis_senilis",
      "myrmophylax_atrothorax",
@@ -515,38 +527,38 @@
      "otus_elegans",
      "penelope_albipennis",
      "periparus_venustulus",
-     "petroica_australis",
      "phacellodomus_ferrugineigula",
-     "phaps_chalcoptera",
      "pharomachrus_fulgidus",
+     "phoenicurus_auroreus",
      "phylloscopus_emeiensis",
      "picumnus_cirratus",
+     "pipilo_chlorurus",
      "pitta_maxima",
      "pluvialis_apricaria",
+     "podargus_ocellatus",
      "pomatostomus_superciliosus",
      "pyrrhomyias_cinnamomeus",
+     "rupornis_magnirostris",
      "saltator_grandis",
      "sayornis_nigricans",
      "sciaphylax_hemimelaena",
+     "scytalopus_vicinior",
      "sittiparus_varius",
-     "somateria_mollissima",
      "sporophila_caerulescens",
-     "strix_uralensis",
      "telophorus_zeylonus",
      "theristicus_caudatus",
      "todiramphus_funebris",
-     "todus_multicolor",
      "turdoides_jardineii",
+     "turdus_subalaris",
      "turdus_torquatus",
-     "tympanuchus_cupido",
-     "uria_aalge",
      "vanellus_armatus",
      "vanellus_coronatus",
-     "vireo_pallens",
+     "vireo_chivi",
+     "xenus_cinereus",
      "xiphorhynchus_fuscus",
      "zentrygon_linearis"
     ],
-    "pmi": 0.433
+    "pmi": 0.431
    },
    {
     "sequence": [
@@ -555,36 +567,35 @@
      "L03",
      "L03"
     ],
-    "count": 114,
+    "count": 106,
     "species": [
      "acanthagenys_rufogularis",
      "ara_macao",
      "arachnothera_longirostra",
      "atlapetes_forbesi",
+     "aythya_collaris",
      "campochaera_sloetii",
      "chrysococcyx_lucidus",
      "circus_aeruginosus",
+     "coccothraustes_vespertinus",
      "contopus_caribaeus",
-     "copsychus_saularis",
      "curruca_nisoria",
      "cyanocompsa_parellina",
      "diglossa_gloriosissima",
      "dysithamnus_puncticeps",
+     "elanoides_forficatus",
+     "eugenes_fulgens",
      "ficedula_albicollis",
-     "fulica_atra",
      "gampsonyx_swainsonii",
      "garrulax_leucolophus",
-     "geopelia_placida",
      "glaucidium_peruanum",
      "grallaricula_flavirostris",
      "haemorhous_mexicanus",
      "halcyon_senegaloides",
      "herpsilochmus_axillaris",
      "horizocerus_cassini",
-     "ichthyaetus_melanocephalus",
      "icthyophaga_leucogaster",
      "jacamaralcyon_tridactyla",
-     "lamprotornis_nitens",
      "lonchura_punctulata",
      "machetornis_rixosa",
      "macrosphenus_kempi",
@@ -604,17 +615,16 @@
      "pyrrhomyias_cinnamomeus",
      "sciaphylax_hemimelaena",
      "sittiparus_varius",
-     "somateria_mollissima",
      "telophorus_zeylonus",
      "todiramphus_funebris",
      "turdoides_jardineii",
      "turdus_torquatus",
-     "tympanuchus_cupido",
-     "uria_aalge",
      "vanellus_armatus",
-     "vanellus_coronatus"
+     "vanellus_coronatus",
+     "xenus_cinereus",
+     "xiphorhynchus_fuscus"
     ],
-    "pmi": 0.641
+    "pmi": 0.588
    }
   ],
   "songTyping": {

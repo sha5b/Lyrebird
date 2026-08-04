@@ -12,8 +12,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0267,
-   "level": 1.35,
-   "timbre": "buzz",
+   "level": 1.05,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
@@ -24,25 +24,25 @@
      701.6
     ]
    ],
-   "attack": 0.016,
+   "attack": 0.004,
    "hold": false,
    "harmonic": 0.0,
-   "gammaScale": 1.5,
-   "tractQ": 0.0,
-   "noise": 0.6,
-   "rough": 0.65,
+   "gammaScale": 3.0,
+   "tractQ": 3.0,
+   "noise": 0.4,
+   "rough": 0.0,
+   "am": 25.0,
+   "amDepth": 0.45,
    "vib": {
-    "rate": 34.0,
+    "rate": 14.0,
     "depth": 0.09
    },
-   "amDepth": 0.6,
-   "am": 30.0,
    "learned": {
     "members": 1,
-    "resynthesisCosine": 0.6975,
-    "rivalCosine": 0.4263,
+    "resynthesisCosine": 0.7079,
+    "rivalCosine": 0.5526,
     "nearestOwn": true,
-    "f0ErrorPercent": 23.93
+    "f0ErrorPercent": -10.5
    }
   },
   {
@@ -106,8 +106,8 @@
    "gammaScale": 2.0,
    "learned": {
     "members": 1,
-    "resynthesisCosine": 0.5624,
-    "rivalCosine": 0.6909,
+    "resynthesisCosine": 0.56,
+    "rivalCosine": 0.6954,
     "nearestOwn": false,
     "f0ErrorPercent": -5.83
    }
@@ -144,8 +144,8 @@
    },
    "learned": {
     "members": 7,
-    "resynthesisCosine": 0.5439,
-    "rivalCosine": 0.2536,
+    "resynthesisCosine": 0.539,
+    "rivalCosine": 0.2454,
     "nearestOwn": true,
     "f0ErrorPercent": 2.01
    }
@@ -179,15 +179,15 @@
    "am": 25.0,
    "amDepth": 0.6,
    "vib": {
-    "rate": 12.0,
+    "rate": 22.0,
     "depth": 0.01
    },
    "learned": {
     "members": 55,
-    "resynthesisCosine": 0.562,
-    "rivalCosine": 0.4955,
+    "resynthesisCosine": 0.5883,
+    "rivalCosine": 0.5523,
     "nearestOwn": true,
-    "f0ErrorPercent": 1.32
+    "f0ErrorPercent": -0.17
    },
    "voices": {
     "contour": [
@@ -254,10 +254,17 @@
    ],
    "learned": {
     "members": 4,
-    "resynthesisCosine": 0.7617,
-    "rivalCosine": 0.2284,
+    "resynthesisCosine": 0.7966,
+    "rivalCosine": 0.2786,
     "nearestOwn": true,
     "f0ErrorPercent": 7.34
+   },
+   "respiration": {
+    "tauX": 0.01,
+    "tauP": 0.012574334296829354,
+    "alphaI": 0.05,
+    "alphaRel": 0.125,
+    "forcing": 35.0
    }
   }
  ],

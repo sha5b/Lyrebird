@@ -53,20 +53,20 @@
    "harmonic": 0.35,
    "am": 12.0,
    "amDepth": 0.8,
-   "gammaScale": 2.0,
+   "gammaScale": 6.0,
    "tractQ": 0.0,
    "noise": 0.8500000238418579,
    "rough": 0.4,
    "vib": {
     "rate": 34.0,
-    "depth": 0.01
+    "depth": 0.09
    },
    "learned": {
     "members": 2,
-    "resynthesisCosine": 0.7506,
-    "rivalCosine": 0.6173,
+    "resynthesisCosine": 0.7346,
+    "rivalCosine": 0.6399,
     "nearestOwn": true,
-    "f0ErrorPercent": -17.5
+    "f0ErrorPercent": -3.75
    }
   },
   {
@@ -76,7 +76,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.056,
-   "level": 0.9,
+   "level": 1.2,
    "timbre": "buzz",
    "contour": [
     [
@@ -113,19 +113,19 @@
    "harmonic": 0.9,
    "am": 41.67,
    "amDepth": 0.0,
-   "gammaScale": 4.5,
-   "noise": 0.6,
-   "rough": 0.4,
+   "gammaScale": 3.0,
+   "noise": 0.85,
+   "rough": 0.2,
    "vib": {
-    "rate": 4.0,
-    "depth": 0.09
+    "rate": 34.0,
+    "depth": 0.01
    },
    "learned": {
     "members": 1,
-    "resynthesisCosine": 0.4942,
-    "rivalCosine": 0.511,
+    "resynthesisCosine": 0.4604,
+    "rivalCosine": 0.4906,
     "nearestOwn": false,
-    "f0ErrorPercent": 6.45
+    "f0ErrorPercent": -4.38
    }
   },
   {
@@ -174,17 +174,10 @@
    ],
    "learned": {
     "members": 16,
-    "resynthesisCosine": 0.8202,
-    "rivalCosine": 0.7968,
+    "resynthesisCosine": 0.8014,
+    "rivalCosine": 0.7456,
     "nearestOwn": true,
     "f0ErrorPercent": -1.22
-   },
-   "respiration": {
-    "tauX": 0.01,
-    "tauP": 0.03162277660168379,
-    "alphaI": 0.05,
-    "alphaRel": 0.125,
-    "forcing": 200.0
    }
   },
   {
@@ -234,8 +227,8 @@
    ],
    "learned": {
     "members": 12,
-    "resynthesisCosine": 0.8041,
-    "rivalCosine": 0.81,
+    "resynthesisCosine": 0.8043,
+    "rivalCosine": 0.8101,
     "nearestOwn": false,
     "f0ErrorPercent": -0.99
    }
@@ -247,8 +240,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.072,
-   "level": 1.35,
-   "timbre": "buzz",
+   "level": 0.6,
+   "timbre": "pure",
    "contour": [
     [
      0.0,
@@ -259,14 +252,16 @@
      7654.1
     ]
    ],
-   "attack": 0.008,
+   "attack": 0.016,
    "hold": true,
    "harmonic": 0.9,
    "am": 12.0,
    "amDepth": 0.8,
-   "gammaScale": 1.0,
-   "tractQ": 12.0,
-   "noise": 0.25,
+   "gammaScale": 1.5,
+   "tractQ": 3.0,
+   "noise": 0.12,
+   "rough": 0.65,
+   "two": true,
    "vib": {
     "rate": 12.0,
     "depth": 0.01
@@ -275,20 +270,20 @@
    "formants": [
     [
      654.2237665009833,
-     4.0,
-     0.5
+     2.0,
+     2.0
     ],
     [
      6830.618534315889,
-     4.0,
-     0.5
+     2.0,
+     2.0
     ]
    ],
    "learned": {
     "members": 32,
-    "resynthesisCosine": 0.7923,
-    "rivalCosine": 0.7929,
-    "nearestOwn": false,
+    "resynthesisCosine": 0.824,
+    "rivalCosine": 0.8228,
+    "nearestOwn": true,
     "f0ErrorPercent": -0.37
    }
   },
@@ -325,8 +320,8 @@
    },
    "learned": {
     "members": 20,
-    "resynthesisCosine": 0.7551,
-    "rivalCosine": 0.7614,
+    "resynthesisCosine": 0.7563,
+    "rivalCosine": 0.7625,
     "nearestOwn": false,
     "f0ErrorPercent": 2.39
    },
@@ -355,8 +350,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0427,
-   "level": 0.3,
-   "timbre": "reed",
+   "level": 0.35,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
@@ -367,21 +362,25 @@
      7684.5
     ]
    ],
-   "attack": 0.008,
+   "attack": 0.004,
    "hold": true,
    "harmonic": 0.9,
    "gammaScale": 1.5,
-   "tractQ": 0.0,
-   "noise": 0.6,
+   "tractQ": 6.0,
+   "noise": 0.4,
    "rough": 0.2,
    "amDepth": 0.45,
    "am": 80.0,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.01
+   },
    "learned": {
     "members": 1,
-    "resynthesisCosine": 0.8132,
-    "rivalCosine": 0.6763,
+    "resynthesisCosine": 0.8065,
+    "rivalCosine": 0.6717,
     "nearestOwn": true,
-    "f0ErrorPercent": -1.7
+    "f0ErrorPercent": -0.92
    }
   }
  ],
@@ -468,62 +467,67 @@
      "L04",
      "L06"
     ],
-    "count": 150,
+    "count": 147,
     "species": [
      "acanthorhynchus_tenuirostris",
      "alectoris_rufa",
-     "anisognathus_igniventris",
+     "amazona_aestiva",
      "anthreptes_malacensis",
-     "apaloderma_narina",
      "aviceda_subcristata",
      "berlepschia_rikeri",
      "brachypteryx_erythrogyna",
+     "bucephala_albeola",
+     "calidris_fuscicollis",
      "carpococcyx_radiceus",
      "ceratogymna_atrata",
      "cercomacroides_parkeri",
      "chlorophonia_elegantissima",
      "columba_oenas",
-     "cossypha_heuglini",
      "coturnicops_noveboracensis",
-     "cuculus_micropterus",
-     "curruca_iberiae",
-     "curruca_nisoria",
+     "crithagra_flaviventris",
+     "curruca_hortensis",
      "curruca_ruppeli",
      "drymornis_bridgesii",
-     "dysithamnus_stictothorax",
      "elaenia_spectabilis",
      "epinecrophylla_leucophthalma",
+     "euphagus_carolinus",
+     "euphonia_chlorotica",
+     "fluvicola_nengeta",
      "formicarius_colma",
-     "fulica_atra",
      "gampsonyx_swainsonii",
      "geothlypis_semiflava",
      "geranospiza_caerulescens",
      "grallaricula_leymebambae",
+     "lanius_collurio",
      "larus_cachinnans",
-     "melanopareia_maximiliani",
-     "myioborus_melanocephalus",
+     "locustella_alishanensis",
+     "meliphaga_lewinii",
      "myiornis_auricularis",
+     "numida_meleagris",
      "pachysylvia_muscicapina",
      "pardalotus_striatus",
-     "phacellodomus_rufifrons",
      "phaethornis_syrmatophorus",
+     "phylidonyris_pyrrhopterus",
      "picumnus_cirratus",
      "pitta_maxima",
-     "ploceus_capensis",
      "podiceps_grisegena",
      "pseudasthenes_humicola",
-     "rynchops_niger",
      "scytalopus_atratus",
+     "scytalopus_vicinior",
+     "sturnella_lilianae",
      "sylviorthorhynchus_desmursii",
      "synallaxis_azarae",
      "thamnophilus_ambiguus",
      "thamnophilus_doliatus",
      "thamnophilus_ruficapillus",
+     "tolmomyias_sulphurescens",
+     "turdus_subalaris",
      "tyranneutes_virescens",
+     "urosphena_squameiceps",
      "vireo_nelsoni",
      "zosterops_erythropleurus"
     ],
-    "pmi": 0.535
+    "pmi": 0.551
    }
   ],
   "songTyping": {

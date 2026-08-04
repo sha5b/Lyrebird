@@ -55,8 +55,8 @@
    "noise": 0.05,
    "learned": {
     "members": 15,
-    "resynthesisCosine": 0.548,
-    "rivalCosine": 0.6046,
+    "resynthesisCosine": 0.5474,
+    "rivalCosine": 0.6033,
     "nearestOwn": false,
     "f0ErrorPercent": -3.66
    }
@@ -68,7 +68,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.2373,
-   "level": 0.3,
+   "level": 0.45,
    "timbre": "pure",
    "contour": [
     [
@@ -110,19 +110,23 @@
    ],
    "attack": 0.004,
    "hold": true,
-   "harmonic": 0.0,
-   "gammaScale": 3.0,
+   "harmonic": 0.35,
+   "gammaScale": 1.0,
    "tractQ": 3.0,
-   "noise": 0.05,
+   "noise": 0.0,
    "rough": 0.65,
-   "amDepth": 0.8,
-   "am": 140.0,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.05
+   },
+   "amDepth": 0.15,
+   "am": 12.0,
    "learned": {
     "members": 17,
-    "resynthesisCosine": 0.5895,
-    "rivalCosine": 0.5441,
+    "resynthesisCosine": 0.4975,
+    "rivalCosine": 0.4268,
     "nearestOwn": true,
-    "f0ErrorPercent": 11.97
+    "f0ErrorPercent": -2.96
    },
    "voices": {
     "contour": [
@@ -167,7 +171,7 @@
     "level": 0.7,
     "tracheaCm": 2.0,
     "refl": 0.9,
-    "betaInj": 0.1
+    "betaInj": 0.2
    }
   },
   {
@@ -216,8 +220,8 @@
    },
    "learned": {
     "members": 19,
-    "resynthesisCosine": 0.5784,
-    "rivalCosine": 0.6419,
+    "resynthesisCosine": 0.579,
+    "rivalCosine": 0.6418,
     "nearestOwn": false,
     "f0ErrorPercent": -21.71
    }
@@ -280,8 +284,8 @@
    },
    "learned": {
     "members": 11,
-    "resynthesisCosine": 0.2773,
-    "rivalCosine": 0.3023,
+    "resynthesisCosine": 0.2883,
+    "rivalCosine": 0.312,
     "nearestOwn": false,
     "f0ErrorPercent": -25.39
    }
@@ -321,15 +325,15 @@
    "hold": true,
    "harmonic": 0.0,
    "gammaScale": 3.0,
-   "tractQ": 3.0,
-   "noise": 0.25,
+   "tractQ": 0.0,
+   "noise": 0.4,
    "rough": 0.4,
    "learned": {
     "members": 6,
-    "resynthesisCosine": 0.7845,
-    "rivalCosine": 0.6635,
+    "resynthesisCosine": 0.7789,
+    "rivalCosine": 0.6721,
     "nearestOwn": true,
-    "f0ErrorPercent": 3.12
+    "f0ErrorPercent": -17.5
    }
   },
   {
@@ -383,8 +387,8 @@
    "tractQ": 3.0,
    "learned": {
     "members": 10,
-    "resynthesisCosine": 0.6811,
-    "rivalCosine": 0.4726,
+    "resynthesisCosine": 0.685,
+    "rivalCosine": 0.4783,
     "nearestOwn": true,
     "f0ErrorPercent": 29.19
    }
@@ -447,8 +451,8 @@
    },
    "learned": {
     "members": 5,
-    "resynthesisCosine": 0.0508,
-    "rivalCosine": 0.7071,
+    "resynthesisCosine": 0.0649,
+    "rivalCosine": 0.7124,
     "nearestOwn": false,
     "f0ErrorPercent": 33.15
    },
@@ -501,7 +505,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.1173,
-   "level": 0.75,
+   "level": 0.9,
    "timbre": "pure",
    "contour": [
     [
@@ -541,8 +545,8 @@
    "tractQ": 30.0,
    "learned": {
     "members": 11,
-    "resynthesisCosine": 0.4247,
-    "rivalCosine": 0.6353,
+    "resynthesisCosine": 0.4348,
+    "rivalCosine": 0.6508,
     "nearestOwn": false,
     "f0ErrorPercent": 10.1
    }
@@ -576,8 +580,8 @@
    "two": true,
    "learned": {
     "members": 21,
-    "resynthesisCosine": 0.5957,
-    "rivalCosine": 0.6803,
+    "resynthesisCosine": 0.6013,
+    "rivalCosine": 0.6839,
     "nearestOwn": false,
     "f0ErrorPercent": -1.0
    }
@@ -703,15 +707,16 @@
      "L07",
      "L00"
     ],
-    "count": 213,
+    "count": 220,
     "species": [
      "acanthorhynchus_tenuirostris",
      "accipiter_striatus",
      "acrocephalus_arundinaceus",
      "aegithina_tiphia",
+     "amblyramphus_holosericeus",
      "anser_cygnoides",
+     "anthus_rubescens",
      "anthus_spragueii",
-     "apaloderma_narina",
      "aphelocoma_coerulescens",
      "aquila_nipalensis",
      "arremon_atricapillus",
@@ -721,57 +726,54 @@
      "butastur_teesa",
      "calliope_calliope",
      "campylorhynchus_gularis",
+     "caprimulgus_macrurus",
      "catharus_fuscater",
      "chamaeza_mollissima",
-     "cisticola_chiniana",
+     "chlorospingus_flavopectus",
      "cisticola_juncidis",
      "coloeus_monedula",
-     "columba_livia",
      "copsychus_stricklandii",
-     "corvus_capensis",
      "cossypha_heuglini",
-     "coturnix_coturnix",
      "crotophaga_major",
      "crypturellus_bartletti",
      "curruca_subalpina",
      "cyanistes_teneriffae",
      "cyanocompsa_parellina",
      "cyanocorax_mystacalis",
+     "dacelo_novaeguineae",
      "dendroplex_kienerii",
+     "diglossa_humeralis",
+     "dryobates_minor",
      "emberiza_rustica",
-     "embernagra_platensis",
      "epinecrophylla_erythrura",
      "erythropitta_ussheri",
+     "euphagus_carolinus",
      "euphonia_xanthogaster",
-     "furnarius_figulus",
+     "eupsittula_canicularis",
      "gallinago_stenura",
      "gavia_adamsii",
-     "geothlypis_philadelphia",
+     "geopelia_placida",
      "grallaria_andicolus",
      "grallaria_rufocinerea",
      "grallaria_squamigera",
      "gymnorhinus_cyanocephalus",
      "herpsilochmus_rufimarginatus",
      "hylocichla_mustelina",
-     "icterus_parisorum",
+     "iduna_pallida",
      "iridosornis_porphyrocephalus",
      "lamprotornis_splendidus",
      "larus_crassirostris",
-     "lichmera_indistincta",
-     "machetornis_rixosa",
+     "larus_marinus",
      "mecocerculus_hellmayri",
-     "melaenornis_silens",
-     "melaniparus_afer",
      "melanodryas_cyanus",
      "merulaxis_ater",
      "morus_bassanus",
-     "myiopagis_viridicata",
      "myiothlypis_cinereicollis",
      "nothoprocta_cinerascens",
      "pachycephala_pectoralis",
      "pachyramphus_aglaiae",
-     "passerella_iliaca",
-     "piaya_cayana",
+     "petrochelidon_fulva",
+     "picoides_arcticus",
      "picumnus_cirratus",
      "poecile_carolinensis",
      "poecilotriccus_ruficeps",
@@ -779,22 +781,24 @@
      "psilopogon_oorti",
      "pterorhinus_treacheri",
      "pycnonotus_taivanus",
+     "riparia_riparia",
      "semnornis_ramphastinus",
+     "surniculus_lugubris",
      "surniculus_velutinus",
      "suthora_webbiana",
-     "tetrao_urogallus",
      "theristicus_caudatus",
-     "thraupis_abbas",
-     "thripadectes_holostictus",
      "todiramphus_funebris",
      "touit_surdus",
+     "trichoglossus_moluccanus",
+     "tringa_semipalmata",
+     "trogon_caligatus",
      "turtur_tympanistria",
-     "upupa_epops",
+     "uria_aalge",
      "vireo_altiloquus",
      "zentrygon_albifacies",
      "zoothera_heinei"
     ],
-    "pmi": 0.518
+    "pmi": 0.444
    },
    {
     "sequence": [
@@ -802,16 +806,23 @@
      "L11",
      "L09"
     ],
-    "count": 95,
+    "count": 122,
     "species": [
-     "accipiter_cooperii",
+     "aegithalos_caudatus",
      "alcippe_morrisonia",
      "anhima_cornuta",
      "anisognathus_igniventris",
+     "anthus_hodgsoni",
      "anurolimnas_fasciatus",
+     "apaloderma_narina",
+     "arremonops_conirostris",
      "bleda_notatus",
+     "brachypteryx_goodfellowi",
      "burhinus_oedicnemus",
+     "cairina_moschata",
      "catharus_ustulatus",
+     "cercomacra_nigricans",
+     "certhiaxis_cinnamomeus",
      "chlorornis_riefferii",
      "cinclodes_excelsior",
      "cisticola_juncidis",
@@ -819,28 +830,39 @@
      "copsychus_cebuensis",
      "corvus_frugilegus",
      "coturnix_pectoralis",
+     "donacospiza_albifrons",
      "eupetomena_cirrochloris",
      "eurillas_latirostris",
      "gallinago_gallinago",
      "grallaria_milleri",
+     "haliastur_indus",
      "hydrocoloeus_minutus",
+     "icterus_pectoralis",
+     "lophotriccus_vitiosus",
+     "malurus_cyaneus",
+     "merulaxis_ater",
      "micrastur_semitorquatus",
-     "myiornis_auricularis",
+     "myioborus_melanocephalus",
      "myophonus_insularis",
      "ninox_philippensis",
      "pardirallus_sanguinolentus",
-     "peucaea_cassinii",
+     "parkesia_motacilla",
+     "passerina_caerulea",
      "phylloscopus_borealoides",
+     "pluvialis_squatarola",
      "psarocolius_bifasciatus",
+     "psittacara_erythrogenys",
+     "psittacula_alexandri",
      "pterorhinus_treacheri",
-     "pyrrhocorax_pyrrhocorax",
-     "sarothrura_affinis",
+     "pycnonotus_sinensis",
+     "pycnonotus_taivanus",
+     "rynchops_niger",
      "scytalopus_diamantinensis",
-     "sylvia_borin",
-     "turdus_mupinensis",
-     "vireo_olivaceus"
+     "somateria_mollissima",
+     "tachybaptus_ruficollis",
+     "turdus_mupinensis"
     ],
-    "pmi": 0.845
+    "pmi": 0.786
    }
   ],
   "songTyping": {

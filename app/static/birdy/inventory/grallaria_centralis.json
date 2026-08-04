@@ -13,7 +13,7 @@
    "refs": [],
    "dur": 0.064,
    "level": 0.45,
-   "timbre": "pure",
+   "timbre": "reed",
    "contour": [
     [
      0.0,
@@ -56,17 +56,17 @@
    "hold": true,
    "harmonic": 0.0,
    "gammaScale": 1.0,
-   "tractQ": 0.0,
+   "tractQ": 12.0,
    "noise": 0.4,
-   "rough": 0.2,
+   "rough": 0.0,
    "vib": {
     "rate": 12.0,
     "depth": 0.05
    },
    "learned": {
     "members": 17,
-    "resynthesisCosine": 0.4145,
-    "rivalCosine": 0.4103,
+    "resynthesisCosine": 0.415,
+    "rivalCosine": 0.4039,
     "nearestOwn": true,
     "f0ErrorPercent": 4.29
    }
@@ -121,8 +121,8 @@
    "am": 25.0,
    "learned": {
     "members": 22,
-    "resynthesisCosine": 0.3518,
-    "rivalCosine": 0.3956,
+    "resynthesisCosine": 0.359,
+    "rivalCosine": 0.4015,
     "nearestOwn": false,
     "f0ErrorPercent": 4.16
    }
@@ -180,8 +180,8 @@
    },
    "learned": {
     "members": 45,
-    "resynthesisCosine": 0.336,
-    "rivalCosine": 0.4098,
+    "resynthesisCosine": 0.3453,
+    "rivalCosine": 0.4153,
     "nearestOwn": false,
     "f0ErrorPercent": -4.14
    }
@@ -246,15 +246,15 @@
    },
    "learned": {
     "members": 14,
-    "resynthesisCosine": -0.1408,
-    "rivalCosine": 0.1809,
+    "resynthesisCosine": -0.1395,
+    "rivalCosine": 0.1946,
     "nearestOwn": false,
     "f0ErrorPercent": -1.29
    },
    "respiration": {
     "tauX": 0.01,
-    "tauP": 0.03162277660168379,
-    "alphaI": 0.05,
+    "tauP": 0.2,
+    "alphaI": 0.16548754598234366,
     "alphaRel": 0.125,
     "forcing": 35.0
    },
@@ -351,7 +351,7 @@
    "learned": {
     "members": 6,
     "resynthesisCosine": 0.6826,
-    "rivalCosine": 0.6206,
+    "rivalCosine": 0.6204,
     "nearestOwn": true,
     "f0ErrorPercent": 1.08
    }
@@ -397,8 +397,8 @@
    "tractQ": 30.0,
    "learned": {
     "members": 8,
-    "resynthesisCosine": 0.6594,
-    "rivalCosine": -0.1612,
+    "resynthesisCosine": 0.6632,
+    "rivalCosine": -0.1501,
     "nearestOwn": true,
     "f0ErrorPercent": -3.36
    }
@@ -410,7 +410,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0454,
-   "level": 0.9,
+   "level": 1.35,
    "timbre": "buzz",
    "contour": [
     [
@@ -446,17 +446,54 @@
    "hold": true,
    "harmonic": 0.0,
    "am": 140.0,
-   "amDepth": 0.45,
-   "gammaScale": 1.5,
+   "amDepth": 0.8,
+   "gammaScale": 4.5,
    "tractQ": 12.0,
-   "noise": 0.05,
-   "rough": 0.2,
+   "noise": 0.25,
+   "rough": 0.0,
    "learned": {
     "members": 6,
-    "resynthesisCosine": 0.1819,
-    "rivalCosine": 0.1419,
-    "nearestOwn": true,
-    "f0ErrorPercent": 23.77
+    "resynthesisCosine": 0.0915,
+    "rivalCosine": 0.1328,
+    "nearestOwn": false,
+    "f0ErrorPercent": 16.69
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      1284.8
+     ],
+     [
+      0.125,
+      1440.1
+     ],
+     [
+      0.25,
+      1480.15
+     ],
+     [
+      0.5,
+      1838.65
+     ],
+     [
+      0.625,
+      1624.3
+     ],
+     [
+      0.75,
+      1570.4
+     ],
+     [
+      1.0,
+      1724.45
+     ]
+    ],
+    "gamma": 18248.190847195805,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.2
    }
   },
   {
@@ -466,7 +503,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.096,
-   "level": 0.6,
+   "level": 0.3,
    "timbre": "pure",
    "contour": [
     [
@@ -478,21 +515,38 @@
      3049.8
     ]
    ],
-   "attack": 0.03,
-   "hold": false,
+   "attack": 0.016,
+   "hold": true,
    "harmonic": 0.0,
-   "am": 140.0,
+   "am": 12.0,
    "amDepth": 0.8,
    "gammaScale": 0.5,
+   "noise": 0.0,
+   "rough": 0.65,
    "tractQ": 30.0,
-   "noise": 0.85,
-   "rough": 0.4,
    "learned": {
     "members": 12,
-    "resynthesisCosine": -0.1664,
-    "rivalCosine": 0.2954,
+    "resynthesisCosine": -0.1269,
+    "rivalCosine": 0.2727,
     "nearestOwn": false,
     "f0ErrorPercent": -0.92
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      5168.228868771197
+     ],
+     [
+      1.0,
+      3993.125529850378
+     ]
+    ],
+    "gamma": 26627.038571231627,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.2
    }
   }
  ],

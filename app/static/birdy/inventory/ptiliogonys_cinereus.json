@@ -3,7 +3,7 @@
  "common": "Gray Silky-flycatcher",
  "scientific": "Ptiliogonys cinereus",
  "bank": "learned",
- "summary": "Learned from 1 field recordings: 2 syllable types fitted from 24 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L02",
@@ -12,8 +12,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.036,
-   "level": 0.45,
-   "timbre": "reed",
+   "level": 0.35,
+   "timbre": "pure",
    "contour": [
     [
      0.0,
@@ -43,63 +43,75 @@
    "attack": 0.016,
    "hold": false,
    "harmonic": 0.0,
-   "am": 140.0,
-   "amDepth": 0.0,
+   "am": 12.0,
+   "amDepth": 0.45,
+   "formants": [
+    [
+     4071.3,
+     6.0,
+     0.6
+    ]
+   ],
+   "tractQ": 6.0,
    "rough": 0.0,
+   "two": false,
    "vib": {
     "rate": 14.0,
     "depth": 0.09
    },
    "gammaScale": 1.5,
-   "tractQ": 12.0,
-   "two": true,
    "learned": {
-    "members": 8,
-    "resynthesisCosine": 0.4746,
-    "rivalCosine": -0.2538,
+    "members": 10,
+    "resynthesisCosine": 0.5783,
+    "rivalCosine": -0.1155,
     "nearestOwn": true,
     "f0ErrorPercent": 9.0
    }
   },
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 3381 Hz \u00b7 40 ms",
+   "label": "learned L01 \u00b7 3310 Hz \u00b7 37 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.04,
+   "dur": 0.0373,
    "level": 0.6,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     3405.2
+     3389.1
+    ],
+    [
+     0.75,
+     3196.0
     ],
     [
      1.0,
-     3357.3
+     3348.3
     ]
    ],
-   "attack": 0.016,
-   "hold": true,
-   "harmonic": 0.0,
-   "am": 45.0,
-   "amDepth": 0.294,
-   "gammaScale": 1.5,
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 28.85,
+   "amDepth": 0.6,
+   "formants": [
+    [
+     4071.3,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 2.0,
    "tractQ": 30.0,
-   "noise": 0.0,
-   "rough": 0.0,
    "two": true,
-   "vib": {
-    "rate": 8.0,
-    "depth": 0.01
-   },
    "learned": {
-    "members": 16,
-    "resynthesisCosine": 0.5408,
-    "rivalCosine": -0.1504,
+    "members": 17,
+    "resynthesisCosine": 0.4781,
+    "rivalCosine": -0.4786,
     "nearestOwn": true,
-    "f0ErrorPercent": 1.67
+    "f0ErrorPercent": -2.79
    }
   }
  ],
@@ -112,12 +124,12 @@
    "confidence": "invented",
    "refs": [],
    "sequence": [
+    "L02",
     "L01",
     "L01",
     "L02",
     "L01",
-    "L01",
-    "L02"
+    "L01"
    ],
    "gaps": [
     0.06,
@@ -130,17 +142,18 @@
  ],
  "grammar": {
   "start": [
-   "L01",
-   "L02"
+   "L02",
+   "L01"
   ],
   "transitions": {
    "L01": {
-    "L01": 0.5,
-    "L02": 0.375,
-    "end": 0.125
+    "L01": 0.4706,
+    "L02": 0.3529,
+    "end": 0.1765
    },
    "L02": {
-    "L01": 1.0
+    "L01": 0.7778,
+    "end": 0.2222
    }
   },
   "gaps": {
@@ -149,8 +162,8 @@
    "L02>L01": 0.248
   },
   "songTyping": {
-   "bouts": 2,
-   "short": 1,
+   "bouts": 5,
+   "short": 4,
    "candidates": 1,
    "repeatCandidates": 0,
    "types": 0,

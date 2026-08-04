@@ -1,0 +1,299 @@
+{
+ "id": "phylidonyris_niger",
+ "common": "White-cheeked Honeyeater",
+ "scientific": "Phylidonyris niger",
+ "bank": "learned",
+ "summary": "Learned from 3 field recordings: 3 syllable types fitted from 42 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 527 Hz \u00b7 101 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1013,
+   "level": 0.6,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     509.2
+    ],
+    [
+     0.125,
+     573.2
+    ],
+    [
+     0.25,
+     507.0
+    ],
+    [
+     0.375,
+     503.8
+    ],
+    [
+     0.5,
+     468.3
+    ],
+    [
+     0.625,
+     532.5
+    ],
+    [
+     0.75,
+     521.7
+    ],
+    [
+     0.875,
+     612.9
+    ],
+    [
+     1.0,
+     527.2
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 1.5,
+   "tractQ": 0.0,
+   "noise": 0.05,
+   "rough": 0.4,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.025
+   },
+   "two": true,
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.6054,
+    "rivalCosine": 0.0355,
+    "nearestOwn": true,
+    "f0ErrorPercent": 17.08
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      254.6
+     ],
+     [
+      0.125,
+      286.6
+     ],
+     [
+      0.25,
+      253.5
+     ],
+     [
+      0.375,
+      251.9
+     ],
+     [
+      0.5,
+      234.15
+     ],
+     [
+      0.625,
+      266.25
+     ],
+     [
+      0.75,
+      260.85
+     ],
+     [
+      0.875,
+      306.45
+     ],
+     [
+      1.0,
+      263.6
+     ]
+    ],
+    "gamma": 1544.3770373512875,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.2
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 778 Hz \u00b7 51 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0507,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     841.2
+    ],
+    [
+     0.5,
+     688.5
+    ],
+    [
+     0.625,
+     838.2
+    ],
+    [
+     0.75,
+     778.0
+    ],
+    [
+     0.875,
+     850.6
+    ],
+    [
+     1.0,
+     687.8
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
+   "noise": 0.8500000238418579,
+   "rough": 0.65,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.7064,
+    "rivalCosine": 0.1977,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.83
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2215 Hz \u00b7 111 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1107,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1948.1
+    ],
+    [
+     0.125,
+     2250.2
+    ],
+    [
+     0.5,
+     2502.9
+    ],
+    [
+     0.625,
+     2021.8
+    ],
+    [
+     0.75,
+     2307.8
+    ],
+    [
+     1.0,
+     2305.1
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.8,
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "noise": 0.6,
+   "rough": 0.2,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.09
+   },
+   "two": true,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.6066,
+    "rivalCosine": -0.1314,
+    "nearestOwn": true,
+    "f0ErrorPercent": 9.13
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L02",
+    "L02",
+    "L01",
+    "L02",
+    "L02"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7692,
+    "end": 0.2308
+   },
+   "L01": {
+    "L02": 0.5833,
+    "L01": 0.25,
+    "end": 0.1667
+   },
+   "L02": {
+    "L02": 0.5333,
+    "L01": 0.4667
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.071,
+   "L01>L01": 0.019,
+   "L01>L02": 0.056,
+   "L02>L01": 0.032,
+   "L02>L02": 0.053
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 5,
+   "candidates": 1,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6
+  }
+ }
+}

@@ -3,7 +3,7 @@
  "common": "Scarlet-bellied Mountain-Tanager",
  "scientific": "Anisognathus igniventris",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 12 syllable types fitted from 151 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 3 field recordings: 8 syllable types fitted from 209 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L08",
@@ -12,7 +12,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.168,
-   "level": 1.35,
+   "level": 1.05,
    "timbre": "pure",
    "contour": [
     [
@@ -62,18 +62,18 @@
     [
      1312.0828814882439,
      8.0,
-     0.5
+     1.0
     ],
     [
      7893.0853838443245,
      8.0,
-     0.5
+     1.0
     ]
    ],
    "learned": {
     "members": 3,
-    "resynthesisCosine": 0.1393,
-    "rivalCosine": 0.3245,
+    "resynthesisCosine": 0.1452,
+    "rivalCosine": 0.2882,
     "nearestOwn": false,
     "f0ErrorPercent": -5.61
    }
@@ -114,14 +114,14 @@
    "rough": 0.65,
    "two": true,
    "vib": {
-    "rate": 22.0,
-    "depth": 0.09
+    "rate": 34.0,
+    "depth": 0.05
    },
    "noise": 0.05,
    "learned": {
     "members": 4,
-    "resynthesisCosine": 0.6692,
-    "rivalCosine": 0.7735,
+    "resynthesisCosine": 0.6651,
+    "rivalCosine": 0.747,
     "nearestOwn": false,
     "f0ErrorPercent": -22.63
    }
@@ -158,397 +158,198 @@
    },
    "learned": {
     "members": 8,
-    "resynthesisCosine": 0.9456,
-    "rivalCosine": 0.8584,
+    "resynthesisCosine": 0.9452,
+    "rivalCosine": 0.8522,
     "nearestOwn": true,
     "f0ErrorPercent": -24.0
    }
   },
   {
    "id": "L02",
-   "label": "learned L02 \u00b7 3726 Hz \u00b7 29 ms",
+   "label": "learned L02 \u00b7 3782 Hz \u00b7 29 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0293,
+   "level": 0.6,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3798.4
+    ],
+    [
+     1.0,
+     3765.6
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.0,
+   "gammaScale": 1.0,
+   "tractQ": 0.2298814072366979,
+   "noise": 0.4,
+   "rough": 0.08,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "amDepth": 0.3,
+   "am": 25.0,
+   "learned": {
+    "members": 29,
+    "resynthesisCosine": 0.864,
+    "rivalCosine": 0.904,
+    "nearestOwn": false,
+    "f0ErrorPercent": 3.7
+   }
+  },
+  {
+   "id": "L11",
+   "label": "learned L11 \u00b7 4183 Hz \u00b7 35 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0347,
+   "level": 0.7667328715324402,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4316.1
+    ],
+    [
+     1.0,
+     4054.8
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "gammaScale": 0.5,
+   "tractQ": 0.1813664744019048,
+   "noise": 0.12,
+   "rough": 0.65,
+   "am": 140.0,
+   "amDepth": 0.6,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 50,
+    "resynthesisCosine": 0.6811,
+    "rivalCosine": 0.7296,
+    "nearestOwn": false,
+    "f0ErrorPercent": 3.21
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4311 Hz \u00b7 77 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0773,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     4560.3
+    ],
+    [
+     1.0,
+     4074.8
+    ]
+   ],
+   "attack": 0.0146,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 16.3,
+   "amDepth": 0.365,
+   "vib": {
+    "rate": 17.05,
+    "depth": 0.084
+   },
+   "gammaScale": 4.5,
+   "rough": 0.2,
+   "learned": {
+    "members": 46,
+    "resynthesisCosine": 0.6141,
+    "rivalCosine": 0.0504,
+    "nearestOwn": true,
+    "f0ErrorPercent": -11.08
+   }
+  },
+  {
+   "id": "L06",
+   "label": "learned L06 \u00b7 7314 Hz \u00b7 35 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0347,
+   "level": 0.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     7331.3
+    ],
+    [
+     1.0,
+     7297.6
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "noise": 0.4,
+   "rough": 0.65,
+   "gammaScale": 1.5,
+   "learned": {
+    "members": 28,
+    "resynthesisCosine": 0.9174,
+    "rivalCosine": 0.9014,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.32
+   }
+  },
+  {
+   "id": "L05",
+   "label": "learned L05 \u00b7 7405 Hz \u00b7 48 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.048,
    "level": 0.9,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     3741.0
+     7347.4
     ],
     [
      1.0,
-     3711.6
+     7463.0
     ]
    ],
    "attack": 0.004,
-   "hold": false,
-   "harmonic": 0.1,
-   "gammaScale": 6.0,
-   "tractQ": 30.0,
-   "noise": 0.12,
-   "rough": 0.65,
-   "am": 25.0,
-   "amDepth": 0.3,
-   "vib": {
-    "rate": 4.0,
-    "depth": 0.01
-   },
-   "learned": {
-    "members": 20,
-    "resynthesisCosine": 0.8941,
-    "rivalCosine": 0.9045,
-    "nearestOwn": false,
-    "f0ErrorPercent": 2.96
-   }
-  },
-  {
-   "id": "L11",
-   "label": "learned L11 \u00b7 3752 Hz \u00b7 31 ms",
-   "function": "",
-   "confidence": "unlabelled",
-   "refs": [],
-   "dur": 0.0307,
-   "level": 0.35,
-   "timbre": "reed",
-   "contour": [
-    [
-     0.0,
-     3830.8
-    ],
-    [
-     1.0,
-     3674.2
-    ]
-   ],
-   "attack": 0.004,
-   "hold": false,
-   "harmonic": 0.0,
-   "am": 45.0,
-   "amDepth": 0.3,
+   "hold": true,
+   "harmonic": 0.9,
    "gammaScale": 4.5,
-   "tractQ": 30.0,
+   "tractQ": 12.0,
    "noise": 0.6,
    "rough": 0.65,
-   "learned": {
-    "members": 12,
-    "resynthesisCosine": 0.904,
-    "rivalCosine": 0.8664,
-    "nearestOwn": true,
-    "f0ErrorPercent": -2.25
-   }
-  },
-  {
-   "id": "L01",
-   "label": "learned L01 \u00b7 3830 Hz \u00b7 69 ms",
-   "function": "",
-   "confidence": "unlabelled",
-   "refs": [],
-   "dur": 0.0693,
-   "level": 0.3,
-   "timbre": "reed",
-   "contour": [
-    [
-     0.0,
-     4376.1
-    ],
-    [
-     0.25,
-     4211.8
-    ],
-    [
-     0.375,
-     3852.2
-    ],
-    [
-     0.875,
-     3389.6
-    ],
-    [
-     1.0,
-     3422.7
-    ]
-   ],
-   "attack": 0.0107,
-   "hold": false,
-   "harmonic": 0.2,
-   "am": 20.9,
-   "amDepth": 0.285,
-   "gammaScale": 3.0,
-   "rough": 0.65,
-   "vib": {
-    "rate": 8.0,
-    "depth": 0.05
-   },
-   "tractQ": 3.0,
-   "learned": {
-    "members": 18,
-    "resynthesisCosine": 0.6102,
-    "rivalCosine": 0.6228,
-    "nearestOwn": false,
-    "f0ErrorPercent": 20.54
-   }
-  },
-  {
-   "id": "L12",
-   "label": "learned L12 \u00b7 5346 Hz \u00b7 80 ms",
-   "function": "",
-   "confidence": "unlabelled",
-   "refs": [],
-   "dur": 0.08,
-   "level": 0.3,
-   "timbre": "pure",
-   "contour": [
-    [
-     0.0,
-     6531.6
-    ],
-    [
-     0.75,
-     5254.5
-    ],
-    [
-     1.0,
-     4452.7
-    ]
-   ],
-   "attack": 0.016,
-   "hold": false,
-   "harmonic": 0.7,
-   "am": 16.68,
-   "amDepth": 0.357,
-   "vib": {
-    "rate": 8.0,
-    "depth": 0.106
-   },
-   "gammaScale": 4.5,
-   "tractQ": 6.0,
-   "rough": 0.2,
-   "learned": {
-    "members": 16,
-    "resynthesisCosine": 0.7526,
-    "rivalCosine": 0.6397,
-    "nearestOwn": true,
-    "f0ErrorPercent": -21.09
-   }
-  },
-  {
-   "id": "L04",
-   "label": "learned L04 \u00b7 6399 Hz \u00b7 49 ms",
-   "function": "",
-   "confidence": "unlabelled",
-   "refs": [],
-   "dur": 0.0494,
-   "level": 1.2,
-   "timbre": "reed",
-   "contour": [
-    [
-     0.0,
-     6383.1
-    ],
-    [
-     0.25,
-     6333.3
-    ],
-    [
-     0.375,
-     6742.0
-    ],
-    [
-     1.0,
-     6153.3
-    ]
-   ],
-   "attack": 0.004,
-   "hold": true,
-   "harmonic": 0.7,
-   "gammaScale": 3.0,
-   "tractQ": 0.0,
-   "noise": 0.25,
-   "rough": 0.2,
-   "two": false,
-   "vib": {
-    "rate": 4.0,
-    "depth": 0.09
-   },
-   "amDepth": 0.6,
-   "am": 25.0,
-   "learned": {
-    "members": 14,
-    "resynthesisCosine": 0.8821,
-    "rivalCosine": 0.9064,
-    "nearestOwn": false,
-    "f0ErrorPercent": 9.19
-   }
-  },
-  {
-   "id": "L13",
-   "label": "learned L13 \u00b7 7263 Hz \u00b7 32 ms",
-   "function": "",
-   "confidence": "unlabelled",
-   "refs": [],
-   "dur": 0.032,
-   "level": 0.35,
-   "timbre": "reed",
-   "contour": [
-    [
-     0.0,
-     7249.5
-    ],
-    [
-     1.0,
-     7276.9
-    ]
-   ],
-   "attack": 0.008,
-   "hold": true,
-   "harmonic": 0.9,
-   "gammaScale": 1.5,
-   "tractQ": 3.0,
-   "noise": 0.85,
-   "rough": 0.65,
-   "am": 140.0,
-   "amDepth": 0.8,
-   "learned": {
-    "members": 25,
-    "resynthesisCosine": 0.9331,
-    "rivalCosine": 0.9339,
-    "nearestOwn": false,
-    "f0ErrorPercent": -1.14
-   }
-  },
-  {
-   "id": "L06",
-   "label": "learned L06 \u00b7 7485 Hz \u00b7 33 ms",
-   "function": "",
-   "confidence": "unlabelled",
-   "refs": [],
-   "dur": 0.0334,
-   "level": 0.3,
-   "timbre": "pure",
-   "contour": [
-    [
-     0.0,
-     7487.1
-    ],
-    [
-     1.0,
-     7482.1
-    ]
-   ],
-   "attack": 0.016,
-   "hold": false,
-   "harmonic": 0.9,
-   "am": 140.0,
-   "amDepth": 0.6,
-   "gammaScale": 2.0,
-   "tractQ": 3.0,
-   "noise": 0.6,
-   "rough": 0.08,
-   "learned": {
-    "members": 12,
-    "resynthesisCosine": 0.9407,
-    "rivalCosine": 0.8824,
-    "nearestOwn": true,
-    "f0ErrorPercent": -3.1
-   }
-  },
-  {
-   "id": "L05",
-   "label": "learned L05 \u00b7 7557 Hz \u00b7 47 ms",
-   "function": "",
-   "confidence": "unlabelled",
-   "refs": [],
-   "dur": 0.0466,
-   "level": 0.75,
-   "timbre": "buzz",
-   "contour": [
-    [
-     0.0,
-     7449.6
-    ],
-    [
-     1.0,
-     7666.8
-    ]
-   ],
-   "attack": 0.0214,
-   "hold": false,
-   "harmonic": 0.0,
-   "am": 25.89,
-   "amDepth": 0.3,
-   "gammaScale": 3.0,
-   "noise": 0.12,
-   "rough": 0.2,
-   "learned": {
-    "members": 6,
-    "resynthesisCosine": 0.93,
-    "rivalCosine": 0.8312,
-    "nearestOwn": true,
-    "f0ErrorPercent": 2.3
-   }
-  },
-  {
-   "id": "L07",
-   "label": "learned L07 \u00b7 7721 Hz \u00b7 104 ms",
-   "function": "",
-   "confidence": "unlabelled",
-   "refs": [],
-   "dur": 0.104,
-   "level": 1.05,
-   "timbre": "buzz",
-   "contour": [
-    [
-     0.0,
-     7511.5
-    ],
-    [
-     0.125,
-     7776.0
-    ],
-    [
-     0.25,
-     6882.0
-    ],
-    [
-     0.375,
-     8117.7
-    ],
-    [
-     0.75,
-     7609.8
-    ],
-    [
-     0.875,
-     8295.5
-    ],
-    [
-     1.0,
-     7938.8
-    ]
-   ],
-   "attack": 0.008,
-   "hold": true,
-   "harmonic": 0.9,
    "am": 12.0,
    "amDepth": 0.3,
-   "gammaScale": 1.5,
-   "tractQ": 12.0,
-   "noise": 0.4,
-   "rough": 0.2,
    "two": true,
-   "vib": {
-    "rate": 8.0,
-    "depth": 0.05
-   },
    "learned": {
-    "members": 13,
-    "resynthesisCosine": 0.8255,
-    "rivalCosine": 0.8021,
+    "members": 41,
+    "resynthesisCosine": 0.9346,
+    "rivalCosine": 0.8936,
     "nearestOwn": true,
-    "f0ErrorPercent": 4.29
+    "f0ErrorPercent": 4.16
    }
   }
  ],
@@ -561,12 +362,12 @@
    "confidence": "invented",
    "refs": [],
    "sequence": [
-    "L13",
-    "L13",
     "L06",
-    "L04",
-    "L13",
-    "L13"
+    "L06",
+    "L05",
+    "L05",
+    "L06",
+    "L06"
    ],
    "gaps": [
     0.06,
@@ -579,192 +380,101 @@
  ],
  "grammar": {
   "start": [
-   "L13",
-   "L07",
    "L06",
-   "L12"
+   "L05",
+   "L01",
+   "L02"
   ],
   "transitions": {
    "L01": {
-    "L01": 0.4118,
-    "end": 0.2353,
-    "L11": 0.1176,
-    "L02": 0.1176,
-    "L12": 0.1176
+    "L01": 0.4222,
+    "L11": 0.2667,
+    "L05": 0.1111,
+    "end": 0.1111,
+    "L02": 0.0889
    },
    "L02": {
-    "L02": 0.3889,
-    "end": 0.2222,
-    "L11": 0.2222,
-    "L01": 0.1667
-   },
-   "L04": {
-    "end": 0.25,
-    "L13": 0.25,
-    "L10": 0.1667,
-    "L06": 0.1667,
-    "L01": 0.1667
+    "L02": 0.4074,
+    "L11": 0.3333,
+    "end": 0.1852,
+    "L01": 0.0741
    },
    "L05": {
-    "L10": 0.6,
-    "L05": 0.4
+    "L05": 0.3171,
+    "end": 0.2683,
+    "L06": 0.1463,
+    "L01": 0.1463,
+    "L10": 0.122
    },
    "L06": {
-    "end": 0.5,
-    "L04": 0.3,
-    "L13": 0.2
-   },
-   "L07": {
-    "end": 0.5,
-    "L07": 0.3333,
-    "L12": 0.1667
+    "L06": 0.3077,
+    "end": 0.3077,
+    "L05": 0.2692,
+    "L01": 0.1154
    },
    "L08": {
     "L09": 1.0
    },
    "L09": {
-    "L01": 0.25,
-    "L12": 0.25,
-    "L11": 0.25,
-    "end": 0.25
+    "L01": 1.0
    },
    "L10": {
-    "L04": 0.3333,
-    "L05": 0.3333,
+    "L05": 0.6667,
     "end": 0.3333
    },
    "L11": {
-    "L02": 0.7143,
-    "end": 0.2857
-   },
-   "L12": {
-    "L12": 0.25,
-    "L01": 0.25,
-    "L07": 0.1667,
-    "L02": 0.1667,
-    "L04": 0.1667
-   },
-   "L13": {
-    "L13": 0.3478,
-    "end": 0.2609,
-    "L06": 0.1304,
-    "L04": 0.1304,
-    "L12": 0.1304
+    "L11": 0.5319,
+    "L01": 0.2128,
+    "L02": 0.1915,
+    "end": 0.0638
    }
   },
   "gaps": {
-   "L01>L01": 0.147,
-   "L01>L02": 0.1,
-   "L01>L11": 0.115,
-   "L01>L12": 0.12,
-   "L02>L01": 0.061,
-   "L02>L02": 0.373,
-   "L02>L11": 0.348,
-   "L04>L01": 0.225,
-   "L04>L06": 0.161,
-   "L04>L10": 0.061,
-   "L04>L13": 0.061,
-   "L05>L05": 0.155,
+   "L01>L01": 0.091,
+   "L01>L02": 0.18,
+   "L01>L05": 0.112,
+   "L01>L11": 0.029,
+   "L02>L01": 0.105,
+   "L02>L02": 0.197,
+   "L02>L11": 0.093,
+   "L05>L01": 0.225,
+   "L05>L05": 0.163,
+   "L05>L06": 0.141,
    "L05>L10": 0.064,
-   "L06>L04": 0.104,
-   "L06>L13": 0.2,
-   "L07>L07": 0.136,
-   "L07>L12": 0.292,
+   "L06>L01": 0.067,
+   "L06>L05": 0.325,
+   "L06>L06": 0.125,
    "L08>L09": 0.232,
-   "L10>L04": 0.229,
-   "L10>L05": 0.029,
-   "L11>L02": 0.235,
-   "L12>L01": 0.376,
-   "L12>L02": 0.28,
-   "L12>L04": 0.139,
-   "L12>L07": 0.403,
-   "L12>L12": 0.075,
-   "L13>L04": 0.032,
-   "L13>L06": 0.379,
-   "L13>L12": 0.101,
-   "L13>L13": 0.125
+   "L09>L01": 0.056,
+   "L10>L05": 0.055,
+   "L11>L01": 0.025,
+   "L11>L02": 0.091,
+   "L11>L11": 0.032
   },
   "chunks": [
-   {
-    "sequence": [
-     "L06",
-     "L06",
-     "L04",
-     "L06"
-    ],
-    "count": 150,
-    "species": [
-     "acanthorhynchus_tenuirostris",
-     "alectoris_rufa",
-     "anisognathus_igniventris",
-     "anthreptes_malacensis",
-     "apaloderma_narina",
-     "aviceda_subcristata",
-     "berlepschia_rikeri",
-     "brachypteryx_erythrogyna",
-     "carpococcyx_radiceus",
-     "ceratogymna_atrata",
-     "cercomacroides_parkeri",
-     "chlorophonia_elegantissima",
-     "columba_oenas",
-     "cossypha_heuglini",
-     "coturnicops_noveboracensis",
-     "cuculus_micropterus",
-     "curruca_iberiae",
-     "curruca_nisoria",
-     "curruca_ruppeli",
-     "drymornis_bridgesii",
-     "dysithamnus_stictothorax",
-     "elaenia_spectabilis",
-     "epinecrophylla_leucophthalma",
-     "formicarius_colma",
-     "fulica_atra",
-     "gampsonyx_swainsonii",
-     "geothlypis_semiflava",
-     "geranospiza_caerulescens",
-     "grallaricula_leymebambae",
-     "larus_cachinnans",
-     "melanopareia_maximiliani",
-     "myioborus_melanocephalus",
-     "myiornis_auricularis",
-     "pachysylvia_muscicapina",
-     "pardalotus_striatus",
-     "phacellodomus_rufifrons",
-     "phaethornis_syrmatophorus",
-     "picumnus_cirratus",
-     "pitta_maxima",
-     "ploceus_capensis",
-     "podiceps_grisegena",
-     "pseudasthenes_humicola",
-     "rynchops_niger",
-     "scytalopus_atratus",
-     "sylviorthorhynchus_desmursii",
-     "synallaxis_azarae",
-     "thamnophilus_ambiguus",
-     "thamnophilus_doliatus",
-     "thamnophilus_ruficapillus",
-     "tyranneutes_virescens",
-     "vireo_nelsoni",
-     "zosterops_erythropleurus"
-    ],
-    "pmi": 0.535
-   },
    {
     "sequence": [
      "L09",
      "L11",
      "L09"
     ],
-    "count": 95,
+    "count": 122,
     "species": [
-     "accipiter_cooperii",
+     "aegithalos_caudatus",
      "alcippe_morrisonia",
      "anhima_cornuta",
      "anisognathus_igniventris",
+     "anthus_hodgsoni",
      "anurolimnas_fasciatus",
+     "apaloderma_narina",
+     "arremonops_conirostris",
      "bleda_notatus",
+     "brachypteryx_goodfellowi",
      "burhinus_oedicnemus",
+     "cairina_moschata",
      "catharus_ustulatus",
+     "cercomacra_nigricans",
+     "certhiaxis_cinnamomeus",
      "chlorornis_riefferii",
      "cinclodes_excelsior",
      "cisticola_juncidis",
@@ -772,64 +482,50 @@
      "copsychus_cebuensis",
      "corvus_frugilegus",
      "coturnix_pectoralis",
+     "donacospiza_albifrons",
      "eupetomena_cirrochloris",
      "eurillas_latirostris",
      "gallinago_gallinago",
      "grallaria_milleri",
+     "haliastur_indus",
      "hydrocoloeus_minutus",
+     "icterus_pectoralis",
+     "lophotriccus_vitiosus",
+     "malurus_cyaneus",
+     "merulaxis_ater",
      "micrastur_semitorquatus",
-     "myiornis_auricularis",
+     "myioborus_melanocephalus",
      "myophonus_insularis",
      "ninox_philippensis",
      "pardirallus_sanguinolentus",
-     "peucaea_cassinii",
+     "parkesia_motacilla",
+     "passerina_caerulea",
      "phylloscopus_borealoides",
+     "pluvialis_squatarola",
      "psarocolius_bifasciatus",
+     "psittacara_erythrogenys",
+     "psittacula_alexandri",
      "pterorhinus_treacheri",
-     "pyrrhocorax_pyrrhocorax",
-     "sarothrura_affinis",
+     "pycnonotus_sinensis",
+     "pycnonotus_taivanus",
+     "rynchops_niger",
      "scytalopus_diamantinensis",
-     "sylvia_borin",
-     "turdus_mupinensis",
-     "vireo_olivaceus"
+     "somateria_mollissima",
+     "tachybaptus_ruficollis",
+     "turdus_mupinensis"
     ],
-    "pmi": 0.845
-   },
-   {
-    "sequence": [
-     "L13",
-     "L04",
-     "L13"
-    ],
-    "count": 58,
-    "species": [
-     "acrocephalus_agricola",
-     "anisognathus_igniventris",
-     "basileuterus_tristriatus",
-     "ceratopipra_erythrocephala",
-     "cercomacroides_serva",
-     "chrysuronia_versicolor",
-     "gampsonyx_swainsonii",
-     "hesperoburhinus_bistriatus",
-     "odontophorus_gujanensis",
-     "orthotomus_sutorius",
-     "peucaea_cassinii",
-     "procnias_albus",
-     "psilopogon_asiaticus",
-     "zosterops_flavilateralis"
-    ],
-    "pmi": 0.852
+    "pmi": 0.786
    }
   ],
   "songTyping": {
-   "bouts": 34,
-   "short": 20,
-   "candidates": 14,
-   "repeatCandidates": 1,
+   "bouts": 35,
+   "short": 23,
+   "candidates": 12,
+   "repeatCandidates": 4,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,
-   "unplaced": 14,
+   "unplaced": 12,
    "minClusterSize": 6
   }
  }

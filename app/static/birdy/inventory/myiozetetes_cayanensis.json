@@ -3,7 +3,7 @@
  "common": "Rusty-margined Flycatcher",
  "scientific": "Myiozetetes cayanensis",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 3 field recordings: 3 syllable types fitted from 42 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L02",
@@ -38,17 +38,17 @@
    ],
    "attack": 0.016,
    "hold": false,
-   "harmonic": 0.1,
+   "harmonic": 0.2,
    "am": 12.0,
    "amDepth": 0.45,
    "formants": [
     [
-     2696.4,
+     2762.5,
      6.0,
      1.0
     ],
     [
-     8089.2,
+     8287.6,
      6.0,
      0.3333
     ]
@@ -63,8 +63,8 @@
    },
    "learned": {
     "members": 4,
-    "resynthesisCosine": 0.6867,
-    "rivalCosine": 0.0767,
+    "resynthesisCosine": 0.6816,
+    "rivalCosine": 0.0634,
     "nearestOwn": true,
     "f0ErrorPercent": 27.05
    }
@@ -77,7 +77,7 @@
    "refs": [],
    "dur": 0.0867,
    "level": 0.401,
-   "timbre": "reed",
+   "timbre": "pure",
    "contour": [
     [
      0.0,
@@ -90,52 +90,96 @@
    ],
    "attack": 0.04,
    "hold": false,
-   "harmonic": 0.9,
+   "harmonic": 0.7,
    "am": 12.0,
-   "amDepth": 0.3,
+   "amDepth": 0.15,
    "formants": [
     [
-     2696.4,
+     2762.5,
      6.0,
      1.0
     ],
     [
-     8089.2,
+     8287.6,
      6.0,
      0.3333
     ]
    ],
    "gammaScale": 6.0,
-   "noise": 0.25,
+   "noise": 0.12,
    "rough": 0.2,
-   "vib": {
-    "rate": 14.0,
-    "depth": 0.09
-   },
-   "tractQ": 12.0,
+   "two": true,
    "learned": {
     "members": 26,
-    "resynthesisCosine": 0.5253,
-    "rivalCosine": -0.3528,
-    "nearestOwn": true,
-    "f0ErrorPercent": 6.37
-   },
-   "voices": {
-    "contour": [
-     [
-      0.0,
-      3216.7
-     ],
-     [
-      1.0,
-      2864.2
-     ]
+    "resynthesisCosine": 0.5186,
+    "rivalCosine": 0.6865,
+    "nearestOwn": false,
+    "f0ErrorPercent": 5.11
+   }
+  },
+  {
+   "id": "L03",
+   "label": "learned L03 \u00b7 4963 Hz \u00b7 191 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1906,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5137.4
     ],
-    "gamma": 8895.543158718803,
-    "level": 0.7,
-    "tracheaCm": 2.0,
-    "refl": 0.9,
-    "betaInj": 0.02
+    [
+     0.25,
+     4735.6
+    ],
+    [
+     0.375,
+     4792.5
+    ],
+    [
+     0.5,
+     5185.9
+    ],
+    [
+     0.625,
+     4903.9
+    ],
+    [
+     1.0,
+     5038.7
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 13.16,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     1063.304792525682,
+     2.0,
+     1.0
+    ],
+    [
+     5083.5393171114765,
+     2.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "noise": 0.25,
+   "rough": 0.65,
+   "two": true,
+   "fricative": true,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.9071,
+    "rivalCosine": 0.281,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.34
    }
   }
  ],
@@ -158,7 +202,8 @@
  ],
  "grammar": {
   "start": [
-   "L01"
+   "L01",
+   "L03"
   ],
   "transitions": {
    "L01": {
@@ -167,17 +212,22 @@
    },
    "L02": {
     "L02": 1.0
+   },
+   "L03": {
+    "L03": 0.8333,
+    "end": 0.1667
    }
   },
   "gaps": {
    "L01>L01": 0.075,
-   "L02>L02": 0.267
+   "L02>L02": 0.267,
+   "L03>L03": 0.148
   },
   "songTyping": {
-   "bouts": 5,
-   "short": 5,
+   "bouts": 7,
+   "short": 7,
    "candidates": 0,
-   "repeatCandidates": 1,
+   "repeatCandidates": 3,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,

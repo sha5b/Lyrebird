@@ -12,8 +12,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0614,
-   "level": 1.05,
-   "timbre": "reed",
+   "level": 0.3,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
@@ -44,11 +44,9 @@
      686.2
     ]
    ],
-   "attack": 0.016,
-   "hold": false,
-   "harmonic": 0.0,
-   "am": 25.0,
-   "amDepth": 0.6,
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
    "formants": [
     [
      1920.5,
@@ -66,19 +64,22 @@
      0.06
     ]
    ],
+   "gammaScale": 0.5,
    "tractQ": 0.0,
+   "noise": 0.0,
    "rough": 0.65,
-   "two": true,
+   "am": 140.0,
+   "amDepth": 0.8,
    "vib": {
-    "rate": 14.0,
-    "depth": 0.025
+    "rate": 12.0,
+    "depth": 0.09
    },
    "learned": {
     "members": 12,
-    "resynthesisCosine": 0.4787,
-    "rivalCosine": 0.3238,
+    "resynthesisCosine": 0.5102,
+    "rivalCosine": 0.2561,
     "nearestOwn": true,
-    "f0ErrorPercent": -3.25
+    "f0ErrorPercent": 2.8
    }
   },
   {
@@ -143,8 +144,8 @@
    "amDepth": 0.3,
    "learned": {
     "members": 18,
-    "resynthesisCosine": 0.4139,
-    "rivalCosine": 0.2114,
+    "resynthesisCosine": 0.4178,
+    "rivalCosine": 0.215,
     "nearestOwn": true,
     "f0ErrorPercent": -0.81
    }
@@ -156,7 +157,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.436,
-   "level": 0.45,
+   "level": 0.6,
    "timbre": "pure",
    "contour": [
     [
@@ -176,7 +177,7 @@
      2965.9
     ]
    ],
-   "attack": 0.004,
+   "attack": 0.008,
    "hold": false,
    "harmonic": 0.0,
    "formants": [
@@ -198,16 +199,17 @@
    ],
    "gammaScale": 4.5,
    "tractQ": 12.0,
-   "noise": 0.12,
-   "rough": 0.0,
-   "am": 12.0,
-   "amDepth": 0.3,
+   "noise": 0.05,
+   "rough": 0.08,
+   "amDepth": 0.15,
+   "am": 30.0,
+   "two": true,
    "learned": {
     "members": 14,
-    "resynthesisCosine": 0.6888,
-    "rivalCosine": -0.4297,
+    "resynthesisCosine": 0.6861,
+    "rivalCosine": -0.4651,
     "nearestOwn": true,
-    "f0ErrorPercent": -23.97
+    "f0ErrorPercent": -0.49
    }
   }
  ],

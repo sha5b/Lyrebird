@@ -3,17 +3,17 @@
  "common": "Australasian Figbird",
  "scientific": "Sphecotheres vieilloti",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 34 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 3 field recordings: 3 syllable types fitted from 36 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
-   "label": "learned L00 \u00b7 445 Hz \u00b7 75 ms",
+   "label": "learned L00 \u00b7 445 Hz \u00b7 72 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0747,
-   "level": 0.3,
-   "timbre": "pure",
+   "dur": 0.072,
+   "level": 0.9,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
@@ -30,20 +30,21 @@
    ],
    "attack": 0.004,
    "hold": true,
-   "harmonic": 0.0,
-   "am": 12.0,
-   "amDepth": 0.45,
-   "gammaScale": 1.0,
-   "tractQ": 30.0,
-   "noise": 0.12,
-   "rough": 0.0,
-   "two": true,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "rough": 0.2,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
    "learned": {
     "members": 7,
-    "resynthesisCosine": 0.5796,
-    "rivalCosine": -0.1339,
+    "resynthesisCosine": 0.6003,
+    "rivalCosine": -0.1118,
     "nearestOwn": true,
-    "f0ErrorPercent": 5.21
+    "f0ErrorPercent": 1.37
    },
    "voices": {
     "contour": [
@@ -60,48 +61,92 @@
       212.2
      ]
     ],
-    "gamma": 2608.880529664886,
+    "gamma": 1304.440264832443,
     "level": 0.7,
     "tracheaCm": 2.0,
     "refl": 0.9,
-    "betaInj": 0.2
+    "betaInj": 0.02
    }
   },
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 2522 Hz \u00b7 93 ms",
+   "label": "learned L01 \u00b7 2509 Hz \u00b7 112 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0933,
-   "level": 1.2,
-   "timbre": "reed",
+   "dur": 0.112,
+   "level": 0.6523180603981018,
+   "timbre": "pure",
    "contour": [
     [
      0.0,
-     3179.2
+     3190.0
     ],
     [
      1.0,
-     2001.4
+     1972.8
     ]
    ],
-   "attack": 0.016,
+   "attack": 0.12,
    "hold": false,
-   "harmonic": 0.2,
+   "harmonic": 0.1,
+   "am": 12.0,
+   "amDepth": 0.15,
+   "gammaScale": 4.5,
+   "tractQ": 12.0,
+   "noise": 0.0,
+   "rough": 0.4,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 25,
+    "resynthesisCosine": 0.9241,
+    "rivalCosine": -0.2505,
+    "nearestOwn": true,
+    "f0ErrorPercent": 16.97
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2828 Hz \u00b7 43 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0427,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2881.2
+    ],
+    [
+     1.0,
+     2776.0
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
    "am": 25.0,
    "amDepth": 0.3,
+   "gammaScale": 1.0,
+   "tractQ": 12.0,
+   "noise": 0.4,
+   "rough": 0.65,
+   "two": false,
    "vib": {
     "rate": 8.0,
-    "depth": 0.133
+    "depth": 0.025
    },
-   "tractQ": 6.0,
    "learned": {
-    "members": 27,
-    "resynthesisCosine": 0.8865,
-    "rivalCosine": -0.2111,
+    "members": 4,
+    "resynthesisCosine": 0.7953,
+    "rivalCosine": -0.0549,
     "nearestOwn": true,
-    "f0ErrorPercent": 12.62
+    "f0ErrorPercent": 3.49
    }
   }
  ],
@@ -115,9 +160,17 @@
    "refs": [],
    "sequence": [
     "L01",
-    "L01"
+    "L01",
+    "L02",
+    "L01",
+    "L01",
+    "L02"
    ],
    "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
     0.06
    ]
   }
@@ -125,31 +178,38 @@
  "grammar": {
   "start": [
    "L01",
-   "L00"
+   "L00",
+   "L02"
   ],
   "transitions": {
    "L00": {
-    "L00": 0.5714,
-    "end": 0.4286
+    "L00": 0.6667,
+    "end": 0.3333
    },
    "L01": {
-    "end": 0.6538,
-    "L01": 0.3462
+    "end": 0.72,
+    "L01": 0.2,
+    "L02": 0.08
+   },
+   "L02": {
+    "L01": 1.0
    }
   },
   "gaps": {
    "L00>L00": 0.112,
-   "L01>L01": 0.579
+   "L01>L01": 0.464,
+   "L01>L02": 0.712,
+   "L02>L01": 0.58
   },
   "songTyping": {
-   "bouts": 20,
-   "short": 20,
-   "candidates": 0,
-   "repeatCandidates": 3,
+   "bouts": 21,
+   "short": 19,
+   "candidates": 2,
+   "repeatCandidates": 1,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,
-   "unplaced": 0,
+   "unplaced": 2,
    "minClusterSize": 6
   }
  }

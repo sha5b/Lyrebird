@@ -1,0 +1,182 @@
+{
+ "id": "cyanocorax_yncas",
+ "common": "Green Jay",
+ "scientific": "Cyanocorax yncas",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 904 Hz \u00b7 75 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0747,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     906.1
+    ],
+    [
+     1.0,
+     901.2
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     5063.7,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "rough": 0.0,
+   "am": 80.0,
+   "amDepth": 0.3,
+   "two": false,
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.654,
+    "rivalCosine": -0.0251,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.06
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 5015 Hz \u00b7 179 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1787,
+   "level": 0.75,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     5760.6
+    ],
+    [
+     0.125,
+     5655.1
+    ],
+    [
+     0.25,
+     5218.0
+    ],
+    [
+     0.375,
+     5629.0
+    ],
+    [
+     0.5,
+     4497.1
+    ],
+    [
+     0.625,
+     5630.6
+    ],
+    [
+     0.75,
+     4196.5
+    ],
+    [
+     0.875,
+     4478.0
+    ],
+    [
+     1.0,
+     4410.0
+    ]
+   ],
+   "attack": 0.06,
+   "hold": true,
+   "harmonic": 0.5,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.258
+   },
+   "formants": [
+    [
+     2289.5188831594724,
+     8.0,
+     0.5
+    ],
+    [
+     5899.517283512816,
+     8.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "rough": 0.65,
+   "fricative": true,
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.7289,
+    "rivalCosine": -0.1179,
+    "nearestOwn": true,
+    "f0ErrorPercent": 16.6
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6667,
+    "end": 0.3333
+   },
+   "L01": {
+    "L01": 0.6,
+    "end": 0.4
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.08,
+   "L01>L01": 0.044
+  },
+  "songTyping": {
+   "bouts": 11,
+   "short": 11,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

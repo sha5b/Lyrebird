@@ -70,8 +70,8 @@
    },
    "learned": {
     "members": 10,
-    "resynthesisCosine": 0.3366,
-    "rivalCosine": 0.3976,
+    "resynthesisCosine": 0.3397,
+    "rivalCosine": 0.3986,
     "nearestOwn": false,
     "f0ErrorPercent": 3.75
    },
@@ -117,7 +117,7 @@
    "refs": [],
    "dur": 0.132,
    "level": 0.3,
-   "timbre": "pure",
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
@@ -169,54 +169,18 @@
     ]
    ],
    "gammaScale": 0.5,
-   "tractQ": 30.0,
+   "tractQ": 3.0,
    "noise": 0.0,
    "rough": 0.0,
-   "am": 12.0,
    "amDepth": 0.8,
+   "am": 140.0,
+   "two": false,
    "learned": {
     "members": 18,
-    "resynthesisCosine": 0.2836,
-    "rivalCosine": 0.6279,
+    "resynthesisCosine": 0.2622,
+    "rivalCosine": 0.7445,
     "nearestOwn": false,
     "f0ErrorPercent": 34.63
-   },
-   "voices": {
-    "contour": [
-     [
-      0.0,
-      366.15
-     ],
-     [
-      0.25,
-      502.1
-     ],
-     [
-      0.375,
-      358.9
-     ],
-     [
-      0.5,
-      258.15
-     ],
-     [
-      0.75,
-      449.4
-     ],
-     [
-      0.875,
-      502.65
-     ],
-     [
-      1.0,
-      487.95
-     ]
-    ],
-    "gamma": 2390.5914584278084,
-    "level": 0.7,
-    "tracheaCm": 2.0,
-    "refl": 0.9,
-    "betaInj": 0.02
    }
   },
   {
@@ -226,8 +190,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.1093,
-   "level": 0.3,
-   "timbre": "pure",
+   "level": 1.2,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
@@ -258,9 +222,11 @@
      1746.1
     ]
    ],
-   "attack": 0.12,
-   "hold": true,
-   "harmonic": 0.0,
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 140.0,
+   "amDepth": 0.45,
    "formants": [
     [
      1920.5,
@@ -279,19 +245,17 @@
     ]
    ],
    "gammaScale": 0.5,
-   "tractQ": 12.0,
-   "noise": 0.05,
-   "rough": 0.65,
-   "amDepth": 0.0,
-   "am": 12.0,
+   "tractQ": 30.0,
+   "rough": 0.0,
    "vib": {
     "rate": 12.0,
     "depth": 0.05
    },
+   "two": true,
    "learned": {
     "members": 21,
-    "resynthesisCosine": 0.4366,
-    "rivalCosine": 0.6213,
+    "resynthesisCosine": 0.4752,
+    "rivalCosine": 0.7444,
     "nearestOwn": false,
     "f0ErrorPercent": 0.3
    }
@@ -376,8 +340,8 @@
    },
    "learned": {
     "members": 7,
-    "resynthesisCosine": 0.6894,
-    "rivalCosine": 0.775,
+    "resynthesisCosine": 0.6914,
+    "rivalCosine": 0.7761,
     "nearestOwn": false,
     "f0ErrorPercent": 4.99
    }
@@ -450,8 +414,8 @@
    },
    "learned": {
     "members": 17,
-    "resynthesisCosine": 0.7137,
-    "rivalCosine": 0.5651,
+    "resynthesisCosine": 0.7155,
+    "rivalCosine": 0.5707,
     "nearestOwn": true,
     "f0ErrorPercent": 3.69
    }
@@ -463,8 +427,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0626,
-   "level": 1.2,
-   "timbre": "buzz",
+   "level": 1.35,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
@@ -507,15 +471,15 @@
    "am": 25.0,
    "two": true,
    "vib": {
-    "rate": 14.0,
+    "rate": 12.0,
     "depth": 0.025
    },
    "learned": {
     "members": 16,
-    "resynthesisCosine": 0.584,
-    "rivalCosine": 0.7203,
+    "resynthesisCosine": 0.593,
+    "rivalCosine": 0.7165,
     "nearestOwn": false,
-    "f0ErrorPercent": -1.83
+    "f0ErrorPercent": 0.4
    }
   },
   {
@@ -559,14 +523,14 @@
    ],
    "gammaScale": 1.0,
    "tractQ": 3.0,
-   "noise": 0.4,
+   "noise": 0.25,
    "rough": 0.0,
    "amDepth": 0.8,
    "am": 140.0,
    "learned": {
     "members": 3,
-    "resynthesisCosine": 0.6528,
-    "rivalCosine": 0.5179,
+    "resynthesisCosine": 0.6534,
+    "rivalCosine": 0.5321,
     "nearestOwn": true,
     "f0ErrorPercent": 2.3
    }
@@ -617,15 +581,15 @@
    "tractQ": 20.0,
    "noise": 0.0,
    "rough": 0.08,
-   "amDepth": 0.3,
+   "amDepth": 0.8,
    "am": 45.0,
    "fricative": true,
    "learned": {
     "members": 6,
-    "resynthesisCosine": 0.6259,
-    "rivalCosine": 0.6807,
-    "nearestOwn": false,
-    "f0ErrorPercent": 14.13
+    "resynthesisCosine": 0.6304,
+    "rivalCosine": 0.6212,
+    "nearestOwn": true,
+    "f0ErrorPercent": 13.78
    }
   }
  ],

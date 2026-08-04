@@ -1,0 +1,173 @@
+{
+ "id": "thamnophilus_atrinucha",
+ "common": "Western Slaty-Antshrike",
+ "scientific": "Thamnophilus atrinucha",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 26 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1614 Hz \u00b7 77 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0773,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1639.0
+    ],
+    [
+     1.0,
+     1590.3
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.2,
+   "formants": [
+    [
+     1743.0,
+     6.0,
+     0.15
+    ],
+    [
+     5229.1,
+     6.0,
+     0.05
+    ],
+    [
+     8715.2,
+     6.0,
+     0.03
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 6.0,
+   "noise": 0.4,
+   "rough": 0.65,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.8306,
+    "rivalCosine": -0.3923,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.18
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2710 Hz \u00b7 248 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.248,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2589.3
+    ],
+    [
+     0.375,
+     3397.0
+    ],
+    [
+     0.5,
+     3393.0
+    ],
+    [
+     0.625,
+     2262.8
+    ],
+    [
+     1.0,
+     2163.5
+    ]
+   ],
+   "attack": 0.06,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     1743.0,
+     6.0,
+     0.15
+    ],
+    [
+     5229.1,
+     6.0,
+     0.05
+    ],
+    [
+     8715.2,
+     6.0,
+     0.03
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 0.0,
+   "noise": 0.0,
+   "rough": 0.0,
+   "am": 25.0,
+   "amDepth": 0.15,
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.5319,
+    "rivalCosine": -0.445,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.69
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.029,
+   "L01>L01": 0.037
+  },
+  "songTyping": {
+   "bouts": 2,
+   "short": 2,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

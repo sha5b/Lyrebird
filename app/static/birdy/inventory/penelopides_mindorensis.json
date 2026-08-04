@@ -41,8 +41,8 @@
    "tractQ": 6.0,
    "learned": {
     "members": 2,
-    "resynthesisCosine": 0.9078,
-    "rivalCosine": 0.8845,
+    "resynthesisCosine": 0.9061,
+    "rivalCosine": 0.884,
     "nearestOwn": true,
     "f0ErrorPercent": 76.99
    }
@@ -54,8 +54,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.2027,
-   "level": 0.3,
-   "timbre": "pure",
+   "level": 0.75,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
@@ -96,7 +96,7 @@
    ],
    "attack": 0.12,
    "hold": true,
-   "harmonic": 0.0,
+   "harmonic": 0.2,
    "formants": [
     [
      4071.3,
@@ -104,22 +104,20 @@
      0.3
     ]
    ],
-   "gammaScale": 0.5,
-   "tractQ": 3.0,
    "noise": 0.85,
    "rough": 0.08,
-   "am": 12.0,
-   "amDepth": 0.6,
+   "amDepth": 0.8,
+   "am": 45.0,
    "vib": {
-    "rate": 12.0,
+    "rate": 8.0,
     "depth": 0.09
    },
    "learned": {
     "members": 1,
-    "resynthesisCosine": 0.5895,
-    "rivalCosine": -0.2917,
+    "resynthesisCosine": 0.5775,
+    "rivalCosine": -0.2219,
     "nearestOwn": true,
-    "f0ErrorPercent": 3.21
+    "f0ErrorPercent": -8.42
    }
   },
   {
@@ -163,8 +161,8 @@
    "fricative": true,
    "learned": {
     "members": 30,
-    "resynthesisCosine": 0.7907,
-    "rivalCosine": 0.8221,
+    "resynthesisCosine": 0.7876,
+    "rivalCosine": 0.8197,
     "nearestOwn": false,
     "f0ErrorPercent": 0.29
    }
@@ -176,8 +174,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0587,
-   "level": 0.35,
-   "timbre": "buzz",
+   "level": 1.2,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
@@ -188,35 +186,38 @@
      4024.4
     ]
    ],
-   "attack": 0.008,
+   "attack": 0.004,
    "hold": true,
-   "harmonic": 0.35,
+   "harmonic": 0.5,
    "formants": [
     [
      1312.0828814882439,
      2.0,
-     2.0
+     0.5
     ],
     [
      3741.776844777196,
      2.0,
-     2.0
+     0.5
     ]
    ],
-   "gammaScale": 1.5,
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
    "noise": 0.85,
-   "rough": 0.08,
+   "rough": 0.4,
+   "am": 80.0,
+   "amDepth": 0.3,
    "vib": {
-    "rate": 22.0,
-    "depth": 0.05
+    "rate": 14.0,
+    "depth": 0.025
    },
    "fricative": true,
    "learned": {
     "members": 20,
-    "resynthesisCosine": 0.826,
-    "rivalCosine": 0.7592,
+    "resynthesisCosine": 0.827,
+    "rivalCosine": 0.7574,
     "nearestOwn": true,
-    "f0ErrorPercent": 3.08
+    "f0ErrorPercent": 2.03
    }
   }
  ],

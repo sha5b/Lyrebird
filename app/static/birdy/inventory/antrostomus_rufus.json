@@ -1,0 +1,177 @@
+{
+ "id": "antrostomus_rufus",
+ "common": "Rufous Nightjar",
+ "scientific": "Antrostomus rufus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1200 Hz \u00b7 115 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1147,
+   "level": 1.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1061.7
+    ],
+    [
+     0.125,
+     1071.1
+    ],
+    [
+     0.375,
+     1242.4
+    ],
+    [
+     0.5,
+     1168.8
+    ],
+    [
+     0.625,
+     1264.5
+    ],
+    [
+     0.75,
+     1203.6
+    ],
+    [
+     0.875,
+     1221.8
+    ],
+    [
+     1.0,
+     1400.5
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.6,
+   "vib": {
+    "rate": 10.42,
+    "depth": 0.185
+   },
+   "noise": 0.6,
+   "two": false,
+   "tractQ": 20.0,
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.8254,
+    "rivalCosine": -0.1863,
+    "nearestOwn": true,
+    "f0ErrorPercent": -11.03
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 6369 Hz \u00b7 91 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0907,
+   "level": 1.2,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     6593.5
+    ],
+    [
+     0.375,
+     6565.6
+    ],
+    [
+     0.5,
+     6083.6
+    ],
+    [
+     0.75,
+     5979.8
+    ],
+    [
+     0.875,
+     6447.5
+    ],
+    [
+     1.0,
+     6573.6
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.7,
+   "gammaScale": 1.5,
+   "tractQ": 6.0,
+   "noise": 0.6,
+   "rough": 0.0,
+   "am": 12.0,
+   "amDepth": 0.45,
+   "two": true,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.583,
+    "rivalCosine": 0.021,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.76
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.75,
+    "end": 0.25
+   },
+   "L01": {
+    "L01": 0.7143,
+    "end": 0.2857
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.165,
+   "L01>L01": 0.091
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 7,
+   "candidates": 0,
+   "repeatCandidates": 6,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

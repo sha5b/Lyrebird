@@ -1,0 +1,184 @@
+{
+ "id": "dicaeum_cruentatum",
+ "common": "Scarlet-backed Flowerpecker",
+ "scientific": "Dicaeum cruentatum",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 451 Hz \u00b7 100 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     433.3
+    ],
+    [
+     0.125,
+     475.7
+    ],
+    [
+     0.5,
+     462.8
+    ],
+    [
+     0.625,
+     435.0
+    ],
+    [
+     0.875,
+     439.8
+    ],
+    [
+     1.0,
+     460.8
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.7,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.025
+   },
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
+   "two": true,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.4137,
+    "rivalCosine": -0.1562,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.21
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      216.65
+     ],
+     [
+      0.125,
+      237.85
+     ],
+     [
+      0.5,
+      231.4
+     ],
+     [
+      0.625,
+      217.5
+     ],
+     [
+      0.875,
+      219.9
+     ],
+     [
+      1.0,
+      230.4
+     ]
+    ],
+    "gamma": 1200.0,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.02
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 6475 Hz \u00b7 37 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0373,
+   "level": 1.0910725593566895,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     6471.2
+    ],
+    [
+     1.0,
+     6479.3
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.2,
+   "gammaScale": 3.0,
+   "tractQ": 6.0,
+   "noise": 0.05,
+   "rough": 0.08,
+   "two": true,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.6783,
+    "rivalCosine": -0.2108,
+    "nearestOwn": true,
+    "f0ErrorPercent": -7.86
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.875,
+    "end": 0.125
+   },
+   "L01": {
+    "L01": 0.6364,
+    "end": 0.3636
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.083,
+   "L01>L01": 0.221
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 6,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

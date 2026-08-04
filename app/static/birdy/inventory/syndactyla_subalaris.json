@@ -51,8 +51,8 @@
    "two": true,
    "learned": {
     "members": 254,
-    "resynthesisCosine": 0.283,
-    "rivalCosine": 0.1099,
+    "resynthesisCosine": 0.295,
+    "rivalCosine": 0.1164,
     "nearestOwn": true,
     "f0ErrorPercent": 0.77
    }
@@ -123,8 +123,8 @@
    "fricative": true,
    "learned": {
     "members": 79,
-    "resynthesisCosine": 0.7811,
-    "rivalCosine": 0.8816,
+    "resynthesisCosine": 0.7765,
+    "rivalCosine": 0.8795,
     "nearestOwn": false,
     "f0ErrorPercent": -27.23
    }
@@ -179,23 +179,23 @@
     [
      845.2861410183435,
      2.0,
-     0.5
+     2.0
     ],
     [
      6830.618534315889,
      2.0,
-     0.5
+     2.0
     ]
    ],
    "gammaScale": 6.0,
    "tractQ": 0.0,
-   "noise": 0.4,
+   "noise": 0.25,
    "rough": 0.4,
    "fricative": true,
    "learned": {
     "members": 206,
-    "resynthesisCosine": 0.5755,
-    "rivalCosine": 0.92,
+    "resynthesisCosine": 0.5633,
+    "rivalCosine": 0.9103,
     "nearestOwn": false,
     "f0ErrorPercent": 11.35
    }
@@ -250,8 +250,8 @@
    "fricative": true,
    "learned": {
     "members": 113,
-    "resynthesisCosine": 0.9281,
-    "rivalCosine": 0.647,
+    "resynthesisCosine": 0.9264,
+    "rivalCosine": 0.6394,
     "nearestOwn": true,
     "f0ErrorPercent": 29.25
    }
@@ -263,8 +263,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0587,
-   "level": 0.6,
-   "timbre": "pure",
+   "level": 0.3,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
@@ -275,9 +275,11 @@
      4738.7
     ]
    ],
-   "attack": 0.03,
-   "hold": true,
+   "attack": 0.016,
+   "hold": false,
    "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.6,
    "formants": [
     [
      5063.7,
@@ -286,21 +288,15 @@
     ]
    ],
    "gammaScale": 2.0,
-   "tractQ": 0.0,
-   "noise": 0.25,
-   "rough": 0.08,
-   "am": 12.0,
-   "amDepth": 0.6,
-   "vib": {
-    "rate": 34.0,
-    "depth": 0.025
-   },
+   "noise": 0.12,
+   "rough": 0.0,
+   "tractQ": 3.0,
    "learned": {
     "members": 499,
-    "resynthesisCosine": 0.4349,
-    "rivalCosine": 0.3686,
+    "resynthesisCosine": 0.4584,
+    "rivalCosine": 0.2195,
     "nearestOwn": true,
-    "f0ErrorPercent": 3.44
+    "f0ErrorPercent": -3.88
    }
   },
   {
@@ -310,8 +306,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.332,
-   "level": 1.05,
-   "timbre": "buzz",
+   "level": 0.3,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
@@ -322,11 +318,9 @@
      5042.6
     ]
    ],
-   "attack": 0.008,
+   "attack": 0.12,
    "hold": false,
-   "harmonic": 0.2,
-   "am": 17.72,
-   "amDepth": 0.8,
+   "harmonic": 0.1,
    "formants": [
     [
      5063.7,
@@ -334,17 +328,18 @@
      1.0
     ]
    ],
-   "gammaScale": 6.0,
-   "tractQ": 20.0,
-   "noise": 0.0,
-   "rough": 0.08,
-   "two": true,
+   "gammaScale": 0.6394953474915034,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "rough": 0.65,
+   "amDepth": 0.8,
+   "am": 12.0,
    "learned": {
     "members": 150,
-    "resynthesisCosine": 0.7327,
-    "rivalCosine": 0.477,
+    "resynthesisCosine": 0.7377,
+    "rivalCosine": 0.5537,
     "nearestOwn": true,
-    "f0ErrorPercent": 1.97
+    "f0ErrorPercent": 0.48
    }
   },
   {
@@ -388,8 +383,8 @@
    },
    "learned": {
     "members": 169,
-    "resynthesisCosine": 0.7522,
-    "rivalCosine": 0.6878,
+    "resynthesisCosine": 0.7531,
+    "rivalCosine": 0.6888,
     "nearestOwn": true,
     "f0ErrorPercent": 0.46
    }
@@ -401,7 +396,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.1067,
-   "level": 0.9,
+   "level": 1.2,
    "timbre": "buzz",
    "contour": [
     [
@@ -413,9 +408,11 @@
      5956.0
     ]
    ],
-   "attack": 0.03,
-   "hold": true,
+   "attack": 0.06,
+   "hold": false,
    "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.15,
    "formants": [
     [
      5063.7,
@@ -427,13 +424,15 @@
    "tractQ": 0.0,
    "noise": 0.4,
    "rough": 0.0,
-   "amDepth": 0.15,
-   "am": 140.0,
    "two": true,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.09
+   },
    "learned": {
     "members": 327,
-    "resynthesisCosine": 0.8401,
-    "rivalCosine": 0.6237,
+    "resynthesisCosine": 0.8073,
+    "rivalCosine": 0.4602,
     "nearestOwn": true,
     "f0ErrorPercent": -13.88
    }

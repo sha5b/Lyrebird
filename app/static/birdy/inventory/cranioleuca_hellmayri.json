@@ -46,8 +46,8 @@
    },
    "learned": {
     "members": 2,
-    "resynthesisCosine": 0.7897,
-    "rivalCosine": 0.7592,
+    "resynthesisCosine": 0.7896,
+    "rivalCosine": 0.7583,
     "nearestOwn": true,
     "f0ErrorPercent": -10.58
    }
@@ -59,7 +59,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0706,
-   "level": 0.3,
+   "level": 0.45,
    "timbre": "buzz",
    "contour": [
     [
@@ -93,20 +93,45 @@
      1.0
     ]
    ],
-   "gammaScale": 1.5,
+   "gammaScale": 0.9272117124616935,
    "tractQ": 0.0,
-   "noise": 0.6,
-   "rough": 0.0,
-   "vib": {
-    "rate": 4.0,
-    "depth": 0.05
-   },
+   "noise": 0.25,
+   "rough": 0.4,
    "learned": {
     "members": 26,
-    "resynthesisCosine": 0.4802,
-    "rivalCosine": 0.5912,
+    "resynthesisCosine": 0.4843,
+    "rivalCosine": 0.5733,
     "nearestOwn": false,
-    "f0ErrorPercent": 9.49
+    "f0ErrorPercent": 4.27
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      543.0
+     ],
+     [
+      0.25,
+      765.7
+     ],
+     [
+      0.5,
+      703.3
+     ],
+     [
+      0.625,
+      743.8
+     ],
+     [
+      1.0,
+      663.3
+     ]
+    ],
+    "gamma": 7959.001119252827,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.2
    }
   },
   {
@@ -116,7 +141,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.1373,
-   "level": 1.35,
+   "level": 1.2,
    "timbre": "buzz",
    "contour": [
     [
@@ -161,30 +186,22 @@
    "harmonic": 0.9,
    "formants": [
     [
-     845.2861410183435,
-     2.0,
-     2.0
-    ],
-    [
-     6830.618534315889,
-     2.0,
-     2.0
+     6000.0,
+     6.0,
+     1.0
     ]
    ],
    "gammaScale": 4.5,
    "tractQ": 0.0,
-   "noise": 0.25,
-   "rough": 0.08,
+   "noise": 0.12,
+   "rough": 0.0,
    "two": true,
-   "amDepth": 0.15,
-   "am": 80.0,
-   "fricative": true,
    "learned": {
     "members": 10,
-    "resynthesisCosine": 0.2923,
-    "rivalCosine": 0.4432,
+    "resynthesisCosine": 0.2625,
+    "rivalCosine": 0.5126,
     "nearestOwn": false,
-    "f0ErrorPercent": 4.46
+    "f0ErrorPercent": 4.21
    }
   },
   {
@@ -246,8 +263,8 @@
    "fricative": true,
    "learned": {
     "members": 9,
-    "resynthesisCosine": 0.5648,
-    "rivalCosine": 0.4984,
+    "resynthesisCosine": 0.5572,
+    "rivalCosine": 0.4936,
     "nearestOwn": true,
     "f0ErrorPercent": -22.33
    }
@@ -259,7 +276,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0267,
-   "level": 0.3,
+   "level": 0.45,
    "timbre": "pure",
    "contour": [
     [
@@ -278,16 +295,16 @@
     [
      845.2861410183435,
      2.0,
-     1.0
+     0.5
     ],
     [
      5083.5393171114765,
      2.0,
-     1.0
+     0.5
     ]
    ],
    "gammaScale": 0.5,
-   "tractQ": 12.0,
+   "tractQ": 20.0,
    "noise": 0.85,
    "rough": 0.65,
    "amDepth": 0.15,
@@ -299,8 +316,8 @@
    "fricative": true,
    "learned": {
     "members": 2,
-    "resynthesisCosine": 0.8718,
-    "rivalCosine": 0.6835,
+    "resynthesisCosine": 0.8673,
+    "rivalCosine": 0.6861,
     "nearestOwn": true,
     "f0ErrorPercent": 3.02
    }
@@ -352,8 +369,8 @@
    "fricative": true,
    "learned": {
     "members": 11,
-    "resynthesisCosine": 0.7186,
-    "rivalCosine": 0.5475,
+    "resynthesisCosine": 0.7239,
+    "rivalCosine": 0.5484,
     "nearestOwn": true,
     "f0ErrorPercent": -7.34
    }
@@ -404,8 +421,8 @@
    "fricative": true,
    "learned": {
     "members": 23,
-    "resynthesisCosine": 0.6709,
-    "rivalCosine": 0.6335,
+    "resynthesisCosine": 0.6785,
+    "rivalCosine": 0.6432,
     "nearestOwn": true,
     "f0ErrorPercent": -0.48
    }
@@ -473,8 +490,8 @@
    "fricative": true,
    "learned": {
     "members": 15,
-    "resynthesisCosine": 0.5799,
-    "rivalCosine": 0.6729,
+    "resynthesisCosine": 0.5705,
+    "rivalCosine": 0.6658,
     "nearestOwn": false,
     "f0ErrorPercent": -54.67
    }
@@ -589,25 +606,26 @@
     "species": [
      "aegithina_tiphia",
      "cacicus_oseryi",
-     "calliope_calliope",
      "catharus_fuscater",
+     "cercomacroides_tyrannina",
      "cossypha_dichroa",
-     "cossypha_heuglini",
      "cranioleuca_hellmayri",
      "curruca_subalpina",
      "cyanocompsa_parellina",
+     "dacelo_novaeguineae",
+     "diglossa_humeralis",
      "empidonax_minimus",
-     "icterus_parisorum",
-     "myiopagis_viridicata",
+     "larus_marinus",
      "myrmia_micrura",
-     "piaya_cayana",
+     "myrmotherula_axillaris",
+     "promerops_cafer",
      "psilopogon_asiaticus",
      "selasphorus_ardens",
      "semnornis_ramphastinus",
      "zentrygon_albifacies",
      "zoothera_heinei"
     ],
-    "pmi": 1.299
+    "pmi": 1.244
    }
   ],
   "songTyping": {

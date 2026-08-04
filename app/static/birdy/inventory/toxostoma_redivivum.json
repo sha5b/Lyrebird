@@ -1,0 +1,272 @@
+{
+ "id": "toxostoma_redivivum",
+ "common": "California Thrasher",
+ "scientific": "Toxostoma redivivum",
+ "bank": "learned",
+ "summary": "Learned from 3 field recordings: 4 syllable types fitted from 57 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 661 Hz \u00b7 312 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.312,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     719.9
+    ],
+    [
+     0.125,
+     789.5
+    ],
+    [
+     0.375,
+     661.0
+    ],
+    [
+     0.5,
+     1328.1
+    ],
+    [
+     0.625,
+     532.0
+    ],
+    [
+     0.75,
+     500.9
+    ],
+    [
+     0.875,
+     495.9
+    ],
+    [
+     1.0,
+     551.3
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.1,
+   "am": 26.55,
+   "amDepth": 0.0,
+   "gammaScale": 4.5,
+   "noise": 0.85,
+   "rough": 0.08,
+   "two": false,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 2,
+    "resynthesisCosine": 0.6285,
+    "rivalCosine": 0.358,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.3
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2301 Hz \u00b7 45 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0453,
+   "level": 0.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2294.1
+    ],
+    [
+     1.0,
+     2308.3
+    ]
+   ],
+   "attack": 0.0053,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 1.5,
+   "tractQ": 12.0,
+   "noise": 0.85,
+   "rough": 0.08,
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.7504,
+    "rivalCosine": 0.5581,
+    "nearestOwn": true,
+    "f0ErrorPercent": 5.61
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2552 Hz \u00b7 59 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0587,
+   "level": 1.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2465.2
+    ],
+    [
+     1.0,
+     2640.9
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.1,
+   "gammaScale": 4.5,
+   "tractQ": 30.0,
+   "noise": 0.12,
+   "rough": 0.65,
+   "am": 12.0,
+   "amDepth": 0.0,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 31,
+    "resynthesisCosine": 0.7014,
+    "rivalCosine": 0.6194,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.52
+   }
+  },
+  {
+   "id": "L03",
+   "label": "learned L03 \u00b7 3134 Hz \u00b7 92 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.092,
+   "level": 0.9,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3136.9
+    ],
+    [
+     0.125,
+     3230.0
+    ],
+    [
+     0.25,
+     2888.5
+    ],
+    [
+     0.5,
+     3241.4
+    ],
+    [
+     1.0,
+     3186.7
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.5,
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
+   "noise": 0.4,
+   "rough": 0.2,
+   "two": true,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
+   "am": 80.0,
+   "amDepth": 0.3,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.6711,
+    "rivalCosine": 0.4095,
+    "nearestOwn": true,
+    "f0ErrorPercent": -5.52
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L02",
+    "L01",
+    "L02",
+    "L02",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L01",
+   "L00",
+   "L03"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "L02": 0.6667,
+    "L01": 0.3333
+   },
+   "L02": {
+    "L02": 0.4839,
+    "end": 0.2258,
+    "L01": 0.2258,
+    "L03": 0.0645
+   },
+   "L03": {
+    "L03": 0.6667,
+    "L02": 0.3333
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.095,
+   "L01>L02": 0.089,
+   "L02>L01": 0.067,
+   "L02>L02": 0.227,
+   "L02>L03": 0.396,
+   "L03>L02": 0.136,
+   "L03>L03": 0.121
+  },
+  "songTyping": {
+   "bouts": 11,
+   "short": 7,
+   "candidates": 4,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 4,
+   "minClusterSize": 6
+  }
+ }
+}

@@ -1,0 +1,183 @@
+{
+ "id": "habia_fuscicauda",
+ "common": "Red-throated Ant-Tanager",
+ "scientific": "Habia fuscicauda",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1094 Hz \u00b7 285 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2853,
+   "level": 0.75,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1338.8
+    ],
+    [
+     0.125,
+     679.1
+    ],
+    [
+     0.25,
+     762.1
+    ],
+    [
+     0.375,
+     1040.9
+    ],
+    [
+     0.5,
+     4494.6
+    ],
+    [
+     0.625,
+     503.7
+    ],
+    [
+     0.75,
+     1141.8
+    ],
+    [
+     0.875,
+     1058.5
+    ],
+    [
+     1.0,
+     1137.4
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.5,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     5856.3,
+     6.0,
+     0.15
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 20.0,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
+   },
+   "two": true,
+   "learned": {
+    "members": 1,
+    "resynthesisCosine": 0.2896,
+    "rivalCosine": -0.3645,
+    "nearestOwn": true,
+    "f0ErrorPercent": -15.88
+   },
+   "respiration": {
+    "tauX": 0.01,
+    "tauP": 0.03162277660168379,
+    "alphaI": 0.05,
+    "alphaRel": 0.125,
+    "forcing": 20.0
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 5760 Hz \u00b7 57 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0573,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5708.0
+    ],
+    [
+     1.0,
+     5813.2
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.35,
+   "formants": [
+    [
+     5856.3,
+     6.0,
+     0.15
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
+   "noise": 0.4,
+   "rough": 0.65,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
+   },
+   "amDepth": 0.45,
+   "am": 12.0,
+   "learned": {
+    "members": 30,
+    "resynthesisCosine": 0.8432,
+    "rivalCosine": -0.501,
+    "nearestOwn": true,
+    "f0ErrorPercent": 9.94
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "L01": 0.8,
+    "end": 0.2
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.117
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 7,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

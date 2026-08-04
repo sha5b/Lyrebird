@@ -1,0 +1,253 @@
+{
+ "id": "lanius_schach",
+ "common": "Long-tailed Shrike",
+ "scientific": "Lanius schach",
+ "bank": "learned",
+ "summary": "Learned from 3 field recordings: 3 syllable types fitted from 44 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 643 Hz \u00b7 140 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.14,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     650.4
+    ],
+    [
+     0.125,
+     608.9
+    ],
+    [
+     0.25,
+     652.2
+    ],
+    [
+     0.5,
+     687.4
+    ],
+    [
+     0.75,
+     536.1
+    ],
+    [
+     0.875,
+     629.3
+    ],
+    [
+     1.0,
+     761.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 19.6,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 5.86,
+    "depth": 0.09
+   },
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.4315,
+    "rivalCosine": -0.3028,
+    "nearestOwn": true,
+    "f0ErrorPercent": 11.04
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 700 Hz \u00b7 355 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.3547,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     577.5
+    ],
+    [
+     0.125,
+     966.6
+    ],
+    [
+     0.25,
+     805.0
+    ],
+    [
+     0.375,
+     840.0
+    ],
+    [
+     0.5,
+     784.7
+    ],
+    [
+     0.625,
+     586.5
+    ],
+    [
+     0.75,
+     556.8
+    ],
+    [
+     1.0,
+     596.0
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     3192.5863689730877,
+     2.0,
+     2.0
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "noise": 0.25,
+   "rough": 0.4,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.025
+   },
+   "fricative": true,
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.1861,
+    "rivalCosine": 0.0312,
+    "nearestOwn": true,
+    "f0ErrorPercent": 14.17
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 3216 Hz \u00b7 229 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2293,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3125.8
+    ],
+    [
+     1.0,
+     3308.3
+    ]
+   ],
+   "attack": 0.06,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 3.0,
+   "noise": 0.4,
+   "rough": 0.65,
+   "amDepth": 0.3,
+   "am": 12.0,
+   "learned": {
+    "members": 35,
+    "resynthesisCosine": 0.2551,
+    "rivalCosine": -0.082,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.35
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L02"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6667,
+    "end": 0.3333
+   },
+   "L01": {
+    "end": 1.0
+   },
+   "L02": {
+    "L02": 0.8,
+    "end": 0.2
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.024,
+   "L02>L02": 0.216
+  },
+  "songTypes": [
+   {
+    "id": "S01",
+    "sequence": [
+     "L02"
+    ],
+    "count": 7,
+    "share": 0.5833,
+    "kind": "repeat"
+   }
+  ],
+  "songTyping": {
+   "bouts": 12,
+   "short": 12,
+   "candidates": 0,
+   "repeatCandidates": 9,
+   "types": 1,
+   "repeatTypes": 1,
+   "inTypes": 7,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

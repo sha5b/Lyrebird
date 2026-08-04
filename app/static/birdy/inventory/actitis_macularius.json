@@ -3,32 +3,30 @@
  "common": "Spotted Sandpiper",
  "scientific": "Actitis macularius",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 3 field recordings: 2 syllable types fitted from 32 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
-   "label": "learned L00 \u00b7 431 Hz \u00b7 109 ms",
+   "label": "learned L00 \u00b7 430 Hz \u00b7 109 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.1093,
-   "level": 1.2,
-   "timbre": "reed",
+   "level": 0.3,
+   "timbre": "pure",
    "contour": [
     [
      0.0,
-     430.0
+     427.5
     ],
     [
      1.0,
      432.6
     ]
    ],
-   "attack": 0.008,
+   "attack": 0.016,
    "hold": false,
    "harmonic": 0.0,
-   "am": 140.0,
-   "amDepth": 0.8,
    "formants": [
     [
      3695.1,
@@ -41,19 +39,18 @@
      0.3333
     ]
    ],
-   "gammaScale": 0.5,
-   "tractQ": 3.0,
-   "vib": {
-    "rate": 12.0,
-    "depth": 0.09
-   },
-   "two": true,
+   "gammaScale": 1.0,
+   "tractQ": 12.0,
+   "noise": 0.0,
+   "rough": 0.08,
+   "amDepth": 0.8,
+   "am": 30.0,
    "learned": {
-    "members": 17,
-    "resynthesisCosine": 0.6552,
-    "rivalCosine": -0.0314,
+    "members": 19,
+    "resynthesisCosine": 0.6062,
+    "rivalCosine": -0.0739,
     "nearestOwn": true,
-    "f0ErrorPercent": -9.86
+    "f0ErrorPercent": 1.03
    }
   },
   {
@@ -63,8 +60,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0507,
-   "level": 1.05,
-   "timbre": "pure",
+   "level": 0.3,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
@@ -79,9 +76,11 @@
      3896.1
     ]
    ],
-   "attack": 0.004,
+   "attack": 0.03,
    "hold": true,
    "harmonic": 0.9,
+   "am": 12.0,
+   "amDepth": 0.8,
    "formants": [
     [
      3695.1,
@@ -94,22 +93,17 @@
      0.3333
     ]
    ],
-   "gammaScale": 0.5,
-   "tractQ": 20.0,
-   "noise": 0.05,
-   "rough": 0.2,
-   "amDepth": 0.45,
-   "am": 45.0,
+   "gammaScale": 1.5,
    "vib": {
-    "rate": 8.0,
-    "depth": 0.01
+    "rate": 14.0,
+    "depth": 0.05
    },
    "learned": {
     "members": 13,
-    "resynthesisCosine": 0.4544,
-    "rivalCosine": -0.0838,
+    "resynthesisCosine": 0.4397,
+    "rivalCosine": 0.0301,
     "nearestOwn": true,
-    "f0ErrorPercent": 3.76
+    "f0ErrorPercent": 6.53
    }
   }
  ],
@@ -141,9 +135,9 @@
   ],
   "transitions": {
    "L00": {
-    "L00": 0.5882,
-    "end": 0.2353,
-    "L02": 0.1765
+    "L00": 0.5263,
+    "end": 0.3158,
+    "L02": 0.1579
    },
    "L02": {
     "L02": 0.6667,
@@ -156,8 +150,8 @@
    "L02>L02": 0.172
   },
   "songTyping": {
-   "bouts": 8,
-   "short": 7,
+   "bouts": 10,
+   "short": 9,
    "candidates": 1,
    "repeatCandidates": 5,
    "types": 0,

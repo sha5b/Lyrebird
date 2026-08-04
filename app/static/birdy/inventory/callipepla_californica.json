@@ -3,69 +3,68 @@
  "common": "California Quail",
  "scientific": "Callipepla californica",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 3 syllable types fitted from 45 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 3 field recordings: 3 syllable types fitted from 46 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L03",
-   "label": "learned L03 \u00b7 733 Hz \u00b7 43 ms",
+   "label": "learned L03 \u00b7 730 Hz \u00b7 40 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0427,
-   "level": 1.2,
-   "timbre": "buzz",
+   "dur": 0.04,
+   "level": 0.3,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
-     716.5
+     750.7
     ],
     [
-     0.375,
-     814.2
+     0.5,
+     758.7
     ],
     [
      0.625,
-     686.0
+     691.0
     ],
     [
      0.75,
-     665.4
+     672.1
     ],
     [
      0.875,
-     777.3
+     762.1
     ],
     [
      1.0,
-     748.5
+     749.5
     ]
    ],
-   "attack": 0.004,
+   "attack": 0.0053,
    "hold": true,
-   "harmonic": 0.35,
+   "harmonic": 0.5,
+   "am": 37.5,
+   "amDepth": 0.0,
    "formants": [
     [
      4378.3,
      6.0,
-     1.0
+     0.6
     ]
    ],
-   "gammaScale": 0.5,
-   "tractQ": 0.0,
-   "noise": 0.8500000238418579,
-   "rough": 0.0,
+   "gammaScale": 2.0,
+   "noise": 0.12,
    "vib": {
     "rate": 8.0,
-    "depth": 0.05
+    "depth": 0.025
    },
-   "amDepth": 0.45,
-   "am": 30.0,
+   "tractQ": 6.0,
    "learned": {
-    "members": 16,
-    "resynthesisCosine": 0.2479,
-    "rivalCosine": 0.3765,
-    "nearestOwn": false,
-    "f0ErrorPercent": 16.62
+    "members": 17,
+    "resynthesisCosine": 0.5315,
+    "rivalCosine": 0.4537,
+    "nearestOwn": true,
+    "f0ErrorPercent": 19.9
    }
   },
   {
@@ -75,8 +74,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.1387,
-   "level": 1.05,
-   "timbre": "buzz",
+   "level": 0.6,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
@@ -111,8 +110,8 @@
      1014.7
     ]
    ],
-   "attack": 0.12,
-   "hold": false,
+   "attack": 0.06,
+   "hold": true,
    "harmonic": 0.0,
    "am": 140.0,
    "amDepth": 0.8,
@@ -120,22 +119,21 @@
     [
      4378.3,
      6.0,
-     1.0
+     0.6
     ]
    ],
    "gammaScale": 0.5,
-   "tractQ": 0.0,
+   "tractQ": 3.0,
    "noise": 0.0,
-   "rough": 0.65,
-   "two": true,
+   "rough": 0.0,
    "vib": {
     "rate": 12.0,
-    "depth": 0.05
+    "depth": 0.09
    },
    "learned": {
     "members": 17,
-    "resynthesisCosine": 0.1214,
-    "rivalCosine": -0.2117,
+    "resynthesisCosine": 0.1791,
+    "rivalCosine": -0.2617,
     "nearestOwn": true,
     "f0ErrorPercent": -9.48
    }
@@ -147,8 +145,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0413,
-   "level": 1.35,
-   "timbre": "buzz",
+   "level": 0.35,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
@@ -167,28 +165,27 @@
      4392.4
     ]
    ],
-   "attack": 0.016,
-   "hold": false,
+   "attack": 0.0053,
+   "hold": true,
    "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.3,
    "formants": [
     [
      4378.3,
      6.0,
-     1.0
+     0.6
     ]
    ],
-   "gammaScale": 0.5,
-   "tractQ": 0.0,
+   "gammaScale": 3.0,
+   "tractQ": 20.0,
    "noise": 0.25,
-   "rough": 0.0,
-   "am": 12.0,
-   "amDepth": 0.6,
    "learned": {
     "members": 12,
-    "resynthesisCosine": 0.3578,
-    "rivalCosine": 0.2473,
+    "resynthesisCosine": 0.3621,
+    "rivalCosine": 0.3119,
     "nearestOwn": true,
-    "f0ErrorPercent": 1.0
+    "f0ErrorPercent": -19.34
    }
   }
  ],
@@ -219,7 +216,8 @@
  ],
  "grammar": {
   "start": [
-   "L04"
+   "L04",
+   "L03"
   ],
   "transitions": {
    "L02": {
@@ -228,9 +226,10 @@
     "L03": 0.1667
    },
    "L03": {
-    "L04": 0.5333,
-    "L03": 0.2667,
-    "L02": 0.2
+    "L04": 0.4706,
+    "L03": 0.2353,
+    "L02": 0.1765,
+    "end": 0.1176
    },
    "L04": {
     "L03": 0.6667,
@@ -248,8 +247,8 @@
    "L04>L04": 0.035
   },
   "songTyping": {
-   "bouts": 2,
-   "short": 0,
+   "bouts": 3,
+   "short": 1,
    "candidates": 2,
    "repeatCandidates": 0,
    "types": 0,

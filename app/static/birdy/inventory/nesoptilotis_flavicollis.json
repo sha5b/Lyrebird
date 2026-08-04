@@ -1,0 +1,194 @@
+{
+ "id": "nesoptilotis_flavicollis",
+ "common": "Yellow-throated Honeyeater",
+ "scientific": "Nesoptilotis flavicollis",
+ "bank": "learned",
+ "summary": "Learned from 3 field recordings: 2 syllable types fitted from 35 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 571 Hz \u00b7 63 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0626,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     649.4
+    ],
+    [
+     0.125,
+     722.0
+    ],
+    [
+     0.25,
+     545.8
+    ],
+    [
+     0.625,
+     554.1
+    ],
+    [
+     0.75,
+     492.8
+    ],
+    [
+     1.0,
+     498.4
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.45,
+   "formants": [
+    [
+     1582.0,
+     6.0,
+     1.0
+    ],
+    [
+     4746.0,
+     6.0,
+     0.3333
+    ],
+    [
+     7910.0,
+     6.0,
+     0.2
+    ],
+    [
+     11073.9,
+     6.0,
+     0.1429
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 0.33409237453968227,
+   "noise": 0.0,
+   "rough": 0.08,
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.7964,
+    "rivalCosine": 0.132,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.17
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1668 Hz \u00b7 53 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0533,
+   "level": 0.75,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1662.4
+    ],
+    [
+     1.0,
+     1674.5
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.2,
+   "formants": [
+    [
+     1582.0,
+     6.0,
+     1.0
+    ],
+    [
+     4746.0,
+     6.0,
+     0.3333
+    ],
+    [
+     7910.0,
+     6.0,
+     0.2
+    ],
+    [
+     11073.9,
+     6.0,
+     0.1429
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 30.0,
+   "noise": 0.0,
+   "rough": 0.2,
+   "amDepth": 0.8,
+   "am": 25.0,
+   "two": true,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 31,
+    "resynthesisCosine": 0.7374,
+    "rivalCosine": 0.1706,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.38
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5,
+    "end": 0.5
+   },
+   "L01": {
+    "L01": 0.8065,
+    "end": 0.1935
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.259,
+   "L01>L01": 0.021
+  },
+  "songTyping": {
+   "bouts": 8,
+   "short": 8,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

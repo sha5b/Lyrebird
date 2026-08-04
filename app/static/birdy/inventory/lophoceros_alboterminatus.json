@@ -3,7 +3,7 @@
  "common": "Crowned Hornbill",
  "scientific": "Lophoceros alboterminatus",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 4 syllable types fitted from 58 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 3 field recordings: 4 syllable types fitted from 59 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
@@ -29,7 +29,7 @@
     ]
    ],
    "attack": 0.03,
-   "hold": true,
+   "hold": false,
    "harmonic": 1.0,
    "formants": [
     [
@@ -50,8 +50,8 @@
    },
    "learned": {
     "members": 11,
-    "resynthesisCosine": 0.646,
-    "rivalCosine": 0.5046,
+    "resynthesisCosine": 0.6503,
+    "rivalCosine": 0.4884,
     "nearestOwn": true,
     "f0ErrorPercent": 6.46
    }
@@ -99,45 +99,16 @@
    ],
    "gammaScale": 1.0,
    "tractQ": 30.0,
-   "noise": 0.12,
-   "rough": 0.0,
-   "am": 25.0,
+   "noise": 0.05,
+   "rough": 0.65,
+   "am": 12.0,
    "amDepth": 0.45,
    "learned": {
     "members": 10,
-    "resynthesisCosine": 0.5131,
-    "rivalCosine": 0.5571,
+    "resynthesisCosine": 0.4927,
+    "rivalCosine": 0.5412,
     "nearestOwn": false,
     "f0ErrorPercent": -24.55
-   },
-   "voices": {
-    "contour": [
-     [
-      0.0,
-      1860.1
-     ],
-     [
-      0.5,
-      1837.9
-     ],
-     [
-      0.625,
-      2114.6
-     ],
-     [
-      0.75,
-      2694.5
-     ],
-     [
-      1.0,
-      4904.7
-     ]
-    ],
-    "gamma": 7294.590695289493,
-    "level": 0.7,
-    "tracheaCm": 2.0,
-    "refl": 0.9,
-    "betaInj": 0.05
    }
   },
   {
@@ -205,17 +176,10 @@
    "am": 80.0,
    "learned": {
     "members": 4,
-    "resynthesisCosine": 0.4146,
-    "rivalCosine": 0.5482,
+    "resynthesisCosine": 0.4509,
+    "rivalCosine": 0.5718,
     "nearestOwn": false,
     "f0ErrorPercent": -8.61
-   },
-   "respiration": {
-    "tauX": 0.01,
-    "tauP": 0.005,
-    "alphaI": 0.05,
-    "alphaRel": 0.125,
-    "forcing": 20.0
    },
    "voices": {
     "contour": [
@@ -256,37 +220,37 @@
     "level": 0.7,
     "tracheaCm": 2.0,
     "refl": 0.9,
-    "betaInj": 0.05
+    "betaInj": 0.1
    }
   },
   {
    "id": "L03",
-   "label": "learned L03 \u00b7 3353 Hz \u00b7 195 ms",
+   "label": "learned L03 \u00b7 3354 Hz \u00b7 195 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.1947,
-   "level": 0.75,
-   "timbre": "buzz",
+   "level": 0.6,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
-     4261.3
+     4257.6
     ],
     [
      0.125,
-     2957.8
+     2958.1
     ],
     [
      1.0,
-     2990.4
+     2996.3
     ]
    ],
-   "attack": 0.016,
+   "attack": 0.008,
    "hold": false,
    "harmonic": 0.0,
-   "am": 80.0,
-   "amDepth": 0.3,
+   "am": 45.0,
+   "amDepth": 0.8,
    "formants": [
     [
      4378.3,
@@ -294,20 +258,16 @@
      1.0
     ]
    ],
-   "gammaScale": 1.5,
-   "tractQ": 12.0,
-   "noise": 0.25,
-   "rough": 0.65,
-   "vib": {
-    "rate": 4.0,
-    "depth": 0.01
-   },
+   "gammaScale": 1.0,
+   "tractQ": 30.0,
+   "noise": 0.12,
+   "rough": 0.4,
    "learned": {
-    "members": 33,
-    "resynthesisCosine": 0.5157,
-    "rivalCosine": 0.3442,
+    "members": 34,
+    "resynthesisCosine": 0.5084,
+    "rivalCosine": 0.3348,
     "nearestOwn": true,
-    "f0ErrorPercent": -10.79
+    "f0ErrorPercent": -10.82
    }
   }
  ],
@@ -352,8 +312,9 @@
     "L03": 1.0
    },
    "L03": {
-    "L03": 0.871,
-    "L02": 0.129
+    "L03": 0.8182,
+    "L02": 0.1212,
+    "end": 0.0606
    }
   },
   "gaps": {
@@ -364,8 +325,8 @@
    "L03>L03": 0.189
   },
   "songTyping": {
-   "bouts": 2,
-   "short": 0,
+   "bouts": 3,
+   "short": 1,
    "candidates": 2,
    "repeatCandidates": 0,
    "types": 0,

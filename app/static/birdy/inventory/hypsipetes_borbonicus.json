@@ -3,109 +3,109 @@
  "common": "R\u00e9union Bulbul",
  "scientific": "Hypsipetes borbonicus",
  "bank": "learned",
- "summary": "Learned from 1 field recordings: 2 syllable types fitted from 26 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 35 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L02",
-   "label": "learned L02 \u00b7 503 Hz \u00b7 128 ms",
+   "label": "learned L02 \u00b7 549 Hz \u00b7 112 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.128,
-   "level": 1.35,
-   "timbre": "buzz",
-   "contour": [
-    [
-     0.0,
-     550.1
-    ],
-    [
-     0.125,
-     485.8
-    ],
-    [
-     0.375,
-     482.1
-    ],
-    [
-     0.5,
-     440.1
-    ],
-    [
-     0.625,
-     562.2
-    ],
-    [
-     0.875,
-     477.1
-    ],
-    [
-     1.0,
-     536.5
-    ]
-   ],
-   "attack": 0.008,
-   "hold": true,
-   "harmonic": 0.0,
-   "formants": [
-    [
-     2631.8,
-     6.0,
-     0.3
-    ],
-    [
-     7895.5,
-     6.0,
-     0.1
-    ]
-   ],
-   "noise": 0.6,
-   "amDepth": 0.0,
-   "am": 45.0,
-   "vib": {
-    "rate": 8.0,
-    "depth": 0.09
-   },
-   "rough": 0.4,
-   "gammaScale": 4.5,
-   "learned": {
-    "members": 7,
-    "resynthesisCosine": 0.4551,
-    "rivalCosine": 0.3689,
-    "nearestOwn": true,
-    "f0ErrorPercent": -6.81
-   }
-  },
-  {
-   "id": "L00",
-   "label": "learned L00 \u00b7 2748 Hz \u00b7 99 ms",
-   "function": "",
-   "confidence": "unlabelled",
-   "refs": [],
-   "dur": 0.0987,
-   "level": 0.3,
+   "dur": 0.112,
+   "level": 0.75,
    "timbre": "pure",
    "contour": [
     [
      0.0,
-     2916.0
+     583.8
+    ],
+    [
+     0.125,
+     603.8
     ],
     [
      0.25,
-     2800.1
+     566.7
+    ],
+    [
+     0.375,
+     498.6
+    ],
+    [
+     0.5,
+     482.3
+    ],
+    [
+     0.625,
+     628.0
     ],
     [
      0.875,
-     2755.2
+     525.3
     ],
     [
      1.0,
-     2535.6
+     524.0
     ]
    ],
-   "attack": 0.03,
+   "attack": 0.004,
    "hold": true,
    "harmonic": 0.0,
+   "gammaScale": 1.5,
+   "tractQ": 0.021404261660617204,
+   "noise": 0.6,
+   "rough": 0.0,
+   "am": 25.0,
+   "amDepth": 0.135,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.5188,
+    "rivalCosine": 0.0172,
+    "nearestOwn": true,
+    "f0ErrorPercent": 9.66
+   }
+  },
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2698 Hz \u00b7 136 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.136,
+   "level": 0.6,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2833.7
+    ],
+    [
+     0.125,
+     2634.2
+    ],
+    [
+     1.0,
+     2632.3
+    ]
+   ],
+   "attack": 0.0373,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 13.89,
+   "amDepth": 0.6,
+   "gammaScale": 1.0,
+   "two": true,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
+   "tractQ": 30.0,
+   "rough": 0.2,
+   "fricative": true,
    "formants": [
     [
      2711.2989394619476,
@@ -118,17 +118,12 @@
      0.5
     ]
    ],
-   "gammaScale": 2.0,
-   "tractQ": 30.0,
-   "amDepth": 0.45,
-   "am": 12.0,
-   "fricative": true,
    "learned": {
-    "members": 19,
-    "resynthesisCosine": 0.3233,
-    "rivalCosine": -0.2564,
+    "members": 25,
+    "resynthesisCosine": 0.3951,
+    "rivalCosine": -0.3323,
     "nearestOwn": true,
-    "f0ErrorPercent": -0.46
+    "f0ErrorPercent": 4.92
    }
   }
  ],
@@ -164,26 +159,27 @@
   ],
   "transitions": {
    "L00": {
-    "L00": 0.7895,
-    "L02": 0.1053,
-    "end": 0.1053
+    "L00": 0.76,
+    "end": 0.16,
+    "L02": 0.08
    },
    "L02": {
-    "L02": 0.5714,
-    "L00": 0.4286
+    "L02": 0.5,
+    "L00": 0.3,
+    "end": 0.2
    }
   },
   "gaps": {
    "L00>L00": 0.072,
    "L00>L02": 0.163,
    "L02>L00": 0.195,
-   "L02>L02": 0.108
+   "L02>L02": 0.12
   },
   "songTyping": {
-   "bouts": 2,
-   "short": 1,
+   "bouts": 6,
+   "short": 5,
    "candidates": 1,
-   "repeatCandidates": 1,
+   "repeatCandidates": 3,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,

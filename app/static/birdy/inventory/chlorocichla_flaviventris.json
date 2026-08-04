@@ -3,7 +3,7 @@
  "common": "Yellow-bellied Greenbul",
  "scientific": "Chlorocichla flaviventris",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 3 field recordings: 2 syllable types fitted from 35 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L02",
@@ -13,7 +13,7 @@
    "refs": [],
    "dur": 0.036,
    "level": 0.30000001192092896,
-   "timbre": "pure",
+   "timbre": "reed",
    "contour": [
     [
      0.0,
@@ -34,152 +34,115 @@
    ],
    "attack": 0.12,
    "hold": true,
-   "harmonic": 0.35,
+   "harmonic": 0.7,
    "am": 12.0,
    "amDepth": 0.85,
-   "formants": [
-    [
-     2447.2,
-     6.0,
-     0.6
-    ],
-    [
-     7341.7,
-     6.0,
-     0.2
-    ]
-   ],
    "gammaScale": 1.5,
    "tractQ": 0.3784638550099617,
    "noise": 0.05,
-   "rough": 0.08,
+   "rough": 0.2,
    "learned": {
     "members": 4,
-    "resynthesisCosine": 0.6823,
-    "rivalCosine": 0.3996,
+    "resynthesisCosine": 0.7025,
+    "rivalCosine": 0.3707,
     "nearestOwn": true,
     "f0ErrorPercent": 8.13
    },
    "respiration": {
     "tauX": 0.11180339887498947,
-    "tauP": 0.2,
+    "tauP": 0.07952707287670507,
     "alphaI": 0.05,
-    "alphaRel": 0.08359253812205276,
-    "forcing": 63.24555320336759
+    "alphaRel": 0.125,
+    "forcing": 35.0
    }
   },
   {
    "id": "L00",
-   "label": "learned L00 \u00b7 1968 Hz \u00b7 213 ms",
+   "label": "learned L00 \u00b7 2071 Hz \u00b7 149 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.2133,
+   "dur": 0.1493,
    "level": 0.3,
    "timbre": "pure",
    "contour": [
     [
      0.0,
-     1878.8
-    ],
-    [
-     0.125,
-     1846.3
+     1901.4
     ],
     [
      0.25,
-     1980.3
+     2056.4
     ],
     [
-     0.375,
-     1921.1
-    ],
-    [
-     0.625,
-     1964.6
+     0.5,
+     2061.1
     ],
     [
      0.75,
-     2097.2
+     2210.3
     ],
     [
      0.875,
-     2019.4
+     2081.2
     ],
     [
      1.0,
-     2052.8
+     2130.6
     ]
    ],
-   "attack": 0.03,
+   "attack": 0.004,
    "hold": true,
    "harmonic": 0.0,
-   "formants": [
-    [
-     2447.2,
-     6.0,
-     0.6
-    ],
-    [
-     7341.7,
-     6.0,
-     0.2
-    ]
-   ],
-   "gammaScale": 0.5,
-   "tractQ": 3.0,
-   "noise": 0.05,
-   "rough": 0.65,
-   "amDepth": 0.8,
    "am": 80.0,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "rough": 0.65,
    "two": true,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.01
+   },
    "learned": {
-    "members": 24,
-    "resynthesisCosine": 0.5121,
-    "rivalCosine": 0.363,
+    "members": 31,
+    "resynthesisCosine": 0.5078,
+    "rivalCosine": 0.3443,
     "nearestOwn": true,
-    "f0ErrorPercent": -3.53
+    "f0ErrorPercent": 1.84
    },
    "voices": {
     "contour": [
      [
       0.0,
-      1409.1
-     ],
-     [
-      0.125,
-      1384.725
+      1426.0500000000002
      ],
      [
       0.25,
-      1485.225
+      1542.3000000000002
      ],
      [
-      0.375,
-      1440.8249999999998
-     ],
-     [
-      0.625,
-      1473.4499999999998
+      0.5,
+      1545.8249999999998
      ],
      [
       0.75,
-      1572.8999999999999
+      1657.7250000000001
      ],
      [
       0.875,
-      1514.5500000000002
+      1560.8999999999999
      ],
      [
       1.0,
-      1539.6000000000001
+      1597.9499999999998
      ]
     ],
-    "gamma": 8653.167798890643,
+    "gamma": 4552.863571662389,
     "level": 0.7,
     "tracheaCm": 2.0,
     "refl": 0.9,
-    "betaInj": 0.02
+    "betaInj": 0.05
    }
   }
  ],
@@ -215,9 +178,9 @@
   ],
   "transitions": {
    "L00": {
-    "L00": 0.6667,
-    "end": 0.25,
-    "L02": 0.0833
+    "L00": 0.7097,
+    "end": 0.2258,
+    "L02": 0.0645
    },
    "L02": {
     "end": 0.5,
@@ -225,15 +188,15 @@
    }
   },
   "gaps": {
-   "L00>L00": 0.263,
+   "L00>L00": 0.207,
    "L00>L02": 0.281,
    "L02>L00": 0.196
   },
   "songTyping": {
-   "bouts": 8,
-   "short": 7,
+   "bouts": 9,
+   "short": 8,
    "candidates": 1,
-   "repeatCandidates": 4,
+   "repeatCandidates": 5,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,

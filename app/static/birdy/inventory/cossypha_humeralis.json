@@ -63,8 +63,8 @@
    "rough": 0.65,
    "learned": {
     "members": 2,
-    "resynthesisCosine": -0.0939,
-    "rivalCosine": 0.0722,
+    "resynthesisCosine": -0.0968,
+    "rivalCosine": 0.0668,
     "nearestOwn": false,
     "f0ErrorPercent": -11.9
    }
@@ -77,7 +77,7 @@
    "refs": [],
    "dur": 0.0453,
    "level": 0.3,
-   "timbre": "pure",
+   "timbre": "reed",
    "contour": [
     [
      0.0,
@@ -93,14 +93,14 @@
    "harmonic": 0.0,
    "gammaScale": 1.0,
    "tractQ": 30.0,
-   "noise": 0.25,
+   "noise": 0.12,
    "rough": 0.08,
    "am": 12.0,
    "amDepth": 0.45,
    "learned": {
     "members": 7,
-    "resynthesisCosine": 0.7205,
-    "rivalCosine": 0.3332,
+    "resynthesisCosine": 0.7142,
+    "rivalCosine": 0.3338,
     "nearestOwn": true,
     "f0ErrorPercent": 0.83
    }
@@ -146,8 +146,8 @@
    "two": true,
    "learned": {
     "members": 26,
-    "resynthesisCosine": 0.8038,
-    "rivalCosine": 0.7393,
+    "resynthesisCosine": 0.8087,
+    "rivalCosine": 0.7429,
     "nearestOwn": true,
     "f0ErrorPercent": 17.6
    }
@@ -182,8 +182,8 @@
    "rough": 0.65,
    "learned": {
     "members": 13,
-    "resynthesisCosine": 0.7894,
-    "rivalCosine": 0.6221,
+    "resynthesisCosine": 0.7888,
+    "rivalCosine": 0.6197,
     "nearestOwn": true,
     "f0ErrorPercent": 1.66
    }
@@ -234,8 +234,8 @@
    "rough": 0.2,
    "learned": {
     "members": 15,
-    "resynthesisCosine": 0.6244,
-    "rivalCosine": 0.6353,
+    "resynthesisCosine": 0.6309,
+    "rivalCosine": 0.6386,
     "nearestOwn": false,
     "f0ErrorPercent": 2.98
    }
@@ -285,8 +285,8 @@
    "tractQ": 6.0,
    "learned": {
     "members": 12,
-    "resynthesisCosine": 0.6036,
-    "rivalCosine": 0.5477,
+    "resynthesisCosine": 0.5979,
+    "rivalCosine": 0.5418,
     "nearestOwn": true,
     "f0ErrorPercent": -5.26
    }
@@ -324,8 +324,8 @@
    "rough": 0.08,
    "learned": {
     "members": 16,
-    "resynthesisCosine": 0.8822,
-    "rivalCosine": 0.6491,
+    "resynthesisCosine": 0.8853,
+    "rivalCosine": 0.6553,
     "nearestOwn": true,
     "f0ErrorPercent": 11.91
    }
@@ -337,8 +337,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.056,
-   "level": 0.6,
-   "timbre": "pure",
+   "level": 0.3,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
@@ -357,12 +357,12 @@
      4514.3
     ]
    ],
-   "attack": 0.008,
+   "attack": 0.016,
    "hold": true,
-   "harmonic": 0.0,
+   "harmonic": 0.1,
    "gammaScale": 1.0,
-   "tractQ": 3.0,
-   "noise": 0.85,
+   "tractQ": 0.16943511976720607,
+   "noise": 0.6,
    "rough": 0.2,
    "am": 140.0,
    "amDepth": 0.6,
@@ -374,21 +374,46 @@
    "formants": [
     [
      654.2237665009833,
-     4.0,
+     2.0,
      2.0
     ],
     [
      5083.5393171114765,
-     4.0,
+     2.0,
      2.0
     ]
    ],
    "learned": {
     "members": 19,
-    "resynthesisCosine": 0.6348,
-    "rivalCosine": 0.5148,
+    "resynthesisCosine": 0.6023,
+    "rivalCosine": 0.3133,
     "nearestOwn": true,
     "f0ErrorPercent": 12.33
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      7005.599999999999
+     ],
+     [
+      0.375,
+      7552.200000000001
+     ],
+     [
+      0.75,
+      6610.650000000001
+     ],
+     [
+      1.0,
+      6771.450000000001
+     ]
+    ],
+    "gamma": 81778.03624709696,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.1
    }
   }
  ],
@@ -500,94 +525,100 @@
      "L07",
      "L01"
     ],
-    "count": 238,
+    "count": 251,
     "species": [
-     "aegithalos_concinnus",
+     "acanthiza_apicalis",
      "agelaioides_badius",
-     "agelaius_tricolor",
      "aix_sponsa",
      "anas_crecca",
-     "anthus_correndera",
+     "anthornis_melanura",
      "anthus_richardi",
      "apteryx_haastii",
      "atlapetes_melanolaemus",
-     "bubo_africanus",
      "buteo_albonotatus",
      "campylorhamphus_falcularius",
+     "capsiempis_flaveola",
      "centronyx_bairdii",
      "chlorostilbon_lucidus",
      "cichlocolaptes_leucophrus",
+     "clibanornis_rubiginosus",
      "cnemathraupis_aureodorsalis",
+     "coccyzus_americanus",
+     "colibri_cyanotus",
      "cossypha_humeralis",
-     "curruca_conspicillata",
-     "cyanocorax_yucatanicus",
-     "dicaeum_erythrorhynchos",
+     "curruca_iberiae",
+     "dendrortyx_leucophrys",
+     "dysithamnus_mentalis",
      "elaenia_flavogaster",
-     "electron_platyrhynchum",
      "euphonia_violacea",
      "eupsittula_pertinax",
      "gerygone_fusca",
      "glareola_maldivarum",
-     "glaucidium_brasilianum",
      "grallaria_kaestneri",
      "granatellus_venustus",
      "herpsilochmus_axillaris",
-     "hirundo_neoxena",
      "hypopyrrhus_pyrohypogaster",
-     "icterus_cucullatus",
      "inezia_tenuirostris",
      "mecocerculus_hellmayri",
      "mecocerculus_stictopterus",
      "melanerpes_cactorum",
+     "melanocorypha_calandra",
      "micrastur_mirandollei",
+     "myadestes_melanops",
+     "myiarchus_cinerascens",
      "myioborus_pictus",
+     "myiomela_leucura",
      "myiothlypis_nigrocristata",
      "myrmornis_torquata",
      "myrmotherula_longicauda",
+     "nectarinia_famosa",
      "otus_spilocephalus",
+     "pachysylvia_decurtata",
      "pachysylvia_semibrunnea",
      "pampa_curvipennis",
      "parvipsitta_pusilla",
-     "passer_italiae",
+     "patagioenas_maculosa",
      "pavo_cristatus",
      "pellorneum_nigrocapitatum",
-     "phaps_chalcoptera",
+     "phainopepla_nitens",
      "pharomachrus_fulgidus",
      "phasianus_versicolor",
-     "phylloscopus_ibericus",
-     "ploceus_capensis",
+     "phylloscopus_examinandus",
      "pluvialis_dominica",
      "pseudoleistes_virescens",
      "psilopogon_asiaticus",
      "psilorhamphus_guttatus",
      "pteroptochos_castaneus",
-     "ptilonorhynchus_violaceus",
      "pycnonotus_capensis",
      "ramphocelus_sanguinolentus",
+     "rynchops_niger",
      "saltatricula_atricollis",
+     "saxicola_maurus",
+     "scytalopus_alvarezlopezi",
      "scytalopus_iraiensis",
      "sphenopsis_frontalis",
      "spinus_magellanicus",
      "spizaetus_ornatus",
-     "spizella_atrogularis",
+     "spizella_breweri",
      "spizixos_semitorques",
      "sylvia_curruca",
      "sylvietta_rufescens",
      "synallaxis_cabanisi",
      "synallaxis_courseni",
+     "terpsiphone_viridis",
      "threskiornis_aethiopicus",
-     "todirostrum_chrysocrotaphum",
+     "thryophilus_sinaloa",
      "todus_mexicanus",
      "trogon_curucui",
-     "trogon_viridis",
      "turdus_pallidus",
-     "turdus_pelios",
-     "upupa_epops",
+     "tyrannus_savana",
+     "urocissa_erythroryncha",
+     "xiphorhynchus_guttatus",
      "zentrygon_albifacies",
      "zimmerius_bolivianus",
      "zoothera_heinei"
     ],
-    "pmi": 0.613
+    "pmi": 0.575
    },
    {
     "sequence": [
@@ -596,18 +627,19 @@
      "L01",
      "L01"
     ],
-    "count": 130,
+    "count": 136,
     "species": [
+     "acanthiza_apicalis",
      "agelaioides_badius",
-     "anthus_correndera",
+     "anthornis_melanura",
      "anthus_richardi",
      "apteryx_haastii",
      "atlapetes_melanolaemus",
-     "bubo_africanus",
      "buteo_albonotatus",
      "centronyx_bairdii",
+     "clibanornis_rubiginosus",
      "cossypha_humeralis",
-     "curruca_conspicillata",
+     "curruca_iberiae",
      "elaenia_flavogaster",
      "euphonia_violacea",
      "gerygone_fusca",
@@ -616,29 +648,34 @@
      "herpsilochmus_axillaris",
      "hypopyrrhus_pyrohypogaster",
      "inezia_tenuirostris",
+     "melanocorypha_calandra",
      "myioborus_pictus",
      "myiothlypis_nigrocristata",
      "myrmornis_torquata",
      "myrmotherula_longicauda",
+     "nectarinia_famosa",
      "pachysylvia_semibrunnea",
      "pampa_curvipennis",
-     "passer_italiae",
+     "patagioenas_maculosa",
      "pellorneum_nigrocapitatum",
-     "phaps_chalcoptera",
      "pharomachrus_fulgidus",
      "phasianus_versicolor",
+     "phylloscopus_examinandus",
      "psilopogon_asiaticus",
      "psilorhamphus_guttatus",
      "saltatricula_atricollis",
+     "scytalopus_alvarezlopezi",
      "scytalopus_iraiensis",
-     "spizella_atrogularis",
+     "spizella_breweri",
      "sylvietta_rufescens",
      "synallaxis_cabanisi",
      "threskiornis_aethiopicus",
-     "turdus_pelios",
+     "thryophilus_sinaloa",
+     "tyrannus_savana",
+     "xiphorhynchus_guttatus",
      "zentrygon_albifacies"
     ],
-    "pmi": 1.221
+    "pmi": 1.13
    },
    {
     "sequence": [
@@ -647,48 +684,50 @@
      "L07",
      "L01"
     ],
-    "count": 118,
+    "count": 121,
     "species": [
-     "aegithalos_concinnus",
-     "agelaius_tricolor",
+     "acanthiza_apicalis",
      "anas_crecca",
-     "anthus_correndera",
      "anthus_richardi",
+     "campylorhamphus_falcularius",
+     "capsiempis_flaveola",
      "cichlocolaptes_leucophrus",
+     "coccyzus_americanus",
      "cossypha_humeralis",
-     "curruca_conspicillata",
+     "curruca_iberiae",
      "euphonia_violacea",
      "glareola_maldivarum",
      "grallaria_kaestneri",
      "granatellus_venustus",
-     "hirundo_neoxena",
      "hypopyrrhus_pyrohypogaster",
-     "icterus_cucullatus",
      "inezia_tenuirostris",
      "mecocerculus_hellmayri",
      "melanerpes_cactorum",
+     "melanocorypha_calandra",
      "myioborus_pictus",
      "myiothlypis_nigrocristata",
      "myrmotherula_longicauda",
+     "pachysylvia_decurtata",
      "pachysylvia_semibrunnea",
-     "passer_italiae",
+     "patagioenas_maculosa",
      "pellorneum_nigrocapitatum",
-     "phaps_chalcoptera",
      "phasianus_versicolor",
-     "ploceus_capensis",
+     "phylloscopus_examinandus",
      "pseudoleistes_virescens",
      "psilopogon_asiaticus",
      "pteroptochos_castaneus",
      "pycnonotus_capensis",
+     "rynchops_niger",
      "saltatricula_atricollis",
-     "spizella_atrogularis",
+     "saxicola_maurus",
      "sylvietta_rufescens",
      "synallaxis_cabanisi",
-     "turdus_pelios",
+     "thryophilus_sinaloa",
+     "xiphorhynchus_guttatus",
      "zentrygon_albifacies",
      "zoothera_heinei"
     ],
-    "pmi": 1.081
+    "pmi": 0.962
    }
   ],
   "songTyping": {

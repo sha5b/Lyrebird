@@ -1,0 +1,170 @@
+{
+ "id": "spizelloides_arborea",
+ "common": "American Tree Sparrow",
+ "scientific": "Spizelloides arborea",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 35 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1747 Hz \u00b7 43 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0427,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1566.5
+    ],
+    [
+     0.625,
+     1678.5
+    ],
+    [
+     0.75,
+     1879.1
+    ],
+    [
+     1.0,
+     1884.2
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     5063.7,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "rough": 0.4,
+   "amDepth": 0.15,
+   "am": 45.0,
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.7107,
+    "rivalCosine": 0.2582,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.53
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4915 Hz \u00b7 51 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0507,
+   "level": 0.75,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4963.2
+    ],
+    [
+     1.0,
+     4867.0
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     1063.304792525682,
+     4.0,
+     0.5
+    ],
+    [
+     5083.5393171114765,
+     4.0,
+     0.5
+    ]
+   ],
+   "noise": 0.85,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.025
+   },
+   "gammaScale": 0.5,
+   "rough": 0.4,
+   "fricative": true,
+   "learned": {
+    "members": 28,
+    "resynthesisCosine": 0.656,
+    "rivalCosine": 0.3425,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.63
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L01",
+    "L01",
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.7143,
+    "L01": 0.2857
+   },
+   "L01": {
+    "L01": 0.7857,
+    "end": 0.1429,
+    "L00": 0.0714
+   }
+  },
+  "gaps": {
+   "L00>L01": 0.364,
+   "L01>L00": 0.461,
+   "L01>L01": 0.056
+  },
+  "songTyping": {
+   "bouts": 9,
+   "short": 8,
+   "candidates": 1,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6
+  }
+ }
+}

@@ -46,8 +46,8 @@
    },
    "learned": {
     "members": 5,
-    "resynthesisCosine": 0.3979,
-    "rivalCosine": 0.4624,
+    "resynthesisCosine": 0.3924,
+    "rivalCosine": 0.4571,
     "nearestOwn": false,
     "f0ErrorPercent": -26.23
    }
@@ -59,7 +59,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.096,
-   "level": 1.2,
+   "level": 0.3,
    "timbre": "pure",
    "contour": [
     [
@@ -92,37 +92,69 @@
     ]
    ],
    "attack": 0.06,
-   "hold": true,
+   "hold": false,
    "harmonic": 0.0,
-   "am": 12.0,
-   "amDepth": 0.8,
+   "am": 45.0,
+   "amDepth": 0.3,
    "formants": [
     [
-     2711.2989394619476,
-     8.0,
-     0.5
-    ],
-    [
-     6830.618534315889,
-     8.0,
-     0.5
+     4378.3,
+     6.0,
+     0.3
     ]
    ],
-   "gammaScale": 0.5,
-   "tractQ": 30.0,
-   "noise": 0.05,
-   "rough": 0.65,
+   "gammaScale": 1.5,
+   "tractQ": 20.0,
+   "noise": 0.12,
+   "rough": 0.0,
+   "two": true,
    "vib": {
     "rate": 34.0,
-    "depth": 0.025
+    "depth": 0.05
    },
-   "fricative": true,
    "learned": {
     "members": 10,
-    "resynthesisCosine": 0.3377,
-    "rivalCosine": 0.2219,
-    "nearestOwn": true,
-    "f0ErrorPercent": -20.84
+    "resynthesisCosine": 0.3481,
+    "rivalCosine": 0.3498,
+    "nearestOwn": false,
+    "f0ErrorPercent": -21.58
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      1148.25
+     ],
+     [
+      0.125,
+      2288.7
+     ],
+     [
+      0.25,
+      2145.5249999999996
+     ],
+     [
+      0.625,
+      2142.0
+     ],
+     [
+      0.75,
+      1381.275
+     ],
+     [
+      0.875,
+      810.5250000000001
+     ],
+     [
+      1.0,
+      516.9749999999999
+     ]
+    ],
+    "gamma": 7738.15786203677,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.02
    }
   },
   {
@@ -186,8 +218,8 @@
    "fricative": true,
    "learned": {
     "members": 27,
-    "resynthesisCosine": 0.779,
-    "rivalCosine": 0.1157,
+    "resynthesisCosine": 0.7874,
+    "rivalCosine": 0.1256,
     "nearestOwn": true,
     "f0ErrorPercent": 0.2
    }
@@ -238,8 +270,8 @@
    "fricative": true,
    "learned": {
     "members": 6,
-    "resynthesisCosine": 0.4951,
-    "rivalCosine": 0.2415,
+    "resynthesisCosine": 0.4905,
+    "rivalCosine": 0.236,
     "nearestOwn": true,
     "f0ErrorPercent": 1.8
    }
@@ -305,6 +337,87 @@
    "L05>L02": 0.188,
    "L05>L05": 0.016
   },
+  "chunks": [
+   {
+    "sequence": [
+     "L05",
+     "L02",
+     "L05",
+     "L05"
+    ],
+    "count": 91,
+    "species": [
+     "amazona_ochrocephala",
+     "anabacerthia_amaurotis",
+     "anser_anser",
+     "aratinga_nenday",
+     "arremon_brunneinucha",
+     "attila_spadiceus",
+     "batis_pririt",
+     "cairina_moschata",
+     "carpococcyx_radiceus",
+     "catharus_bicknelli",
+     "chenonetta_jubata",
+     "cinnyris_usambaricus",
+     "clytoctantes_alixii",
+     "coturnix_coturnix",
+     "cyanoramphus_novaezelandiae",
+     "dendrortyx_barbatus",
+     "diglossa_baritula",
+     "dromococcyx_pavoninus",
+     "dryobates_scalaris",
+     "dysithamnus_stictothorax",
+     "euphagus_carolinus",
+     "ficedula_narcissina",
+     "fringilla_coelebs",
+     "fulica_cristata",
+     "geothlypis_philadelphia",
+     "gracupica_nigricollis",
+     "grallaricula_nana",
+     "halcyon_senegalensis",
+     "hieraaetus_pennatus",
+     "hypocnemis_hypoxantha",
+     "lanius_collurio",
+     "macronus_ptilosus",
+     "malacoptila_striata",
+     "melanerpes_cactorum",
+     "mesembrinibis_cayennensis",
+     "mniotilta_varia",
+     "mohoua_albicilla",
+     "mulleripicus_pulverulentus",
+     "myadestes_ralloides",
+     "notopholia_corusca",
+     "ocyphaps_lophotes",
+     "otus_gurneyi",
+     "oxyura_jamaicensis",
+     "pachycare_flavogriseum",
+     "pachyramphus_major",
+     "phylloscopus_plumbeitarsus",
+     "pipilo_ocai",
+     "progne_tapera",
+     "psarocolius_viridis",
+     "pyrrhura_calliptera",
+     "quiscalus_niger",
+     "rallus_aquaticus",
+     "rufirallus_castaneiceps",
+     "saltator_orenocensis",
+     "sipia_nigricauda",
+     "sitta_ledanti",
+     "spatula_clypeata",
+     "sphyrapicus_nuchalis",
+     "sphyrapicus_thyroideus",
+     "synallaxis_fuscorufa",
+     "syndactyla_ruficollis",
+     "tringa_glareola",
+     "turdus_falcklandii",
+     "tyrannus_savana",
+     "vanellus_chilensis",
+     "vireo_cassinii",
+     "zosterops_erythropleurus"
+    ],
+    "pmi": 0.652
+   }
+  ],
   "songTyping": {
    "bouts": 15,
    "short": 12,

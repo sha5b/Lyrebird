@@ -72,10 +72,17 @@
    "rough": 0.2,
    "learned": {
     "members": 2,
-    "resynthesisCosine": 0.3706,
-    "rivalCosine": -0.2822,
+    "resynthesisCosine": 0.425,
+    "rivalCosine": -0.2651,
     "nearestOwn": true,
     "f0ErrorPercent": -14.6
+   },
+   "respiration": {
+    "tauX": 0.01,
+    "tauP": 0.07952707287670507,
+    "alphaI": 0.05,
+    "alphaRel": 0.08359253812205276,
+    "forcing": 112.46826503806983
    }
   },
   {
@@ -130,13 +137,13 @@
     ]
    ],
    "tractQ": 3.0,
-   "noise": 0.4,
+   "noise": 0.25,
    "rough": 0.4,
    "gammaScale": 3.0,
    "learned": {
     "members": 28,
-    "resynthesisCosine": 0.1413,
-    "rivalCosine": 0.288,
+    "resynthesisCosine": 0.1728,
+    "rivalCosine": 0.2868,
     "nearestOwn": false,
     "f0ErrorPercent": -23.21
    },
@@ -241,8 +248,8 @@
    "fricative": true,
    "learned": {
     "members": 19,
-    "resynthesisCosine": 0.2264,
-    "rivalCosine": -0.0715,
+    "resynthesisCosine": 0.2208,
+    "rivalCosine": -0.0828,
     "nearestOwn": true,
     "f0ErrorPercent": 14.81
    }
@@ -254,8 +261,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0986,
-   "level": 0.9,
-   "timbre": "pure",
+   "level": 0.75,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
@@ -288,7 +295,7 @@
    ],
    "attack": 0.004,
    "hold": true,
-   "harmonic": 0.5,
+   "harmonic": 0.7,
    "formants": [
     [
      4071.3,
@@ -298,19 +305,20 @@
    ],
    "gammaScale": 6.0,
    "tractQ": 3.0,
-   "noise": 0.12,
-   "am": 140.0,
-   "amDepth": 0.3,
+   "noise": 0.25,
+   "rough": 0.0,
+   "am": 12.0,
+   "amDepth": 0.0,
    "vib": {
     "rate": 14.0,
-    "depth": 0.01
+    "depth": 0.09
    },
    "learned": {
     "members": 10,
-    "resynthesisCosine": 0.414,
-    "rivalCosine": 0.2199,
+    "resynthesisCosine": 0.3813,
+    "rivalCosine": 0.1046,
     "nearestOwn": true,
-    "f0ErrorPercent": 5.87
+    "f0ErrorPercent": -11.19
    }
   }
  ],
@@ -373,6 +381,87 @@
    "L05>L03": 0.115,
    "L05>L05": 0.06
   },
+  "chunks": [
+   {
+    "sequence": [
+     "L05",
+     "L02",
+     "L05",
+     "L05"
+    ],
+    "count": 91,
+    "species": [
+     "amazona_ochrocephala",
+     "anabacerthia_amaurotis",
+     "anser_anser",
+     "aratinga_nenday",
+     "arremon_brunneinucha",
+     "attila_spadiceus",
+     "batis_pririt",
+     "cairina_moschata",
+     "carpococcyx_radiceus",
+     "catharus_bicknelli",
+     "chenonetta_jubata",
+     "cinnyris_usambaricus",
+     "clytoctantes_alixii",
+     "coturnix_coturnix",
+     "cyanoramphus_novaezelandiae",
+     "dendrortyx_barbatus",
+     "diglossa_baritula",
+     "dromococcyx_pavoninus",
+     "dryobates_scalaris",
+     "dysithamnus_stictothorax",
+     "euphagus_carolinus",
+     "ficedula_narcissina",
+     "fringilla_coelebs",
+     "fulica_cristata",
+     "geothlypis_philadelphia",
+     "gracupica_nigricollis",
+     "grallaricula_nana",
+     "halcyon_senegalensis",
+     "hieraaetus_pennatus",
+     "hypocnemis_hypoxantha",
+     "lanius_collurio",
+     "macronus_ptilosus",
+     "malacoptila_striata",
+     "melanerpes_cactorum",
+     "mesembrinibis_cayennensis",
+     "mniotilta_varia",
+     "mohoua_albicilla",
+     "mulleripicus_pulverulentus",
+     "myadestes_ralloides",
+     "notopholia_corusca",
+     "ocyphaps_lophotes",
+     "otus_gurneyi",
+     "oxyura_jamaicensis",
+     "pachycare_flavogriseum",
+     "pachyramphus_major",
+     "phylloscopus_plumbeitarsus",
+     "pipilo_ocai",
+     "progne_tapera",
+     "psarocolius_viridis",
+     "pyrrhura_calliptera",
+     "quiscalus_niger",
+     "rallus_aquaticus",
+     "rufirallus_castaneiceps",
+     "saltator_orenocensis",
+     "sipia_nigricauda",
+     "sitta_ledanti",
+     "spatula_clypeata",
+     "sphyrapicus_nuchalis",
+     "sphyrapicus_thyroideus",
+     "synallaxis_fuscorufa",
+     "syndactyla_ruficollis",
+     "tringa_glareola",
+     "turdus_falcklandii",
+     "tyrannus_savana",
+     "vanellus_chilensis",
+     "vireo_cassinii",
+     "zosterops_erythropleurus"
+    ],
+    "pmi": 0.652
+   }
+  ],
   "songTyping": {
    "bouts": 2,
    "short": 1,

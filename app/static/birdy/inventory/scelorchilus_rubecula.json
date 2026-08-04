@@ -3,7 +3,7 @@
  "common": "Chucao Tapaculo",
  "scientific": "Scelorchilus rubecula",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 3 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
@@ -13,7 +13,7 @@
    "refs": [],
    "dur": 0.044,
    "level": 0.3,
-   "timbre": "pure",
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
@@ -44,11 +44,9 @@
      494.3
     ]
    ],
-   "attack": 0.016,
-   "hold": false,
-   "harmonic": 0.35,
-   "am": 25.0,
-   "amDepth": 0.6,
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.7,
    "formants": [
     [
      2447.2,
@@ -61,46 +59,43 @@
      0.3333
     ]
    ],
-   "noise": 0.0,
-   "rough": 0.2,
-   "vib": {
-    "rate": 34.0,
-    "depth": 0.025
-   },
-   "gammaScale": 1.5,
-   "tractQ": 3.0,
+   "gammaScale": 2.0,
+   "tractQ": 0.0,
+   "noise": 0.05,
+   "rough": 0.0,
+   "amDepth": 0.8,
+   "am": 140.0,
+   "two": false,
    "learned": {
     "members": 6,
-    "resynthesisCosine": 0.4002,
-    "rivalCosine": 0.032,
+    "resynthesisCosine": 0.4183,
+    "rivalCosine": 0.0692,
     "nearestOwn": true,
-    "f0ErrorPercent": -4.4
+    "f0ErrorPercent": 19.5
    }
   },
   {
-   "id": "L02",
-   "label": "learned L02 \u00b7 2430 Hz \u00b7 43 ms",
+   "id": "L03",
+   "label": "learned L03 \u00b7 2411 Hz \u00b7 75 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0427,
+   "dur": 0.0747,
    "level": 1.35,
-   "timbre": "reed",
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
-     2394.9
+     2388.1
     ],
     [
      1.0,
-     2465.2
+     2433.8
     ]
    ],
-   "attack": 0.008,
+   "attack": 0.016,
    "hold": true,
    "harmonic": 0.0,
-   "am": 12.0,
-   "amDepth": 0.3,
    "formants": [
     [
      2447.2,
@@ -113,29 +108,34 @@
      0.3333
     ]
    ],
-   "gammaScale": 0.5,
+   "gammaScale": 6.0,
    "tractQ": 30.0,
-   "noise": 0.6,
-   "rough": 0.4,
+   "noise": 0.05,
+   "rough": 0.0,
+   "two": true,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.01
+   },
    "learned": {
-    "members": 19,
-    "resynthesisCosine": 0.4735,
-    "rivalCosine": -0.2893,
+    "members": 21,
+    "resynthesisCosine": 0.494,
+    "rivalCosine": -0.1692,
     "nearestOwn": true,
-    "f0ErrorPercent": -1.23
+    "f0ErrorPercent": 7.76
    },
    "voices": {
     "contour": [
      [
       0.0,
-      1796.1750000000002
+      1791.0749999999998
      ],
      [
       1.0,
-      1848.8999999999999
+      1825.3500000000001
      ]
     ],
-    "gamma": 10681.359984154331,
+    "gamma": 10598.038139976046,
     "level": 0.7,
     "tracheaCm": 2.0,
     "refl": 0.9,
@@ -152,8 +152,8 @@
    "confidence": "invented",
    "refs": [],
    "sequence": [
-    "L02",
-    "L02"
+    "L03",
+    "L03"
    ],
    "gaps": [
     0.06
@@ -162,7 +162,7 @@
  ],
  "grammar": {
   "start": [
-   "L02",
+   "L03",
    "L00"
   ],
   "transitions": {
@@ -170,18 +170,18 @@
     "L00": 0.6,
     "end": 0.4
    },
-   "L02": {
-    "L02": 0.7778,
-    "end": 0.2222
+   "L03": {
+    "L03": 0.7,
+    "end": 0.3
    }
   },
   "gaps": {
    "L00>L00": 0.72,
-   "L02>L02": 0.095
+   "L03>L03": 0.095
   },
   "songTyping": {
-   "bouts": 6,
-   "short": 6,
+   "bouts": 8,
+   "short": 8,
    "candidates": 0,
    "repeatCandidates": 4,
    "types": 0,

@@ -3,7 +3,7 @@
  "common": "Giant Eagle Owl",
  "scientific": "Ketupa lactea",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 33 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 3 field recordings: 2 syllable types fitted from 35 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
@@ -24,17 +24,17 @@
      477.1
     ]
    ],
-   "attack": 0.004,
+   "attack": 0.008,
    "hold": true,
    "harmonic": 0.0,
    "formants": [
     [
-     2696.4,
+     2631.8,
      6.0,
      0.15
     ],
     [
-     8089.2,
+     7895.5,
      6.0,
      0.05
     ]
@@ -42,92 +42,84 @@
    "gammaScale": 2.0,
    "tractQ": 3.0,
    "noise": 0.05,
-   "rough": 0.0,
+   "rough": 0.08,
    "two": false,
-   "amDepth": 0.8,
    "am": 140.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.025
+   },
    "learned": {
     "members": 30,
-    "resynthesisCosine": 0.8464,
-    "rivalCosine": -0.3592,
+    "resynthesisCosine": 0.7287,
+    "rivalCosine": -0.2651,
     "nearestOwn": true,
     "f0ErrorPercent": 3.39
-   },
-   "voices": {
-    "contour": [
-     [
-      0.0,
-      235.5
-     ],
-     [
-      1.0,
-      238.55
-     ]
-    ],
-    "gamma": 2778.5017769751917,
-    "level": 0.7,
-    "tracheaCm": 2.0,
-    "refl": 0.9,
-    "betaInj": 0.1
    }
   },
   {
    "id": "L02",
-   "label": "learned L02 \u00b7 3056 Hz \u00b7 83 ms",
+   "label": "learned L02 \u00b7 2503 Hz \u00b7 99 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0827,
-   "level": 1.35,
-   "timbre": "reed",
+   "dur": 0.0987,
+   "level": 1.05,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
-     3311.0
+     2931.3
     ],
     [
      0.25,
-     3318.9
+     2828.2
     ],
     [
      0.375,
-     2778.0
+     2114.2
     ],
     [
      0.875,
-     2722.8
+     2068.9
     ],
     [
      1.0,
-     3207.2
+     2709.2
     ]
    ],
-   "attack": 0.03,
+   "attack": 0.04,
    "hold": false,
    "harmonic": 0.0,
-   "am": 13.39,
-   "amDepth": 0.49,
+   "am": 12.0,
+   "amDepth": 0.3,
    "formants": [
     [
-     3192.5863689730877,
-     8.0,
-     1.0
+     2631.8,
+     6.0,
+     0.15
     ],
     [
-     6830.618534315889,
-     8.0,
-     1.0
+     7895.5,
+     6.0,
+     0.05
     ]
    ],
    "gammaScale": 6.0,
-   "tractQ": 3.0,
-   "fricative": true,
+   "tractQ": 6.0,
+   "rough": 0.08,
+   "two": false,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.01
+   },
    "learned": {
-    "members": 3,
-    "resynthesisCosine": 0.7644,
-    "rivalCosine": -0.3745,
+    "members": 5,
+    "resynthesisCosine": 0.6136,
+    "rivalCosine": -0.3632,
     "nearestOwn": true,
-    "f0ErrorPercent": 0.64
+    "f0ErrorPercent": -14.99
    }
   }
  ],
@@ -164,11 +156,11 @@
   },
   "gaps": {
    "L00>L00": 0.236,
-   "L02>L02": 0.04
+   "L02>L02": 0.032
   },
   "songTyping": {
-   "bouts": 6,
-   "short": 6,
+   "bouts": 7,
+   "short": 7,
    "candidates": 0,
    "repeatCandidates": 6,
    "types": 0,

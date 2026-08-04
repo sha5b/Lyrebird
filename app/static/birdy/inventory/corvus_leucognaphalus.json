@@ -3,15 +3,15 @@
  "common": "White-necked Crow",
  "scientific": "Corvus leucognaphalus",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 3 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
-   "label": "learned L00 \u00b7 1577 Hz \u00b7 37 ms",
+   "label": "learned L00 \u00b7 1383 Hz \u00b7 40 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0373,
+   "dur": 0.04,
    "level": 0.3,
    "timbre": "buzz",
    "contour": [
@@ -24,31 +24,35 @@
      1676.2
     ],
     [
+     0.25,
+     1684.1
+    ],
+    [
      0.375,
-     1692.0
+     1498.2
     ],
     [
      0.5,
-     1381.5
+     1153.4
+    ],
+    [
+     0.625,
+     1273.9
     ],
     [
      0.75,
-     1174.7
-    ],
-    [
-     0.875,
-     1650.8
+     1098.0
     ],
     [
      1.0,
-     1777.1
+     1093.9
     ]
    ],
-   "attack": 0.008,
-   "hold": true,
-   "harmonic": 0.7,
-   "am": 12.0,
-   "amDepth": 0.45,
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.8,
    "formants": [
     [
      4378.3,
@@ -56,20 +60,20 @@
      1.0
     ]
    ],
-   "gammaScale": 2.0,
+   "gammaScale": 3.0,
    "tractQ": 0.0,
-   "noise": 0.25,
-   "rough": 0.2,
+   "noise": 0.85,
+   "rough": 0.65,
    "vib": {
-    "rate": 14.0,
+    "rate": 4.0,
     "depth": 0.09
    },
    "learned": {
-    "members": 15,
-    "resynthesisCosine": 0.5172,
-    "rivalCosine": 0.2604,
+    "members": 17,
+    "resynthesisCosine": 0.6406,
+    "rivalCosine": 0.3159,
     "nearestOwn": true,
-    "f0ErrorPercent": 23.32
+    "f0ErrorPercent": 12.98
    }
   },
   {
@@ -137,8 +141,8 @@
    "am": 30.0,
    "learned": {
     "members": 13,
-    "resynthesisCosine": 0.8125,
-    "rivalCosine": -0.1056,
+    "resynthesisCosine": 0.8075,
+    "rivalCosine": -0.0876,
     "nearestOwn": true,
     "f0ErrorPercent": -23.55
    }
@@ -153,8 +157,8 @@
    "confidence": "invented",
    "refs": [],
    "sequence": [
-    "L01",
-    "L01"
+    "L00",
+    "L00"
    ],
    "gaps": [
     0.06
@@ -163,13 +167,13 @@
  ],
  "grammar": {
   "start": [
-   "L01",
-   "L00"
+   "L00",
+   "L01"
   ],
   "transitions": {
    "L00": {
-    "L00": 0.5714,
-    "end": 0.4286
+    "L00": 0.5625,
+    "end": 0.4375
    },
    "L01": {
     "end": 0.6154,
@@ -177,12 +181,12 @@
    }
   },
   "gaps": {
-   "L00>L00": 0.123,
+   "L00>L00": 0.104,
    "L01>L01": 0.477
   },
   "songTyping": {
-   "bouts": 14,
-   "short": 14,
+   "bouts": 15,
+   "short": 15,
    "candidates": 0,
    "repeatCandidates": 4,
    "types": 0,

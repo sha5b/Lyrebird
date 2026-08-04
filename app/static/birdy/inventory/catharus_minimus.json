@@ -3,7 +3,7 @@
  "common": "Gray-cheeked Thrush",
  "scientific": "Catharus minimus",
  "bank": "learned",
- "summary": "Learned from 1 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 39 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L02",
@@ -43,55 +43,130 @@
    "two": true,
    "learned": {
     "members": 3,
-    "resynthesisCosine": 0.8935,
-    "rivalCosine": -0.3047,
+    "resynthesisCosine": 0.896,
+    "rivalCosine": -0.0561,
     "nearestOwn": true,
     "f0ErrorPercent": 6.38
    }
   },
   {
-   "id": "L01",
-   "label": "learned L01 \u00b7 4251 Hz \u00b7 155 ms",
+   "id": "L03",
+   "label": "learned L03 \u00b7 2141 Hz \u00b7 379 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.1547,
-   "level": 0.6,
-   "timbre": "buzz",
+   "dur": 0.3786,
+   "level": 0.3,
+   "timbre": "pure",
    "contour": [
     [
      0.0,
-     4345.2
+     4492.2
+    ],
+    [
+     0.125,
+     4854.6
+    ],
+    [
+     0.25,
+     662.0
+    ],
+    [
+     0.375,
+     4885.0
     ],
     [
      0.5,
-     4657.4
+     1818.6
     ],
     [
      0.625,
-     4032.1
+     1817.8
     ],
     [
      0.75,
-     3953.6
+     1966.0
     ],
     [
      0.875,
-     4371.1
+     2866.4
     ],
     [
      1.0,
-     4182.4
+     719.6
     ]
    ],
    "attack": 0.03,
    "hold": true,
    "harmonic": 0.0,
-   "am": 13.16,
-   "amDepth": 0.45,
+   "am": 140.0,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 3.0,
+   "rough": 0.4,
+   "noise": 0.05,
    "vib": {
-    "rate": 8.0,
+    "rate": 34.0,
     "depth": 0.05
+   },
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.3493,
+    "rivalCosine": 0.573,
+    "nearestOwn": false,
+    "f0ErrorPercent": 13.48
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4586 Hz \u00b7 159 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1587,
+   "level": 0.6,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4581.2
+    ],
+    [
+     0.5,
+     4811.1
+    ],
+    [
+     0.625,
+     4463.6
+    ],
+    [
+     0.75,
+     4407.4
+    ],
+    [
+     0.875,
+     4748.4
+    ],
+    [
+     1.0,
+     4515.8
+    ]
+   ],
+   "attack": 0.0626,
+   "hold": true,
+   "harmonic": 0.35,
+   "am": 13.52,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.091
    },
    "formants": [
     [
@@ -100,14 +175,15 @@
      0.6
     ]
    ],
-   "gammaScale": 3.0,
+   "gammaScale": 2.0,
    "tractQ": 30.0,
+   "two": true,
    "learned": {
-    "members": 27,
-    "resynthesisCosine": 0.7518,
-    "rivalCosine": -0.557,
+    "members": 32,
+    "resynthesisCosine": 0.7285,
+    "rivalCosine": 0.1334,
     "nearestOwn": true,
-    "f0ErrorPercent": -17.14
+    "f0ErrorPercent": -27.17
    }
   }
  ],
@@ -131,26 +207,31 @@
  "grammar": {
   "start": [
    "L01",
-   "L02"
+   "L02",
+   "L03"
   ],
   "transitions": {
    "L01": {
-    "L01": 0.8148,
-    "end": 0.1852
+    "L01": 0.7188,
+    "end": 0.2812
    },
    "L02": {
     "L02": 1.0
+   },
+   "L03": {
+    "L03": 1.0
    }
   },
   "gaps": {
    "L01>L01": 0.053,
-   "L02>L02": 0.155
+   "L02>L02": 0.155,
+   "L03>L03": 0.037
   },
   "songTyping": {
-   "bouts": 5,
-   "short": 5,
+   "bouts": 10,
+   "short": 10,
    "candidates": 0,
-   "repeatCandidates": 4,
+   "repeatCandidates": 5,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,

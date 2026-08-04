@@ -1,0 +1,149 @@
+{
+ "id": "otus_senegalensis",
+ "common": "African Scops-Owl",
+ "scientific": "Otus senegalensis",
+ "bank": "learned",
+ "summary": "Learned from 3 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 991 Hz \u00b7 299 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2987,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     946.8
+    ],
+    [
+     0.125,
+     1013.1
+    ],
+    [
+     0.25,
+     998.5
+    ],
+    [
+     0.375,
+     1077.1
+    ],
+    [
+     1.0,
+     925.9
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 0.7723806091151564,
+   "tractQ": 30.0,
+   "noise": 0.12,
+   "rough": 0.08,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.8603,
+    "rivalCosine": -0.3782,
+    "nearestOwn": true,
+    "f0ErrorPercent": 5.58
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 7458 Hz \u00b7 93 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0933,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     7550.1
+    ],
+    [
+     0.125,
+     7326.6
+    ],
+    [
+     1.0,
+     7499.3
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "gammaScale": 4.5,
+   "tractQ": 0.0,
+   "noise": 0.85,
+   "rough": 0.4,
+   "fricative": true,
+   "formants": [
+    [
+     3741.776844777196,
+     2.0,
+     1.0
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     1.0
+    ]
+   ],
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.8413,
+    "rivalCosine": -0.1866,
+    "nearestOwn": true,
+    "f0ErrorPercent": 10.32
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00"
+   ],
+   "gaps": []
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "L01": 0.875,
+    "end": 0.125
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.061
+  },
+  "songTyping": {
+   "bouts": 14,
+   "short": 14,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

@@ -3,7 +3,7 @@
  "common": "Kurrichane Thrush",
  "scientific": "Turdus libonyana",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 26 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 3 field recordings: 2 syllable types fitted from 35 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L02",
@@ -80,38 +80,44 @@
    "gammaScale": 2.0,
    "learned": {
     "members": 2,
-    "resynthesisCosine": 0.7298,
-    "rivalCosine": 0.1153,
+    "resynthesisCosine": 0.7275,
+    "rivalCosine": 0.2687,
     "nearestOwn": true,
     "f0ErrorPercent": 18.82
    }
   },
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 3081 Hz \u00b7 155 ms",
+   "label": "learned L01 \u00b7 3134 Hz \u00b7 163 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.1547,
-   "level": 0.6,
+   "dur": 0.1627,
+   "level": 0.3,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     3277.5
+     3302.0
     ],
     [
-     0.125,
-     3281.7
+     0.25,
+     3387.7
+    ],
+    [
+     0.75,
+     3072.6
     ],
     [
      1.0,
-     2718.1
+     2805.6
     ]
    ],
-   "attack": 0.004,
+   "attack": 0.03,
    "hold": true,
    "harmonic": 0.0,
+   "am": 80.0,
+   "amDepth": 0.0,
    "formants": [
     [
      3195.0,
@@ -125,21 +131,19 @@
     ]
    ],
    "gammaScale": 0.5,
-   "tractQ": 30.0,
+   "tractQ": 6.0,
    "noise": 0.05,
-   "rough": 0.2,
    "vib": {
-    "rate": 14.0,
-    "depth": 0.025
+    "rate": 12.0,
+    "depth": 0.09
    },
-   "amDepth": 0.45,
-   "am": 25.0,
+   "rough": 0.4,
    "learned": {
-    "members": 24,
-    "resynthesisCosine": 0.7424,
-    "rivalCosine": 0.1023,
+    "members": 33,
+    "resynthesisCosine": 0.7932,
+    "rivalCosine": 0.2458,
     "nearestOwn": true,
-    "f0ErrorPercent": -1.93
+    "f0ErrorPercent": -0.47
    }
   }
  ],
@@ -167,24 +171,35 @@
   ],
   "transitions": {
    "L01": {
-    "L01": 0.75,
-    "end": 0.25
+    "L01": 0.7576,
+    "end": 0.2424
    },
    "L02": {
     "end": 1.0
    }
   },
   "gaps": {
-   "L01>L01": 0.097
+   "L01>L01": 0.141
   },
+  "songTypes": [
+   {
+    "id": "S01",
+    "sequence": [
+     "L01"
+    ],
+    "count": 6,
+    "share": 0.6,
+    "kind": "repeat"
+   }
+  ],
   "songTyping": {
-   "bouts": 8,
-   "short": 8,
+   "bouts": 10,
+   "short": 10,
    "candidates": 0,
-   "repeatCandidates": 4,
-   "types": 0,
-   "repeatTypes": 0,
-   "inTypes": 0,
+   "repeatCandidates": 6,
+   "types": 1,
+   "repeatTypes": 1,
+   "inTypes": 6,
    "unplaced": 0,
    "minClusterSize": 6
   }

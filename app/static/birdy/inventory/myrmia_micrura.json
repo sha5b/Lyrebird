@@ -66,8 +66,8 @@
    "amDepth": 0.3,
    "learned": {
     "members": 11,
-    "resynthesisCosine": 0.5056,
-    "rivalCosine": 0.6127,
+    "resynthesisCosine": 0.498,
+    "rivalCosine": 0.6076,
     "nearestOwn": false,
     "f0ErrorPercent": -2.09
    }
@@ -110,8 +110,8 @@
    "two": true,
    "learned": {
     "members": 8,
-    "resynthesisCosine": 0.6664,
-    "rivalCosine": 0.5132,
+    "resynthesisCosine": 0.6652,
+    "rivalCosine": 0.5097,
     "nearestOwn": true,
     "f0ErrorPercent": 31.68
    }
@@ -180,8 +180,8 @@
    },
    "learned": {
     "members": 6,
-    "resynthesisCosine": 0.5285,
-    "rivalCosine": 0.7622,
+    "resynthesisCosine": 0.5246,
+    "rivalCosine": 0.7595,
     "nearestOwn": false,
     "f0ErrorPercent": 11.44
    }
@@ -253,8 +253,8 @@
    },
    "learned": {
     "members": 5,
-    "resynthesisCosine": 0.7307,
-    "rivalCosine": 0.7203,
+    "resynthesisCosine": 0.729,
+    "rivalCosine": 0.7189,
     "nearestOwn": true,
     "f0ErrorPercent": 0.13
    }
@@ -266,8 +266,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.2133,
-   "level": 0.75,
-   "timbre": "pure",
+   "level": 0.3,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
@@ -306,11 +306,9 @@
      3819.0
     ]
    ],
-   "attack": 0.112,
+   "attack": 0.12,
    "hold": false,
-   "harmonic": 1.0,
-   "am": 80.0,
-   "amDepth": 0.45,
+   "harmonic": 0.9,
    "formants": [
     [
      6000.0,
@@ -318,20 +316,19 @@
      1.0
     ]
    ],
+   "gammaScale": 1.0,
    "tractQ": 3.0,
    "noise": 0.85,
    "rough": 0.65,
-   "gammaScale": 1.5,
-   "vib": {
-    "rate": 12.0,
-    "depth": 0.05
-   },
+   "amDepth": 0.6,
+   "am": 12.0,
+   "two": true,
    "learned": {
     "members": 5,
-    "resynthesisCosine": 0.7198,
-    "rivalCosine": 0.6492,
+    "resynthesisCosine": 0.7199,
+    "rivalCosine": 0.6211,
     "nearestOwn": true,
-    "f0ErrorPercent": 12.27
+    "f0ErrorPercent": -0.04
    }
   },
   {
@@ -405,8 +402,8 @@
    "fricative": true,
    "learned": {
     "members": 4,
-    "resynthesisCosine": 0.6492,
-    "rivalCosine": 0.6229,
+    "resynthesisCosine": 0.6498,
+    "rivalCosine": 0.6224,
     "nearestOwn": true,
     "f0ErrorPercent": 5.08
    }
@@ -418,8 +415,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0293,
-   "level": 0.35,
-   "timbre": "reed",
+   "level": 0.45,
+   "timbre": "pure",
    "contour": [
     [
      0.0,
@@ -436,17 +433,17 @@
    "formants": [
     [
      1919.8885853658714,
-     2.0,
+     4.0,
      0.5
     ],
     [
      6830.618534315889,
-     2.0,
+     4.0,
      0.5
     ]
    ],
    "gammaScale": 1.5,
-   "tractQ": 0.0,
+   "tractQ": 12.0,
    "noise": 0.85,
    "vib": {
     "rate": 12.0,
@@ -455,8 +452,8 @@
    "fricative": true,
    "learned": {
     "members": 20,
-    "resynthesisCosine": 0.8631,
-    "rivalCosine": 0.7343,
+    "resynthesisCosine": 0.8548,
+    "rivalCosine": 0.7294,
     "nearestOwn": true,
     "f0ErrorPercent": -1.49
    }
@@ -504,8 +501,8 @@
    "fricative": true,
    "learned": {
     "members": 63,
-    "resynthesisCosine": 0.7927,
-    "rivalCosine": 0.6636,
+    "resynthesisCosine": 0.7888,
+    "rivalCosine": 0.6583,
     "nearestOwn": true,
     "f0ErrorPercent": -2.45
    }
@@ -616,25 +613,26 @@
     "species": [
      "aegithina_tiphia",
      "cacicus_oseryi",
-     "calliope_calliope",
      "catharus_fuscater",
+     "cercomacroides_tyrannina",
      "cossypha_dichroa",
-     "cossypha_heuglini",
      "cranioleuca_hellmayri",
      "curruca_subalpina",
      "cyanocompsa_parellina",
+     "dacelo_novaeguineae",
+     "diglossa_humeralis",
      "empidonax_minimus",
-     "icterus_parisorum",
-     "myiopagis_viridicata",
+     "larus_marinus",
      "myrmia_micrura",
-     "piaya_cayana",
+     "myrmotherula_axillaris",
+     "promerops_cafer",
      "psilopogon_asiaticus",
      "selasphorus_ardens",
      "semnornis_ramphastinus",
      "zentrygon_albifacies",
      "zoothera_heinei"
     ],
-    "pmi": 1.299
+    "pmi": 1.244
    }
   ],
   "songTyping": {

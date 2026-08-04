@@ -1,0 +1,233 @@
+{
+ "id": "laniarius_major",
+ "common": "Tropical Boubou",
+ "scientific": "Laniarius major",
+ "bank": "learned",
+ "summary": "Learned from 3 field recordings: 3 syllable types fitted from 38 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1530 Hz \u00b7 473 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.4734,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1524.8
+    ],
+    [
+     1.0,
+     1536.2
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.1,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.15
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 12.0,
+   "noise": 0.05,
+   "rough": 0.4,
+   "amDepth": 0.8,
+   "am": 25.0,
+   "two": true,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.8318,
+    "rivalCosine": 0.0143,
+    "nearestOwn": true,
+    "f0ErrorPercent": -4.08
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2036 Hz \u00b7 53 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0533,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1984.8
+    ],
+    [
+     0.75,
+     1945.7
+    ],
+    [
+     0.875,
+     2102.5
+    ],
+    [
+     1.0,
+     2115.2
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.35,
+   "am": 45.0,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.15
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 6.0,
+   "noise": 0.85,
+   "rough": 0.0,
+   "two": true,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.9043,
+    "rivalCosine": -0.0846,
+    "nearestOwn": true,
+    "f0ErrorPercent": 8.33
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 4192 Hz \u00b7 56 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.056,
+   "level": 1.2,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     4067.0
+    ],
+    [
+     0.75,
+     4260.1
+    ],
+    [
+     0.875,
+     4147.1
+    ],
+    [
+     1.0,
+     4299.6
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.2,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.15
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 0.3010324125211701,
+   "noise": 0.0,
+   "rough": 0.0,
+   "am": 140.0,
+   "amDepth": 0.6,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.6585,
+    "rivalCosine": -0.0155,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.95
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L02",
+    "L01",
+    "L01",
+    "L02",
+    "L02"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.75,
+    "end": 0.25
+   },
+   "L01": {
+    "L01": 0.8947,
+    "L02": 0.1053
+   },
+   "L02": {
+    "end": 0.6,
+    "L02": 0.2,
+    "L01": 0.2
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.912,
+   "L01>L01": 0.48,
+   "L01>L02": 0.572,
+   "L02>L01": 0.063,
+   "L02>L02": 0.071
+  },
+  "songTyping": {
+   "bouts": 9,
+   "short": 7,
+   "candidates": 2,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6
+  }
+ }
+}

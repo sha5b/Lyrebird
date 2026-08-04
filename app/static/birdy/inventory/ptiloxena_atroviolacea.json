@@ -1,0 +1,178 @@
+{
+ "id": "ptiloxena_atroviolacea",
+ "common": "Cuban Blackbird",
+ "scientific": "Ptiloxena atroviolacea",
+ "bank": "learned",
+ "summary": "Learned from 3 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 492 Hz \u00b7 53 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0533,
+   "level": 1.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     496.0
+    ],
+    [
+     0.125,
+     505.7
+    ],
+    [
+     0.375,
+     436.5
+    ],
+    [
+     0.5,
+     511.4
+    ],
+    [
+     0.625,
+     500.2
+    ],
+    [
+     0.75,
+     530.4
+    ],
+    [
+     0.875,
+     480.3
+    ],
+    [
+     1.0,
+     478.1
+    ]
+   ],
+   "attack": 0.004,
+   "hold": false,
+   "harmonic": 0.5,
+   "am": 25.0,
+   "amDepth": 0.8,
+   "gammaScale": 3.0,
+   "tractQ": 20.0,
+   "noise": 0.4,
+   "rough": 0.65,
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.8359,
+    "rivalCosine": -0.2443,
+    "nearestOwn": true,
+    "f0ErrorPercent": -28.42
+   },
+   "respiration": {
+    "tauX": 0.25,
+    "tauP": 0.07952707287670507,
+    "alphaI": 0.05,
+    "alphaRel": 0.125,
+    "forcing": 35.0
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3373 Hz \u00b7 53 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0533,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3497.9
+    ],
+    [
+     1.0,
+     3252.4
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 3.0,
+   "tractQ": 3.0,
+   "noise": 0.0,
+   "rough": 0.65,
+   "amDepth": 0.3,
+   "am": 80.0,
+   "two": true,
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.5306,
+    "rivalCosine": -0.2839,
+    "nearestOwn": true,
+    "f0ErrorPercent": -22.79
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      2623.425
+     ],
+     [
+      1.0,
+      2439.3
+     ]
+    ],
+    "gamma": 14827.312858858713,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.02
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.6667,
+    "L00": 0.3333
+   },
+   "L01": {
+    "L01": 0.7619,
+    "end": 0.2381
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.075,
+   "L01>L01": 0.06
+  },
+  "songTyping": {
+   "bouts": 11,
+   "short": 11,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

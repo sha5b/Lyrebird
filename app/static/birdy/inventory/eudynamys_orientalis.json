@@ -1,0 +1,181 @@
+{
+ "id": "eudynamys_orientalis",
+ "common": "Pacific Koel",
+ "scientific": "Eudynamys orientalis",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 24 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 470 Hz \u00b7 81 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0814,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     486.2
+    ],
+    [
+     0.125,
+     463.0
+    ],
+    [
+     0.5,
+     542.0
+    ],
+    [
+     0.625,
+     470.1
+    ],
+    [
+     0.75,
+     445.4
+    ],
+    [
+     0.875,
+     454.2
+    ],
+    [
+     1.0,
+     437.1
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 1.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
+   "tractQ": 20.0,
+   "rough": 0.08,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.8126,
+    "rivalCosine": 0.2966,
+    "nearestOwn": true,
+    "f0ErrorPercent": 11.13
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      243.1
+     ],
+     [
+      0.125,
+      231.5
+     ],
+     [
+      0.5,
+      271.0
+     ],
+     [
+      0.625,
+      235.05
+     ],
+     [
+      0.75,
+      222.7
+     ],
+     [
+      0.875,
+      227.1
+     ],
+     [
+      1.0,
+      218.55
+     ]
+    ],
+    "gamma": 1377.627344674019,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.02
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1515 Hz \u00b7 511 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.5107,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1396.4
+    ],
+    [
+     1.0,
+     1642.6
+    ]
+   ],
+   "attack": 0.06,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 11.93,
+   "amDepth": 0.8,
+   "tractQ": 30.0,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.8583,
+    "rivalCosine": 0.206,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.06
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01"
+   ],
+   "gaps": []
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5833,
+    "end": 0.4167
+   },
+   "L01": {
+    "end": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.048
+  },
+  "songTyping": {
+   "bouts": 16,
+   "short": 16,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}
