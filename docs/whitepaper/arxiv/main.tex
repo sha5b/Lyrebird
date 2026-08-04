@@ -1115,10 +1115,46 @@ against two independent audible-distance metrics over 200 fitted types: mel-ceps
 distortion \citep{kubichek1993} and multi-resolution log-spectral distance. The cosine
 carries almost no information about either. Against MCD it reaches Pearson $+0.106$ and
 Spearman $+0.100$. Against STFT error it reaches Pearson $+0.102$ and Spearman $+0.111$.
-Neither is distinguishable from zero, and both point estimates lean the wrong way. The
-instrument itself is sound. The recomputed cosine reproduces the stored one at Pearson 0.921,
-and the two distortion metrics agree with each other at 0.925.
+Neither is distinguishable from zero at that sample, and both point estimates lean the wrong
+way. The instrument itself is sound. The recomputed cosine reproduces the stored one at Pearson
+0.921, and the two distortion metrics agree with each other at 0.925.
 % docs/19 §19.2 — n = 200 types, debug-100 store against the iNat audio cache
+
+\paragraph{At six times the sample the wrong sign becomes significant, and the claim gets
+worse.} Re-benched on the production store over \textbf{1\,200} fitted types --- a different
+population from the 200 above, so this is a second measurement and not a re-run --- the
+cosine's correlation with audible distortion is no longer indistinguishable from zero. It is
+\emph{positively} correlated with distortion on both independent metrics:
+
+\begin{center}\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}l r r@{}}
+\toprule
+$n = 1\,200$ & Pearson & Spearman \\
+\midrule
+cosine vs MCD      & $+0.098$ & $+0.200$ \\
+cosine vs STFT     & $+0.091$ & $+0.186$ \\
+mel target vs MCD  & $-0.346$ & $\mathbf{-0.456}$ \\
+mel target vs STFT & $-0.312$ & $-0.440$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Every one of those eight is significant. The two that matter most: the cosine's Spearman against
+MCD at $p = 3\times10^{-12}$, and the mel target's at $p = 1\times10^{-62}$.
+
+Higher cosine goes with \emph{more} audible distortion, on two metrics that were built
+independently and agree with each other at 0.925. At $n = 200$ that read as a point estimate
+leaning the wrong way. At $n = 1\,200$ it is $p = 3\mathrm{e}{-}12$. So the objective is not
+merely uninformative about fidelity, which is what this section claimed before: it is mildly
+anti-correlated with it, and the effect survives a sixfold increase in sample on a different
+store. The mel target's ranking advantage survives the same increase --- Spearman $-0.456$
+against the cosine's $+0.200$, opposite signs, both significant.
+
+One caveat on the population. Of 2\,396 types considered, 1\,196 were skipped: 753 have no
+cached audio and 443 are too short to bench. The benched set therefore over-represents types
+whose members survived the audio cache, and nothing here corrects for that.
+% analysis/specbench_n1200.json — production store out/harvest-gan, shipped inventory
 
 \begin{figure*}[t]
 \centering
@@ -1147,8 +1183,46 @@ The project therefore measures spectrally and optimises
 descriptor-wise. Every cosine-gated adoption inherits that caveat, and we
 record it here. The respiration and two-voice fit winners, the fricative routing and the
 one-tone texture re-fit were all decided by a proxy that does not rank audible fit at type
-level. Each of them also improved the descriptor match. Any of them may still be correct, but
-``improved the proxy'' is a weaker claim than it reads.
+level. Each of them also improved the descriptor match, and ``improved the proxy'' is a weaker
+claim than it reads.
+
+\paragraph{One of those four adoptions has now been re-judged on the bench, and it made the
+sound worse.} The respiratory block is the one adoption that can be re-judged without
+refitting: \texttt{respfit} ships it on a type only where it beats that type's cosine by 0.02,
+and in the shipped inventory the field is present on \emph{exactly} the 204 types where it won
+and on none of the others. So stripping the field reconstructs the pre-adoption syllable and
+leaves everything else identical. Both arms were rendered and benched. Of the 175 types that
+benched in both:
+
+\begin{center}\footnotesize
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}l r@{}}
+\toprule
+median $\Delta$cosine (the gate's own number) & $\mathbf{+0.034}$ \\
+\midrule
+MCD win share & $\mathbf{33.1\,\%}$ (58/175) \\
+median $\Delta$MCD & $\mathbf{-4.18}$ dB \\
+mean $\Delta$MCD & $-18.40$ dB \\
+median $\Delta$STFT error & $-2.34$ dB \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Positive $\Delta$MCD would mean the adoption reduced audible distortion. It is negative on the
+median and on the mean, negative on the second metric too, and it helped only one type in
+three. \textbf{An adoption that gained a third of a cosine point degraded the audible fit by
+about 4 dB.} This was pre-registered before the run --- given the cosine's positive correlation
+with distortion above, the prediction was a win share below 50\,\% with a median
+$\Delta$MCD at or below zero, and both held.
+
+Two things this does not say. It does not say the respiratory model is wrong: the physics is
+from \citet{fainstein2025} and this measures a gate, not a mechanism. And it does not
+generalise to the other three adoptions, which remain owed --- the two-voice block cannot be
+stripped this way, because \texttt{two} is present on winners and non-winners alike, and
+\texttt{docrefit} and the fricative routing each need their own reversibility argument. What it
+does say is that the caveat above is not hypothetical. One measured instance of it went the
+wrong way.
+% analysis/rejudge_respfit.py / .json — 204 adopted types, 175 benched both arms
 
 \subsection{Limit 2. The embedding sorts by recordist, not by bird}
 

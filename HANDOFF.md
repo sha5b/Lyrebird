@@ -404,6 +404,131 @@ floor that makes the test possible removes what it is testing for.
 was the embedded population before the two-recordist floor, and the whitepaper said "On 2 158
 recordings ... reaches 93.29 %". Corrected in both papers.
 
+## Limit 1: the planned experiment is REFUSED, and the reason is in the repo already
+
+Asked to attack Limit 1 (the fit objective cannot hear). The plan was to sweep the mel-target
+blend weight, then to fit each type both ways and keep whichever scored better on the bench.
+**Both halves are wrong and the second is wrong for a reason this project already wrote down.**
+
+**The weight was not tried once.** docs/19 §19.4 probed w = 1.0, 0.5 and 0.25 at n = 10, and
+§19.5 took w = 0.5 to the n = 80 gate. So a "nobody swept the weight" framing is false. What the
+three weights show is a monotone trade rather than a missing optimum: w = 1.0 gains MCD and
+collapses the cosine guardrail (drop 0.377), w = 0.25 is a wash (5/5, -0.75 dB), w = 0.5 sits
+between. A finer sweep interpolates that line. It does not escape it.
+
+**And the diagnosis rules out a weight fix anyway.** §19.5's own reading: the change *mostly does
+nothing* (median dMCD exactly 0.0, because the inversion already lands where the blend would send
+it), *sometimes helps enormously* (mean +2.07 dB, pulled by a handful at +13.8), and *occasionally
+wanders* (one type lost 0.120 cosine). That is a selection problem, not a weight problem. A larger
+w buys more of the help and more of the wandering together.
+
+**So the obvious fix is per-type selection -- and that is the part this project has already
+forbidden.** From the two-start comment in `learn.py` around the `invert_gestures` call:
+
+```
+The selection reads `invert_gestures`'s own returned objective, not the pure cosine measured
+further down. That is deliberate and is what the pre-registration says: the objective that
+already decides the descent is the one that decides between descents, or the comparison would
+be judged on a number the search never optimised.
+```
+
+A w=0 arm and a w=0.5 arm optimise **different** objectives, so there is no shared objective to
+select on. Selecting on MCD instead would also be circular: MCD is the number the result is
+reported in. Both objections are fatal and the second is the project's own rule.
+
+**A valid version exists and it is expensive.** Select on MCD computed against member audio held
+out of the mel target's construction, and report on a third split. Member counts with cached audio
+are small, so most types cannot afford three splits. Not attempted.
+
+### What was verified on the way, and it is worth keeping
+
+The spectral bench runs and is correctly paired again. `specbench --store out/harvest-gan
+--inventory data/learned-inventory.json --calibration-dir out` reproduces stored cosines
+**exactly** (0.446/0.446, 0.660/0.660, 0.912/0.912), so the calibration lookup is right. Pairing
+it with `out/harvest-d100` instead skips 277 of 282 types on `noMembers` and recomputes cosines
+that disagree with the stored ones -- that pairing is wrong and the failure is quiet, so check
+the recomputed-vs-stored column before trusting a bench run.
+
+At n = 10 the mel target reproduces its docs/19 correlation: melTargetVsMcd **-0.448** against the
+cosine's -0.042. The §19.4 premise stands.
+
+### And the cheap experiment DID land: the objective is worse than "cannot hear"
+
+The bench needs no refitting, so it was re-run on the production store at **n = 1 200** against
+docs/19's n = 200. A different population, so this is a second measurement rather than a re-run.
+
+```
+n = 1 200            Pearson   Spearman        (docs/19 n=200, for comparison)
+cosine   vs MCD       +0.098    +0.200          +0.106 / +0.100  "not distinguishable from 0"
+cosine   vs STFT      +0.091    +0.186          +0.102 / +0.111
+mel targ vs MCD       -0.346    -0.456          -0.305 / -0.420
+mel targ vs STFT      -0.312    -0.440
+```
+
+**All eight are significant.** The cosine's Spearman against MCD is p = 3e-12; the mel target's
+is p = 1e-62. At n = 200 the cosine read as a point estimate leaning the wrong way. At n = 1 200
+the wrong sign is solid: **higher cosine goes with MORE audible distortion**, on two metrics
+built independently that agree with each other at 0.925.
+
+So Limit 1's claim was understated, not overstated. The objective is not merely uninformative
+about fidelity -- it is mildly **anti**-correlated with it, and that survives a sixfold sample
+increase on a different store. The mel target's ranking advantage survives the same increase at
+the opposite sign. Written into Limit 1 in the whitepaper.
+
+Population caveat, stated in the paper too: of 2 396 types considered, 1 196 were skipped (753
+no cached audio, 443 too short), so the benched set over-represents types whose audio survived
+the cache. Nothing corrects for that.
+
+`analysis/specbench_n1200.json`. Reproduce with:
+`birdy-pipeline specbench --limit 1200 --store out/harvest-gan --inventory ../data/learned-inventory.json --calibration-dir out --out analysis/specbench_n1200.json`
+
+### And the re-judgment ran too. A cosine-gated adoption made the sound WORSE
+
+The file-diff route looked closed because respfit writes `--out "$LEARNED"` in place, so v9's
+pre-respfit state is gone. It is not closed, because **the transform is additive and therefore
+reversible**: in the shipped inventory the `respiration` field sits on exactly the 204 types
+where it won its gate and on none of the others. Strip the field and you have the pre-adoption
+syllable with everything else byte-identical. Render both, bench both.
+
+```
+median dcosine (the gate's own number)   +0.034   <- the gate required >= +0.02, so this checks out
+MCD win share                             33.1 %  (58/175)
+median dMCD                              -4.18 dB <- NEGATIVE = the adoption made distortion worse
+mean   dMCD                             -18.40 dB
+median dSTFT                             -2.34 dB <- the second metric agrees
+```
+
+**An adoption that gained a third of a cosine point degraded the audible fit by about 4 dB, and
+helped only one type in three.** Pre-registered before the run in the script's docstring: given
+the cosine's positive (wrong-sign) correlation with distortion at n = 1 200, the prediction was a
+win share below 50 % with median dMCD <= 0. Both held.
+
+This is the first time Limit 1's consequence has been *demonstrated* rather than warned about.
+The Limitations section said "every cosine-gated adoption inherits that caveat". One instance is
+now measured, and it went the wrong way.
+
+**Two things it does not say.** Not that the respiratory physics is wrong -- Fainstein et al.
+2025 is the mechanism and this measures a *gate*. And not that the other three adoptions are
+also bad. `analysis/rejudge_respfit.py`, `.json`; written into Limit 1.
+
+### What is STILL owed on Limit 1
+
+The other three cosine-gated adoptions. `two-voice` **cannot** be stripped the way respiration
+was -- `two` is present on winners and non-winners alike (688 vs 1 146 in a 4 000-record sample),
+so removing it does not reconstruct a clean control. `docrefit` and the fricative routing each
+need their own reversibility argument before they can be re-judged without a refit. If none
+exists, they need a refit on the current store with the stage disabled, which is hours.
+
+The Limitations section already names it: *"A re-judgment of every cosine-gated adoption on the
+spectral bench is owed."* That is non-circular -- the adoptions were decided on cosine and would be
+re-judged on an independent metric -- and it needs no refitting. It is blocked on one thing a
+human can answer in a minute: **which inventory generation pairs with which store.**
+`data/learned-inventory-pre-respfit.json` and `-respfit.json` are 55 and 56 MB and carry no
+per-syllable `resynthesisCosine`; `data/learned-inventory.json` is 33 MB and also carries none on
+its syllables, yet the bench reads stored cosines from it successfully. Where the fitted cosine
+lives, and which of these five `learned-inventory-*.json` files corresponds to `respfit-gan-report.json`'s
+12 680 records, decides whether the re-judgment is a file diff or a re-render.
+
 ## There is a publishing plan now, in `publish/`
 
 Every venue in it is free. arXiv is deliberately absent. Two constraints from `NOTICE.md` drove
