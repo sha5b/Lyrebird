@@ -1,0 +1,81 @@
+{
+ "arms": [
+  {
+   "arm": "ARM A \u2014 aggregated, every recording",
+   "recordings": 9026,
+   "species": {
+    "groups": 87,
+    "labelled": 2341,
+    "coverage": 0.2594,
+    "knn": 0.2333,
+    "null": 0.0122,
+    "lift": 0.2211,
+    "p": 0.005,
+    "verdict": "clear"
+   },
+   "recordists": 2424,
+   "recordist": {
+    "groups": 198,
+    "labelled": 5204,
+    "coverage": 0.5766,
+    "knn": 0.1838,
+    "null": 0.0284,
+    "lift": 0.1554,
+    "p": 0.005,
+    "verdict": "clear"
+   }
+  },
+  {
+   "arm": "ARM B \u2014 recordist-blocked (<=1 recording per species x recordist)",
+   "recordings": 7441,
+   "species": {
+    "groups": 76,
+    "labelled": 1244,
+    "coverage": 0.1672,
+    "knn": 0.1691,
+    "null": 0.0135,
+    "lift": 0.1557,
+    "p": 0.005,
+    "verdict": "clear"
+   },
+   "recordists": 2424,
+   "recordist": {
+    "groups": 150,
+    "labelled": 3670,
+    "coverage": 0.4932,
+    "knn": 0.1786,
+    "null": 0.0408,
+    "lift": 0.1378,
+    "p": 0.005,
+    "verdict": "clear"
+   }
+  },
+  {
+   "arm": "ARM C \u2014 matched rows (species AND recordist both >= 8), the fair margin",
+   "recordings": 1309,
+   "species": {
+    "groups": 77,
+    "labelled": 1309,
+    "coverage": 1.0,
+    "knn": 0.2419,
+    "null": 0.0133,
+    "lift": 0.2286,
+    "p": 0.005,
+    "verdict": "clear"
+   },
+   "recordists": 62,
+   "recordist": {
+    "groups": 62,
+    "labelled": 1309,
+    "coverage": 1.0,
+    "knn": 0.2257,
+    "null": 0.0297,
+    "lift": 0.196,
+    "p": 0.005,
+    "verdict": "clear"
+   }
+  }
+ ],
+ "species_with_3plus_recordists": 743,
+ "species_total": 3636
+}

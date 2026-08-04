@@ -1,5 +1,91 @@
 # Lyrebird — READ THIS FIRST (2026-08-04): v9 is installed, five noise gates are measured dead, and the whitepaper leads with its findings
 
+## START HERE NEXT CHAT
+
+Two research runs are agreed, and everything else in this list is small. Owner asked which of
+the two would genuinely add to the field and answered **both**. They are independent, each is
+about a day, and neither blocks the other. The full specification with pre-registered gates is
+`docs/24-what-this-corpus-could-add-to-ornithology.md`.
+
+### 1. W0 — is benchmark accuracy in this field inflated by recordist leakage?
+
+The widest-reaching result available, and **it does not depend on any part of our pipeline
+being correct**, because it runs public models over public corpora.
+
+```
+corpus   BirdSet XCM or XCL (Hugging Face), or the BirdCLEF splits  -- NOT our store
+models   Perch 2.0 (already wired: perch.py, weights cached) and BirdNET
+measure  species retrieval / top-1, twice, changing ONE thing:
+           a) the standard random split
+           b) a recordist-blocked split (all of one recordist's recordings on one side)
+gate     > 10 points of top-1 drop, on >= 1 public corpus, reproduced on both models
+```
+
+**Step zero is a literature check, before the run.** Domain shift and focal-to-soundscape
+generalisation are known problems here, and recordist-blocked evaluation may already exist
+under another name. If it does, cite it and move to G1.
+
+Why us: we measured the mechanism at +0.488 recordist against +0.196 species, four removal
+attempts failed, and both external models carry it. A negative result is also publishable and
+retires our loudest complaint.
+
+### 2. G1 — does the fitted tracheal length track body mass?
+
+This decides whether **any** comparative biology is possible with this corpus.
+
+```
+data     L_eff per species, 1 621 species, parsed from out/v9/learn.log
+         AVONET (Tobias et al. 2022, open, 11 009 species) for body mass
+method   log L_eff on log mass, partial on log f0, EXCLUDING clamped species
+gate     partial r > 0.4 over >= 800 unpinned species,
+         AND the known long-trachea clades in the upper decile
+```
+
+Known before the run, and three of the four facts are discouraging: `L_eff` is a deterministic
+restatement of the fitted tract f1 (r = -1.000 log-log), it takes only **39 distinct values**,
+and **388 species (24 %) sit on the 1.4 cm floor** with 11 on the 14.3 cm ceiling. The one
+encouraging fact is that it correlates with the species' own median f0 at only **-0.206**, so
+it is not pitch in centimetres.
+
+If G1 passes, W1 to W4 in docs/24 open up (phylogenetic signal in production parameters,
+learners against non-learners, source-filter independence, acoustic adaptation). If it fails,
+write the negative result and close the biology.
+
+### 3. Carried over, small, and named so they are not lost
+
+- **`fig_corpus`'s clay annotation overruns its panel.** Pre-existing: byte-identical at
+  `git show HEAD`, so the sixth row did not cause it. Either shorten the text or move the
+  `xytext` left.
+- **988 species are still under the fitting floor** (median 11, max 23). A correctly filtered
+  pass needs ~24 700 observations against **21 776 of headroom**, so it crosses `syllableCap`
+  and `_trim` starts evicting the oldest recordings of the *largest* species. Raising the cap,
+  accepting eviction, or stopping at 2 650 species is a decision, not a task. `--species-file`
+  now works, so the pass itself is one command.
+- **`fig_song_funnel` is pinned to the pre-v9 store** in its docstring and caption. Its three
+  panels are one study, so it moves as a unit or not at all. Re-running the full funnel on v9
+  is what it needs.
+- **Two `\todo` items left in `main.tex`**: the Zenodo release DOI, and the acknowledgements,
+  which can legitimately be an explicit statement of none. Both need the owner.
+- **`main.tex` has never been compiled.** There is no TeX toolchain on this machine. It is
+  validated statically only: braces balanced, environments nested, 0 dangling refs, 19 figures
+  with PDFs. Expect overfull boxes on the first real build.
+
+### 4. State, so nothing has to be re-derived
+
+```
+store        pipeline/out/harvest-gan   378 224 observations, 3 636 species with syllables
+             snr on 97.1 % of rows, segmentBand [400, 12000] recorded in state.json
+             headroom 21 776 of syllableCap 400 000
+installed    app/static/birdy = v9: 387 287 points, 16 380 knots, verify passes
+             data/learned-inventory.json = 2 650 species, 16 283 types
+             committed as 569ddef; ROLLBACK IS HEAD~1 (348 461 points, 2 423 species)
+audio cache  pipeline/out/audio-cache, 6 453 wavs, 6.3 GB, iNat only
+perch        runs; weights in the HF cache; analysis/perch_presence.py works
+whitepaper   findings section now BEFORE the walls; 0 em dashes in prose; author set;
+             new section "What this corpus could be asked next"
+```
+
+
 The section below asked what filtering would keep a noise-only recording out and offered an
 SNR floor or a tonality test as the answer. **Both are measured dead, a third candidate is
 measured dead, and the reason all three failed is the finding: the syllables had already

@@ -115,3 +115,11 @@ is evidence, plan, or literature.
     W2 order-2 **no structure** though order 1 buys 0.98 bits/token held out, W5
     **adopted**, W6 T1 **fails** with Perch and T3 **passes**. The negatives are
     the point.
+24. `24-what-this-corpus-could-add-to-ornithology.md` — the plan for adding to the
+    science rather than to the tool. **W0** asks whether bioacoustic benchmarks are
+    inflated by recordist leakage, on public corpora with public models, and is the
+    one result here that would reach the whole field. **G1** asks whether the fitted
+    tracheal length tracks body mass, which decides whether any comparative biology
+    is possible at all. Owner's call, 2026-08-04: **run both.** They are independent,
+    and W0 stands even if every parameter we fitted is an artefact.
+

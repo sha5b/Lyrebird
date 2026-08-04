@@ -2109,6 +2109,41 @@ from the archives' own behavioural annotations. Each is specified with its gate 
 project's plan document.
 
 % =====================================================================
+\section{What this corpus could be asked next}
+\label{sec:next}
+
+This paper is a system, a resource and a ledger of refusals. It is not a contribution to
+ornithology, and the distinction is worth making because the corpus can support two questions
+that would be. Both are specified with pre-registered gates in the project's plan document,
+and both need no new audio.
+
+\emph{Is benchmark accuracy in this field inflated by recordist leakage?} Standard evaluation
+splits recordings at random. Section~\ref{sec:walls} measures a nearest-neighbour lift of
+$+0.488$ for recordist against $+0.196$ for species, and Section~\ref{sec:external} finds the
+two archive-scale external models carry it as well. If a species' recordings come
+disproportionately from one recordist, a random split leaks recorder identity across the
+train and test sides. The test is one comparison on a public corpus with public models,
+changing only the split: random against recordist-blocked. A large drop would mean the field
+should block its splits by recordist, which is a cheap change with a measurable cost. This
+result would not depend on any part of the pipeline described here being correct, which is
+what makes it the widest-reaching thing the project can offer.
+
+\emph{Can anatomy be inferred from song at a scale dissection cannot reach?} The fit estimates
+an effective tracheal length for 1\,621 species. Tracheal length scales with body size, and
+several lineages carry documented elongation. Regressing the fitted length on published body
+mass, controlling for the species' own pitch, decides whether the parameter is anatomy or a
+fitting artefact. Three facts are known before that run and none of them is encouraging on its
+own: the length is a deterministic restatement of the fitted tract resonance, it is quantized
+to 39 values, and 24\,\% of species sit on its lower clamp. The single encouraging fact is that
+it correlates with the species' median $f_0$ at only $-0.206$, so it is not pitch in
+centimetres. If it survives, comparative work on song \emph{production} rather than song
+\emph{sound} becomes possible, and that has not been available before at this scale. If it
+does not, the negative result is worth reporting on its own.
+
+Neither question is answered here. Naming them is not the same as answering them, and the
+evidence discipline that produced 36 refusals applies to our own plans as well.
+
+% =====================================================================
 \section{Conclusion}
 
 Lyrebird measures 378\,224 syllables from wild recordings without keeping the recordings,
