@@ -26,7 +26,7 @@ from .corpus import (
     synthetic_corpus,
     write_wav,
 )
-from . import docrefit, galaxy, harvest, learn, respfit, respiration, twovoice
+from . import docrefit, galaxy, harvest, learn, quality, respfit, respiration, twovoice
 from . import syntax as syntax_mod
 from . import songspace as songspace_mod
 from .galaxy import PointSet, build_galaxy
@@ -2897,6 +2897,40 @@ def measure_match_ramp(
     }
 
 
+def cmd_quality_remeasure(args: argparse.Namespace) -> int:
+    """Fill `snr`/`clipped` on the observations harvested before those fields existed.
+
+    59 % of `out/harvest-gan` carries no `snr`, and `learn.quality_weight` reads that as
+    neutral. It is not a sampling accident — 188 986 of the 199 993 unmeasured rows are
+    the iNat sweep, and its audio is still in the owner-sanctioned cache, so the
+    measurement was available on this disk the whole time. `quality.py` explains why the
+    pass is exact rather than approximate, and why it fails closed.
+    """
+    # Before touching the corpus, prove this build still reproduces the arithmetic the
+    # corpus was harvested with. The pass writes 188 986 rows; the check costs a second.
+    quality.self_test(verbose=False)
+    store_root = Path(args.store)
+    try:
+        report = quality.remeasure_store(
+            store_root,
+            Path(args.audio_cache),
+            max_seconds=args.max_seconds,
+            dry_run=args.dry_run,
+            log=log,
+        )
+    except FileNotFoundError as exc:
+        log(str(exc))
+        return 2
+    log(report.format(store_root))
+    for rid, why in sorted(report.undecodable.items())[:10]:
+        log(f"  undecodable {rid}: {why[:120]}")
+    if report.drifted:
+        # Not a warning to skim past: it means this build's segmentation is not the one
+        # that harvested the store, so the pass is inapplicable rather than merely thin.
+        return 1
+    return 0
+
+
 def cmd_thresholds(args: argparse.Namespace) -> int:
     """Re-measure the match ramp the browser uses to say "this is not birdsong".
 
@@ -4106,6 +4140,30 @@ def build_parser() -> argparse.ArgumentParser:
     v = sub.add_parser("verify", help="check a generated asset directory")
     v.add_argument("--out", default=str(DEFAULT_OUT))
     v.set_defaults(func=cmd_verify)
+
+    q = sub.add_parser(
+        "quality",
+        help="ingest-time quality of the observations a store already holds",
+    )
+    q_sub = q.add_subparsers(dest="quality_command", required=True)
+    qr = q_sub.add_parser(
+        "remeasure",
+        help="fill snr/clipped on rows harvested before those fields existed, from the "
+             "cached audio; rewrites syllables.jsonl line for line and touches nothing else",
+    )
+    qr.add_argument("--store", default=str(DEFAULT_HARVEST_STORE))
+    qr.add_argument("--audio-cache",
+                    default=str(REPO_ROOT / "pipeline" / "out" / "audio-cache"),
+                    help="the owner-sanctioned iNat WAV cache (AGENTS.md). Rows from any "
+                         "other source have no audio and are reported unreachable, never "
+                         "silently skipped")
+    qr.add_argument("--max-seconds", type=float, default=harvest.DEFAULT_MAX_SECONDS,
+                    help="the analysis window the store was harvested with. Changing it "
+                         "changes the segmentation, so every row will read as drifted and "
+                         "nothing will be written")
+    qr.add_argument("--dry-run", action="store_true",
+                    help="measure and report, write nothing")
+    qr.set_defaults(func=cmd_quality_remeasure)
 
     th = sub.add_parser("thresholds", help="re-measure the browser's match ramp on the shipped assets")
     th.add_argument("--out", default=str(DEFAULT_OUT))

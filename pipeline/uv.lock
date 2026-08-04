@@ -43,6 +43,8 @@ dependencies = [
     { name = "numpy" },
     { name = "pacmap" },
     { name = "scikit-learn" },
+    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "scipy", version = "1.18.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "soundfile" },
     { name = "umap-learn" },
 ]
@@ -86,6 +88,7 @@ requires-dist = [
     { name = "pillow", marker = "extra == 'whitepaper'", specifier = ">=10.0" },
     { name = "python-docx", marker = "extra == 'whitepaper'", specifier = ">=1.1" },
     { name = "scikit-learn", specifier = ">=1.4" },
+    { name = "scipy", specifier = ">=1.11" },
     { name = "soundfile", specifier = ">=0.12" },
     { name = "torch", marker = "extra == 'critic'", specifier = ">=2.2", index = "https://download.pytorch.org/whl/cu128" },
     { name = "umap-learn", specifier = ">=0.5.6" },

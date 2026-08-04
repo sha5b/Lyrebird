@@ -1,4 +1,407 @@
-# Lyrebird — READ THIS FIRST (2026-08-03, ~17:45): noise gets into the corpus, and the gate that should stop it is unmeasured on 59 % of it
+# Lyrebird — READ THIS FIRST (2026-08-03, ~19:40): the noise was getting in below 400 Hz, and five gates are measured dead
+
+The section below asked what filtering would keep a noise-only recording out and offered an
+SNR floor or a tonality test as the answer. **Both are measured dead, a third candidate is
+measured dead, and the reason all three failed is the finding: the syllables had already
+been chosen by the noise before any per-syllable gate could see them.**
+
+```
+INAT227259, energy below 400 Hz                          98.7 %
+   ...and F0_MIN_HZ, the floor of every description       400 Hz
+```
+
+`_segments` thresholds at `ONSET_REL` = 14 % of the recording's **full-band** envelope peak,
+while `track_f0` and `measure_harmonics` throw away everything outside 400 Hz – 12 kHz. On a
+file carrying wind, handling noise or traffic under it, those two facts disagree and the
+segmenter wins: it slices the rumble, and the description then reads whatever tonal haze
+happens to sit inside those spans. **A per-syllable filter cannot help, because the spans
+are wrong.** That is why each candidate gate failed on the owner's own example:
+
+```
+                          INAT227259        the corpus              verdict
+absolute SNR floor        med 11.5 dB       med 17.1 dB             would need ~19 dB
+                          min  8.2 dB                               -> over half the corpus
+spectral flatness         0.044             med 0.106               21st percentile
+                                                                    -> reads MORE tonal
+Perch 2.0 taxon_max       0.899             med 0.541, p90 0.919    88th percentile
+                          Passer domesticus                         -> rejecting it costs 89 %
+```
+
+Perch was the owner's chosen route and it is the sharpest of the three refusals: **Perch
+reads that recording as a bird with high confidence**, `Trogon curucui` (the store's own
+label) in its early windows and *Passer domesticus* up to 0.899 later. Ranked against a
+200-recording sample of the cache it sits at the 88th percentile, so a threshold low enough
+to reject it takes 89 % of the corpus with it. `analysis/perch_presence.py` is that
+measurement, runnable, with the distribution and the cost of every threshold; nothing is
+wired into ingest, and the module docstring says why in the first paragraph.
+
+The spectrogram is what settled it. INAT227259 is not empty — under a loud sub-400 Hz
+rumble there is a very regular ~1.5 kHz pulse train, broadband ticks, and a banded
+vocalisation at 4–6 kHz around 22–26 s. The owner heard the rumble, Perch heard the bird,
+and both were right about a file whose 95 stored "syllables" have an f0 median of 992 Hz
+against the corpus's 2 762 — the segmenter had described neither.
+
+## 1. The fix: the segmentation now hears the band the description uses
+
+`learn.SEGMENT_BAND_HZ = (F0_MIN_HZ, F0_MAX_HZ)`, the band every measurement below it was
+already restricted to. `band_limit` is a 4th-order Butterworth under `sosfiltfilt` —
+zero-phase, because the whole point of this pass is *when* a syllable starts and a causal
+filter would move every onset by its group delay.
+
+Not a rare shape, and that is the argument for changing the default. Over a 200-recording
+sample of `out/audio-cache`, the share of energy under 400 Hz runs **median 35.5 %, p75
+86.8 %, p90 97.5 %: 23 % of recordings put over nine tenths of their energy outside the
+band that describes them.**
+
+Measured over 120 cached recordings, both paths run on the same audio:
+
+```
+                       full-band        band-limited     per recording
+syllables (total)         3,882            3,009          -22.5 %
+f0 median                2,622 Hz         3,179 Hz        up on 67 %
+snr median                12.73 dB         15.85 dB       +3.10 dB, up on 81 %
+described by neither 13,  full only 3,  band only 6
+```
+
+Fewer syllables, higher, and better separated from their own floor — which is what "stop
+segmenting on rumble" should do. **A spectral mask was tried first and is in the code's
+history for a reason:** at `ENV_FRAME` = 512, 44.1 kHz gives 86 Hz bins, so `F0_MIN_HZ` is
+bin 4.6 and a Hann main lobe is four bins wide — the band edge is as wide as the band's own
+lower reach. On the self-test fixture the mask found **11 segments where there are four**,
+peak-to-median 15 against the filter's 234 060. A window's sidelobes are not a stopband.
+
+**What this does not do, stated plainly: it does not make INAT227259 clean.** Band-limited,
+that file yields 105 syllables at f0 median 1 455 Hz — the segmenter has stopped chasing the
+rumble and started chasing the 1.5 kHz pulse train, which is the next loudest thing in the
+band and is probably an insect. The fix makes the segmenter *coherent with the description*
+and improves the corpus measurably. It is not an "is this a bird" gate and no gate here is.
+
+Also: `snr`'s numerator is now read in the same band as its floor. Dividing a full-band
+segment level by an in-band floor is how a file that is 98.7 % rumble reports a healthy SNR —
+the numerator counts the rumble and the denominator does not, so the worse the rumble the
+better the number. **The legacy full-band path is left arithmetically untouched**
+(`segment_band=None`), because §2 writes 188 986 rows through it and "exactly" is the only
+property that makes such a pass safe.
+
+## 2. The 59 % that was unmeasured is now 3.2 %, and the audio never had to be re-fetched
+
+The section below says an SNR floor "cannot touch the 199 993 rows with no `snr` without
+re-measuring them". **Re-measuring them was available on this disk the whole time**, and
+that was the most useful correction of the round:
+
+```
+rows with no snr                    199,993
+  ...that are iNat                  188,986      94.5 %
+iNat recordings in the store          5,368
+  ...still in out/audio-cache         5,366      6.3 GB
+```
+
+`birdy-pipeline quality remeasure` (new, `quality.py`) fills them. **It is exact, not
+approximate:** it does not re-segment, it reproduces the segmentation the store already
+holds and measures the two quality fields on the segment the stored row names, matching by
+`(recording_id, order)` and verifying `start`/`dur` agree to a millisecond before writing
+anything. On the whole store that verification passed on **188 986 of 188 986 rows — zero
+drifted, zero absent, zero missing wav.**
+
+Ran, verified against a backup line by line:
+
+```
+rows                340,122 -> 340,122      order preserved
+keys that differ    ['clipped', 'snr']      and nothing else
+snr coverage        41.2 % -> 96.8 %        329,115 of 340,122
+clipped = True                        840
+```
+
+Row order is the only thing pairing `syllables.jsonl` with `patches.f16`,
+`descriptors.f32`, `points.jsonl` and `typing.json`, so the write is a line-for-line stream
+rewrite plus `os.replace`, and it never calls `HarvestStore.save` — which would rebuild all
+five files from memory to change two floats.
+
+**The corpus is quieter than the measured 41 % suggested, so the floor costs in the section
+below were computed on a biased sample.** The real distribution, now that 96.8 % of it is
+measured:
+
+```
+                 was (41 % subset)      now (96.8 %)
+median snr             17.13 dB             11.94 dB
+below  3 dB            (6.2 %)              10.9 %      35,889 rows
+below  6 dB           (13.9 %)              23.7 %      78,036 rows
+below 10 dB           (26.6 %)              42.5 %     139,717 rows
+min / max             -9.7 / 81.0        -12.04 / 169.38
+```
+
+That 169 dB maximum is a recording whose frames outside its syllables are near-digital
+silence, so the floor estimate collapses. It is not a bug in the measurement but it is a
+reminder that `snr` is a ratio inside one recording and nothing more.
+
+## 3. Consequences worth knowing before the next run
+
+- **`out/harvest-gan` is now a mixed store**: 340 122 rows segmented full-band, anything
+  added from here segmented in-band. `state.json` records `segmentBand` so a store says
+  which regime it was last ingested under — and the field's comment says outright that it
+  describes the latest ingest, not every row.
+- **A re-learn will no longer reproduce the installed inventory.** `quality_weight` changed
+  for 188 986 rows, so the byte-for-byte reproduction that the v8 chain used as an integrity
+  check is spent. That was the cost the owner accepted when choosing to write the
+  re-measurement into the store rather than to a sidecar.
+- **The existing rows cannot be re-segmented cheaply.** The iNat half *is* re-derivable from
+  the cache, but new spans mean new patches, descriptors, embeddings and typing — a rebuild
+  of five files, not a field edit. Not attempted.
+- **`--dry-run` first, always.** The pass is naturally idempotent (a row with an `snr` is
+  left alone), so a second run now finds only the 11 007 xeno-canto rows and reports them
+  unreachable by design.
+
+## 4. Tests
+
+- `learn.self_test` §12: five properties of the band. Rejection over 40 dB on a 60 Hz rumble
+  at 0.9 under 5.2 kHz chirps at 0.05; onsets do not move (zero phase); the band envelope
+  peaks inside a chirp; the segmenter returns **4 of 4 chirps that the full-band path misses
+  entirely**; and `segment_band=None` still computes the old SNR formula, checked against
+  the arithmetic spelled out by hand.
+- `quality.self_test`: `measure_recording` reproduces
+  `extract_syllables(segment_band=None)` exactly — timing, SNR to 0.005 dB, and the clipping
+  flag. This is the one property the tolerance check *cannot* see, since it compares timing
+  only: a pass that segmented identically but computed `snr` differently would match every
+  row and write 188 986 wrong numbers. It also asserts the band-limited path reads as
+  drifted, or the guard has nothing to protect. Wired into the CLI command, which runs it
+  before touching the corpus.
+- Every module self-test still passes: `features`, `galaxy`, `harvest`, `learn`, `quality`,
+  `inverse`, `respiration`, `twovoice`.
+- `scipy` is now an explicit dependency. It was already present transitively through
+  scikit-learn and umap-learn, which is exactly why it needed writing down: a core module
+  now imports `scipy.signal` at module scope on every ingest.
+
+## 5. The iNat sweep is RUNNING
+
+Held until the gate landed, then started, so the top-up is ingested under the new
+segmentation rather than needing the same audit again afterwards:
+
+```
+setsid nohup uv run birdy-pipeline sources fetch --source inat-sounds \
+  --species-file out/underfloor-species.txt --per-species 1 --limit 1500 \
+  --keep-audio out/audio-cache --store out/harvest-gan > out/inat-topup.log 2>&1 &
+```
+
+`setsid` for the reason the section below records: `( cmd & )` does not survive the shell
+exiting. Progress is in `out/inat-topup.log`; it reports `110 498 acceptable Aves recordings
+for 1160 named species` and streams the 81 GB archive until 1 500 are ingested.
+
+**`--keep-audio out/audio-cache` was added and is not in the earlier plan.** AGENTS.md
+sanctions it for the current training phase, and everything in §2 and §4 depends on cached
+audio existing: without it the new rows would be the only ones in the corpus that can never
+be re-measured or re-examined. Cost is ~1 MB a recording, so ~1.5 GB on top of the 6.3 GB
+already there.
+
+Two hazards while it runs:
+
+- **Do not start a harvest from the Learn page.** The control server builds a fresh
+  `HarvestStore` per request (checked: server.py lines 421, 476, 638, 673, 902), so it cannot
+  clobber §2's re-measurement with stale memory — but two processes holding the store and
+  saving would make the last writer win, and the sweep is the one with hours of work in it.
+- `store=NNNNNN` in the log is the **descriptor** count against `cap` 600 000, not the
+  syllable count. It reads like the corpus shrinking from 340 122 and it is not; it started
+  from `retained` 258 400 and is climbing.
+
+Then `learn`. Two things to expect that were not true before: new rows will be segmented
+in-band (so about a fifth fewer syllables per recording, at higher SNR), and the `--limit`
+arithmetic in the section below assumed ~33 observations per recording — at −22.5 % that is
+closer to 26, so 1 500 recordings is a *smaller* bite of the 59 921 headroom than it was.
+
+## 6. The periodicity gate was built, and it is the fifth candidate measured dead
+
+`analysis/periodicity.py`. The idea was the best one left: every earlier gate asks "is this
+*syllable* a bird", and one insect pulse is not distinguishable from one short call, so ask
+about the **sequence** instead — an insect stridulates at a fixed rate for a whole recording
+and its pulses are spectrally identical. Per recording, from stored fields only (no audio, so
+it covers all 340 122 rows): the longest run of consecutive inter-onset intervals holding
+within 12 % of the run's own median, the share of the recording that run covers, its CV, and
+the mean cosine between successive descriptors inside it.
+
+**It ranks real birds at the top.** All fifteen most metronomic recordings in the corpus are
+genuine:
+
+```
+XC273582    scytalopus_vicinior      run 192/391  share 0.49  cv 0.047  sim 0.989
+XC354217    scytalopus_vicinior      run 120/213  share 0.56  cv 0.028  sim 0.986
+INAT167833  scytalopus_speluncae     run  75/ 75  share 1.00  cv 0.011  sim 0.993
+XC1152455   gallinago_gallinago      run  60/ 83  share 0.72  cv 0.019  sim 0.995
+XC1005194   jynx_torquilla           run  51/144  share 0.35  cv 0.058  sim 0.995
+```
+
+Tapaculos, a snipe, a wryneck, antpittas — and of the 45 recordings a `run >= 12, share >=
+0.5` cut selects, **40 belong to a species that is in the inventory.**
+
+**And it does not flag the recording it was designed for.** INAT227259 ranks 959th of 7 103
+(run 5 of 95). On the band-limited spans it will actually get, its run rises to 22 of 105 —
+so the pulse train is real and detectable — but `INAT167833`, a *modelled* *Scytalopus
+speluncae*, is **75 of 75 at CV 0.011**: more metronomic than the insect on every axis. Its
+spectrogram was checked by eye — 75 identical notes at 5/s across the whole file. Any
+threshold catching the insect deletes the tapaculo.
+
+Pairing periodicity with loudness looked like the way out (the metronomic birds sit at
+23–30 dB in-band, INAT227259 at 9). Over the corpus it is not: the cut selects 43 recordings
+that are again mostly real birds which are simply quiet and repetitive — *Chamaeza*
+antthrushes, a *Glaucidium* pygmy-owl, a sedge warbler, a tawny frogmouth — and INAT227259 is
+not among them. It is a "quiet repetitive bird" detector that happened to contain one insect.
+
+**The generalisable lesson, and the reason the file stays in the tree:** loudness, tonality,
+harmonicity, model presence and rhythm each name a property that some real bird has in the
+extreme. **n = 1 labelled noise recording cannot separate anything.** The next attempt should
+start by getting more labels — a dozen recordings the owner has listened to and called noise
+— and not by proposing a sixth feature. Everything needed to make that cheap is now in place:
+`out/audio-cache` holds 5 366 recordings, `out/periodicity.jsonl` and
+`out/perch-presence.jsonl` rank them, and `quality remeasure` proves audio-derived
+measurements can be written back exactly.
+
+## 6b. Docs, whitepaper and figures
+
+Done, and none of it waits on the sweep:
+
+- **`docs/23-what-we-have-not-tried.md` §23.9 — W8, a new workstream.** The five gates, the
+  root cause, and a **pre-registered gate for the next attempt**: at least 12 owner-labelled
+  noise recordings, then ≥ 0.8 recall on them at ≤ 2 % loss of recordings belonging to
+  inventory species. §23.8's order list and the "three of the six" count are updated.
+- **`docs/whitepaper/arxiv/figures.py` — `fig_noise_gates`, new figure `noise-gates.pdf`.**
+  Two panels: the percentile the flagged recording occupies on each of the five statistics
+  against the tail a gate would have to reject, and what a threshold at its own value costs.
+  Every number re-derived per-recording against the current store rather than reused from
+  prose, so `p43` for SNR is the **post-remeasure** figure and not §2's old 41 % sample.
+- **`main.tex` — a new subsection** under "The system", §"What the segmenter listens to, and
+  five gates that do not work", plus the figure. Validated the way the README requires
+  (no TeX toolchain here): braces balanced, environments nested, all `\ref`s resolve, all 19
+  figures have PDFs. README's stale "11 tables and 10 figures" corrected to 10 and 19.
+- **Only `noise-gates.pdf` is new in `figures/`.** Every other PDF regenerated byte-identically
+  — the file pins its own creation date and uses no RNG — which is the check that adding a
+  figure perturbed nothing.
+
+**A pre-existing breakage found while doing it, and NOT fixed:** `figures.py` aborts before
+`write_manifest()`.
+
+```
+pinned types absent from the inventory: [('arundinax_aedon', 'L06')]
+```
+
+`_load_examples` raises `SystemExit` when a pinned example type is missing, and
+`arundinax_aedon` now types as L01–L11 with **no L06** — `data/learned-inventory.json` has
+been that way since 2026-08-02 and is committed, so this predates today. Consequences:
+`figures/MANIFEST.md` is stale (it has neither `noise-gates.pdf` nor anything else added since
+the type vanished), and `spectral-examples.pdf` / `gestures.pdf` on disk are from an older run.
+Deliberately left for after `learn`: that step rewrites the inventory and the type ids with
+it, so re-deriving the three pinned examples now would be work thrown away. The criteria to
+re-derive them under are written above `EXAMPLES` — top/middle/bottom of the
+resynthesis-cosine ordering, cached recording, 0.10–0.45 s, energy above 1 kHz — so it is a
+lookup, not a judgement call.
+
+## 6d. The sweep finished, and `--species-file` was silently matching nothing
+
+```
+1500 recordings ingested, 4710 already known, 0 failed
+38102 syllables segmented, 378224 held for learning      (was 340,122)
+293757 descriptors retained, 11687 recordings, 3812 species
+6353 MB of member data streamed, 73 minutes
+```
+
+Cap held: 378 224 of 400 000, so nothing was evicted. `state.json` now carries
+`segmentBand: [400.0, 12000.0]`, and the new rows arrived at **25.4 observations per
+recording** against the old ~33 — the −22.5 % the segmentation fix predicted, confirmed on
+1 500 recordings this time instead of 120.
+
+`snr` coverage is now **97.1 %**: every row except the 11 007 xeno-canto ones whose audio was
+deleted by design.
+
+**But it was not a targeted sweep, and the reason is a bug I have fixed.**
+
+```
+species clearing learn.MIN_OBSERVATIONS = 24      2,423 -> 2,648   (+227)
+of the 1,160 target species, now clearing          202
+their observations, median                          11 -> 13
+of 1,287 ingested recordings still holding rows, on a target species     302
+```
+
+`sources fetch --species-file` documents its input as *"ids or \"Genus species\""*, and
+`analysis/topup_underfloor.py` writes ids. Every one of them went through
+`harvest.species_id_for`, which **splits on whitespace and requires two parts** — so
+`acanthis_hornemanni` returned `""`, a `discard("")` emptied the wanted set, and
+`if wanted_ids and sid not in wanted_ids` then read an empty set as *no filter*. The run was
+an unfiltered taxonomic-order pass over all 3 846 Aves species: exactly the "One broad pass"
+option this file warned would cover alphabetically-early species. The log said so at the time
+and nobody read it — `110498 acceptable Aves recordings for 1160 named species` is the
+**unfiltered** total.
+
+Fixed, and the fix is two changes because one of them is the real lesson:
+
+- `harvest.canonical_species_id` accepts either spelling (and cuts a trinomial to its
+  binomial), while `species_id_for` **stays strict** — it reads fetcher metadata, where a
+  one-word scientific name is bad data rather than shorthand, and widening it would hide real
+  errors at the ingest boundary.
+- `InatSoundsSource._wanted` now **raises** when a species ask parses to nothing, instead of
+  falling through to an 81 GB sweep. A filter that silently becomes a no-op on its own
+  documented input format is worse than one that refuses.
+
+`harvest.self_test` covers seven spellings plus the two strictness assertions.
+
+**The consequence, and it is a decision not a task.** 988 species are still under the floor
+(median 11, max 23). A correctly-filtered pass over them needs ~988 recordings at ~25
+observations each ≈ **24 700 observations against 21 776 of headroom**, so it would cross
+`syllableCap` and `_trim` would start evicting — and `_trim` retires the oldest recording of
+whichever species holds the most, which is the opposite of what a top-up wants. Raising the
+cap, accepting eviction, or stopping at 2 648 species is the owner's call, with those numbers.
+
+## 6c. Still to do, and it is a chain that has to run in order
+
+`analysis/run_production_v9.sh` is **running** (started 19:46). Its executable body is
+byte-identical to v8's apart from the two staging paths — checked with `diff` — because that
+script is the record of what produced the shipped build and the recipe is not what changed
+this round. It seeds the staging inventory with the current one so type ids stay stable, then
+learn → docrefit → respfit → build → verify → song funnel.
+
+```
+learn      RUNNING, ~2 h at v8's 2 423 species, expect longer at 2 648
+docrefit   texture for the 44 authored documented calls
+respfit    respiration + two-voice where they win their gate
+build      --space embed --clustering label --projection pacmap
+verify     then analysis/song_funnel.py against the installed inventory
+```
+
+**It installs nothing, by design.** Everything lands in `out/v9/` and the install is a
+separate deliberate step once `verify` has passed — so the app's `manifest.json`, and every
+prose number that follows from it, does not move until someone decides it should.
+
+Then, and only with v9's numbers in hand:
+
+```
+figures.py     fig_corpus needs a sixth row; EXAMPLES needs re-deriving (see 6b)
+prose numbers  2 423 species / 340 079 syllables / 13 748 rows / 1 043 genera
+song funnel    stage 6 prints the syntax trade; v6's re-learn cost repeat classes 68 %
+```
+
+That last one is the gate worth watching rather than the cosine: a finer typing fractures the
+runs repeat detection depends on, and this corpus change is a typing change.
+
+The app itself needs no figure work: `app/static/figures/` is four **screenshots of the
+running app**, and the interface has not changed. What it does need is the number sweep —
+`InfoPage.svelte` reads §5 from the loaded `manifest.json` (so that updates itself), but
+`2 423` and `340 079` are also written into prose and comments in `+page.svelte`,
+`InventoryTable.svelte`, `inventory-rows.ts`, `palette.ts`, `shaders.ts`, `Galaxy.svelte`
+and `types.ts`.
+
+## 7. Also not done
+
+- **`harmonic` clips at 1.0 on over a quarter of the corpus** (p75 = 1.000), which makes it
+  useless as a discriminator over that quarter. Noticed while testing gates; not chased.
+- **`harmonics` and `noise_frac` are on every row and unused as gates.** The reason not to
+  reach for them is §1: they are per-syllable, and the spans they would judge are still
+  chosen by whatever is loudest in band.
+- **The store's existing rows are still segmented full-band.** The iNat half is re-derivable
+  from the cache, but new spans mean new patches, descriptors, embeddings and typing — a
+  rebuild of five files, not a field edit.
+- `out/harvest-gan/syllables.jsonl.bak` has been **deleted** (owner's call, after the numbers
+  in §2 were reviewed). The re-measurement is no longer reversible from a copy; it is
+  reproducible from the cache, which is the better property anyway.
+
+# Lyrebird — (2026-08-03, ~17:45): noise gets into the corpus, and the gate that should stop it is unmeasured on 59 % of it
+
+**Superseded by the section above.** Its diagnosis ("a tonality or harmonicity test is the thing that would actually separate a bird from a river") is measured wrong, and its claim that the unmeasured rows cannot be re-measured is measured wrong. The measurements it *does* record are still good; the conclusions are not.
 
 Owner, on an ingested recording: *"I'm looking at INAT227259, it's just noise, no bird call — do
 we have sufficient filtering that errors like that never come in?"*

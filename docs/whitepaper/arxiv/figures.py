@@ -584,6 +584,115 @@ def fig_claim_ladder():
     )
 
 
+def fig_noise_gates():
+    """FULL WIDTH. Five candidate noise gates, and where the flagged recording sits.
+
+    docs/23 §23.9, HANDOFF 2026-08-03 (~19:40). Every value is a *per-recording*
+    median against the store's own distribution, so the two panels are the same
+    measurement read two ways: the percentile the flagged recording occupies, and
+    what a threshold placed at its own value would cost.
+
+    Sample sizes differ by what each statistic needs and are stated in the
+    footnote: the two that need audio (Perch inference, sub-400 Hz share) are a
+    200-recording sample of the iNat cache; the three read from stored descriptors
+    cover the whole store.
+    """
+    # (label, percentile of INAT227259, share rejected by a threshold at its own
+    #  value, the tail a gate would reject, n, colour)
+    rows = [
+        ("absolute SNR floor", 43.3, 43.3, "low", 7496, CLAY),
+        ("spectral flatness", 21.1, 78.9, "high", 7739, CLAY),
+        ("Perch 2.0 presence", 88.1, 88.6, "low", 201, CLAY),
+        ("periodicity (run length)", 79.3, 20.7, "high", 7103, CLAY),
+        ("energy below 400 Hz", 95.0, 5.0, "high", 201, VIOLET),
+    ]
+    fig, (a1, a2) = plt.subplots(
+        1, 2, figsize=(W_FULL, 2.60), gridspec_kw={"width_ratios": [2.05, 1.0]}
+    )
+    ys = list(range(len(rows)))[::-1]
+
+    # Left: the percentile the flagged recording occupies, against the tail a gate on
+    # that statistic would have to reject. When the marker is not in the shaded tail,
+    # the gate is pointing the wrong way.
+    for yy, (_name, pct, _cost, tail, _n, colour) in zip(ys, rows):
+        x0, x1 = (0.0, 25.0) if tail == "low" else (75.0, 100.0)
+        a1.add_patch(Rectangle((x0, yy - 0.30), x1 - x0, 0.60,
+                               facecolor=SLATE_W, edgecolor="none", zorder=0))
+        a1.plot([0, 100], [yy, yy], color=AXIS, lw=0.7, zorder=1)
+        a1.plot([pct], [yy], marker="o", markersize=6.2, color=colour, zorder=3)
+        inside = (pct <= 25.0) if tail == "low" else (pct >= 75.0)
+        a1.text(pct + (2.4 if pct < 70 else -2.4), yy + 0.30,
+                f"p{pct:.0f}", fontsize=7.2, color=colour,
+                ha="left" if pct < 70 else "right", va="center", zorder=3)
+        if not inside:
+            a1.text(pct + (2.4 if pct < 70 else -2.4), yy - 0.30, "not in the tail",
+                    fontsize=6.6, color=MUTED, style="italic",
+                    ha="left" if pct < 70 else "right", va="center", zorder=3)
+    a1.set_xlim(-1, 101)
+    a1.set_ylim(-0.6, len(rows) - 0.4)
+    a1.set_yticks(ys)
+    a1.set_yticklabels([r[0] for r in rows], fontsize=7.4)
+    a1.set_xticks([0, 25, 50, 75, 100])
+    a1.set_xticklabels(["0", "25", "50", "75", "100"])
+    a1.set_xlabel("percentile of the flagged recording in the corpus")
+    a1.set_title("where the noise actually sits (shaded: the tail a gate rejects)",
+                 color=INK)
+    vgrid(a1)
+
+    # Right: what it costs to catch it at all.
+    a2.barh(ys, [r[2] for r in rows], height=0.56,
+            color=[r[5] for r in rows], edgecolor="none")
+    for yy, r in zip(ys, rows):
+        a2.text(r[2] + 1.8, yy, f"{r[2]:.0f} %", va="center", fontsize=7.6,
+                color=r[5])
+    a2.set_xlim(0, 108)
+    a2.set_ylim(-0.6, len(rows) - 0.4)
+    a2.set_yticks([])
+    a2.set_xticks([0, 50, 100])
+    a2.set_xticklabels(["0", "50", "100 %"])
+    a2.set_xlabel("corpus rejected by a threshold at its value")
+    a2.set_title("what catching it costs", color=INK)
+    vgrid(a2)
+
+    # No em dashes in a footnote: the body font here is cmr10 and has no such glyph,
+    # so one renders as a missing-character box. The LaTeX `caption` below may use them.
+    footnote(fig,
+             "The owner identified one ingested recording by ear as noise. Four "
+             "candidate gates put it mid-distribution or in the wrong tail "
+             "entirely: it reads as more tonal than average, and Perch 2.0 calls "
+             "it a bird at the 88th percentile of confidence, so a threshold that "
+             "catches it takes 43 to 89 per cent of the corpus with it. The one "
+             "statistic on which it is genuinely extreme is the share of its "
+             "energy below 400 Hz, and that was not a gate but a bug: the "
+             "segmenter thresholded on the full band while every description used "
+             "400 Hz to 12 kHz, so the syllables had been chosen by rumble that "
+             "nothing downstream reads. It was fixed rather than gated, because a "
+             "rumbling recording can still hold a bird. Over 7000 recordings for "
+             "the three statistics read from stored descriptors; 201 for the two "
+             "that need the audio.",
+             left=0.175, right=0.985, top_in=0.32, bottom_in=0.42, wspace=0.10)
+    return save(
+        fig, "noise-gates", width="full",
+        shows="five candidate ingest gates for noise, the percentile the one "
+              "by-ear-flagged recording occupies on each, and the share of the "
+              "corpus a threshold at its own value would reject",
+        source="docs/23 §23.9; HANDOFF.md 2026-08-03 (~19:40); "
+               "pipeline/analysis/perch_presence.py and periodicity.py over "
+               "pipeline/out/harvest-gan and out/audio-cache",
+        caption="Five candidate noise gates against the one recording identified "
+                "by ear as noise. Four of them place it mid-distribution or in the "
+                "wrong tail --- it reads as \\emph{more} tonal than average, and "
+                "Perch~2.0 calls it a bird at the 88th percentile of confidence "
+                "--- so catching it costs 43 to 89\\,\\% of the corpus. The only "
+                "statistic on which it is extreme is the share of energy below "
+                "400\\,Hz, which was a bug rather than a gate: the segmenter "
+                "thresholded on the full band while every description used "
+                "400\\,Hz--12\\,kHz. Loudness, tonality, harmonicity, model "
+                "presence and rhythm each name a property some real bird has in "
+                "the extreme.",
+    )
+
+
 def fig_spaces_bridge():
     """FULL WIDTH. The two feature spaces, what changed, and the bridge.
 
@@ -2231,6 +2340,7 @@ def main():
     fig_architecture()
     fig_signal_chain()
     fig_claim_ladder()
+    fig_noise_gates()
     fig_spaces_bridge()
     fig_corpus()
     fig_ruler()

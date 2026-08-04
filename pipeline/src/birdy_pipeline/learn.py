@@ -40,6 +40,7 @@ from pathlib import Path
 from typing import Any, Callable, Iterable, Sequence
 
 import numpy as np
+from scipy import signal
 from sklearn.cluster import KMeans
 
 from . import density, features, respiration, syrinx, twovoice
@@ -65,6 +66,38 @@ MERGE_GAP_S = 0.022
 CONTOUR_KNOTS = 9
 COLLINEAR_TOL = 0.025
 MAX_PER_RECORDING = 400
+
+#: The band the segmentation is allowed to see, and it is `F0_MIN_HZ..F0_MAX_HZ` on
+#: purpose: **the band every description below already restricts itself to.**
+#:
+#: This was full-band until it was measured, and the measurement is the reason it is not.
+#: `_segments` thresholds at `ONSET_REL` of the recording's own envelope peak, so whatever
+#: is loudest in a file decides what counts as a syllable — while `track_f0` and
+#: `measure_harmonics` throw away everything outside 400 Hz - 12 kHz. On a recording with
+#: wind, handling noise or traffic rumble under it those two facts disagree, and the
+#: segmenter wins: it slices the rumble, and the description then reads whatever tonal
+#: haze happens to sit inside those spans.
+#:
+#: The owner found one by ear (INAT227259, "just noise, no bird call"). Measured, **98.7 %
+#: of that file's energy is below 400 Hz** — the segmenter was thresholding almost entirely
+#: on content nothing downstream ever looks at, and it is not a rare shape. Over a
+#: 200-recording sample of the iNat cache, the share of energy under 400 Hz runs
+#: median 35.5 %, p75 86.8 %, p90 97.5 %: **23 % of recordings put over nine tenths of
+#: their energy outside the band that describes them**, and that is the population whose
+#: segmentation was being decided by rumble.
+#:
+#: This is why no per-syllable filter could catch that recording, and three were tried and
+#: measured dead on it (HANDOFF, this round): an absolute SNR floor would need 19 dB when
+#: the corpus median is 17.1; its spectral flatness is at the 21st percentile, i.e. it
+#: reads as *more* tonal than average; and Perch 2.0 ranks it at the 88th percentile of
+#: bird confidence in the cache. All three were asking "is this syllable a bird" about
+#: syllables that had already been chosen by the noise.
+#:
+#: `None` restores the full-band envelope, which is what every store harvested before this
+#: constant existed used. It is not a preference — it is how `quality.remeasure_store`
+#: reproduces such a store's segmentation exactly instead of misattributing one syllable's
+#: measurement to another.
+SEGMENT_BAND_HZ: tuple[float, float] | None = (F0_MIN_HZ, F0_MAX_HZ)
 
 # --- ingest-time quality -------------------------------------------------------------
 
@@ -226,6 +259,53 @@ def envelope(x: np.ndarray) -> np.ndarray:
     """Frame RMS at ENV_HOP. The segmentation runs on this, not on the samples."""
     f = _frames(x, ENV_FRAME, ENV_HOP)
     return np.sqrt(np.mean(f * f, axis=1)) if f.size else np.zeros(0)
+
+
+def band_limit(x: np.ndarray, sample_rate: int, lo: float, hi: float) -> np.ndarray:
+    """`x` with everything outside `lo..hi` Hz taken out. Zero phase, same length.
+
+    **A filter and not a spectral mask, and the first attempt was the mask.** Weighting
+    `ENV_FRAME`-point rfft bins looks equivalent and is not: 512 points at 44.1 kHz is 86 Hz
+    per bin, so `F0_MIN_HZ` is bin 4.6 and a Hann main lobe is four bins wide — the band edge
+    is as wide as the band's own lower reach. Measured on `self_test`'s fixture (a 60 Hz
+    rumble at 0.9 under four 5.2 kHz chirps at 0.05), the mask leaked enough rumble to find
+    **11 segments where there are four**, and the envelope's peak-to-median ratio was 15
+    against this filter's 234 060. A Butterworth skirt has stopband rejection; a window's
+    sidelobes do not.
+
+    `sosfiltfilt`, so the filter is zero-phase: the whole point of this pass is *when* a
+    syllable starts, and a causal filter would move every onset by its own group delay.
+    """
+    nyquist = 0.5 * sample_rate
+    low = max(lo, 1.0) / nyquist
+    high = min(hi, 0.999 * nyquist) / nyquist
+    if low >= high:  # a rate too low to have the band at all
+        return np.asarray(x, dtype=np.float64)
+    if high >= 0.999:
+        sos = signal.butter(4, low, btype="highpass", output="sos")
+    else:
+        sos = signal.butter(4, [low, high], btype="bandpass", output="sos")
+    # filtfilt needs more samples than its padding; a fragment shorter than that is not
+    # something the segmenter can use anyway.
+    if x.size <= 3 * (sos.shape[0] * 2 + 1):
+        return np.asarray(x, dtype=np.float64)
+    return np.asarray(signal.sosfiltfilt(sos, np.asarray(x, dtype=np.float64)))
+
+
+def band_envelope(x: np.ndarray, sample_rate: int, lo: float, hi: float) -> np.ndarray:
+    """`envelope`, but hearing only `lo..hi` Hz. Same frames, same units, same length.
+
+    Literally `envelope(band_limit(...))`, which is what keeps it comparable: it is the same
+    rectangular frame RMS in the same units, measured on the same frame grid, of a signal
+    with the out-of-band content removed. That matters because `_noise_floor` reads this
+    envelope while `snr` divides a segment's level by it — the two have to be the same
+    measurement of the same thing in the same band, or the ratio is a unit conversion
+    wearing a dB sign.
+
+    Cost: measured at 0.03 s for a 90-second recording on top of the 0.07 s the plain RMS
+    already takes, against the hundreds of milliseconds describing that recording costs.
+    """
+    return envelope(band_limit(x, sample_rate, lo, hi))
 
 
 def _segments(env: np.ndarray, sample_rate: int) -> list[tuple[int, int]]:
@@ -433,8 +513,14 @@ def extract_syllables(
     species_id: str,
     recording_id: str,
     max_seconds: float | None = None,
+    segment_band: tuple[float, float] | None = SEGMENT_BAND_HZ,
 ) -> list[SyllableObservation]:
-    """Segment a recording and describe each syllable in syrinx parameters."""
+    """Segment a recording and describe each syllable in syrinx parameters.
+
+    `segment_band` is the band the segmentation and its noise floor are measured in; see
+    `SEGMENT_BAND_HZ` for why it is not the whole spectrum, and pass `None` to reproduce a
+    store harvested before it existed.
+    """
     if max_seconds is not None:
         mono = mono[: int(max_seconds * sample_rate)]
     if mono.size < F0_FRAME:
@@ -443,7 +529,11 @@ def extract_syllables(
     # its loudest sample is 0.9, which erases exactly the evidence the flag needs.
     unscaled = mono
     mono = peak_normalise(mono)
-    env = envelope(mono)
+    env = (
+        envelope(mono)
+        if segment_band is None
+        else band_envelope(mono, sample_rate, *segment_band)
+    )
     if not env.size:
         return []
     env_peak = float(env.max()) or 1.0
@@ -469,7 +559,31 @@ def extract_syllables(
         # Quality, measured while the samples exist. The SNR is a ratio inside one
         # recording, so the peak normalisation above cancels out of it; the clipping
         # flag cannot use the normalised copy at all (see `unscaled`).
-        seg_rms = float(np.sqrt(np.mean(seg * seg))) if seg.size else 0.0
+        #
+        # The numerator has to be read in the same band as `noise_floor`, which comes from
+        # `env`. Dividing a full-band segment level by a 400 Hz - 12 kHz floor is how you
+        # report a recording that is 98.7 % rumble as having a healthy SNR — the numerator
+        # counts the rumble and the denominator does not, so the worse the rumble the better
+        # the number. That is measured, not hypothetical: it is why INAT227259's stored SNR
+        # is a respectable 11.5 dB median.
+        # On the legacy full-band path both sides were already the same band, so the
+        # formula there is left exactly as it was — `quality.remeasure_store` reproduces
+        # that path's numbers on 188 986 rows of the existing corpus, and "exactly" is the
+        # only property that makes such a pass safe to write back.
+        band_frames = (
+            np.zeros(0)
+            if segment_band is None
+            else env[
+                max(0, s0 // ENV_HOP) : max(
+                    s0 // ENV_HOP + 1, (s1 + ENV_HOP - 1) // ENV_HOP
+                )
+            ]
+        )
+        seg_rms = (
+            float(np.sqrt(np.mean(band_frames * band_frames)))
+            if band_frames.size
+            else (float(np.sqrt(np.mean(seg * seg))) if seg.size else 0.0)
+        )
         snr = 20.0 * math.log10(max(seg_rms, 1.0e-9) / max(noise_floor, 1.0e-9))
         raw = unscaled[s0:s1]
         clipped = bool(np.mean(np.abs(raw) >= CLIP_FULL_SCALE) > CLIP_SHARE_MIN)
@@ -4102,11 +4216,107 @@ def self_test(verbose: bool = True) -> None:
         "the grammar must follow the bout rule it is given"
     )
 
+    # 12. The segmentation band (`SEGMENT_BAND_HZ`). Five properties, and the fixture is
+    #     the failure the owner reported: a bird buried under rumble that carries almost
+    #     all of the energy. Full-band, the segmenter thresholds at 14 % of the *rumble's*
+    #     peak and finds the rumble; band-limited, it finds the bird.
+    rate = features.SAMPLE_RATE
+    t = np.arange(int(3.0 * rate)) / rate
+    rumble = 0.9 * np.sin(2 * np.pi * 60.0 * t) * (1.0 + 0.6 * np.sin(2 * np.pi * 2.0 * t))
+    chirps = np.zeros_like(t)
+    for onset in (0.5, 1.2, 1.9, 2.6):
+        span = (t >= onset) & (t < onset + 0.09)
+        chirps[span] = 0.05 * np.sin(2 * np.pi * 5200.0 * t[span]) * np.hanning(int(span.sum()))
+    fixture = rumble + chirps
+
+    # 12a. The band-limiter must actually reject, and by a lot: this is where the spectral
+    #      mask that was tried first failed (see `band_limit`). 60 Hz at 0.9 against 5.2 kHz
+    #      at 0.05 is a 25 dB deficit for the thing we want to keep, so anything less than
+    #      ~40 dB of rejection leaves the rumble in charge of the threshold.
+    kept = band_limit(fixture, rate, *SEGMENT_BAND_HZ)
+    assert kept.shape == fixture.shape, "band_limit changed the length"
+    rumble_only = band_limit(rumble, rate, *SEGMENT_BAND_HZ)
+    rejection_db = 20.0 * math.log10(
+        float(np.sqrt(np.mean(rumble ** 2)))
+        / max(float(np.sqrt(np.mean(rumble_only ** 2))), 1e-12)
+    )
+    assert rejection_db > 40.0, f"only {rejection_db:.1f} dB of rumble rejection"
+    # Zero phase: an onset must not move. A causal filter would shift every one of them.
+    tone = np.sin(2 * np.pi * 5200.0 * t) * (t > 1.5)
+    shifted = band_limit(tone, rate, *SEGMENT_BAND_HZ)
+    assert abs(int(np.argmax(np.abs(shifted) > 0.4)) - int(1.5 * rate)) < 0.002 * rate, (
+        "band_limit moved an onset — sosfiltfilt should be zero phase"
+    )
+
+    # 12b. The band envelope must ignore the rumble the full-band one is dominated by.
+    full_env = envelope(peak_normalise(fixture))
+    band_env = band_envelope(peak_normalise(fixture), rate, *SEGMENT_BAND_HZ)
+    assert full_env.argmax() != band_env.argmax(), (
+        "the fixture is meant to peak in different places in the two bands"
+    )
+    # The four chirps are the only in-band energy, so the band envelope's peak has to
+    # land inside one of them.
+    band_peak_s = band_env.argmax() * ENV_HOP / rate
+    assert any(onset <= band_peak_s <= onset + 0.09 for onset in (0.5, 1.2, 1.9, 2.6)), (
+        f"the band envelope peaks at {band_peak_s:.3f} s, which is not a chirp"
+    )
+
+    # 12c. ...so the segmentation finds the bird instead of the rumble. Four chirps in,
+    #      four segments out, each one on a chirp.
+    band_segments = _segments(band_env, rate)
+    assert len(band_segments) == 4, f"expected the four chirps, got {len(band_segments)}"
+    for (s0, s1), onset in zip(band_segments, (0.5, 1.2, 1.9, 2.6)):
+        assert abs(s0 / rate - onset) < 0.02, (
+            f"segment at {s0 / rate:.3f} s is not the chirp at {onset} s"
+        )
+    full_segments = _segments(full_env, rate)
+    assert not any(
+        any(abs(s0 / rate - onset) < 0.02 for onset in (0.5, 1.2, 1.9, 2.6))
+        for s0, _ in full_segments
+    ), "the full-band segmenter was supposed to miss every chirp — fixture is wrong"
+
+    # 12d. The whole path agrees, and `segment_band=None` really is the old behaviour:
+    #      it has to be, because `quality.remeasure_store` reproduces 188 986 rows of the
+    #      existing corpus through it.
+    banded = extract_syllables(fixture, rate, "test_bird", "fixture")
+    legacy = extract_syllables(fixture, rate, "test_bird", "fixture", segment_band=None)
+    assert banded, "the band-limited path described nothing"
+    assert [round(o.start, 3) for o in banded] != [round(o.start, 3) for o in legacy], (
+        "the band must change which syllables are described"
+    )
+    #      The legacy SNR must still be the old formula — a time-domain segment RMS over an
+    #      envelope-derived floor, both full-band. `quality.measure_recording` holds a copy
+    #      of exactly this arithmetic, so if the two ever part company the re-measurement
+    #      pass starts writing numbers the corpus was not harvested with.
+    legacy_env = envelope(peak_normalise(fixture))
+    legacy_floor = _noise_floor(legacy_env, _segments(legacy_env, rate))
+    normalised_fixture = peak_normalise(fixture)
+    for o in legacy:
+        s0 = int(round(o.start * rate))
+        seg = normalised_fixture[s0 : s0 + int(round(o.dur * rate))]
+        expected = 20.0 * math.log10(
+            max(float(np.sqrt(np.mean(seg * seg))), 1e-9) / max(legacy_floor, 1e-9)
+        )
+        assert abs(o.snr - round(expected, 2)) < 0.02, (
+            f"segment_band=None changed the SNR formula: {o.snr} vs {expected:.2f}"
+        )
+
+    # 12e. The SNR reads its numerator in the band its floor came from. On the fixture the
+    #      in-band chirps sit far above the in-band floor, and the *legacy* full-band SNR of
+    #      the same recording is flattered by the rumble it counts in the numerator only —
+    #      which is the mechanism behind INAT227259's respectable 11.5 dB.
+    assert all(o.snr is not None for o in banded)
+    assert min(o.snr for o in banded) > 6.0, (
+        f"the chirps should stand clear of the in-band floor: "
+        f"{[round(o.snr, 1) for o in banded]}"
+    )
+
     if verbose:
         print(
             f"learn self-test ok: typing space unchanged by default, "
             f"{len(mixed)} rows aligned through the embedder, "
-            f"w=0 exactly the old objective, w=1 exactly the critic"
+            f"w=0 exactly the old objective, w=1 exactly the critic, "
+            f"segmentation band finds {len(band_segments)}/4 chirps the full band misses"
         )
 
 

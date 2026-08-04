@@ -7,7 +7,7 @@ conventional preprint layout, `natbib` citations, figures pulled from
 
 `build_whitepaper.py` was **not** modified. Nothing outside this directory was modified.
 
-- `main.tex` — the manuscript. ~17\,000 words of prose plus 11 tables and 10 figures.
+- `main.tex` — the manuscript. ~17\,000 words of prose plus 10 tables and 19 figures.
 - `WHITEPAPER-FINDINGS.md` — 27 problems found in the code, the numbers and the project's
   own assumptions while reading. Read this before acting on anything else here.
 - `README.md` — this file.

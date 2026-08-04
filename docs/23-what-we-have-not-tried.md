@@ -5,7 +5,7 @@ the measured failure it attacks, the method, the gate stated before the run, and
 negative result would mean. Methods are taken from fields that solved the same problem
 on other data. Birdsong is the subject here, not the boundary of the reading list.
 
-The order is by cost over payoff, not by ambition. Three of the six need no new data,
+The order is by cost over payoff, not by ambition. Three of the eight need no new data,
 no network and no training run.
 
 ## 23.0 The pattern this plan answers
@@ -632,6 +632,132 @@ behavioural equivalence.
    are.
 7. **W7** whenever a harvest is being run anyway: it costs a species list, and it is the
    only ground truth for cross-species similarity this corpus can obtain.
+8. **W8** (§23.9) is blocked on the owner, not on compute: it needs a dozen recordings
+   listened to and called noise before a sixth feature is worth proposing. The
+   measurement half is done and the root cause it found is already fixed.
 
 One heavy job at a time (AGENTS.md). W1 and W2 are read-only against a fixed store and
 can share a session with anything else.
+
+## 23.9 W8 — Keeping noise out of the corpus, and the five gates that cannot
+
+**The failure, and it was reported by ear.** The owner listened to an ingested recording
+(`INAT227259`, 95 retained observations) and asked: *"it's just noise, no bird call — do we
+have sufficient filtering that errors like that never come in?"* The answer was no. Three
+gates existed and none of them was an absolute test for "is this a bird": the syllable
+overlap requirement in `slice_descriptors`, the segmenter's own onset threshold, and `snr`,
+which is a weight and not a gate (`learn.quality_weight`: *"Unmeasured is neutral, not bad"*).
+
+This section is the same shape §23.0 names, with an unusual ending: **the root cause was not
+a missing gate, it was a measurement that disagreed with itself, and fixing that did not
+produce a gate either.**
+
+### 23.9.1 The root cause — the segmenter was thresholding outside the analysis band
+
+`learn._segments` thresholded at `ONSET_REL` = 14 % of the recording's **full-band** envelope
+peak, while `track_f0` and `measure_harmonics` discard everything outside
+`F0_MIN_HZ..F0_MAX_HZ` = 400 Hz – 12 kHz. Those two facts disagree on any recording with wind,
+handling noise or traffic under it, and the segmenter won.
+
+```
+INAT227259, share of energy below 400 Hz                       98.7 %
+its 95 stored syllables, f0 median                              992 Hz
+the corpus, f0 median                                         2 762 Hz
+```
+
+The spans had been chosen by the rumble, so the description read whatever tonal haze sat
+inside them. **This is why every per-syllable gate had to fail: each was being asked about
+the wrong spans.** Not a rare shape either — over a 200-recording sample of the iNat cache,
+the share of energy under 400 Hz runs median 35.5 %, p75 86.8 %, p90 97.5 %, so **23 % of
+recordings put over nine tenths of their energy outside the band that describes them.**
+
+Fixed: `learn.SEGMENT_BAND_HZ`, a 4th-order Butterworth under `sosfiltfilt` (zero-phase,
+because this pass is about *when* a syllable starts). Over 120 cached recordings, both paths
+on the same audio: **−22.5 % syllables, f0 median 2 622 → 3 179 Hz, SNR median 12.73 → 15.85 dB
+with 81 % of recordings improving.** A spectral mask was tried first and failed — at
+`ENV_FRAME` = 512 the bins are 86 Hz, so `F0_MIN_HZ` is bin 4.6 and a Hann main lobe is four
+bins wide; it found 11 segments where there are four.
+
+### 23.9.2 The five gates, each measured dead on the one labelled example
+
+| gate | INAT227259 | corpus | why it fails |
+|---|---|---|---|
+| absolute SNR floor | med 11.5 dB, min 8.2 | med 17.1 dB | needs ~19 dB → over half the corpus |
+| spectral flatness | 0.044 | med 0.106 | **21st percentile** — reads *more* tonal than average |
+| Perch 2.0 presence | `taxon_max` 0.899 | med 0.541 | **88th percentile** — rejecting it costs 89 % |
+| full-band segmentation | 98.7 % sub-400 Hz | p90 97.5 % | the root cause; fixed, but not a gate |
+| periodicity | run 5/95, rank 959/7 103 | — | the most metronomic recordings are all real birds |
+
+Two of these deserve their own sentence because they are the strongest candidates and they
+fail hardest.
+
+**Perch 2.0 says it is a bird.** Run over the whole recording, Perch labels it *Trogon
+curucui* — the store's own label — at 0.41–0.54 in its early windows and *Passer domesticus*
+at up to 0.899 later. `analysis/perch_presence.py` carries the measurement, the distribution
+and the cost of every threshold. Nothing is wired into ingest, and the discipline of §23.6 is
+unchanged: a presence score is metadata exactly as a label is.
+
+**Periodicity was the best idea left and it is the cleanest refutation.** Every other gate
+asks "is this *syllable* a bird", and one insect pulse is not distinguishable from one short
+call, so `analysis/periodicity.py` asks about the sequence instead: the longest run of
+consecutive inter-onset intervals holding within 12 % of the run's own median. The top of that
+ranking is not noise, it is ornithology:
+
+```
+XC273582    scytalopus_vicinior    run 192/391  cv 0.047     tapaculo
+INAT167833  scytalopus_speluncae   run  75/ 75  cv 0.011     tapaculo, MODELLED
+XC1152455   gallinago_gallinago    run  60/ 83  cv 0.019     snipe
+XC1005194   jynx_torquilla         run  51/144  cv 0.058     wryneck
+```
+
+Of the 45 recordings a `run >= 12, share >= 0.5` cut selects, **40 belong to a species in the
+inventory**. On its band-limited spans INAT227259's run rises to 22 of 105, so the pulse train
+is real — but `INAT167833` is 75 of 75 at CV 0.011, **more metronomic than the insect on every
+axis** (checked by eye: 75 identical notes at 5/s across the whole file). Any threshold that
+catches the one deletes the other. Pairing periodicity with loudness looked like the escape
+(the metronomic birds sit at 23–30 dB in-band against 9 dB) and over the corpus it is not: the
+cut selects 43 recordings that are again mostly quiet repetitive birds — *Chamaeza*
+antthrushes, a *Glaucidium* pygmy-owl, a sedge warbler, a tawny frogmouth — and INAT227259 is
+not among them.
+
+### 23.9.3 What the pattern says, and the gate stated before the next run
+
+Loudness, tonality, harmonicity, model presence and rhythm each name a property that **some
+real bird has in the extreme**. That is not five unlucky choices; it is what a corpus of 3 581
+species means. A one-dimensional gate over such a corpus has no tail that belongs only to
+noise.
+
+**The binding constraint is labels, not features.** Every threshold above was fitted against
+`n = 1` recording the owner had listened to, and a conjunction tuned on one positive example is
+a description of that example. The next attempt should not propose a sixth feature.
+
+**Pre-registered gate for W8, next run.** Obtain **at least 12** recordings the owner has
+listened to and called noise, drawn from the shortlists already computed
+(`out/periodicity.jsonl`, `out/perch-presence.jsonl`). Then any candidate gate must reach
+**≥ 0.8 recall on those 12 at ≤ 2 % loss of recordings belonging to inventory species**. A
+negative result would mean noise removal at ingest is not achievable from the stored
+descriptors, and the honest alternative is a *flag* carried beside each observation with the
+weight it already has — which is what `snr` and `clipped` are, and what §23.6's discipline
+would say about a Perch score.
+
+Everything needed to make that labelling cheap now exists: `out/audio-cache` holds 5 366
+recordings, both shortlists rank them, and `birdy-pipeline quality remeasure` demonstrated
+that an audio-derived measurement can be written back into `syllables.jsonl` **exactly** —
+188 986 of 188 986 rows matched, zero drifted.
+
+### 23.9.4 A side effect worth more than the gate
+
+`snr` was measured on 41 % of the corpus and treated as neutral on the other 59 %. That was
+believed unfixable without re-fetching audio. It was not: **188 986 of the 199 993 unmeasured
+rows are iNat, and 5 366 of the 5 368 iNat recordings were still in `out/audio-cache`.**
+
+```
+snr coverage           41.2 % -> 96.8 %      329 115 of 340 122 rows
+corpus median snr      17.13 dB -> 11.94 dB  the measured 41 % was a biased sample
+below  6 dB            13.9 %  -> 23.7 %     78 036 rows
+below 10 dB            26.6 %  -> 42.5 %     139 717 rows
+```
+
+The corpus is substantially quieter than the measured fraction suggested, so **every floor
+cost quoted before this run was computed on a biased sample.** That correction is the most
+useful thing W8 produced, and it came from noticing that the audio was already on the disk.

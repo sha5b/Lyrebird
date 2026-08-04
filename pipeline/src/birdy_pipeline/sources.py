@@ -759,14 +759,28 @@ class InatSoundsSource(Source):
         licences = {lic["id"]: lic for lic in meta["licenses"]}
         category_of = {a["audio_id"]: a["category_id"] for a in meta["annotations"]}
         # A bare string stays one species; anything iterable becomes a set of ids. Both go
-        # through `species_id_for`, so "Genus species" and `genus_species` are the same ask.
+        # through `canonical_species_id`, so "Genus species" and `genus_species` really are
+        # the same ask — this used to call `species_id_for`, which returns "" for a bare id,
+        # and the emptied set then read as "no filter" and swept the whole archive.
         if not species:
             wanted_ids: set[str] = set()
         elif isinstance(species, str):
-            wanted_ids = {species_id_for(species)}
+            wanted_ids = {harvest.canonical_species_id(species)}
         else:
-            wanted_ids = {species_id_for(s) for s in species if s}
+            wanted_ids = {harvest.canonical_species_id(s) for s in species if s}
+        unusable = wanted_ids & {""}
         wanted_ids.discard("")
+        # **Refuse rather than widen.** A species ask that parses to nothing must not quietly
+        # become an unfiltered 81 GB sweep; that is the failure this guard is named after.
+        if species and not wanted_ids:
+            raise RuntimeError(
+                f"none of the {1 if isinstance(species, str) else len(list(species))} "
+                f"requested species parsed to an id, so the filter would have matched "
+                f"everything and swept the whole archive. Expected \"Genus species\" or "
+                f"genus_species per entry."
+            )
+        if unusable:
+            log("  warning: some requested species did not parse to an id and were dropped")
         out: dict[str, dict[str, Any]] = {}
         for audio in meta["audio"]:
             cat = categories.get(category_of.get(audio["id"]))

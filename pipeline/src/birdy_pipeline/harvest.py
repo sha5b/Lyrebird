@@ -57,7 +57,7 @@ import soundfile as sf
 from . import features
 from .corpus import AUDIO_SUFFIXES, LOCAL_CLIP_SECONDS, LOCAL_HOP_SECONDS, resample
 from .galaxy import PointSet
-from .learn import SyllableObservation, extract_syllables
+from .learn import SEGMENT_BAND_HZ, SyllableObservation, extract_syllables
 from .syrinx import SAMPLE_RATE, peak_normalise
 
 XC_API = "https://xeno-canto.org/api/3/recordings"
@@ -481,6 +481,20 @@ class HarvestStore:
                     # `features.PATCH_*` invalidates every patch ever written, and this is
                     # what lets `critic.py` say so instead of training on a reshaped mess.
                     "patchShape": list(features.PATCH_SHAPE),
+                    # The segmentation band of the build that wrote this state, so a store
+                    # says which regime it was last ingested under instead of leaving it to
+                    # be inferred (`learn.SEGMENT_BAND_HZ`; `null` is the full-band
+                    # behaviour every store harvested before it existed used).
+                    #
+                    # **It describes the latest ingest, not every row.** A store that
+                    # accumulated across the change is mixed and this cannot say so —
+                    # `out/harvest-gan` is exactly such a store, 340 122 rows segmented
+                    # full-band with anything added afterwards segmented in-band. Recorded
+                    # rather than omitted because "unknown" and "full-band" were previously
+                    # the same silence, and `quality.remeasure_store` has to tell them apart.
+                    "segmentBand": (
+                        None if SEGMENT_BAND_HZ is None else list(SEGMENT_BAND_HZ)
+                    ),
                     "patchesWithData": sum(
                         1 for o in self.syllables if o.mel_patch is not None
                     ),
@@ -878,6 +892,38 @@ def species_id_for(scientific: str) -> str:
     if len(parts) < 2:
         return ""
     return f"{parts[0].lower()}_{parts[1].lower()}"
+
+
+def canonical_species_id(value: str) -> str:
+    """`Cuculus canorus` **or** `cuculus_canorus` -> `cuculus_canorus`.
+
+    For species asks that come from a human or from a generated file, where both spellings
+    are legitimate. `species_id_for` stays strict on purpose — it is fed scientific names by
+    the fetchers, and a one-word name there is bad metadata that should read as empty rather
+    than be waved through — so widening it would hide real errors at the ingest boundary.
+
+    **This function exists because its absence silently ran a 73-minute sweep on the wrong
+    thing.** `sources fetch --species-file` documents "ids or \"Genus species\"", and
+    `analysis/topup_underfloor.py` writes ids; every one of them went through
+    `species_id_for`, came back `""`, was dropped by a `discard("")`, and left the wanted set
+    **empty** — which the filter reads as "no filter". The result was an unfiltered
+    taxonomic-order pass: of 1 287 recordings ingested against a 1 160-species target list,
+    302 landed on a target. A filter that silently becomes a no-op when its input is the
+    documented format is worse than one that raises.
+    """
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    parts = [p for p in text.split() if p]
+    if len(parts) >= 2:
+        return f"{parts[0].lower()}_{parts[1].lower()}"
+    # One word: an id already, if it is shaped like one. A bare genus is not a species and
+    # must not become `genus_` or match anything. A trinomial is cut to its binomial, which is
+    # what the spaced branch above already does to "Acanthis hornemanni exilipes".
+    chunks = [c for c in parts[0].lower().split("_") if c]
+    if len(chunks) >= 2:
+        return f"{chunks[0]}_{chunks[1]}"
+    return ""
 
 
 def load_discovered(path: Path) -> list[dict[str, Any]]:
@@ -1417,6 +1463,25 @@ def self_test(verbose: bool = True) -> None:
         ("http://example.com/unknown-terms", False),
     ):
         assert audio_may_be_cached(url) is want, f"licence gate wrong for {url!r}"
+
+    # A species ask must parse from either spelling, and must NOT parse from a genus.
+    # This is the guard on a 73-minute sweep that ran unfiltered because every id in a
+    # generated species file came back empty — see `canonical_species_id`.
+    for text, want_id in (
+        ("Acanthis hornemanni", "acanthis_hornemanni"),
+        ("acanthis_hornemanni", "acanthis_hornemanni"),
+        ("ACANTHIS_HORNEMANNI", "acanthis_hornemanni"),
+        ("Acanthis hornemanni exilipes", "acanthis_hornemanni"),
+        ("acanthis_hornemanni_exilipes", "acanthis_hornemanni"),
+        ("Acanthis", ""),
+        ("", ""),
+    ):
+        got = canonical_species_id(text)
+        assert got == want_id, f"canonical_species_id({text!r}) = {got!r}, want {want_id!r}"
+    # ...and the strict parser stays strict, because it reads fetcher metadata where a
+    # one-word scientific name is bad data rather than a shorthand.
+    assert species_id_for("cuculus_canorus") == "", "species_id_for must not accept a bare id"
+    assert species_id_for("Cuculus canorus") == "cuculus_canorus"
 
     if verbose:
         print(

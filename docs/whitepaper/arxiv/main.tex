@@ -493,6 +493,49 @@ licence is refused, because absence of a licence is not permission. On the produ
 the browser.
 % AGENTS.md hard constraints, owner decision 2026-08-01
 
+\subsection{What the segmenter listens to, and five gates that do not work}
+\label{sec:noisegates}
+
+The segmenter is where noise enters, and for most of the project it was listening to the
+wrong thing. Onsets were thresholded at 14\,\% of each recording's \emph{full-band} envelope
+peak, while every description downstream discards everything outside 400\,Hz--12\,kHz. On a
+recording with wind, handling noise or traffic under it the two disagree and the segmenter
+wins: it slices the rumble, and the description then reads whatever tonal haze sits inside
+those spans. The case that exposed it was found by ear, and 98.7\,\% of that recording's
+energy lies below 400\,Hz; its 95 stored syllables have a pitch median of 992\,Hz against the
+corpus median of 2\,762\,Hz. It is not a rare shape. Over a 200-recording sample, the share of
+energy under 400\,Hz runs median 35.5\,\%, p75 86.8\,\% and p90 97.5\,\%, so roughly a quarter
+of recordings put over nine tenths of their energy outside the band that describes them.
+Segmenting on the analysis band instead, measured over 120 recordings, gives 22.5\,\% fewer
+syllables at a pitch median of 3\,179\,Hz rather than 2\,622\,Hz and a signal-to-noise median
+of 15.9\,dB rather than 12.7\,dB, improving 81\,\% of recordings.
+% docs/23 §23.9.1; HANDOFF 2026-08-03 (~19:40)
+
+That was a defect, not a filter, and fixing it did not produce a filter. Five candidate
+ingest gates were measured against the one recording a human had labelled noise
+(Figure~\ref{fig:noisegates}), and four of them place it mid-distribution or in the wrong
+tail: it reads as \emph{more} tonal than average, and Perch~2.0 identifies a bird in it at
+the 88th percentile of confidence in the corpus. A threshold that catches it rejects between
+43 and 89\,\% of everything else. The reason is structural rather than unlucky: loudness,
+tonality, harmonicity, model presence and rhythm each name a property that some real bird has
+in the extreme --- the most metronomic recordings in this corpus are tapaculos, a snipe and a
+wryneck, not insects --- so over 3\,581 species no one-dimensional gate has a tail belonging
+only to noise. Each threshold was also fitted against a single labelled example, which is a
+description of that example and not a rule. Ingest quality is therefore carried as a
+\emph{weight} and not as a filter: a signal-to-noise ratio and a clipping flag ride on every
+observation, and unmeasured is treated as neutral rather than as bad.
+% docs/23 §23.9.2-23.9.3
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{noise-gates}
+\caption{Five candidate noise gates against the one recording identified by ear as noise.
+Four place it mid-distribution or in the wrong tail, so catching it costs 43 to 89\,\% of the
+corpus. The only statistic on which it is extreme is the share of energy below 400\,Hz, which
+was a segmentation defect rather than a gate.}
+\label{fig:noisegates}
+\end{figure*}
+
 \subsection{The 28-dimensional descriptor}
 
 One descriptor per syllable offline, or per rolling window in the browser, computed
