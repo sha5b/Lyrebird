@@ -18,9 +18,12 @@ because a pre-registration edited after the fact is not one.
 
 ```
 G1  fitted tract length vs body mass      FAIL      partial r +0.194, gate > 0.4
-G2  the textbook mass/frequency result    PASS      r -0.542 on well-sampled species
+G2  the textbook mass/frequency result    PASS      PGLS beta -0.560 on the deep arm,
+                                                    against a published -0.510
 G3  recordist confound after aggregation  PASS      species +0.229 vs recordist +0.196
 W0  step-zero literature check            MOVED     the practice exists; the number does not
+W0  method as pre-registered              BROKEN    both models trained on the eval corpus;
+                                                    redesigned as a frozen-embedding probe
 W1  phylogenetic signal in production      CLOSED    by G1, per this document's own rule
 W2  learners vs non-learners              REFUSED   the measures cannot carry the question
 ```
@@ -158,8 +161,38 @@ is a direct measurement and it sharpens as the sample grows, exactly as a measur
 should. `L_eff` is a fitted parameter and it stayed flat. The dilution at low syllable
 counts is sampling, not a broken pipeline.
 
-Still owed: PGLS. This is OLS, and the BirdTree download that W2 later used is now on
-disk, so the phylogenetic version is cheap and should be run before anything is published.
+**PGLS, run 2026-08-04 later the same day (`analysis/g2_pgls.py`): G2 now passes both
+halves of its gate, and the way it passes is a finding of its own.**
+
+```
+                        n     standardised slope   fitted lambda
+all species          2 059          -0.211             0.130
+n_syllables >= 100     651          -0.248             0.000
+n_syllables >= 400      76          -0.560             0.291
+Mikula et al. 2021   5 085          -0.510
+```
+
+Negative and significant everywhere (p 1e-9 or better), so the pre-registered sign half is
+clear. **The magnitude half is only met on the deep arm** — at 2 059 species we are at
+about 40 % of the published slope, and at 76 deeply-sampled species we are on top of it.
+
+**Lambda is the tell, and it moves the same way.** Pagel's lambda is fitted by maximum
+likelihood here rather than assumed. It comes out at **0.130 over all species and exactly
+0.000 on the middle arm** — that is, our species-level f0 residuals carry no phylogenetic
+signal at all, which cannot be true of birdsong. Measurement error biases lambda towards
+zero and attenuates a standardised slope by exactly the same mechanism, and both recover
+together on the deep arm (lambda 0.291, slope -0.560). **The shortfall is our noise, not
+the birds' biology**, and the deep arm is the check that says so rather than an assertion.
+
+**One method note worth keeping, because it nearly produced a wrong answer.** The first
+attempt forced Brownian motion (lambda = 1), which is what "PGLS" is often taken to mean.
+It returned standardised slopes spanning **-1.962 to +0.001 across ten posterior trees** —
+a range crossing zero, from trees drawn out of one posterior. That was not a numerical
+fault: every pruned tree came back exactly ultrametric and positive-definite with condition
+numbers around 1e6-1e7. Forcing a model the trait does not follow put the whole estimate on
+a handful of deep splits whose arrangement differs between trees. Fitting lambda collapsed
+the range to [-0.214, -0.207]. **A "PGLS" number with lambda assumed rather than fitted
+should not be trusted from this corpus, and that generalises past us.**
 
 ### G3 — Does the recordist confound survive species-level aggregation?
 
@@ -298,6 +331,53 @@ That does not retire the question — a random split still puts one recordist on
 — but the expected effect should be revised down before the gate of "more than 10 points"
 is treated as likely.
 
+### W0's method as written is broken, and the fix is cheap. 2026-08-04.
+
+The contamination note above named BirdNET. Checking the other model made it worse:
+**Perch 2.0 was trained on Xeno-canto *and* iNaturalist** (Perch 2.0 tech report,
+arXiv 2508.04665: ~1.5 M recordings over 14 500 classes from Xeno-canto, iNaturalist
+research-grade audio via GBIF, Tierstimmenarchiv and FSD50K).
+
+So both candidate models have trained on the corpus W0 proposed to evaluate them on, and
+that breaks the pre-registered method rather than merely qualifying it:
+
+> **Top-1 accuracy on a random split versus a recordist-blocked split cannot separate
+> leakage from memorisation.** A model that has seen the individual test recordings scores
+> high on the random split for a reason that has nothing to do with recordists, and the
+> gap between the two splits then partly measures *which recordings it memorised*. The
+> pre-registered gate of "more than 10 points of top-1 drop" would be met, or missed, for
+> the wrong reason either way.
+
+**The redesign, and it is cheaper than the original.** Use the foundation model as a
+**frozen feature extractor** and put the split on a **linear probe trained on top of it**:
+
+```
+1  embed a public focal corpus with recordist metadata once, per model, frozen
+2  train a linear probe TWICE on those fixed embeddings, changing one thing only:
+     a) a random split
+     b) a recordist-blocked split
+3  report the top-1 difference, per model, with recordist coverage stated
+```
+
+The foundation model's contamination is then **identical in both arms** and cancels out of
+the comparison. What differs between the arms is only the probe's training set, which is
+the thing the claim is about. It is also an order of magnitude cheaper than the original:
+embeddings are computed once, and a linear probe is seconds.
+
+This does narrow the claim, and the narrowing should be stated in the paper rather than
+buried: the result becomes *"a recordist-blocked split costs a linear probe over frozen
+Perch/BirdNET features N points"*, not *"benchmark accuracy is inflated by N points"*. That
+is still a number nobody has published and it is still directly actionable.
+
+**A consequence for a claim we have already made, and it is not comfortable.** Perch 2.0
+trained on iNaturalist research-grade audio. **5 368 of our own store's recordings are
+iNaturalist.** `w6_t1_perch_recordist.py` ran Perch over that cache and found it carried
+the recordist structure, and that result is one of the four ends at which the whitepaper
+says the recordist confound was closed. Perch may have been recognising recordings it was
+trained on. **That arm needs re-running on audio Perch cannot have seen, or the claim needs
+qualifying**, and it should be settled before the methods paper goes out. It is filed here
+rather than in the handoff because it changes what a published sentence is allowed to say.
+
 ## Phase 1 — The four questions worth asking
 
 Ordered by how much new biology a positive result would add, against how exposed each is to
@@ -393,6 +473,14 @@ types by 100-300 syllables, so the binding constraint is syllables per species a
 species count. That is the same decision named in the handoff as "988 species under the
 fitting floor", seen from the other end.
 
+**One caveat added after G2's PGLS, and it does not change the verdict.** W2's fits force
+Brownian motion (lambda = 1) rather than fitting lambda, which G2 later showed is unstable
+on this corpus — W2's own posterior ranges show it, with entropy spanning [-0.067, +0.680].
+**The refusal stands regardless**, because it rests on the pre-model diagnostic (one measure
+degenerate, another 85 % sampling effort) and not on any coefficient. But if W2 is ever
+re-run on a deeper corpus, it must fit lambda rather than assume it, and the numbers in
+`w2_learners.json` should not be quoted as they stand.
+
 ### W3 — How independent are the source and the filter?
 
 **The open question.** Birds were long treated as lacking a strong source-filter separation.
@@ -469,11 +557,17 @@ enough to state before restating the original reasoning.**
 
 ```
 still to run    W0        the run itself, with the corpus/model pairing fixed first
-                G2-PGLS   cheap now; BirdTree is on disk
                 W4        only behind a G3 margin better than +0.033
+done            G2-PGLS   lambda fitted, not assumed; gate now met on both halves
 closed          W1, W3    by G1
 refused         W2        by its own measures, until the corpus is deeper per species
 ```
+
+**A constraint that emerged from G2's PGLS and now applies to everything left.** Fitted
+lambda is 0.000 on 651 species and 0.291 on the 76 deepest. Per-species measurement noise,
+not phylogeny, is what is limiting the comparative arm of this corpus — and it limits W4
+the same way it limited W2. **Depth per species is now the single binding constraint on
+every remaining question**, which is the same conclusion W2 reached from the other side.
 
 0. **W0**, because it is the widest-reaching result available and it depends on none of the
    gates below. It uses public corpora and public models, so it stands even if every

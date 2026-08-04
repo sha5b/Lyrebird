@@ -3286,6 +3286,11 @@ uv run birdy-pipeline build</pre>
 										>{c.label}{speciesCategories.includes(c.id) ? '' : '*'}</button>
 									{/each}
 								</p>
+								<!-- The asterisk was unreadable without this: a tooltip is not a legend,
+									     and a reader seeing `contact*` has no way to guess what it marks. -->
+								<p class="note faint">
+									* this bird has no documented call in that category
+								</p>
 
 								{#if readCalls.length}
 									{#each readCalls as call (call.song.id)}
@@ -3327,18 +3332,12 @@ uv run birdy-pipeline build</pre>
 						-->
 						{#if preview && preview.source !== 'documented' && !readCalls.length}
 							<!--
-								The inverse case is said out loud: no keyword matched, so what
-								plays is the words' rhythm in this bird's own syllables — labelled
-								invented, because that is what it is (docs/08 §8.5).
+								The "no documented call matches / what plays is rhythm" callout that
+								used to sit here has gone: the reading above now says both, and the
+								browser probe's refusal shot showed it said them twice in a row. What
+								is still worth keeping is the offer of a bird that *does* have the
+								call, which is the one thing the reading cannot say for itself.
 							-->
-							<div class="callout">
-								<span class="badge {preview.confidence}">{confidenceLabel(preview.confidence).text}</span>
-								<p class="note">No documented call matches these words.</p>
-								<p class="note faint">
-									What plays is a rendering of the words' rhythm in this bird's own
-									syllables — invented, not a translation of the words.
-								</p>
-							</div>
 							{#if preview.documentedElsewhere?.length}
 								<p class="note faint">
 									A documented call for this exists, but not for this bird:

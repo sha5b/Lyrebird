@@ -37,6 +37,17 @@ DATA
                     consensus. The trees are ultrametric, so VCV_ij = h - D_ij/2.
   mass              AVONET (eBird taxonomy).
 
+**CAVEAT added 2026-08-04, after `g2_pgls.py`.** The fits below force Brownian motion
+(lambda = 1) rather than fitting Pagel's lambda, and G2 later showed that assumption is
+unstable on this corpus — its forced-Brownian slopes spanned -1.962 to +0.001 across ten
+trees from one posterior, and fitting lambda collapsed the range to [-0.214, -0.207]. The
+same instability is visible here in the entropy row's [-0.067, +0.680].
+
+**The verdict below is unaffected**, because it rests on the pre-model diagnostic — one
+measure degenerate, another 85 % sampling effort — and not on any coefficient. But the
+coefficients themselves should not be quoted as they stand, and a re-run on a deeper corpus
+must fit lambda. `g2_pgls.pgls_lambda` is the implementation to reuse.
+
 Usage:  .venv/bin/python analysis/w2_learners.py
 """
 
@@ -185,7 +196,12 @@ def vcv(tree, tips: list[str]) -> np.ndarray:
     c = np.zeros((n, n))
     for node in tree.postorder_node_iter():
         if node.is_leaf():
-            node.tips = np.array([index[node.taxon.label]], dtype=np.intp)
+            # A leaf outside `tips` contributes to no pair among `tips`, and dropping it
+            # changes no internal depth — so it is skipped rather than being an error.
+            # Callers that prune once and then analyse a subset (g2_pgls.py's second arm)
+            # rely on this; without it the tree and the index silently disagree.
+            i = index.get(node.taxon.label if node.taxon else None)
+            node.tips = np.empty(0, dtype=np.intp) if i is None else np.array([i], dtype=np.intp)
             continue
         groups = [ch.tips for ch in node.child_node_iter()]
         for a in range(len(groups)):
@@ -195,8 +211,9 @@ def vcv(tree, tips: list[str]) -> np.ndarray:
         node.tips = np.concatenate(groups) if groups else np.empty(0, dtype=np.intp)
 
     for node in tree.leaf_node_iter():
-        i = index[node.taxon.label]
-        c[i, i] = node.depth
+        i = index.get(node.taxon.label if node.taxon else None)
+        if i is not None:
+            c[i, i] = node.depth
     return c
 
 

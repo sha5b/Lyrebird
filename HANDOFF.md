@@ -104,6 +104,52 @@ Two constraints on that run, both discovered in the literature pass:
 Cheap and still owed: **G2 under PGLS.** It is OLS today; BirdTree is now on disk and
 `w2_learners.py` already has a working VCV and GLS, so this is an hour.
 
+## Later the same day: G2's PGLS landed, and W0's method turned out to be broken
+
+**G2 now passes both halves of its gate** (`analysis/g2_pgls.py`). Pagel's lambda is
+fitted by maximum likelihood rather than assumed, over 10 BirdTree posterior trees:
+
+```
+                        n     standardised slope   fitted lambda
+all species          2 059          -0.211             0.130
+n_syllables >= 100     651          -0.248             0.000
+n_syllables >= 400      76          -0.560             0.291
+Mikula et al. 2021   5 085          -0.510
+```
+
+Negative and significant everywhere. The magnitude only meets the published figure on the
+deep arm — and **lambda tells you why**. A fitted lambda of 0.000 says our species-level f0
+residuals carry no phylogenetic signal, which cannot be true of birdsong. Measurement error
+pushes lambda to zero and attenuates a standardised slope by the same mechanism, and both
+recover together at depth. **The shortfall is our noise, not the birds.**
+
+**A method trap worth remembering.** The first attempt forced Brownian motion, which is
+what "PGLS" is usually taken to mean. It returned slopes spanning **-1.962 to +0.001 across
+ten trees from one posterior** — crossing zero. Not a numerical fault: every pruned tree was
+exactly ultrametric and positive-definite, condition number ~1e6-1e7. Forcing a model the
+trait does not follow puts the estimate on a few deep splits that differ between trees.
+Fitting lambda collapsed the range to [-0.214, -0.207]. **Do not trust a PGLS number from
+this corpus with lambda assumed.**
+
+**W0 cannot be run as written, and the reason is in docs/24 §W0.** BirdNET is excluded from
+BirdSet for training-set leakage — that was known. Checking the other model made it worse:
+**Perch 2.0 trained on Xeno-canto *and* iNaturalist** (arXiv 2508.04665). Both candidate
+models have trained on the corpus W0 proposed to evaluate them on, so a top-1 comparison
+between a random and a recordist-blocked split cannot separate leakage from memorisation.
+
+The redesign is cheaper than the original: freeze the model as a feature extractor, embed
+once, and put the split on a **linear probe** trained twice on those fixed embeddings. The
+contamination is then identical in both arms and cancels. The claim narrows to "a
+recordist-blocked split costs a linear probe over frozen Perch/BirdNET features N points",
+which is still a number nobody has published.
+
+**And this lands on a claim we have already published.** Perch trained on iNaturalist
+research-grade audio; **5 368 of our store's recordings are iNaturalist**, and
+`w6_t1_perch_recordist.py` ran Perch over exactly that cache. That result is one of the four
+ends at which the whitepaper says the recordist confound was closed. Perch may have been
+recognising its own training data. **That arm needs re-running on audio Perch cannot have
+seen, or the sentence needs qualifying, before the methods paper goes out.**
+
 ## The Words tab was reworked, and it now refuses on purpose
 
 Owner's ask: typing should be read for *meaning*, and the bird's notes should say what the
