@@ -73,15 +73,37 @@ console.log('the deselect that went silent');
 }
 
 {
-	// From silence, a selection must not resume anything on the way out: an explicit stop
-	// survives the round trip.
+	// **This assertion was inverted on 2026-08-04, at the owner's request, and the reason
+	// it could be inverted without losing anything is worth writing down.**
+	//
+	// It used to require that an explicit stop survived a selection round trip: press
+	// stop, pick a bird, let it go, and the aviary stayed silent. But `chooseBird` enters
+	// `solo` from any state including `off`, so the middle step is already audible — the
+	// stop had not survived the round trip, only the *release* pretended it had. Stepping
+	// out of a singing bird into silence is what read as the app having stopped.
+	//
+	// So releasing a selection now always hands the air back to the whole aviary. What a
+	// stop still buys is silence until the user next asks for sound; it no longer reaches
+	// across a selection it was already overridden by.
 	const s = run([
 		{ k: 'pressChorus', mode: 'global' },
 		{ k: 'stop' },
 		{ k: 'chooseBird', id: 'sp_a' },
 		{ k: 'releaseSelection' }
 	]);
-	ok('a stop the user asked for survives a selection', s.state.chorus === 'off', s.state.chorus);
+	ok('letting a bird go hands the air back to the aviary', s.state.chorus === 'global',
+		s.state.chorus);
+	ok('and the aviary is actually started', has(s, 'startGlobal'), cmds(s));
+
+	// A stop with no selection in play still stops, which is the part that matters.
+	const quiet = run([{ k: 'pressChorus', mode: 'global' }, { k: 'stop' }]);
+	ok('a stop with nothing selected still silences', quiet.state.chorus === 'off',
+		quiet.state.chorus);
+	// And releasing nothing is still not a transition, so a stop is not undone by a stray
+	// deselect on an empty view.
+	const strayed = reduce(quiet.state, { k: 'releaseSelection' });
+	ok('releasing nothing does not restart the aviary', strayed.state.chorus === 'off',
+		strayed.state.chorus);
 }
 
 // --- the toggle that must not be reachable programmatically --------------------------

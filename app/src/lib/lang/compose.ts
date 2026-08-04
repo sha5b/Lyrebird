@@ -226,22 +226,97 @@ export function textRhythm(text: string): TextRhythm | null {
 	return { count, wordStarts };
 }
 
+/** FNV-1a, so the same words always produce the same bout. */
+function seedFrom(text: string): number {
+	let h = 0x811c9dc5;
+	for (let i = 0; i < text.length; i++) {
+		h ^= text.charCodeAt(i);
+		h = Math.imul(h, 0x01000193) >>> 0;
+	}
+	return h >>> 0;
+}
+
+/** mulberry32 — a small seeded PRNG, so a bout is reproducible from its text. */
+function rngFrom(seed: number): () => number {
+	let a = seed;
+	return () => {
+		a = (a + 0x6d2b79f5) | 0;
+		let t = Math.imul(a ^ (a >>> 15), 1 | a);
+		t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+	};
+}
+
 /**
- * Fills the strip to a text's rhythm by walking the measured suggestions — top
- * transition at each step, bout start first — never by hashing the words. Tokens are
- * tagged `text` so an unedited strip can say the order came from the syntax.
+ * Draws one next token from the measured transition probabilities.
+ *
+ * Bout starts export no rate, so their options are drawn uniformly; everywhere else the
+ * draw is weighted by `p`.
+ */
+function drawNext(options: NextOption[], rand: () => number): string | null {
+	if (!options.length) return null;
+	const weights = options.map((o) => (o.p == null ? 1 : Math.max(o.p, 0)));
+	const total = weights.reduce((a, b) => a + b, 0);
+	if (total <= 0) return options[Math.floor(rand() * options.length)].typeId;
+	let r = rand() * total;
+	for (let i = 0; i < options.length; i++) {
+		r -= weights[i];
+		if (r <= 0) return options[i].typeId;
+	}
+	return options[options.length - 1].typeId;
+}
+
+/**
+ * Fills the strip to a text's rhythm by walking the measured grammar, never by hashing
+ * the words into syllables. Tokens are tagged `text` so an unedited strip can say the
+ * order came from the syntax.
+ *
+ * **The walk samples the measured distribution; it used to take the mode, and the mode is
+ * a trap.** Taking the single likeliest transition at every step makes the walk
+ * deterministic, and a deterministic walk on a first-order chain runs straight into the
+ * first fixed point it meets. Most species' likeliest transition out of a type is back
+ * into the same type — birds repeat — so the strip came out as one token stamped N times
+ * ("L20 L20 L20 L20 L20") for every text, in every species that had a self-loop at the
+ * top. The bug looked like the text being ignored, which it was, but the cause was the
+ * argmax rather than the rhythm-only design.
+ *
+ * Sampling is also the more faithful reading of a measured grammar: the mode is one
+ * statistic of the distribution, and reproducing the distribution reproduces the repeats
+ * in the proportion they were actually counted, rather than collapsing to whichever
+ * transition won by a hair. The draw is seeded from the text, so the same words still
+ * give the same bout every time — which is the property `compilePhrase`'s hash walk was
+ * protecting, kept here without letting the words choose syllables.
  */
 export function applyTextRhythm(species: Species, text: string): Token[] | null {
 	const rhythm = textRhythm(text);
 	if (!rhythm) return null;
 	const starts = new Set(rhythm.wordStarts);
+	const rand = rngFrom(seedFrom(text));
 	const tokens: Token[] = [];
+	const startOptions = nextOptions(species, []).options;
 	for (let i = 0; i < rhythm.count; i++) {
+		// **A word begins a phrase.** Sampling the chain faithfully is not enough on its
+		// own: this corpus has types whose measured self-transition is 0.8155, so a
+		// nine-token walk that enters one has a one-in-five chance of never leaving, and
+		// comes out as one note repeated. That is what the grammar says, and it is still a
+		// bad answer to "sing this sentence".
+		//
+		// The text already marks word boundaries and already widens the gap there. Letting
+		// the same boundary re-draw from the bout-start distribution costs no new claim
+		// about the bird — the syllables and every within-word transition are still the
+		// measured ones — and it is what stops one dominant self-loop from eating a whole
+		// sentence. The interface says the text sets the rhythm *and where phrases begin*.
+		//
+		// A type whose only measured continuation is `end` also lands here: it has no
+		// options at all, and repeating the previous token would be the same stutter by
+		// another route.
 		const { options } = nextOptions(species, tokens);
+		const atWordStart = starts.has(i);
+		const from = atWordStart || !options.length ? startOptions : options;
 		const fallback = species.syllables[0]?.id;
-		const typeId = options[0]?.typeId ?? tokens[tokens.length - 1]?.typeId ?? fallback;
+		const typeId = drawNext(from.length ? from : options, rand) ?? fallback;
 		if (!typeId) return null;
-		tokens.push({ typeId, source: 'text', gapBefore: starts.has(i) && i > 0 ? 0.12 : undefined });
+		tokens.push({ typeId, source: 'text', gapBefore: atWordStart && i > 0 ? 0.12 : undefined });
 	}
 	return tokens;
 }
@@ -310,11 +385,15 @@ export function tokensToPhrase(species: Species, tokens: Token[], provenance: Pr
 		// "The order is the bird's measured syntax" is only claimable while every chip
 		// still came from the rhythm walk or its suggestions; one keyboard pick makes it
 		// the user's order, and the note shrinks to what stays true.
+		// "Only the rhythm" stopped being true when a word boundary began re-drawing from
+		// the bout-start distribution (`applyTextRhythm`). The text now also decides where
+		// a phrase starts, and the sentence has to say so — the claim that stays true is
+		// that no letter chooses a syllable and every within-word step is measured.
 		const syntaxDriven = tokens.every((t) => t.source !== 'free');
 		note +=
 			provenance.kind === 'guided' && syntaxDriven
-				? ` The text (“${provenance.text}”) set only the rhythm; syllables and order are the bird’s measured syntax.`
-				: ` The text (“${provenance.text}”) set only the rhythm.`;
+				? ` The text (“${provenance.text}”) set the rhythm and where each phrase begins; which syllables, and their order inside a word, are the bird’s measured syntax.`
+				: ` The text (“${provenance.text}”) set the rhythm and where each phrase begins.`;
 	}
 
 	return {

@@ -20,10 +20,15 @@ because a pre-registration edited after the fact is not one.
 G1  fitted tract length vs body mass      FAIL      partial r +0.194, gate > 0.4
 G2  the textbook mass/frequency result    PASS      PGLS beta -0.560 on the deep arm,
                                                     against a published -0.510
-G3  recordist confound after aggregation  PASS      species +0.229 vs recordist +0.196
+G3  recordist confound after aggregation  PASS*     species +0.229 vs recordist +0.196,
+                                                    but on 77 of 3 636 species -- see ARM D
 W0  step-zero literature check            MOVED     the practice exists; the number does not
 W0  method as pre-registered              BROKEN    both models trained on the eval corpus;
                                                     redesigned as a frozen-embedding probe
+W0  pilot, frozen Perch, post-cutoff      NOT MET   9.68 points, gate > 10 -- but 2.44x the
+                                                    errors, worse in 20 of 20 folds
+T1b Perch recordist lift, unseen audio    CONFIRMED +0.441 on matched rows; the earlier
+                                                    contamination alarm was overcautious
 W1  phylogenetic signal in production      CLOSED    by G1, per this document's own rule
 W2  learners vs non-learners              REFUSED   the measures cannot carry the question
 ```
@@ -227,15 +232,64 @@ A. Subtracting two lifts computed on different rows is not the margin this gate 
 about. Arm C keeps only recordings whose species *and* recordist both clear 8, so both
 lifts come off one identical row set at 100 % coverage. It is the number to quote.
 
-**What it means, and it cuts against us.** Most of the recordist confound was
-same-recording pseudo-replication: syllables from one recording are neighbours, and one
-recording has one recordist. That is a weaker claim than the project has been making, and
-it weakens W0's premise as well as this gate's threat.
+**What it means — and this took two wrong explanations before ARM D measured the right
+one. All three are recorded, because the gate reads differently under each.**
+
+*First explanation, wrong: same-recording pseudo-replication.* `geometry.blocks_for`
+already gives every field observation the block `rec:{recording_id}` and `measure` drops
+same-block pairs, so the +0.488 was measured with same-recording neighbours excluded — the
+whitepaper says "blocked by recording" in the same sentence as the number. Nothing to
+remove.
+
+*Second explanation, also wrong: averaging strips the recordist's signature.* ARM D tests
+it directly — one population of recordings, scored at both representations, nothing else
+changed:
+
+```
+                                       species   recordist
+syllable-level, blocked by recording    +0.343     +0.295
+the same recordings, averaged           +0.223     +0.198
+```
+
+Both fall by about a third, together. Aggregation is not selective.
+
+*What is actually going on: the population, not the representation.* Look at the top row
+again — **species already outranks recordist at syllable level here**. There is no
+inversion for aggregation to cause. `measure` drops any group under 8, and at recording
+level that floor means "species with at least 8 recordings": **77 of 3 636**.
+
+The last step of that argument is measured rather than assumed, because the two before it
+were not:
+
+```
+r(log recordings, log recordists) over 3 853 species      +0.923
+species with >= 8 recordings   median distinct recordists  17.0
+species with  < 8 recordings   median distinct recordists   2.0
+```
+
+A species is well sampled in this corpus almost exactly because several recordists
+contributed to it.
+
+**That much is not new and must not be written up as if it were.** The whitepaper's Wall 2
+already states it: "most species in this corpus are carried by a handful of recordists, so
+no method that sees only the embedding can separate labels the data never separated", and
+"the named action is more recordists per species, in the data". The +0.923 is a number for
+a fact the project had already put in print.
+
+**The new part is what it does to this gate.** The floor that makes the recording-level
+test possible is the same floor that selects away the confound the test is looking for. G3
+asks whether the confound survives aggregation, and it can only be asked on the slice of
+the corpus where the sampling problem does not apply.
+
+**So G3 passes on the sub-population where it is measurable, and that sub-population is
+selected in a way that favours passing.** The gate's letter is met and its spirit is not
+settled. The coverage figures in each arm are the honest part of the result, and W4 — which
+this gate exists to license — should be read as still blocked rather than merely thin.
 
 Two deviations, both forced and both stated rather than absorbed. "Species means" taken
 literally is one point per species, which makes species lift untestable by construction;
-one point per *recording* is the aggregation that removes the pseudo-replication while
-leaving both groupings measurable, and it is what `w6_t1_perch_recordist.py` already uses.
+one point per *recording* is the aggregation that answers the question while leaving both
+groupings measurable, and it is what `w6_t1_perch_recordist.py` already uses.
 And the margins are thin. +0.033 is a pass, not a comfortable one.
 
 The fallback population, reported either way as this gate requires:
@@ -325,11 +379,14 @@ therefore cannot use an XC-derived corpus for BirdNET. Either find a corpus Bird
 not trained on, report BirdNET separately with the contamination stated, or replace the
 second model. This has to be settled before the run, not discovered during it.
 
-**And G3 has since undercut the premise.** If most of the recordist structure we measured
-was same-recording pseudo-replication, the leakage W0 predicts is smaller than we thought.
-That does not retire the question — a random split still puts one recordist on both sides
-— but the expected effect should be revised down before the gate of "more than 10 points"
-is treated as likely.
+**And G3 revises the expected effect down, though less than first written here.** An
+earlier version of this paragraph said most of the recordist structure was same-recording
+pseudo-replication; that was wrong and is corrected under G3 above — the original
+measurement was already blocked by recording. What G3 does show is that the confound is
+weaker at recording level than at syllable level (+0.196 against +0.488), and a benchmark
+split is a *recording*-level operation. So the leakage W0 predicts should be read off the
+recording-level figure rather than the syllable-level one, and the pre-registered gate of
+"more than 10 points" should not be treated as likely on the strength of +0.488.
 
 ### W0's method as written is broken, and the fix is cheap. 2026-08-04.
 
@@ -369,14 +426,111 @@ buried: the result becomes *"a recordist-blocked split costs a linear probe over
 Perch/BirdNET features N points"*, not *"benchmark accuracy is inflated by N points"*. That
 is still a number nobody has published and it is still directly actionable.
 
-**A consequence for a claim we have already made, and it is not comfortable.** Perch 2.0
-trained on iNaturalist research-grade audio. **5 368 of our own store's recordings are
-iNaturalist.** `w6_t1_perch_recordist.py` ran Perch over that cache and found it carried
-the recordist structure, and that result is one of the four ends at which the whitepaper
-says the recordist confound was closed. Perch may have been recognising recordings it was
-trained on. **That arm needs re-running on audio Perch cannot have seen, or the claim needs
-qualifying**, and it should be settled before the methods paper goes out. It is filed here
-rather than in the handoff because it changes what a published sentence is allowed to say.
+**RESULT of the pilot, 2026-08-04 (`analysis/w0_recordist_split.py`): the effect is real,
+large, and lands just under the pre-registered gate.** 62 species with >= 6 recordings and
+>= 2 recordists, 730 recordings, frozen Perch features, post-cutoff audio, 20 folds.
+
+```
+                     random split   recordist-blocked
+top-1                   93.29 %          83.61 %
+DROP                     9.68 points                  gate > 10.0     NOT MET
+per fold            mean +9.68  sd 5.08  blocked worse in 20 of 20 folds
+as error rate         6.71 %  ->  16.39 %             2.44x the errors
+```
+
+**Gate not met, and it is not close enough to argue about — 9.68 against 10.** The
+threshold was pre-registered and it is not being moved.
+
+**But points are the wrong unit near the ceiling, and that is worth saying next to the
+verdict rather than instead of it.** The same 9.68 points is a **2.44x increase in what the
+model gets wrong**, and blocked was worse in **20 of 20 folds**. A gate specified in
+accuracy points at 93 % accuracy is a much harsher bar than the same gate at 60 %, which is
+a flaw in how it was written rather than a property of the effect. Any re-registration
+should state the threshold as an error-rate ratio.
+
+**The class-set correction mattered and is the reason to trust the number.** Scoring the
+arms as they fall gives 9.14 points, because a blocked split strands whole species and
+leaves that arm a smaller, easier label set (49.9 classes against 62). Pairing each blocked
+fold with a random fold on its *own* class set raises the drop to 9.68 — the bias ran in
+the direction predicted, and correcting it made the effect larger, not smaller.
+
+Limits, stated: one model, pilot scale, and only species carried by two or more recordists,
+which is the population where blocking is possible at all.
+
+**A consequence for a claim we have already made — and the first version of this note
+overstated it by applying one word to two very different tests.** Perch 2.0 trained on
+iNaturalist research-grade audio, and **5 368 of our store's recordings are iNaturalist**,
+so Perch has very likely seen the files `w6_t1_perch_recordist.py` fed it. That is true.
+What follows from it is not the same for both tests:
+
+*For W0, contamination is fatal.* W0 measures accuracy. A memorised recording is scored
+correctly for a reason unrelated to generalisation, and the random-against-blocked gap then
+partly measures which recordings were memorised. That is why W0 is redesigned above.
+
+*For the recordist-lift arm, it is a speculative worry rather than a demonstrated flaw*,
+and three things weigh against it:
+
+- **Perch was never given recordist labels.** It was trained on species. It cannot have
+  memorised an identity nobody told it.
+- **Same-recording pairs are already excluded** by the blocking, so memorising one file
+  cannot produce the effect directly — it would have to make *different* recordings by one
+  recordist more alike.
+- **The plausible direction of overfitting runs the other way.** A species classifier that
+  overfits gets better at ignoring channel, microphone and background, which are exactly
+  what carries a recordist's signature. That would lower recordist lift, not manufacture it.
+
+So `w6_t1b_perch_postcutoff.py` is worth running, but for a narrower reason than "the
+result is suspect": the whitepaper leans on Perch as an **independent** replication, and
+training overlap is precisely what independence costs. The honest expectation is that it
+**confirms** the original arm. If it does, the correction on record is that this note was
+overcautious, not that the arm was wrong.
+
+**RESULT, 2026-08-04: it confirms it, and the note above was overcautious.** 2 158 quality-A
+bird recordings uploaded to xeno-canto after Perch 2.0's publication — audio the model
+provably could not have trained on — 137 recordists, 827 species.
+
+```
+ARM A  every recording       species +0.742 (28.2 % cov)   recordist +0.159 (99.8 % cov)
+ARM B  matched rows, n=293   species +0.750 (100 %)        recordist +0.441 (100 %)
+```
+
+Arm B is the number: both groupings on identical rows at full coverage, recordist lift
+**+0.441, verdict "strong", p at the permutation floor**. **Perch was not recognising its
+own training data.** The recordist confound is a property of archive audio that a
+foundation model reads off recordings it has never seen.
+
+Two notes. Species lift is very high here (+0.750) because Perch is a well-trained species
+classifier and these are quality-A focal recordings; both structures are strong at once,
+which is the point rather than a contradiction. And Arm A shows the same coverage trap G3
+hit — species scored on 28.2 % of rows against recordist's 99.8 % — which is why Arm B was
+built in from the start this time.
+
+**The BirdNET arm is probably clean, and that matters more than the Perch problem.**
+Checked after raising the alarm above, because an alarm is only useful with its scope
+attached. BirdNET v2.4's training sources are Xeno-canto, the Macaulay Library, BirdSet's
+soundscape evaluation subsets and project-internal data — **iNaturalist is not among
+them**. `w6_birdnet_arms.py` imports `CACHE` from the Perch runner, so it ran on the same
+iNaturalist audio, which BirdNET has no documented reason to have seen.
+
+That asymmetry is the useful part:
+
+```
+Perch 2.0   trained on XC + iNaturalist   -> our iNat cache is contaminated
+BirdNET     trained on XC + Macaulay      -> our iNat cache is probably clean
+```
+
+And the whitepaper's BirdNET result is the stronger of the two: BirdNET *raises* the
+recordist lift by 24 %, more recordist structure than our own critic shows. **A model that
+never trained on this audio finding more recordist structure in it is evidence the
+structure is in the recordings rather than in anyone's memorisation.** So the "closed at
+four ends" sentence survives, resting on the BirdNET end rather than the Perch end.
+
+Two caveats that must travel with this. BirdNET's training set is **not publicly
+documented** — the 2026 comparative review says as much, and notes that correspondence with
+the authors indicated some downstream datasets are used in training. "Probably clean" is
+the strongest available claim, not "certainly clean". And BirdNET having trained on
+BirdSet's soundscape subsets is exactly why it is excluded from BirdSet evaluation, which
+is the constraint on W0 above.
 
 ## Phase 1 — The four questions worth asking
 
@@ -616,8 +770,8 @@ that belong in paper two:
 - a **positive control that makes the negative one credible** — the same pipeline recovers
   the mass/frequency relationship at the published effect size, so "our corpus is broken"
   is not available as an explanation;
-- a **correction to our own loudest claim** — the recordist confound largely does not
-  survive aggregation past same-recording pseudo-replication.
+- a **qualification of our own loudest claim** — the recordist confound is weaker at
+  recording level (+0.196) than at syllable level (+0.488), and species overtakes it there.
 
 The third is uncomfortable and is the reason to trust the other two. A methods-and-refusals
 paper that also retracts its own headline number is doing the thing it claims to be for.

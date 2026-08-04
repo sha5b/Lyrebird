@@ -402,12 +402,41 @@ export class BirdyEngine {
 	// --- microphone + recording ---
 
 	/**
+	 * A device that is really the *output* looped back, exposed as an input.
+	 *
+	 * PulseAudio and PipeWire publish every sink's monitor as a capture source, and Chrome
+	 * passes those through `enumerateDevices` as ordinary `audioinput`s. Windows has the
+	 * same idea under two older names. Matching them is what lets "computer audio" avoid
+	 * display capture entirely.
+	 */
+	private static readonly MONITOR_RE = /\bmonitor\b|\bloopback\b|stereo mix|what u ?hear/i;
+
+	/** The loopback input to prefer for computer audio, if the platform has one. */
+	static async monitorDevice(): Promise<MediaDeviceInfo | null> {
+		const all = await BirdyEngine.inputDevices();
+		return all.find((d) => BirdyEngine.MONITOR_RE.test(d.label)) ?? null;
+	}
+
+	/** How the open input was actually obtained, for the interface to report honestly. */
+	inputVia: 'microphone' | 'monitor' | 'display' | null = null;
+
+	/**
 	 * Opens an input and routes it into the analysis bus.
 	 *
-	 * `microphone` takes an optional device id. `system` uses display capture, which is
-	 * the only way a browser will hand over the computer's own output; Chrome requires a
-	 * video track to be requested alongside it, so one is asked for and immediately
-	 * stopped — we never look at it.
+	 * `microphone` takes an optional device id.
+	 *
+	 * **`system` tries the output's monitor device before it tries display capture, and
+	 * that ordering is the whole point.** `getDisplayMedia` is the API browsers document
+	 * for computer audio, but it is a *screen* API: it always opens the screen picker,
+	 * always needs a video track requested alongside (asked for and immediately stopped
+	 * here), and on Linux it generally yields tab audio only — never the whole system. So
+	 * on any machine whose sound server publishes a monitor source, which is every
+	 * PulseAudio and PipeWire desktop, the honest route is `getUserMedia` against that
+	 * device: it is the real system output, and nothing is shared or shown.
+	 *
+	 * Device labels are blank until the browser has been granted audio permission once, so
+	 * a monitor cannot be recognised before then. One silent `getUserMedia` is opened and
+	 * closed to unlock the labels rather than making the user's first attempt fail.
 	 *
 	 * Every processing option is off. Echo cancellation, noise suppression and AGC are
 	 * tuned for speech: they gate exactly the quiet broadband texture a distant bird is
@@ -422,13 +451,41 @@ export class BirdyEngine {
 		};
 		let stream: MediaStream;
 		if (source === 'system') {
+			let monitor = await BirdyEngine.monitorDevice();
+			if (!monitor) {
+				try {
+					const probe = await navigator.mediaDevices.getUserMedia({ audio: true });
+					probe.getTracks().forEach((t) => t.stop());
+					monitor = await BirdyEngine.monitorDevice();
+				} catch {
+					// Permission refused, or no input at all. Display capture is still worth
+					// offering — it is the only route on a machine with no monitor source.
+				}
+			}
+			if (monitor) {
+				stream = await navigator.mediaDevices.getUserMedia({
+					audio: { ...constraints, deviceId: { exact: monitor.deviceId } }
+				});
+				this.micStream = stream;
+				this.inputSource = source;
+				this.inputVia = 'monitor';
+				this.micSource = this.ctx.createMediaStreamSource(stream);
+				this.micSource.connect(this.analysisBus);
+				await this.resume();
+				return;
+			}
 			if (!navigator.mediaDevices.getDisplayMedia) {
 				throw new Error('This browser cannot capture computer audio.');
 			}
 			stream = await navigator.mediaDevices.getDisplayMedia({
 				audio: constraints,
-				video: true
-			});
+				video: true,
+				// Chrome-only hints. `systemAudio` asks for the machine's output rather than
+				// one tab's; `selfBrowserSurface` keeps this page out of the picker, since
+				// capturing ourselves would feed our own synthesis back into the analysis.
+				systemAudio: 'include',
+				selfBrowserSurface: 'exclude'
+			} as DisplayMediaStreamOptions);
 			stream.getVideoTracks().forEach((t) => {
 				t.stop();
 				stream.removeTrack(t);
@@ -438,10 +495,12 @@ export class BirdyEngine {
 					'No audio came with that capture. Tick "share audio" when choosing the tab or screen.'
 				);
 			}
+			this.inputVia = 'display';
 		} else {
 			stream = await navigator.mediaDevices.getUserMedia({
 				audio: deviceId ? { ...constraints, deviceId: { exact: deviceId } } : constraints
 			});
+			this.inputVia = 'microphone';
 		}
 		this.micStream = stream;
 		this.inputSource = source;
@@ -464,6 +523,7 @@ export class BirdyEngine {
 		this.micStream?.getTracks().forEach((t) => t.stop());
 		this.micStream = null;
 		this.inputSource = null;
+		this.inputVia = null;
 	}
 
 	get micActive(): boolean {

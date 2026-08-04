@@ -15,10 +15,62 @@ script existed:
 **One deviation from the pre-registration, and it is forced.** "Species means" taken
 literally is one point per species, and species lift is then untestable by construction —
 `geometry.measure` says so itself and returns "untestable (one observation per group)"
-rather than a zero. The aggregation that removes the pseudo-replication G3 is aimed at,
-while leaving both groupings measurable, is **one point per recording**. That is also the
-representation `w6_t1_perch_recordist.py` already uses, so the two results are comparable.
-It is written down here rather than quietly substituted.
+rather than a zero. The aggregation that answers G3's question while leaving both groupings
+measurable is **one point per recording**. That is also the representation
+`w6_t1_perch_recordist.py` already uses, so the two results are comparable. It is written
+down here rather than quietly substituted.
+
+**Two wrong explanations were written here before ARM D measured the right one. Both are
+recorded rather than deleted, because the gate's result reads differently under each.**
+
+*Wrong explanation 1: aggregation removes same-recording pseudo-replication.* It does not.
+`geometry.blocks_for` already gives every field observation the block `rec:{recording_id}`
+and `measure` drops same-block pairs, so the syllable-level +0.488 was measured with
+same-recording neighbours excluded. There was none left to remove.
+
+*Wrong explanation 2: averaging strips the recordist's signature (channel, mic, distance,
+background) while leaving the species' centre intact.* ARM D tests exactly this — one
+population of recordings, scored at both representations — and it does not hold. Both lifts
+fall by about a third, together:
+
+```
+                                       species   recordist
+syllable-level, blocked by recording    +0.343     +0.295
+the same recordings, averaged           +0.223     +0.198
+```
+
+*What is actually going on.* **Species already outranks recordist at syllable level on this
+population**, so there is no inversion for aggregation to cause. The difference between
+these numbers and the store-wide +0.488/+0.196 is the **population**, not the
+representation. `measure` drops any group under 8, and at recording level that floor means
+"species with at least 8 recordings" — 77 of 3 636.
+
+And this last step is measured rather than assumed, because the two before it were not:
+
+```
+r(log recordings, log recordists) over 3 853 species      +0.923
+species with >= 8 recordings   median distinct recordists  17.0
+species with  < 8 recordings   median distinct recordists   2.0
+```
+
+A species is well sampled in this corpus almost exactly because several recordists
+contributed to it.
+
+**None of that is new, and it should not be presented as if it were.** The whitepaper's
+Wall 2 already says it in words — "most species in this corpus are carried by a handful of
+recordists, so no method that sees only the embedding can separate labels the data never
+separated", and "the named action is more recordists per species, in the data". The +0.923
+is a number for a fact the project had already stated.
+
+**What is new is the consequence for this gate.** The floor that makes the recording-level
+test possible is the same floor that selects away the confound the test is looking for. G3
+was written to check whether the confound survives aggregation, and it can only be run on
+the slice of the corpus where the sampling problem does not apply.
+
+**So this gate passes on the sub-population where it can be measured, and that
+sub-population is selected in a way that favours passing.** That is a weaker result than a
+bare "+0.229 vs +0.196" suggests, and the coverage lines in every arm below are what keep
+it honest.
 
 The estimator is the project's own (`geometry.measure`): kNN label agreement at k = 10
 against a 199-draw permutation null, lift = observed - null mean. Nothing new is invented
@@ -202,6 +254,61 @@ def main() -> int:
         print(f"  {res['arm']}")
         print(f"    species lift {sp['lift']:+.3f}  vs  recordist lift {rc['lift']:+.3f}"
               f"   margin {margin:+.3f}   -> {verdict}")
+
+    # ARM D — the representation test, added after the first write-up of this script got
+    # the mechanism wrong and claimed aggregation removes same-recording pseudo-replication.
+    # It does not; `blocks_for` already blocked that. The remaining explanation was that
+    # averaging a recording's syllables discards within-recording variation carrying the
+    # recordist's signature — and that was an argument, not a measurement. This measures it:
+    # ONE population of recordings, scored twice, changing only the representation.
+    print()
+    print("=" * 72)
+    print("ARM D — is the difference the representation? Same recordings, scored twice.")
+    print("=" * 72)
+    raw = np.fromfile(STORE / "embeddings.f32", dtype="<f4")
+    emb = raw.reshape(len(store.syllables), -1).astype(np.float64)
+    per_rec: dict[str, list[int]] = defaultdict(list)
+    for i, o in enumerate(store.syllables):
+        if o.recording_id in means:
+            per_rec[o.recording_id].append(i)
+
+    # Arm C's matched population, not a fresh random draw. A random sample of recordings
+    # scatters across species and recordists, so once it is averaged almost nothing clears
+    # `measure`'s 8-member floor — the first attempt at this arm left species untestable
+    # and recordist on 3 groups. The matched set already guarantees the property on both
+    # groupings, which is exactly what a two-representation comparison needs.
+    pick = [r for r in both if len(per_rec.get(r, ())) >= 8]
+    rows_idx = [i for r in pick for i in per_rec[r][:16]]
+    print(f"  {len(pick)} recordings, {len(rows_idx)} syllables "
+          f"(<= 16 per recording; the Arm C matched set)")
+
+    syl_x = emb[rows_idx]
+    syl_rec = [store.syllables[i].recording_id for i in rows_idx]
+    syl_sp = [store.recordings[r]["speciesId"] for r in syl_rec]
+    syl_who = [store.recordings[r]["recordist"] for r in syl_rec]
+
+    for name, xx, sp_l, wh_l, blocks in (
+        ("syllable-level, blocked by recording", syl_x, syl_sp, syl_who, syl_rec),
+        ("the same recordings, averaged",
+         np.stack([means[r] for r in pick]),
+         [store.recordings[r]["speciesId"] for r in pick],
+         [store.recordings[r]["recordist"] for r in pick], None),
+    ):
+        print(f"\n  {name}")
+        for grouping, labels in (("species", sp_l), ("recordist", wh_l)):
+            rel = geometry.measure(
+                xx, labels, grouping=grouping, space="critic", metric="cosine",
+                seed=SEED, blocks=blocks,
+            )
+            if rel is None:
+                print(f"    {grouping:10s} untestable")
+                continue
+            print(f"    {grouping:10s} groups {rel.groups:4d}   "
+                  f"LIFT {rel.knn - rel.knn_null:+.3f}   p {rel.knn_p:.3g}   "
+                  f"({rel.labelled} rows)")
+    print()
+    print("  If recordist lift falls between these two rows while species holds up, the")
+    print("  explanation in this file's header is measured rather than argued.")
 
     # The count docs/24 says to report before anything else runs, if G3 fails.
     per_species: dict[str, set[str]] = defaultdict(set)

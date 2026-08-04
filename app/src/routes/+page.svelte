@@ -182,7 +182,13 @@
 	let volume = $state(1.5);
 	const chorus = $derived(perf.chorus);
 	let micOn = $state(false);
-	let inputSource = $state<'microphone' | 'system'>('microphone');
+	// Computer audio is the default: the common use of Listen is pointing it at a recording
+	// already playing on this machine, and the microphone is the deliberate choice. The
+	// engine reaches it through the output's monitor device where one exists, so choosing
+	// this default does not mean choosing a screen-share prompt.
+	let inputSource = $state<'microphone' | 'system'>('system');
+	/** Which route the open input actually took, so the panel can say so. */
+	let inputVia = $state<'microphone' | 'monitor' | 'display' | null>(null);
 	let inputDeviceId = $state('');
 	let inputDevices = $state<MediaDeviceInfo[]>([]);
 	let recording = $state(false);
@@ -1366,6 +1372,7 @@
 			} else {
 				await engine.startInput(inputSource, inputDeviceId || undefined);
 				micOn = true;
+				inputVia = engine.inputVia;
 				// Device labels are withheld until permission has been granted once, so the
 				// list is worth re-reading the moment it has been.
 				inputDevices = await BirdyEngine.inputDevices();
@@ -1408,6 +1415,7 @@
 		try {
 			if (engine.recording) await toggleRecording();
 			await engine.startInput(inputSource, inputDeviceId || undefined);
+			inputVia = engine.inputVia;
 			inputDevices = await BirdyEngine.inputDevices();
 		} catch (err) {
 			audioError = describeInputError(err, inputSource);
@@ -3593,10 +3601,31 @@ uv run birdy-pipeline build</pre>
 								</p>
 							{/if}
 						{:else}
-							<p class="note faint">
-								The browser will ask which screen or tab to capture. Tick <b>share audio</b> in
-								that dialog, or no sound arrives.
-							</p>
+							<!--
+								Two different mechanisms wear one button, and which one ran decides what
+								the user should expect — so the panel says which, after the fact, rather
+								than promising one up front.
+							-->
+							{#if inputVia === 'monitor'}
+								<p class="note faint">
+									Listening to this computer's own output through its monitor device. Nothing
+									is shared and no screen is captured.
+								</p>
+							{:else if inputVia === 'display'}
+								<p class="note faint">
+									This machine exposes no monitor device, so the browser's screen-capture
+									dialog is the only route to computer audio. The video is discarded the
+									instant it arrives — only the sound is read.
+								</p>
+							{:else}
+								<p class="note faint">
+									Reads what this computer is playing. Where the sound system offers a
+									monitor of the output — every PipeWire and PulseAudio desktop — it is
+									captured directly and <b>nothing is shared</b>. Only on machines without
+									one does the browser fall back to its screen-capture dialog, where
+									<b>share audio</b> has to be ticked.
+								</p>
+							{/if}
 						{/if}
 						<div class="row">
 							<button

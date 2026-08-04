@@ -1,0 +1,52 @@
+{
+ "since": "2025-09-01",
+ "query": "grp:birds since:2025-09-01 q:A",
+ "recordings": 2158,
+ "recordists": 137,
+ "species": 827,
+ "all": {
+  "species": {
+   "groups": 40,
+   "labelled": 609,
+   "coverage": 0.2822,
+   "knn": 0.7754,
+   "null": 0.0331,
+   "lift": 0.7422,
+   "p": 0.005,
+   "verdict": "strong"
+  },
+  "recordist": {
+   "groups": 136,
+   "labelled": 2153,
+   "coverage": 0.9977,
+   "knn": 0.1669,
+   "null": 0.0076,
+   "lift": 0.1593,
+   "p": 0.005,
+   "verdict": "clear"
+  }
+ },
+ "matched": {
+  "species": {
+   "groups": 22,
+   "labelled": 293,
+   "coverage": 1.0,
+   "knn": 0.8041,
+   "null": 0.0545,
+   "lift": 0.7496,
+   "p": 0.005,
+   "verdict": "strong"
+  },
+  "recordist": {
+   "groups": 25,
+   "labelled": 293,
+   "coverage": 1.0,
+   "knn": 0.4802,
+   "null": 0.0396,
+   "lift": 0.4406,
+   "p": 0.005,
+   "verdict": "strong"
+  }
+ },
+ "recordist_structure_present": true
+}

@@ -201,9 +201,14 @@ export function reduce(s: Performance, e: Event): Step {
 			if (s.chorus !== 'solo') {
 				return { state: cleared, commands: [{ k: 'refreshSelection' }] };
 			}
-			return cleared.resumeGlobal
-				? enter({ ...cleared, resumeGlobal: false }, 'global')
-				: enter({ ...cleared, resumeGlobal: false }, 'off');
+			// **Letting a bird go always hands the air back to the aviary.** This used to
+			// depend on `resumeGlobal` — the whole-corpus chorus came back only if it had
+			// been running before the bird was picked, and stepping out of a bird chosen
+			// from silence left silence. Owner's call, 2026-08-04: deselecting is a "show me
+			// everything again" gesture, and the empty view answering with nothing read as
+			// the app having stopped. `resumeGlobal` is still cleared here so an explicit
+			// stop stays stopped through the next selection.
+			return enter({ ...cleared, resumeGlobal: false }, 'global');
 		}
 
 		case 'pickKnot': {

@@ -164,6 +164,42 @@ console.log('\nstate 3 — the override: chickadee, "hello", corrected to alarm'
 	ok('typing clears the override', /We read this as\s*contact/i.test(retyped));
 }
 
+console.log('\nstate 4 — the strip must not be one token stamped N times');
+{
+	// The walk used to take the likeliest transition at every step. Most species' likeliest
+	// transition out of a type is back into itself, so every text produced "L20 L20 L20 ...".
+	// Cape Canary is the species the bug was reported on: start[0] is L20 and L20 -> L20 is
+	// its top row entry at p = 0.2911, i.e. a 29 % event chosen 100 % of the time.
+	await pick('serinus_canicollis');
+	const seen = [];
+	for (const text of ['Hello im here', 'sing me a long song about the sky']) {
+		await type(text);
+		await panel.getByRole('button', { name: 'Sing the words', exact: true }).click();
+		await page.waitForTimeout(900);
+		const chips = (await panel.locator('.chip').allInnerTexts())
+			.map((c) => c.trim())
+			.filter(Boolean); // an empty label is not a distinct type, and counting it
+		const uniq = new Set(chips); // once made this assertion pass on a degenerate strip
+		seen.push(uniq.size);
+		ok(`"${text}" gives more than one type`, uniq.size > 1,
+			`${chips.length} chips, ${uniq.size} distinct: ${[...uniq].join(' ')}`);
+		ok(`"${text}" has as many chips as syllables`, chips.length > 1, String(chips.length));
+	}
+	ok('the walk is not degenerate on this species', Math.max(...seen) >= 2);
+
+	// Seeded: the same words must still give the same bout.
+	await type('Hello im here');
+	await panel.getByRole('button', { name: 'Sing the words', exact: true }).click();
+	await page.waitForTimeout(900);
+	const a = (await panel.locator('.chip').allInnerTexts()).join(' ');
+	await type('x');
+	await type('Hello im here');
+	await panel.getByRole('button', { name: 'Sing the words', exact: true }).click();
+	await page.waitForTimeout(900);
+	const b = (await panel.locator('.chip').allInnerTexts()).join(' ');
+	ok('the same words give the same bout', a === b, `${a} | ${b}`);
+}
+
 console.log('\nconsole');
 ok('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
 console.log(`  404s (reported, not failed): ${[...missing].join(', ') || 'none'}`);
