@@ -16,10 +16,14 @@ conventional preprint layout, `natbib` citations, figures pulled from
 
 ## Building it
 
-There is **no LaTeX toolchain on this machine**, so the manuscript has been validated
-statically (brace balance, environment nesting, table cell counts against column
-specifications, `\ref`/`\label` closure) but has **never been compiled**. Expect to fix
-overfull boxes on first build.
+`tectonic` is on this machine at `~/.local/bin/tectonic`, and the manuscript **compiles**.
+Last build: **39 pages, 0 undefined references, 0 undefined citations, 0 overfull vboxes**, and
+2 overfull hboxes of 1.7 pt and 1.5 pt (both far below the ~20 pt where a rule shows in the
+margin).
+
+The first real build did **not** succeed. `longtable` raises a hard error outside 1-column
+mode, so the phase-0 findings table is wrapped in `\onecolumn ... \twocolumn`, matching the
+appendix ledger. See the git history for that fix.
 
 Install a TeX distribution, then:
 

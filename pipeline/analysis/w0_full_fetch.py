@@ -6,7 +6,10 @@ missing from a publishable version and this stage supplies both.
   1. **The population.** `_catalogue_full.json` holds the complete post-cutoff q:A bird
      catalogue: 21 928 recordings, of which 13 646 sit inside the 886 species that have at
      least 6 recordings from at least 2 recordists. Those 886 species are W0's scorable
-     classes, against the pilot's 62.
+     classes, against the pilot's 62. `MAX_PER_SPECIES` then trims those 13 646 down to
+     **8 321** without losing a single species — see the cap's own note below for why that
+     is a better experiment and not only a cheaper one. **8 321 is the number to quote as
+     the population; 13 646 is the uncapped pool it was drawn from.**
   2. **The second model.** BirdNET, so that agreement between two architectures trained by
      different groups is evidence about *the archives* rather than about one model. The
      ONNX backbone `w6_birdnet_arms.py` already uses needs no new runtime.

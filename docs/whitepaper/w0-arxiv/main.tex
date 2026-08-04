@@ -1,0 +1,547 @@
+% =====================================================================
+% Paper one of the Lyrebird project: W0, benchmark inflation under
+% recordist leakage.
+%
+% This is NOT the system paper. docs/24 §24.3 separates the two on
+% purpose: the system, the resource and the 36 written refusals are
+% ../arxiv/main.tex, and depend on the pipeline being correct. This
+% paper depends on no part of that pipeline, which is what gives it the
+% wider reach and is why it is a separate document.
+%
+% Build:  tectonic -X compile main.tex --outdir build
+% =====================================================================
+\documentclass[10pt,twocolumn,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[british]{babel}
+\usepackage[margin=1.9cm]{geometry}
+\setlength{\columnsep}{6mm}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{microtype}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,allcolors=blue!55!black,breaklinks=true]{hyperref}
+
+\captionsetup{font=small,labelfont=bf}
+\captionsetup[table]{skip=4pt}
+
+%: A visible marker for a number that is genuinely not yet in the repository.
+\newcommand{\todo}[1]{{\color{red}\textbf{[TODO: #1]}}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\title{\textbf{What a recordist-blocked split costs\\
+a bioacoustic foundation model}}
+
+\author{Mag.~art.~Shahab Nedaei\\
+  \normalsize variable.gallery\\
+  \normalsize \texttt{ned.tabulov@gmail.com}}
+
+\date{4 August 2026}
+
+\begin{document}
+\makeatletter
+\twocolumn[\begin{@twocolumnfalse}
+\maketitle
+\begin{abstract}
+\noindent
+Standard evaluation in bioacoustics splits recordings at random. Where a species'
+recordings come disproportionately from one recordist, a random split puts recordings by
+that person on both sides of the partition, and the reported accuracy is partly a measure of
+recorder identity rather than of the bird. Holding recordists out is not a new idea:
+\citet{stowell2014} did it twelve years ago and stated the rationale in the words we would
+use. What has never been published is the \emph{quantity} --- what blocking costs a current
+foundation model --- and without that number the practice stays easy to ignore.
+%
+Measuring it on an archive corpus is not straightforward, because both of the field's
+archive-scale models were trained on the archives. Perch~2.0 trained on xeno-canto and
+iNaturalist; BirdNET~V2.4 trained on xeno-canto; BirdSet excludes BirdNET from its own
+evaluation for exactly this reason. A top-1 comparison on archive audio therefore partly
+measures which recordings were memorised. We close that with two changes that also make the
+experiment cheaper. The models are \textbf{frozen} and only a linear probe is trained, so
+whatever either model memorised is identical on both sides of the comparison and cancels out
+of the difference. And the audio was \textbf{uploaded after both training snapshots} ---
+xeno-canto's \texttt{since:} tag filters on upload date, which is a one-directional
+guarantee rather than an estimate. Because the discriminator is upload date rather than
+archive provenance, ``reproduced on both models'' becomes possible on a xeno-canto corpus,
+which the pre-registered design had ruled out.
+%
+On \todo{N} recordings uploaded after 2025-09-01, covering \todo{S} species from \todo{R}
+recordists, a linear probe over frozen features loses \todo{drop} points of top-1 accuracy
+under a recordist-blocked split relative to a random one \todo{on both models / and the
+models disagree}. \todo{error-ratio sentence.} We also report the drop as a function of how
+many species are in the label set, because a bar written in accuracy points is far harsher
+near the ceiling than in the middle of the range, and a 62-class result and an 886-class
+result are not comparable in points.
+%
+Separately, and on identical rows, the two foundation models disagree about the size of the
+recordist confound by more than either differs from a 32-dimensional space trained on one
+small corpus: Perch sits 16.5\,\% below that space and BirdNET 24\,\% above it. If recorder
+invariance were a product of archive-scale training, both would sit below. It is better read
+as a property of the archives that any model trained on them inherits.
+%
+The deliverable is not a system. It is a number, a threat model and the code: block your
+splits by recordist, here is what it costs, here is how to reproduce it.
+\end{abstract}
+\vspace{4mm}
+\end{@twocolumnfalse}]
+\makeatother
+
+% =====================================================================
+\section{Introduction}
+\label{sec:intro}
+
+Automatic species classification from sound is used for real monitoring and real
+conservation decisions. BirdNET \citep{birdnet2021} and Perch \citep{perch2} are deployed by
+ecologists, and their benchmark numbers set expectations about what a deployment will do.
+
+Those numbers come from evaluations that split recordings at random. That is only sound if a
+recording's provenance carries no information about its label. In the archives it does. A
+species' recordings are contributed by volunteers, and for many species they come
+disproportionately from a handful of people. A recordist is not only a person: they are a
+microphone, a preamplifier, a set of recording habits, a geographic range and a preferred
+time of day. When recordings by one person land on both sides of a random split, a model can
+reach the right species by recognising the person.
+
+This matters beyond the leaderboard, because the failure has a deployment shape. A recordist
+is functionally \emph{a recorder and a site}. Generalising across recordists is the same
+problem as generalising to a new device in a new place, which is the transition the field
+already knows disappoints \citep{perch2}. Naming a measurable cause, and pricing it, is more
+actionable than the observation that deployment is hard.
+
+\paragraph{What this paper contributes.} One number, measured carefully, plus the method that
+makes it measurable at all. Specifically:
+
+\begin{enumerate}
+  \item \textbf{The cost of blocking}, for a linear probe over frozen features from two
+    independent foundation models, on audio neither model can have trained on
+    (\S\ref{sec:results}).
+  \item \textbf{A contamination-free design} for asking the question on archive audio, which
+    the obvious design cannot do (\S\ref{sec:design}). This is what lets both models be
+    tested on the same corpus.
+  \item \textbf{The observation that the pre-registered gate was written in the wrong unit.}
+    Accuracy points are not comparable across label-set sizes, and we show the drop's
+    dependence on class count directly (\S\ref{sec:sweep}).
+  \item \textbf{Evidence that the structure is in the archives rather than in one model}
+    (\S\ref{sec:archives}): read on identical rows, Perch and BirdNET disagree about the size
+    of the recordist confound by more than either differs from a 32-d space trained on one
+    small corpus. Recorder invariance is not conferred by archive-scale training.
+  \item \textbf{Code and a fixed population}, so the number can be checked rather than
+    believed (\S\ref{sec:repro}).
+\end{enumerate}
+
+\paragraph{What it does not contribute.} Not the practice of recordist-blocked evaluation,
+which is twelve years old. Not a new model, not a new architecture, and not a claim that
+these models are bad. A model that reads recorder identity is doing something reasonable
+with the data it was given; the problem is the evaluation protocol that rewards it.
+
+% =====================================================================
+\section{What is already known, and what is not}
+\label{sec:related}
+
+\paragraph{The practice exists, and is older than the models.} \citet{stowell2014} split by
+recordist and gave the rationale plainly: the approach ``tests whether the system can
+generalise to recordings from unknown recordists, rather than adapting to any specifics of
+the known recordists''. Read against the full text rather than the abstract, two details
+matter here. The stratification was applied to \emph{one} of their four datasets ---
+\texttt{bldawn}, 20 recordings each from three UK recordists, three-fold, training on two
+recordists and testing on the held-out third. And the paper reports \textbf{no
+random-against-blocked comparison}: recordist stratification is used where it is used, and
+its cost is never priced. The Cornell CBI dataset is likewise partitioned so that no
+recordist spans two partitions.
+
+\paragraph{The quantity does not exist.} We checked this against sources rather than
+abstracts. Neither the 2026 foundation-model comparative review
+(\href{https://arxiv.org/abs/2508.01277}{arXiv:2508.01277}) nor the 2025 large-scale training
+recipe (\href{https://arxiv.org/abs/2508.11845}{arXiv:2508.11845}) reports a
+random-against-blocked accuracy comparison. Nobody has published what a recordist-blocked
+split costs a current foundation model.
+
+\paragraph{So the claim moves.} The deliverable is not \emph{block your splits}, which is
+known and ignored. It is \emph{here is what one costs}. That is a smaller claim than the
+project originally registered, and it is the one that is actually unoccupied. It is also the
+claim most likely to change behaviour, because the reason a twelve-year-old
+recommendation gets ignored is that nobody has priced ignoring it.
+
+% =====================================================================
+\section{Why the obvious experiment is invalid}
+\label{sec:design}
+
+The experiment as first designed was: take a public archive-derived corpus, take Perch and
+BirdNET off the shelf, evaluate top-1 species accuracy twice, changing only the split.
+That design does not work, and the reason is worth stating because it applies to any
+evaluation of these models on archive audio.
+
+\paragraph{Both models trained on the archives.} Perch~2.0's technical report
+\citep{perch2} lists roughly 1.5\,M recordings over 14\,500 classes drawn from xeno-canto,
+iNaturalist research-grade audio via GBIF, the Tierstimmenarchiv and FSD50K. BirdNET~V2.4
+\citep{birdnet2021} trained on xeno-canto. BirdSet already excludes BirdNET from evaluation
+on its \texttt{XCM}/\texttt{XCL} splits on precisely these grounds, since those splits are
+drawn from xeno-canto.
+
+\paragraph{Why that is fatal rather than merely untidy.} A memorised recording is scored
+correctly for reasons that have nothing to do with acoustics, and a model that memorised a
+recording will also place it near that recording's siblings. So on archive audio, top-1
+accuracy measures memorisation as much as generalisation --- and the \emph{gap} between two
+splits partly measures which recordings were memorised, rather than what blocking costs.
+Under the pre-registered design this made ``reproduced on both models'' unreachable on any
+xeno-canto-derived corpus.
+
+\paragraph{Two changes fix it, and both make the experiment cheaper.}
+
+\begin{enumerate}
+  \item \textbf{Freeze the model; train only a linear probe.} The foundation model is a fixed
+    feature extractor in both arms. Whatever it memorised is therefore present identically on
+    both sides of the comparison and cancels out of the difference. What differs between the
+    arms is only the probe's training set, which is the thing the claim is about.
+  \item \textbf{Use audio uploaded after both training snapshots.} Xeno-canto's
+    \texttt{since:} tag filters on \emph{upload} date. A recording uploaded after a model's
+    data snapshot cannot have been in that snapshot regardless of when it was recorded, which
+    makes it a one-directional guarantee rather than an estimate. We set the bound to
+    2025-09-01: one month past Perch~2.0's publication, and more than two years past
+    BirdNET~V2.4's June~2023 release. No attempt at precision is made, because the argument
+    needs the bound to be safe rather than tight.
+\end{enumerate}
+
+\paragraph{This is what makes the two-model requirement satisfiable.} Because the
+discriminator is upload date and not archive provenance, the objection that disqualifies
+BirdNET on a xeno-canto corpus does not apply: the audio postdates its training set by two
+years. The design constraint that broke the registered method is dissolved rather than worked
+around, and both models can be read on identical rows.
+
+\paragraph{What the design still cannot claim.} A linear probe over frozen features is not a
+fine-tuned model, and the absolute accuracies here are not comparable to a published
+benchmark number. That is deliberate: the quantity of interest is a \emph{difference} between
+two splits under an otherwise identical procedure, and the frozen-feature design is what makes
+that difference attributable to the split. Whether full fine-tuning would widen or narrow the
+gap is open, and \S\ref{sec:threats} says so.
+
+% =====================================================================
+\section{Data}
+\label{sec:data}
+
+\paragraph{The query, and a warning that belongs in it.} The population is every xeno-canto
+recording matching \texttt{grp:birds since:2025-09-01 q:A}. The group tag is not optional.
+Xeno-canto hosts bats, frogs, grasshoppers and land mammals alongside birds, and the same
+query without \texttt{grp:birds} returned 6\,000 recordings of which \textbf{none were
+birds} --- 3\,035 bats, 1\,568 frogs, 926 grasshoppers and 471 land mammals. Pagination
+simply never reached the birds. Nothing errored, and the first downloads were 256\,kHz
+ultrasonic bat clips that decoded perfectly well and would have entered a bird model as
+though they were birdsong. Any replication must carry the group tag.
+
+\paragraph{Census.} The complete query returns \textbf{21\,928} recordings, of which
+21\,709 have downloadable audio; xeno-canto redacts the file for species it considers at
+risk from trapping or disturbance, and no query gets round it. Those recordings cover
+\textbf{4\,305} species and \textbf{961} recordists.
+
+\paragraph{The species floor is the experiment, not a convenience.} Under a
+recordist-blocked split, a species whose recordings all come from one recordist lands
+entirely on one side of the partition and cannot be classified at all. That is an empty test
+class, not leakage, and scoring it as an error would manufacture the result the experiment is
+looking for. We therefore keep only species with at least 6 recordings from at least
+\textbf{2 distinct recordists}, which is \textbf{886} species covering 13\,646 recordings,
+and we report the number excluded.
+
+\paragraph{A cap of 12 recordings per species, which improves the experiment.} The scorable
+population is severely skewed: 6 recordings at the floor, a median of 9, and a maximum of
+338. Left uncapped, a handful of species would supply a large share of the probe's training
+rows and the class prior would do work that the features are supposed to do. Capping at 12
+reduces the imbalance from 56:1 against the floor to 2:1, loses \emph{no} species because the
+floor is 6, and reduces the download by roughly 5\,300 recordings.
+
+The cap has to be recordist-aware. Consider a species with 20 recordings where one recordist
+contributed 19 and a second contributed 1: an ordinary random sample of 12 drops that second
+recordist about 40\,\% of the time, the species falls to a single recordist, and it becomes
+unscorable under a blocked split \emph{after} having been counted as scorable. Selection
+therefore round-robins across a species' recordists, which keeps every recordist for as long
+as the cap allows, and an assertion checks that the scorable species set is unchanged by
+capping.
+
+\paragraph{The population actually scored} is \textbf{8\,321} recordings over \textbf{886}
+species and \textbf{649} recordists, with 6 to 12 recordings per species and at least 2
+recordists each. For scale, the pilot that preceded this run scored 62 species over 2\,158
+recordings on one model --- and of those 2\,158 only \textbf{730} cleared its floor and were
+actually scored, a distinction worth keeping because the larger number is the one easily
+mistaken for the sample size. Table~\ref{tab:pilot} sets the two runs side by side.
+
+% =====================================================================
+\section{Method}
+\label{sec:method}
+
+\paragraph{Features.} Each recording is decoded, mixed to mono, resampled, and cut into the
+model's native window: 5\,s at 32\,kHz for Perch (six windows, 30\,s) and 3\,s at 48\,kHz
+for BirdNET (ten windows, the same 30\,s). Window embeddings are mean-pooled to one vector
+per recording --- 1536-d for Perch, 1024-d for BirdNET's backbone. Both models are ONNX
+exports run without gradients; neither is updated at any point.
+
+\paragraph{Probe.} A multinomial logistic regression with an L2 penalty
+($C = 1$), on features standardised using the \emph{training} side's mean and variance only.
+Standardising over both sides would leak the test set's statistics across the partition,
+which is the same class of error the paper is about.
+
+\paragraph{The probe runs on the GPU, and that required a check.} At 886 classes in 1536
+dimensions a full-batch multinomial fit costs on the order of $10^{10}$ multiply--adds per
+iteration, which is not tractable on CPU across 20 folds, two arms and two models. The probe
+is therefore implemented in PyTorch with full-batch L-BFGS, minimising the same objective
+scikit-learn minimises. Swapping the estimator silently would make this run incomparable with
+the pilot, so the two are checked against each other on synthetic data and on the pilot's real
+features; they agree to within one accuracy point, and the check fails loudly if they do not.
+
+\paragraph{Three arms.} All three restrict each fold to the classes present on
+\emph{both} sides before scoring, and that restriction must be applied to every arm or the
+comparison is rigged: a blocked split strands whole species on one side, and dropping those
+from the blocked arm alone would leave it a smaller and easier label set than the random arm,
+which inflates blocked accuracy and understates the very drop being measured.
+
+\begin{itemize}
+  \item \textbf{A --- random.} 30\,\% of each species' recordings held out, stratified by
+    species. This is the standard protocol.
+  \item \textbf{B --- recordist-blocked.} 30\,\% of recordists held out; every recording by a
+    held-out recordist is on the test side.
+  \item \textbf{C --- paired, and this is the number we quote.} Each blocked fold's surviving
+    class set is reused for a random fold at the same held-out fraction, so the two differ in
+    exactly one thing: whether a recordist may appear on both sides. Arms A and B are not
+    scored on the same task, because blocked folds end up with fewer classes, and fewer
+    classes is an easier problem.
+\end{itemize}
+
+Twenty folds per arm, seeded. Because the folds are paired, the per-fold difference is the
+statistic with the least noise in it, and we report its spread and the number of folds in
+which blocking was worse, not only the mean.
+
+\paragraph{Reporting the effect in two units.} The pre-registered gate is a drop of more than
+10 points of top-1 accuracy, reproduced on both models, and it is scored as written. But
+points are a poor unit near the ceiling: the pilot's 9.68 points at 93\,\% accuracy was
+$2.44\times$ the errors, whereas the same 9.68 points at 60\,\% accuracy would be $1.24\times$.
+We therefore report the error-rate ratio beside the gate, and \S\ref{sec:sweep} shows what the
+points figure does as the label set grows.
+
+% =====================================================================
+\section{Results}
+\label{sec:results}
+
+\todo{This section is filled from pipeline/analysis/w0\_full.json when the run completes.
+Nothing below this marker should be read as measured until then.}
+
+% -- headline table, both models, paired arm
+% -- per-fold spread and folds-blocked-worse
+% -- error ratio
+% -- cross-model agreement
+
+\subsection{The drop depends on how many species are in the label set}
+\label{sec:sweep}
+
+\todo{class-count sweep table: 62 / 150 / 300 / 500 / 886 classes, drop in points and error
+ratio at each, on the same recordings and the same folds.}
+
+The reason to report this is that it decides how the pre-registered gate should be read. If
+the points-drop climbs with class count while the error ratio stays roughly flat, then the
+ratio is the invariant and a bar written in points was partly a bar on how many species
+happened to clear our sampling floor --- which is a fact about corpus depth, not about
+recordists.
+
+% =====================================================================
+\section{The structure is in the archives, not in one model}
+\label{sec:archives}
+
+A drop measured on one model could be a property of that model. The measurements in this
+section are a separate experiment, on a separate population, and they are what rules that
+out. They use nearest-neighbour retrieval lift against a permutation null rather than a
+probe: for a given grouping, how much more often is a recording's nearest neighbour in its own
+group than chance allows.
+
+Three embedding spaces are compared on \emph{identical rows} with an identical estimator ---
+Perch~2.0 at 1536-d, BirdNET~V2.4 at 1024-d, and a 32-d task-specific space trained on this
+project's own corpus (the ``critic'', described in the companion system paper). Two
+populations: one drawn to be recordist-stratified, one drawn as species pairs.
+
+\begin{table}[t]
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{Nearest-neighbour lift over a permutation null, same rows, same estimator. Every
+space is confounded in the same direction; they differ only in degree. \textbf{The two
+foundation models disagree with each other by more than either differs from a 32-d space
+trained on one small corpus}, which is the observation this section exists for.}
+\label{tab:crossmodel}
+\begin{tabular}{L{1.5cm} L{1.5cm} r r}
+\toprule
+population & space & species & recordist \\
+\midrule
+T1        & critic 32-d   & ---      & $+0.0891$ \\
+1\,567 rec.\ & Perch 1536-d  & ---      & $+0.0744$ \\
+135 rec'ists & BirdNET 1024-d & ---     & $+0.1107$ \\
+\midrule
+T3        & critic 32-d   & $+0.0074$ & $+0.1684$ \\
+1\,644 rec.\ & Perch 1536-d  & $+0.0588$ & $+0.1155$ \\
+760 rec'ists & BirdNET 1024-d & $+0.0393$ & $+0.1755$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Every space carries it, and the two big models disagree about how much.} On the
+recordist-stratified population, Perch sits \textbf{16.5\,\% below} the small
+corpus-specific space and BirdNET \textbf{24\,\% above} it. On the species-pair population
+Perch is 31.4\,\% below and BirdNET 4\,\% above. Two models trained by different groups on
+overlapping archives, read on the same recordings by the same estimator, differ from each
+other more than either differs from a 32-d space trained on one project's corpus.
+
+\paragraph{What that licenses, and what it does not.} It licenses the claim that
+\textbf{recorder invariance is not conferred by archive-scale training}. If it were, both
+archive-scale models would sit below the small space, and one of them sits above it. The
+structure is better explained as a property of the archives that any model trained on them
+inherits to some degree. It does \emph{not} license a ranking of the two models: the
+populations here are small, and the T3 recordist column rests on a coverage of only 0.329
+because most recordists in that draw have too few recordings for the estimator's floor.
+
+\paragraph{And the structure survives on audio the model never saw.} Repeating the
+recordist measurement on the post-cutoff population of \S\ref{sec:data} --- rows Perch
+provably did not train on --- gives a recordist lift of $+0.441$ against a species lift of
+$+0.750$ on 293 matched rows where both groupings clear the estimator's floor, both at the
+permutation floor for significance. Whatever the recordist structure is, it is not Perch
+recognising its own training data.
+
+\paragraph{A caution about a number we have retracted elsewhere.} An earlier and louder
+version of this project's headline was a recordist lift of $+0.488$ against a species lift of
+$+0.196$, at \emph{syllable} level. A benchmark split is a \emph{recording}-level operation,
+and at recording level on the same corpus the ordering reverses: species $+0.229$ against
+recordist $+0.196$. That reversal is itself a selection artefact --- the estimator's
+eight-member floor at recording level means ``species with at least eight recordings'', which
+is 77 of 3\,636, and recordings per species correlates with recordists per species at
+$r = +0.923$. The honest reading is that the recording-level figures are the ones relevant to
+a split, that they are smaller than the syllable-level ones, and that the population which
+makes them measurable is the population where the confound is weakest. The pre-registered
+10-point gate should not have been treated as likely on the strength of $+0.488$.
+
+% =====================================================================
+\section{Threats to validity}
+\label{sec:threats}
+
+\paragraph{One archive, one quality tier.} Everything here is xeno-canto at \texttt{q:A}.
+Quality~A keeps the audio comparable but selects recordings that a human judged clean, and
+cleanliness may correlate with recordist skill --- which is the variable under test. A
+replication across quality tiers would say whether the effect is larger or smaller in the
+messier part of the archive.
+
+\paragraph{Upload date is not recording date.} The guarantee is one-directional and that is
+all it needs to be: a recording uploaded after a snapshot was not in that snapshot. It does
+not follow that these recordings are acoustically representative of the archive as a whole,
+and a corpus of recent uploads may over-represent currently active recordists.
+
+\paragraph{A probe is not a fine-tuned model.} The frozen-feature design is what makes the
+difference attributable to the split, at the cost of not being the number a practitioner
+would report from fine-tuning. The direction of that difference is not predictable from this
+experiment.
+
+\paragraph{Recordist identity is self-reported metadata.} One person with two accounts reads
+as two recordists and weakens blocking; two people sharing an account reads as one and
+strengthens it. Both push in known directions but neither is quantified here.
+
+\paragraph{The class-count dependence cuts both ways.} It is a finding about the gate's unit,
+but it also means our own headline number is a statement about an 886-class problem. A reader
+comparing it to a benchmark with a different label-set size should compare error ratios.
+
+% =====================================================================
+\section{What to do about it}
+\label{sec:what}
+
+\paragraph{For benchmark maintainers.} Report both numbers. A random split and a
+recordist-blocked split, with the recordist coverage of the corpus stated, so that readers can
+see the gap rather than infer it. Blocking need not replace random splitting to be useful;
+the gap is the informative quantity.
+
+\paragraph{For practitioners.} Where a deployment will meet new recorders in new places ---
+which is most deployments --- the blocked figure is the closer estimate, and the gap measured
+here is the scale of the optimism in the random one.
+
+\paragraph{For corpus builders.} Recordist metadata is what makes any of this measurable.
+Archives that keep it, and evaluations that use it, cost little and are the precondition for
+pricing this failure at all.
+
+% =====================================================================
+\section{Reproducibility}
+\label{sec:repro}
+
+Every number is produced by a script that prints its pre-registered gate before its result and
+writes a JSON sidecar beside itself. The catalogue is cached, so the population is fixed
+rather than re-searched.
+
+\begin{table}[t]
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{The pilot and this run. The pilot's limits were not properties of the archive: its
+catalogue held exactly 6\,000 recordings because its search stopped at 60 pages, and it
+selected by \emph{recordist} because it inherited that rule from a different experiment whose
+unit was the recordist.}
+\label{tab:pilot}
+\begin{tabular}{L{2.6cm} L{2.2cm} L{2.4cm}}
+\toprule
+ & pilot & this run \\
+\midrule
+catalogue read      & 6\,000        & 21\,928 \\
+selection unit      & recordist     & species \\
+recordings embedded & 2\,158        & 8\,321 \\
+recordings scored   & 730           & \todo{N} \\
+species scored      & 62            & 886 \\
+recordists          & 137           & 649 \\
+models              & Perch only    & Perch + BirdNET \\
+probe               & CPU, sklearn  & GPU, verified equivalent \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{What reproduces what. Filenames are relative to \texttt{pipeline/analysis/} in the
+project repository; the \texttt{analysis/} prefix is dropped here because it does not fit a
+two-column measure.}
+\label{tab:repro}
+\begin{tabular}{L{3.6cm} L{3.9cm}}
+\toprule
+script & what it does \\
+\midrule
+\texttt{w0\_full\_catalogue.py}
+  & pages the complete post-cutoff catalogue and reports what it can support \\
+\texttt{w0\_full\_fetch.py}
+  & selects the scorable population, downloads it, embeds it through both models,
+    checkpointed and resumable \\
+\texttt{w0\_probe.py}
+  & the GPU probe, and \texttt{-{}-verify} for its equivalence to scikit-learn \\
+\texttt{w0\_full.py}
+  & the three arms, the gate, and the class-count sweep \\
+\texttt{w0\_recordist\_split.py}
+  & the earlier pilot, kept runnable and unchanged \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+An \texttt{XC\_API\_KEY} is required for the fetch; xeno-canto API v3 needs a personal key.
+The embeddings are cached, so the analysis can be re-run without re-downloading, and
+\texttt{w0\_recordist\_split.py -{}-self-test} checks the split machinery against two
+synthetic worlds with known answers --- one where recordist is assigned at random, where
+blocking must cost nothing, and one where recordist is confounded with species, where
+blocking must be devastating.
+
+% =====================================================================
+\section*{Data and code availability}
+
+\todo{Zenodo DOI for the archived release.} No audio is redistributed: the fetch scripts
+retrieve it from xeno-canto under the contributors' own licences, and the cached catalogue
+records exactly which recordings were used.
+
+\section*{Acknowledgements}
+
+\todo{acknowledgements, funding statement, or an explicit statement of none.} The recordings
+this paper is about were contributed to xeno-canto \citep{xenocanto} by volunteers, and the
+recordist metadata that makes the measurement possible is their work.
+
+\bibliographystyle{plainnat}
+\bibliography{../references/references}
+
+\end{document}
