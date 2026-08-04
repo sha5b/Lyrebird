@@ -1182,6 +1182,17 @@ not a per-dimension gain either.
 % docs/23 §23.1.1
 The named action is more recordists per species, in the data.
 
+Two later measurements sharpen this wall rather than moving it, and both are reported in
+full in Section~\ref{sec:phase0}. \textbf{The structure is not an artefact of any model
+having memorised these archives}: on 2\,158 recordings uploaded to xeno-canto after Perch
+2.0's training snapshot, that model's recordist lift is $+0.441$ against a species lift of
+$+0.750$, both scored on identical rows at full coverage. And \textbf{the sentence above
+about recordists per species now has a number}: recordings per species correlates with
+distinct recordists per species at $r = +0.923$ over 3\,853 species, with a median of 17
+recordists for species holding at least eight recordings against 2 for the rest. That
+correlation is also a warning about test design, because any analysis requiring several
+recordings per species is selecting the part of the corpus where this wall is lowest.
+
 \subsection{Wall 3: syntax is data-limited, not method-limited}
 
 A first-order transition model over the learned tokens is strongly supported
@@ -2117,6 +2128,11 @@ ornithology, and the distinction is worth making because the corpus can support 
 that would be. Both are specified with pre-registered gates in the project's plan document,
 and both need no new audio.
 
+\emph{Both were subsequently run.} The two paragraphs that follow were written before the
+runs and are kept as written; Section~\ref{sec:phase0} reports what they answered, and the
+short version is that neither opened the door it was aimed at. The corpus is still not a
+contribution to ornithology, and it is now that by measurement rather than by caution.
+
 \emph{Is benchmark accuracy in this field inflated by recordist leakage?} Standard evaluation
 splits recordings at random. Section~\ref{sec:walls} measures a nearest-neighbour lift of
 $+0.488$ for recordist against $+0.196$ for species, and Section~\ref{sec:external} finds the
@@ -2140,8 +2156,178 @@ centimetres. If it survives, comparative work on song \emph{production} rather t
 \emph{sound} becomes possible, and that has not been available before at this scale. If it
 does not, the negative result is worth reporting on its own.
 
-Neither question is answered here. Naming them is not the same as answering them, and the
-evidence discipline that produced 36 refusals applies to our own plans as well.
+\subsection{Both questions were then asked, and this is what they answered}
+\label{sec:phase0}
+
+The two paragraphs above were written before either run. Both ran on 2026-08-04, against
+pre-registered gates that were not moved afterwards, and the paragraphs are left standing
+so that the prediction and the outcome can be read together. Table~\ref{tab:phase0} is the
+full ledger with the command that reproduces each row. Ordered by what a reader should take
+from them:
+
+\paragraph{Anatomy cannot be inferred from song at this scale, and the two available
+excuses are closed.} The fitted tracheal length correlates with published body mass at a
+partial $r$ of $+0.194$ controlling for the species' own pitch, over 1\,187 unclamped
+species joined to AVONET. The gate asked for $0.4$. The correlation is real and the
+direction is right --- $p = 1.5\times10^{-11}$ --- and it is less than half of what was
+required. Neither obvious defence survives measurement: a \emph{perfect} predictor pushed
+through the same 39 quantization levels still reaches $r = +0.998$, so the grid is not the
+ceiling; and the correlation is flat as the per-species sample grows ($+0.241$, $+0.263$,
+$+0.226$, $+0.299$), so it is not thin sampling. The one encouraging fragment is that cranes
+sit 2 of 2 in the upper decile at a median 10.6\,cm, on a sample too small to carry weight.
+\textbf{Comparative work on song production is closed until a tract estimate passes this
+gate}, and by the plan's own rule that also closes the phylogenetic-signal and
+source--filter questions that depend on it.
+
+\paragraph{The pipeline recovers the textbook relationship, which is what makes the negative
+result above worth reading.} Species median $f_0$ against body mass under phylogenetic
+generalised least squares over ten BirdTree posterior trees gives a standardised slope of
+$-0.560$ on deeply sampled species, against the $-0.510$ that Mikula et al.\ report over
+5\,085 passerines. A pipeline that failed both gates would simply be broken; one that
+reproduces a known result at the published effect size and still cannot find anatomy in its
+own fitted parameter has localised the failure.
+
+Two method points travel with that number. \textbf{Pagel's $\lambda$ must be fitted rather
+than assumed.} Forcing Brownian motion --- which is what ``PGLS'' is often taken to mean ---
+returned standardised slopes spanning $-1.962$ to $+0.001$ across ten trees drawn from one
+posterior, a range that crosses zero. That was not numerical: every pruned tree was exactly
+ultrametric and positive definite with condition numbers around $10^{6}$--$10^{7}$. Fitting
+$\lambda$ collapsed the range to $[-0.214, -0.207]$. And \textbf{the fitted $\lambda$ is
+itself a measurement of our own noise}: it comes out at $0.000$ on 651 species and $0.291$ on
+the 76 most deeply sampled, and a $\lambda$ of zero for song frequency cannot be true of
+birds. Measurement error drives $\lambda$ towards zero and attenuates a standardised slope by
+the same mechanism, and both recover together with depth. The shortfall against $-0.510$ at
+full sample is ours, not the birds'.
+
+\paragraph{A recordist-blocked split costs a probe over frozen foundation-model features
+9.68 points of top-1, which is just under the gate we set.} On 2\,158 quality-A recordings
+uploaded to xeno-canto \emph{after} Perch 2.0's publication --- audio the model provably
+could not have trained on --- a linear probe over frozen Perch features reaches 93.29\,\%
+under a random split and 83.61\,\% under a recordist-blocked one, across 62 species carried
+by two or more recordists. The pre-registered gate asked for more than 10 points and is
+therefore not met, and the threshold is not being moved.
+
+Two things belong beside that verdict rather than instead of it. Blocking was worse in
+\textbf{20 of 20 paired folds}, and 9.68 points at 93\,\% accuracy is \textbf{2.44 times the
+errors} ($6.71\,\% \to 16.39\,\%$) --- a gate written in accuracy points is a far harsher bar
+near the ceiling than in the middle of the range, which is a flaw in how we wrote it rather
+than a property of the effect. A re-registration should state the bar as an error-rate ratio.
+The design also had to change before it could run at all: \emph{both} candidate models train
+on xeno-canto, and Perch additionally on iNaturalist, so a top-1 comparison on archive audio
+cannot separate leakage from memorisation. Freezing the model and training only a linear
+probe puts identical contamination on both sides of the comparison, and post-cutoff audio
+removes it entirely.
+
+\paragraph{The recordist structure is visible to an outside model on recordings it has never
+seen.} On that same post-cutoff population, Perch's nearest-neighbour recordist lift is
+$+0.441$ against a species lift of $+0.750$, both scored on identical rows at full coverage,
+both strong, both at the permutation floor. Section~\ref{sec:walls} reports the confound on
+our own store and Section~\ref{sec:external} on archive-scale models evaluated over
+iNaturalist audio that Perch had trained on; this arm removes that objection. The confound is
+a property of the archives rather than of any one model's memorisation.
+
+\paragraph{Aggregating to one point per recording does not remove the confound, and the
+test that appears to say otherwise is selecting its own answer.} Scored per recording rather
+than per syllable, species lift ($+0.229$) exceeds recordist lift ($+0.196$) on rows where
+both groupings clear the estimator's eight-member floor. That reads as an inversion and is
+not one. The same population scored at syllable level already puts species above recordist
+($+0.343$ against $+0.295$), and aggregation lowers both by about a third together. What
+differs is the \emph{population}: at recording level the eight-member floor means ``species
+with at least eight recordings'', which is 77 of 3\,636 --- and recordings per species
+correlates with distinct recordists per species at $r = +0.923$ (median 17 recordists for
+species above the floor, 2 below it). \textbf{The floor that makes the test possible is the
+floor that removes what it is testing for.} Section~\ref{sec:walls} already states the
+underlying fact in words; this is a number for it, and a warning about a test design.
+
+\paragraph{Whether vocal learners have more complex song cannot be asked of this corpus,
+and that is a statement about our measures rather than a null about birds.} The contrast ran
+at full scale --- 2\,059 species, learner status from BirdTree's own oscine/suboscine
+column, PGLS over ten posterior trees, body mass and sampling effort as covariates --- and
+every coefficient came back flat. It should not be reported as a null. Our repertoire proxy
+correlates with how much audio we hold for a species at $r = +0.852$, and the repeat-class
+count is zero for 97.7\,\% of species. One of three measures is degenerate and another is
+largely a count of our own collection effort, so a two-of-three gate cannot be cleared by
+what remains. The binding constraint is depth per species, at a median of 69 syllables.
+
+% This table is 14.4 cm of ruled width and has to be able to break across pages, so it
+% cannot live in the two-column body: `longtable` raises a hard error outside 1-column
+% mode, and a `table*` float cannot break. Same treatment as tab:ledger in the appendix.
+\onecolumn
+\begingroup
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+% Last column holds unbreakable \texttt paths, so it gets the spare width: 15.6 cm of
+% rules plus 1.13 cm of tabcolsep against a 17.2 cm one-column textwidth.
+\begin{longtable}{L{2.0cm} L{3.4cm} L{4.6cm} L{5.6cm}}
+\caption{Phase-0 findings, most consequential first, with the gate set in advance and the
+command that reproduces each row. Every runner prints its own gate before its result and
+writes a JSON sidecar beside itself.}
+\label{tab:phase0}\\
+\toprule
+finding & the gate, set in advance & what it measured & how to reproduce \\
+\midrule
+\endfirsthead
+\multicolumn{4}{l}{\emph{Table \ref{tab:phase0}, continued}}\\
+\toprule
+finding & the gate, set in advance & what it measured & how to reproduce \\
+\midrule
+\endhead
+\midrule
+\multicolumn{4}{r}{\emph{continued overleaf}}\\
+\endfoot
+\bottomrule
+\endlastfoot
+
+G1 --- fitted tract length against body mass
+& partial $r > 0.4$ controlling $\log f_0$, over $\ge 800$ unclamped species, and the known
+long-trachea clades in the upper decile
+& $+0.194$ over 1\,187 species. A perfect predictor through the same 39 levels reaches
+$+0.998$, and $r$ is flat in per-species sample size, so neither quantization nor sampling
+explains it
+& \texttt{analysis/g1\_g2\_avonet.py}; needs AVONET (figshare 16586228)
+\\[2pt]
+
+G2 --- species median $f_0$ against body mass
+& negative slope, significant under PGLS, effect size inside the published range
+& standardised slope $-0.560$ on deeply sampled species against a published $-0.510$;
+$\lambda$ fitted at $0.130$ overall and $0.000$ at shallow depth
+& \texttt{analysis/g2\_pgls.py}; needs BirdTree Ericson Stage-2 trees
+\\[2pt]
+
+W0 --- cost of a recordist-blocked split
+& $>10$ points of top-1 drop, on a public corpus, on both models
+& 9.68 points ($93.29 \to 83.61$), 20 of 20 folds, $2.44\times$ the errors. One model,
+pilot scale
+& \texttt{analysis/w0\_recordist\_split.py}; \texttt{-{}-self-test} first
+\\[2pt]
+
+T1b --- Perch's recordist lift on unseen audio
+& is the structure present at all on audio outside the training snapshot
+& recordist $+0.441$, species $+0.750$, matched rows, both strong
+& \texttt{analysis/w6\_t1b\_perch\_postcutoff.py}; fetches its own audio
+\\[2pt]
+
+G3 --- confound after aggregation
+& species lift must exceed recordist lift; state the margin
+& $+0.229$ against $+0.196$, but on 77 of 3\,636 species, and recordings per species
+correlates with recordists per species at $+0.923$
+& \texttt{analysis/g3\_recordist\_aggregation.py}, ARM~D
+\\[2pt]
+
+W2 --- learners against non-learners
+& learners exceed on $\ge 2$ of 3 measures after phylogenetic correction
+& refused. Repertoire against sampling effort $r = +0.852$; repeat classes zero on
+97.7\,\% of species
+& \texttt{analysis/w2\_learners.py}
+\\
+\end{longtable}
+\endgroup
+\twocolumn
+
+One caveat applies to every row and is a consequence of the corpus rather than of any
+method: xeno-canto hosts bats, frogs, grasshoppers and land mammals alongside birds, and a
+query without an explicit group tag returned 6\,000 recordings of which none were birds. It
+raised no error. Any replication of the last two rows must carry \texttt{grp:birds}.
 
 % =====================================================================
 \section{Conclusion}

@@ -1,4 +1,4 @@
-# Lyrebird — READ THIS FIRST (2026-08-04, later): Phase 0 ran, the comparative biology is closed, and the methods paper got better
+# Lyrebird — READ THIS FIRST (2026-08-04, later): Phase 0 ran, the comparative biology is closed, and the whitepaper now carries the findings and a replication table
 
 Phase 0 of `docs/24` was run end to end. **The headline: paper three does not exist. Paper
 two is stronger than it was this morning.** Every gate was pre-registered before the run and
@@ -256,6 +256,147 @@ structure in it than our own critic does is evidence the structure is in the rec
 not in memorisation.** Caveat that must travel with it: BirdNET's training set is not
 publicly documented, so "probably clean" is the strongest available claim.
 
+## The whitepaper now carries Phase 0, and there is a replication table
+
+`docs/whitepaper/arxiv/main.tex`, three edits:
+
+- **`\subsection{Both questions were then asked, and this is what they answered}`**, new,
+  inside `sec:next` and labelled `sec:phase0`. Six paragraphs, most consequential first:
+  anatomy is closed; the textbook control passes and localises the failure; W0's 9.68
+  points; T1b confirming the confound on unseen audio; G3's selection effect; W2's refusal.
+  **The two prediction paragraphs above it are left exactly as written** so the forecast and
+  the outcome read together — the sentence "Neither question is answered here" is replaced
+  by a pointer rather than deleted.
+- **`Table~\ref{tab:phase0}`**, a longtable in the same design as the gate ledger
+  (`what was tried / the gate set in advance / what it measured / how to reproduce`), with
+  the runnable command in every row. That is the "so everybody can replicate our steps"
+  artefact. It closes with the `grp:birds` warning, because that failure produced 6 000
+  recordings and no error.
+- **Wall 2 gains two sharpening sentences** — Perch's $+0.441$ on post-cutoff audio, and
+  `r = +0.923` for recordings-per-species against recordists-per-species, which is the
+  number for a sentence Wall 2 already had in words.
+
+Statically validated as before: braces balanced, environments nested, 0 dangling refs, both
+longtables matched. The two `\todo`s (Zenodo DOI, acknowledgements) are untouched and still
+need the owner.
+
+**It also compiles — see "Paper" under *What is still open* below for the real account.**
+I wrote here that `main.tex` had never been compiled and that the new longtable would
+merely produce overfull boxes. **Both halves were wrong**: `tectonic` is on this machine,
+`build/main.pdf` was already tracked, and the new table was a *hard error*
+(`longtable not in 1-column mode`) until it was wrapped in `\onecolumn`. The build is clean
+now at 39 pages. Do not trust the "never compiled" line if it reappears anywhere in this
+file — it is stale in two older entries below.
+
+## What is still open, in the order I would take it
+
+**Science**
+
+```
+W0 full run   the pilot is one model at pilot scale. A publishable version needs BirdNET
+              as the second model and tens of thousands of recordings. The design is
+              settled (frozen model + linear probe, post-cutoff audio) and the pilot says
+              the effect is ~2.4x the errors, so this is the one worth building.
+W4            BLOCKED, not thin. G3 only passes on the 77-of-3 636 well-sampled species,
+              which is the population selected against the confound. Do not run it behind
+              a "+0.033 margin" reading; that reading is retracted.
+W2            refused until the corpus is deeper per species (median 69 syllables).
+W1, W3        closed by G1. Reopen only if a tract estimate ever passes it.
+G2 re-check   the deep arm rests on 76 species. Worth re-running as depth grows.
+```
+
+**Corpus** — both are owner decisions, not tasks:
+
+```
+988 species under the fitting floor: ~24 700 obs needed against 21 776 headroom, so it
+crosses syllableCap and _trim starts evicting the largest species' oldest recordings.
+The store's rows are still segmented full-band; the band fix is in the code and has not
+touched the corpus. Re-deriving means new patches, descriptors, embeddings and typing.
+```
+
+**Paper** — it compiles, and the new longtable was a hard error, not overfull boxes:
+
+```
+tectonic IS on this machine (~/.local/bin/tectonic), and build/main.pdf was already
+tracked from a 1 Aug build -- so "never compiled" was wrong. What had never been
+compiled was main.tex WITH the new four-column longtable, and that did not build:
+
+  ! Package longtable Error: longtable not in 1-column mode.
+
+`longtable` refuses to run inside a twocolumn body, and the table is 14.4 cm of rules
+against an 8.6 cm column, so it was authored for full width anyway. It is now wrapped
+in \onecolumn ... \twocolumn, the same treatment tab:ledger already gets in the
+appendix, and its last column widened 4.4 -> 5.6 cm to swallow the unbreakable
+\texttt paths (15.6 cm of rules + 1.13 cm tabcolsep against 17.2 cm of textwidth).
+```
+
+**The build is now clean**: 39 pages, **0 undefined references, 0 undefined citations, 0
+overfull vboxes**, and 2 overfull hboxes of 1.7 pt and 1.5 pt — both far below the ~20 pt
+where a rule shows in the margin. Table 10 lands on page 29 with all six rows on one page.
+`build/main.pdf`, `main.log` and `main.blg` are refreshed to this build.
+
+```
+Rebuild:  cd docs/whitepaper/arxiv && tectonic -X compile main.tex --outdir build
+```
+
+**One cosmetic consequence for the owner to accept or reject.** `\onecolumn` ejects the
+page, so Table 10 sits alone on page 29 with about two thirds of it white. The alternative
+is a `table*` float, which would let text fill the page — but a `table*` cannot break
+across pages, and this table gains a row every time a gate is run (the W0 full run is next),
+so it would fail silently the first time it outgrows a page. The breakable version is the
+one that is safe to leave unattended, which is why it is what is committed.
+
+Still open, and still the owner's:
+
+```
+Two \todo items: the Zenodo release DOI, and acknowledgements (an explicit none is fine).
+Both render as loud red [TODO: ...] in the PDF, so neither can ship unnoticed.
+fig_corpus's clay annotation overruns its panel (pre-existing, inside the figure asset).
+fig_song_funnel is pinned to the pre-v9 store; its three panels move as one unit.
+```
+
+`\S`sec:next no longer needs the fix the last handoff asked for — it already reads *"Both
+were subsequently run \dots{} neither opened the door it was aimed at"* and points at
+`\S`sec:phase0. That item is done; this note is what was stale.
+
+**App** — the monitor capture is now verified, and the check found a bug:
+
+```
+Listen defaults to computer audio and reaches it through the output's monitor device
+(getUserMedia), so no screen picker. VERIFIED at the sound-server layer, no speakers
+and no browser needed: a sink's monitor carries the mix whether or not anything is
+plugged in, so the test is to play a known probe and read the capture's spectrogram.
+```
+
+A 4 s probe — 1 s each at 1 kHz, 3 kHz, 6 kHz, then a 500 Hz→10 kHz sweep — was played to
+the default sink while `parecord` took its monitor. Aligned by cross-correlation, the
+capture returns **1000.0, 2999.9 and 6000.0 Hz** (error ≤ 0.1 Hz) at 18–23 dB over the
+other audio on that sink, and the sweep rises linearly to 10 kHz. On an otherwise idle
+sink the capture was bit-exact: peak 0.06000 against a probe amplitude of 0.06, noise
+floor at −140 dBFS. **The monitor route delivers the real, unprocessed, full-band mix of
+every application on the sink** — which is exactly what "computer audio" has to mean.
+
+**The bug: `monitorDevice()` picked the wrong monitor.** It was `find`-ing the first
+`audioinput` whose label matches `/monitor/`, but a sound server publishes one monitor per
+sink and every sink that is not being played to is silence. This machine has **ten**
+monitor sources; measured over a 2 s capture with audio playing, nine sat at the noise
+floor (−280 dBFS, digital zero) and only the default sink's monitor carried anything
+(−13.5 dBFS). Note the old note above was misleading on this point: `HiFi__Speaker__sink.monitor`
+does exist, and it is one of the silent nine, because output goes to a Bluetooth sink.
+
+`engine.ts` now pairs the monitor to the default output by `groupId` (Chrome gives a sink
+and its monitor the same group), falling back to the old first-label-match when `groupId`
+is empty — so it is no worse than before in the worst case. **What still needs a browser:**
+that Chrome really does populate `groupId` on PulseAudio monitors. If it does not, the
+fallback puts us back on today's behaviour, silent monitor and all.
+
+One measured quirk worth knowing: a sink waking from `SUSPENDED` **drops its first ~0.9 s**
+to silence and is sample-accurate after that. An empty first second of Listen is the sound
+server starting, not a missing signal. Both facts are now in the `engine.ts` comments.
+
+**Disk**: `pipeline/out/audio-postcutoff` is 13 GB of fetched xeno-canto audio. Outside the
+repo, re-fetchable from its own cached `_catalogue.json`, safe to delete.
+
 ## The Words tab was reworked, and it now refuses on purpose
 
 Owner's ask: typing should be read for *meaning*, and the bird's notes should say what the
@@ -318,7 +459,8 @@ correction is a labelled datum. Nothing currently records those corrections.
   repertoire measure saturates near 8 types by 100-300 syllables, so depth per species, not
   species count, is what would make W2 answerable.
 - `fig_song_funnel` is pinned to the pre-v9 store.
-- Two `\todo` items in `main.tex`, both needing the owner; `main.tex` has never been compiled.
+- Two `\todo` items in `main.tex`, both needing the owner. (The "never been compiled" that
+  used to follow this line was wrong: tectonic is installed and the build is clean at 39 pages.)
 
 # Lyrebird — (2026-08-04): v9 is installed, five noise gates are measured dead, and the whitepaper leads with its findings
 
@@ -391,6 +533,9 @@ write the negative result and close the biology.
 - **`main.tex` has never been compiled.** There is no TeX toolchain on this machine. It is
   validated statically only: braces balanced, environments nested, 0 dangling refs, 19 figures
   with PDFs. Expect overfull boxes on the first real build.
+  <br>**FALSE, corrected 2026-08-04 later — left in place because this is a dated entry.**
+  `tectonic` is at `~/.local/bin/tectonic` and `build/main.pdf` was already tracked. See the
+  top entry for the real state: the build is clean at 39 pages.
 
 ### 4. State, so nothing has to be re-derived
 

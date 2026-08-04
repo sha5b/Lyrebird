@@ -1,0 +1,40 @@
+{
+ "census": {
+  "catalogue": 21928,
+  "playable": 21709,
+  "species_all": 4305,
+  "species_scorable": 886,
+  "recordings_scorable": 8321,
+  "max_per_species": 12,
+  "recordists_all": 961
+ },
+ "recordings_scored": 7,
+ "species_scored": 1,
+ "recordists": 2,
+ "single_recordist_species_dropped": 5,
+ "folds_per_arm": 5,
+ "gate_points": 10.0,
+ "gate_met_both_models": false,
+ "incomplete_models": [
+  "perch",
+  "birdnet"
+ ],
+ "results": {
+  "perch": {
+   "space": "perch",
+   "dims": 1536,
+   "status": "no usable folds"
+  },
+  "birdnet": {
+   "space": "birdnet",
+   "dims": 1024,
+   "status": "no usable folds"
+  }
+ },
+ "audio": "xeno-canto uploads after Perch 2.0 (since 2025-09-01), q:A, grp:birds",
+ "models": {
+  "perch": "perch-2.0-frozen",
+  "birdnet": "birdnet-v2.4-backbone-frozen"
+ },
+ "probe": "multinomial logistic, L2 C=1.0, GPU; verified against sklearn in w0_probe.py"
+}

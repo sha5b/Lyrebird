@@ -25,6 +25,19 @@ published version needs — and one model, because BirdNET is not wired here. Wh
 establish is the sign and the rough size of the effect on uncontaminated audio, which is
 what decides whether the full run is worth building.
 
+**SUPERSEDED for the headline number: see `w0_full.py`.** The full run was built and it
+carries both of the things this file says it lacks — 886 species over ~8 300 recordings
+against 62 over 2 158, and BirdNET beside Perch. Two things this pilot got wrong about its
+own population are worth keeping visible, because both were invisible from inside it:
+
+  * Its catalogue held exactly 6 000 recordings, which was `SEARCH_PAGES = 60` in
+    `w6_t1b_perch_postcutoff.py` and not the archive. The same query has **21 928**.
+  * It selected by *recordist*, inheriting T1b's rule, while W0's unit is the *species*.
+    That is what left 62 scorable classes out of 827 species fetched.
+
+This file is kept runnable and unchanged: it is the measurement the whitepaper's pilot row
+was computed from, and it should stay reproducible against the catalogue it actually used.
+
 **The species filter is not a convenience, it is the experiment.** Under a recordist-blocked
 split, a species whose recordings all come from one recordist lands entirely on one side and
 cannot be classified at all — that is not "leakage", it is an empty test class, and counting

@@ -411,10 +411,40 @@ export class BirdyEngine {
 	 */
 	private static readonly MONITOR_RE = /\bmonitor\b|\bloopback\b|stereo mix|what u ?hear/i;
 
-	/** The loopback input to prefer for computer audio, if the platform has one. */
+	/**
+	 * The loopback input to prefer for computer audio, if the platform has one.
+	 *
+	 * **It has to be the monitor of the *current default output*, not merely the first
+	 * device whose label says "monitor".** A sound server publishes one monitor per sink,
+	 * and every sink that is not being played to is digital silence. Measured on this
+	 * machine: ten monitor sources, nine of them silent at the noise floor over a 2 s
+	 * capture, because output was going to a Bluetooth sink — only that sink's monitor
+	 * carried the mix. A plain label match returns whichever monitor `enumerateDevices`
+	 * lists first, which on any laptop with HDMI ports is usually a dead one.
+	 *
+	 * Chrome gives a sink and its monitor the same `groupId`, so the default output's
+	 * group is what names the right monitor. Where no group matches — a browser that
+	 * leaves `groupId` empty — this falls back to the old first-label-match, which is no
+	 * worse than what it replaces.
+	 */
 	static async monitorDevice(): Promise<MediaDeviceInfo | null> {
-		const all = await BirdyEngine.inputDevices();
-		return all.find((d) => BirdyEngine.MONITOR_RE.test(d.label)) ?? null;
+		if (!navigator.mediaDevices?.enumerateDevices) return null;
+		const all = await navigator.mediaDevices.enumerateDevices();
+		const monitors = all.filter(
+			(d) => d.kind === 'audioinput' && BirdyEngine.MONITOR_RE.test(d.label)
+		);
+		if (!monitors.length) return null;
+
+		const outputs = all.filter((d) => d.kind === 'audiooutput');
+		// The `default` entry mirrors a real device and shares its group; if the browser
+		// only exposes the alias, any other output in the same group identifies it.
+		const preferred = outputs.find((d) => d.deviceId === 'default') ?? outputs[0];
+		const group = preferred?.groupId;
+		if (group) {
+			const paired = monitors.find((d) => d.groupId === group);
+			if (paired) return paired;
+		}
+		return monitors[0];
 	}
 
 	/** How the open input was actually obtained, for the interface to report honestly. */
@@ -433,6 +463,11 @@ export class BirdyEngine {
 	 * on any machine whose sound server publishes a monitor source, which is every
 	 * PulseAudio and PipeWire desktop, the honest route is `getUserMedia` against that
 	 * device: it is the real system output, and nothing is shared or shown.
+	 *
+	 * A monitor that has been idle wakes with a gap: measured here, a sink coming out of
+	 * SUSPENDED dropped the first ~0.9 s to digital silence, and reproduced the signal
+	 * sample-accurately from then on. So an empty first second of analysis after opening
+	 * computer audio is the sound server starting up, not a missing signal.
 	 *
 	 * Device labels are blank until the browser has been granted audio permission once, so
 	 * a monitor cannot be recognised before then. One silent `getUserMedia` is opened and
