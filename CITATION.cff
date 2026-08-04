@@ -1,0 +1,45 @@
+cff-version: 1.2.0
+title: >-
+  Lyrebird: a physically interpretable syllable inventory for
+  2,650 wild bird species
+message: >-
+  If you use this work, please cite it. If you use the
+  recordings behind it, cite the recordists — every one is
+  named in the store's CREDITS.md, and their licences are
+  their own.
+type: software
+authors:
+  - given-names: Shahab
+    family-names: Nedaei
+    affiliation: variable.gallery
+    email: ned.tabulov@gmail.com
+    # orcid: 'https://orcid.org/0000-0000-0000-0000'   <- add yours
+repository-code: 'https://github.com/sha5b/Birdy'
+abstract: >-
+  Lyrebird measures syllables in wild bird recordings from
+  xeno-canto and iNaturalist. It fits the Laje-Mindlin
+  normal-form syrinx oscillator to each measured syllable type
+  by coordinate descent, learns a per-species type inventory
+  and a first-order grammar over it, and ships the result as a
+  browser application. The pipeline decodes each recording,
+  describes it as numbers, and deletes it: no audio is
+  redistributed and no model weights reach the browser. Fifty
+  eight gates were registered before their runs and thirty six
+  ended in a written refusal, which are as much of the
+  contribution as the system is.
+keywords:
+  - bioacoustics
+  - birdsong
+  - syrinx model
+  - gesture inversion
+  - contrastive embeddings
+  - sequence statistics
+  - recordist leakage
+  - evaluation methodology
+  - negative results
+  - pre-registration
+license: CC-BY-NC-SA-4.0
+# Fill both of these after the Zenodo deposition is published, then commit.
+# doi: 10.5281/zenodo.XXXXXXX
+# version: v9
+# date-released: '2026-08-04'

@@ -339,6 +339,46 @@ floor that makes the test possible removes what it is testing for.
 was the embedded population before the two-recordist floor, and the whitepaper said "On 2 158
 recordings ... reaches 93.29 %". Corrected in both papers.
 
+## There is a publishing plan now, in `publish/`
+
+Every venue in it is free. arXiv is deliberately absent. Two constraints from `NOTICE.md` drove
+the choices and rule some options out: the work is **CC BY-NC-SA 4.0**, so anything demanding
+CC BY is out, and **no audio may be redistributed**, so every dataset release is derived
+features and metadata only.
+
+```
+publish/README.md                        the plan, ordered, with what only the owner can do
+publish/zenodo/                          metadata JSON, ready except for an ORCID
+publish/preprint/                        which paper goes where, and why only one server each
+publish/huggingface/dataset-card.md      the card, plus a Parquet conversion snippet
+publish/community/                       drafts for BirdSet, Perch, BirdNET, xeno-canto, WILDLABS
+CITATION.cff                             at the repo root, valid YAML, needs an ORCID + DOI
+```
+
+**Zenodo is first because both papers block on it.** Each carries `\todo{Zenodo DOI}` in its
+data-availability section. The sequencing is the only fiddly part: *reserve* the DOI while the
+record is a draft, put it in both papers, rebuild, then upload -- so the PDF contains the DOI
+of the record it sits in.
+
+**One preprint server per paper.** System paper to EcoEvoRxiv (free, not-for-profit, hosts
+bioacoustics, and accepts reports and postprints rather than assuming a journal is next). W0
+paper to TechRxiv, since its natural home is arXiv `cs.SD`. Posting one manuscript to two
+servers splits the citation record.
+
+**Hugging Face is the highest-leverage venue and costs nothing.** BirdSet, Perch and BirdNET all
+live there. That community reads dataset cards; it does not read ecology preprint servers.
+
+Two drafts need reading before they are sent. `community/benchmark-maintainers.md` says other
+people's published numbers are optimistic, which is defensible but should go out in the owner's
+voice. And `community/xeno-canto-forum-post.md` ends in a **request** rather than a complaint --
+a species with fifty recordings from three people gains far more from a fourth *person* than a
+fourth recording. That is the only fix that ever worked, since all four method-side removals
+failed, and it is entirely in the recordists' hands.
+
+**Nothing in `publish/` should go out until `analysis/w0_full.json` is complete.** Every
+community draft carries `[DROP]`, `[RATIO]`, `[S]` and `[R]` placeholders. The system paper is
+complete and could go today.
+
 ## The song funnel was re-measured on v9, and it narrowed
 
 `fig_song_funnel` carried a note saying it was pinned to the 340 079-observation store and

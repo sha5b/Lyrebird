@@ -1675,8 +1675,9 @@ $+0.422$ nats and 29 of 30 species, and the decomposition reversed the adoption.
 held-out tokens by whether the transition was seen in training, first-order is the better
 model on the 90\,\% seen ($-1.525$ against $-1.624$ nats/token, better in 15 of 30 species),
 and the HMM's entire advantage is the 10\,\% unseen tail, where first-order pays $-9.25$ and
-the HMM $-4.16$. That is a property of smoothing \emph{shape}. A mixture predictive is
-heavy-tailed and not of recovered hidden structure. Adopting a heavier model for a smoothing
+the HMM $-4.16$. That is a property of smoothing \emph{shape}, because a mixture
+predictive is heavy-tailed. It is not evidence of recovered hidden structure. Adopting a
+heavier model for a smoothing
 artefact would be the wrong lesson, so first order stayed and the smoothing was repaired
 instead: a Kneser--Ney continuation backoff \citep{kneser1995} gains $+1.90$ and $+2.32$
 nats per token on unseen-\emph{context} transitions across two debug stores with the seen
