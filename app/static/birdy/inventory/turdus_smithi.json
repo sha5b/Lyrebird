@@ -1,0 +1,154 @@
+{
+ "id": "turdus_smithi",
+ "common": "Karoo Thrush",
+ "scientific": "Turdus smithi",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 629 Hz \u00b7 39 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0387,
+   "level": 0.30000001192092896,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     554.9
+    ],
+    [
+     0.125,
+     722.3
+    ],
+    [
+     0.25,
+     589.3
+    ],
+    [
+     0.375,
+     556.1
+    ],
+    [
+     0.5,
+     721.5
+    ],
+    [
+     1.0,
+     655.6
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "gammaScale": 2.0,
+   "tractQ": 1.7495917234240546,
+   "noise": 0.04906357824802399,
+   "rough": 0.43808358907699585,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.8228,
+    "rivalCosine": 0.4049,
+    "nearestOwn": true,
+    "f0ErrorPercent": 12.92
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2443 Hz \u00b7 133 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1333,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2435.9
+    ],
+    [
+     1.0,
+     2450.7
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 21.66,
+   "amDepth": 0.0,
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "rough": 0.08,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 26,
+    "resynthesisCosine": 0.3947,
+    "rivalCosine": 0.1089,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.27
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "L01": 0.6923,
+    "end": 0.2308,
+    "L00": 0.0769
+   }
+  },
+  "gaps": {
+   "L01>L00": 0.304,
+   "L01>L01": 0.079
+  },
+  "songTyping": {
+   "bouts": 9,
+   "short": 8,
+   "candidates": 1,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6
+  }
+ }
+}

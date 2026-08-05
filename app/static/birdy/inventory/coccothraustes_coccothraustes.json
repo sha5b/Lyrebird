@@ -1,0 +1,172 @@
+{
+ "id": "coccothraustes_coccothraustes",
+ "common": "Hawfinch",
+ "scientific": "Coccothraustes coccothraustes",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 35 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 765 Hz \u00b7 71 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0707,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     719.2
+    ],
+    [
+     0.125,
+     819.6
+    ],
+    [
+     0.375,
+     801.2
+    ],
+    [
+     1.0,
+     723.4
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.5,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.15
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 0.0,
+   "noise": 0.8500000238418579,
+   "rough": 0.0,
+   "amDepth": 0.45,
+   "am": 30.0,
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.6781,
+    "rivalCosine": 0.6524,
+    "nearestOwn": true,
+    "f0ErrorPercent": -25.97
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 6912 Hz \u00b7 51 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0507,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     6937.9
+    ],
+    [
+     1.0,
+     6886.0
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     1919.8885853658714,
+     2.0,
+     0.5
+    ],
+    [
+     6830.618534315889,
+     2.0,
+     0.5
+    ]
+   ],
+   "noise": 0.85,
+   "amDepth": 0.8,
+   "am": 30.0,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.09
+   },
+   "gammaScale": 1.5,
+   "rough": 0.2,
+   "fricative": true,
+   "learned": {
+    "members": 17,
+    "resynthesisCosine": 0.6945,
+    "rivalCosine": 0.3264,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.49
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6111,
+    "L01": 0.2778,
+    "end": 0.1111
+   },
+   "L01": {
+    "L01": 0.4706,
+    "L00": 0.2941,
+    "end": 0.2353
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.109,
+   "L00>L01": 0.563,
+   "L01>L00": 0.216,
+   "L01>L01": 0.055
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 4,
+   "candidates": 2,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6
+  }
+ }
+}

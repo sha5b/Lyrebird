@@ -3,45 +3,41 @@
  "common": "Jerdon's Baza",
  "scientific": "Aviceda jerdoni",
  "bank": "learned",
- "summary": "Learned from 1 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
-   "label": "learned L00 \u00b7 2333 Hz \u00b7 65 ms",
+   "label": "learned L00 \u00b7 2370 Hz \u00b7 67 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0653,
+   "dur": 0.0667,
    "level": 0.35,
    "timbre": "reed",
    "contour": [
     [
      0.0,
-     2073.7
+     2076.5
     ],
     [
      0.125,
-     2250.9
+     2255.8
     ],
     [
      0.25,
-     2696.1
+     2735.9
     ],
     [
      0.5,
-     2117.7
+     2180.2
     ],
     [
      0.625,
-     2623.7
-    ],
-    [
-     0.75,
-     2350.9
+     2742.4
     ],
     [
      1.0,
-     2291.6
+     2314.8
     ]
    ],
    "attack": 0.008,
@@ -55,77 +51,55 @@
     ]
    ],
    "gammaScale": 2.0,
-   "tractQ": 3.0,
    "noise": 0.4,
-   "rough": 0.65,
-   "learned": {
-    "members": 26,
-    "resynthesisCosine": 0.6805,
-    "rivalCosine": 0.5414,
-    "nearestOwn": true,
-    "f0ErrorPercent": 23.13
+   "rough": 0.4,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
    },
-   "voices": {
-    "contour": [
-     [
-      0.0,
-      1555.2749999999999
-     ],
-     [
-      0.125,
-      1688.1750000000002
-     ],
-     [
-      0.25,
-      2022.0749999999998
-     ],
-     [
-      0.5,
-      1588.2749999999999
-     ],
-     [
-      0.625,
-      1967.7749999999999
-     ],
-     [
-      0.75,
-      1763.1750000000002
-     ],
-     [
-      1.0,
-      1718.6999999999998
-     ]
-    ],
-    "gamma": 20515.65114721328,
-    "level": 0.7,
-    "tracheaCm": 2.0,
-    "refl": 0.9,
-    "betaInj": 0.1
+   "learned": {
+    "members": 25,
+    "resynthesisCosine": 0.6559,
+    "rivalCosine": 0.7249,
+    "nearestOwn": false,
+    "f0ErrorPercent": -18.32
    }
   },
   {
    "id": "L02",
-   "label": "learned L02 \u00b7 6125 Hz \u00b7 451 ms",
+   "label": "learned L02 \u00b7 5730 Hz \u00b7 449 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.4506,
-   "level": 0.35,
-   "timbre": "pure",
+   "dur": 0.4493,
+   "level": 0.45,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
-     6132.3
+     6132.1
+    ],
+    [
+     0.125,
+     6106.3
+    ],
+    [
+     0.25,
+     4400.5
+    ],
+    [
+     0.375,
+     6127.0
     ],
     [
      1.0,
-     6116.9
+     6118.5
     ]
    ],
-   "attack": 0.004,
+   "attack": 0.008,
    "hold": true,
    "harmonic": 0.5,
-   "am": 12.0,
+   "am": 140.0,
    "amDepth": 0.0,
    "formants": [
     [
@@ -134,21 +108,20 @@
      1.0
     ]
    ],
-   "gammaScale": 2.0,
-   "tractQ": 3.0,
-   "noise": 0.12,
-   "rough": 0.4,
-   "two": false,
+   "gammaScale": 1.5,
+   "tractQ": 0.0,
+   "noise": 0.05,
    "vib": {
     "rate": 8.0,
     "depth": 0.09
    },
+   "rough": 0.65,
    "learned": {
     "members": 4,
-    "resynthesisCosine": 0.7736,
-    "rivalCosine": 0.4725,
+    "resynthesisCosine": 0.7684,
+    "rivalCosine": 0.4303,
     "nearestOwn": true,
-    "f0ErrorPercent": 10.06
+    "f0ErrorPercent": 12.25
    }
   }
  ],
@@ -176,16 +149,16 @@
   ],
   "transitions": {
    "L00": {
-    "L00": 0.9231,
-    "end": 0.0769
+    "L00": 0.92,
+    "end": 0.08
    },
    "L02": {
     "L02": 1.0
    }
   },
   "gaps": {
-   "L00>L00": 0.133,
-   "L02>L02": 0.032
+   "L00>L00": 0.136,
+   "L02>L02": 0.035
   },
   "songTyping": {
    "bouts": 2,

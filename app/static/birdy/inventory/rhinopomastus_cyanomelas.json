@@ -1,0 +1,152 @@
+{
+ "id": "rhinopomastus_cyanomelas",
+ "common": "Common Scimitarbill",
+ "scientific": "Rhinopomastus cyanomelas",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1445 Hz \u00b7 85 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0853,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1419.4
+    ],
+    [
+     1.0,
+     1471.9
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.2,
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
+   "noise": 0.25,
+   "rough": 0.4,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.05
+   },
+   "amDepth": 0.45,
+   "am": 30.0,
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.6784,
+    "rivalCosine": 0.3337,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.46
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1620 Hz \u00b7 200 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1579.3
+    ],
+    [
+     0.125,
+     1738.9
+    ],
+    [
+     1.0,
+     1548.2
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0049610380083322525,
+   "gammaScale": 1.0,
+   "tractQ": 20.0,
+   "noise": 0.12,
+   "rough": 0.0,
+   "amDepth": 0.3,
+   "am": 12.0,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.6272,
+    "rivalCosine": 0.3794,
+    "nearestOwn": true,
+    "f0ErrorPercent": 6.48
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L00",
+    "L00",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6842,
+    "L01": 0.1579,
+    "end": 0.1579
+   },
+   "L01": {
+    "L00": 0.625,
+    "L01": 0.375
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.453,
+   "L00>L01": 0.448,
+   "L01>L00": 0.429,
+   "L01>L01": 0.427
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 0,
+   "candidates": 3,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 3,
+   "minClusterSize": 6
+  }
+ }
+}

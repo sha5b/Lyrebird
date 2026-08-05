@@ -12,8 +12,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.1294,
-   "level": 0.599,
-   "timbre": "reed",
+   "level": 0.6,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
@@ -48,35 +48,35 @@
      2285.5
     ]
    ],
-   "attack": 0.016,
+   "attack": 0.008,
    "hold": true,
-   "harmonic": 0.1,
+   "harmonic": 0.5,
    "am": 16.51,
    "amDepth": 0.45,
    "vib": {
-    "rate": 34.0,
-    "depth": 0.09
+    "rate": 14.0,
+    "depth": 0.287
    },
-   "gammaScale": 4.5,
-   "tractQ": 0.0,
-   "noise": 0.12,
-   "rough": 0.4,
+   "gammaScale": 2.0,
+   "tractQ": 3.0,
+   "noise": 0.25,
+   "rough": 0.2,
    "learned": {
     "members": 16,
-    "resynthesisCosine": 0.7689,
-    "rivalCosine": 0.7159,
-    "nearestOwn": true,
-    "f0ErrorPercent": 9.46
+    "resynthesisCosine": 0.7692,
+    "rivalCosine": 0.8316,
+    "nearestOwn": false,
+    "f0ErrorPercent": -15.95
    }
   },
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 3045 Hz \u00b7 192 ms",
+   "label": "learned L01 \u00b7 3050 Hz \u00b7 192 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.192,
-   "level": 0.75,
+   "level": 0.9,
    "timbre": "buzz",
    "contour": [
     [
@@ -93,7 +93,7 @@
     ],
     [
      0.375,
-     3787.8
+     3787.6
     ],
     [
      0.5,
@@ -105,7 +105,7 @@
     ],
     [
      0.75,
-     2060.5
+     2084.9
     ],
     [
      1.0,
@@ -116,21 +116,31 @@
    "hold": false,
    "harmonic": 0.0,
    "gammaScale": 6.0,
-   "tractQ": 6.0,
+   "tractQ": 0.0,
    "noise": 0.05,
-   "rough": 0.2,
-   "amDepth": 0.3,
-   "am": 45.0,
-   "vib": {
-    "rate": 22.0,
-    "depth": 0.09
-   },
+   "rough": 0.0,
+   "amDepth": 0.15,
+   "am": 25.0,
+   "two": true,
+   "fricative": true,
+   "formants": [
+    [
+     1919.8885853658714,
+     8.0,
+     1.0
+    ],
+    [
+     3741.776844777196,
+     8.0,
+     1.0
+    ]
+   ],
    "learned": {
     "members": 12,
-    "resynthesisCosine": 0.9123,
-    "rivalCosine": 0.5958,
+    "resynthesisCosine": 0.8968,
+    "rivalCosine": 0.6045,
     "nearestOwn": true,
-    "f0ErrorPercent": -1.25
+    "f0ErrorPercent": 9.28
    }
   }
  ],

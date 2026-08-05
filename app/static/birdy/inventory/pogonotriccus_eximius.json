@@ -39,12 +39,12 @@
    "noise": 0.0,
    "rough": 0.4,
    "amDepth": 0.6,
-   "am": 30.0,
+   "am": 25.0,
    "learned": {
     "members": 30,
-    "resynthesisCosine": 0.7572,
-    "rivalCosine": 0.7324,
-    "nearestOwn": true,
+    "resynthesisCosine": 0.7523,
+    "rivalCosine": 0.7653,
+    "nearestOwn": false,
     "f0ErrorPercent": -1.78
    }
   },
@@ -69,7 +69,7 @@
    ],
    "attack": 0.0027,
    "hold": true,
-   "harmonic": 0.0,
+   "harmonic": 0.1,
    "formants": [
     [
      5063.7,
@@ -78,45 +78,51 @@
     ]
    ],
    "gammaScale": 6.0,
-   "tractQ": 6.0,
+   "tractQ": 30.0,
    "noise": 0.05,
    "rough": 0.65,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.09
+   },
    "learned": {
     "members": 7,
-    "resynthesisCosine": 0.8732,
-    "rivalCosine": 0.7056,
+    "resynthesisCosine": 0.8763,
+    "rivalCosine": 0.7144,
     "nearestOwn": true,
     "f0ErrorPercent": -3.16
    }
   },
   {
    "id": "L02",
-   "label": "learned L02 \u00b7 6876 Hz \u00b7 65 ms",
+   "label": "learned L02 \u00b7 6847 Hz \u00b7 65 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0653,
-   "level": 0.3,
-   "timbre": "pure",
+   "level": 0.45,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
      6756.7
     ],
     [
+     0.75,
+     6730.0
+    ],
+    [
      0.875,
-     7035.3
+     7052.8
     ],
     [
      1.0,
-     6839.1
+     6854.5
     ]
    ],
-   "attack": 0.03,
-   "hold": false,
-   "harmonic": 0.9,
-   "am": 25.0,
-   "amDepth": 0.3,
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 1.0,
    "formants": [
     [
      5063.7,
@@ -124,17 +130,19 @@
      1.0
     ]
    ],
-   "gammaScale": 2.0,
-   "tractQ": 6.0,
-   "noise": 0.05,
+   "gammaScale": 1.5,
+   "tractQ": 0.0,
+   "noise": 0.6,
    "rough": 0.65,
+   "am": 12.0,
+   "amDepth": 0.15,
    "fricative": true,
    "learned": {
     "members": 4,
-    "resynthesisCosine": 0.7583,
-    "rivalCosine": 0.1956,
+    "resynthesisCosine": 0.858,
+    "rivalCosine": 0.3693,
     "nearestOwn": true,
-    "f0ErrorPercent": -0.83
+    "f0ErrorPercent": 6.86
    }
   }
  ],

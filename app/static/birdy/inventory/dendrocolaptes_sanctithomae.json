@@ -3,127 +3,141 @@
  "common": "Northern Barred-Woodcreeper",
  "scientific": "Dendrocolaptes sanctithomae",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 35 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 34 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 2291 Hz \u00b7 63 ms",
+   "label": "learned L01 \u00b7 2318 Hz \u00b7 63 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0626,
-   "level": 0.45,
+   "level": 0.6,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     2308.8
+     2358.2
+    ],
+    [
+     0.125,
+     2399.8
+    ],
+    [
+     0.25,
+     2253.0
+    ],
+    [
+     0.75,
+     2376.1
+    ],
+    [
+     0.875,
+     2252.7
     ],
     [
      1.0,
-     2274.2
+     2273.3
     ]
    ],
-   "attack": 0.0094,
+   "attack": 0.008,
    "hold": true,
-   "harmonic": 0.7,
-   "formants": [
-    [
-     5856.3,
-     6.0,
-     1.0
-    ]
-   ],
-   "gammaScale": 6.0,
-   "tractQ": 0.0,
-   "noise": 0.85,
-   "rough": 0.65,
-   "am": 12.0,
-   "amDepth": 0.3,
+   "harmonic": 1.0,
    "vib": {
-    "rate": 12.0,
-    "depth": 0.05
+    "rate": 14.0,
+    "depth": 0.051
    },
+   "gammaScale": 4.5,
+   "noise": 0.85,
+   "rough": 0.08,
+   "amDepth": 0.3,
+   "am": 30.0,
    "learned": {
     "members": 28,
-    "resynthesisCosine": 0.826,
-    "rivalCosine": 0.7715,
+    "resynthesisCosine": 0.8498,
+    "rivalCosine": 0.6811,
     "nearestOwn": true,
-    "f0ErrorPercent": -11.7
+    "f0ErrorPercent": -5.25
    }
   },
   {
    "id": "L02",
-   "label": "learned L02 \u00b7 5504 Hz \u00b7 69 ms",
+   "label": "learned L02 \u00b7 5480 Hz \u00b7 81 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0693,
-   "level": 0.3,
+   "dur": 0.0813,
+   "level": 1.35,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     5612.4
+     5613.1
+    ],
+    [
+     0.125,
+     5633.2
+    ],
+    [
+     0.25,
+     4876.1
     ],
     [
      0.375,
-     5626.7
+     5436.2
     ],
     [
      0.5,
-     5051.9
+     5393.8
     ],
     [
      0.625,
-     5713.5
+     5792.9
     ],
     [
      0.75,
-     5371.4
+     5565.4
+    ],
+    [
+     0.875,
+     5711.8
     ],
     [
      1.0,
-     5679.1
+     5352.6
     ]
    ],
-   "attack": 0.016,
+   "attack": 0.03,
    "hold": true,
-   "harmonic": 0.2,
+   "harmonic": 0.5,
+   "am": 80.0,
+   "amDepth": 0.8,
+   "gammaScale": 6.0,
+   "noise": 0.25,
+   "rough": 0.4,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.01
+   },
+   "fricative": true,
    "formants": [
-    [
-     5856.3,
-     4.0,
-     0.5
-    ],
     [
      2289.5188831594724,
      4.0,
-     0.5
+     2.0
     ],
     [
      5899.517283512816,
      4.0,
-     0.5
+     2.0
     ]
    ],
-   "gammaScale": 6.0,
-   "tractQ": 0.0,
-   "noise": 0.85,
-   "rough": 0.08,
-   "am": 80.0,
-   "amDepth": 0.3,
-   "vib": {
-    "rate": 34.0,
-    "depth": 0.025
-   },
-   "fricative": true,
    "learned": {
-    "members": 7,
-    "resynthesisCosine": 0.8627,
-    "rivalCosine": 0.8429,
+    "members": 6,
+    "resynthesisCosine": 0.8016,
+    "rivalCosine": 0.6911,
     "nearestOwn": true,
-    "f0ErrorPercent": 12.04
+    "f0ErrorPercent": 12.23
    }
   }
  ],
@@ -159,28 +173,30 @@
   ],
   "transitions": {
    "L01": {
-    "L01": 0.6429,
-    "L02": 0.1786,
-    "end": 0.1786
+    "L01": 0.75,
+    "end": 0.1429,
+    "L02": 0.1071
    },
    "L02": {
-    "L01": 1.0
+    "L01": 0.6,
+    "L02": 0.4
    }
   },
   "gaps": {
-   "L01>L01": 0.075,
-   "L01>L02": 0.136,
-   "L02>L01": 0.107
+   "L01>L01": 0.088,
+   "L01>L02": 0.115,
+   "L02>L01": 0.059,
+   "L02>L02": 0.123
   },
   "songTyping": {
    "bouts": 5,
-   "short": 1,
-   "candidates": 4,
-   "repeatCandidates": 0,
+   "short": 3,
+   "candidates": 2,
+   "repeatCandidates": 2,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,
-   "unplaced": 4,
+   "unplaced": 2,
    "minClusterSize": 6
   }
  }

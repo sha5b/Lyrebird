@@ -3,25 +3,25 @@
  "common": "Fulvous Chatterer",
  "scientific": "Argya fulva",
  "bank": "learned",
- "summary": "Learned from 1 field recordings: 2 syllable types fitted from 33 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
-   "label": "learned L00 \u00b7 3701 Hz \u00b7 32 ms",
+   "label": "learned L00 \u00b7 3588 Hz \u00b7 32 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.032,
-   "level": 1.35,
-   "timbre": "reed",
+   "level": 1.2,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
-     3708.3
+     3610.7
     ],
     [
      1.0,
-     3693.2
+     3565.5
     ]
    ],
    "attack": 0.008,
@@ -29,17 +29,7 @@
    "harmonic": 0.9,
    "formants": [
     [
-     3195.0,
-     4.0,
-     2.0
-    ],
-    [
-     9584.9,
-     4.0,
-     2.0
-    ],
-    [
-     3741.776844777196,
+     3192.5863689730877,
      4.0,
      2.0
     ],
@@ -50,85 +40,75 @@
     ]
    ],
    "gammaScale": 1.0,
-   "tractQ": 3.0,
+   "tractQ": 0.0,
    "noise": 0.0,
-   "rough": 0.2,
-   "amDepth": 0.45,
+   "rough": 0.0,
    "am": 12.0,
+   "amDepth": 0.45,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.01
+   },
    "fricative": true,
    "learned": {
-    "members": 30,
-    "resynthesisCosine": 0.7468,
-    "rivalCosine": 0.5816,
+    "members": 17,
+    "resynthesisCosine": 0.7743,
+    "rivalCosine": 0.5656,
     "nearestOwn": true,
-    "f0ErrorPercent": 1.23
-   },
-   "voices": {
-    "contour": [
-     [
-      0.0,
-      7416.6
-     ],
-     [
-      1.0,
-      7386.4
-     ]
-    ],
-    "gamma": 21691.239074570993,
-    "level": 0.7,
-    "tracheaCm": 2.0,
-    "refl": 0.9,
-    "betaInj": 0.05
+    "f0ErrorPercent": 0.06
    }
   },
   {
-   "id": "L02",
-   "label": "learned L02 \u00b7 6658 Hz \u00b7 27 ms",
+   "id": "L03",
+   "label": "learned L03 \u00b7 4130 Hz \u00b7 32 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0267,
-   "level": 0.35,
-   "timbre": "pure",
+   "dur": 0.032,
+   "level": 1.35,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
-     7487.7
+     4227.0
     ],
     [
-     0.25,
-     6287.2
+     0.625,
+     4009.2
     ],
     [
      1.0,
-     6269.2
+     4156.5
     ]
    ],
-   "attack": 0.0053,
+   "attack": 0.016,
    "hold": true,
-   "harmonic": 0.7,
+   "harmonic": 0.9,
+   "am": 45.0,
+   "amDepth": 0.0,
    "formants": [
     [
-     3195.0,
-     6.0,
-     1.0
+     3741.776844777196,
+     8.0,
+     0.5
     ],
     [
-     9584.9,
-     6.0,
-     0.3333
+     7893.0853838443245,
+     8.0,
+     0.5
     ]
    ],
+   "tractQ": 6.0,
+   "noise": 0.25,
+   "rough": 0.0,
    "gammaScale": 2.0,
-   "tractQ": 3.0,
-   "noise": 0.12,
-   "rough": 0.65,
+   "fricative": true,
    "learned": {
-    "members": 3,
-    "resynthesisCosine": 0.8551,
-    "rivalCosine": 0.6888,
+    "members": 14,
+    "resynthesisCosine": 0.6734,
+    "rivalCosine": 0.6418,
     "nearestOwn": true,
-    "f0ErrorPercent": 11.02
+    "f0ErrorPercent": -7.4
    }
   }
  ],
@@ -152,25 +132,29 @@
  "grammar": {
   "start": [
    "L00",
-   "L02"
+   "L03"
   ],
   "transitions": {
    "L00": {
-    "L00": 0.7931,
-    "end": 0.2069
+    "L00": 0.6875,
+    "end": 0.3125
    },
-   "L02": {
-    "end": 1.0
+   "L03": {
+    "L03": 0.7143,
+    "end": 0.1429,
+    "L00": 0.1429
    }
   },
   "gaps": {
-   "L00>L00": 0.013
+   "L00>L00": 0.013,
+   "L03>L00": 0.091,
+   "L03>L03": 0.016
   },
   "songTyping": {
-   "bouts": 8,
-   "short": 8,
+   "bouts": 7,
+   "short": 7,
    "candidates": 0,
-   "repeatCandidates": 4,
+   "repeatCandidates": 3,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,

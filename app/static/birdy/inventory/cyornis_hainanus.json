@@ -3,107 +3,119 @@
  "common": "Hainan Blue-Flycatcher",
  "scientific": "Cyornis hainanus",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 2819 Hz \u00b7 91 ms",
+   "label": "learned L01 \u00b7 2725 Hz \u00b7 85 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0907,
-   "level": 0.45,
+   "dur": 0.0853,
+   "level": 0.3,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     2765.2
-    ],
-    [
-     1.0,
-     2873.1
-    ]
-   ],
-   "attack": 0.016,
-   "hold": true,
-   "harmonic": 0.0,
-   "am": 12.0,
-   "amDepth": 0.6,
-   "gammaScale": 0.5,
-   "tractQ": 20.0,
-   "noise": 0.12,
-   "learned": {
-    "members": 25,
-    "resynthesisCosine": 0.4994,
-    "rivalCosine": -0.2428,
-    "nearestOwn": true,
-    "f0ErrorPercent": -1.21
-   }
-  },
-  {
-   "id": "L02",
-   "label": "learned L02 \u00b7 5294 Hz \u00b7 40 ms",
-   "function": "",
-   "confidence": "unlabelled",
-   "refs": [],
-   "dur": 0.04,
-   "level": 0.35,
-   "timbre": "reed",
-   "contour": [
-    [
-     0.0,
-     6077.7
-    ],
-    [
-     0.125,
-     5325.4
+     2764.5
     ],
     [
      0.25,
-     5322.8
-    ],
-    [
-     0.375,
-     4680.7
-    ],
-    [
-     0.5,
-     5206.4
+     2660.2
     ],
     [
      1.0,
-     5243.2
+     2750.9
     ]
    ],
-   "attack": 0.0027,
+   "attack": 0.008,
    "hold": true,
    "harmonic": 0.0,
-   "gammaScale": 4.5,
-   "tractQ": 6.0,
-   "noise": 0.25,
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "noise": 0.4,
+   "rough": 0.0,
+   "amDepth": 0.45,
+   "am": 12.0,
    "vib": {
-    "rate": 34.0,
+    "rate": 4.0,
     "depth": 0.025
    },
+   "learned": {
+    "members": 23,
+    "resynthesisCosine": 0.4968,
+    "rivalCosine": -0.3304,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.0
+   }
+  },
+  {
+   "id": "L03",
+   "label": "learned L03 \u00b7 4507 Hz \u00b7 88 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.088,
+   "level": 1.05,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     4676.9
+    ],
+    [
+     0.125,
+     4678.2
+    ],
+    [
+     0.25,
+     4178.4
+    ],
+    [
+     0.375,
+     4178.5
+    ],
+    [
+     0.5,
+     4681.9
+    ],
+    [
+     1.0,
+     4687.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 1.0,
+   "tractQ": 0.0,
+   "noise": 0.85,
+   "rough": 0.2,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.05
+   },
+   "am": 25.0,
+   "amDepth": 0.3,
    "fricative": true,
    "formants": [
     [
-     845.2861410183435,
-     2.0,
+     1063.304792525682,
+     4.0,
      0.5
     ],
     [
      5083.5393171114765,
-     2.0,
+     4.0,
      0.5
     ]
    ],
    "learned": {
     "members": 5,
-    "resynthesisCosine": 0.8814,
-    "rivalCosine": -0.1731,
+    "resynthesisCosine": 0.787,
+    "rivalCosine": -0.4568,
     "nearestOwn": true,
-    "f0ErrorPercent": 0.35
+    "f0ErrorPercent": 7.19
    }
   }
  ],
@@ -118,14 +130,10 @@
    "sequence": [
     "L01",
     "L01",
-    "L02",
-    "L01",
-    "L01",
-    "L02"
+    "L03",
+    "L03"
    ],
    "gaps": [
-    0.06,
-    0.06,
     0.06,
     0.06,
     0.06
@@ -134,34 +142,32 @@
  ],
  "grammar": {
   "start": [
-   "L01",
-   "L02"
+   "L01"
   ],
   "transitions": {
    "L01": {
-    "L01": 0.76,
-    "L02": 0.12,
-    "end": 0.12
+    "L01": 0.7826,
+    "end": 0.1304,
+    "L03": 0.087
    },
-   "L02": {
-    "end": 0.5,
-    "L01": 0.5
+   "L03": {
+    "L03": 1.0
    }
   },
   "gaps": {
-   "L01>L01": 0.059,
-   "L01>L02": 0.293,
-   "L02>L01": 0.465
+   "L01>L01": 0.056,
+   "L01>L03": 0.136,
+   "L03>L03": 0.16
   },
   "songTyping": {
-   "bouts": 5,
+   "bouts": 4,
    "short": 3,
-   "candidates": 2,
-   "repeatCandidates": 2,
+   "candidates": 1,
+   "repeatCandidates": 3,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,
-   "unplaced": 2,
+   "unplaced": 1,
    "minClusterSize": 6
   }
  }

@@ -1,0 +1,153 @@
+{
+ "id": "malacocincla_abbotti",
+ "common": "Abbott's Babbler",
+ "scientific": "Malacocincla abbotti",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 35 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 3018 Hz \u00b7 99 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0987,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3022.4
+    ],
+    [
+     1.0,
+     3013.1
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 0.0,
+   "noise": 0.12,
+   "rough": 0.08,
+   "learned": {
+    "members": 31,
+    "resynthesisCosine": 0.5854,
+    "rivalCosine": 0.6418,
+    "nearestOwn": false,
+    "f0ErrorPercent": 0.72
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 5989 Hz \u00b7 63 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0626,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     5989.9
+    ],
+    [
+     1.0,
+     5988.7
+    ]
+   ],
+   "attack": 0.0066,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     2711.2989394619476,
+     8.0,
+     2.0
+    ],
+    [
+     6830.618534315889,
+     8.0,
+     2.0
+    ]
+   ],
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "amDepth": 0.15,
+   "am": 25.0,
+   "gammaScale": 0.5,
+   "fricative": true,
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.6678,
+    "rivalCosine": 0.5656,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.65
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L01",
+    "L00",
+    "L00",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8667,
+    "L01": 0.1333
+   },
+   "L01": {
+    "L00": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.029,
+   "L00>L01": 0.019,
+   "L01>L00": 0.048
+  },
+  "songTyping": {
+   "bouts": 1,
+   "short": 0,
+   "candidates": 1,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6
+  }
+ }
+}

@@ -1,0 +1,184 @@
+{
+ "id": "atlapetes_fulviceps",
+ "common": "Fulvous-headed Brush-Finch",
+ "scientific": "Atlapetes fulviceps",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 26 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 3517 Hz \u00b7 243 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2427,
+   "level": 1.0,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3531.8
+    ],
+    [
+     0.375,
+     3519.4
+    ],
+    [
+     0.5,
+     3186.4
+    ],
+    [
+     0.75,
+     3771.0
+    ],
+    [
+     1.0,
+     3604.2
+    ]
+   ],
+   "attack": 0.048,
+   "hold": false,
+   "harmonic": 0.35,
+   "am": 18.6,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 3.23,
+    "depth": 0.09
+   },
+   "formants": [
+    [
+     4071.3,
+     6.0,
+     0.15
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.5357,
+    "rivalCosine": -0.3564,
+    "nearestOwn": true,
+    "f0ErrorPercent": -14.47
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 8109 Hz \u00b7 59 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0587,
+   "level": 0.756,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     8360.5
+    ],
+    [
+     0.75,
+     7860.5
+    ],
+    [
+     0.875,
+     8289.0
+    ],
+    [
+     1.0,
+     7936.4
+    ]
+   ],
+   "attack": 0.0053,
+   "hold": true,
+   "harmonic": 0.5,
+   "am": 140.0,
+   "amDepth": 0.0,
+   "formants": [
+    [
+     845.2861410183435,
+     2.0,
+     1.0
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "rough": 0.2,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "fricative": true,
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.6426,
+    "rivalCosine": -0.2473,
+    "nearestOwn": true,
+    "f0ErrorPercent": -26.2
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6,
+    "L01": 0.4
+   },
+   "L01": {
+    "L01": 0.5,
+    "L00": 0.5
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.024,
+   "L00>L01": 0.533,
+   "L01>L00": 0.133,
+   "L01>L01": 0.195
+  },
+  "songTyping": {
+   "bouts": 1,
+   "short": 0,
+   "candidates": 1,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6
+  }
+ }
+}

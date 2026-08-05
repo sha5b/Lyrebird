@@ -1,0 +1,216 @@
+{
+ "id": "heterophasia_auricularis",
+ "common": "White-eared Sibia",
+ "scientific": "Heterophasia auricularis",
+ "bank": "learned",
+ "summary": "Learned from 3 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 602 Hz \u00b7 99 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0987,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     647.8
+    ],
+    [
+     0.125,
+     641.5
+    ],
+    [
+     0.25,
+     481.2
+    ],
+    [
+     0.375,
+     608.4
+    ],
+    [
+     0.5,
+     581.4
+    ],
+    [
+     0.75,
+     638.7
+    ],
+    [
+     0.875,
+     608.7
+    ],
+    [
+     1.0,
+     629.8
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 1.5,
+   "tractQ": 0.0,
+   "noise": 0.8500000238418579,
+   "rough": 0.2,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.4947,
+    "rivalCosine": -0.1197,
+    "nearestOwn": true,
+    "f0ErrorPercent": -26.4
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      323.9
+     ],
+     [
+      0.125,
+      320.75
+     ],
+     [
+      0.25,
+      240.6
+     ],
+     [
+      0.375,
+      304.2
+     ],
+     [
+      0.5,
+      290.7
+     ],
+     [
+      0.75,
+      319.35
+     ],
+     [
+      0.875,
+      304.35
+     ],
+     [
+      1.0,
+      314.9
+     ]
+    ],
+    "gamma": 1765.1507949541706,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.02
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3459 Hz \u00b7 125 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1253,
+   "level": 0.45,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3466.7
+    ],
+    [
+     0.375,
+     3616.6
+    ],
+    [
+     0.625,
+     3476.0
+    ],
+    [
+     0.75,
+     3245.1
+    ],
+    [
+     0.875,
+     3479.7
+    ],
+    [
+     1.0,
+     3481.6
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 4.5,
+   "tractQ": 30.0,
+   "noise": 0.05,
+   "rough": 0.4,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
+   "am": 45.0,
+   "amDepth": 0.3,
+   "learned": {
+    "members": 17,
+    "resynthesisCosine": 0.4581,
+    "rivalCosine": -0.3758,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.07
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8182,
+    "end": 0.1818
+   },
+   "L01": {
+    "L01": 0.6471,
+    "end": 0.3529
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.099,
+   "L01>L01": 0.069
+  },
+  "songTyping": {
+   "bouts": 8,
+   "short": 8,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

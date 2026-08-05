@@ -1,0 +1,175 @@
+{
+ "id": "synoicus_chinensis",
+ "common": "Asian Blue Quail",
+ "scientific": "Synoicus chinensis",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1291 Hz \u00b7 67 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0667,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1309.9
+    ],
+    [
+     1.0,
+     1272.9
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     2388.6,
+     6.0,
+     0.6
+    ],
+    [
+     7165.9,
+     6.0,
+     0.2
+    ],
+    [
+     11943.2,
+     6.0,
+     0.12
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 0.0,
+   "noise": 0.4,
+   "rough": 0.65,
+   "amDepth": 0.0,
+   "am": 45.0,
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.3586,
+    "rivalCosine": -0.0622,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.56
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2531 Hz \u00b7 144 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.144,
+   "level": 0.9,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2556.1
+    ],
+    [
+     1.0,
+     2507.0
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     845.2861410183435,
+     8.0,
+     2.0
+    ],
+    [
+     2289.5188831594724,
+     8.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "noise": 0.0,
+   "rough": 0.4,
+   "am": 45.0,
+   "amDepth": 0.6,
+   "two": false,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
+   "fricative": true,
+   "learned": {
+    "members": 17,
+    "resynthesisCosine": 0.2926,
+    "rivalCosine": -0.2241,
+    "nearestOwn": true,
+    "f0ErrorPercent": -7.94
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6154,
+    "L01": 0.3846
+   },
+   "L01": {
+    "L01": 0.5882,
+    "L00": 0.2941,
+    "end": 0.1176
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.116,
+   "L00>L01": 0.203,
+   "L01>L00": 0.032,
+   "L01>L01": 0.199
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 1,
+   "candidates": 2,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6
+  }
+ }
+}

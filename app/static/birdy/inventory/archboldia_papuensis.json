@@ -3,54 +3,52 @@
  "common": "Archbold's Bowerbird",
  "scientific": "Archboldia papuensis",
  "bank": "learned",
- "summary": "Learned from 1 field recordings: 3 syllable types fitted from 37 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 36 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
-   "id": "L03",
-   "label": "learned L03 \u00b7 595 Hz \u00b7 29 ms",
+   "id": "L04",
+   "label": "learned L04 \u00b7 1405 Hz \u00b7 29 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0293,
-   "level": 0.45,
+   "level": 0.75,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     789.8
-    ],
-    [
-     0.25,
-     514.2
+     1409.6
     ],
     [
      1.0,
-     517.4
+     1400.3
     ]
    ],
-   "attack": 0.004,
+   "attack": 0.008,
    "hold": true,
-   "harmonic": 0.1,
-   "gammaScale": 3.0,
+   "harmonic": 0.0,
+   "gammaScale": 4.5,
    "tractQ": 0.0,
-   "noise": 0.8500000238418579,
-   "rough": 0.013087920844554901,
+   "noise": 0.6,
+   "rough": 0.0,
+   "am": 12.0,
+   "amDepth": 0.3,
    "learned": {
     "members": 3,
-    "resynthesisCosine": 0.9844,
-    "rivalCosine": 0.321,
+    "resynthesisCosine": 0.9299,
+    "rivalCosine": 0.3704,
     "nearestOwn": true,
-    "f0ErrorPercent": 14.73
+    "f0ErrorPercent": 9.23
    }
   },
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 2117 Hz \u00b7 299 ms",
+   "label": "learned L01 \u00b7 2120 Hz \u00b7 299 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.2987,
-   "level": 0.9,
+   "level": 0.75,
    "timbre": "buzz",
    "contour": [
     [
@@ -75,25 +73,23 @@
     ],
     [
      1.0,
-     2456.9
+     2473.2
     ]
    ],
    "attack": 0.016,
    "hold": true,
    "harmonic": 0.0,
-   "gammaScale": 1.5,
+   "gammaScale": 4.5,
    "tractQ": 6.0,
    "noise": 0.85,
-   "rough": 0.4,
+   "rough": 0.2,
    "two": true,
-   "amDepth": 0.0,
-   "am": 45.0,
    "learned": {
     "members": 7,
-    "resynthesisCosine": 0.7357,
-    "rivalCosine": 0.1774,
+    "resynthesisCosine": 0.6842,
+    "rivalCosine": 0.1488,
     "nearestOwn": true,
-    "f0ErrorPercent": -28.05
+    "f0ErrorPercent": -1.67
    },
    "voices": {
     "contour": [
@@ -119,54 +115,67 @@
      ],
      [
       1.0,
-      1842.6750000000002
+      1854.8999999999999
      ]
     ],
-    "gamma": 18614.349303949974,
+    "gamma": 18634.87507111463,
     "level": 0.7,
     "tracheaCm": 2.0,
     "refl": 0.9,
-    "betaInj": 0.02
+    "betaInj": 0.2
    }
   },
   {
    "id": "L02",
-   "label": "learned L02 \u00b7 3161 Hz \u00b7 80 ms",
+   "label": "learned L02 \u00b7 3162 Hz \u00b7 80 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.08,
-   "level": 0.3,
-   "timbre": "reed",
+   "level": 1.05,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
-     2822.0
+     2823.8
     ],
     [
      1.0,
      3541.4
     ]
    ],
-   "attack": 0.008,
+   "attack": 0.004,
    "hold": true,
    "harmonic": 0.35,
-   "am": 13.89,
-   "amDepth": 0.15,
-   "gammaScale": 6.0,
-   "tractQ": 30.0,
-   "noise": 0.25,
-   "rough": 0.4,
+   "gammaScale": 1.0,
+   "tractQ": 12.0,
+   "noise": 0.85,
+   "rough": 0.0,
    "vib": {
     "rate": 14.0,
-    "depth": 0.025
+    "depth": 0.09
    },
+   "amDepth": 0.3,
+   "am": 30.0,
+   "fricative": true,
+   "formants": [
+    [
+     3192.5863689730877,
+     8.0,
+     0.5
+    ],
+    [
+     7893.0853838443245,
+     8.0,
+     0.5
+    ]
+   ],
    "learned": {
-    "members": 27,
-    "resynthesisCosine": 0.7527,
-    "rivalCosine": 0.3135,
+    "members": 26,
+    "resynthesisCosine": 0.6811,
+    "rivalCosine": 0.3821,
     "nearestOwn": true,
-    "f0ErrorPercent": -1.15
+    "f0ErrorPercent": -3.16
    }
   }
  ],
@@ -180,9 +189,11 @@
    "refs": [],
    "sequence": [
     "L02",
-    "L02"
+    "L02",
+    "L04"
    ],
    "gaps": [
+    0.06,
     0.06
    ]
   }
@@ -191,7 +202,7 @@
   "start": [
    "L02",
    "L01",
-   "L03"
+   "L04"
   ],
   "transitions": {
    "L01": {
@@ -199,16 +210,18 @@
     "L01": 0.4286
    },
    "L02": {
-    "L02": 0.84,
-    "end": 0.16
+    "L02": 0.8,
+    "end": 0.12,
+    "L04": 0.08
    },
-   "L03": {
+   "L04": {
     "end": 1.0
    }
   },
   "gaps": {
    "L01>L01": 0.232,
-   "L02>L02": 0.061
+   "L02>L02": 0.06,
+   "L02>L04": 0.649
   },
   "songTyping": {
    "bouts": 10,

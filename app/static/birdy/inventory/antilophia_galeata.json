@@ -12,8 +12,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0293,
-   "level": 0.35,
-   "timbre": "reed",
+   "level": 0.30000001192092896,
+   "timbre": "pure",
    "contour": [
     [
      0.0,
@@ -24,30 +24,32 @@
      468.3
     ]
    ],
-   "attack": 0.008,
-   "hold": false,
+   "attack": 0.004,
+   "hold": true,
    "harmonic": 0.5,
    "formants": [
     [
      2447.2,
      6.0,
-     1.0
+     0.15
     ],
     [
      7341.7,
      6.0,
-     0.3333
+     0.05
     ]
    ],
-   "gammaScale": 2.0,
-   "tractQ": 0.0,
+   "gammaScale": 3.0,
+   "tractQ": 3.0,
+   "noise": 0.05,
    "rough": 0.65,
-   "am": 12.0,
-   "amDepth": 0.0,
+   "am": 140.0,
+   "amDepth": 0.85,
+   "two": true,
    "learned": {
     "members": 5,
-    "resynthesisCosine": 0.9204,
-    "rivalCosine": 0.2881,
+    "resynthesisCosine": 0.9338,
+    "rivalCosine": 0.2245,
     "nearestOwn": true,
     "f0ErrorPercent": 5.61
    }
@@ -59,7 +61,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.1533,
-   "level": 0.6,
+   "level": 1.35,
    "timbre": "reed",
    "contour": [
     [
@@ -71,45 +73,48 @@
      2193.2
     ]
    ],
-   "attack": 0.016,
+   "attack": 0.008,
    "hold": true,
    "harmonic": 0.35,
    "formants": [
     [
      2447.2,
      6.0,
-     1.0
+     0.15
     ],
     [
      7341.7,
      6.0,
-     0.3333
+     0.05
     ]
    ],
-   "gammaScale": 1.5,
-   "tractQ": 12.0,
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
    "noise": 0.12,
-   "rough": 0.4,
+   "rough": 0.65,
+   "amDepth": 0.45,
+   "am": 80.0,
+   "two": false,
    "vib": {
-    "rate": 34.0,
-    "depth": 0.025
+    "rate": 22.0,
+    "depth": 0.09
    },
    "learned": {
     "members": 18,
-    "resynthesisCosine": 0.7978,
-    "rivalCosine": 0.3216,
+    "resynthesisCosine": 0.7968,
+    "rivalCosine": 0.2561,
     "nearestOwn": true,
-    "f0ErrorPercent": 13.6
+    "f0ErrorPercent": -8.82
    }
   },
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 2509 Hz \u00b7 155 ms",
+   "label": "learned L01 \u00b7 2509 Hz \u00b7 153 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.1547,
-   "level": 0.45,
+   "dur": 0.1533,
+   "level": 0.3,
    "timbre": "pure",
    "contour": [
     [
@@ -125,8 +130,8 @@
      2561.9
     ]
    ],
-   "attack": 0.004,
-   "hold": true,
+   "attack": 0.008,
+   "hold": false,
    "harmonic": 0.0,
    "am": 12.0,
    "amDepth": 0.8,
@@ -138,25 +143,25 @@
     [
      2447.2,
      6.0,
-     1.0
+     0.15
     ],
     [
      7341.7,
      6.0,
-     0.3333
+     0.05
     ]
    ],
    "gammaScale": 0.5,
-   "tractQ": 20.0,
-   "rough": 0.4,
+   "tractQ": 30.0,
+   "rough": 0.65,
    "two": true,
    "noise": 0.05,
    "learned": {
     "members": 22,
-    "resynthesisCosine": 0.6449,
-    "rivalCosine": 0.6743,
-    "nearestOwn": false,
-    "f0ErrorPercent": 6.25
+    "resynthesisCosine": 0.6023,
+    "rivalCosine": 0.4747,
+    "nearestOwn": true,
+    "f0ErrorPercent": -9.64
    }
   }
  ],

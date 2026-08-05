@@ -3,108 +3,108 @@
  "common": "Peach-fronted Parakeet",
  "scientific": "Eupsittula aurea",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
-   "id": "L02",
-   "label": "learned L02 \u00b7 933 Hz \u00b7 35 ms",
+   "id": "L03",
+   "label": "learned L03 \u00b7 1351 Hz \u00b7 43 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0347,
+   "dur": 0.0427,
    "level": 1.35,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     862.7
+     1251.7
+    ],
+    [
+     0.125,
+     1137.0
     ],
     [
      0.25,
-     1035.5
+     1432.8
+    ],
+    [
+     0.375,
+     1808.1
     ],
     [
      0.5,
-     981.7
+     1392.3
     ],
     [
-     0.625,
-     899.1
+     0.75,
+     1397.6
     ],
     [
      1.0,
-     894.9
+     1146.7
     ]
    ],
-   "attack": 0.008,
+   "attack": 0.016,
    "hold": true,
-   "harmonic": 0.7,
+   "harmonic": 0.0,
    "gammaScale": 2.0,
    "tractQ": 0.0,
-   "noise": 0.8500000238418579,
+   "noise": 0.4,
    "rough": 0.65,
+   "am": 80.0,
+   "amDepth": 0.6,
    "learned": {
-    "members": 7,
-    "resynthesisCosine": 0.8432,
-    "rivalCosine": 0.6746,
+    "members": 5,
+    "resynthesisCosine": 0.7657,
+    "rivalCosine": 0.703,
     "nearestOwn": true,
-    "f0ErrorPercent": 0.31
+    "f0ErrorPercent": -17.69
    }
   },
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 3232 Hz \u00b7 89 ms",
+   "label": "learned L01 \u00b7 3380 Hz \u00b7 89 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0893,
-   "level": 0.45,
+   "level": 1.2,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     3518.3
+     3701.9
     ],
     [
-     0.375,
-     3262.5
+     0.125,
+     3440.5
     ],
     [
      0.5,
-     3419.9
+     3466.3
     ],
     [
      0.75,
-     3033.4
-    ],
-    [
-     0.875,
-     3164.7
+     3110.8
     ],
     [
      1.0,
-     3026.3
+     3214.3
     ]
    ],
-   "attack": 0.004,
+   "attack": 0.008,
    "hold": true,
-   "harmonic": 0.1,
-   "gammaScale": 4.5,
-   "tractQ": 0.0,
-   "noise": 0.85,
-   "rough": 0.4,
-   "am": 12.0,
-   "amDepth": 0.3,
-   "vib": {
-    "rate": 8.0,
-    "depth": 0.025
-   },
+   "harmonic": 0.2,
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "noise": 0.4,
+   "rough": 0.0,
    "learned": {
     "members": 24,
-    "resynthesisCosine": 0.9189,
-    "rivalCosine": 0.568,
+    "resynthesisCosine": 0.9372,
+    "rivalCosine": 0.602,
     "nearestOwn": true,
-    "f0ErrorPercent": 3.91
+    "f0ErrorPercent": -0.65
    }
   }
  ],
@@ -119,7 +119,7 @@
    "sequence": [
     "L01",
     "L01",
-    "L02"
+    "L03"
    ],
    "gaps": [
     0.06,
@@ -130,31 +130,31 @@
  "grammar": {
   "start": [
    "L01",
-   "L02"
+   "L03"
   ],
   "transitions": {
    "L01": {
-    "L01": 0.5,
+    "L01": 0.5417,
     "end": 0.375,
-    "L02": 0.125
+    "L03": 0.0833
    },
-   "L02": {
+   "L03": {
     "end": 1.0
    }
   },
   "gaps": {
-   "L01>L01": 0.248,
-   "L01>L02": 0.184
+   "L01>L01": 0.355,
+   "L01>L03": 0.327
   },
   "songTyping": {
-   "bouts": 14,
-   "short": 13,
-   "candidates": 1,
-   "repeatCandidates": 3,
+   "bouts": 12,
+   "short": 12,
+   "candidates": 0,
+   "repeatCandidates": 4,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,
-   "unplaced": 1,
+   "unplaced": 0,
    "minClusterSize": 6
   }
  }

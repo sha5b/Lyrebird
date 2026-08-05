@@ -3,7 +3,7 @@
  "common": "Rufous-breasted Leaftosser",
  "scientific": "Sclerurus scansor",
  "bank": "learned",
- "summary": "Learned from 3 field recordings: 3 syllable types fitted from 46 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 3 field recordings: 3 syllable types fitted from 47 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
@@ -38,33 +38,12 @@
    "tractQ": 0.0,
    "noise": 0.25,
    "rough": 0.2,
-   "vib": {
-    "rate": 8.0,
-    "depth": 0.01
-   },
    "learned": {
     "members": 4,
-    "resynthesisCosine": 0.744,
-    "rivalCosine": 0.3873,
+    "resynthesisCosine": 0.7301,
+    "rivalCosine": 0.5454,
     "nearestOwn": true,
     "f0ErrorPercent": -0.05
-   },
-   "voices": {
-    "contour": [
-     [
-      0.0,
-      1657.55
-     ],
-     [
-      1.0,
-      1754.85
-     ]
-    ],
-    "gamma": 19993.039848549244,
-    "level": 0.7,
-    "tracheaCm": 2.0,
-    "refl": 0.9,
-    "betaInj": 0.2
    }
   },
   {
@@ -74,7 +53,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0774,
-   "level": 0.6148243546485901,
+   "level": 0.75,
    "timbre": "buzz",
    "contour": [
     [
@@ -94,90 +73,84 @@
      4983.5
     ]
    ],
-   "attack": 0.12,
+   "attack": 0.03,
    "hold": false,
-   "harmonic": 0.0,
+   "harmonic": 0.9,
+   "am": 14.45,
+   "amDepth": 0.6,
    "formants": [
     [
      5187.9,
-     8.0,
-     0.5
-    ],
-    [
-     2289.5188831594724,
-     8.0,
-     0.5
-    ],
-    [
-     5083.5393171114765,
-     8.0,
-     0.5
+     6.0,
+     1.0
     ]
    ],
-   "gammaScale": 6.0,
-   "tractQ": 20.0,
-   "noise": 0.4,
-   "rough": 0.0,
+   "noise": 0.6,
+   "rough": 0.08,
    "two": true,
-   "fricative": true,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
+   "gammaScale": 0.5,
    "learned": {
     "members": 8,
-    "resynthesisCosine": 0.7304,
-    "rivalCosine": 0.6986,
+    "resynthesisCosine": 0.7257,
+    "rivalCosine": 0.6399,
     "nearestOwn": true,
-    "f0ErrorPercent": -1.83
+    "f0ErrorPercent": 3.84
    }
   },
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 5488 Hz \u00b7 101 ms",
+   "label": "learned L01 \u00b7 5529 Hz \u00b7 99 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.1013,
-   "level": 0.75,
-   "timbre": "buzz",
+   "dur": 0.0987,
+   "level": 0.45,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
-     5520.1
+     5478.8
     ],
     [
-     0.5,
-     5437.8
+     0.625,
+     5608.0
     ],
     [
      1.0,
-     5506.8
+     5501.7
     ]
    ],
    "attack": 0.03,
    "hold": true,
-   "harmonic": 0.9,
+   "harmonic": 0.5,
+   "am": 80.0,
+   "amDepth": 0.8,
    "formants": [
     [
      5899.517283512816,
-     2.0,
-     0.5
+     4.0,
+     1.0
     ]
    ],
    "gammaScale": 6.0,
-   "tractQ": 0.0,
+   "tractQ": 3.0,
    "noise": 0.6,
    "rough": 0.4,
    "vib": {
-    "rate": 14.0,
+    "rate": 4.0,
     "depth": 0.09
    },
-   "amDepth": 0.8,
-   "am": 140.0,
    "fricative": true,
    "learned": {
-    "members": 34,
-    "resynthesisCosine": 0.8374,
-    "rivalCosine": 0.5892,
+    "members": 35,
+    "resynthesisCosine": 0.859,
+    "rivalCosine": 0.6513,
     "nearestOwn": true,
-    "f0ErrorPercent": 7.02
+    "f0ErrorPercent": 3.07
    }
   }
  ],
@@ -209,8 +182,8 @@
     "end": 1.0
    },
    "L01": {
-    "L01": 0.7941,
-    "end": 0.2059
+    "L01": 0.8,
+    "end": 0.2
    },
    "L04": {
     "L04": 0.5,
@@ -218,7 +191,7 @@
    }
   },
   "gaps": {
-   "L01>L01": 0.755,
+   "L01>L01": 0.752,
    "L04>L04": 0.06
   },
   "songTyping": {

@@ -1,0 +1,212 @@
+{
+ "id": "ardenna_grisea",
+ "common": "Sooty Shearwater",
+ "scientific": "Ardenna grisea",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 657 Hz \u00b7 59 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0587,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     774.6
+    ],
+    [
+     0.125,
+     756.3
+    ],
+    [
+     0.375,
+     629.6
+    ],
+    [
+     0.5,
+     595.3
+    ],
+    [
+     0.625,
+     598.4
+    ],
+    [
+     0.75,
+     569.6
+    ],
+    [
+     0.875,
+     669.5
+    ],
+    [
+     1.0,
+     690.8
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "gammaScale": 2.0,
+   "noise": 0.85,
+   "rough": 0.65,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.8236,
+    "rivalCosine": 0.799,
+    "nearestOwn": true,
+    "f0ErrorPercent": -28.66
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      387.3
+     ],
+     [
+      0.125,
+      378.15
+     ],
+     [
+      0.375,
+      314.8
+     ],
+     [
+      0.5,
+      297.65
+     ],
+     [
+      0.625,
+      299.2
+     ],
+     [
+      0.75,
+      284.8
+     ],
+     [
+      0.875,
+      334.75
+     ],
+     [
+      1.0,
+      345.4
+     ]
+    ],
+    "gamma": 1200.0,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.02
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2000 Hz \u00b7 32 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.032,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2033.3
+    ],
+    [
+     0.125,
+     2115.5
+    ],
+    [
+     0.875,
+     1971.1
+    ],
+    [
+     1.0,
+     1887.1
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.5,
+   "gammaScale": 4.5,
+   "tractQ": 0.0,
+   "noise": 0.8500000238418579,
+   "rough": 0.4,
+   "am": 80.0,
+   "amDepth": 0.45,
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.8258,
+    "rivalCosine": 0.6445,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.46
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7273,
+    "L01": 0.2727
+   },
+   "L01": {
+    "end": 0.5789,
+    "L01": 0.3158,
+    "L00": 0.1053
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.176,
+   "L00>L01": 0.205,
+   "L01>L00": 0.448,
+   "L01>L01": 0.195
+  },
+  "songTyping": {
+   "bouts": 12,
+   "short": 10,
+   "candidates": 2,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6
+  }
+ }
+}

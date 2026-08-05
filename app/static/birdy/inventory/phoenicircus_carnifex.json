@@ -1,0 +1,421 @@
+{
+ "id": "phoenicircus_carnifex",
+ "common": "Guianan Red-Cotinga",
+ "scientific": "Phoenicircus carnifex",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 4 syllable types fitted from 58 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1550 Hz \u00b7 43 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0427,
+   "level": 1.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     492.2
+    ],
+    [
+     0.5,
+     556.1
+    ],
+    [
+     0.625,
+     1597.6
+    ],
+    [
+     0.75,
+     4589.5
+    ],
+    [
+     1.0,
+     4459.9
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.5,
+   "am": 28.85,
+   "amDepth": 0.629,
+   "gammaScale": 4.5,
+   "tractQ": 3.0,
+   "noise": 0.6,
+   "rough": 0.2,
+   "two": true,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 1,
+    "resynthesisCosine": 0.4174,
+    "rivalCosine": 0.2615,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.56
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3088 Hz \u00b7 115 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1147,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3299.4
+    ],
+    [
+     0.625,
+     3413.5
+    ],
+    [
+     1.0,
+     2613.7
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.9,
+   "gammaScale": 4.5,
+   "tractQ": 0.0,
+   "noise": 0.25,
+   "rough": 0.08,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.09
+   },
+   "fricative": true,
+   "formants": [
+    [
+     3741.776844777196,
+     2.0,
+     2.0
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 5,
+    "resynthesisCosine": 0.7632,
+    "rivalCosine": 0.5863,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.26
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 4254 Hz \u00b7 43 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0427,
+   "level": 1.2,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4278.3
+    ],
+    [
+     1.0,
+     4230.4
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.35,
+   "gammaScale": 4.5,
+   "tractQ": 0.0,
+   "noise": 0.12,
+   "rough": 0.08,
+   "am": 80.0,
+   "amDepth": 0.3,
+   "learned": {
+    "members": 25,
+    "resynthesisCosine": 0.7596,
+    "rivalCosine": 0.7184,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.44
+   }
+  },
+  {
+   "id": "L03",
+   "label": "learned L03 \u00b7 4463 Hz \u00b7 181 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1813,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4512.6
+    ],
+    [
+     1.0,
+     4413.8
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "gammaScale": 1.0,
+   "tractQ": 0.0,
+   "noise": 0.6,
+   "rough": 0.0,
+   "am": 25.0,
+   "amDepth": 0.3,
+   "fricative": true,
+   "formants": [
+    [
+     1919.8885853658714,
+     2.0,
+     1.0
+    ],
+    [
+     4368.450554124434,
+     2.0,
+     1.0
+    ]
+   ],
+   "learned": {
+    "members": 27,
+    "resynthesisCosine": 0.6997,
+    "rivalCosine": 0.7016,
+    "nearestOwn": false,
+    "f0ErrorPercent": -0.2
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L03",
+    "L02",
+    "L03",
+    "L02",
+    "L03",
+    "L02"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L03",
+   "L02",
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "L03": 0.6,
+    "L02": 0.4
+   },
+   "L02": {
+    "L03": 0.5833,
+    "L02": 0.3333,
+    "end": 0.0833
+   },
+   "L03": {
+    "end": 0.4074,
+    "L02": 0.3333,
+    "L03": 0.1481,
+    "L01": 0.1111
+   }
+  },
+  "gaps": {
+   "L01>L02": 0.503,
+   "L01>L03": 0.056,
+   "L02>L02": 0.077,
+   "L02>L03": 0.289,
+   "L03>L01": 0.213,
+   "L03>L02": 0.232,
+   "L03>L03": 0.289
+  },
+  "chunks": [
+   {
+    "sequence": [
+     "L03",
+     "L01",
+     "L03"
+    ],
+    "count": 347,
+    "species": [
+     "acridotheres_javanicus",
+     "actophilornis_africanus",
+     "akletos_goeldii",
+     "amaurornis_marginalis",
+     "anairetes_alpinus",
+     "anarhynchus_alexandrinus",
+     "anas_superciliosa",
+     "anodorhynchus_hyacinthinus",
+     "anser_caerulescens",
+     "anthus_campestris",
+     "apteryx_mantelli",
+     "arremon_semitorquatus",
+     "bangsia_melanochlamys",
+     "basileuterus_delattrii",
+     "bucco_tamatia",
+     "callipepla_gambelii",
+     "campephilus_pollens",
+     "cepphus_columba",
+     "chamaeza_campanisona",
+     "charadrius_melodus",
+     "chloropsis_hardwickii",
+     "cichlopsis_leucogenys",
+     "cincloramphus_mathewsi",
+     "cincloramphus_timoriensis",
+     "circus_aeruginosus",
+     "colinus_virginianus",
+     "conirostrum_rufum",
+     "coracina_papuensis",
+     "cryptillas_victorini",
+     "crypturellus_cinereus",
+     "crypturellus_undulatus",
+     "curruca_subalpina",
+     "cyanocorax_beecheii",
+     "diglossa_humeralis",
+     "diglossa_lafresnayii",
+     "diglossa_mystacalis",
+     "dryocopus_lineatus",
+     "dysithamnus_puncticeps",
+     "emberiza_spodocephala",
+     "empidonax_hammondii",
+     "enicognathus_leptorhynchus",
+     "epinecrophylla_ornata",
+     "ficedula_albicollis",
+     "formicivora_grisea",
+     "galerida_cristata",
+     "geothlypis_nelsoni",
+     "glaucidium_nana",
+     "glaucidium_nubicola",
+     "grallaria_gigantea",
+     "habia_fuscicauda",
+     "hemitriccus_flammulatus",
+     "hemixos_castanonotus",
+     "hesperoburhinus_bistriatus",
+     "lagonosticta_rubricata",
+     "lanius_senator",
+     "larus_dominicanus",
+     "larus_glaucescens",
+     "locustella_mandelli",
+     "machlolophus_holsti",
+     "malacopteron_affine",
+     "megascops_albogularis",
+     "melanerpes_uropygialis",
+     "menura_alberti",
+     "merops_persicus",
+     "mimus_polyglottos",
+     "mixornis_bornensis",
+     "motacilla_capensis",
+     "mustelirallus_albicollis",
+     "myiarchus_nuttingi",
+     "myiothlypis_coronata",
+     "ochetorhynchus_phoenicurus",
+     "ocyceros_griseus",
+     "oenanthe_familiaris",
+     "ortalis_garrula",
+     "pachycephala_pectoralis",
+     "passer_montanus",
+     "patagioenas_cayennensis",
+     "patagioenas_maculosa",
+     "patagioenas_plumbea",
+     "penelope_perspicax",
+     "petroica_macrocephala",
+     "peucaea_sumichrasti",
+     "phacellodomus_ruber",
+     "philemon_citreogularis",
+     "phoenicircus_carnifex",
+     "picumnus_subtilis",
+     "pionus_chalcopterus",
+     "pipile_jacutinga",
+     "pitta_versicolor",
+     "pseudocolopteryx_citreola",
+     "pterorhinus_perspicillatus",
+     "pycnonotus_nigricans",
+     "saltator_olivascens",
+     "saltator_striatipectus",
+     "sarothrura_elegans",
+     "scytalopus_alvarezlopezi",
+     "selasphorus_platycercus",
+     "sirystes_sibilator",
+     "sitta_canadensis",
+     "sitta_carolinensis",
+     "spizella_pusilla",
+     "sporophila_caerulescens",
+     "stelgidopteryx_ruficollis",
+     "stelgidopteryx_serripennis",
+     "stephanoaetus_coronatus",
+     "sterna_paradisaea",
+     "stigmatura_budytoides",
+     "streptopelia_semitorquata",
+     "synallaxis_ruficapilla",
+     "syndactyla_rufosuperciliata",
+     "tarsiger_johnstoniae",
+     "telophorus_viridis",
+     "thalasseus_elegans",
+     "theristicus_melanopis",
+     "thripophaga_fusciceps",
+     "thryothorus_ludovicianus",
+     "todirostrum_cinereum",
+     "trachyphonus_erythrocephalus",
+     "trachyphonus_vaillantii",
+     "troglodytes_hiemalis",
+     "turdus_amaurochalinus",
+     "turdus_subalaris",
+     "tyrannus_forficatus",
+     "tyto_alba",
+     "urocolius_indicus",
+     "vanellus_coronatus",
+     "vidua_chalybeata",
+     "wetmorethraupis_sterrhopteron",
+     "xiphorhynchus_fuscus",
+     "zimmerius_chrysops",
+     "zosterops_ceylonensis",
+     "zosterops_japonicus",
+     "zosterops_mbuluensis"
+    ],
+    "pmi": 0.387
+   }
+  ],
+  "songTyping": {
+   "bouts": 14,
+   "short": 7,
+   "candidates": 7,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 7,
+   "minClusterSize": 6
+  }
+ }
+}

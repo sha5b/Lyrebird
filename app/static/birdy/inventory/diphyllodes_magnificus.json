@@ -3,83 +3,82 @@
  "common": "Magnificent Bird-of-Paradise",
  "scientific": "Diphyllodes magnificus",
  "bank": "learned",
- "summary": "Learned from 1 field recordings: 2 syllable types fitted from 33 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 32 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
-   "label": "learned L00 \u00b7 1801 Hz \u00b7 216 ms",
+   "label": "learned L00 \u00b7 1811 Hz \u00b7 213 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.216,
+   "dur": 0.2133,
+   "level": 0.9,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2185.5
+    ],
+    [
+     0.75,
+     1557.9
+    ],
+    [
+     1.0,
+     1744.6
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "noise": 0.4,
+   "rough": 0.65,
+   "amDepth": 0.8,
+   "am": 140.0,
+   "learned": {
+    "members": 28,
+    "resynthesisCosine": 0.6432,
+    "rivalCosine": -0.6173,
+    "nearestOwn": true,
+    "f0ErrorPercent": -5.5
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3778 Hz \u00b7 40 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.04,
    "level": 1.35,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     2177.5
-    ],
-    [
-     0.75,
-     1542.4
+     3838.3
     ],
     [
      1.0,
-     1740.7
-    ]
-   ],
-   "attack": 0.016,
-   "hold": true,
-   "harmonic": 0.0,
-   "gammaScale": 0.5,
-   "tractQ": 6.0,
-   "noise": 0.12,
-   "rough": 0.65,
-   "amDepth": 0.15,
-   "am": 30.0,
-   "two": true,
-   "learned": {
-    "members": 27,
-    "resynthesisCosine": 0.7592,
-    "rivalCosine": -0.3985,
-    "nearestOwn": true,
-    "f0ErrorPercent": -4.91
-   }
-  },
-  {
-   "id": "L01",
-   "label": "learned L01 \u00b7 3167 Hz \u00b7 37 ms",
-   "function": "",
-   "confidence": "unlabelled",
-   "refs": [],
-   "dur": 0.0374,
-   "level": 1.35,
-   "timbre": "pure",
-   "contour": [
-    [
-     0.0,
-     3186.7
-    ],
-    [
-     1.0,
-     3147.3
+     3717.8
     ]
    ],
    "attack": 0.016,
    "hold": false,
    "harmonic": 0.0,
-   "gammaScale": 2.0,
-   "tractQ": 3.0,
+   "gammaScale": 1.5,
+   "tractQ": 0.0,
    "noise": 0.6,
-   "rough": 0.2,
+   "rough": 0.0,
    "am": 140.0,
-   "amDepth": 0.45,
+   "amDepth": 0.8,
    "learned": {
-    "members": 6,
-    "resynthesisCosine": 0.6972,
-    "rivalCosine": -0.2345,
+    "members": 4,
+    "resynthesisCosine": 0.7281,
+    "rivalCosine": -0.2869,
     "nearestOwn": true,
-    "f0ErrorPercent": -2.9
+    "f0ErrorPercent": 2.58
    }
   }
  ],
@@ -92,8 +91,8 @@
    "confidence": "invented",
    "refs": [],
    "sequence": [
-    "L01",
-    "L01"
+    "L00",
+    "L00"
    ],
    "gaps": [
     0.06
@@ -102,26 +101,25 @@
  ],
  "grammar": {
   "start": [
-   "L01",
-   "L00"
+   "L00",
+   "L01"
   ],
   "transitions": {
    "L00": {
-    "L00": 0.9259,
-    "end": 0.0741
+    "L00": 0.9286,
+    "end": 0.0714
    },
    "L01": {
-    "L01": 0.6,
-    "end": 0.4
+    "L01": 1.0
    }
   },
   "gaps": {
-   "L00>L00": 0.099,
+   "L00>L00": 0.1,
    "L01>L01": 0.216
   },
   "songTyping": {
-   "bouts": 4,
-   "short": 4,
+   "bouts": 3,
+   "short": 3,
    "candidates": 0,
    "repeatCandidates": 3,
    "types": 0,

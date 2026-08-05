@@ -1,0 +1,152 @@
+{
+ "id": "chroicocephalus_novaehollandiae",
+ "common": "Silver Gull",
+ "scientific": "Chroicocephalus novaehollandiae",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 24 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2288 Hz \u00b7 237 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2373,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2325.4
+    ],
+    [
+     0.125,
+     2583.7
+    ],
+    [
+     0.25,
+     2257.6
+    ],
+    [
+     0.375,
+     2118.6
+    ],
+    [
+     1.0,
+     2183.0
+    ]
+   ],
+   "attack": 0.12,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.8,
+   "gammaScale": 1.0,
+   "tractQ": 0.0,
+   "noise": 0.85,
+   "rough": 0.65,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.6677,
+    "rivalCosine": 0.4538,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.86
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2816 Hz \u00b7 347 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.3467,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2869.3
+    ],
+    [
+     0.875,
+     2864.8
+    ],
+    [
+     1.0,
+     2716.0
+    ]
+   ],
+   "attack": 0.0587,
+   "hold": true,
+   "harmonic": 1.0,
+   "am": 140.0,
+   "amDepth": 0.6,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.025
+   },
+   "gammaScale": 6.0,
+   "tractQ": 20.0,
+   "noise": 0.25,
+   "rough": 0.4,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.6651,
+    "rivalCosine": 0.2945,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.66
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.5,
+    "L00": 0.5
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.635,
+   "L01>L01": 0.36
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 5,
+   "candidates": 0,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

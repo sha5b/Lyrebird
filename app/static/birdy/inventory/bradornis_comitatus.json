@@ -3,117 +3,111 @@
  "common": "Dusky-blue Flycatcher",
  "scientific": "Bradornis comitatus",
  "bank": "learned",
- "summary": "Learned from 1 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 26 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
-   "id": "L02",
-   "label": "learned L02 \u00b7 1927 Hz \u00b7 104 ms",
+   "id": "L03",
+   "label": "learned L03 \u00b7 2930 Hz \u00b7 176 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.104,
-   "level": 1.35,
-   "timbre": "buzz",
+   "dur": 0.176,
+   "level": 0.35,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
-     1330.7
-    ],
-    [
-     0.5,
-     1292.5
+     2377.6
     ],
     [
      0.625,
-     1586.0
+     2477.3
+    ],
+    [
+     0.75,
+     2952.9
     ],
     [
      0.875,
-     2579.0
+     2937.1
     ],
     [
      1.0,
-     3779.6
+     4224.0
     ]
    ],
-   "attack": 0.008,
+   "attack": 0.004,
    "hold": true,
    "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 18.75,
+    "depth": 0.103
+   },
    "formants": [
     [
      5187.9,
      6.0,
-     1.0
+     0.15
     ]
    ],
-   "gammaScale": 2.0,
-   "tractQ": 0.0,
-   "noise": 0.4,
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
    "rough": 0.2,
-   "am": 45.0,
-   "amDepth": 0.15,
-   "two": true,
    "learned": {
-    "members": 2,
-    "resynthesisCosine": 0.3194,
-    "rivalCosine": 0.3178,
+    "members": 1,
+    "resynthesisCosine": 0.678,
+    "rivalCosine": -0.0965,
     "nearestOwn": true,
-    "f0ErrorPercent": -4.9
+    "f0ErrorPercent": 5.22
    }
   },
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 5768 Hz \u00b7 173 ms",
+   "label": "learned L01 \u00b7 5858 Hz \u00b7 224 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.1733,
+   "dur": 0.224,
    "level": 1.35,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     5682.2
-    ],
-    [
-     0.25,
-     5655.2
+     5752.4
     ],
     [
      0.375,
-     5987.1
+     5974.8
     ],
     [
      1.0,
-     5754.1
+     5849.1
     ]
    ],
    "attack": 0.03,
    "hold": true,
    "harmonic": 0.35,
+   "am": 17.86,
+   "amDepth": 0.0,
    "formants": [
     [
      5187.9,
      6.0,
-     1.0
+     0.15
     ]
    ],
    "gammaScale": 0.5,
-   "tractQ": 6.0,
    "noise": 0.4,
-   "rough": 0.0,
-   "am": 80.0,
-   "amDepth": 0.0,
-   "vib": {
-    "rate": 4.0,
-    "depth": 0.025
-   },
+   "tractQ": 6.0,
+   "rough": 0.2,
    "learned": {
-    "members": 27,
-    "resynthesisCosine": 0.6238,
-    "rivalCosine": -0.1365,
+    "members": 25,
+    "resynthesisCosine": 0.6447,
+    "rivalCosine": -0.1512,
     "nearestOwn": true,
-    "f0ErrorPercent": 4.55
+    "f0ErrorPercent": 1.54
    }
   }
  ],
@@ -137,20 +131,19 @@
  "grammar": {
   "start": [
    "L01",
-   "L02"
+   "L03"
   ],
   "transitions": {
    "L01": {
-    "L01": 0.5385,
-    "end": 0.4615
+    "end": 0.52,
+    "L01": 0.48
    },
-   "L02": {
-    "end": 0.5,
-    "L01": 0.5
+   "L03": {
+    "L01": 1.0
    }
   },
   "gaps": {
-   "L01>L01": 0.025
+   "L01>L01": 0.027
   },
   "songTyping": {
    "bouts": 13,

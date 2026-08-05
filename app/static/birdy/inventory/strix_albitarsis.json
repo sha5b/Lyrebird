@@ -1,0 +1,192 @@
+{
+ "id": "strix_albitarsis",
+ "common": "Rufous-banded Owl",
+ "scientific": "Strix albitarsis",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 24 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 588 Hz \u00b7 55 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0547,
+   "level": 1.350000023841858,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     569.6
+    ],
+    [
+     0.375,
+     615.0
+    ],
+    [
+     1.0,
+     581.2
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     661.1,
+     6.0,
+     0.15
+    ],
+    [
+     1983.3,
+     6.0,
+     0.05
+    ],
+    [
+     3305.4,
+     6.0,
+     0.03
+    ],
+    [
+     4627.6,
+     6.0,
+     0.0214
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 6.0,
+   "noise": 0.8500000238418579,
+   "rough": 0.0,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.09
+   },
+   "am": 80.0,
+   "amDepth": 0.3,
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.9321,
+    "rivalCosine": 0.4078,
+    "nearestOwn": true,
+    "f0ErrorPercent": 16.45
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 607 Hz \u00b7 91 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0906,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     560.8
+    ],
+    [
+     0.125,
+     653.0
+    ],
+    [
+     0.75,
+     650.8
+    ],
+    [
+     0.875,
+     596.6
+    ],
+    [
+     1.0,
+     579.8
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     661.1,
+     6.0,
+     0.15
+    ],
+    [
+     1983.3,
+     6.0,
+     0.05
+    ],
+    [
+     3305.4,
+     6.0,
+     0.03
+    ],
+    [
+     4627.6,
+     6.0,
+     0.0214
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 12.0,
+   "noise": 0.25,
+   "rough": 0.08,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.8338,
+    "rivalCosine": 0.531,
+    "nearestOwn": true,
+    "f0ErrorPercent": 9.06
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 0.75,
+    "end": 0.25
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.141,
+   "L01>L01": 0.139
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 5,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

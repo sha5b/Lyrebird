@@ -3,64 +3,63 @@
  "common": "Blue-breasted Kingfisher",
  "scientific": "Halcyon malimbica",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
-   "label": "learned L00 \u00b7 2575 Hz \u00b7 117 ms",
+   "label": "learned L00 \u00b7 2568 Hz \u00b7 116 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.1173,
-   "level": 0.8260453343391418,
-   "timbre": "reed",
+   "dur": 0.116,
+   "level": 1.2,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
-     2614.2
+     2601.5
     ],
     [
      1.0,
-     2535.7
+     2534.6
     ]
    ],
-   "attack": 0.004,
+   "attack": 0.008,
    "hold": true,
    "harmonic": 0.9,
-   "gammaScale": 1.0758255636286387,
-   "tractQ": 0.0,
-   "noise": 0.05,
-   "rough": 0.0,
-   "amDepth": 0.3,
-   "am": 12.0,
-   "vib": {
-    "rate": 14.0,
-    "depth": 0.01
-   },
-   "fricative": true,
    "formants": [
     [
-     2711.2989394619476,
-     8.0,
-     2.0
+     2447.2,
+     6.0,
+     0.6
     ],
     [
-     5899.517283512816,
-     8.0,
-     2.0
+     7341.7,
+     6.0,
+     0.2
     ]
    ],
+   "gammaScale": 1.0,
+   "tractQ": 6.0,
+   "noise": 0.05,
+   "rough": 0.0,
+   "amDepth": 0.45,
+   "am": 12.0,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.01
+   },
    "learned": {
-    "members": 21,
-    "resynthesisCosine": 0.7717,
-    "rivalCosine": -0.1055,
+    "members": 20,
+    "resynthesisCosine": 0.7315,
+    "rivalCosine": -0.2467,
     "nearestOwn": true,
-    "f0ErrorPercent": 0.22
+    "f0ErrorPercent": -0.11
    }
   },
   {
    "id": "L02",
-   "label": "learned L02 \u00b7 6083 Hz \u00b7 157 ms",
+   "label": "learned L02 \u00b7 6077 Hz \u00b7 157 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
@@ -74,7 +73,7 @@
     ],
     [
      0.125,
-     6322.7
+     6293.6
     ],
     [
      0.25,
@@ -92,22 +91,34 @@
    "attack": 0.0427,
    "hold": false,
    "harmonic": 0.9,
-   "am": 25.0,
+   "am": 23.44,
    "amDepth": 0.203,
    "vib": {
     "rate": 5.36,
     "depth": 0.13
    },
+   "formants": [
+    [
+     3741.776844777196,
+     8.0,
+     0.5
+    ],
+    [
+     5899.517283512816,
+     8.0,
+     0.5
+    ]
+   ],
    "gammaScale": 3.0,
-   "rough": 0.2,
-   "two": true,
-   "tractQ": 6.0,
+   "tractQ": 0.0,
+   "rough": 0.4,
+   "fricative": true,
    "learned": {
     "members": 7,
-    "resynthesisCosine": 0.7944,
-    "rivalCosine": -0.0607,
+    "resynthesisCosine": 0.6994,
+    "rivalCosine": -0.1982,
     "nearestOwn": true,
-    "f0ErrorPercent": -26.71
+    "f0ErrorPercent": -28.6
    }
   }
  ],
@@ -143,9 +154,9 @@
   ],
   "transitions": {
    "L00": {
-    "L00": 0.7143,
-    "end": 0.1905,
-    "L02": 0.0952
+    "L00": 0.7,
+    "end": 0.2,
+    "L02": 0.1
    },
    "L02": {
     "end": 0.4286,
@@ -154,10 +165,10 @@
    }
   },
   "gaps": {
-   "L00>L00": 0.221,
-   "L00>L02": 0.176,
-   "L02>L00": 0.28,
-   "L02>L02": 0.379
+   "L00>L00": 0.196,
+   "L00>L02": 0.177,
+   "L02>L00": 0.281,
+   "L02>L02": 0.399
   },
   "songTyping": {
    "bouts": 7,

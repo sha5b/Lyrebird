@@ -3,30 +3,30 @@
  "common": "Crowned Solitary Eagle",
  "scientific": "Buteogallus coronatus",
  "bank": "learned",
- "summary": "Learned from 1 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 26 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L02",
-   "label": "learned L02 \u00b7 1857 Hz \u00b7 97 ms",
+   "label": "learned L02 \u00b7 1862 Hz \u00b7 80 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0973,
-   "level": 0.75,
+   "dur": 0.08,
+   "level": 0.9,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     1852.4
+     1869.9
     ],
     [
      1.0,
-     1861.9
+     1853.5
     ]
    ],
-   "attack": 0.03,
+   "attack": 0.016,
    "hold": true,
-   "harmonic": 1.0,
+   "harmonic": 0.9,
    "formants": [
     [
      6000.0,
@@ -34,92 +34,71 @@
      1.0
     ]
    ],
-   "gammaScale": 1.0,
-   "tractQ": 30.0,
+   "gammaScale": 0.5,
+   "tractQ": 6.0,
    "noise": 0.12,
-   "rough": 0.2,
+   "rough": 0.4,
    "amDepth": 0.45,
    "am": 25.0,
-   "vib": {
-    "rate": 34.0,
-    "depth": 0.05
-   },
    "two": true,
-   "fricative": true,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.01
+   },
    "learned": {
-    "members": 6,
-    "resynthesisCosine": 0.7562,
-    "rivalCosine": 0.0394,
+    "members": 7,
+    "resynthesisCosine": 0.6709,
+    "rivalCosine": 0.0078,
     "nearestOwn": true,
-    "f0ErrorPercent": -1.76
+    "f0ErrorPercent": -0.96
    }
   },
   {
    "id": "L03",
-   "label": "learned L03 \u00b7 4854 Hz \u00b7 44 ms",
+   "label": "learned L03 \u00b7 5968 Hz \u00b7 45 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.044,
-   "level": 1.350000023841858,
+   "dur": 0.0453,
+   "level": 0.3,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     5767.2
-    ],
-    [
-     0.25,
-     5758.7
-    ],
-    [
-     0.5,
-     4047.3
-    ],
-    [
-     0.625,
-     5907.5
-    ],
-    [
-     0.75,
-     4109.9
-    ],
-    [
-     0.875,
-     4390.0
+     6269.9
     ],
     [
      1.0,
-     4429.2
+     5680.1
     ]
    ],
    "attack": 0.004,
    "hold": true,
-   "harmonic": 0.35,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.408,
    "formants": [
     [
-     2289.5188831594724,
-     8.0,
+     654.2237665009833,
+     4.0,
      0.5
     ],
     [
      6830.618534315889,
-     8.0,
+     4.0,
      0.5
     ]
    ],
-   "gammaScale": 4.5,
-   "tractQ": 6.0,
-   "noise": 0.0,
-   "rough": 0.08797585219144821,
-   "two": true,
+   "gammaScale": 2.0,
+   "tractQ": 0.0,
+   "rough": 0.08,
    "fricative": true,
    "learned": {
-    "members": 22,
-    "resynthesisCosine": 0.6424,
-    "rivalCosine": 0.2688,
+    "members": 19,
+    "resynthesisCosine": 0.6434,
+    "rivalCosine": 0.2156,
     "nearestOwn": true,
-    "f0ErrorPercent": -22.76
+    "f0ErrorPercent": 10.14
    }
   }
  ],
@@ -134,9 +113,15 @@
    "sequence": [
     "L02",
     "L03",
+    "L03",
+    "L02",
+    "L03",
     "L03"
    ],
    "gaps": [
+    0.06,
+    0.06,
+    0.06,
     0.06,
     0.06
    ]
@@ -149,22 +134,24 @@
   ],
   "transitions": {
    "L02": {
-    "L03": 0.5,
-    "L02": 0.5
+    "L03": 0.5714,
+    "L02": 0.4286
    },
    "L03": {
-    "L03": 0.8095,
-    "end": 0.1905
+    "L03": 0.7368,
+    "end": 0.1579,
+    "L02": 0.1053
    }
   },
   "gaps": {
-   "L02>L02": 0.139,
-   "L02>L03": 0.32,
-   "L03>L03": 0.056
+   "L02>L02": 0.136,
+   "L02>L03": 0.349,
+   "L03>L02": 0.129,
+   "L03>L03": 0.048
   },
   "songTyping": {
-   "bouts": 4,
-   "short": 3,
+   "bouts": 3,
+   "short": 2,
    "candidates": 1,
    "repeatCandidates": 1,
    "types": 0,

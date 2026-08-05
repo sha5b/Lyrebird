@@ -3,7 +3,7 @@
  "common": "Tooth-billed Catbird",
  "scientific": "Scenopoeetes dentirostris",
  "bank": "learned",
- "summary": "Learned from 1 field recordings: 2 syllable types fitted from 32 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L02",
@@ -38,53 +38,76 @@
    ],
    "attack": 0.004,
    "hold": true,
-   "harmonic": 0.7,
+   "harmonic": 0.35,
    "gammaScale": 6.0,
    "tractQ": 3.0,
    "noise": 0.25,
    "rough": 0.0,
    "amDepth": 0.45,
    "am": 30.0,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.01
+   },
    "learned": {
     "members": 4,
-    "resynthesisCosine": 0.7709,
-    "rivalCosine": 0.5346,
+    "resynthesisCosine": 0.7953,
+    "rivalCosine": 0.6005,
     "nearestOwn": true,
     "f0ErrorPercent": 5.94
    }
   },
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 3529 Hz \u00b7 47 ms",
+   "label": "learned L01 \u00b7 3531 Hz \u00b7 51 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0467,
-   "level": 1.35,
+   "dur": 0.0507,
+   "level": 1.05,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     3538.5
+     3540.6
     ],
     [
      1.0,
-     3520.3
+     3520.7
     ]
    ],
    "attack": 0.008,
    "hold": true,
-   "harmonic": 0.5,
+   "harmonic": 0.9,
    "am": 45.0,
    "amDepth": 0.3,
+   "tractQ": 3.0,
    "noise": 0.12,
-   "rough": 0.2,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.01
+   },
+   "gammaScale": 0.5,
+   "rough": 0.08,
+   "fricative": true,
+   "formants": [
+    [
+     3192.5863689730877,
+     2.0,
+     1.0
+    ],
+    [
+     6830.618534315889,
+     2.0,
+     1.0
+    ]
+   ],
    "learned": {
-    "members": 28,
-    "resynthesisCosine": 0.7341,
-    "rivalCosine": 0.5164,
+    "members": 27,
+    "resynthesisCosine": 0.7339,
+    "rivalCosine": 0.6033,
     "nearestOwn": true,
-    "f0ErrorPercent": 0.07
+    "f0ErrorPercent": 0.6
    }
   }
  ],
@@ -120,9 +143,9 @@
   ],
   "transitions": {
    "L01": {
-    "L01": 0.6786,
-    "end": 0.2143,
-    "L02": 0.1071
+    "L01": 0.6667,
+    "end": 0.2222,
+    "L02": 0.1111
    },
    "L02": {
     "L01": 1.0
@@ -130,7 +153,7 @@
   },
   "gaps": {
    "L01>L01": 0.037,
-   "L01>L02": 0.339,
+   "L01>L02": 0.347,
    "L02>L01": 0.069
   },
   "songTyping": {

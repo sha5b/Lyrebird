@@ -1,0 +1,171 @@
+{
+ "id": "cardinalis_sinuatus",
+ "common": "Pyrrhuloxia",
+ "scientific": "Cardinalis sinuatus",
+ "bank": "learned",
+ "summary": "Learned from 3 field recordings: 2 syllable types fitted from 33 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 821 Hz \u00b7 40 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.04,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     926.3
+    ],
+    [
+     0.125,
+     812.0
+    ],
+    [
+     0.25,
+     741.8
+    ],
+    [
+     0.5,
+     746.7
+    ],
+    [
+     0.625,
+     826.6
+    ],
+    [
+     1.0,
+     892.1
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.5,
+   "am": 25.0,
+   "amDepth": 0.3,
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "rough": 0.65,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.69,
+    "rivalCosine": -0.5568,
+    "nearestOwn": true,
+    "f0ErrorPercent": 6.52
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3284 Hz \u00b7 108 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.108,
+   "level": 0.75,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     3691.2
+    ],
+    [
+     0.25,
+     3894.3
+    ],
+    [
+     0.375,
+     3395.9
+    ],
+    [
+     0.5,
+     3096.0
+    ],
+    [
+     0.625,
+     2984.3
+    ],
+    [
+     0.875,
+     3155.2
+    ],
+    [
+     1.0,
+     2895.7
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 12.0,
+   "amDepth": 0.15,
+   "gammaScale": 4.5,
+   "two": true,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
+   "tractQ": 30.0,
+   "rough": 0.2,
+   "learned": {
+    "members": 30,
+    "resynthesisCosine": 0.923,
+    "rivalCosine": -0.7036,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.41
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 1.0
+   },
+   "L01": {
+    "L01": 0.7241,
+    "end": 0.2759
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.133
+  },
+  "songTyping": {
+   "bouts": 10,
+   "short": 10,
+   "candidates": 0,
+   "repeatCandidates": 6,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

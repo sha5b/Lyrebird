@@ -3,7 +3,7 @@
  "common": "Madagascar Magpie-Robin",
  "scientific": "Copsychus albospecularis",
  "bank": "learned",
- "summary": "Learned from 1 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 24 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L02",
@@ -13,7 +13,7 @@
    "refs": [],
    "dur": 0.064,
    "level": 0.3,
-   "timbre": "reed",
+   "timbre": "pure",
    "contour": [
     [
      0.0,
@@ -40,42 +40,40 @@
      1.0
     ]
    ],
-   "gammaScale": 1.5,
+   "gammaScale": 1.0,
    "tractQ": 3.0,
    "noise": 0.6,
-   "rough": 0.65,
+   "rough": 0.2,
    "learned": {
     "members": 7,
-    "resynthesisCosine": 0.5642,
-    "rivalCosine": -0.0824,
+    "resynthesisCosine": 0.5839,
+    "rivalCosine": -0.1516,
     "nearestOwn": true,
-    "f0ErrorPercent": 2.6
+    "f0ErrorPercent": 1.33
    }
   },
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 5038 Hz \u00b7 199 ms",
+   "label": "learned L01 \u00b7 5052 Hz \u00b7 211 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.1987,
-   "level": 0.9,
-   "timbre": "buzz",
+   "dur": 0.2107,
+   "level": 0.6,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
-     5085.4
+     5159.3
     ],
     [
      1.0,
-     4992.0
+     4946.3
     ]
    ],
-   "attack": 0.016,
+   "attack": 0.008,
    "hold": true,
    "harmonic": 0.0,
-   "am": 25.0,
-   "amDepth": 0.8,
    "formants": [
     [
      5856.3,
@@ -83,37 +81,20 @@
      1.0
     ]
    ],
-   "gammaScale": 6.0,
-   "tractQ": 20.0,
-   "rough": 0.0,
+   "gammaScale": 4.5,
+   "tractQ": 30.0,
    "noise": 0.05,
+   "rough": 0.0,
    "vib": {
-    "rate": 12.0,
+    "rate": 4.0,
     "depth": 0.01
    },
    "learned": {
-    "members": 18,
-    "resynthesisCosine": 0.588,
-    "rivalCosine": -0.3516,
+    "members": 17,
+    "resynthesisCosine": 0.539,
+    "rivalCosine": -0.1768,
     "nearestOwn": true,
-    "f0ErrorPercent": 1.14
-   },
-   "voices": {
-    "contour": [
-     [
-      0.0,
-      5085.4
-     ],
-     [
-      1.0,
-      4992.0
-     ]
-    ],
-    "gamma": 14766.085169088257,
-    "level": 0.7,
-    "tracheaCm": 2.0,
-    "refl": 0.9,
-    "betaInj": 0.05
+    "f0ErrorPercent": 9.93
    }
   }
  ],
@@ -149,9 +130,9 @@
   ],
   "transitions": {
    "L01": {
-    "L01": 0.7222,
-    "L02": 0.1667,
-    "end": 0.1111
+    "L01": 0.7059,
+    "L02": 0.1765,
+    "end": 0.1176
    },
    "L02": {
     "L01": 0.5714,
@@ -159,9 +140,9 @@
    }
   },
   "gaps": {
-   "L01>L01": 0.043,
+   "L01>L01": 0.04,
    "L01>L02": 0.029,
-   "L02>L01": 0.34,
+   "L02>L01": 0.397,
    "L02>L02": 0.064
   },
   "songTyping": {

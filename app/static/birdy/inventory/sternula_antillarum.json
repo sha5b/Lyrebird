@@ -1,0 +1,268 @@
+{
+ "id": "sternula_antillarum",
+ "common": "Least Tern",
+ "scientific": "Sternula antillarum",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 42 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 666 Hz \u00b7 67 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0667,
+   "level": 0.75,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     596.6
+    ],
+    [
+     0.125,
+     666.2
+    ],
+    [
+     0.25,
+     651.0
+    ],
+    [
+     0.375,
+     702.4
+    ],
+    [
+     0.5,
+     713.9
+    ],
+    [
+     0.75,
+     632.0
+    ],
+    [
+     0.875,
+     709.2
+    ],
+    [
+     1.0,
+     665.0
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.45,
+   "gammaScale": 1.0,
+   "tractQ": 3.0,
+   "noise": 0.25,
+   "rough": 0.65,
+   "learned": {
+    "members": 23,
+    "resynthesisCosine": 0.7428,
+    "rivalCosine": 0.1187,
+    "nearestOwn": true,
+    "f0ErrorPercent": 6.91
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      298.3
+     ],
+     [
+      0.125,
+      333.1
+     ],
+     [
+      0.25,
+      325.5
+     ],
+     [
+      0.375,
+      351.2
+     ],
+     [
+      0.5,
+      356.95
+     ],
+     [
+      0.75,
+      316.0
+     ],
+     [
+      0.875,
+      354.6
+     ],
+     [
+      1.0,
+      332.5
+     ]
+    ],
+    "gamma": 1951.5976951203918,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.2
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1661 Hz \u00b7 43 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0427,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1568.3
+    ],
+    [
+     0.5,
+     1517.9
+    ],
+    [
+     0.625,
+     1396.2
+    ],
+    [
+     0.75,
+     2094.8
+    ],
+    [
+     0.875,
+     1739.2
+    ],
+    [
+     1.0,
+     1737.2
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.2,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "gammaScale": 1.0,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "rough": 0.0,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.7538,
+    "rivalCosine": 0.0636,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.35
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2509 Hz \u00b7 27 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0267,
+   "level": 0.9,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2636.6
+    ],
+    [
+     0.25,
+     2591.4
+    ],
+    [
+     1.0,
+     2311.4
+    ]
+   ],
+   "attack": 0.008,
+   "hold": false,
+   "harmonic": 0.0,
+   "gammaScale": 2.0,
+   "tractQ": 6.0,
+   "noise": 0.6,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "rough": 0.65,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.7325,
+    "rivalCosine": 0.1331,
+    "nearestOwn": true,
+    "f0ErrorPercent": 37.99
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L01",
+    "L02",
+    "L02"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L02",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5909,
+    "end": 0.2727,
+    "L01": 0.1364
+   },
+   "L01": {
+    "end": 0.6667,
+    "L02": 0.3333
+   },
+   "L02": {
+    "end": 0.8182,
+    "L02": 0.1818
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.051,
+   "L00>L01": 0.109,
+   "L01>L02": 0.249,
+   "L02>L02": 0.184
+  },
+  "songTyping": {
+   "bouts": 19,
+   "short": 17,
+   "candidates": 2,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6
+  }
+ }
+}

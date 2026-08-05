@@ -3,115 +3,83 @@
  "common": "Gray-throated Babbler",
  "scientific": "Stachyris nigriceps",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
-   "id": "L02",
-   "label": "learned L02 \u00b7 868 Hz \u00b7 29 ms",
+   "id": "L03",
+   "label": "learned L03 \u00b7 4054 Hz \u00b7 64 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0293,
-   "level": 0.30000001192092896,
+   "dur": 0.064,
+   "level": 0.45,
    "timbre": "pure",
    "contour": [
     [
      0.0,
-     1214.7
+     4075.8
     ],
     [
      1.0,
-     620.9
-    ]
-   ],
-   "attack": 0.016,
-   "hold": false,
-   "harmonic": 0.9,
-   "formants": [
-    [
-     4378.3,
-     6.0,
-     1.0
-    ]
-   ],
-   "gammaScale": 1.5,
-   "tractQ": 6.0,
-   "noise": 0.25,
-   "rough": 0.0,
-   "am": 80.0,
-   "amDepth": 0.45,
-   "vib": {
-    "rate": 34.0,
-    "depth": 0.05
-   },
-   "two": true,
-   "learned": {
-    "members": 1,
-    "resynthesisCosine": 0.8017,
-    "rivalCosine": 0.1831,
-    "nearestOwn": true,
-    "f0ErrorPercent": -1.83
-   }
-  },
-  {
-   "id": "L01",
-   "label": "learned L01 \u00b7 4220 Hz \u00b7 84 ms",
-   "function": "",
-   "confidence": "unlabelled",
-   "refs": [],
-   "dur": 0.084,
-   "level": 0.3,
-   "timbre": "buzz",
-   "contour": [
-    [
-     0.0,
-     4139.4
-    ],
-    [
-     1.0,
-     4301.9
+     4033.2
     ]
    ],
    "attack": 0.016,
    "hold": true,
-   "harmonic": 0.0,
-   "am": 140.0,
-   "amDepth": 0.8,
-   "formants": [
-    [
-     4378.3,
-     6.0,
-     1.0
-    ]
-   ],
-   "gammaScale": 1.5,
+   "harmonic": 0.5,
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "noise": 0.05,
+   "rough": 0.0,
+   "am": 80.0,
+   "amDepth": 0.45,
    "vib": {
-    "rate": 8.0,
+    "rate": 4.0,
     "depth": 0.01
    },
    "learned": {
-    "members": 24,
-    "resynthesisCosine": 0.7868,
-    "rivalCosine": 0.0897,
+    "members": 11,
+    "resynthesisCosine": 0.7316,
+    "rivalCosine": 0.6629,
     "nearestOwn": true,
-    "f0ErrorPercent": -0.57
-   },
-   "voices": {
-    "contour": [
-     [
-      0.0,
-      4139.4
-     ],
-     [
-      1.0,
-      4301.9
-     ]
+    "f0ErrorPercent": 0.18
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4290 Hz \u00b7 97 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0973,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4262.2
     ],
-    "gamma": 12367.000387841084,
-    "level": 0.7,
-    "tracheaCm": 2.0,
-    "refl": 0.9,
-    "betaInj": 0.2
+    [
+     1.0,
+     4318.3
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.7,
+   "gammaScale": 1.1092211583513567,
+   "tractQ": 0.0,
+   "noise": 0.0,
+   "rough": 0.0,
+   "two": true,
+   "am": 80.0,
+   "amDepth": 0.3,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.7483,
+    "rivalCosine": 0.6243,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.22
    }
   }
  ],
@@ -125,9 +93,13 @@
    "refs": [],
    "sequence": [
     "L01",
-    "L01"
+    "L01",
+    "L03",
+    "L03"
    ],
    "gaps": [
+    0.06,
+    0.06,
     0.06
    ]
   }
@@ -138,15 +110,18 @@
   ],
   "transitions": {
    "L01": {
-    "L01": 0.8696,
-    "end": 0.1304
+    "L01": 0.8,
+    "L03": 0.2
    },
-   "L02": {
-    "L01": 1.0
+   "L03": {
+    "L03": 0.8,
+    "end": 0.2
    }
   },
   "gaps": {
-   "L01>L01": 0.031
+   "L01>L01": 0.051,
+   "L01>L03": 0.013,
+   "L03>L03": 0.017
   },
   "songTyping": {
    "bouts": 3,

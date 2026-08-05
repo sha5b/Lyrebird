@@ -1,0 +1,176 @@
+{
+ "id": "carpodacus_formosanus",
+ "common": "Taiwan Rosefinch",
+ "scientific": "Carpodacus formosanus",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 26 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2133 Hz \u00b7 77 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0774,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2436.0
+    ],
+    [
+     0.125,
+     2111.7
+    ],
+    [
+     0.25,
+     2291.5
+    ],
+    [
+     0.5,
+     2125.0
+    ],
+    [
+     0.625,
+     1815.6
+    ],
+    [
+     1.0,
+     2073.4
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.35,
+   "gammaScale": 6.0,
+   "noise": 0.85,
+   "rough": 0.0,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "fricative": true,
+   "formants": [
+    [
+     2711.2989394619476,
+     2.0,
+     0.5
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     0.5
+    ]
+   ],
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.8232,
+    "rivalCosine": 0.7715,
+    "nearestOwn": true,
+    "f0ErrorPercent": 11.13
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4894 Hz \u00b7 39 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0387,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4822.4
+    ],
+    [
+     1.0,
+     4967.1
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.35,
+   "gammaScale": 6.0,
+   "tractQ": 0.0,
+   "noise": 0.6,
+   "rough": 0.4,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "fricative": true,
+   "formants": [
+    [
+     4368.450554124434,
+     2.0,
+     2.0
+    ],
+    [
+     6830.618534315889,
+     2.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.851,
+    "rivalCosine": 0.7741,
+    "nearestOwn": true,
+    "f0ErrorPercent": 10.88
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8421,
+    "end": 0.1579
+   },
+   "L01": {
+    "L01": 0.3333,
+    "end": 0.3333,
+    "L00": 0.3333
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.037,
+   "L01>L00": 0.06,
+   "L01>L01": 0.577
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 4,
+   "candidates": 1,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6
+  }
+ }
+}

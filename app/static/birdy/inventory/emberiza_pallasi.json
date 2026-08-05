@@ -1,0 +1,182 @@
+{
+ "id": "emberiza_pallasi",
+ "common": "Pallas's Bunting",
+ "scientific": "Emberiza pallasi",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 34 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1204 Hz \u00b7 43 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0427,
+   "level": 0.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1221.6
+    ],
+    [
+     1.0,
+     1187.0
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.1,
+   "formants": [
+    [
+     4071.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "rough": 0.2,
+   "amDepth": 0.15,
+   "am": 80.0,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.7502,
+    "rivalCosine": 0.4462,
+    "nearestOwn": true,
+    "f0ErrorPercent": -10.88
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 5060 Hz \u00b7 171 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1707,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4182.8
+    ],
+    [
+     0.125,
+     5658.8
+    ],
+    [
+     0.25,
+     5810.8
+    ],
+    [
+     0.375,
+     5261.2
+    ],
+    [
+     0.5,
+     5445.4
+    ],
+    [
+     0.875,
+     5052.2
+    ],
+    [
+     1.0,
+     4264.9
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 80.0,
+   "amDepth": 0.0,
+   "formants": [
+    [
+     4368.450554124434,
+     2.0,
+     2.0
+    ],
+    [
+     6830.618534315889,
+     2.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 1.5,
+   "noise": 0.6,
+   "rough": 0.08,
+   "fricative": true,
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.4116,
+    "rivalCosine": 0.485,
+    "nearestOwn": false,
+    "f0ErrorPercent": 39.24
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5789,
+    "L01": 0.2632,
+    "end": 0.1579
+   },
+   "L01": {
+    "L01": 0.6667,
+    "L00": 0.3333
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.272,
+   "L00>L01": 0.061,
+   "L01>L00": 0.283,
+   "L01>L01": 0.055
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 1,
+   "candidates": 2,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6
+  }
+ }
+}

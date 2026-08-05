@@ -3,127 +3,124 @@
  "common": "Coppersmith Barbet",
  "scientific": "Psilopogon haemacephalus",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
-   "id": "L00",
-   "label": "learned L00 \u00b7 648 Hz \u00b7 408 ms",
+   "id": "L02",
+   "label": "learned L02 \u00b7 645 Hz \u00b7 92 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.408,
-   "level": 0.75,
-   "timbre": "buzz",
+   "dur": 0.092,
+   "level": 1.35,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
-     647.7
+     647.5
     ],
     [
      1.0,
-     648.8
+     642.9
     ]
    ],
-   "attack": 0.06,
+   "attack": 0.004,
    "hold": true,
    "harmonic": 0.0,
-   "am": 140.0,
-   "amDepth": 0.8,
+   "gammaScale": 1.0,
+   "tractQ": 20.0,
+   "noise": 0.05,
+   "rough": 0.4,
+   "am": 45.0,
+   "amDepth": 0.3,
+   "two": true,
    "vib": {
-    "rate": 4.0,
+    "rate": 8.0,
     "depth": 0.01
    },
-   "formants": [
-    [
-     6000.0,
-     6.0,
-     0.15
-    ]
-   ],
-   "gammaScale": 0.5,
-   "tractQ": 3.0,
-   "rough": 0.08,
-   "two": true,
    "learned": {
-    "members": 20,
-    "resynthesisCosine": 0.6165,
-    "rivalCosine": 0.0592,
+    "members": 24,
+    "resynthesisCosine": 0.7603,
+    "rivalCosine": -0.2064,
     "nearestOwn": true,
-    "f0ErrorPercent": -1.69
+    "f0ErrorPercent": 5.26
    }
   },
   {
-   "id": "L01",
-   "label": "learned L01 \u00b7 4849 Hz \u00b7 480 ms",
+   "id": "L03",
+   "label": "learned L03 \u00b7 2828 Hz \u00b7 565 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.48,
-   "level": 1.35,
+   "dur": 0.5654,
+   "level": 1.2,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     7449.8
+     5331.9
     ],
     [
      0.125,
-     3034.8
+     3043.7
     ],
     [
      0.25,
-     7316.0
+     3749.3
     ],
     [
      0.375,
-     5402.2
+     3615.7
     ],
     [
      0.5,
-     5296.2
+     2316.1
     ],
     [
      0.625,
-     6262.2
+     1800.6
     ],
     [
      0.75,
-     5203.1
+     1825.6
     ],
     [
      0.875,
-     3093.4
+     2231.4
     ],
     [
      1.0,
-     3105.5
+     3092.1
     ]
    ],
-   "attack": 0.104,
+   "attack": 0.12,
    "hold": true,
    "harmonic": 0.0,
-   "am": 12.0,
+   "gammaScale": 6.0,
+   "tractQ": 12.0,
+   "noise": 0.0,
+   "rough": 0.0,
    "amDepth": 0.3,
-   "vib": {
-    "rate": 4.0,
-    "depth": 0.4
-   },
+   "am": 80.0,
+   "fricative": true,
    "formants": [
     [
-     6000.0,
-     6.0,
-     0.15
+     3192.5863689730877,
+     4.0,
+     2.0
+    ],
+    [
+     6830.618534315889,
+     4.0,
+     2.0
     ]
    ],
-   "gammaScale": 4.5,
-   "tractQ": 20.0,
-   "two": true,
    "learned": {
-    "members": 7,
-    "resynthesisCosine": 0.5655,
-    "rivalCosine": 0.361,
+    "members": 6,
+    "resynthesisCosine": 0.4706,
+    "rivalCosine": -0.1593,
     "nearestOwn": true,
-    "f0ErrorPercent": -21.9
+    "f0ErrorPercent": 11.18
    }
   }
  ],
@@ -136,8 +133,8 @@
    "confidence": "invented",
    "refs": [],
    "sequence": [
-    "L00",
-    "L00"
+    "L02",
+    "L02"
    ],
    "gaps": [
     0.06
@@ -146,28 +143,26 @@
  ],
  "grammar": {
   "start": [
-   "L00",
-   "L01"
+   "L02",
+   "L03"
   ],
   "transitions": {
-   "L00": {
-    "L00": 0.85,
-    "end": 0.15
+   "L02": {
+    "L02": 1.0
    },
-   "L01": {
-    "L01": 0.7143,
-    "end": 0.2857
+   "L03": {
+    "L03": 1.0
    }
   },
   "gaps": {
-   "L00>L00": 0.019,
-   "L01>L01": 0.019
+   "L02>L02": 0.44,
+   "L03>L03": 0.024
   },
   "songTyping": {
-   "bouts": 5,
-   "short": 5,
+   "bouts": 2,
+   "short": 2,
    "candidates": 0,
-   "repeatCandidates": 3,
+   "repeatCandidates": 2,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,

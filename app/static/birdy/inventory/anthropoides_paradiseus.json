@@ -3,112 +3,94 @@
  "common": "Blue Crane",
  "scientific": "Anthropoides paradiseus",
  "bank": "learned",
- "summary": "Learned from 3 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 3 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
-   "id": "L00",
-   "label": "learned L00 \u00b7 753 Hz \u00b7 67 ms",
+   "id": "L02",
+   "label": "learned L02 \u00b7 1039 Hz \u00b7 45 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0667,
-   "level": 0.75,
-   "timbre": "reed",
-   "contour": [
-    [
-     0.0,
-     848.0
-    ],
-    [
-     0.5,
-     854.7
-    ],
-    [
-     0.625,
-     773.7
-    ],
-    [
-     0.75,
-     612.6
-    ],
-    [
-     0.875,
-     634.2
-    ],
-    [
-     1.0,
-     835.7
-    ]
-   ],
-   "attack": 0.06,
-   "hold": true,
-   "harmonic": 0.0,
-   "am": 80.0,
-   "amDepth": 0.8,
-   "gammaScale": 1.0,
-   "tractQ": 0.0,
-   "noise": 0.0,
-   "rough": 0.65,
-   "learned": {
-    "members": 9,
-    "resynthesisCosine": 0.6803,
-    "rivalCosine": 0.1206,
-    "nearestOwn": true,
-    "f0ErrorPercent": 14.48
-   }
-  },
-  {
-   "id": "L01",
-   "label": "learned L01 \u00b7 2958 Hz \u00b7 99 ms",
-   "function": "",
-   "confidence": "unlabelled",
-   "refs": [],
-   "dur": 0.0987,
-   "level": 1.0488319396972656,
+   "dur": 0.0453,
+   "level": 0.6,
    "timbre": "pure",
    "contour": [
     [
      0.0,
-     3124.7
+     1077.3
+    ],
+    [
+     0.25,
+     970.0
+    ],
+    [
+     0.375,
+     1053.4
+    ],
+    [
+     0.5,
+     1062.9
+    ],
+    [
+     0.625,
+     1010.4
+    ],
+    [
+     1.0,
+     1062.8
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.6,
+   "gammaScale": 2.0,
+   "tractQ": 30.0,
+   "noise": 0.8500000238418579,
+   "rough": 0.65,
+   "learned": {
+    "members": 17,
+    "resynthesisCosine": 0.7142,
+    "rivalCosine": 0.0823,
+    "nearestOwn": true,
+    "f0ErrorPercent": 1.03
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2912 Hz \u00b7 120 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.12,
+   "level": 0.75,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3029.6
     ],
     [
      1.0,
      2799.7
     ]
    ],
-   "attack": 0.03,
-   "hold": false,
-   "harmonic": 0.0,
-   "am": 25.0,
-   "amDepth": 0.15,
-   "gammaScale": 6.0,
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.1,
+   "am": 140.0,
+   "amDepth": 0.271,
+   "gammaScale": 4.901917968503251,
    "tractQ": 30.0,
-   "noise": 0.05,
-   "rough": 0.4,
-   "two": true,
+   "noise": 0.0,
+   "rough": 0.2,
    "learned": {
-    "members": 16,
-    "resynthesisCosine": 0.5077,
-    "rivalCosine": 0.0703,
+    "members": 14,
+    "resynthesisCosine": 0.5709,
+    "rivalCosine": -0.3199,
     "nearestOwn": true,
-    "f0ErrorPercent": 1.05
-   },
-   "voices": {
-    "contour": [
-     [
-      0.0,
-      3124.7
-     ],
-     [
-      1.0,
-      2799.7
-     ]
-    ],
-    "gamma": 8668.13035333901,
-    "level": 0.7,
-    "tracheaCm": 2.0,
-    "refl": 0.9,
-    "betaInj": 0.02
+    "f0ErrorPercent": 8.54
    }
   }
  ],
@@ -121,8 +103,8 @@
    "confidence": "invented",
    "refs": [],
    "sequence": [
-    "L00",
-    "L00"
+    "L02",
+    "L02"
    ],
    "gaps": [
     0.06
@@ -131,32 +113,32 @@
  ],
  "grammar": {
   "start": [
-   "L00",
+   "L02",
    "L01"
   ],
   "transitions": {
-   "L00": {
-    "L00": 0.5,
-    "end": 0.5
-   },
    "L01": {
-    "L01": 0.8,
-    "end": 0.2
+    "L01": 0.7857,
+    "end": 0.2143
+   },
+   "L02": {
+    "L02": 0.7059,
+    "end": 0.2941
    }
   },
   "gaps": {
-   "L00>L00": 0.105,
-   "L01>L01": 0.077
+   "L01>L01": 0.067,
+   "L02>L02": 0.013
   },
   "songTyping": {
-   "bouts": 7,
-   "short": 6,
-   "candidates": 1,
-   "repeatCandidates": 3,
+   "bouts": 8,
+   "short": 8,
+   "candidates": 0,
+   "repeatCandidates": 4,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,
-   "unplaced": 1,
+   "unplaced": 0,
    "minClusterSize": 6
   }
  }

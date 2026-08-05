@@ -3,38 +3,40 @@
  "common": "Brown Cacholote",
  "scientific": "Pseudoseisura lophotes",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 33 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
-   "label": "learned L00 \u00b7 465 Hz \u00b7 84 ms",
+   "label": "learned L00 \u00b7 460 Hz \u00b7 71 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.084,
-   "level": 0.6,
-   "timbre": "pure",
+   "dur": 0.0707,
+   "level": 1.05,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
-     471.4
+     467.9
     ],
     [
      0.125,
-     450.4
+     486.9
     ],
     [
-     0.375,
-     475.6
+     0.5,
+     434.0
     ],
     [
      1.0,
-     462.7
+     454.7
     ]
    ],
-   "attack": 0.12,
-   "hold": true,
-   "harmonic": 0.9,
+   "attack": 0.004,
+   "hold": false,
+   "harmonic": 0.7,
+   "am": 80.0,
+   "amDepth": 0.15,
    "formants": [
     [
      2696.4,
@@ -47,23 +49,19 @@
      0.05
     ]
    ],
-   "gammaScale": 1.0,
-   "tractQ": 0.551616589295034,
-   "noise": 0.0,
-   "rough": 0.0,
-   "amDepth": 0.45,
-   "am": 25.0,
+   "rough": 0.65,
    "two": true,
    "vib": {
-    "rate": 14.0,
-    "depth": 0.01
+    "rate": 22.0,
+    "depth": 0.025
    },
+   "tractQ": 6.0,
    "learned": {
-    "members": 20,
-    "resynthesisCosine": 0.8234,
-    "rivalCosine": 0.1134,
+    "members": 14,
+    "resynthesisCosine": 0.8398,
+    "rivalCosine": 0.0814,
     "nearestOwn": true,
-    "f0ErrorPercent": 2.41
+    "f0ErrorPercent": -7.82
    }
   },
   {
@@ -73,7 +71,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.2667,
-   "level": 0.3,
+   "level": 1.35,
    "timbre": "buzz",
    "contour": [
     [
@@ -117,22 +115,22 @@
     ]
    ],
    "gammaScale": 0.5,
-   "tractQ": 20.0,
+   "tractQ": 6.0,
    "noise": 0.05,
    "rough": 0.65,
-   "two": true,
+   "am": 80.0,
+   "amDepth": 0.0,
+   "two": false,
    "vib": {
-    "rate": 34.0,
+    "rate": 22.0,
     "depth": 0.05
    },
-   "amDepth": 0.15,
-   "am": 12.0,
    "learned": {
     "members": 13,
-    "resynthesisCosine": 0.6143,
-    "rivalCosine": 0.1764,
+    "resynthesisCosine": 0.5414,
+    "rivalCosine": -0.0297,
     "nearestOwn": true,
-    "f0ErrorPercent": -3.24
+    "f0ErrorPercent": -2.51
    }
   }
  ],
@@ -160,20 +158,19 @@
   ],
   "transitions": {
    "L00": {
-    "L00": 0.9,
-    "end": 0.1
+    "L00": 1.0
    },
    "L01": {
     "L01": 1.0
    }
   },
   "gaps": {
-   "L00>L00": 0.044,
+   "L00>L00": 0.085,
    "L01>L01": 0.325
   },
   "songTyping": {
-   "bouts": 3,
-   "short": 3,
+   "bouts": 2,
+   "short": 2,
    "candidates": 0,
    "repeatCandidates": 2,
    "types": 0,

@@ -3,146 +3,115 @@
  "common": "Marsh Sandpiper",
  "scientific": "Tringa stagnatilis",
  "bank": "learned",
- "summary": "Learned from 1 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
-   "label": "learned L00 \u00b7 2761 Hz \u00b7 53 ms",
+   "label": "learned L00 \u00b7 2601 Hz \u00b7 56 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0533,
-   "level": 0.35,
-   "timbre": "reed",
-   "contour": [
-    [
-     0.0,
-     2739.1
-    ],
-    [
-     0.125,
-     2938.4
-    ],
-    [
-     0.375,
-     2931.0
-    ],
-    [
-     1.0,
-     2464.4
-    ]
-   ],
-   "attack": 0.008,
-   "hold": true,
-   "harmonic": 0.1,
-   "am": 12.0,
-   "amDepth": 0.3,
-   "formants": [
-    [
-     3118.5,
-     6.0,
-     1.0
-    ],
-    [
-     9355.4,
-     6.0,
-     0.3333
-    ]
-   ],
-   "gammaScale": 6.0,
-   "tractQ": 30.0,
-   "noise": 0.12,
-   "rough": 0.08,
-   "vib": {
-    "rate": 22.0,
-    "depth": 0.05
-   },
-   "learned": {
-    "members": 27,
-    "resynthesisCosine": 0.6138,
-    "rivalCosine": 0.3312,
-    "nearestOwn": true,
-    "f0ErrorPercent": 9.88
-   }
-  },
-  {
-   "id": "L02",
-   "label": "learned L02 \u00b7 8696 Hz \u00b7 77 ms",
-   "function": "",
-   "confidence": "unlabelled",
-   "refs": [],
-   "dur": 0.0773,
+   "dur": 0.056,
    "level": 1.35,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     8399.5
-    ],
-    [
-     0.125,
-     8372.1
-    ],
-    [
-     0.25,
-     9578.1
-    ],
-    [
-     0.375,
-     7742.6
-    ],
-    [
-     0.5,
-     9107.6
-    ],
-    [
-     0.625,
-     8290.6
-    ],
-    [
-     0.75,
-     8261.1
-    ],
-    [
-     0.875,
-     9567.4
+     2791.4
     ],
     [
      1.0,
-     9135.9
+     2423.3
     ]
    ],
-   "attack": 0.004,
+   "attack": 0.03,
    "hold": true,
    "harmonic": 0.0,
-   "formants": [
+   "am": 12.0,
+   "amDepth": 0.6,
+   "gammaScale": 4.5,
+   "tractQ": 12.0,
+   "noise": 0.05,
+   "rough": 0.0,
+   "two": true,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 24,
+    "resynthesisCosine": 0.496,
+    "rivalCosine": 0.3809,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.71
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 8710 Hz \u00b7 69 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0693,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
     [
-     3118.5,
-     6.0,
-     1.0
+     0.0,
+     8385.5
     ],
     [
-     9355.4,
-     6.0,
-     0.3333
+     0.125,
+     8372.6
+    ],
+    [
+     0.25,
+     9579.0
+    ],
+    [
+     0.375,
+     8065.3
+    ],
+    [
+     0.5,
+     9108.5
+    ],
+    [
+     0.625,
+     9090.2
+    ],
+    [
+     0.75,
+     8284.0
+    ],
+    [
+     0.875,
+     9425.8
+    ],
+    [
+     1.0,
+     8224.7
     ]
    ],
-   "gammaScale": 3.0,
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 2.0,
    "tractQ": 0.0,
-   "noise": 0.25,
+   "noise": 0.6,
+   "rough": 0.65,
    "am": 12.0,
-   "amDepth": 0.3,
+   "amDepth": 0.6,
    "vib": {
     "rate": 8.0,
     "depth": 0.09
    },
-   "rough": 0.65,
    "learned": {
     "members": 1,
-    "resynthesisCosine": 0.8257,
-    "rivalCosine": 0.3874,
+    "resynthesisCosine": 0.8003,
+    "rivalCosine": 0.1454,
     "nearestOwn": true,
-    "f0ErrorPercent": 5.64
+    "f0ErrorPercent": 19.25
    }
   }
  ],
@@ -167,24 +136,26 @@
  ],
  "grammar": {
   "start": [
-   "L02"
+   "L02",
+   "L00"
   ],
   "transitions": {
    "L00": {
-    "L00": 1.0
+    "L00": 0.9167,
+    "end": 0.0833
    },
    "L02": {
     "L00": 1.0
    }
   },
   "gaps": {
-   "L00>L00": 0.115
+   "L00>L00": 0.101
   },
   "songTyping": {
-   "bouts": 1,
-   "short": 1,
+   "bouts": 2,
+   "short": 2,
    "candidates": 0,
-   "repeatCandidates": 1,
+   "repeatCandidates": 2,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,

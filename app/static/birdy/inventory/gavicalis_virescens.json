@@ -1,0 +1,144 @@
+{
+ "id": "gavicalis_virescens",
+ "common": "Singing Honeyeater",
+ "scientific": "Gavicalis virescens",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 630 Hz \u00b7 48 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.048,
+   "level": 0.75,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     655.3
+    ],
+    [
+     1.0,
+     605.3
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.211,
+   "tractQ": 3.0,
+   "noise": 0.05,
+   "rough": 0.2,
+   "two": true,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.7334,
+    "rivalCosine": 0.2878,
+    "nearestOwn": true,
+    "f0ErrorPercent": 7.58
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2045 Hz \u00b7 71 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0706,
+   "level": 0.75,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2055.5
+    ],
+    [
+     0.25,
+     1966.7
+    ],
+    [
+     1.0,
+     2117.1
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 1.0,
+   "tractQ": 30.0,
+   "noise": 0.05,
+   "rough": 0.2,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "amDepth": 0.15,
+   "am": 30.0,
+   "learned": {
+    "members": 22,
+    "resynthesisCosine": 0.5286,
+    "rivalCosine": 0.1823,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.1
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 1.0
+   },
+   "L01": {
+    "L01": 0.9048,
+    "L00": 0.0952
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.04,
+   "L01>L00": 0.472,
+   "L01>L01": 0.037
+  },
+  "songTyping": {
+   "bouts": 2,
+   "short": 1,
+   "candidates": 1,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6
+  }
+ }
+}

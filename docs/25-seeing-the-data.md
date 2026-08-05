@@ -106,7 +106,32 @@ legible.
 hairball; the selected species' eight nearest partners as bundled arcs answers "how do these
 interact" without permanent clutter.
 
-**7. Draw the residual, to show whether a render fits.**
+**7. Draw the residual, to show whether a render fits. — BLOCKED, and the reason is a
+measurement.** This step assumes every fitted type has a synthetic point to draw the segment
+*from*. It does not. Counting the shipped build by provenance:
+
+| points | share | class | what it is |
+|---|---|---|---|
+| 367 196 | 94.8 % | `field` | real audio carrying a fitted type |
+| 11 028 | 2.8 % | `candidate` | real audio that nothing has named |
+| 8 007 | 2.1 % | `documented` | our whole-song renders, no type id |
+| 1 056 | 0.3 % | `documented` | our renders of the 44 authored calls (44 x 24 variants) |
+| **0** | — | `learned` | **our synthesis of a fitted type** |
+| 0 | — | `unlabelled` | the `grow` arrival pool, empty in this build |
+
+**Zero points are a render of a fitted type.** `PROVENANCE.learned` needs `syllableId[0] === 'L'`
+with a non-field source, and the only renders in the cloud are the authored calls (single-letter
+ids) and the song renders (no id at all). So two of the five provenance classes are never
+painted, and the residual segment has no origin for any of the 16 283 learned types. Either the
+build has to emit a render point per fitted type, or the residual has to be drawn as a property
+of the field knot itself — a halo sized by the type's MCD — rather than as a segment between two
+points.
+
+**Also, `manifest.clusterPlan.unlabelledPoints` = 19 035 pools two unlike things.** It is exactly
+11 028 unnamed *field* syllables + 8 007 of *our own* song renders. Only the first 11 028 are a
+discovery surface; the rest are ours. §25.1 leaned on the combined figure.
+
+**8. Draw the residual, to show whether a render fits.**
 Per type there is a resynthesis cosine and, from the spectral bench, an MCD. A short segment
 from a synthetic point to its field centroid with length set by the render's error makes
 fidelity visible per type. This is what the xeno-canto audio cache buys: the bench can only

@@ -1,0 +1,247 @@
+{
+ "id": "emberiza_cioides",
+ "common": "Meadow Bunting",
+ "scientific": "Emberiza cioides",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 32 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 787 Hz \u00b7 136 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.136,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1002.9
+    ],
+    [
+     0.125,
+     597.6
+    ],
+    [
+     0.25,
+     720.5
+    ],
+    [
+     0.375,
+     714.7
+    ],
+    [
+     0.5,
+     657.0
+    ],
+    [
+     0.625,
+     768.4
+    ],
+    [
+     0.75,
+     731.2
+    ],
+    [
+     0.875,
+     1016.9
+    ],
+    [
+     1.0,
+     996.4
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.5,
+   "am": 45.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.15
+    ]
+   ],
+   "tractQ": 3.0,
+   "rough": 0.65,
+   "noise": 0.05,
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.5778,
+    "rivalCosine": -0.0847,
+    "nearestOwn": true,
+    "f0ErrorPercent": -13.54
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      501.45
+     ],
+     [
+      0.125,
+      298.8
+     ],
+     [
+      0.25,
+      360.25
+     ],
+     [
+      0.375,
+      357.35
+     ],
+     [
+      0.5,
+      328.5
+     ],
+     [
+      0.625,
+      384.2
+     ],
+     [
+      0.75,
+      365.6
+     ],
+     [
+      0.875,
+      508.45
+     ],
+     [
+      1.0,
+      498.2
+     ]
+    ],
+    "gamma": 2305.5769261813225,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.02
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 5507 Hz \u00b7 48 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.048,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     6181.4
+    ],
+    [
+     0.125,
+     6158.9
+    ],
+    [
+     0.25,
+     6575.4
+    ],
+    [
+     0.75,
+     5876.7
+    ],
+    [
+     0.875,
+     4378.4
+    ],
+    [
+     1.0,
+     4332.1
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 80.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.15
+    ]
+   ],
+   "gammaScale": 1.5,
+   "noise": 0.05,
+   "rough": 0.2,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.09
+   },
+   "fricative": true,
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.499,
+    "rivalCosine": -0.0799,
+    "nearestOwn": true,
+    "f0ErrorPercent": 39.11
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5455,
+    "end": 0.2727,
+    "L01": 0.1818
+   },
+   "L01": {
+    "L01": 0.7619,
+    "L00": 0.1429,
+    "end": 0.0952
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.2,
+   "L00>L01": 0.168,
+   "L01>L00": 0.653,
+   "L01>L01": 0.045
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 3,
+   "candidates": 2,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6
+  }
+ }
+}

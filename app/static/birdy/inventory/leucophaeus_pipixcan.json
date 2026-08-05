@@ -1,0 +1,157 @@
+{
+ "id": "leucophaeus_pipixcan",
+ "common": "Franklin's Gull",
+ "scientific": "Leucophaeus pipixcan",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 436 Hz \u00b7 79 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0786,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     427.8
+    ],
+    [
+     0.25,
+     452.2
+    ],
+    [
+     1.0,
+     429.4
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     5856.3,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 1.2525066591639897,
+   "noise": 0.0,
+   "rough": 0.2,
+   "amDepth": 0.8,
+   "am": 140.0,
+   "learned": {
+    "members": 28,
+    "resynthesisCosine": 0.8554,
+    "rivalCosine": -0.2386,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.0
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2389 Hz \u00b7 128 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.128,
+   "level": 0.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2286.9
+    ],
+    [
+     0.5,
+     2077.0
+    ],
+    [
+     0.625,
+     2587.9
+    ],
+    [
+     1.0,
+     2649.4
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 8.93,
+    "depth": 0.123
+   },
+   "formants": [
+    [
+     5856.3,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 20.0,
+   "rough": 0.65,
+   "two": true,
+   "learned": {
+    "members": 1,
+    "resynthesisCosine": 0.5197,
+    "rivalCosine": -0.1103,
+    "nearestOwn": true,
+    "f0ErrorPercent": -16.31
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8571,
+    "end": 0.1429
+   },
+   "L01": {
+    "end": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.115
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 5,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

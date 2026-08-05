@@ -1,0 +1,251 @@
+{
+ "id": "polyerata_amabilis",
+ "common": "Blue-chested Hummingbird",
+ "scientific": "Polyerata amabilis",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 39 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1238 Hz \u00b7 37 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0373,
+   "level": 0.75,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     877.2
+    ],
+    [
+     0.125,
+     1288.3
+    ],
+    [
+     0.25,
+     1374.8
+    ],
+    [
+     0.375,
+     1374.8
+    ],
+    [
+     0.5,
+     1177.3
+    ],
+    [
+     0.625,
+     907.5
+    ],
+    [
+     0.875,
+     1387.3
+    ],
+    [
+     1.0,
+     1744.4
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.2,
+   "formants": [
+    [
+     6000.0,
+     2.0,
+     2.0
+    ],
+    [
+     845.2861410183435,
+     2.0,
+     2.0
+    ],
+    [
+     2289.5188831594724,
+     2.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 3.0,
+   "noise": 0.8500000238418579,
+   "rough": 0.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
+   },
+   "fricative": true,
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.873,
+    "rivalCosine": 0.7905,
+    "nearestOwn": true,
+    "f0ErrorPercent": -7.95
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 7133 Hz \u00b7 29 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0294,
+   "level": 0.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     7134.9
+    ],
+    [
+     1.0,
+     7131.9
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 12.0,
+   "noise": 0.4,
+   "rough": 0.65,
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.8864,
+    "rivalCosine": 0.7716,
+    "nearestOwn": true,
+    "f0ErrorPercent": 7.97
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 7283 Hz \u00b7 72 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.072,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     7300.1
+    ],
+    [
+     1.0,
+     7265.4
+    ]
+   ],
+   "attack": 0.024,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 18.29,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     6000.0,
+     2.0,
+     1.0
+    ],
+    [
+     1595.9601420802412,
+     2.0,
+     1.0
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 2.0,
+   "noise": 0.85,
+   "rough": 0.2,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.09
+   },
+   "fricative": true,
+   "learned": {
+    "members": 31,
+    "resynthesisCosine": 0.7963,
+    "rivalCosine": 0.7051,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.37
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L02",
+    "L01",
+    "L02",
+    "L02",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L02": 1.0
+   },
+   "L01": {
+    "end": 0.5,
+    "L02": 0.5
+   },
+   "L02": {
+    "L02": 0.5333,
+    "end": 0.3333,
+    "L01": 0.1333
+   }
+  },
+  "gaps": {
+   "L00>L02": 0.115,
+   "L01>L02": 0.304,
+   "L02>L01": 0.497,
+   "L02>L02": 0.585
+  },
+  "songTyping": {
+   "bouts": 12,
+   "short": 10,
+   "candidates": 2,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6
+  }
+ }
+}

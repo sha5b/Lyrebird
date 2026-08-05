@@ -3,91 +3,80 @@
  "common": "Streamer-tailed Tyrant",
  "scientific": "Gubernetes yetapa",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 35 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
-   "label": "learned L00 \u00b7 454 Hz \u00b7 59 ms",
+   "label": "learned L00 \u00b7 412 Hz \u00b7 56 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0587,
-   "level": 0.45,
-   "timbre": "buzz",
+   "dur": 0.056,
+   "level": 0.6,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
-     463.4
+     420.7
     ],
     [
      1.0,
-     445.0
+     404.2
     ]
    ],
-   "attack": 0.0187,
-   "hold": false,
+   "attack": 0.008,
+   "hold": true,
    "harmonic": 0.9,
    "am": 140.0,
-   "amDepth": 0.8,
+   "amDepth": 0.45,
    "gammaScale": 0.5,
-   "rough": 0.4,
-   "learned": {
-    "members": 10,
-    "resynthesisCosine": 0.7816,
-    "rivalCosine": -0.1844,
-    "nearestOwn": true,
-    "f0ErrorPercent": -6.21
+   "tractQ": 1.0751876370560158,
+   "noise": 0.0,
+   "rough": 0.235369473695755,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
    },
-   "voices": {
-    "contour": [
-     [
-      0.0,
-      231.7
-     ],
-     [
-      1.0,
-      222.5
-     ]
-    ],
-    "gamma": 1200.0,
-    "level": 0.7,
-    "tracheaCm": 2.0,
-    "refl": 0.9,
-    "betaInj": 0.2
+   "learned": {
+    "members": 1,
+    "resynthesisCosine": 0.8797,
+    "rivalCosine": -0.1881,
+    "nearestOwn": true,
+    "f0ErrorPercent": 8.28
    }
   },
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 1678 Hz \u00b7 171 ms",
+   "label": "learned L01 \u00b7 1680 Hz \u00b7 169 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.1707,
-   "level": 0.3,
+   "dur": 0.1694,
+   "level": 0.6,
    "timbre": "pure",
    "contour": [
     [
      0.0,
-     1403.1
+     1400.6
     ],
     [
      0.125,
-     1655.2
+     1665.7
     ],
     [
      0.25,
-     1775.7
+     1779.9
     ],
     [
      1.0,
-     1922.6
+     1919.8
     ]
    ],
-   "attack": 0.016,
-   "hold": true,
-   "harmonic": 0.35,
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.7,
    "am": 45.0,
-   "amDepth": 0.3,
+   "amDepth": 0.157,
    "vib": {
     "rate": 4.0,
     "depth": 0.09
@@ -109,11 +98,11 @@
     ]
    ],
    "learned": {
-    "members": 25,
-    "resynthesisCosine": 0.8733,
-    "rivalCosine": -0.2703,
+    "members": 24,
+    "resynthesisCosine": 0.7856,
+    "rivalCosine": -0.2418,
     "nearestOwn": true,
-    "f0ErrorPercent": 17.84
+    "f0ErrorPercent": 18.59
    }
   }
  ],
@@ -138,23 +127,18 @@
   ],
   "transitions": {
    "L00": {
-    "L00": 0.5,
-    "end": 0.3,
-    "L01": 0.2
+    "end": 1.0
    },
    "L01": {
     "end": 1.0
    }
   },
-  "gaps": {
-   "L00>L00": 0.024,
-   "L00>L01": 0.865
-  },
+  "gaps": {},
   "songTyping": {
-   "bouts": 27,
-   "short": 27,
+   "bouts": 25,
+   "short": 25,
    "candidates": 0,
-   "repeatCandidates": 1,
+   "repeatCandidates": 0,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,

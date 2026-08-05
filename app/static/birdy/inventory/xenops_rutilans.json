@@ -7,13 +7,13 @@
  "syllables": [
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 6282 Hz \u00b7 89 ms",
+   "label": "learned L01 \u00b7 6285 Hz \u00b7 88 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0893,
-   "level": 0.45,
-   "timbre": "buzz",
+   "dur": 0.088,
+   "level": 0.75,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
@@ -21,28 +21,28 @@
     ],
     [
      1.0,
-     6653.1
+     6661.3
     ]
    ],
-   "attack": 0.004,
+   "attack": 0.016,
    "hold": true,
    "harmonic": 0.9,
    "am": 12.0,
-   "amDepth": 0.15,
+   "amDepth": 0.6,
    "vib": {
-    "rate": 34.0,
+    "rate": 8.0,
     "depth": 0.09
    },
-   "gammaScale": 0.5,
-   "noise": 0.25,
-   "rough": 0.65,
-   "two": false,
+   "gammaScale": 2.0,
+   "tractQ": 20.0,
+   "noise": 0.6,
+   "rough": 0.08,
    "learned": {
     "members": 24,
-    "resynthesisCosine": 0.7573,
-    "rivalCosine": 0.6033,
+    "resynthesisCosine": 0.7451,
+    "rivalCosine": 0.5504,
     "nearestOwn": true,
-    "f0ErrorPercent": -6.88
+    "f0ErrorPercent": 13.49
    }
   },
   {
@@ -52,8 +52,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.044,
-   "level": 1.35,
-   "timbre": "buzz",
+   "level": 1.05,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
@@ -64,24 +64,38 @@
      6459.6
     ]
    ],
-   "attack": 0.008,
+   "attack": 0.004,
    "hold": true,
-   "harmonic": 0.9,
-   "am": 25.0,
-   "amDepth": 0.0,
-   "rough": 0.2,
+   "harmonic": 0.7,
    "gammaScale": 0.5,
-   "noise": 0.12,
+   "tractQ": 6.0,
+   "noise": 0.4,
+   "rough": 0.0,
+   "am": 25.0,
+   "amDepth": 0.3,
    "vib": {
-    "rate": 14.0,
-    "depth": 0.025
+    "rate": 22.0,
+    "depth": 0.01
    },
+   "fricative": true,
+   "formants": [
+    [
+     2289.5188831594724,
+     2.0,
+     0.5
+    ],
+    [
+     5899.517283512816,
+     2.0,
+     0.5
+    ]
+   ],
    "learned": {
     "members": 10,
-    "resynthesisCosine": 0.7737,
-    "rivalCosine": 0.5789,
+    "resynthesisCosine": 0.7877,
+    "rivalCosine": 0.549,
     "nearestOwn": true,
-    "f0ErrorPercent": 2.73
+    "f0ErrorPercent": 0.05
    }
   }
  ],
@@ -131,7 +145,7 @@
    "L00>L00": 0.135,
    "L00>L01": 0.115,
    "L01>L00": 0.133,
-   "L01>L01": 0.093
+   "L01>L01": 0.099
   },
   "songTyping": {
    "bouts": 8,

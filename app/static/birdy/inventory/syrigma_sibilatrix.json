@@ -3,11 +3,11 @@
  "common": "Whistling Heron",
  "scientific": "Syrigma sibilatrix",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 26 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L02",
-   "label": "learned L02 \u00b7 1009 Hz \u00b7 59 ms",
+   "label": "learned L02 \u00b7 1210 Hz \u00b7 59 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
@@ -17,7 +17,7 @@
    "contour": [
     [
      0.0,
-     1069.0
+     1815.9
     ],
     [
      0.125,
@@ -25,68 +25,7 @@
     ],
     [
      1.0,
-     970.9
-    ]
-   ],
-   "attack": 0.016,
-   "hold": true,
-   "harmonic": 0.1,
-   "gammaScale": 1.0,
-   "tractQ": 0.0,
-   "noise": 0.0,
-   "rough": 0.65,
-   "amDepth": 0.6,
-   "am": 12.0,
-   "learned": {
-    "members": 5,
-    "resynthesisCosine": 0.6126,
-    "rivalCosine": 0.2917,
-    "nearestOwn": true,
-    "f0ErrorPercent": -2.87
-   },
-   "voices": {
-    "contour": [
-     [
-      0.0,
-      801.75
-     ],
-     [
-      0.125,
-      741.375
-     ],
-     [
-      1.0,
-      728.175
-     ]
-    ],
-    "gamma": 4433.701053708123,
-    "level": 0.7,
-    "tracheaCm": 2.0,
-    "refl": 0.9,
-    "betaInj": 0.02
-   }
-  },
-  {
-   "id": "L00",
-   "label": "learned L00 \u00b7 2602 Hz \u00b7 133 ms",
-   "function": "",
-   "confidence": "unlabelled",
-   "refs": [],
-   "dur": 0.1333,
-   "level": 0.3,
-   "timbre": "reed",
-   "contour": [
-    [
-     0.0,
-     2719.3
-    ],
-    [
-     0.125,
-     2570.7
-    ],
-    [
-     1.0,
-     2519.5
+     986.2
     ]
    ],
    "attack": 0.016,
@@ -96,18 +35,69 @@
    "amDepth": 0.8,
    "vib": {
     "rate": 34.0,
-    "depth": 0.09
+    "depth": 0.05
    },
-   "gammaScale": 0.5,
-   "tractQ": 20.0,
-   "noise": 0.4,
+   "tractQ": 0.0,
    "rough": 0.65,
    "learned": {
-    "members": 21,
-    "resynthesisCosine": 0.5754,
-    "rivalCosine": -0.0066,
+    "members": 5,
+    "resynthesisCosine": 0.5799,
+    "rivalCosine": 0.2855,
     "nearestOwn": true,
-    "f0ErrorPercent": -9.16
+    "f0ErrorPercent": -15.5
+   }
+  },
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2654 Hz \u00b7 153 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1533,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2807.7
+    ],
+    [
+     0.125,
+     2832.9
+    ],
+    [
+     0.25,
+     2562.7
+    ],
+    [
+     0.75,
+     2588.7
+    ],
+    [
+     0.875,
+     2511.8
+    ],
+    [
+     1.0,
+     2638.3
+    ]
+   ],
+   "attack": 0.06,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 0.5,
+   "tractQ": 20.0,
+   "noise": 0.05,
+   "rough": 0.65,
+   "am": 12.0,
+   "amDepth": 0.6,
+   "two": true,
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.5354,
+    "rivalCosine": 0.0222,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.68
    }
   }
  ],
@@ -122,15 +112,9 @@
    "sequence": [
     "L00",
     "L00",
-    "L02",
-    "L00",
-    "L00",
     "L02"
    ],
    "gaps": [
-    0.06,
-    0.06,
-    0.06,
     0.06,
     0.06
    ]
@@ -143,19 +127,17 @@
   ],
   "transitions": {
    "L00": {
-    "L00": 0.6667,
-    "end": 0.1905,
-    "L02": 0.1429
+    "L00": 0.7,
+    "end": 0.2,
+    "L02": 0.1
    },
    "L02": {
-    "end": 0.6,
-    "L00": 0.4
+    "end": 1.0
    }
   },
   "gaps": {
-   "L00>L00": 0.047,
-   "L00>L02": 0.341,
-   "L02>L00": 0.235
+   "L00>L00": 0.057,
+   "L00>L02": 0.4
   },
   "songTyping": {
    "bouts": 7,

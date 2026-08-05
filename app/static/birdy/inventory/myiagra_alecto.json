@@ -3,174 +3,85 @@
  "common": "Shining Flycatcher",
  "scientific": "Myiagra alecto",
  "bank": "learned",
- "summary": "Learned from 1 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
-   "id": "L00",
-   "label": "learned L00 \u00b7 512 Hz \u00b7 97 ms",
+   "id": "L02",
+   "label": "learned L02 \u00b7 505 Hz \u00b7 32 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0973,
-   "level": 0.3,
-   "timbre": "buzz",
+   "dur": 0.032,
+   "level": 1.35,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
-     464.2
-    ],
-    [
-     0.375,
-     455.8
-    ],
-    [
-     0.625,
-     478.1
-    ],
-    [
-     0.75,
-     517.2
-    ],
-    [
-     0.875,
-     591.6
+     511.6
     ],
     [
      1.0,
-     579.6
+     498.3
     ]
    ],
-   "attack": 0.016,
-   "hold": false,
-   "harmonic": 0.9,
-   "am": 140.0,
-   "amDepth": 0.8,
-   "formants": [
-    [
-     1920.5,
-     6.0,
-     1.0
-    ],
-    [
-     5761.5,
-     6.0,
-     0.3333
-    ],
-    [
-     9602.5,
-     6.0,
-     0.2
-    ]
-   ],
-   "gammaScale": 0.5,
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.7,
+   "gammaScale": 1.5,
    "tractQ": 3.0,
-   "rough": 0.4,
+   "noise": 0.85,
+   "rough": 0.65,
    "two": true,
-   "vib": {
-    "rate": 8.0,
-    "depth": 0.09
-   },
    "learned": {
-    "members": 16,
-    "resynthesisCosine": 0.2522,
-    "rivalCosine": -0.1348,
+    "members": 3,
+    "resynthesisCosine": 0.8212,
+    "rivalCosine": 0.4886,
     "nearestOwn": true,
-    "f0ErrorPercent": -4.58
-   },
-   "voices": {
-    "contour": [
-     [
-      0.0,
-      232.1
-     ],
-     [
-      0.375,
-      227.9
-     ],
-     [
-      0.625,
-      239.05
-     ],
-     [
-      0.75,
-      258.6
-     ],
-     [
-      0.875,
-      295.8
-     ],
-     [
-      1.0,
-      289.8
-     ]
-    ],
-    "gamma": 1499.4583184636708,
-    "level": 0.7,
-    "tracheaCm": 2.0,
-    "refl": 0.9,
-    "betaInj": 0.02
+    "f0ErrorPercent": -22.71
    }
   },
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 2477 Hz \u00b7 44 ms",
+   "label": "learned L01 \u00b7 2301 Hz \u00b7 52 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.044,
-   "level": 0.75,
+   "dur": 0.052,
+   "level": 1.2,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     2666.9
+     2088.5
     ],
     [
-     0.75,
-     2664.5
+     0.375,
+     2115.0
     ],
     [
-     0.875,
-     2298.7
+     0.625,
+     2510.1
     ],
     [
      1.0,
-     2306.1
+     2528.3
     ]
    ],
    "attack": 0.004,
    "hold": true,
    "harmonic": 0.35,
-   "formants": [
-    [
-     1920.5,
-     6.0,
-     1.0
-    ],
-    [
-     5761.5,
-     6.0,
-     0.3333
-    ],
-    [
-     9602.5,
-     6.0,
-     0.2
-    ]
-   ],
    "gammaScale": 4.5,
-   "tractQ": 30.0,
+   "tractQ": 0.0,
    "noise": 0.12,
    "rough": 0.0,
-   "amDepth": 0.15,
-   "am": 80.0,
-   "fricative": true,
+   "am": 25.0,
+   "amDepth": 0.3,
    "learned": {
-    "members": 12,
-    "resynthesisCosine": 0.7061,
-    "rivalCosine": 0.1882,
+    "members": 28,
+    "resynthesisCosine": 0.7134,
+    "rivalCosine": 0.576,
     "nearestOwn": true,
-    "f0ErrorPercent": 0.32
+    "f0ErrorPercent": 4.41
    }
   }
  ],
@@ -194,27 +105,25 @@
  "grammar": {
   "start": [
    "L01",
-   "L00"
+   "L02"
   ],
   "transitions": {
-   "L00": {
-    "L00": 0.75,
-    "end": 0.25
-   },
    "L01": {
-    "L01": 0.5455,
-    "end": 0.4545
+    "L01": 0.7143,
+    "end": 0.2857
+   },
+   "L02": {
+    "end": 1.0
    }
   },
   "gaps": {
-   "L00>L00": 0.033,
-   "L01>L01": 0.272
+   "L01>L01": 0.143
   },
   "songTyping": {
-   "bouts": 9,
-   "short": 9,
+   "bouts": 11,
+   "short": 11,
    "candidates": 0,
-   "repeatCandidates": 3,
+   "repeatCandidates": 4,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,

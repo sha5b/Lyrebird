@@ -1,0 +1,257 @@
+{
+ "id": "iodopleura_isabellae",
+ "common": "White-browed Purpletuft",
+ "scientific": "Iodopleura isabellae",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 41 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1190 Hz \u00b7 208 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.208,
+   "level": 1.350000023841858,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1250.7
+    ],
+    [
+     0.5,
+     1121.1
+    ],
+    [
+     1.0,
+     1201.4
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 0.1774253205141202,
+   "noise": 0.12,
+   "rough": 0.4,
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.6243,
+    "rivalCosine": 0.4599,
+    "nearestOwn": true,
+    "f0ErrorPercent": -6.04
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1932 Hz \u00b7 307 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.3067,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1268.2
+    ],
+    [
+     0.25,
+     2178.3
+    ],
+    [
+     0.375,
+     2192.4
+    ],
+    [
+     0.5,
+     3512.9
+    ],
+    [
+     0.625,
+     1930.6
+    ],
+    [
+     0.75,
+     1880.4
+    ],
+    [
+     0.875,
+     2021.4
+    ],
+    [
+     1.0,
+     1242.7
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.35,
+   "am": 140.0,
+   "amDepth": 0.15,
+   "vib": {
+    "rate": 5.68,
+    "depth": 0.09
+   },
+   "formants": [
+    [
+     1063.304792525682,
+     2.0,
+     2.0
+    ],
+    [
+     6830.618534315889,
+     2.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 4.5,
+   "noise": 0.85,
+   "rough": 0.2,
+   "fricative": true,
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.5524,
+    "rivalCosine": 0.5711,
+    "nearestOwn": false,
+    "f0ErrorPercent": 4.32
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 5658 Hz \u00b7 155 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1547,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     6049.2
+    ],
+    [
+     0.25,
+     6073.7
+    ],
+    [
+     0.375,
+     4271.5
+    ],
+    [
+     0.5,
+     6041.8
+    ],
+    [
+     1.0,
+     6116.0
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     845.2861410183435,
+     2.0,
+     1.0
+    ],
+    [
+     6830.618534315889,
+     2.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 0.0,
+   "noise": 0.25,
+   "rough": 0.0,
+   "fricative": true,
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.568,
+    "rivalCosine": 0.51,
+    "nearestOwn": true,
+    "f0ErrorPercent": -25.76
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L02",
+    "L01",
+    "L00",
+    "L00",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6667,
+    "L01": 0.2222,
+    "L02": 0.1111
+   },
+   "L01": {
+    "L00": 0.4167,
+    "L01": 0.3333,
+    "end": 0.25
+   },
+   "L02": {
+    "L02": 0.5714,
+    "L01": 0.4286
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.095,
+   "L00>L01": 0.071,
+   "L00>L02": 0.105,
+   "L01>L00": 0.104,
+   "L01>L01": 0.097,
+   "L02>L01": 0.045,
+   "L02>L02": 0.103
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 1,
+   "candidates": 4,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 4,
+   "minClusterSize": 6
+  }
+ }
+}

@@ -3,113 +3,122 @@
  "common": "Retz's Helmetshrike",
  "scientific": "Prionops retzii",
  "bank": "learned",
- "summary": "Learned from 1 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 26 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
-   "id": "L02",
-   "label": "learned L02 \u00b7 2026 Hz \u00b7 195 ms",
+   "id": "L03",
+   "label": "learned L03 \u00b7 2042 Hz \u00b7 555 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.1947,
-   "level": 1.35,
-   "timbre": "reed",
+   "dur": 0.5546,
+   "level": 0.75,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
-     1908.6
+     1831.8
     ],
     [
-     0.25,
-     1964.5
+     0.125,
+     2002.4
     ],
     [
-     0.375,
-     2141.9
-    ],
-    [
-     0.5,
-     2194.1
+     0.625,
+     2115.7
     ],
     [
      0.75,
-     1947.8
+     2207.0
     ],
     [
      1.0,
-     2015.9
+     2075.0
     ]
    ],
    "attack": 0.008,
    "hold": true,
    "harmonic": 0.0,
-   "am": 45.0,
-   "amDepth": 0.8,
-   "vib": {
-    "rate": 34.0,
-    "depth": 0.131
-   },
-   "gammaScale": 6.0,
-   "rough": 0.4,
-   "tractQ": 20.0,
+   "formants": [
+    [
+     2631.8,
+     6.0,
+     0.6
+    ],
+    [
+     7895.5,
+     6.0,
+     0.2
+    ]
+   ],
+   "gammaScale": 4.774888321260981,
+   "tractQ": 6.0,
+   "noise": 0.0,
+   "rough": 0.0,
+   "amDepth": 0.3,
+   "am": 30.0,
    "learned": {
-    "members": 11,
-    "resynthesisCosine": 0.8017,
-    "rivalCosine": 0.4818,
+    "members": 8,
+    "resynthesisCosine": 0.603,
+    "rivalCosine": 0.0062,
     "nearestOwn": true,
-    "f0ErrorPercent": 11.39
+    "f0ErrorPercent": -4.87
    }
   },
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 7250 Hz \u00b7 93 ms",
+   "label": "learned L01 \u00b7 7426 Hz \u00b7 69 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0933,
-   "level": 0.3,
+   "dur": 0.0693,
+   "level": 0.35,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     7145.2
+     7271.8
+    ],
+    [
+     0.875,
+     7568.6
     ],
     [
      1.0,
-     7355.6
+     7439.7
     ]
    ],
    "attack": 0.008,
    "hold": true,
    "harmonic": 0.9,
-   "am": 80.0,
-   "amDepth": 0.3,
-   "vib": {
-    "rate": 8.0,
-    "depth": 0.09
-   },
-   "gammaScale": 4.5,
-   "noise": 0.6,
-   "rough": 0.2,
-   "fricative": true,
+   "am": 25.0,
+   "amDepth": 0.0,
    "formants": [
     [
-     3192.5863689730877,
-     4.0,
-     2.0
+     2631.8,
+     6.0,
+     0.6
     ],
     [
-     7893.0853838443245,
-     4.0,
-     2.0
+     7895.5,
+     6.0,
+     0.2
     ]
    ],
+   "gammaScale": 4.5,
+   "tractQ": 12.0,
+   "noise": 0.25,
+   "rough": 0.08,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.01
+   },
    "learned": {
-    "members": 19,
-    "resynthesisCosine": 0.7335,
-    "rivalCosine": 0.4913,
+    "members": 18,
+    "resynthesisCosine": 0.753,
+    "rivalCosine": 0.2837,
     "nearestOwn": true,
-    "f0ErrorPercent": -7.58
+    "f0ErrorPercent": 17.04
    }
   }
  ],
@@ -122,12 +131,12 @@
    "confidence": "invented",
    "refs": [],
    "sequence": [
-    "L02",
-    "L02",
     "L01",
     "L01",
-    "L02",
-    "L02"
+    "L03",
+    "L01",
+    "L01",
+    "L03"
    ],
    "gaps": [
     0.06,
@@ -140,33 +149,195 @@
  ],
  "grammar": {
   "start": [
-   "L02"
+   "L01",
+   "L03"
   ],
   "transitions": {
    "L01": {
-    "L01": 0.8333,
-    "L02": 0.1667
+    "L01": 0.6667,
+    "L03": 0.2222,
+    "end": 0.1111
    },
-   "L02": {
-    "L02": 0.6364,
-    "L01": 0.3636
+   "L03": {
+    "L01": 0.5714,
+    "L03": 0.4286
    }
   },
   "gaps": {
-   "L01>L01": 0.355,
-   "L01>L02": 0.328,
-   "L02>L01": 0.197,
-   "L02>L02": 0.381
+   "L01>L01": 0.363,
+   "L01>L03": 0.212,
+   "L03>L01": 0.307,
+   "L03>L03": 0.496
   },
+  "chunks": [
+   {
+    "sequence": [
+     "L01",
+     "L03",
+     "L01"
+    ],
+    "count": 380,
+    "species": [
+     "acridotheres_javanicus",
+     "actophilornis_africanus",
+     "aegithalos_caudatus",
+     "anarhynchus_alexandrinus",
+     "anas_superciliosa",
+     "anthropoides_virgo",
+     "apteryx_mantelli",
+     "arremon_semitorquatus",
+     "augastes_scutatus",
+     "bangsia_melanochlamys",
+     "basileuterus_delattrii",
+     "basilinna_leucotis",
+     "biatas_nigropectus",
+     "bradypterus_barratti",
+     "buteo_brachyurus",
+     "calidris_fuscicollis",
+     "campephilus_pollens",
+     "caprimulgus_jotaka",
+     "cepphus_columba",
+     "chamaeza_campanisona",
+     "charadrius_melodus",
+     "chlorestes_notata",
+     "chloropsis_aurifrons",
+     "chloropsis_hardwickii",
+     "cichlopsis_leucogenys",
+     "cincloramphus_mathewsi",
+     "circus_aeruginosus",
+     "colinus_virginianus",
+     "conirostrum_rufum",
+     "crithagra_scotops",
+     "crotophaga_sulcirostris",
+     "crypturellus_undulatus",
+     "culicicapa_ceylonensis",
+     "cyanocorax_beecheii",
+     "dacnis_hartlaubi",
+     "dicaeum_ignipectus",
+     "diglossa_lafresnayii",
+     "diglossa_mystacalis",
+     "dryocopus_lineatus",
+     "dysithamnus_puncticeps",
+     "elanoides_forficatus",
+     "emberiza_spodocephala",
+     "empidonax_hammondii",
+     "epinecrophylla_ornata",
+     "eupodotis_senegalensis",
+     "euscarthmus_rufomarginatus",
+     "formicarius_colma",
+     "formicivora_acutirostris",
+     "fringilla_montifringilla",
+     "fringilla_spodiogenys",
+     "galerida_cristata",
+     "gallirallus_australis",
+     "geothlypis_nelsoni",
+     "glaucidium_hardyi",
+     "glaucidium_nana",
+     "grallaria_gigantea",
+     "habia_fuscicauda",
+     "hemitriccus_flammulatus",
+     "hydrobates_leucorhous",
+     "hydrophasianus_chirurgus",
+     "hypsipetes_leucocephalus",
+     "iduna_opaca",
+     "jacana_spinosa",
+     "lagonosticta_rubricata",
+     "lanius_senator",
+     "larus_glaucescens",
+     "locustella_mandelli",
+     "machlolophus_holsti",
+     "megapodius_reinwardt",
+     "menura_alberti",
+     "menura_novaehollandiae",
+     "merops_persicus",
+     "mimus_polyglottos",
+     "momotus_aequatorialis",
+     "monticola_explorator",
+     "mustelirallus_albicollis",
+     "myiagra_rubecula",
+     "myiarchus_nuttingi",
+     "myiothlypis_coronata",
+     "myiothlypis_nigrocristata",
+     "myrmornis_torquata",
+     "nephelornis_oneilli",
+     "oenanthe_familiaris",
+     "oreothlypis_superciliosa",
+     "ortalis_squamata",
+     "otus_fuliginosus",
+     "passer_montanus",
+     "passerina_cyanea",
+     "patagioenas_cayennensis",
+     "patagioenas_plumbea",
+     "penelope_perspicax",
+     "peucaea_mystacalis",
+     "phacellodomus_ruber",
+     "phapitreron_leucotis",
+     "philemon_citreogularis",
+     "phoenicopterus_roseus",
+     "pica_hudsonia",
+     "picumnus_subtilis",
+     "pipile_jacutinga",
+     "pitta_versicolor",
+     "pittasoma_michleri",
+     "polioptila_nigriceps",
+     "prionops_retzii",
+     "prosthemadera_novaeseelandiae",
+     "pseudocolopteryx_citreola",
+     "psilorhamphus_guttatus",
+     "pternistis_afer",
+     "pygoscelis_adeliae",
+     "rhipidura_rufifrons",
+     "riparia_chinensis",
+     "rufirallus_schomburgkii",
+     "saltator_aurantiirostris",
+     "saltator_olivascens",
+     "saltator_striatipectus",
+     "sarothrura_elegans",
+     "scytalopus_alvarezlopezi",
+     "selasphorus_rufus",
+     "sitta_carolinensis",
+     "spizella_pusilla",
+     "spizelloides_arborea",
+     "stelgidopteryx_ruficollis",
+     "stephanoaetus_coronatus",
+     "sterna_paradisaea",
+     "stigmatura_budytoides",
+     "sturnia_sinensis",
+     "synallaxis_castanea",
+     "tachyphonus_rufus",
+     "tarsiger_johnstoniae",
+     "telophorus_viridis",
+     "tesia_everetti",
+     "thamnophilus_nigriceps",
+     "thamnophilus_stictocephalus",
+     "todirostrum_cinereum",
+     "trachyphonus_erythrocephalus",
+     "turdus_amaurochalinus",
+     "turdus_subalaris",
+     "tyrannus_forficatus",
+     "tyrannus_tyrannus",
+     "tyto_alba",
+     "urodynamis_taitensis",
+     "vanellus_coronatus",
+     "vidua_chalybeata",
+     "vireo_plumbeus",
+     "zimmerius_chrysops",
+     "zosterops_ceylonensis",
+     "zosterops_japonicus",
+     "zosterops_mbuluensis"
+    ],
+    "pmi": 0.332
+   }
+  ],
   "songTyping": {
-   "bouts": 1,
-   "short": 0,
-   "candidates": 1,
-   "repeatCandidates": 0,
+   "bouts": 3,
+   "short": 1,
+   "candidates": 2,
+   "repeatCandidates": 1,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,
-   "unplaced": 1,
+   "unplaced": 2,
    "minClusterSize": 6
   }
  }

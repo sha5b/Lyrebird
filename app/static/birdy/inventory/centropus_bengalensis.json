@@ -1,0 +1,205 @@
+{
+ "id": "centropus_bengalensis",
+ "common": "Lesser Coucal",
+ "scientific": "Centropus bengalensis",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 42 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 602 Hz \u00b7 59 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0587,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     590.0
+    ],
+    [
+     1.0,
+     614.9
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     4273.5,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
+   "rough": 0.65,
+   "two": true,
+   "learned": {
+    "members": 27,
+    "resynthesisCosine": 0.6167,
+    "rivalCosine": 0.7033,
+    "nearestOwn": false,
+    "f0ErrorPercent": -1.0
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 620 Hz \u00b7 61 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0613,
+   "level": 1.05,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     600.6
+    ],
+    [
+     1.0,
+     639.5
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     4273.5,
+     6.0,
+     0.3
+    ]
+   ],
+   "tractQ": 3.0,
+   "noise": 0.05,
+   "rough": 0.65,
+   "am": 12.0,
+   "amDepth": 0.15,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.6735,
+    "rivalCosine": 0.5766,
+    "nearestOwn": true,
+    "f0ErrorPercent": 5.29
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 1961 Hz \u00b7 37 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0373,
+   "level": 0.6,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     1970.8
+    ],
+    [
+     1.0,
+     1950.3
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     4273.5,
+     6.0,
+     0.3
+    ]
+   ],
+   "noise": 0.25,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "tractQ": 3.0,
+   "rough": 0.65,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.5728,
+    "rivalCosine": 0.3517,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.58
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8148,
+    "L01": 0.1111,
+    "end": 0.0741
+   },
+   "L01": {
+    "L01": 0.5,
+    "L00": 0.25,
+    "end": 0.25
+   },
+   "L02": {
+    "L02": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.137,
+   "L00>L01": 0.229,
+   "L01>L00": 0.251,
+   "L01>L01": 0.216,
+   "L02>L02": 0.315
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 4,
+   "candidates": 2,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6
+  }
+ }
+}

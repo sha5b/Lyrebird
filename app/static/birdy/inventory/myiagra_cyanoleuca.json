@@ -1,0 +1,211 @@
+{
+ "id": "myiagra_cyanoleuca",
+ "common": "Satin Flycatcher",
+ "scientific": "Myiagra cyanoleuca",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 34 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1027 Hz \u00b7 101 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1013,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1157.2
+    ],
+    [
+     0.125,
+     1018.9
+    ],
+    [
+     0.25,
+     954.2
+    ],
+    [
+     0.375,
+     1032.3
+    ],
+    [
+     0.5,
+     990.6
+    ],
+    [
+     0.75,
+     1059.4
+    ],
+    [
+     0.875,
+     973.8
+    ],
+    [
+     1.0,
+     1044.3
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 3.0,
+   "noise": 0.4,
+   "rough": 0.65,
+   "two": false,
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.4703,
+    "rivalCosine": 0.1194,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.5
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1208 Hz \u00b7 581 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.5813,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1106.6
+    ],
+    [
+     0.125,
+     1086.8
+    ],
+    [
+     0.25,
+     1325.5
+    ],
+    [
+     0.375,
+     1228.4
+    ],
+    [
+     0.625,
+     1506.0
+    ],
+    [
+     0.75,
+     1455.6
+    ],
+    [
+     0.875,
+     1029.2
+    ],
+    [
+     1.0,
+     1026.8
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.9,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.4
+   },
+   "formants": [
+    [
+     1063.304792525682,
+     4.0,
+     1.0
+    ],
+    [
+     6830.618534315889,
+     4.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 1.0,
+   "noise": 0.4,
+   "rough": 0.65,
+   "amDepth": 0.8,
+   "am": 12.0,
+   "fricative": true,
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.5959,
+    "rivalCosine": 0.0798,
+    "nearestOwn": true,
+    "f0ErrorPercent": -13.49
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7222,
+    "L01": 0.2778
+   },
+   "L01": {
+    "L01": 0.6429,
+    "L00": 0.3571
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.027,
+   "L00>L01": 0.016,
+   "L01>L00": 0.067,
+   "L01>L01": 0.016
+  },
+  "songTyping": {
+   "bouts": 2,
+   "short": 1,
+   "candidates": 1,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6
+  }
+ }
+}

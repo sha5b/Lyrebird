@@ -3,154 +3,106 @@
  "common": "Narrow-billed Woodcreeper",
  "scientific": "Lepidocolaptes angustirostris",
  "bank": "learned",
- "summary": "Learned from 3 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 3 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L02",
-   "label": "learned L02 \u00b7 1707 Hz \u00b7 45 ms",
+   "label": "learned L02 \u00b7 1560 Hz \u00b7 56 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0453,
-   "level": 0.45,
+   "dur": 0.056,
+   "level": 0.3,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     2057.0
+     2063.1
     ],
     [
      0.125,
-     1401.4
+     1518.5
     ],
     [
      0.25,
-     2016.0
+     2011.9
     ],
     [
      0.375,
-     1630.4
-    ],
-    [
-     0.5,
-     1516.6
-    ],
-    [
-     0.625,
-     1503.2
+     1498.2
     ],
     [
      0.75,
-     1726.6
+     1468.4
     ],
     [
      1.0,
-     1930.2
+     1039.0
     ]
    ],
-   "attack": 0.008,
+   "attack": 0.0107,
    "hold": true,
-   "harmonic": 0.7,
-   "noise": 0.6,
-   "rough": 0.4,
-   "am": 80.0,
-   "amDepth": 0.15,
+   "harmonic": 0.2,
    "gammaScale": 2.0,
+   "noise": 0.85,
    "learned": {
-    "members": 9,
-    "resynthesisCosine": 0.7781,
-    "rivalCosine": -0.1266,
+    "members": 7,
+    "resynthesisCosine": 0.7347,
+    "rivalCosine": -0.2789,
     "nearestOwn": true,
-    "f0ErrorPercent": -23.94
-   },
-   "voices": {
-    "contour": [
-     [
-      0.0,
-      1028.5
-     ],
-     [
-      0.125,
-      700.7
-     ],
-     [
-      0.25,
-      1008.0
-     ],
-     [
-      0.375,
-      815.2
-     ],
-     [
-      0.5,
-      758.3
-     ],
-     [
-      0.625,
-      751.6
-     ],
-     [
-      0.75,
-      863.3
-     ],
-     [
-      1.0,
-      965.1
-     ]
-    ],
-    "gamma": 10003.532507587033,
-    "level": 0.7,
-    "tracheaCm": 2.0,
-    "refl": 0.9,
-    "betaInj": 0.02
+    "f0ErrorPercent": 31.67
    }
   },
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 2832 Hz \u00b7 219 ms",
+   "label": "learned L01 \u00b7 2860 Hz \u00b7 220 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.2187,
-   "level": 0.6,
-   "timbre": "buzz",
+   "dur": 0.22,
+   "level": 0.3,
+   "timbre": "pure",
    "contour": [
     [
      0.0,
-     2723.6
+     2702.4
     ],
     [
      0.5,
-     2903.9
+     2912.0
+    ],
+    [
+     0.625,
+     2975.1
     ],
     [
      0.875,
-     2808.0
+     2804.4
     ],
     [
      1.0,
-     2895.1
+     2915.3
     ]
    ],
-   "attack": 0.004,
+   "attack": 0.06,
    "hold": true,
    "harmonic": 0.1,
-   "gammaScale": 0.5,
-   "tractQ": 6.0,
-   "noise": 0.05,
-   "rough": 0.4,
-   "amDepth": 0.8,
    "am": 12.0,
+   "amDepth": 0.6,
    "vib": {
-    "rate": 12.0,
+    "rate": 4.0,
     "depth": 0.05
    },
+   "gammaScale": 0.5,
+   "tractQ": 20.0,
+   "noise": 0.12,
+   "rough": 0.4,
    "learned": {
-    "members": 21,
-    "resynthesisCosine": 0.7542,
-    "rivalCosine": -0.5678,
+    "members": 20,
+    "resynthesisCosine": 0.6283,
+    "rivalCosine": -0.6388,
     "nearestOwn": true,
-    "f0ErrorPercent": 5.77
+    "f0ErrorPercent": 2.93
    }
   }
  ],
@@ -182,23 +134,23 @@
   ],
   "transitions": {
    "L01": {
-    "L01": 0.85,
-    "end": 0.15
+    "L01": 0.8421,
+    "end": 0.1579
    },
    "L02": {
-    "L02": 0.4444,
-    "end": 0.3333,
-    "L01": 0.2222
+    "L02": 0.4286,
+    "end": 0.2857,
+    "L01": 0.2857
    }
   },
   "gaps": {
-   "L01>L01": 0.067,
-   "L02>L01": 0.148,
-   "L02>L02": 0.264
+   "L01>L01": 0.061,
+   "L02>L01": 0.149,
+   "L02>L02": 0.725
   },
   "songTyping": {
-   "bouts": 6,
-   "short": 5,
+   "bouts": 5,
+   "short": 4,
    "candidates": 1,
    "repeatCandidates": 3,
    "types": 0,

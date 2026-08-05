@@ -1,0 +1,224 @@
+{
+ "id": "leptasthenura_aegithaloides",
+ "common": "Plain-mantled Tit-Spinetail",
+ "scientific": "Leptasthenura aegithaloides",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 28 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 759 Hz \u00b7 161 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1613,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     722.6
+    ],
+    [
+     0.125,
+     712.0
+    ],
+    [
+     0.25,
+     793.3
+    ],
+    [
+     0.5,
+     772.4
+    ],
+    [
+     0.625,
+     804.5
+    ],
+    [
+     1.0,
+     750.9
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "noise": 0.05,
+   "rough": 0.65,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.6922,
+    "rivalCosine": -0.19,
+    "nearestOwn": true,
+    "f0ErrorPercent": -6.01
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      361.3
+     ],
+     [
+      0.125,
+      356.0
+     ],
+     [
+      0.25,
+      396.65
+     ],
+     [
+      0.5,
+      386.2
+     ],
+     [
+      0.625,
+      402.25
+     ],
+     [
+      1.0,
+      375.45
+     ]
+    ],
+    "gamma": 2222.933607892803,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.2
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 5416 Hz \u00b7 43 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0427,
+   "level": 1.350000023841858,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4797.4
+    ],
+    [
+     0.125,
+     4937.0
+    ],
+    [
+     0.5,
+     6042.1
+    ],
+    [
+     1.0,
+     6011.5
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.35,
+   "formants": [
+    [
+     845.2861410183435,
+     4.0,
+     2.0
+    ],
+    [
+     5899.517283512816,
+     4.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "rough": 0.08,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.09
+   },
+   "fricative": true,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.743,
+    "rivalCosine": -0.0626,
+    "nearestOwn": true,
+    "f0ErrorPercent": 11.33
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7333,
+    "L01": 0.2667
+   },
+   "L01": {
+    "L01": 0.6364,
+    "L00": 0.3636
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.117,
+   "L00>L01": 0.081,
+   "L01>L00": 0.14,
+   "L01>L01": 0.045
+  },
+  "songTyping": {
+   "bouts": 2,
+   "short": 1,
+   "candidates": 1,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6
+  }
+ }
+}

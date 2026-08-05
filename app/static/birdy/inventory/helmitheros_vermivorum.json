@@ -1,0 +1,203 @@
+{
+ "id": "helmitheros_vermivorum",
+ "common": "Worm-eating Warbler",
+ "scientific": "Helmitheros vermivorum",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 26 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 554 Hz \u00b7 43 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0427,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     501.8
+    ],
+    [
+     0.125,
+     516.4
+    ],
+    [
+     0.25,
+     580.9
+    ],
+    [
+     0.5,
+     572.2
+    ],
+    [
+     0.625,
+     476.7
+    ],
+    [
+     0.75,
+     563.6
+    ],
+    [
+     0.875,
+     559.3
+    ],
+    [
+     1.0,
+     682.4
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     2696.4,
+     6.0,
+     1.0
+    ],
+    [
+     8089.2,
+     6.0,
+     0.3333
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 0.0,
+   "noise": 0.6,
+   "rough": 0.65,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.09
+   },
+   "am": 12.0,
+   "amDepth": 0.3,
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.7499,
+    "rivalCosine": 0.6429,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.73
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3132 Hz \u00b7 51 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0507,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3242.2
+    ],
+    [
+     0.375,
+     3206.8
+    ],
+    [
+     0.875,
+     3174.2
+    ],
+    [
+     1.0,
+     2915.0
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     3192.5863689730877,
+     2.0,
+     2.0
+    ],
+    [
+     6830.618534315889,
+     2.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 0.0,
+   "noise": 0.85,
+   "rough": 0.4,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.01
+   },
+   "fricative": true,
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.7049,
+    "rivalCosine": 0.5641,
+    "nearestOwn": true,
+    "f0ErrorPercent": -6.28
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5,
+    "L01": 0.5
+   },
+   "L01": {
+    "L01": 0.5789,
+    "end": 0.2632,
+    "L00": 0.1579
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.091,
+   "L00>L01": 0.309,
+   "L01>L00": 0.163,
+   "L01>L01": 0.101
+  },
+  "songTyping": {
+   "bouts": 6,
+   "short": 3,
+   "candidates": 3,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 3,
+   "minClusterSize": 6
+  }
+ }
+}

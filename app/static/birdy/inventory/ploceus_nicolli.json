@@ -3,33 +3,65 @@
  "common": "Usambara Weaver",
  "scientific": "Ploceus nicolli",
  "bank": "learned",
- "summary": "Learned from 1 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
-   "id": "L02",
-   "label": "learned L02 \u00b7 3549 Hz \u00b7 107 ms",
+   "id": "L03",
+   "label": "learned L03 \u00b7 1668 Hz \u00b7 33 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0334,
+   "level": 0.6,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1669.0
+    ],
+    [
+     1.0,
+     1666.5
+    ]
+   ],
+   "attack": 0.002,
+   "hold": true,
+   "harmonic": 0.1,
+   "gammaScale": 2.0,
+   "tractQ": 30.0,
+   "noise": 0.4,
+   "rough": 0.0,
+   "am": 45.0,
+   "amDepth": 0.15,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 2,
+    "resynthesisCosine": 0.8577,
+    "rivalCosine": 0.1033,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.37
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 6523 Hz \u00b7 107 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.1067,
    "level": 0.35,
-   "timbre": "buzz",
+   "timbre": "reed",
    "contour": [
     [
      0.0,
-     3452.1
-    ],
-    [
-     0.125,
-     3313.1
-    ],
-    [
-     0.25,
-     3657.8
+     6608.8
     ],
     [
      1.0,
-     3792.5
+     6437.9
     ]
    ],
    "attack": 0.004,
@@ -37,94 +69,33 @@
    "harmonic": 0.9,
    "am": 12.0,
    "amDepth": 0.15,
-   "formants": [
-    [
-     3741.776844777196,
-     8.0,
-     2.0
-    ],
-    [
-     7893.0853838443245,
-     8.0,
-     2.0
-    ]
-   ],
-   "gammaScale": 1.5,
-   "noise": 0.85,
-   "rough": 0.2,
+   "tractQ": 12.0,
+   "noise": 0.6,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.09
+   },
+   "gammaScale": 2.0,
+   "rough": 0.4,
    "fricative": true,
-   "learned": {
-    "members": 5,
-    "resynthesisCosine": 0.6254,
-    "rivalCosine": 0.3279,
-    "nearestOwn": true,
-    "f0ErrorPercent": 3.63
-   }
-  },
-  {
-   "id": "L01",
-   "label": "learned L01 \u00b7 6793 Hz \u00b7 93 ms",
-   "function": "",
-   "confidence": "unlabelled",
-   "refs": [],
-   "dur": 0.0933,
-   "level": 0.75,
-   "timbre": "pure",
-   "contour": [
-    [
-     0.0,
-     6753.7
-    ],
-    [
-     0.125,
-     7010.6
-    ],
-    [
-     0.375,
-     6604.9
-    ],
-    [
-     0.5,
-     7010.5
-    ],
-    [
-     1.0,
-     6598.3
-    ]
-   ],
-   "attack": 0.004,
-   "hold": true,
-   "harmonic": 0.9,
    "formants": [
     [
      3192.5863689730877,
-     2.0,
+     4.0,
      0.5
     ],
     [
      6830.618534315889,
-     2.0,
+     4.0,
      0.5
     ]
    ],
-   "gammaScale": 1.5,
-   "tractQ": 3.0,
-   "noise": 0.25,
-   "rough": 0.08,
-   "am": 80.0,
-   "amDepth": 0.15,
-   "two": true,
-   "vib": {
-    "rate": 22.0,
-    "depth": 0.01
-   },
-   "fricative": true,
    "learned": {
-    "members": 25,
-    "resynthesisCosine": 0.8013,
-    "rivalCosine": 0.561,
+    "members": 29,
+    "resynthesisCosine": 0.7111,
+    "rivalCosine": -0.0545,
     "nearestOwn": true,
-    "f0ErrorPercent": 4.55
+    "f0ErrorPercent": 14.21
    }
   }
  ],
@@ -138,17 +109,9 @@
    "refs": [],
    "sequence": [
     "L01",
-    "L01",
-    "L02",
-    "L01",
-    "L01",
-    "L02"
+    "L01"
    ],
    "gaps": [
-    0.06,
-    0.06,
-    0.06,
-    0.06,
     0.06
    ]
   }
@@ -156,32 +119,30 @@
  "grammar": {
   "start": [
    "L01",
-   "L02"
+   "L03"
   ],
   "transitions": {
    "L01": {
-    "L01": 0.64,
-    "end": 0.2,
-    "L02": 0.16
+    "L01": 0.8276,
+    "end": 0.1724
    },
-   "L02": {
-    "L01": 1.0
+   "L03": {
+    "L03": 0.5,
+    "L01": 0.5
    }
   },
   "gaps": {
-   "L01>L01": 0.1,
-   "L01>L02": 0.229,
-   "L02>L01": 0.229
+   "L01>L01": 0.153
   },
   "songTyping": {
    "bouts": 5,
-   "short": 2,
-   "candidates": 3,
-   "repeatCandidates": 1,
+   "short": 5,
+   "candidates": 0,
+   "repeatCandidates": 4,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,
-   "unplaced": 3,
+   "unplaced": 0,
    "minClusterSize": 6
   }
  }

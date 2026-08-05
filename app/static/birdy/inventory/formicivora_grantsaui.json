@@ -1,0 +1,170 @@
+{
+ "id": "formicivora_grantsaui",
+ "common": "Sincor\u00e1 Antwren",
+ "scientific": "Formicivora grantsaui",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 419 Hz \u00b7 53 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0533,
+   "level": 1.2,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     414.9
+    ],
+    [
+     1.0,
+     423.5
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     3195.0,
+     6.0,
+     0.15
+    ],
+    [
+     9584.9,
+     6.0,
+     0.05
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "noise": 0.0,
+   "rough": 0.65,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "learned": {
+    "members": 2,
+    "resynthesisCosine": 0.7335,
+    "rivalCosine": -0.1877,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.74
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3372 Hz \u00b7 91 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0907,
+   "level": 0.75,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4164.1
+    ],
+    [
+     0.125,
+     4091.1
+    ],
+    [
+     0.375,
+     2983.2
+    ],
+    [
+     1.0,
+     2543.0
+    ]
+   ],
+   "attack": 0.12,
+   "hold": false,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     3192.5863689730877,
+     8.0,
+     0.5
+    ],
+    [
+     7893.0853838443245,
+     8.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 3.0,
+   "tractQ": 0.0,
+   "noise": 0.0,
+   "rough": 0.0,
+   "amDepth": 0.15,
+   "am": 30.0,
+   "two": true,
+   "fricative": true,
+   "learned": {
+    "members": 23,
+    "resynthesisCosine": 0.8084,
+    "rivalCosine": -0.4682,
+    "nearestOwn": true,
+    "f0ErrorPercent": -9.24
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L01",
+    "L01",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L01": 1.0
+   },
+   "L01": {
+    "L01": 0.9091,
+    "L00": 0.0909
+   }
+  },
+  "gaps": {
+   "L00>L01": 0.116,
+   "L01>L00": 0.151,
+   "L01>L01": 0.296
+  },
+  "songTyping": {
+   "bouts": 1,
+   "short": 0,
+   "candidates": 1,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6
+  }
+ }
+}

@@ -52,7 +52,14 @@ DEFAULT_DEMO_OUT = REPO_ROOT / "pipeline" / "out" / "demo"
 #: a specbench run came back with a clean-looking correlation table drawn from 86 of
 #: 16 239 types — see `specbench.MIN_PAIRING_SHARE`, which now catches the pairing.
 #: Owner decision 2026-08-05. Experiment stores are reached with an explicit `--store`.
-DEFAULT_HARVEST_STORE = REPO_ROOT / "pipeline" / "out" / "harvest-gan"
+#:
+#: **It moved again when v10 was installed, and it has to track the shipped inventory.**
+#: v10's types were fitted on `out/harvest-inband` — the re-segmented, 0 dB-floored,
+#: internally consistent corpus — so leaving this on `out/harvest-gan` would pair the
+#: shipped inventory with the store it was *not* learned from, and every type id would
+#: fail to resolve. `out/harvest-gan` remains on disk as v9's store and is still the
+#: right `--store` for reproducing any v9 figure.
+DEFAULT_HARVEST_STORE = REPO_ROOT / "pipeline" / "out" / "harvest-inband"
 DEFAULT_LEARNED_INVENTORY = REPO_ROOT / "data" / "learned-inventory.json"
 DEFAULT_DISCOVERED = REPO_ROOT / "data" / "discovered-species.json"
 DEFAULT_CRITIC = REPO_ROOT / "pipeline" / "out" / "critic.pt"

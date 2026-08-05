@@ -3,17 +3,17 @@
  "common": "Black-headed Grosbeak",
  "scientific": "Pheucticus melanocephalus",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 35 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 34 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L02",
-   "label": "learned L02 \u00b7 1363 Hz \u00b7 211 ms",
+   "label": "learned L02 \u00b7 1383 Hz \u00b7 203 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.2107,
-   "level": 1.35,
-   "timbre": "reed",
+   "dur": 0.2026,
+   "level": 0.9,
+   "timbre": "pure",
    "contour": [
     [
      0.0,
@@ -24,28 +24,24 @@
      1277.8
     ],
     [
-     0.25,
-     1331.8
-    ],
-    [
      0.375,
-     1583.2
+     1512.2
     ],
     [
-     0.875,
-     1431.7
+     0.625,
+     1576.7
     ],
     [
      1.0,
      1286.5
     ]
    ],
-   "attack": 0.016,
+   "attack": 0.008,
    "hold": true,
    "harmonic": 0.0,
    "vib": {
     "rate": 7.22,
-    "depth": 0.112
+    "depth": 0.09
    },
    "formants": [
     [
@@ -69,17 +65,18 @@
      0.1429
     ]
    ],
-   "gammaScale": 0.5,
-   "tractQ": 20.0,
-   "noise": 0.12,
+   "tractQ": 30.0,
+   "noise": 0.0,
    "rough": 0.65,
-   "two": true,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "gammaScale": 0.5,
    "learned": {
     "members": 16,
-    "resynthesisCosine": 0.7592,
-    "rivalCosine": 0.343,
+    "resynthesisCosine": 0.5585,
+    "rivalCosine": 0.2738,
     "nearestOwn": true,
-    "f0ErrorPercent": 3.64
+    "f0ErrorPercent": 1.73
    },
    "voices": {
     "contour": [
@@ -92,51 +89,53 @@
       638.9
      ],
      [
-      0.25,
-      665.9
-     ],
-     [
       0.375,
-      791.6
+      756.1
      ],
      [
-      0.875,
-      715.85
+      0.625,
+      788.35
      ],
      [
       1.0,
       643.25
      ]
     ],
-    "gamma": 3993.1809840150568,
+    "gamma": 4052.247712744193,
     "level": 0.7,
     "tracheaCm": 2.0,
     "refl": 0.9,
-    "betaInj": 0.02
+    "betaInj": 0.2
    }
   },
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 2869 Hz \u00b7 93 ms",
+   "label": "learned L01 \u00b7 2856 Hz \u00b7 96 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0933,
-   "level": 1.05,
-   "timbre": "pure",
+   "dur": 0.096,
+   "level": 0.52,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
-     2938.6
+     2936.3
     ],
     [
      1.0,
-     2801.8
+     2778.5
     ]
    ],
-   "attack": 0.008,
-   "hold": true,
-   "harmonic": 0.2,
+   "attack": 0.028,
+   "hold": false,
+   "harmonic": 0.103,
+   "am": 12.8,
+   "amDepth": 0.45,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
    "formants": [
     [
      842.4,
@@ -159,19 +158,16 @@
      0.1429
     ]
    ],
-   "gammaScale": 4.5,
+   "gammaScale": 6.0,
    "tractQ": 6.0,
-   "noise": 0.0,
-   "rough": 0.65,
-   "amDepth": 0.6,
-   "am": 12.0,
+   "rough": 0.2,
    "two": true,
    "learned": {
-    "members": 19,
-    "resynthesisCosine": 0.6614,
-    "rivalCosine": 0.2178,
+    "members": 18,
+    "resynthesisCosine": 0.5306,
+    "rivalCosine": 0.0634,
     "nearestOwn": true,
-    "f0ErrorPercent": -10.33
+    "f0ErrorPercent": 6.68
    }
   }
  ],
@@ -207,9 +203,9 @@
   ],
   "transitions": {
    "L01": {
-    "L01": 0.6842,
-    "L02": 0.2105,
-    "end": 0.1053
+    "L01": 0.6667,
+    "L02": 0.2222,
+    "end": 0.1111
    },
    "L02": {
     "L02": 0.625,
@@ -218,10 +214,10 @@
    }
   },
   "gaps": {
-   "L01>L01": 0.235,
+   "L01>L01": 0.245,
    "L01>L02": 0.285,
    "L02>L01": 0.12,
-   "L02>L02": 0.044
+   "L02>L02": 0.053
   },
   "songTyping": {
    "bouts": 5,

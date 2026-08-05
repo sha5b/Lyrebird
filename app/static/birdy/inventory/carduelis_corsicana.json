@@ -3,141 +3,130 @@
  "common": "Corsican Finch",
  "scientific": "Carduelis corsicana",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 32 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 452 Hz \u00b7 171 ms",
+   "label": "learned L01 \u00b7 478 Hz \u00b7 117 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.1707,
-   "level": 1.2,
+   "dur": 0.1173,
+   "level": 0.3,
    "timbre": "pure",
    "contour": [
     [
      0.0,
-     457.0
+     466.2
+    ],
+    [
+     0.375,
+     497.7
+    ],
+    [
+     0.5,
+     526.5
     ],
     [
      0.625,
-     474.8
+     466.1
     ],
     [
      1.0,
-     425.6
+     436.3
     ]
    ],
-   "attack": 0.03,
+   "attack": 0.004,
    "hold": false,
-   "harmonic": 0.1,
-   "am": 140.0,
-   "amDepth": 0.15,
+   "harmonic": 0.9,
    "formants": [
     [
      3195.0,
      6.0,
-     0.15
+     0.6
     ],
     [
      9584.9,
      6.0,
-     0.05
+     0.2
     ]
    ],
+   "gammaScale": 0.5,
+   "tractQ": 1.8089270615119695,
+   "noise": 0.0,
+   "rough": 0.65,
+   "am": 140.0,
+   "amDepth": 0.6,
    "vib": {
     "rate": 12.0,
-    "depth": 0.09
+    "depth": 0.025
    },
-   "tractQ": 20.0,
    "learned": {
-    "members": 29,
-    "resynthesisCosine": 0.8628,
-    "rivalCosine": 0.5396,
+    "members": 25,
+    "resynthesisCosine": 0.7833,
+    "rivalCosine": 0.3444,
     "nearestOwn": true,
-    "f0ErrorPercent": 0.46
-   },
-   "voices": {
-    "contour": [
-     [
-      0.0,
-      228.5
-     ],
-     [
-      0.625,
-      237.4
-     ],
-     [
-      1.0,
-      212.8
-     ]
-    ],
-    "gamma": 1200.0,
-    "level": 0.7,
-    "tracheaCm": 2.0,
-    "refl": 0.9,
-    "betaInj": 0.02
+    "f0ErrorPercent": 2.7
    }
   },
   {
    "id": "L02",
-   "label": "learned L02 \u00b7 1185 Hz \u00b7 32 ms",
+   "label": "learned L02 \u00b7 1244 Hz \u00b7 40 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.032,
-   "level": 1.2,
+   "dur": 0.04,
+   "level": 0.9,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     1295.1
+     1296.7
     ],
     [
      0.5,
-     1302.8
+     1305.7
     ],
     [
      0.625,
-     1096.9
+     1196.3
     ],
     [
      1.0,
-     1064.0
+     1180.9
     ]
    ],
-   "attack": 0.12,
-   "hold": true,
+   "attack": 0.03,
+   "hold": false,
    "harmonic": 0.0,
    "am": 45.0,
-   "amDepth": 0.6,
+   "amDepth": 0.8,
    "formants": [
     [
      3195.0,
      6.0,
-     0.15
+     0.6
     ],
     [
      9584.9,
      6.0,
-     0.05
+     0.2
     ]
    ],
-   "gammaScale": 0.7936032420514675,
+   "gammaScale": 1.0,
    "tractQ": 0.0,
-   "noise": 0.4037278890609741,
-   "rough": 0.0,
-   "two": true,
+   "noise": 0.25,
+   "rough": 0.4,
    "vib": {
-    "rate": 22.0,
-    "depth": 0.025
+    "rate": 14.0,
+    "depth": 0.09
    },
    "learned": {
-    "members": 3,
-    "resynthesisCosine": 0.8543,
-    "rivalCosine": 0.3379,
+    "members": 4,
+    "resynthesisCosine": 0.7675,
+    "rivalCosine": 0.1173,
     "nearestOwn": true,
-    "f0ErrorPercent": 5.42
+    "f0ErrorPercent": 15.59
    }
   }
  ],
@@ -165,16 +154,16 @@
   ],
   "transitions": {
    "L01": {
-    "L01": 0.6897,
-    "end": 0.3103
+    "L01": 0.64,
+    "end": 0.36
    },
    "L02": {
     "L02": 1.0
    }
   },
   "gaps": {
-   "L01>L01": 0.128,
-   "L02>L02": 0.28
+   "L01>L01": 0.175,
+   "L02>L02": 0.281
   },
   "songTyping": {
    "bouts": 10,

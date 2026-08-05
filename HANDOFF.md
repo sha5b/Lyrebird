@@ -293,7 +293,82 @@ channels want **one** new packed vec4 rather than two slots, and that plus the b
 a 1 438-line shader is its own pass. It should also be done after the re-derived build, because
 the 0 dB floor and in-band segmentation move the SNR distribution the ramp has to span.
 
-## 9. Still open — and it is the same decision, with better numbers
+## 9. v10 IS BUILT AND VERIFIED, and the install is a decision with numbers on both sides
+
+`analysis/run_production_v10.sh` ran clean end to end: learn 3 h 03 m (v9: 2 h 58 m serially,
+on a corpus 15 % smaller), docrefit 22 s, respfit 8 m, build 33 m, **`verify` all checks
+passed**. Nothing is installed.
+
+**One correction to what the header of that script claims.** It records `learn --jobs 8` as a
+deliberate deviation. The flag was **silently ignored** — `learn.py:3492` refuses the pool
+whenever `--inverse` is passed, because the encoder holds a torch model that cannot cross into a
+worker, and the v9 recipe passes `--inverse`. The log says so on line 5. So the fit ran
+**serially, by exactly v9's method**, which is better for comparability than what was intended;
+the deviation never happened and the script's header needs fixing (it could not be edited while
+bash was executing the file).
+
+**What got better**
+
+```
+resynthesis cosine   median 0.689 -> 0.731   worst -0.435 -> -0.258
+                     (for scale, the two-start descent gate that shipped was +0.0330)
+species with a song      80 -> 102   +28 %
+song types              187 -> 358   +91 %
+repeat classes           91 -> 154   +69 %
+motifs                   96 -> 204  +112 %
+points                387 287 -> 444 213
+median SNR of points  11.96 -> 18.85 dB (meter caveat, §7)
+```
+
+**What got worse**
+
+```
+species                2 650 -> 2 489    -6 %
+fitted types          16 283 -> 15 241    -6 %
+grammar chunks         2 389 -> 1 024   -57 %   <- the funnel's own alarm fired
+```
+
+The grammar loss is expected, measured and documented (docs/22 §22.2): a better syllable fit is
+a worse typing for finding repeats, because finer distinctions fracture the runs repeat detection
+depends on. `song_funnel.py` prints it as an alarm and says it is *"not a reason to abort the
+chain — a reason not to install without deciding to accept it."* That is the decision, and it is
+the owner's.
+
+**Both new data channels ship in this build, and the guarantee held.** `points.json` now carries
+`snr` (444 213 values, 8 583 null — the renders, which have no recording) and `knnAgreement`
+(no nulls, 0..1). The per-point channel's mean is **0.4574** and the manifest's `knnAgreement` is
+**0.4574** — the same measurement at two resolutions, as designed, verified on a real build
+rather than on a fixture.
+
+**INSTALLED, owner decision 2026-08-05 — "the fit is the point".**
+
+```
+app/static/birdy         <- out/v10/assets     (rsync --delete, exact)
+data/learned-inventory   <- learned-v10.json   2 489 species / 15 241 types
+shipped manifest         builtAt 2026-08-05T13:38, 444 213 points
+verify on the installed path   all checks passed
+```
+
+Three consequences handled with it:
+
+- **`DEFAULT_HARVEST_STORE` now points at `out/harvest-inband`.** v10's types were fitted there,
+  so leaving the default on `out/harvest-gan` would pair the shipped inventory with a store it
+  was never learned from and every type id would fail to resolve. Confirmed after the move:
+  `specbench` with no `--store` reports `noMembers 0` and the pairing guard stays quiet.
+  `out/harvest-gan` stays on disk and is still the right `--store` for reproducing a v9 figure.
+- **`relations.json` was NOT carried over.** The v10 recipe passes `--no-relations` (as v9's did),
+  so the build emits none, and the shipped file was computed against v9's 2 650-species set. It
+  is fetched with `getOptionalJson` and nothing draws it yet (docs/25 §25.3 step 6), so the exact
+  install drops it rather than shipping a stale graph over a superseded species set. **Relations
+  for v10 are owed.**
+- **v9 is fully recoverable** from `out/v9/assets` + `out/v9/learned-v9.json`, byte-size verified
+  against what was shipped before the swap.
+
+**The whitepaper's headline resource claim is now stale**: it says 2 650 fitted species and the
+shipped build has 2 489. Every figure derived from the v9 store needs a pass, and the corpus
+figures (378 224 syllables) are now 435 630. That is the next real piece of work.
+
+## 10. Still open — and it is the same decision, with better numbers
 
 **The SNR floor is yours to call**, and the reconciliation above is the input it was waiting
 on. 0 dB is near-free (3.6 % of rows, 97 species, +0.5 dB). 6 dB buys +3.3 dB at 0.77

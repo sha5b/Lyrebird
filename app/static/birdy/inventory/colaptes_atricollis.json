@@ -1,0 +1,195 @@
+{
+ "id": "colaptes_atricollis",
+ "common": "Black-necked Woodpecker",
+ "scientific": "Colaptes atricollis",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 3249 Hz \u00b7 79 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0786,
+   "level": 0.834,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3197.6
+    ],
+    [
+     1.0,
+     3302.2
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 14.42,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 17.05,
+    "depth": 0.09
+   },
+   "formants": [
+    [
+     3695.1,
+     8.0,
+     0.5
+    ],
+    [
+     11085.3,
+     8.0,
+     0.5
+    ],
+    [
+     3741.776844777196,
+     8.0,
+     0.5
+    ],
+    [
+     6830.618534315889,
+     8.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 3.0,
+   "noise": 0.4,
+   "rough": 0.0,
+   "fricative": true,
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.5588,
+    "rivalCosine": 0.2632,
+    "nearestOwn": true,
+    "f0ErrorPercent": 19.35
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3385 Hz \u00b7 72 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.072,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3329.3
+    ],
+    [
+     1.0,
+     3441.6
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.5,
+   "am": 25.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 17.9,
+    "depth": 0.05
+   },
+   "formants": [
+    [
+     3695.1,
+     6.0,
+     1.0
+    ],
+    [
+     11085.3,
+     6.0,
+     0.3333
+    ]
+   ],
+   "two": true,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.5461,
+    "rivalCosine": 0.474,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.57
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      1664.65
+     ],
+     [
+      1.0,
+      1720.8
+     ]
+    ],
+    "gamma": 9920.240094152687,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.1
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8571,
+    "L01": 0.1429
+   },
+   "L01": {
+    "L01": 0.8667,
+    "L00": 0.1333
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.027,
+   "L00>L01": 0.037,
+   "L01>L00": 0.031,
+   "L01>L01": 0.029
+  },
+  "songTyping": {
+   "bouts": 1,
+   "short": 0,
+   "candidates": 1,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6
+  }
+ }
+}

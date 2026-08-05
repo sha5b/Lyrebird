@@ -3,25 +3,79 @@
  "common": "Scaly-throated Leaftosser",
  "scientific": "Sclerurus guatemalensis",
  "bank": "learned",
- "summary": "Learned from 1 field recordings: 2 syllable types fitted from 34 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 35 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
-   "label": "learned L00 \u00b7 3354 Hz \u00b7 112 ms",
+   "label": "learned L00 \u00b7 3231 Hz \u00b7 104 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.112,
+   "dur": 0.104,
    "level": 1.35,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3122.5
+    ],
+    [
+     1.0,
+     3343.0
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "gammaScale": 1.0,
+   "tractQ": 0.0,
+   "noise": 0.85,
+   "rough": 0.65,
+   "two": true,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.025
+   },
+   "fricative": true,
+   "formants": [
+    [
+     3192.5863689730877,
+     4.0,
+     0.5
+    ],
+    [
+     6830.618534315889,
+     4.0,
+     0.5
+    ]
+   ],
+   "learned": {
+    "members": 27,
+    "resynthesisCosine": 0.6353,
+    "rivalCosine": 0.5219,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.05
+   }
+  },
+  {
+   "id": "L03",
+   "label": "learned L03 \u00b7 3808 Hz \u00b7 85 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0854,
+   "level": 1.2,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     3246.2
+     3698.4
     ],
     [
      1.0,
-     3465.4
+     3921.7
     ]
    ],
    "attack": 0.008,
@@ -30,73 +84,32 @@
    "gammaScale": 1.0,
    "tractQ": 0.0,
    "noise": 0.25,
-   "rough": 0.65,
-   "two": true,
-   "amDepth": 0.6,
-   "am": 140.0,
-   "vib": {
-    "rate": 12.0,
-    "depth": 0.01
-   },
-   "fricative": true,
-   "formants": [
-    [
-     3192.5863689730877,
-     2.0,
-     1.0
-    ],
-    [
-     6830.618534315889,
-     2.0,
-     1.0
-    ]
-   ],
-   "learned": {
-    "members": 29,
-    "resynthesisCosine": 0.6116,
-    "rivalCosine": 0.262,
-    "nearestOwn": true,
-    "f0ErrorPercent": -0.2
-   }
-  },
-  {
-   "id": "L02",
-   "label": "learned L02 \u00b7 6174 Hz \u00b7 51 ms",
-   "function": "",
-   "confidence": "unlabelled",
-   "refs": [],
-   "dur": 0.0507,
-   "level": 1.2,
-   "timbre": "buzz",
-   "contour": [
-    [
-     0.0,
-     6238.1
-    ],
-    [
-     1.0,
-     6110.2
-    ]
-   ],
-   "attack": 0.004,
-   "hold": true,
-   "harmonic": 0.9,
-   "gammaScale": 1.0,
-   "tractQ": 0.0,
-   "noise": 0.85,
    "rough": 0.0,
-   "am": 140.0,
-   "amDepth": 0.3,
    "vib": {
     "rate": 12.0,
     "depth": 0.025
    },
+   "am": 80.0,
+   "amDepth": 0.3,
+   "fricative": true,
+   "formants": [
+    [
+     3741.776844777196,
+     2.0,
+     2.0
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     2.0
+    ]
+   ],
    "learned": {
-    "members": 5,
-    "resynthesisCosine": 0.7059,
-    "rivalCosine": 0.4374,
+    "members": 8,
+    "resynthesisCosine": 0.6503,
+    "rivalCosine": 0.4624,
     "nearestOwn": true,
-    "f0ErrorPercent": 0.68
+    "f0ErrorPercent": -0.09
    }
   }
  ],
@@ -110,9 +123,17 @@
    "refs": [],
    "sequence": [
     "L00",
+    "L00",
+    "L03",
+    "L03",
+    "L00",
     "L00"
    ],
    "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
     0.06
    ]
   }
@@ -120,31 +141,34 @@
  "grammar": {
   "start": [
    "L00",
-   "L02"
+   "L03"
   ],
   "transitions": {
    "L00": {
-    "L00": 0.9286,
-    "end": 0.0714
+    "L00": 0.8519,
+    "L03": 0.0741,
+    "end": 0.0741
    },
-   "L02": {
-    "end": 0.5,
-    "L02": 0.5
+   "L03": {
+    "L03": 0.625,
+    "L00": 0.375
    }
   },
   "gaps": {
-   "L00>L00": 0.049,
-   "L02>L02": 0.135
+   "L00>L00": 0.032,
+   "L00>L03": 0.311,
+   "L03>L00": 0.093,
+   "L03>L03": 0.147
   },
   "songTyping": {
-   "bouts": 4,
-   "short": 3,
-   "candidates": 1,
-   "repeatCandidates": 2,
+   "bouts": 2,
+   "short": 0,
+   "candidates": 2,
+   "repeatCandidates": 0,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,
-   "unplaced": 1,
+   "unplaced": 2,
    "minClusterSize": 6
   }
  }

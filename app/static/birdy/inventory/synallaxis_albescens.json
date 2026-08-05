@@ -3,7 +3,7 @@
  "common": "Pale-breasted Spinetail",
  "scientific": "Synallaxis albescens",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 3 syllable types fitted from 43 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 41 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L04",
@@ -12,7 +12,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.072,
-   "level": 0.6,
+   "level": 0.75,
    "timbre": "buzz",
    "contour": [
     [
@@ -26,34 +26,32 @@
    ],
    "attack": 0.06,
    "hold": false,
-   "harmonic": 0.1,
-   "am": 25.0,
+   "harmonic": 0.7,
+   "am": 18.75,
    "amDepth": 0.8,
-   "gammaScale": 1.0,
-   "tractQ": 0.04752846783362221,
-   "noise": 0.0,
-   "rough": 0.0,
+   "tractQ": 3.0,
+   "rough": 0.2,
    "vib": {
-    "rate": 22.0,
-    "depth": 0.09
+    "rate": 14.0,
+    "depth": 0.025
    },
    "learned": {
     "members": 3,
-    "resynthesisCosine": 0.9026,
-    "rivalCosine": -0.0646,
+    "resynthesisCosine": 0.8961,
+    "rivalCosine": -0.1409,
     "nearestOwn": true,
-    "f0ErrorPercent": -4.66
+    "f0ErrorPercent": 3.29
    }
   },
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 3923 Hz \u00b7 139 ms",
+   "label": "learned L01 \u00b7 3988 Hz \u00b7 141 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.1387,
-   "level": 1.35,
-   "timbre": "reed",
+   "dur": 0.1413,
+   "level": 0.9,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
@@ -61,59 +59,56 @@
     ],
     [
      0.125,
-     4139.6
+     4321.1
     ],
     [
      0.375,
-     3879.5
+     3980.3
     ],
     [
      0.5,
-     4180.3
-    ],
-    [
-     0.625,
-     3902.3
+     4210.5
     ],
     [
      1.0,
-     3799.3
+     3803.0
     ]
    ],
-   "attack": 0.008,
+   "attack": 0.03,
    "hold": true,
-   "harmonic": 0.2,
-   "am": 25.0,
-   "amDepth": 0.8,
-   "gammaScale": 4.5,
-   "tractQ": 12.0,
+   "harmonic": 0.9,
+   "gammaScale": 6.0,
+   "tractQ": 0.09041735510734118,
    "noise": 0.05,
    "rough": 0.0,
+   "amDepth": 0.15,
+   "am": 25.0,
+   "two": false,
    "vib": {
-    "rate": 8.0,
-    "depth": 0.05
+    "rate": 12.0,
+    "depth": 0.09
    },
    "learned": {
-    "members": 18,
-    "resynthesisCosine": 0.837,
-    "rivalCosine": 0.7072,
+    "members": 16,
+    "resynthesisCosine": 0.8062,
+    "rivalCosine": 0.5271,
     "nearestOwn": true,
-    "f0ErrorPercent": 2.92
+    "f0ErrorPercent": -7.72
    }
   },
   {
    "id": "L02",
-   "label": "learned L02 \u00b7 4109 Hz \u00b7 83 ms",
+   "label": "learned L02 \u00b7 4114 Hz \u00b7 83 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0827,
-   "level": 0.6,
+   "level": 0.50592041015625,
    "timbre": "reed",
    "contour": [
     [
      0.0,
-     3641.5
+     3655.3
     ],
     [
      0.875,
@@ -124,32 +119,26 @@
      4234.5
     ]
    ],
-   "attack": 0.06,
+   "attack": 0.12,
    "hold": false,
    "harmonic": 0.9,
-   "am": 25.0,
-   "amDepth": 0.45,
-   "vib": {
-    "rate": 8.0,
-    "depth": 0.09
-   },
    "gammaScale": 2.0,
-   "tractQ": 3.0,
+   "tractQ": 0.0,
+   "noise": 0.0,
    "rough": 0.4,
-   "fricative": true,
-   "formants": [
-    [
-     4368.450554124434,
-     8.0,
-     0.5
-    ]
-   ],
+   "amDepth": 0.15,
+   "am": 25.0,
+   "two": true,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.025
+   },
    "learned": {
     "members": 22,
-    "resynthesisCosine": 0.8563,
-    "rivalCosine": 0.6041,
+    "resynthesisCosine": 0.8076,
+    "rivalCosine": 0.505,
     "nearestOwn": true,
-    "f0ErrorPercent": 27.27
+    "f0ErrorPercent": 9.48
    }
   }
  ],
@@ -174,27 +163,26 @@
   ],
   "transitions": {
    "L01": {
-    "L02": 0.5,
-    "L01": 0.5
+    "L02": 0.625,
+    "L01": 0.375
    },
    "L02": {
-    "L02": 0.5,
-    "L01": 0.4091,
-    "end": 0.0909
+    "L02": 0.5238,
+    "L01": 0.4762
    },
    "L04": {
     "end": 1.0
    }
   },
   "gaps": {
-   "L01>L01": 0.053,
-   "L01>L02": 0.131,
-   "L02>L01": 0.072,
+   "L01>L01": 0.051,
+   "L01>L02": 0.123,
+   "L02>L01": 0.084,
    "L02>L02": 0.237
   },
   "songTyping": {
-   "bouts": 5,
-   "short": 4,
+   "bouts": 4,
+   "short": 3,
    "candidates": 1,
    "repeatCandidates": 0,
    "types": 0,

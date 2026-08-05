@@ -1,0 +1,226 @@
+{
+ "id": "falco_columbarius",
+ "common": "Merlin",
+ "scientific": "Falco columbarius",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 38 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 730 Hz \u00b7 37 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0373,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     788.0
+    ],
+    [
+     0.5,
+     707.9
+    ],
+    [
+     1.0,
+     697.8
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     5063.7,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 0.0,
+   "noise": 0.12,
+   "rough": 0.4,
+   "am": 80.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.5864,
+    "rivalCosine": 0.349,
+    "nearestOwn": true,
+    "f0ErrorPercent": 10.18
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4463 Hz \u00b7 219 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2187,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4358.4
+    ],
+    [
+     1.0,
+     4569.9
+    ]
+   ],
+   "attack": 0.12,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     5063.7,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 0.01711519419269014,
+   "noise": 0.0,
+   "rough": 0.0,
+   "amDepth": 0.15,
+   "am": 30.0,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.2322,
+    "rivalCosine": 0.3552,
+    "nearestOwn": false,
+    "f0ErrorPercent": -0.62
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      4358.4
+     ],
+     [
+      1.0,
+      4569.9
+     ]
+    ],
+    "gamma": 13079.237099688964,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.1
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 4482 Hz \u00b7 168 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.168,
+   "level": 1.05,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     4370.8
+    ],
+    [
+     1.0,
+     4595.6
+    ]
+   ],
+   "attack": 0.12,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     5063.7,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 0.042065489866593885,
+   "noise": 0.0,
+   "rough": 0.0,
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.2956,
+    "rivalCosine": 0.1132,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.7
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L02",
+    "L02",
+    "L01",
+    "L02",
+    "L02"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.5714,
+    "L00": 0.4286
+   },
+   "L01": {
+    "L02": 0.6667,
+    "L01": 0.3333
+   },
+   "L02": {
+    "L02": 0.619,
+    "end": 0.1905,
+    "L01": 0.1905
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.123,
+   "L01>L01": 0.061,
+   "L01>L02": 0.052,
+   "L02>L01": 0.081,
+   "L02>L02": 0.043
+  },
+  "songTyping": {
+   "bouts": 8,
+   "short": 6,
+   "candidates": 2,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6
+  }
+ }
+}

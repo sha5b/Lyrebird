@@ -1,0 +1,268 @@
+{
+ "id": "rallus_caerulescens",
+ "common": "African Rail",
+ "scientific": "Rallus caerulescens",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 47 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 1256 Hz \u00b7 51 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0507,
+   "level": 1.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2563.1
+    ],
+    [
+     0.625,
+     2229.5
+    ],
+    [
+     0.75,
+     774.4
+    ],
+    [
+     1.0,
+     561.8
+    ]
+   ],
+   "attack": 0.0027,
+   "hold": false,
+   "harmonic": 0.5,
+   "am": 12.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     2696.4,
+     6.0,
+     0.6
+    ],
+    [
+     8089.2,
+     6.0,
+     0.2
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 6.0,
+   "noise": 0.4,
+   "two": true,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "rough": 0.4,
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.6785,
+    "rivalCosine": 0.6899,
+    "nearestOwn": false,
+    "f0ErrorPercent": -7.68
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1680 Hz \u00b7 197 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1973,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     804.9
+    ],
+    [
+     0.125,
+     1820.0
+    ],
+    [
+     0.25,
+     462.7
+    ],
+    [
+     0.375,
+     2475.6
+    ],
+    [
+     0.5,
+     1822.2
+    ],
+    [
+     0.625,
+     2598.9
+    ],
+    [
+     0.75,
+     2858.5
+    ],
+    [
+     1.0,
+     2788.0
+    ]
+   ],
+   "attack": 0.12,
+   "hold": false,
+   "harmonic": 0.35,
+   "am": 25.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     2696.4,
+     6.0,
+     0.6
+    ],
+    [
+     8089.2,
+     6.0,
+     0.2
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 0.0,
+   "noise": 0.12,
+   "rough": 0.08,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.8368,
+    "rivalCosine": 0.5436,
+    "nearestOwn": true,
+    "f0ErrorPercent": 24.48
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 2501 Hz \u00b7 83 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0827,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2842.0
+    ],
+    [
+     0.375,
+     2541.9
+    ],
+    [
+     0.875,
+     2401.3
+    ],
+    [
+     1.0,
+     2256.2
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.2,
+   "formants": [
+    [
+     2696.4,
+     6.0,
+     0.6
+    ],
+    [
+     8089.2,
+     6.0,
+     0.2
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 6.0,
+   "noise": 0.0,
+   "rough": 0.0,
+   "am": 25.0,
+   "amDepth": 0.3,
+   "two": true,
+   "learned": {
+    "members": 36,
+    "resynthesisCosine": 0.4263,
+    "rivalCosine": 0.6002,
+    "nearestOwn": false,
+    "f0ErrorPercent": 2.72
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L01",
+    "L02",
+    "L02",
+    "L01",
+    "L02"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.3333,
+    "L01": 0.3333,
+    "L02": 0.3333
+   },
+   "L01": {
+    "L02": 0.5,
+    "L01": 0.5
+   },
+   "L02": {
+    "L02": 0.8571,
+    "L01": 0.0857,
+    "L00": 0.0571
+   }
+  },
+  "gaps": {
+   "L01>L01": 0.025,
+   "L01>L02": 0.047,
+   "L02>L00": 0.041,
+   "L02>L01": 0.027,
+   "L02>L02": 0.091
+  },
+  "songTyping": {
+   "bouts": 2,
+   "short": 1,
+   "candidates": 1,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6
+  }
+ }
+}

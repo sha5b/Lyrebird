@@ -3,44 +3,30 @@
  "common": "Savannah Sparrow",
  "scientific": "Passerculus sandwichensis",
  "bank": "learned",
- "summary": "Learned from 1 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
-   "label": "learned L00 \u00b7 452 Hz \u00b7 75 ms",
+   "label": "learned L00 \u00b7 431 Hz \u00b7 51 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0747,
-   "level": 0.9,
+   "dur": 0.0507,
+   "level": 0.3,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     421.6
-    ],
-    [
-     0.125,
-     432.7
-    ],
-    [
-     0.25,
-     502.8
-    ],
-    [
-     0.625,
-     461.9
+     427.1
     ],
     [
      1.0,
-     447.4
+     434.6
     ]
    ],
-   "attack": 0.024,
-   "hold": false,
-   "harmonic": 0.7,
-   "am": 140.0,
-   "amDepth": 0.8,
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.1,
    "formants": [
     [
      2631.8,
@@ -54,69 +40,40 @@
     ]
    ],
    "gammaScale": 0.5,
-   "tractQ": 0.0,
-   "rough": 0.2,
-   "vib": {
-    "rate": 8.0,
-    "depth": 0.01
-   },
+   "tractQ": 12.0,
+   "noise": 0.0,
+   "rough": 0.0,
+   "amDepth": 0.8,
+   "am": 140.0,
+   "two": true,
    "learned": {
-    "members": 9,
-    "resynthesisCosine": 0.685,
-    "rivalCosine": -0.2598,
+    "members": 1,
+    "resynthesisCosine": 0.5903,
+    "rivalCosine": -0.2441,
     "nearestOwn": true,
-    "f0ErrorPercent": 3.51
-   },
-   "voices": {
-    "contour": [
-     [
-      0.0,
-      210.8
-     ],
-     [
-      0.125,
-      216.35
-     ],
-     [
-      0.25,
-      251.4
-     ],
-     [
-      0.625,
-      230.95
-     ],
-     [
-      1.0,
-      223.7
-     ]
-    ],
-    "gamma": 1200.0,
-    "level": 0.7,
-    "tracheaCm": 2.0,
-    "refl": 0.9,
-    "betaInj": 0.02
+    "f0ErrorPercent": 3.05
    }
   },
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 7919 Hz \u00b7 40 ms",
+   "label": "learned L01 \u00b7 8100 Hz \u00b7 59 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.04,
-   "level": 0.75,
+   "dur": 0.0587,
+   "level": 1.05,
    "timbre": "reed",
    "contour": [
     [
      0.0,
-     8076.4
+     8520.8
     ],
     [
      1.0,
-     7765.4
+     7700.6
     ]
    ],
-   "attack": 0.004,
+   "attack": 0.016,
    "hold": true,
    "harmonic": 0.9,
    "formants": [
@@ -133,16 +90,20 @@
    ],
    "gammaScale": 1.0,
    "tractQ": 3.0,
-   "noise": 0.05,
-   "rough": 0.4,
-   "amDepth": 0.6,
+   "noise": 0.0,
+   "rough": 0.65,
+   "amDepth": 0.0,
    "am": 140.0,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.05
+   },
    "learned": {
-    "members": 21,
-    "resynthesisCosine": 0.8111,
-    "rivalCosine": -0.2435,
+    "members": 26,
+    "resynthesisCosine": 0.7251,
+    "rivalCosine": -0.1342,
     "nearestOwn": true,
-    "f0ErrorPercent": 0.23
+    "f0ErrorPercent": -2.73
    }
   }
  ],
@@ -170,23 +131,21 @@
   ],
   "transitions": {
    "L00": {
-    "L00": 0.6667,
-    "end": 0.3333
+    "L01": 1.0
    },
    "L01": {
-    "L01": 0.8571,
-    "end": 0.1429
+    "L01": 0.8846,
+    "end": 0.1154
    }
   },
   "gaps": {
-   "L00>L00": 0.232,
-   "L01>L01": 0.141
+   "L01>L01": 0.125
   },
   "songTyping": {
-   "bouts": 6,
-   "short": 6,
+   "bouts": 3,
+   "short": 3,
    "candidates": 0,
-   "repeatCandidates": 4,
+   "repeatCandidates": 3,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,

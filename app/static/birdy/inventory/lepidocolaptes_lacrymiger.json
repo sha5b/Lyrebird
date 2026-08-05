@@ -3,43 +3,33 @@
  "common": "Montane Woodcreeper",
  "scientific": "Lepidocolaptes lacrymiger",
  "bank": "learned",
- "summary": "Learned from 1 field recordings: 2 syllable types fitted from 26 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
-   "label": "learned L00 \u00b7 6842 Hz \u00b7 341 ms",
+   "label": "learned L00 \u00b7 6647 Hz \u00b7 352 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.3413,
-   "level": 0.629,
-   "timbre": "pure",
+   "dur": 0.352,
+   "level": 0.6,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
-     7594.2
+     7511.9
     ],
     [
      1.0,
-     6164.2
+     5882.4
     ]
    ],
-   "attack": 0.008,
-   "hold": true,
-   "harmonic": 0.5,
-   "am": 12.93,
-   "amDepth": 0.0,
+   "attack": 0.1093,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 14.42,
+   "amDepth": 0.15,
    "formants": [
-    [
-     2696.4,
-     8.0,
-     1.0
-    ],
-    [
-     8089.2,
-     8.0,
-     1.0
-    ],
     [
      2711.2989394619476,
      8.0,
@@ -51,77 +41,79 @@
      1.0
     ]
    ],
-   "gammaScale": 1.5,
+   "gammaScale": 2.0,
    "tractQ": 3.0,
-   "rough": 0.0,
    "vib": {
-    "rate": 14.0,
-    "depth": 0.025
+    "rate": 8.0,
+    "depth": 0.09
    },
+   "rough": 0.08,
    "fricative": true,
    "learned": {
-    "members": 11,
-    "resynthesisCosine": 0.8977,
-    "rivalCosine": 0.2169,
+    "members": 7,
+    "resynthesisCosine": 0.8638,
+    "rivalCosine": 0.0464,
     "nearestOwn": true,
-    "f0ErrorPercent": 2.78
+    "f0ErrorPercent": 14.42
    }
   },
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 8409 Hz \u00b7 91 ms",
+   "label": "learned L01 \u00b7 8226 Hz \u00b7 103 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0907,
+   "dur": 0.1026,
    "level": 1.35,
-   "timbre": "pure",
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
-     8770.8
+     8741.0
+    ],
+    [
+     0.125,
+     8241.0
     ],
     [
      0.25,
-     8669.7
+     8412.0
     ],
     [
      1.0,
-     7820.4
+     7556.9
     ]
    ],
    "attack": 0.008,
    "hold": true,
-   "harmonic": 0.0,
+   "harmonic": 0.7,
    "formants": [
     [
      3192.5863689730877,
-     4.0,
+     8.0,
      0.5
     ],
     [
      7893.0853838443245,
-     4.0,
+     8.0,
      0.5
     ]
    ],
-   "gammaScale": 0.5,
-   "tractQ": 6.0,
+   "gammaScale": 1.0,
+   "tractQ": 12.0,
    "noise": 0.85,
-   "rough": 0.08,
-   "amDepth": 0.45,
-   "am": 80.0,
+   "rough": 0.65,
    "vib": {
-    "rate": 22.0,
-    "depth": 0.09
+    "rate": 12.0,
+    "depth": 0.025
    },
    "fricative": true,
    "learned": {
-    "members": 15,
-    "resynthesisCosine": 0.8692,
-    "rivalCosine": 0.3979,
+    "members": 18,
+    "resynthesisCosine": 0.8494,
+    "rivalCosine": 0.0943,
     "nearestOwn": true,
-    "f0ErrorPercent": -5.25
+    "f0ErrorPercent": -4.03
    }
   }
  ],
@@ -152,35 +144,34 @@
  ],
  "grammar": {
   "start": [
-   "L01",
-   "L00"
+   "L01"
   ],
   "transitions": {
    "L00": {
-    "L00": 0.6364,
-    "L01": 0.1818,
-    "end": 0.1818
+    "L00": 0.5714,
+    "L01": 0.4286
    },
    "L01": {
-    "L01": 0.7857,
-    "L00": 0.2143
+    "L01": 0.6667,
+    "L00": 0.1667,
+    "end": 0.1667
    }
   },
   "gaps": {
-   "L00>L00": 0.107,
-   "L00>L01": 0.043,
-   "L01>L00": 0.056,
-   "L01>L01": 0.069
+   "L00>L00": 0.129,
+   "L00>L01": 0.056,
+   "L01>L00": 0.053,
+   "L01>L01": 0.072
   },
   "songTyping": {
    "bouts": 3,
-   "short": 1,
-   "candidates": 2,
-   "repeatCandidates": 1,
+   "short": 0,
+   "candidates": 3,
+   "repeatCandidates": 0,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,
-   "unplaced": 2,
+   "unplaced": 3,
    "minClusterSize": 6
   }
  }

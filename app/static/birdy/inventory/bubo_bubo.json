@@ -1,0 +1,184 @@
+{
+ "id": "bubo_bubo",
+ "common": "Eurasian Eagle-Owl",
+ "scientific": "Bubo bubo",
+ "bank": "learned",
+ "summary": "Learned from 3 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 529 Hz \u00b7 360 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.36,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     512.7
+    ],
+    [
+     0.125,
+     582.2
+    ],
+    [
+     1.0,
+     494.8
+    ]
+   ],
+   "attack": 0.004,
+   "hold": false,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "noise": 0.0,
+   "rough": 0.65,
+   "amDepth": 0.8,
+   "am": 30.0,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 17,
+    "resynthesisCosine": 0.6855,
+    "rivalCosine": 0.1703,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.15
+   },
+   "respiration": {
+    "tauX": 0.11180339887498947,
+    "tauP": 0.03162277660168379,
+    "alphaI": 0.05,
+    "alphaRel": 0.125,
+    "forcing": 20.0
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1857 Hz \u00b7 101 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1013,
+   "level": 0.75,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     1799.5
+    ],
+    [
+     0.125,
+     1907.1
+    ],
+    [
+     0.5,
+     1898.6
+    ],
+    [
+     0.625,
+     1781.5
+    ],
+    [
+     0.75,
+     1944.4
+    ],
+    [
+     1.0,
+     1818.5
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 45.0,
+   "amDepth": 0.15,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 0.5,
+   "noise": 0.6,
+   "rough": 0.4,
+   "tractQ": 3.0,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.025
+   },
+   "learned": {
+    "members": 13,
+    "resynthesisCosine": 0.3977,
+    "rivalCosine": -0.0135,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.67
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.4706,
+    "end": 0.4118,
+    "L01": 0.1176
+   },
+   "L01": {
+    "end": 0.6154,
+    "L01": 0.3846
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.067,
+   "L00>L01": 0.615,
+   "L01>L01": 0.181
+  },
+  "songTyping": {
+   "bouts": 15,
+   "short": 15,
+   "candidates": 0,
+   "repeatCandidates": 5,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

@@ -3,64 +3,50 @@
  "common": "Ivory-billed Woodcreeper",
  "scientific": "Xiphorhynchus flavigaster",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
-   "label": "learned L00 \u00b7 2038 Hz \u00b7 53 ms",
+   "label": "learned L00 \u00b7 2027 Hz \u00b7 56 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0534,
-   "level": 0.3,
-   "timbre": "pure",
+   "dur": 0.056,
+   "level": 0.6,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
-     1990.3
+     2029.6
+    ],
+    [
+     0.125,
+     1968.9
     ],
     [
      1.0,
-     2086.4
+     2083.9
     ]
    ],
-   "attack": 0.016,
+   "attack": 0.008,
    "hold": true,
    "harmonic": 0.0,
-   "formants": [
-    [
-     2275.6,
-     6.0,
-     1.0
-    ],
-    [
-     6826.8,
-     6.0,
-     0.3333
-    ],
-    [
-     11378.1,
-     6.0,
-     0.2
-    ]
-   ],
-   "gammaScale": 1.0,
-   "tractQ": 30.0,
-   "noise": 0.12,
+   "gammaScale": 0.9395612714874626,
+   "tractQ": 20.0,
+   "noise": 0.4,
    "rough": 0.4,
-   "am": 80.0,
-   "amDepth": 0.45,
-   "two": true,
+   "am": 12.0,
+   "amDepth": 0.3,
    "vib": {
     "rate": 8.0,
     "depth": 0.09
    },
    "learned": {
-    "members": 22,
-    "resynthesisCosine": 0.8053,
-    "rivalCosine": -0.1406,
+    "members": 21,
+    "resynthesisCosine": 0.8122,
+    "rivalCosine": -0.2692,
     "nearestOwn": true,
-    "f0ErrorPercent": 10.2
+    "f0ErrorPercent": 10.15
    }
   },
   {
@@ -70,8 +56,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.1133,
-   "level": 0.6,
-   "timbre": "reed",
+   "level": 1.35,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
@@ -102,37 +88,26 @@
      4413.4
     ]
    ],
-   "attack": 0.008,
+   "attack": 0.03,
    "hold": true,
-   "harmonic": 0.0,
-   "am": 45.0,
-   "amDepth": 0.6,
-   "formants": [
-    [
-     654.2237665009833,
-     2.0,
-     0.5
-    ],
-    [
-     5083.5393171114765,
-     2.0,
-     0.5
-    ]
-   ],
+   "harmonic": 0.1,
    "gammaScale": 6.0,
    "tractQ": 3.0,
-   "rough": 0.08,
+   "noise": 0.05,
+   "rough": 0.65,
    "vib": {
-    "rate": 12.0,
-    "depth": 0.05
+    "rate": 4.0,
+    "depth": 0.09
    },
-   "fricative": true,
+   "am": 80.0,
+   "amDepth": 0.3,
+   "two": true,
    "learned": {
     "members": 8,
-    "resynthesisCosine": 0.7713,
-    "rivalCosine": -0.1269,
+    "resynthesisCosine": 0.7179,
+    "rivalCosine": -0.1895,
     "nearestOwn": true,
-    "f0ErrorPercent": 2.8
+    "f0ErrorPercent": 8.95
    }
   }
  ],
@@ -145,8 +120,8 @@
    "confidence": "invented",
    "refs": [],
    "sequence": [
-    "L00",
-    "L00"
+    "L02",
+    "L02"
    ],
    "gaps": [
     0.06
@@ -155,13 +130,13 @@
  ],
  "grammar": {
   "start": [
-   "L00",
-   "L02"
+   "L02",
+   "L00"
   ],
   "transitions": {
    "L00": {
-    "L00": 0.7727,
-    "end": 0.2273
+    "L00": 0.8095,
+    "end": 0.1905
    },
    "L02": {
     "end": 0.625,
@@ -173,8 +148,8 @@
    "L02>L02": 0.267
   },
   "songTyping": {
-   "bouts": 10,
-   "short": 10,
+   "bouts": 9,
+   "short": 9,
    "candidates": 0,
    "repeatCandidates": 2,
    "types": 0,

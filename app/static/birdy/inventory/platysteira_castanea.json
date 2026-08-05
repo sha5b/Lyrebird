@@ -3,38 +3,38 @@
  "common": "Chestnut Wattle-eye",
  "scientific": "Platysteira castanea",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 34 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
-   "label": "learned L00 \u00b7 1635 Hz \u00b7 93 ms",
+   "label": "learned L00 \u00b7 1642 Hz \u00b7 112 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0933,
-   "level": 0.6,
+   "dur": 0.112,
+   "level": 1.05,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     1505.7
-    ],
-    [
-     0.25,
-     1540.7
+     1492.1
     ],
     [
      0.375,
-     1707.0
+     1533.5
+    ],
+    [
+     0.625,
+     1775.9
     ],
     [
      1.0,
-     1804.2
+     1789.5
     ]
    ],
-   "attack": 0.008,
+   "attack": 0.004,
    "hold": true,
-   "harmonic": 0.5,
+   "harmonic": 0.1,
    "formants": [
     [
      1595.9601420802412,
@@ -47,59 +47,41 @@
      1.0
     ]
    ],
-   "gammaScale": 0.5,
+   "gammaScale": 1.0,
    "tractQ": 0.0,
    "noise": 0.85,
-   "rough": 0.4,
-   "am": 12.0,
-   "amDepth": 0.3,
+   "rough": 0.08,
    "two": true,
    "vib": {
-    "rate": 12.0,
-    "depth": 0.05
+    "rate": 8.0,
+    "depth": 0.09
    },
    "fricative": true,
    "learned": {
-    "members": 28,
-    "resynthesisCosine": 0.7058,
-    "rivalCosine": 0.3642,
+    "members": 22,
+    "resynthesisCosine": 0.6579,
+    "rivalCosine": 0.459,
     "nearestOwn": true,
-    "f0ErrorPercent": 3.27
+    "f0ErrorPercent": 4.64
    }
   },
   {
-   "id": "L02",
-   "label": "learned L02 \u00b7 5890 Hz \u00b7 47 ms",
+   "id": "L03",
+   "label": "learned L03 \u00b7 1803 Hz \u00b7 31 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0466,
+   "dur": 0.0307,
    "level": 1.35,
-   "timbre": "buzz",
+   "timbre": "reed",
    "contour": [
     [
      0.0,
-     5897.7
-    ],
-    [
-     0.25,
-     6393.7
-    ],
-    [
-     0.5,
-     5627.7
-    ],
-    [
-     0.625,
-     5898.2
-    ],
-    [
-     0.75,
-     5655.1
+     1809.0
     ],
     [
      1.0,
-     5898.6
+     1797.7
     ]
    ],
    "attack": 0.008,
@@ -108,37 +90,22 @@
    "formants": [
     [
      6000.0,
-     4.0,
-     0.5
-    ],
-    [
-     1919.8885853658714,
-     4.0,
-     0.5
-    ],
-    [
-     6830.618534315889,
-     4.0,
-     0.5
+     6.0,
+     0.6
     ]
    ],
-   "gammaScale": 1.5,
-   "tractQ": 3.0,
-   "noise": 0.6,
-   "rough": 0.65,
+   "gammaScale": 1.0,
+   "tractQ": 0.0,
+   "noise": 0.85,
+   "rough": 0.4,
    "amDepth": 0.6,
-   "am": 80.0,
-   "vib": {
-    "rate": 4.0,
-    "depth": 0.025
-   },
-   "fricative": true,
+   "am": 25.0,
    "learned": {
-    "members": 6,
-    "resynthesisCosine": 0.6879,
-    "rivalCosine": 0.4498,
+    "members": 8,
+    "resynthesisCosine": 0.9104,
+    "rivalCosine": 0.3738,
     "nearestOwn": true,
-    "f0ErrorPercent": 39.47
+    "f0ErrorPercent": -0.58
    }
   }
  ],
@@ -151,10 +118,10 @@
    "confidence": "invented",
    "refs": [],
    "sequence": [
-    "L02",
+    "L03",
     "L00",
     "L00",
-    "L02",
+    "L03",
     "L00",
     "L00"
    ],
@@ -169,32 +136,34 @@
  ],
  "grammar": {
   "start": [
-   "L02"
+   "L03",
+   "L00"
   ],
   "transitions": {
    "L00": {
-    "L00": 0.7857,
-    "L02": 0.1429,
-    "end": 0.0714
+    "L00": 0.8095,
+    "L03": 0.1905
    },
-   "L02": {
-    "L00": 1.0
+   "L03": {
+    "L00": 0.5714,
+    "L03": 0.4286
    }
   },
   "gaps": {
-   "L00>L00": 0.117,
-   "L00>L02": 0.124,
-   "L02>L00": 0.475
+   "L00>L00": 0.195,
+   "L00>L03": 0.021,
+   "L03>L00": 0.699,
+   "L03>L03": 0.117
   },
   "songTyping": {
    "bouts": 2,
-   "short": 0,
-   "candidates": 2,
+   "short": 1,
+   "candidates": 1,
    "repeatCandidates": 0,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,
-   "unplaced": 2,
+   "unplaced": 1,
    "minClusterSize": 6
   }
  }

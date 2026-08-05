@@ -3,58 +3,15 @@
  "common": "Gilded Hummingbird",
  "scientific": "Hylocharis chrysura",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 3 syllable types fitted from 37 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 32 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
-   "id": "L03",
-   "label": "learned L03 \u00b7 457 Hz \u00b7 28 ms",
+   "id": "L04",
+   "label": "learned L04 \u00b7 1155 Hz \u00b7 59 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.028,
-   "level": 0.45,
-   "timbre": "reed",
-   "contour": [
-    [
-     0.0,
-     457.6
-    ],
-    [
-     1.0,
-     455.6
-    ]
-   ],
-   "attack": 0.008,
-   "hold": false,
-   "harmonic": 0.2,
-   "formants": [
-    [
-     4071.3,
-     6.0,
-     0.15
-    ]
-   ],
-   "gammaScale": 6.0,
-   "tractQ": 3.0,
-   "noise": 0.85,
-   "rough": 0.65,
-   "amDepth": 0.8,
-   "am": 140.0,
-   "learned": {
-    "members": 2,
-    "resynthesisCosine": 0.8377,
-    "rivalCosine": 0.1715,
-    "nearestOwn": true,
-    "f0ErrorPercent": 4.41
-   }
-  },
-  {
-   "id": "L01",
-   "label": "learned L01 \u00b7 1013 Hz \u00b7 83 ms",
-   "function": "",
-   "confidence": "unlabelled",
-   "refs": [],
-   "dur": 0.0827,
+   "dur": 0.0587,
    "level": 1.35,
    "timbre": "buzz",
    "contour": [
@@ -68,104 +25,112 @@
     ],
     [
      0.25,
-     656.5
-    ],
-    [
-     0.375,
-     637.2
+     1517.7
     ],
     [
      0.5,
-     1256.2
+     1083.9
     ],
     [
      0.625,
      1286.6
     ],
     [
-     0.75,
-     603.5
-    ],
-    [
      0.875,
-     1128.8
+     532.3
     ],
     [
      1.0,
      939.1
     ]
    ],
-   "attack": 0.016,
+   "attack": 0.03,
    "hold": false,
-   "harmonic": 1.0,
-   "am": 25.0,
-   "amDepth": 0.0,
-   "formants": [
-    [
-     4071.3,
-     6.0,
-     0.15
-    ]
-   ],
-   "gammaScale": 2.0,
+   "harmonic": 0.7,
+   "gammaScale": 6.0,
    "tractQ": 0.0,
    "noise": 0.85,
-   "rough": 0.4,
+   "rough": 0.08,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
    "learned": {
-    "members": 9,
-    "resynthesisCosine": 0.6803,
-    "rivalCosine": 0.2637,
+    "members": 7,
+    "resynthesisCosine": 0.7362,
+    "rivalCosine": 0.2253,
     "nearestOwn": true,
-    "f0ErrorPercent": 10.45
+    "f0ErrorPercent": -0.41
    }
   },
   {
    "id": "L02",
-   "label": "learned L02 \u00b7 8546 Hz \u00b7 141 ms",
+   "label": "learned L02 \u00b7 8612 Hz \u00b7 139 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.1413,
+   "dur": 0.1387,
    "level": 0.9,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     8601.2
-    ],
-    [
-     0.875,
-     8422.9
+     8597.9
     ],
     [
      1.0,
-     8616.6
+     8625.3
     ]
    ],
-   "attack": 0.03,
+   "attack": 0.004,
    "hold": true,
    "harmonic": 0.0,
-   "am": 12.0,
-   "amDepth": 0.15,
+   "gammaScale": 1.0,
+   "tractQ": 3.0,
+   "noise": 0.25,
+   "rough": 0.0,
+   "amDepth": 0.6,
+   "am": 140.0,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.09
+   },
+   "fricative": true,
    "formants": [
     [
-     4071.3,
-     6.0,
-     0.15
+     845.2861410183435,
+     2.0,
+     2.0
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     2.0
     ]
    ],
-   "gammaScale": 0.5,
-   "rough": 0.4,
-   "vib": {
-    "rate": 8.0,
-    "depth": 0.01
-   },
    "learned": {
-    "members": 26,
-    "resynthesisCosine": 0.6334,
-    "rivalCosine": 0.086,
+    "members": 25,
+    "resynthesisCosine": 0.7409,
+    "rivalCosine": 0.4552,
     "nearestOwn": true,
-    "f0ErrorPercent": -0.63
+    "f0ErrorPercent": -8.95
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      17195.8
+     ],
+     [
+      1.0,
+      17250.6
+     ]
+    ],
+    "gamma": 100950.57854150143,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.2
    }
   }
  ],
@@ -189,251 +154,32 @@
  "grammar": {
   "start": [
    "L02",
-   "L01"
+   "L04"
   ],
   "transitions": {
-   "L01": {
-    "L01": 0.5556,
-    "L02": 0.2222,
-    "L03": 0.2222
-   },
    "L02": {
-    "L02": 0.8077,
-    "end": 0.1923
+    "L02": 0.84,
+    "end": 0.16
    },
-   "L03": {
-    "L01": 0.5,
-    "end": 0.5
+   "L04": {
+    "L04": 0.7143,
+    "L02": 0.2857
    }
   },
   "gaps": {
-   "L01>L01": 0.107,
-   "L01>L02": 0.052,
-   "L01>L03": 0.184,
-   "L02>L02": 0.088
+   "L02>L02": 0.117,
+   "L04>L02": 0.063,
+   "L04>L04": 0.139
   },
-  "chunks": [
-   {
-    "sequence": [
-     "L01",
-     "L03",
-     "L01"
-    ],
-    "count": 473,
-    "species": [
-     "acanthisitta_chloris",
-     "accipiter_cirrocephalus",
-     "accipiter_fasciatus",
-     "acridotheres_grandis",
-     "acrocephalus_bistrigiceps",
-     "aegithalos_caudatus",
-     "aimophila_ruficeps",
-     "aix_sponsa",
-     "alcippe_brunneicauda",
-     "amazilia_yucatanensis",
-     "anarhynchus_alexandrinus",
-     "anhinga_novaehollandiae",
-     "anodorhynchus_hyacinthinus",
-     "anthobaphes_violacea",
-     "aplonis_panayensis",
-     "apteryx_mantelli",
-     "ara_chloropterus",
-     "aramides_mangle",
-     "arremon_semitorquatus",
-     "artemisiospiza_belli",
-     "asthenes_modesta",
-     "bambusicola_thoracicus",
-     "bangsia_edwardsi",
-     "bangsia_melanochlamys",
-     "basilinna_leucotis",
-     "biatas_nigropectus",
-     "bonasa_umbellus",
-     "botaurus_stellaris",
-     "calidris_fuscicollis",
-     "campephaga_flava",
-     "cantorchilus_nigricapillus",
-     "caprimulgus_macrurus",
-     "cepphus_columba",
-     "cercomacra_nigricans",
-     "cercomacroides_tyrannina",
-     "chamaeza_nobilis",
-     "charadrius_melodus",
-     "chlorestes_notata",
-     "chrysococcyx_caprius",
-     "cichlopsis_leucogenys",
-     "cinclocerthia_gutturalis",
-     "circus_aeruginosus",
-     "cisticola_fulvicapilla",
-     "clibanornis_rectirostris",
-     "clibanornis_rubiginosus",
-     "coccothraustes_vespertinus",
-     "colaptes_auratus",
-     "colibri_coruscans",
-     "colibri_delphinae",
-     "colinus_virginianus",
-     "coloeus_monedula",
-     "colorhamphus_parvirostris",
-     "contopus_virens",
-     "crithagra_scotops",
-     "culicicapa_ceylonensis",
-     "curruca_subalpina",
-     "cyanocorax_beecheii",
-     "dendrocoptes_medius",
-     "dicaeum_australe",
-     "dicaeum_ignipectus",
-     "diglossa_humeralis",
-     "diopsittaca_nobilis",
-     "donacobius_atricapilla",
-     "drymophila_malura",
-     "dryobates_passerinus",
-     "dysithamnus_mentalis",
-     "egretta_caerulea",
-     "elaenia_flavogaster",
-     "elanoides_forficatus",
-     "empidonax_hammondii",
-     "empidonax_oberholseri",
-     "epinecrophylla_ornata",
-     "eubucco_bourcierii",
-     "eudyptula_minor",
-     "eurostopodus_mystacalis",
-     "formicivora_grisea",
-     "fringilla_montifringilla",
-     "fringilla_spodiogenys",
-     "fulica_americana",
-     "geotrygon_chrysia",
-     "gerygone_fusca",
-     "glaucidium_jardinii",
-     "grallaria_squamigera",
-     "grallaricula_ferrugineipectus",
-     "graydidascalus_brachyurus",
-     "hemitriccus_flammulatus",
-     "hemixos_castanonotus",
-     "herpsilochmus_axillaris",
-     "hierococcyx_nisicolor",
-     "hylocharis_chrysura",
-     "hypopyrrhus_pyrohypogaster",
-     "jacana_spinosa",
-     "lanius_ludovicianus",
-     "larus_glaucescens",
-     "leiothlypis_ruficapilla",
-     "locustella_mandelli",
-     "machlolophus_holsti",
-     "mecocerculus_leucophrys",
-     "megascops_kennicottii",
-     "melanerpes_uropygialis",
-     "melospiza_melodia",
-     "menura_novaehollandiae",
-     "merops_persicus",
-     "metallura_tyrianthina",
-     "mimus_gundlachii",
-     "mimus_polyglottos",
-     "monticola_solitarius",
-     "motacilla_citreola",
-     "myiodynastes_hemichrysus",
-     "myiothlypis_coronata",
-     "myiothlypis_nigrocristata",
-     "myophonus_insularis",
-     "myrmelastes_schistaceus",
-     "myrmoborus_leucophrys",
-     "myrmoborus_lophotes",
-     "myrmoderus_ferrugineus",
-     "myrmornis_torquata",
-     "oenanthe_familiaris",
-     "oporornis_agilis",
-     "ornorectes_cristatus",
-     "ortalis_cinereiceps",
-     "ortalis_vetula",
-     "orthopsittaca_manilatus",
-     "oxyura_jamaicensis",
-     "pachycephala_aurea",
-     "pachycephala_griseonota",
-     "pachysylvia_decurtata",
-     "panurus_biarmicus",
-     "parus_monticolus",
-     "passer_montanus",
-     "passerina_caerulea",
-     "passerina_cyanea",
-     "patagioenas_picazuro",
-     "penelope_dabbenei",
-     "phacellodomus_ruber",
-     "phaeoptila_sordida",
-     "phaethornis_guy",
-     "phalaropus_tricolor",
-     "pheugopedius_atrogularis",
-     "pheugopedius_mystacalis",
-     "phyllomyias_griseocapilla",
-     "phylloscartes_ventralis",
-     "phylloscopus_trivirgatus",
-     "pitta_versicolor",
-     "podargus_ocellatus",
-     "poecile_carolinensis",
-     "poliocrania_exsul",
-     "prinia_hodgsonii",
-     "psilopogon_zeylanicus",
-     "psiloscops_flammeolus",
-     "psittacara_mitratus",
-     "psittacula_columboides",
-     "pterorhinus_berthemyi",
-     "ptilonorhynchus_violaceus",
-     "pycnonotus_luteolus",
-     "pyrrhomyias_cinnamomeus",
-     "ramphocaenus_melanurus",
-     "rhegmatorhina_melanosticta",
-     "rhipidura_rufifrons",
-     "saltator_olivascens",
-     "saxicola_torquatus",
-     "scytalopus_alvarezlopezi",
-     "sphyrapicus_ruber",
-     "spizella_pusilla",
-     "stelgidopteryx_ruficollis",
-     "stephanoaetus_coronatus",
-     "sterna_paradisaea",
-     "stigmatura_budytoides",
-     "strix_nebulosa",
-     "strix_uralensis",
-     "suthora_webbiana",
-     "synallaxis_castanea",
-     "synallaxis_ruficapilla",
-     "tarphonomus_certhioides",
-     "tarsiger_cyanurus",
-     "tarsiger_johnstoniae",
-     "tauraco_livingstonii",
-     "telophorus_viridis",
-     "thalasseus_sandvicensis",
-     "thamnophilus_nigriceps",
-     "thamnophilus_unicolor",
-     "thamnophilus_zarumae",
-     "theristicus_melanopis",
-     "todirostrum_cinereum",
-     "troglodytes_aedon",
-     "trogon_caligatus",
-     "trogon_elegans",
-     "turdus_assimilis",
-     "turdus_serranus",
-     "turdus_subalaris",
-     "tympanuchus_pallidicinctus",
-     "tyrannus_forficatus",
-     "tyto_alba",
-     "upupa_epops",
-     "urodynamis_taitensis",
-     "vanellus_coronatus",
-     "xipholena_punicea",
-     "zapornia_fusca",
-     "zosterops_ceylonensis",
-     "zosterops_japonicus"
-    ],
-    "pmi": 0.277
-   }
-  ],
   "songTyping": {
-   "bouts": 6,
-   "short": 5,
-   "candidates": 1,
+   "bouts": 4,
+   "short": 4,
+   "candidates": 0,
    "repeatCandidates": 3,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,
-   "unplaced": 1,
+   "unplaced": 0,
    "minClusterSize": 6
   }
  }

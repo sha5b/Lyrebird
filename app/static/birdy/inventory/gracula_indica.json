@@ -1,0 +1,185 @@
+{
+ "id": "gracula_indica",
+ "common": "Southern Hill Myna",
+ "scientific": "Gracula indica",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 24 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2685 Hz \u00b7 333 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.3334,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2670.5
+    ],
+    [
+     0.125,
+     2797.0
+    ],
+    [
+     1.0,
+     2592.3
+    ]
+   ],
+   "attack": 0.068,
+   "hold": false,
+   "harmonic": 0.35,
+   "am": 23.12,
+   "amDepth": 0.15,
+   "vib": {
+    "rate": 4.06,
+    "depth": 0.05
+   },
+   "formants": [
+    [
+     2696.4,
+     8.0,
+     2.0
+    ],
+    [
+     8089.2,
+     8.0,
+     2.0
+    ],
+    [
+     3192.5863689730877,
+     8.0,
+     2.0
+    ],
+    [
+     6830.618534315889,
+     8.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 2.0,
+   "fricative": true,
+   "learned": {
+    "members": 18,
+    "resynthesisCosine": 0.6205,
+    "rivalCosine": -0.2838,
+    "nearestOwn": true,
+    "f0ErrorPercent": 12.8
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 5198 Hz \u00b7 92 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.092,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4776.3
+    ],
+    [
+     0.25,
+     4592.3
+    ],
+    [
+     0.375,
+     5768.9
+    ],
+    [
+     1.0,
+     5769.9
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.7,
+   "formants": [
+    [
+     2696.4,
+     6.0,
+     0.3
+    ],
+    [
+     8089.2,
+     6.0,
+     0.1
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 0.0,
+   "noise": 0.12,
+   "rough": 0.65,
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.5742,
+    "rivalCosine": -0.1259,
+    "nearestOwn": true,
+    "f0ErrorPercent": 39.53
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L01",
+    "L00",
+    "L00",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6667,
+    "end": 0.2222,
+    "L01": 0.1111
+   },
+   "L01": {
+    "end": 0.6,
+    "L00": 0.4
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.063,
+   "L00>L01": 0.331,
+   "L01>L00": 0.617
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 6,
+   "candidates": 1,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6
+  }
+ }
+}

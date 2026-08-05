@@ -3,81 +3,70 @@
  "common": "Papuan Scrubwren",
  "scientific": "Aethomyias papuensis",
  "bank": "learned",
- "summary": "Learned from 1 field recordings: 2 syllable types fitted from 35 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 33 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
-   "label": "learned L00 \u00b7 2085 Hz \u00b7 51 ms",
+   "label": "learned L00 \u00b7 2126 Hz \u00b7 51 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0507,
-   "level": 1.2,
-   "timbre": "reed",
+   "level": 0.35,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
-     2110.8
+     2097.7
     ],
     [
      0.125,
-     2068.5
+     2319.8
     ],
     [
-     0.25,
-     2319.4
+     0.375,
+     2211.6
+    ],
+    [
+     0.625,
+     2403.5
     ],
     [
      0.75,
-     1941.4
+     2028.0
+    ],
+    [
+     0.875,
+     1841.0
     ],
     [
      1.0,
-     2006.2
+     2032.3
     ]
    ],
-   "attack": 0.008,
+   "attack": 0.002,
    "hold": true,
-   "harmonic": 0.9,
-   "formants": [
-    [
-     4071.3,
-     2.0,
-     2.0
-    ],
-    [
-     2289.5188831594724,
-     2.0,
-     2.0
-    ],
-    [
-     7893.0853838443245,
-     2.0,
-     2.0
-    ]
-   ],
-   "gammaScale": 1.5,
-   "tractQ": 3.0,
+   "harmonic": 0.5,
+   "gammaScale": 6.0,
    "noise": 0.85,
-   "rough": 0.65,
-   "am": 80.0,
+   "rough": 0.4,
+   "am": 140.0,
    "amDepth": 0.3,
-   "fricative": true,
    "learned": {
     "members": 21,
-    "resynthesisCosine": 0.8799,
-    "rivalCosine": 0.8458,
+    "resynthesisCosine": 0.881,
+    "rivalCosine": 0.7647,
     "nearestOwn": true,
-    "f0ErrorPercent": 4.08
+    "f0ErrorPercent": 4.42
    }
   },
   {
    "id": "L02",
-   "label": "learned L02 \u00b7 3395 Hz \u00b7 83 ms",
+   "label": "learned L02 \u00b7 3510 Hz \u00b7 72 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0827,
+   "dur": 0.072,
    "level": 1.05,
    "timbre": "buzz",
    "contour": [
@@ -86,51 +75,32 @@
      3490.4
     ],
     [
+     0.25,
+     3478.9
+    ],
+    [
      0.875,
      3614.3
     ],
     [
      1.0,
-     3101.2
+     3459.0
     ]
    ],
-   "attack": 0.008,
+   "attack": 0.0066,
    "hold": true,
-   "harmonic": 0.9,
-   "formants": [
-    [
-     4071.3,
-     2.0,
-     0.5
-    ],
-    [
-     3741.776844777196,
-     2.0,
-     0.5
-    ],
-    [
-     7893.0853838443245,
-     2.0,
-     0.5
-    ]
-   ],
+   "harmonic": 0.5,
    "gammaScale": 4.5,
-   "tractQ": 0.0,
-   "noise": 0.6,
+   "noise": 0.4,
    "rough": 0.2,
-   "am": 12.0,
-   "amDepth": 0.0,
-   "vib": {
-    "rate": 34.0,
-    "depth": 0.05
-   },
-   "fricative": true,
+   "amDepth": 0.15,
+   "am": 45.0,
    "learned": {
-    "members": 14,
-    "resynthesisCosine": 0.8628,
-    "rivalCosine": 0.8456,
-    "nearestOwn": true,
-    "f0ErrorPercent": 4.4
+    "members": 12,
+    "resynthesisCosine": 0.824,
+    "rivalCosine": 0.8377,
+    "nearestOwn": false,
+    "f0ErrorPercent": 14.7
    }
   }
  ],
@@ -166,21 +136,21 @@
   ],
   "transitions": {
    "L00": {
-    "L00": 0.619,
-    "L02": 0.2381,
+    "L00": 0.6667,
+    "L02": 0.1905,
     "end": 0.1429
    },
    "L02": {
-    "L02": 0.4286,
-    "L00": 0.3571,
-    "end": 0.2143
+    "L02": 0.4167,
+    "L00": 0.3333,
+    "end": 0.25
    }
   },
   "gaps": {
-   "L00>L00": 0.12,
-   "L00>L02": 0.027,
-   "L02>L00": 0.051,
-   "L02>L02": 0.045
+   "L00>L00": 0.135,
+   "L00>L02": 0.06,
+   "L02>L00": 0.055,
+   "L02>L02": 0.061
   },
   "songTyping": {
    "bouts": 6,

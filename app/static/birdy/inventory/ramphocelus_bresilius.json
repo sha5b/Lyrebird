@@ -1,0 +1,246 @@
+{
+ "id": "ramphocelus_bresilius",
+ "common": "Brazilian Tanager",
+ "scientific": "Ramphocelus bresilius",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 702 Hz \u00b7 69 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0693,
+   "level": 0.3,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     623.6
+    ],
+    [
+     0.125,
+     741.3
+    ],
+    [
+     0.25,
+     641.5
+    ],
+    [
+     0.375,
+     659.9
+    ],
+    [
+     0.5,
+     792.4
+    ],
+    [
+     0.625,
+     856.1
+    ],
+    [
+     0.75,
+     659.2
+    ],
+    [
+     0.875,
+     730.6
+    ],
+    [
+     1.0,
+     649.5
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.0,
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "noise": 0.6,
+   "rough": 0.4,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.5382,
+    "rivalCosine": -0.3401,
+    "nearestOwn": true,
+    "f0ErrorPercent": 18.12
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      311.8
+     ],
+     [
+      0.125,
+      370.65
+     ],
+     [
+      0.25,
+      320.75
+     ],
+     [
+      0.375,
+      329.95
+     ],
+     [
+      0.5,
+      396.2
+     ],
+     [
+      0.625,
+      428.05
+     ],
+     [
+      0.75,
+      329.6
+     ],
+     [
+      0.875,
+      365.3
+     ],
+     [
+      1.0,
+      324.75
+     ]
+    ],
+    "gamma": 4116.001305825768,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.02
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3519 Hz \u00b7 75 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0747,
+   "level": 1.0944756269454956,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3626.9
+    ],
+    [
+     0.25,
+     3439.2
+    ],
+    [
+     0.375,
+     3582.2
+    ],
+    [
+     0.625,
+     3525.3
+    ],
+    [
+     0.75,
+     3347.0
+    ],
+    [
+     1.0,
+     3604.8
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.85,
+   "gammaScale": 6.0,
+   "tractQ": 0.23857079386520297,
+   "noise": 0.0,
+   "rough": 0.0,
+   "fricative": true,
+   "formants": [
+    [
+     3192.5863689730877,
+     8.0,
+     2.0
+    ],
+    [
+     6830.618534315889,
+     8.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.6133,
+    "rivalCosine": -0.1582,
+    "nearestOwn": true,
+    "f0ErrorPercent": -8.76
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L01",
+    "L01",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L01": 0.375,
+    "L00": 0.375,
+    "end": 0.25
+   },
+   "L01": {
+    "end": 0.4737,
+    "L01": 0.2632,
+    "L00": 0.2632
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.219,
+   "L00>L01": 0.139,
+   "L01>L00": 0.277,
+   "L01>L01": 0.707
+  },
+  "songTyping": {
+   "bouts": 11,
+   "short": 8,
+   "candidates": 3,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 3,
+   "minClusterSize": 6
+  }
+ }
+}

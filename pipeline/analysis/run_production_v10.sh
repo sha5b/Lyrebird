@@ -33,11 +33,19 @@
 #     made no difference to the species count (2 488 either way), so it removed a confound
 #     rather than buying coverage.
 #
-# THE ONE RECIPE DEVIATION: `learn --jobs 8`. v9 ran the fit serially and took 2 h 58 m; this
-# corpus is 15 % larger and the machine has 28 cores. `cli.py`'s own help states a pool gives
-# "identical results, all cores" (the critic embeds once in the parent, workers fit species
-# independently) and there is no realism term here to disable it. Recorded as a deviation
-# anyway, because a claim of identity is still a claim.
+# THE DEVIATION THAT WAS ATTEMPTED AND DID NOT HAPPEN: `learn --jobs 8`. The intent was to
+# parallelise a fit that took v9 2 h 58 m serially on a corpus 15 % smaller. **The flag was
+# silently ignored and the fit ran serially, exactly as v9 did.** `learn.py:3492` refuses the
+# pool whenever `--inverse` is passed — the encoder holds a torch model that cannot cross into
+# a worker process — and this recipe passes `--inverse`, so the pool was never built:
+#
+#   learn.log:5  --jobs 8 ignored: the inverse encoder holds a torch model and cannot
+#                cross into a worker process — fitting serially
+#
+# The flag is left in place because removing it would erase the record of the attempt, and
+# because the outcome is the better one: v10's fit used v9's method, so the comparison between
+# them is of the corpus and nothing else. Measured: 3 h 03 m against v9's 2 h 58 m.
+# To actually parallelise, `--inverse` would have to go — which changes the recipe.
 #
 # Order matters and is not arbitrary — see run_production_v9.sh for the reasoning behind each
 # stage. The current inventory is NOT touched: everything lands in a staging directory and the

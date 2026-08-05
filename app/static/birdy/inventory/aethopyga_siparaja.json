@@ -1,0 +1,281 @@
+{
+ "id": "aethopyga_siparaja",
+ "common": "Crimson Sunbird",
+ "scientific": "Aethopyga siparaja",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 40 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 535 Hz \u00b7 400 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.4,
+   "level": 1.2,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     463.0
+    ],
+    [
+     0.125,
+     526.4
+    ],
+    [
+     0.25,
+     718.4
+    ],
+    [
+     0.375,
+     648.6
+    ],
+    [
+     0.5,
+     448.8
+    ],
+    [
+     0.625,
+     471.8
+    ],
+    [
+     0.75,
+     598.7
+    ],
+    [
+     0.875,
+     495.4
+    ],
+    [
+     1.0,
+     499.7
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.7,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.4
+   },
+   "formants": [
+    [
+     3192.5863689730877,
+     8.0,
+     1.0
+    ],
+    [
+     6830.618534315889,
+     8.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 20.0,
+   "noise": 0.12,
+   "rough": 0.4,
+   "amDepth": 0.8,
+   "am": 30.0,
+   "fricative": true,
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.5822,
+    "rivalCosine": 0.3556,
+    "nearestOwn": true,
+    "f0ErrorPercent": 19.26
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4665 Hz \u00b7 93 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0933,
+   "level": 0.9,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4652.6
+    ],
+    [
+     1.0,
+     4676.5
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     1919.8885853658714,
+     8.0,
+     2.0
+    ],
+    [
+     5083.5393171114765,
+     8.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 3.0,
+   "noise": 0.0,
+   "rough": 0.4,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.01
+   },
+   "amDepth": 0.15,
+   "am": 140.0,
+   "fricative": true,
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.3517,
+    "rivalCosine": -0.1975,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.6
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 5490 Hz \u00b7 209 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2093,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4860.7
+    ],
+    [
+     0.125,
+     5441.6
+    ],
+    [
+     0.25,
+     6473.9
+    ],
+    [
+     0.375,
+     6614.4
+    ],
+    [
+     0.5,
+     5697.8
+    ],
+    [
+     0.625,
+     5570.0
+    ],
+    [
+     0.75,
+     4968.0
+    ],
+    [
+     1.0,
+     4624.3
+    ]
+   ],
+   "attack": 0.056,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.207,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.333
+   },
+   "formants": [
+    [
+     6830.618534315889,
+     2.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 6.0,
+   "noise": 0.05,
+   "rough": 0.65,
+   "fricative": true,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.4525,
+    "rivalCosine": 0.4699,
+    "nearestOwn": false,
+    "f0ErrorPercent": 27.69
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L02",
+    "L02",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L02",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6667,
+    "L02": 0.3333
+   },
+   "L01": {
+    "L01": 0.85,
+    "L02": 0.15
+   },
+   "L02": {
+    "L02": 0.5455,
+    "L01": 0.2727,
+    "L00": 0.1818
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.084,
+   "L00>L02": 0.112,
+   "L01>L01": 0.029,
+   "L01>L02": 0.288,
+   "L02>L00": 0.053,
+   "L02>L01": 0.029,
+   "L02>L02": 0.1
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 0,
+   "candidates": 3,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 3,
+   "minClusterSize": 6
+  }
+ }
+}

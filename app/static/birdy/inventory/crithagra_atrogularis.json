@@ -3,98 +3,83 @@
  "common": "Black-throated Canary",
  "scientific": "Crithagra atrogularis",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 26 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
-   "id": "L00",
-   "label": "learned L00 \u00b7 484 Hz \u00b7 83 ms",
+   "id": "L02",
+   "label": "learned L02 \u00b7 450 Hz \u00b7 140 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0827,
-   "level": 0.3,
-   "timbre": "buzz",
+   "dur": 0.14,
+   "level": 0.9,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
-     464.6
-    ],
-    [
-     0.125,
-     491.5
+     439.4
     ],
     [
      0.375,
-     458.1
+     446.2
     ],
     [
-     0.75,
-     491.3
-    ],
-    [
-     0.875,
-     486.0
+     0.5,
+     470.9
     ],
     [
      1.0,
-     513.0
+     442.9
     ]
    ],
-   "attack": 0.0187,
+   "attack": 0.004,
    "hold": true,
-   "harmonic": 0.0,
-   "am": 140.0,
-   "amDepth": 0.8,
-   "vib": {
-    "rate": 34.0,
-    "depth": 0.09
-   },
+   "harmonic": 0.9,
    "formants": [
     [
      4378.3,
      6.0,
-     0.6
+     0.15
     ]
    ],
-   "tractQ": 0.0,
-   "rough": 0.2,
    "gammaScale": 0.5,
+   "tractQ": 1.4124633793156056,
+   "noise": 0.0,
+   "rough": 0.65,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.025
+   },
    "two": true,
    "learned": {
-    "members": 19,
-    "resynthesisCosine": 0.7361,
-    "rivalCosine": -0.0781,
+    "members": 18,
+    "resynthesisCosine": 0.874,
+    "rivalCosine": -0.1624,
     "nearestOwn": true,
-    "f0ErrorPercent": -6.27
+    "f0ErrorPercent": -0.72
    },
    "voices": {
     "contour": [
      [
       0.0,
-      232.3
-     ],
-     [
-      0.125,
-      245.75
+      219.7
      ],
      [
       0.375,
-      229.05
+      223.1
      ],
      [
-      0.75,
-      245.65
-     ],
-     [
-      0.875,
-      243.0
+      0.5,
+      235.45
      ],
      [
       1.0,
-      256.5
+      221.45
      ]
     ],
-    "gamma": 1200.0,
+    "gamma": 1317.866804253323,
     "level": 0.7,
     "tracheaCm": 2.0,
     "refl": 0.9,
@@ -138,25 +123,29 @@
    ],
    "attack": 0.0507,
    "hold": false,
-   "harmonic": 0.7,
+   "harmonic": 0.35,
    "am": 12.5,
-   "amDepth": 0.3,
+   "amDepth": 0.294,
    "formants": [
     [
      4378.3,
      6.0,
-     0.6
+     0.15
     ]
    ],
    "gammaScale": 3.0,
    "tractQ": 30.0,
    "two": true,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.01
+   },
    "learned": {
     "members": 7,
-    "resynthesisCosine": 0.9025,
-    "rivalCosine": -0.2042,
+    "resynthesisCosine": 0.8847,
+    "rivalCosine": -0.2191,
     "nearestOwn": true,
-    "f0ErrorPercent": -23.87
+    "f0ErrorPercent": -23.62
    }
   }
  ],
@@ -169,8 +158,8 @@
    "confidence": "invented",
    "refs": [],
    "sequence": [
-    "L00",
-    "L00"
+    "L01",
+    "L01"
    ],
    "gaps": [
     0.06
@@ -179,28 +168,28 @@
  ],
  "grammar": {
   "start": [
-   "L00",
-   "L01"
+   "L01",
+   "L02"
   ],
   "transitions": {
-   "L00": {
-    "L00": 0.7368,
-    "end": 0.2632
-   },
    "L01": {
-    "L01": 0.5,
-    "end": 0.5
+    "end": 0.5714,
+    "L01": 0.4286
+   },
+   "L02": {
+    "L02": 0.8333,
+    "end": 0.1667
    }
   },
   "gaps": {
-   "L00>L00": 0.045,
-   "L01>L01": 0.051
+   "L01>L01": 0.051,
+   "L02>L02": 0.032
   },
   "songTyping": {
-   "bouts": 8,
-   "short": 8,
+   "bouts": 7,
+   "short": 7,
    "candidates": 0,
-   "repeatCandidates": 2,
+   "repeatCandidates": 4,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,

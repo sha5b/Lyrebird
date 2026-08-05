@@ -1,0 +1,168 @@
+{
+ "id": "cygnus_olor",
+ "common": "Mute Swan",
+ "scientific": "Cygnus olor",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 690 Hz \u00b7 40 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.04,
+   "level": 1.05,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     711.5
+    ],
+    [
+     0.125,
+     678.0
+    ],
+    [
+     0.75,
+     699.8
+    ],
+    [
+     0.875,
+     661.1
+    ],
+    [
+     1.0,
+     700.1
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.1,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 2.0,
+   "noise": 0.12,
+   "rough": 0.65,
+   "two": true,
+   "learned": {
+    "members": 21,
+    "resynthesisCosine": 0.7109,
+    "rivalCosine": -0.0134,
+    "nearestOwn": true,
+    "f0ErrorPercent": 26.84
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 1399 Hz \u00b7 168 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.168,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1408.5
+    ],
+    [
+     1.0,
+     1390.4
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 80.0,
+   "amDepth": 0.15,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.121
+   },
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 0.5,
+   "two": true,
+   "tractQ": 30.0,
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.3116,
+    "rivalCosine": -0.52,
+    "nearestOwn": true,
+    "f0ErrorPercent": -7.47
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L01",
+    "L00",
+    "L00",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5714,
+    "L01": 0.2381,
+    "end": 0.1905
+   },
+   "L01": {
+    "L00": 0.5714,
+    "L01": 0.4286
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.067,
+   "L00>L01": 0.227,
+   "L01>L00": 0.193,
+   "L01>L01": 0.029
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 4,
+   "candidates": 1,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6
+  }
+ }
+}

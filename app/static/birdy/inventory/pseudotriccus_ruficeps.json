@@ -1,0 +1,258 @@
+{
+ "id": "pseudotriccus_ruficeps",
+ "common": "Rufous-headed Pygmy-Tyrant",
+ "scientific": "Pseudotriccus ruficeps",
+ "bank": "learned",
+ "summary": "Learned from 3 field recordings: 3 syllable types fitted from 41 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 892 Hz \u00b7 37 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0373,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     811.3
+    ],
+    [
+     0.125,
+     949.8
+    ],
+    [
+     0.25,
+     908.2
+    ],
+    [
+     0.5,
+     924.0
+    ],
+    [
+     0.625,
+     847.1
+    ],
+    [
+     0.75,
+     823.3
+    ],
+    [
+     0.875,
+     986.6
+    ],
+    [
+     1.0,
+     901.9
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     6000.0,
+     6.0,
+     0.3
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 0.0,
+   "noise": 0.25,
+   "rough": 0.65,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.8306,
+    "rivalCosine": 0.7586,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.31
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4732 Hz \u00b7 97 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0973,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4783.4
+    ],
+    [
+     0.125,
+     4755.6
+    ],
+    [
+     0.25,
+     4077.9
+    ],
+    [
+     0.5,
+     5216.8
+    ],
+    [
+     0.625,
+     5204.0
+    ],
+    [
+     0.75,
+     4619.2
+    ],
+    [
+     1.0,
+     4565.8
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     845.2861410183435,
+     2.0,
+     0.5
+    ],
+    [
+     5083.5393171114765,
+     2.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 0.0,
+   "noise": 0.85,
+   "rough": 0.65,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.09
+   },
+   "fricative": true,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.6326,
+    "rivalCosine": 0.639,
+    "nearestOwn": false,
+    "f0ErrorPercent": -1.71
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 6245 Hz \u00b7 31 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0307,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     6238.4
+    ],
+    [
+     1.0,
+     6252.2
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.2,
+   "formants": [
+    [
+     1063.304792525682,
+     2.0,
+     0.5
+    ],
+    [
+     6830.618534315889,
+     2.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
+   "noise": 0.85,
+   "rough": 0.65,
+   "amDepth": 0.6,
+   "am": 30.0,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.05
+   },
+   "fricative": true,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.8812,
+    "rivalCosine": 0.7528,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.39
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L02",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.5556,
+    "L00": 0.4444
+   },
+   "L01": {
+    "end": 0.75,
+    "L00": 0.25
+   },
+   "L02": {
+    "L02": 0.4167,
+    "end": 0.4167,
+    "L01": 0.1667
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.344,
+   "L01>L00": 0.196,
+   "L02>L01": 0.116,
+   "L02>L02": 0.109
+  },
+  "songTyping": {
+   "bouts": 21,
+   "short": 20,
+   "candidates": 1,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6
+  }
+ }
+}

@@ -1,0 +1,166 @@
+{
+ "id": "pica_serica",
+ "common": "Oriental Magpie",
+ "scientific": "Pica serica",
+ "bank": "learned",
+ "summary": "Learned from 3 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 783 Hz \u00b7 157 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1573,
+   "level": 0.9322004914283752,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     823.4
+    ],
+    [
+     0.125,
+     1013.8
+    ],
+    [
+     0.25,
+     864.5
+    ],
+    [
+     0.375,
+     765.8
+    ],
+    [
+     0.625,
+     674.5
+    ],
+    [
+     0.875,
+     739.0
+    ],
+    [
+     1.0,
+     656.3
+    ]
+   ],
+   "attack": 0.12,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 12.0,
+   "amDepth": 0.0,
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
+   "noise": 0.8500000238418579,
+   "rough": 0.65,
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.4695,
+    "rivalCosine": 0.2263,
+    "nearestOwn": true,
+    "f0ErrorPercent": -10.71
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2422 Hz \u00b7 80 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.08,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2792.5
+    ],
+    [
+     0.5,
+     2641.6
+    ],
+    [
+     1.0,
+     1925.0
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "gammaScale": 0.5,
+   "tractQ": 3.0,
+   "noise": 0.85,
+   "rough": 0.4,
+   "two": true,
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.1443,
+    "rivalCosine": 0.3158,
+    "nearestOwn": false,
+    "f0ErrorPercent": 9.69
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.4375,
+    "L00": 0.375,
+    "L01": 0.1875
+   },
+   "L01": {
+    "L01": 0.5714,
+    "L00": 0.2143,
+    "end": 0.2143
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.096,
+   "L00>L01": 0.619,
+   "L01>L00": 0.053,
+   "L01>L01": 0.248
+  },
+  "songTyping": {
+   "bouts": 10,
+   "short": 8,
+   "candidates": 2,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6
+  }
+ }
+}

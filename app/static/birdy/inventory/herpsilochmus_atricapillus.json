@@ -3,100 +3,85 @@
  "common": "Black-capped Antwren",
  "scientific": "Herpsilochmus atricapillus",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
-   "id": "L00",
-   "label": "learned L00 \u00b7 583 Hz \u00b7 224 ms",
+   "id": "L02",
+   "label": "learned L02 \u00b7 2275 Hz \u00b7 27 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.224,
-   "level": 1.35,
-   "timbre": "buzz",
-   "contour": [
-    [
-     0.0,
-     796.1
-    ],
-    [
-     0.125,
-     622.2
-    ],
-    [
-     0.25,
-     608.7
-    ],
-    [
-     0.375,
-     486.0
-    ],
-    [
-     0.5,
-     431.0
-    ],
-    [
-     0.75,
-     442.0
-    ],
-    [
-     0.875,
-     569.9
-    ],
-    [
-     1.0,
-     836.4
-    ]
-   ],
-   "attack": 0.016,
-   "hold": true,
-   "harmonic": 0.9,
-   "gammaScale": 6.0,
-   "tractQ": 0.0,
-   "noise": 0.8500000238418579,
-   "rough": 0.08,
-   "learned": {
-    "members": 1,
-    "resynthesisCosine": 0.7473,
-    "rivalCosine": -0.1073,
-    "nearestOwn": true,
-    "f0ErrorPercent": -25.32
-   }
-  },
-  {
-   "id": "L01",
-   "label": "learned L01 \u00b7 2296 Hz \u00b7 35 ms",
-   "function": "",
-   "confidence": "unlabelled",
-   "refs": [],
-   "dur": 0.0347,
-   "level": 1.05,
+   "dur": 0.0267,
+   "level": 0.35,
    "timbre": "pure",
    "contour": [
     [
      0.0,
-     2299.7
+     2284.6
     ],
     [
      1.0,
-     2292.1
+     2264.5
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.2,
+   "tractQ": 12.0,
+   "noise": 0.6,
+   "two": true,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.05
+   },
+   "am": 12.0,
+   "amDepth": 0.45,
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.8993,
+    "rivalCosine": 0.7462,
+    "nearestOwn": true,
+    "f0ErrorPercent": 6.96
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2300 Hz \u00b7 41 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0413,
+   "level": 0.30000001192092896,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     2305.5
+    ],
+    [
+     1.0,
+     2295.2
     ]
    ],
    "attack": 0.016,
-   "hold": false,
+   "hold": true,
    "harmonic": 0.1,
-   "gammaScale": 0.8559424138686498,
-   "tractQ": 6.0,
+   "gammaScale": 0.8377557774445549,
+   "tractQ": 3.0,
    "noise": 0.05,
    "rough": 0.6499999761581421,
-   "amDepth": 0.6,
-   "am": 25.0,
+   "amDepth": 0.8,
+   "am": 140.0,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.025
+   },
    "learned": {
-    "members": 30,
-    "resynthesisCosine": 0.8082,
-    "rivalCosine": -0.2564,
+    "members": 26,
+    "resynthesisCosine": 0.8126,
+    "rivalCosine": 0.7972,
     "nearestOwn": true,
-    "f0ErrorPercent": 0.3
+    "f0ErrorPercent": 5.25
    }
   }
  ],
@@ -109,40 +94,41 @@
    "confidence": "invented",
    "refs": [],
    "sequence": [
+    "L02",
     "L01",
     "L01"
    ],
    "gaps": [
+    0.06,
     0.06
    ]
   }
  ],
  "grammar": {
   "start": [
-   "L01",
-   "L00"
+   "L02"
   ],
   "transitions": {
-   "L00": {
-    "end": 1.0
-   },
    "L01": {
-    "L01": 0.9333,
-    "end": 0.0667
+    "L01": 1.0
+   },
+   "L02": {
+    "L01": 1.0
    }
   },
   "gaps": {
-   "L01>L01": 0.021
+   "L01>L01": 0.021,
+   "L02>L01": 0.023
   },
   "songTyping": {
-   "bouts": 3,
-   "short": 3,
-   "candidates": 0,
-   "repeatCandidates": 2,
+   "bouts": 2,
+   "short": 1,
+   "candidates": 1,
+   "repeatCandidates": 1,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,
-   "unplaced": 0,
+   "unplaced": 1,
    "minClusterSize": 6
   }
  }

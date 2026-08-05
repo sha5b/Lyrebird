@@ -3,7 +3,7 @@
  "common": "Half-collared Kingfisher",
  "scientific": "Alcedo semitorquata",
  "bank": "learned",
- "summary": "Learned from 1 field recordings: 3 syllable types fitted from 38 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 39 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L03",
@@ -44,91 +44,109 @@
    "hold": false,
    "harmonic": 0.0,
    "gammaScale": 1.5,
-   "tractQ": 12.0,
+   "tractQ": 0.0,
    "noise": 0.05,
    "rough": 0.65,
-   "amDepth": 0.6,
+   "amDepth": 0.45,
    "am": 45.0,
    "learned": {
     "members": 8,
-    "resynthesisCosine": 0.631,
-    "rivalCosine": 0.2957,
+    "resynthesisCosine": 0.6154,
+    "rivalCosine": 0.3403,
     "nearestOwn": true,
     "f0ErrorPercent": -1.8
    }
   },
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 1864 Hz \u00b7 55 ms",
+   "label": "learned L01 \u00b7 1971 Hz \u00b7 53 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0547,
-   "level": 1.05,
+   "dur": 0.0533,
+   "level": 0.3,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     1878.4
+     1922.7
     ],
     [
-     0.75,
-     1808.4
+     0.375,
+     1888.6
+    ],
+    [
+     0.5,
+     2035.0
+    ],
+    [
+     0.625,
+     1934.3
+    ],
+    [
+     0.875,
+     1936.2
     ],
     [
      1.0,
-     1906.4
+     2119.5
     ]
    ],
-   "attack": 0.0053,
+   "attack": 0.004,
    "hold": true,
    "harmonic": 0.0,
-   "gammaScale": 0.5,
-   "tractQ": 6.0,
-   "noise": 0.12,
+   "gammaScale": 1.5,
+   "tractQ": 12.0,
+   "noise": 0.85,
    "rough": 0.65,
+   "am": 45.0,
+   "amDepth": 0.0,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
    "learned": {
-    "members": 16,
-    "resynthesisCosine": 0.5857,
-    "rivalCosine": 0.2941,
+    "members": 17,
+    "resynthesisCosine": 0.6123,
+    "rivalCosine": 0.1436,
     "nearestOwn": true,
-    "f0ErrorPercent": -1.99
+    "f0ErrorPercent": 7.12
    }
   },
   {
    "id": "L02",
-   "label": "learned L02 \u00b7 5770 Hz \u00b7 136 ms",
+   "label": "learned L02 \u00b7 5756 Hz \u00b7 136 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.136,
-   "level": 1.35,
-   "timbre": "reed",
+   "level": 0.9,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
-     5697.5
+     5670.3
     ],
     [
      1.0,
      5843.1
     ]
    ],
-   "attack": 0.06,
+   "attack": 0.12,
    "hold": true,
-   "harmonic": 0.0,
+   "harmonic": 0.35,
    "gammaScale": 1.0,
-   "tractQ": 20.0,
+   "tractQ": 0.0,
    "noise": 0.0,
-   "rough": 0.0,
-   "amDepth": 0.6,
-   "am": 25.0,
+   "rough": 0.08,
+   "am": 45.0,
+   "amDepth": 0.3,
    "learned": {
     "members": 14,
-    "resynthesisCosine": 0.6867,
-    "rivalCosine": 0.1966,
+    "resynthesisCosine": 0.6369,
+    "rivalCosine": 0.3269,
     "nearestOwn": true,
-    "f0ErrorPercent": -0.59
+    "f0ErrorPercent": -0.67
    }
   }
  ],
@@ -164,9 +182,9 @@
   ],
   "transitions": {
    "L01": {
-    "L01": 0.4667,
-    "L02": 0.3333,
-    "end": 0.2
+    "L01": 0.5625,
+    "L02": 0.25,
+    "end": 0.1875
    },
    "L02": {
     "end": 0.4615,
@@ -181,10 +199,10 @@
   },
   "gaps": {
    "L01>L01": 0.112,
-   "L01>L02": 0.392,
+   "L01>L02": 0.403,
    "L02>L01": 0.487,
    "L02>L03": 0.141,
-   "L03>L01": 0.631,
+   "L03>L01": 0.484,
    "L03>L02": 0.225,
    "L03>L03": 0.468
   },

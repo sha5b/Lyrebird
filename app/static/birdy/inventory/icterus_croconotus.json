@@ -1,0 +1,245 @@
+{
+ "id": "icterus_croconotus",
+ "common": "Orange-backed Oriole",
+ "scientific": "Icterus croconotus",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 46 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2128 Hz \u00b7 241 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2414,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     1839.8
+    ],
+    [
+     1.0,
+     2461.4
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.35,
+   "formants": [
+    [
+     2289.5188831594724,
+     2.0,
+     0.5
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 0.5,
+   "tractQ": 30.0,
+   "noise": 0.12,
+   "rough": 0.08,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.01
+   },
+   "two": true,
+   "fricative": true,
+   "learned": {
+    "members": 14,
+    "resynthesisCosine": 0.7573,
+    "rivalCosine": 0.3491,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.68
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2652 Hz \u00b7 29 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0294,
+   "level": 0.35,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2643.4
+    ],
+    [
+     1.0,
+     2659.7
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.1,
+   "formants": [
+    [
+     2696.4,
+     6.0,
+     1.0
+    ],
+    [
+     8089.2,
+     6.0,
+     0.3333
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 30.0,
+   "noise": 0.4,
+   "rough": 0.2,
+   "am": 12.0,
+   "amDepth": 0.3,
+   "fricative": true,
+   "learned": {
+    "members": 10,
+    "resynthesisCosine": 0.8265,
+    "rivalCosine": -0.0023,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.5
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 3206 Hz \u00b7 271 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2707,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2798.8
+    ],
+    [
+     1.0,
+     3673.2
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     2696.4,
+     2.0,
+     2.0
+    ],
+    [
+     8089.2,
+     2.0,
+     2.0
+    ],
+    [
+     3192.5863689730877,
+     2.0,
+     2.0
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     2.0
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 0.0,
+   "noise": 0.0,
+   "rough": 0.0,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.01
+   },
+   "fricative": true,
+   "learned": {
+    "members": 22,
+    "resynthesisCosine": 0.7294,
+    "rivalCosine": 0.2114,
+    "nearestOwn": true,
+    "f0ErrorPercent": -1.48
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02",
+    "L00",
+    "L02",
+    "L00",
+    "L02",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L02": 0.5385,
+    "end": 0.3077,
+    "L01": 0.1538
+   },
+   "L01": {
+    "L02": 0.5,
+    "end": 0.3,
+    "L00": 0.2
+   },
+   "L02": {
+    "L00": 0.4545,
+    "end": 0.2273,
+    "L02": 0.1818,
+    "L01": 0.1364
+   }
+  },
+  "gaps": {
+   "L00>L01": 0.033,
+   "L00>L02": 0.56,
+   "L01>L00": 0.247,
+   "L01>L02": 0.429,
+   "L02>L00": 0.505,
+   "L02>L01": 0.576,
+   "L02>L02": 0.239
+  },
+  "songTyping": {
+   "bouts": 12,
+   "short": 4,
+   "candidates": 8,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 8,
+   "minClusterSize": 6
+  }
+ }
+}

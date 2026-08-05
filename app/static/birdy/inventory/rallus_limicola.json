@@ -1,0 +1,196 @@
+{
+ "id": "rallus_limicola",
+ "common": "Virginia Rail",
+ "scientific": "Rallus limicola",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 33 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 474 Hz \u00b7 40 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.04,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     471.8
+    ],
+    [
+     1.0,
+     475.6
+    ]
+   ],
+   "attack": 0.016,
+   "hold": false,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     1073.5,
+     6.0,
+     0.6
+    ],
+    [
+     3220.4,
+     6.0,
+     0.2
+    ],
+    [
+     5367.3,
+     6.0,
+     0.12
+    ],
+    [
+     7514.2,
+     6.0,
+     0.0857
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 3.0,
+   "noise": 0.0,
+   "rough": 0.65,
+   "amDepth": 0.8,
+   "am": 140.0,
+   "two": false,
+   "learned": {
+    "members": 24,
+    "resynthesisCosine": 0.7931,
+    "rivalCosine": 0.5788,
+    "nearestOwn": true,
+    "f0ErrorPercent": 5.55
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3020 Hz \u00b7 35 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0347,
+   "level": 0.6,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3154.7
+    ],
+    [
+     0.625,
+     3152.7
+    ],
+    [
+     0.75,
+     2539.2
+    ],
+    [
+     0.875,
+     3152.7
+    ],
+    [
+     1.0,
+     3152.7
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 37.5,
+   "amDepth": 0.0,
+   "formants": [
+    [
+     1073.5,
+     6.0,
+     0.6
+    ],
+    [
+     3220.4,
+     6.0,
+     0.2
+    ],
+    [
+     5367.3,
+     6.0,
+     0.12
+    ],
+    [
+     7514.2,
+     6.0,
+     0.0857
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 12.0,
+   "noise": 0.4,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.025
+   },
+   "rough": 0.4,
+   "learned": {
+    "members": 9,
+    "resynthesisCosine": 0.6135,
+    "rivalCosine": 0.1919,
+    "nearestOwn": true,
+    "f0ErrorPercent": 7.25
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.8696,
+    "end": 0.1304
+   },
+   "L01": {
+    "L01": 0.5556,
+    "L00": 0.2222,
+    "end": 0.2222
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.067,
+   "L01>L00": 0.077,
+   "L01>L01": 0.109
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 4,
+   "candidates": 1,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6
+  }
+ }
+}

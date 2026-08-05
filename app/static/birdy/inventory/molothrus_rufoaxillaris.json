@@ -1,0 +1,235 @@
+{
+ "id": "molothrus_rufoaxillaris",
+ "common": "Screaming Cowbird",
+ "scientific": "Molothrus rufoaxillaris",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 34 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 3013 Hz \u00b7 147 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1467,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3361.7
+    ],
+    [
+     0.125,
+     2719.3
+    ],
+    [
+     0.25,
+     3150.8
+    ],
+    [
+     0.375,
+     3416.9
+    ],
+    [
+     0.5,
+     3260.9
+    ],
+    [
+     0.75,
+     3273.7
+    ],
+    [
+     0.875,
+     3697.9
+    ],
+    [
+     1.0,
+     1748.1
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.15
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 0.0,
+   "noise": 0.4,
+   "rough": 0.0,
+   "two": true,
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.6934,
+    "rivalCosine": 0.573,
+    "nearestOwn": true,
+    "f0ErrorPercent": 4.62
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      6723.4
+     ],
+     [
+      0.125,
+      5438.6
+     ],
+     [
+      0.25,
+      6301.6
+     ],
+     [
+      0.375,
+      6833.8
+     ],
+     [
+      0.5,
+      6521.8
+     ],
+     [
+      0.75,
+      6547.4
+     ],
+     [
+      0.875,
+      7395.8
+     ],
+     [
+      1.0,
+      3496.2
+     ]
+    ],
+    "gamma": 70640.11221814736,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.1
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4873 Hz \u00b7 136 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.136,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     4834.4
+    ],
+    [
+     0.25,
+     5204.1
+    ],
+    [
+     0.75,
+     4592.5
+    ],
+    [
+     0.875,
+     4889.5
+    ],
+    [
+     1.0,
+     4865.1
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.35,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     0.15
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 3.0,
+   "noise": 0.25,
+   "rough": 0.2,
+   "amDepth": 0.45,
+   "am": 45.0,
+   "two": true,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
+   },
+   "fricative": true,
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.767,
+    "rivalCosine": 0.2923,
+    "nearestOwn": true,
+    "f0ErrorPercent": -14.37
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7333,
+    "L01": 0.2667
+   },
+   "L01": {
+    "L01": 0.6316,
+    "L00": 0.2105,
+    "end": 0.1579
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.019,
+   "L00>L01": 0.023,
+   "L01>L00": 0.023,
+   "L01>L01": 0.107
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 2,
+   "candidates": 1,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6
+  }
+ }
+}

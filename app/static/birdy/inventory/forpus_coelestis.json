@@ -1,0 +1,200 @@
+{
+ "id": "forpus_coelestis",
+ "common": "Pacific Parrotlet",
+ "scientific": "Forpus coelestis",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 26 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2515 Hz \u00b7 174 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1738,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     2476.1
+    ],
+    [
+     0.125,
+     2594.7
+    ],
+    [
+     0.25,
+     3247.7
+    ],
+    [
+     0.5,
+     3247.6
+    ],
+    [
+     0.75,
+     2835.7
+    ],
+    [
+     0.875,
+     3976.8
+    ],
+    [
+     1.0,
+     832.8
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.1,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.293
+   },
+   "formants": [
+    [
+     2711.2989394619476,
+     8.0,
+     0.5
+    ],
+    [
+     6830.618534315889,
+     8.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 6.0,
+   "noise": 0.0,
+   "rough": 0.0,
+   "amDepth": 0.8,
+   "am": 80.0,
+   "fricative": true,
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.5957,
+    "rivalCosine": 0.5155,
+    "nearestOwn": true,
+    "f0ErrorPercent": 10.84
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 6003 Hz \u00b7 103 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1026,
+   "level": 0.482,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     5486.3
+    ],
+    [
+     0.125,
+     6185.8
+    ],
+    [
+     0.5,
+     5970.1
+    ],
+    [
+     1.0,
+     6407.6
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.05
+   },
+   "formants": [
+    [
+     654.2237665009833,
+     2.0,
+     0.5
+    ],
+    [
+     5899.517283512816,
+     2.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 4.5,
+   "tractQ": 6.0,
+   "noise": 0.25,
+   "rough": 0.65,
+   "fricative": true,
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.8175,
+    "rivalCosine": 0.6919,
+    "nearestOwn": true,
+    "f0ErrorPercent": -2.17
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L01",
+    "L01",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.6,
+    "L01": 0.4
+   },
+   "L01": {
+    "L01": 0.7,
+    "L00": 0.2,
+    "end": 0.1
+   }
+  },
+  "gaps": {
+   "L00>L01": 0.187,
+   "L01>L00": 0.084,
+   "L01>L01": 0.079
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 3,
+   "candidates": 2,
+   "repeatCandidates": 1,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6
+  }
+ }
+}

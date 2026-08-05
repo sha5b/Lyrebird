@@ -1,0 +1,223 @@
+{
+ "id": "selasphorus_sasin",
+ "common": "Allen's Hummingbird",
+ "scientific": "Selasphorus sasin",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 2 syllable types fitted from 31 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 636 Hz \u00b7 89 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0893,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     659.9
+    ],
+    [
+     0.125,
+     649.8
+    ],
+    [
+     0.25,
+     856.0
+    ],
+    [
+     0.5,
+     606.5
+    ],
+    [
+     0.75,
+     558.2
+    ],
+    [
+     0.875,
+     593.4
+    ],
+    [
+     1.0,
+     571.6
+    ]
+   ],
+   "attack": 0.03,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 17.08,
+   "amDepth": 0.0,
+   "vib": {
+    "rate": 2.04,
+    "depth": 0.05
+   },
+   "gammaScale": 0.5,
+   "tractQ": 0.0,
+   "rough": 0.2,
+   "two": true,
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.5844,
+    "rivalCosine": 0.2471,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.2
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      329.95
+     ],
+     [
+      0.125,
+      324.9
+     ],
+     [
+      0.25,
+      428.0
+     ],
+     [
+      0.5,
+      303.25
+     ],
+     [
+      0.75,
+      279.1
+     ],
+     [
+      0.875,
+      296.7
+     ],
+     [
+      1.0,
+      285.8
+     ]
+    ],
+    "gamma": 1864.2632376188988,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.02
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 2978 Hz \u00b7 117 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.1173,
+   "level": 1.0,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     4052.7
+    ],
+    [
+     0.25,
+     2817.8
+    ],
+    [
+     0.375,
+     3505.8
+    ],
+    [
+     0.5,
+     3037.8
+    ],
+    [
+     0.625,
+     2904.2
+    ],
+    [
+     0.75,
+     2441.7
+    ],
+    [
+     1.0,
+     2409.7
+    ]
+   ],
+   "attack": 0.0293,
+   "hold": false,
+   "harmonic": 0.5,
+   "am": 17.86,
+   "amDepth": 0.8,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.282
+   },
+   "gammaScale": 6.0,
+   "tractQ": 3.0,
+   "noise": 0.4,
+   "rough": 0.2,
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.5294,
+    "rivalCosine": -0.2369,
+    "nearestOwn": true,
+    "f0ErrorPercent": -25.54
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.7273,
+    "L01": 0.2727
+   },
+   "L01": {
+    "L01": 0.7895,
+    "L00": 0.2105
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.045,
+   "L00>L01": 0.136,
+   "L01>L00": 0.047,
+   "L01>L01": 0.035
+  },
+  "songTyping": {
+   "bouts": 1,
+   "short": 0,
+   "candidates": 1,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6
+  }
+ }
+}

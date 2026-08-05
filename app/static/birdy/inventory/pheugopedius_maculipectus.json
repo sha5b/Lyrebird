@@ -52,7 +52,7 @@
    "hold": false,
    "harmonic": 0.35,
    "am": 12.0,
-   "amDepth": 0.0,
+   "amDepth": 0.15,
    "formants": [
     [
      3195.0,
@@ -66,15 +66,16 @@
     ]
    ],
    "gammaScale": 1.5,
-   "tractQ": 30.0,
+   "tractQ": 12.0,
    "noise": 0.4,
-   "rough": 0.08,
+   "rough": 0.4,
+   "two": true,
    "learned": {
     "members": 5,
-    "resynthesisCosine": 0.7622,
-    "rivalCosine": 0.3615,
+    "resynthesisCosine": 0.6861,
+    "rivalCosine": 0.2131,
     "nearestOwn": true,
-    "f0ErrorPercent": -11.73
+    "f0ErrorPercent": 15.66
    }
   },
   {
@@ -84,7 +85,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0987,
-   "level": 0.75,
+   "level": 1.35,
    "timbre": "reed",
    "contour": [
     [
@@ -96,7 +97,7 @@
      2898.4
     ]
    ],
-   "attack": 0.008,
+   "attack": 0.004,
    "hold": true,
    "harmonic": 0.0,
    "formants": [
@@ -114,19 +115,19 @@
    "gammaScale": 0.5,
    "tractQ": 30.0,
    "noise": 0.05,
-   "rough": 0.65,
+   "rough": 0.2,
+   "am": 25.0,
+   "amDepth": 0.3,
    "vib": {
     "rate": 34.0,
-    "depth": 0.025
+    "depth": 0.01
    },
-   "am": 12.0,
-   "amDepth": 0.3,
    "learned": {
     "members": 21,
-    "resynthesisCosine": 0.63,
-    "rivalCosine": -0.17,
+    "resynthesisCosine": 0.5873,
+    "rivalCosine": -0.2005,
     "nearestOwn": true,
-    "f0ErrorPercent": -2.23
+    "f0ErrorPercent": -1.37
    }
   },
   {
@@ -136,8 +137,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.212,
-   "level": 0.9,
-   "timbre": "pure",
+   "level": 1.2,
+   "timbre": "buzz",
    "contour": [
     [
      0.0,
@@ -154,8 +155,8 @@
    ],
    "attack": 0.03,
    "hold": true,
-   "harmonic": 0.9,
-   "am": 45.0,
+   "harmonic": 0.7,
+   "am": 12.0,
    "amDepth": 0.3,
    "formants": [
     [
@@ -170,18 +171,14 @@
     ]
    ],
    "gammaScale": 6.0,
-   "tractQ": 3.0,
-   "noise": 0.12,
-   "rough": 0.4,
+   "tractQ": 0.0,
+   "noise": 0.25,
+   "rough": 0.2,
    "two": true,
-   "vib": {
-    "rate": 8.0,
-    "depth": 0.025
-   },
    "learned": {
     "members": 18,
-    "resynthesisCosine": 0.5446,
-    "rivalCosine": 0.4797,
+    "resynthesisCosine": 0.3941,
+    "rivalCosine": 0.1692,
     "nearestOwn": true,
     "f0ErrorPercent": -5.43
    }

@@ -1,0 +1,249 @@
+{
+ "id": "centropus_phasianinus",
+ "common": "Pheasant Coucal",
+ "scientific": "Centropus phasianinus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 3 syllable types fitted from 39 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 642 Hz \u00b7 84 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.084,
+   "level": 0.30000001192092896,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     656.9
+    ],
+    [
+     0.125,
+     661.0
+    ],
+    [
+     0.375,
+     553.1
+    ],
+    [
+     0.5,
+     642.0
+    ],
+    [
+     0.875,
+     646.2
+    ],
+    [
+     1.0,
+     705.3
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "gammaScale": 2.0,
+   "tractQ": 3.0,
+   "noise": 0.05,
+   "rough": 0.2,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 12,
+    "resynthesisCosine": 0.797,
+    "rivalCosine": 0.7822,
+    "nearestOwn": true,
+    "f0ErrorPercent": 11.18
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 784 Hz \u00b7 80 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.08,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     681.4
+    ],
+    [
+     0.25,
+     849.3
+    ],
+    [
+     0.375,
+     693.8
+    ],
+    [
+     0.5,
+     820.0
+    ],
+    [
+     0.75,
+     761.8
+    ],
+    [
+     0.875,
+     864.0
+    ],
+    [
+     1.0,
+     838.2
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 1.5,
+   "tractQ": 3.0,
+   "noise": 0.4,
+   "rough": 0.65,
+   "am": 12.0,
+   "amDepth": 0.15,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 20,
+    "resynthesisCosine": 0.8029,
+    "rivalCosine": 0.7745,
+    "nearestOwn": true,
+    "f0ErrorPercent": 3.67
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 3501 Hz \u00b7 88 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.088,
+   "level": 0.9,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3759.7
+    ],
+    [
+     0.125,
+     3475.9
+    ],
+    [
+     0.375,
+     3948.7
+    ],
+    [
+     0.5,
+     3942.0
+    ],
+    [
+     0.625,
+     3690.4
+    ],
+    [
+     0.75,
+     3668.7
+    ],
+    [
+     0.875,
+     2864.5
+    ],
+    [
+     1.0,
+     2864.2
+    ]
+   ],
+   "attack": 0.06,
+   "hold": false,
+   "harmonic": 0.1,
+   "am": 45.0,
+   "amDepth": 0.3,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.146
+   },
+   "gammaScale": 6.0,
+   "noise": 0.25,
+   "rough": 0.65,
+   "two": true,
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.5669,
+    "rivalCosine": -0.3895,
+    "nearestOwn": true,
+    "f0ErrorPercent": 16.06
+   },
+   "respiration": {
+    "tauX": 0.01,
+    "tauP": 0.03162277660168379,
+    "alphaI": 0.05,
+    "alphaRel": 0.125,
+    "forcing": 63.24555320336759
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L02"
+   ],
+   "gaps": []
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L02",
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L01": 0.6667,
+    "L00": 0.1667,
+    "L02": 0.1667
+   },
+   "L01": {
+    "L01": 0.5789,
+    "L00": 0.4211
+   },
+   "L02": {
+    "end": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.115,
+   "L00>L01": 0.068,
+   "L00>L02": 0.213,
+   "L01>L00": 0.176,
+   "L01>L01": 0.024
+  },
+  "songTyping": {
+   "bouts": 7,
+   "short": 6,
+   "candidates": 1,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6
+  }
+ }
+}

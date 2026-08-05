@@ -1,0 +1,275 @@
+{
+ "id": "guttera_edouardi",
+ "common": "Southern Crested Guineafowl",
+ "scientific": "Guttera edouardi",
+ "bank": "learned",
+ "summary": "Learned from 1 field recordings: 3 syllable types fitted from 43 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 885 Hz \u00b7 45 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0453,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     839.2
+    ],
+    [
+     0.125,
+     861.0
+    ],
+    [
+     0.25,
+     658.9
+    ],
+    [
+     0.375,
+     736.6
+    ],
+    [
+     0.5,
+     1261.1
+    ],
+    [
+     0.625,
+     1110.7
+    ],
+    [
+     0.75,
+     875.4
+    ],
+    [
+     0.875,
+     831.5
+    ],
+    [
+     1.0,
+     933.7
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "formants": [
+    [
+     4071.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 0.0,
+   "noise": 0.0,
+   "rough": 0.0,
+   "two": false,
+   "amDepth": 0.0,
+   "am": 80.0,
+   "learned": {
+    "members": 8,
+    "resynthesisCosine": 0.5564,
+    "rivalCosine": 0.3791,
+    "nearestOwn": true,
+    "f0ErrorPercent": 31.03
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      419.6
+     ],
+     [
+      0.125,
+      430.5
+     ],
+     [
+      0.25,
+      329.45
+     ],
+     [
+      0.375,
+      368.3
+     ],
+     [
+      0.5,
+      630.55
+     ],
+     [
+      0.625,
+      555.35
+     ],
+     [
+      0.75,
+      437.7
+     ],
+     [
+      0.875,
+      415.75
+     ],
+     [
+      1.0,
+      466.85
+     ]
+    ],
+    "gamma": 2594.3333410448377,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.02
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 3990 Hz \u00b7 232 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.232,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     3895.0
+    ],
+    [
+     1.0,
+     4087.0
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.5,
+   "formants": [
+    [
+     4071.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "noise": 0.05,
+   "rough": 0.4,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.01
+   },
+   "tractQ": 20.0,
+   "learned": {
+    "members": 7,
+    "resynthesisCosine": 0.4269,
+    "rivalCosine": 0.4171,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.46
+   }
+  },
+  {
+   "id": "L02",
+   "label": "learned L02 \u00b7 4039 Hz \u00b7 212 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.212,
+   "level": 1.2,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     3985.6
+    ],
+    [
+     1.0,
+     4093.3
+    ]
+   ],
+   "attack": 0.03,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     4071.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "tractQ": 3.0,
+   "learned": {
+    "members": 28,
+    "resynthesisCosine": 0.4322,
+    "rivalCosine": 0.3648,
+    "nearestOwn": true,
+    "f0ErrorPercent": 0.13
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L02",
+    "L02",
+    "L01",
+    "L02"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L02"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.5,
+    "L02": 0.25,
+    "end": 0.25
+   },
+   "L01": {
+    "L02": 1.0
+   },
+   "L02": {
+    "L02": 0.7037,
+    "L01": 0.2222,
+    "L00": 0.0741
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.032,
+   "L00>L02": 0.216,
+   "L01>L02": 0.119,
+   "L02>L00": 0.229,
+   "L02>L01": 0.161,
+   "L02>L02": 0.04
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 1,
+   "candidates": 2,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6
+  }
+ }
+}

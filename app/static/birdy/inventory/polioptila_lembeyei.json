@@ -1,0 +1,156 @@
+{
+ "id": "polioptila_lembeyei",
+ "common": "Cuban Gnatcatcher",
+ "scientific": "Polioptila lembeyei",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 483 Hz \u00b7 43 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0427,
+   "level": 0.45,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     434.3
+    ],
+    [
+     1.0,
+     538.1
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.9,
+   "am": 140.0,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     5063.7,
+     6.0,
+     0.6
+    ]
+   ],
+   "gammaScale": 0.5,
+   "rough": 0.65,
+   "two": true,
+   "learned": {
+    "members": 4,
+    "resynthesisCosine": 0.6925,
+    "rivalCosine": -0.2596,
+    "nearestOwn": true,
+    "f0ErrorPercent": -3.13
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4938 Hz \u00b7 51 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0507,
+   "level": 0.75,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     5285.5
+    ],
+    [
+     1.0,
+     4612.9
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
+   "am": 25.0,
+   "amDepth": 0.45,
+   "formants": [
+    [
+     5063.7,
+     8.0,
+     1.0
+    ],
+    [
+     845.2861410183435,
+     8.0,
+     1.0
+    ],
+    [
+     5083.5393171114765,
+     8.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 1.5,
+   "tractQ": 3.0,
+   "rough": 0.65,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.025
+   },
+   "fricative": true,
+   "learned": {
+    "members": 26,
+    "resynthesisCosine": 0.4459,
+    "rivalCosine": -0.2378,
+    "nearestOwn": true,
+    "f0ErrorPercent": 2.9
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "end": 0.5,
+    "L00": 0.5
+   },
+   "L01": {
+    "L01": 0.8846,
+    "end": 0.1154
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.203,
+   "L01>L01": 0.088
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 5,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

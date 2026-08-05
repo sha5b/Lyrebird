@@ -1,0 +1,190 @@
+{
+ "id": "leiothlypis_virginiae",
+ "common": "Virginia's Warbler",
+ "scientific": "Leiothlypis virginiae",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 30 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 634 Hz \u00b7 48 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.048,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     654.7
+    ],
+    [
+     0.125,
+     624.5
+    ],
+    [
+     0.25,
+     646.4
+    ],
+    [
+     0.375,
+     713.8
+    ],
+    [
+     0.5,
+     704.8
+    ],
+    [
+     0.625,
+     621.8
+    ],
+    [
+     0.75,
+     611.2
+    ],
+    [
+     1.0,
+     513.4
+    ]
+   ],
+   "attack": 0.004,
+   "hold": false,
+   "harmonic": 0.9,
+   "am": 31.25,
+   "amDepth": 0.8,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "rough": 0.65,
+   "two": true,
+   "vib": {
+    "rate": 4.0,
+    "depth": 0.09
+   },
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.6371,
+    "rivalCosine": 0.0757,
+    "nearestOwn": true,
+    "f0ErrorPercent": 15.18
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 4805 Hz \u00b7 91 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0907,
+   "level": 1.3429744243621826,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     4805.2
+    ],
+    [
+     0.25,
+     4558.3
+    ],
+    [
+     1.0,
+     5065.7
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.1,
+   "formants": [
+    [
+     4378.3,
+     6.0,
+     1.0
+    ]
+   ],
+   "gammaScale": 1.0,
+   "tractQ": 3.0,
+   "noise": 0.0,
+   "rough": 0.0,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.025
+   },
+   "amDepth": 0.0,
+   "am": 25.0,
+   "two": true,
+   "learned": {
+    "members": 15,
+    "resynthesisCosine": 0.5964,
+    "rivalCosine": -0.0288,
+    "nearestOwn": true,
+    "f0ErrorPercent": -0.17
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L01",
+    "L01",
+    "L00",
+    "L00",
+    "L01",
+    "L01"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L01",
+   "L00"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6667,
+    "end": 0.2,
+    "L01": 0.1333
+   },
+   "L01": {
+    "L01": 0.6667,
+    "L00": 0.2,
+    "end": 0.1333
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.14,
+   "L00>L01": 0.252,
+   "L01>L00": 0.061,
+   "L01>L01": 0.071
+  },
+  "songTyping": {
+   "bouts": 5,
+   "short": 3,
+   "candidates": 2,
+   "repeatCandidates": 0,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 2,
+   "minClusterSize": 6
+  }
+ }
+}

@@ -1,0 +1,182 @@
+{
+ "id": "tapera_naevia",
+ "common": "Striped Cuckoo",
+ "scientific": "Tapera naevia",
+ "bank": "learned",
+ "summary": "Learned from 3 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 2829 Hz \u00b7 221 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.2213,
+   "level": 0.3,
+   "timbre": "reed",
+   "contour": [
+    [
+     0.0,
+     2680.5
+    ],
+    [
+     1.0,
+     2984.7
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.5,
+   "formants": [
+    [
+     2696.4,
+     6.0,
+     1.0
+    ],
+    [
+     8089.2,
+     6.0,
+     0.3333
+    ]
+   ],
+   "gammaScale": 2.0,
+   "tractQ": 12.0,
+   "noise": 0.25,
+   "rough": 0.2,
+   "amDepth": 0.8,
+   "am": 140.0,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.05
+   },
+   "learned": {
+    "members": 19,
+    "resynthesisCosine": 0.7247,
+    "rivalCosine": -0.0773,
+    "nearestOwn": true,
+    "f0ErrorPercent": 5.84
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 5043 Hz \u00b7 44 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.044,
+   "level": 0.3,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5052.3
+    ],
+    [
+     0.25,
+     5265.2
+    ],
+    [
+     0.375,
+     4808.1
+    ],
+    [
+     0.625,
+     4598.2
+    ],
+    [
+     0.75,
+     4663.3
+    ],
+    [
+     0.875,
+     5545.4
+    ],
+    [
+     1.0,
+     5454.4
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.1,
+   "formants": [
+    [
+     3741.776844777196,
+     4.0,
+     0.5
+    ],
+    [
+     6830.618534315889,
+     4.0,
+     0.5
+    ]
+   ],
+   "gammaScale": 6.0,
+   "tractQ": 0.0,
+   "noise": 0.85,
+   "rough": 0.08,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
+   },
+   "am": 80.0,
+   "amDepth": 0.3,
+   "fricative": true,
+   "learned": {
+    "members": 6,
+    "resynthesisCosine": 0.8473,
+    "rivalCosine": 0.081,
+    "nearestOwn": true,
+    "f0ErrorPercent": 39.67
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.6842,
+    "end": 0.3158
+   },
+   "L01": {
+    "end": 0.6667,
+    "L01": 0.3333
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.272,
+   "L01>L01": 0.128
+  },
+  "songTyping": {
+   "bouts": 10,
+   "short": 10,
+   "candidates": 0,
+   "repeatCandidates": 4,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

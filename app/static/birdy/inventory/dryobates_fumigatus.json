@@ -1,0 +1,172 @@
+{
+ "id": "dryobates_fumigatus",
+ "common": "Smoky-brown Woodpecker",
+ "scientific": "Dryobates fumigatus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 33 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 501 Hz \u00b7 85 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0854,
+   "level": 0.45,
+   "timbre": "pure",
+   "contour": [
+    [
+     0.0,
+     496.1
+    ],
+    [
+     0.375,
+     490.1
+    ],
+    [
+     0.5,
+     520.1
+    ],
+    [
+     0.625,
+     500.0
+    ],
+    [
+     1.0,
+     500.1
+    ]
+   ],
+   "attack": 0.004,
+   "hold": true,
+   "harmonic": 0.2,
+   "gammaScale": 1.5,
+   "tractQ": 0.0,
+   "noise": 0.6,
+   "rough": 0.4,
+   "amDepth": 0.0,
+   "am": 25.0,
+   "learned": {
+    "members": 30,
+    "resynthesisCosine": 0.8162,
+    "rivalCosine": -0.3918,
+    "nearestOwn": true,
+    "f0ErrorPercent": 5.12
+   },
+   "voices": {
+    "contour": [
+     [
+      0.0,
+      248.05
+     ],
+     [
+      0.375,
+      245.05
+     ],
+     [
+      0.5,
+      260.05
+     ],
+     [
+      0.625,
+      250.0
+     ],
+     [
+      1.0,
+      250.05
+     ]
+    ],
+    "gamma": 1468.787777194981,
+    "level": 0.7,
+    "tracheaCm": 2.0,
+    "refl": 0.9,
+    "betaInj": 0.02
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 6098 Hz \u00b7 40 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.04,
+   "level": 0.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     6097.1
+    ],
+    [
+     1.0,
+     6099.8
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.7,
+   "gammaScale": 2.0,
+   "noise": 0.6,
+   "amDepth": 0.3,
+   "am": 30.0,
+   "rough": 0.65,
+   "vib": {
+    "rate": 22.0,
+    "depth": 0.01
+   },
+   "learned": {
+    "members": 3,
+    "resynthesisCosine": 0.9068,
+    "rivalCosine": -0.2164,
+    "nearestOwn": true,
+    "f0ErrorPercent": 20.93
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.9,
+    "end": 0.1
+   },
+   "L01": {
+    "L01": 1.0
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.027,
+   "L01>L01": 0.34
+  },
+  "songTyping": {
+   "bouts": 3,
+   "short": 3,
+   "candidates": 0,
+   "repeatCandidates": 3,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 0,
+   "minClusterSize": 6
+  }
+ }
+}

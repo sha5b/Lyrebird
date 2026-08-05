@@ -12,8 +12,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0787,
-   "level": 1.35,
-   "timbre": "buzz",
+   "level": 0.6,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
@@ -26,32 +26,23 @@
    ],
    "attack": 0.008,
    "hold": true,
-   "harmonic": 0.9,
-   "gammaScale": 0.5,
-   "tractQ": 0.0,
-   "noise": 0.12,
+   "harmonic": 0.2,
+   "gammaScale": 6.0,
+   "tractQ": 30.0,
+   "noise": 0.6,
    "rough": 0.65,
-   "amDepth": 0.45,
-   "am": 45.0,
-   "fricative": true,
-   "formants": [
-    [
-     2289.5188831594724,
-     4.0,
-     2.0
-    ],
-    [
-     5083.5393171114765,
-     4.0,
-     2.0
-    ]
-   ],
+   "am": 25.0,
+   "amDepth": 0.15,
+   "vib": {
+    "rate": 12.0,
+    "depth": 0.025
+   },
    "learned": {
     "members": 8,
-    "resynthesisCosine": 0.8059,
-    "rivalCosine": 0.408,
+    "resynthesisCosine": 0.7553,
+    "rivalCosine": 0.4022,
     "nearestOwn": true,
-    "f0ErrorPercent": -0.28
+    "f0ErrorPercent": 1.03
    }
   },
   {
@@ -61,8 +52,8 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.1093,
-   "level": 0.75,
-   "timbre": "reed",
+   "level": 0.45,
+   "timbre": "pure",
    "contour": [
     [
      0.0,
@@ -73,26 +64,25 @@
      2656.8
     ]
    ],
-   "attack": 0.004,
+   "attack": 0.016,
    "hold": true,
-   "harmonic": 0.7,
-   "gammaScale": 0.5,
-   "tractQ": 12.0,
+   "harmonic": 0.5,
+   "gammaScale": 0.6237466145398076,
+   "tractQ": 30.0,
    "noise": 0.05,
    "rough": 0.0,
-   "two": true,
+   "amDepth": 0.6,
+   "am": 140.0,
    "vib": {
     "rate": 14.0,
-    "depth": 0.025
+    "depth": 0.01
    },
-   "amDepth": 0.6,
-   "am": 45.0,
    "learned": {
     "members": 17,
-    "resynthesisCosine": 0.7888,
-    "rivalCosine": 0.3286,
+    "resynthesisCosine": 0.7147,
+    "rivalCosine": 0.3792,
     "nearestOwn": true,
-    "f0ErrorPercent": -2.96
+    "f0ErrorPercent": -1.26
    }
   }
  ],
@@ -138,7 +128,7 @@
   },
   "gaps": {
    "L00>L00": 0.096,
-   "L00>L01": 0.171,
+   "L00>L01": 0.173,
    "L01>L00": 0.075,
    "L01>L01": 0.067
   },

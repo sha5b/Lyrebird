@@ -12,7 +12,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.088,
-   "level": 0.3,
+   "level": 0.30000001192092896,
    "timbre": "pure",
    "contour": [
     [
@@ -28,21 +28,26 @@
      1929.7
     ]
    ],
-   "attack": 0.004,
+   "attack": 0.016,
    "hold": true,
    "harmonic": 0.0,
-   "am": 12.0,
+   "am": 140.0,
    "amDepth": 0.8,
-   "gammaScale": 0.5,
+   "gammaScale": 1.0,
    "tractQ": 3.0,
+   "noise": 0.05,
    "rough": 0.65,
-   "two": true,
+   "two": false,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.01
+   },
    "learned": {
     "members": 17,
-    "resynthesisCosine": 0.6642,
-    "rivalCosine": 0.0353,
+    "resynthesisCosine": 0.7189,
+    "rivalCosine": 0.0826,
     "nearestOwn": true,
-    "f0ErrorPercent": 1.96
+    "f0ErrorPercent": 4.68
    },
    "voices": {
     "contour": [
@@ -63,45 +68,45 @@
     "level": 0.7,
     "tracheaCm": 2.0,
     "refl": 0.9,
-    "betaInj": 0.2
+    "betaInj": 0.02
    }
   },
   {
    "id": "L01",
-   "label": "learned L01 \u00b7 5579 Hz \u00b7 539 ms",
+   "label": "learned L01 \u00b7 5578 Hz \u00b7 536 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.5387,
-   "level": 0.45,
+   "dur": 0.536,
+   "level": 0.431,
    "timbre": "reed",
    "contour": [
     [
      0.0,
-     5585.6
+     5583.9
     ],
     [
      1.0,
      5571.9
     ]
    ],
-   "attack": 0.008,
+   "attack": 0.004,
    "hold": true,
    "harmonic": 0.0,
-   "gammaScale": 4.5,
+   "gammaScale": 6.0,
    "tractQ": 6.0,
    "noise": 0.4,
-   "rough": 0.0,
+   "rough": 0.65,
    "vib": {
-    "rate": 4.0,
+    "rate": 14.0,
     "depth": 0.09
    },
    "learned": {
     "members": 7,
-    "resynthesisCosine": 0.8269,
-    "rivalCosine": -0.0982,
+    "resynthesisCosine": 0.8171,
+    "rivalCosine": -0.1684,
     "nearestOwn": true,
-    "f0ErrorPercent": 10.72
+    "f0ErrorPercent": -8.35
    }
   }
  ],
@@ -138,7 +143,7 @@
   },
   "gaps": {
    "L00>L00": 0.231,
-   "L01>L01": 0.037
+   "L01>L01": 0.039
   },
   "songTyping": {
    "bouts": 6,

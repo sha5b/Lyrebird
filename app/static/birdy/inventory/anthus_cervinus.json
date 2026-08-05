@@ -3,50 +3,54 @@
  "common": "Red-throated Pipit",
  "scientific": "Anthus cervinus",
  "bank": "learned",
- "summary": "Learned from 3 field recordings: 3 syllable types fitted from 46 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 3 field recordings: 3 syllable types fitted from 41 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
-   "label": "learned L00 \u00b7 537 Hz \u00b7 129 ms",
+   "label": "learned L00 \u00b7 555 Hz \u00b7 105 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.1293,
+   "dur": 0.1053,
    "level": 0.45,
    "timbre": "buzz",
    "contour": [
     [
      0.0,
-     517.7
+     600.5
     ],
     [
-     0.25,
-     512.1
+     0.125,
+     547.5
     ],
     [
      0.375,
-     542.6
+     572.7
     ],
     [
      0.5,
-     526.6
+     548.8
+    ],
+    [
+     0.625,
+     561.6
     ],
     [
      0.75,
-     559.1
+     515.4
     ],
     [
      0.875,
-     529.6
+     522.1
     ],
     [
      1.0,
-     570.4
+     578.5
     ]
    ],
-   "attack": 0.008,
-   "hold": false,
-   "harmonic": 0.9,
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.0,
    "am": 140.0,
    "amDepth": 0.8,
    "formants": [
@@ -56,35 +60,39 @@
      0.3
     ]
    ],
-   "gammaScale": 0.5,
+   "gammaScale": 1.0,
    "tractQ": 0.0,
    "noise": 0.0,
-   "rough": 0.4,
+   "rough": 0.65,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
    "learned": {
-    "members": 30,
-    "resynthesisCosine": 0.7873,
-    "rivalCosine": 0.3548,
+    "members": 24,
+    "resynthesisCosine": 0.8244,
+    "rivalCosine": 0.5029,
     "nearestOwn": true,
-    "f0ErrorPercent": -2.71
+    "f0ErrorPercent": -1.62
    }
   },
   {
    "id": "L02",
-   "label": "learned L02 \u00b7 756 Hz \u00b7 39 ms",
+   "label": "learned L02 \u00b7 740 Hz \u00b7 37 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.0387,
-   "level": 0.3,
+   "dur": 0.0373,
+   "level": 0.45,
    "timbre": "pure",
    "contour": [
     [
      0.0,
-     731.8
+     700.7
     ],
     [
      1.0,
-     780.8
+     780.5
     ]
    ],
    "attack": 0.004,
@@ -99,20 +107,17 @@
    ],
    "gammaScale": 1.0,
    "tractQ": 3.0,
-   "noise": 0.25,
+   "noise": 0.05,
    "rough": 0.65,
    "am": 12.0,
-   "amDepth": 0.0,
-   "vib": {
-    "rate": 14.0,
-    "depth": 0.01
-   },
+   "amDepth": 0.3,
+   "two": true,
    "learned": {
-    "members": 8,
-    "resynthesisCosine": 0.7583,
-    "rivalCosine": 0.2215,
+    "members": 9,
+    "resynthesisCosine": 0.7973,
+    "rivalCosine": 0.5418,
     "nearestOwn": true,
-    "f0ErrorPercent": 2.56
+    "f0ErrorPercent": -0.28
    }
   },
   {
@@ -122,7 +127,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.0973,
-   "level": 1.2,
+   "level": 1.350000023841858,
    "timbre": "buzz",
    "contour": [
     [
@@ -159,8 +164,8 @@
    },
    "learned": {
     "members": 8,
-    "resynthesisCosine": 0.6421,
-    "rivalCosine": -0.0402,
+    "resynthesisCosine": 0.5308,
+    "rivalCosine": -0.204,
     "nearestOwn": true,
     "f0ErrorPercent": 39.35
    }
@@ -190,34 +195,36 @@
   ],
   "transitions": {
    "L00": {
-    "L00": 0.8966,
-    "L02": 0.1034
+    "L00": 0.8261,
+    "L02": 0.1739
    },
    "L01": {
     "end": 0.5714,
     "L01": 0.4286
    },
    "L02": {
-    "L02": 0.6667,
-    "L01": 0.3333
+    "L02": 0.5,
+    "L00": 0.25,
+    "L01": 0.25
    }
   },
   "gaps": {
-   "L00>L00": 0.067,
-   "L00>L02": 0.019,
+   "L00>L00": 0.064,
+   "L00>L02": 0.072,
    "L01>L01": 0.501,
+   "L02>L00": 0.175,
    "L02>L01": 0.115,
    "L02>L02": 0.029
   },
   "songTyping": {
    "bouts": 6,
-   "short": 4,
-   "candidates": 2,
-   "repeatCandidates": 2,
+   "short": 3,
+   "candidates": 3,
+   "repeatCandidates": 1,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,
-   "unplaced": 2,
+   "unplaced": 3,
    "minClusterSize": 6
   }
  }

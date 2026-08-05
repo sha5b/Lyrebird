@@ -3,42 +3,47 @@
  "common": "Kea",
  "scientific": "Nestor notabilis",
  "bank": "learned",
- "summary": "Learned from 3 field recordings: 2 syllable types fitted from 33 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 3 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
    "id": "L00",
-   "label": "learned L00 \u00b7 425 Hz \u00b7 107 ms",
+   "label": "learned L00 \u00b7 424 Hz \u00b7 96 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.1067,
-   "level": 0.3,
+   "dur": 0.096,
+   "level": 0.45,
    "timbre": "pure",
    "contour": [
     [
      0.0,
-     427.4
+     432.5
     ],
     [
      1.0,
-     421.9
+     415.6
     ]
    ],
-   "attack": 0.032,
-   "hold": false,
-   "harmonic": 0.7,
-   "am": 140.0,
-   "amDepth": 0.8,
-   "gammaScale": 0.5,
-   "tractQ": 3.0,
-   "rough": 0.2,
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.0,
+   "gammaScale": 1.0,
+   "tractQ": 30.0,
+   "noise": 0.05,
+   "rough": 0.65,
+   "amDepth": 0.15,
+   "am": 25.0,
    "two": true,
+   "vib": {
+    "rate": 34.0,
+    "depth": 0.09
+   },
    "learned": {
-    "members": 23,
-    "resynthesisCosine": 0.7201,
-    "rivalCosine": -0.0169,
+    "members": 15,
+    "resynthesisCosine": 0.7843,
+    "rivalCosine": 0.0495,
     "nearestOwn": true,
-    "f0ErrorPercent": -0.7
+    "f0ErrorPercent": -1.71
    }
   },
   {
@@ -48,7 +53,7 @@
    "confidence": "unlabelled",
    "refs": [],
    "dur": 0.1333,
-   "level": 0.5263761281967163,
+   "level": 0.45,
    "timbre": "reed",
    "contour": [
     [
@@ -68,19 +73,26 @@
      2055.0
     ]
    ],
-   "attack": 0.06,
-   "hold": false,
+   "attack": 0.008,
+   "hold": true,
    "harmonic": 0.0,
    "gammaScale": 2.0,
-   "tractQ": 12.0,
-   "noise": 0.05,
-   "rough": 0.65,
+   "tractQ": 30.0,
+   "noise": 0.12,
+   "rough": 0.08,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
+   },
+   "am": 12.0,
+   "amDepth": 0.3,
+   "two": true,
    "learned": {
     "members": 10,
-    "resynthesisCosine": 0.6429,
-    "rivalCosine": -0.048,
+    "resynthesisCosine": 0.6655,
+    "rivalCosine": 0.1542,
     "nearestOwn": true,
-    "f0ErrorPercent": 35.62
+    "f0ErrorPercent": 26.96
    },
    "voices": {
     "contour": [
@@ -105,7 +117,7 @@
     "level": 0.7,
     "tracheaCm": 2.0,
     "refl": 0.9,
-    "betaInj": 0.02
+    "betaInj": 0.05
    }
   }
  ],
@@ -133,8 +145,8 @@
   ],
   "transitions": {
    "L00": {
-    "L00": 0.8261,
-    "end": 0.1739
+    "L00": 0.8667,
+    "end": 0.1333
    },
    "L01": {
     "end": 0.6,
@@ -142,12 +154,12 @@
    }
   },
   "gaps": {
-   "L00>L00": 0.037,
+   "L00>L00": 0.045,
    "L01>L01": 0.259
   },
   "songTyping": {
-   "bouts": 10,
-   "short": 10,
+   "bouts": 8,
+   "short": 8,
    "candidates": 0,
    "repeatCandidates": 3,
    "types": 0,

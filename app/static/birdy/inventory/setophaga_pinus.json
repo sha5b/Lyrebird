@@ -1,0 +1,206 @@
+{
+ "id": "setophaga_pinus",
+ "common": "Pine Warbler",
+ "scientific": "Setophaga pinus",
+ "bank": "learned",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 27 segmented syllables. No documented function is attached to any of them.",
+ "syllables": [
+  {
+   "id": "L00",
+   "label": "learned L00 \u00b7 946 Hz \u00b7 43 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.0427,
+   "level": 1.35,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     891.7
+    ],
+    [
+     0.25,
+     1138.9
+    ],
+    [
+     0.375,
+     1022.5
+    ],
+    [
+     0.5,
+     671.9
+    ],
+    [
+     0.625,
+     990.1
+    ],
+    [
+     0.75,
+     952.7
+    ],
+    [
+     1.0,
+     1033.0
+    ]
+   ],
+   "attack": 0.016,
+   "hold": true,
+   "harmonic": 0.9,
+   "gammaScale": 6.0,
+   "tractQ": 0.0,
+   "noise": 0.8500000238418579,
+   "rough": 0.65,
+   "vib": {
+    "rate": 8.0,
+    "depth": 0.09
+   },
+   "am": 140.0,
+   "amDepth": 0.3,
+   "fricative": true,
+   "formants": [
+    [
+     845.2861410183435,
+     2.0,
+     0.5
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     0.5
+    ]
+   ],
+   "learned": {
+    "members": 11,
+    "resynthesisCosine": 0.7855,
+    "rivalCosine": 0.714,
+    "nearestOwn": true,
+    "f0ErrorPercent": 63.3
+   }
+  },
+  {
+   "id": "L01",
+   "label": "learned L01 \u00b7 5545 Hz \u00b7 68 ms",
+   "function": "",
+   "confidence": "unlabelled",
+   "refs": [],
+   "dur": 0.068,
+   "level": 1.2,
+   "timbre": "buzz",
+   "contour": [
+    [
+     0.0,
+     5302.9
+    ],
+    [
+     0.125,
+     6271.8
+    ],
+    [
+     0.25,
+     5349.1
+    ],
+    [
+     0.625,
+     5925.9
+    ],
+    [
+     0.875,
+     5492.5
+    ],
+    [
+     1.0,
+     5019.7
+    ]
+   ],
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.2,
+   "am": 45.0,
+   "amDepth": 0.15,
+   "gammaScale": 3.0,
+   "noise": 0.12,
+   "rough": 0.4,
+   "fricative": true,
+   "formants": [
+    [
+     4368.450554124434,
+     2.0,
+     2.0
+    ],
+    [
+     7893.0853838443245,
+     2.0,
+     2.0
+    ]
+   ],
+   "learned": {
+    "members": 16,
+    "resynthesisCosine": 0.6636,
+    "rivalCosine": 0.7159,
+    "nearestOwn": false,
+    "f0ErrorPercent": -7.13
+   }
+  }
+ ],
+ "songs": [
+  {
+   "id": "learned_bout",
+   "label": "learned bout",
+   "gloss": "a phrase in this bird's measured syntax",
+   "function": "",
+   "confidence": "invented",
+   "refs": [],
+   "sequence": [
+    "L00",
+    "L00",
+    "L01",
+    "L01",
+    "L00",
+    "L00"
+   ],
+   "gaps": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ]
+  }
+ ],
+ "grammar": {
+  "start": [
+   "L00",
+   "L01"
+  ],
+  "transitions": {
+   "L00": {
+    "L00": 0.3636,
+    "end": 0.3636,
+    "L01": 0.2727
+   },
+   "L01": {
+    "L01": 0.625,
+    "end": 0.25,
+    "L00": 0.125
+   }
+  },
+  "gaps": {
+   "L00>L00": 0.157,
+   "L00>L01": 0.171,
+   "L01>L00": 0.035,
+   "L01>L01": 0.024
+  },
+  "songTyping": {
+   "bouts": 8,
+   "short": 7,
+   "candidates": 1,
+   "repeatCandidates": 2,
+   "types": 0,
+   "repeatTypes": 0,
+   "inTypes": 0,
+   "unplaced": 1,
+   "minClusterSize": 6
+  }
+ }
+}

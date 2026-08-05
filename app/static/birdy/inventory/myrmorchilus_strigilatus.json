@@ -3,40 +3,30 @@
  "common": "Stripe-backed Antbird",
  "scientific": "Myrmorchilus strigilatus",
  "bank": "learned",
- "summary": "Learned from 2 field recordings: 2 syllable types fitted from 29 segmented syllables. No documented function is attached to any of them.",
+ "summary": "Learned from 2 field recordings: 2 syllable types fitted from 25 segmented syllables. No documented function is attached to any of them.",
  "syllables": [
   {
-   "id": "L02",
-   "label": "learned L02 \u00b7 624 Hz \u00b7 52 ms",
+   "id": "L04",
+   "label": "learned L04 \u00b7 755 Hz \u00b7 27 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.052,
-   "level": 0.6,
-   "timbre": "buzz",
+   "dur": 0.0267,
+   "level": 0.9,
+   "timbre": "reed",
    "contour": [
     [
      0.0,
-     509.4
-    ],
-    [
-     0.125,
-     647.4
-    ],
-    [
-     0.875,
-     699.2
+     767.0
     ],
     [
      1.0,
-     656.7
+     743.3
     ]
    ],
-   "attack": 0.016,
-   "hold": false,
-   "harmonic": 0.2,
-   "am": 140.0,
-   "amDepth": 0.8,
+   "attack": 0.008,
+   "hold": true,
+   "harmonic": 0.9,
    "formants": [
     [
      3195.0,
@@ -49,74 +39,57 @@
      0.3333
     ]
    ],
-   "tractQ": 0.0,
-   "rough": 0.65,
-   "gammaScale": 0.5,
+   "gammaScale": 2.0,
+   "tractQ": 3.0,
+   "noise": 0.05,
+   "amDepth": 0.8,
+   "am": 140.0,
+   "two": false,
+   "rough": 0.2,
    "learned": {
-    "members": 4,
-    "resynthesisCosine": 0.7005,
-    "rivalCosine": -0.0412,
+    "members": 1,
+    "resynthesisCosine": 0.9279,
+    "rivalCosine": -0.4435,
     "nearestOwn": true,
-    "f0ErrorPercent": 7.83
-   },
-   "voices": {
-    "contour": [
-     [
-      0.0,
-      254.7
-     ],
-     [
-      0.125,
-      323.7
-     ],
-     [
-      0.875,
-      349.6
-     ],
-     [
-      1.0,
-      328.35
-     ]
-    ],
-    "gamma": 1200.0,
-    "level": 0.7,
-    "tracheaCm": 2.0,
-    "refl": 0.9,
-    "betaInj": 0.02
+    "f0ErrorPercent": 11.53
    }
   },
   {
    "id": "L03",
-   "label": "learned L03 \u00b7 3143 Hz \u00b7 144 ms",
+   "label": "learned L03 \u00b7 3147 Hz \u00b7 148 ms",
    "function": "",
    "confidence": "unlabelled",
    "refs": [],
-   "dur": 0.144,
+   "dur": 0.148,
    "level": 0.45,
    "timbre": "pure",
    "contour": [
     [
      0.0,
-     2944.7
+     2918.2
     ],
     [
      0.5,
-     3077.0
+     3083.0
     ],
     [
      0.625,
-     3356.4
+     3333.6
+    ],
+    [
+     0.875,
+     3177.4
     ],
     [
      1.0,
-     3210.3
+     3238.0
     ]
    ],
-   "attack": 0.0853,
-   "hold": false,
+   "attack": 0.0867,
+   "hold": true,
    "harmonic": 0.9,
-   "am": 13.39,
-   "amDepth": 0.3,
+   "am": 14.25,
+   "amDepth": 0.174,
    "formants": [
     [
      3195.0,
@@ -131,13 +104,18 @@
    ],
    "gammaScale": 2.0,
    "tractQ": 30.0,
-   "rough": 0.2,
+   "rough": 0.08,
+   "vib": {
+    "rate": 14.0,
+    "depth": 0.01
+   },
+   "two": true,
    "learned": {
-    "members": 25,
-    "resynthesisCosine": 0.7504,
-    "rivalCosine": -0.3568,
+    "members": 24,
+    "resynthesisCosine": 0.7465,
+    "rivalCosine": -0.7251,
     "nearestOwn": true,
-    "f0ErrorPercent": 17.63
+    "f0ErrorPercent": 17.05
    }
   }
  ],
@@ -151,13 +129,9 @@
    "refs": [],
    "sequence": [
     "L03",
-    "L03",
-    "L02",
-    "L02"
+    "L03"
    ],
    "gaps": [
-    0.06,
-    0.06,
     0.06
    ]
   }
@@ -167,29 +141,26 @@
    "L03"
   ],
   "transitions": {
-   "L02": {
-    "L02": 1.0
-   },
    "L03": {
-    "L03": 0.76,
-    "end": 0.16,
-    "L02": 0.08
+    "L03": 0.8261,
+    "end": 0.1739
+   },
+   "L04": {
+    "end": 1.0
    }
   },
   "gaps": {
-   "L02>L02": 0.147,
-   "L03>L02": 0.499,
-   "L03>L03": 0.131
+   "L03>L03": 0.133
   },
   "songTyping": {
    "bouts": 5,
-   "short": 4,
-   "candidates": 1,
+   "short": 5,
+   "candidates": 0,
    "repeatCandidates": 2,
    "types": 0,
    "repeatTypes": 0,
    "inTypes": 0,
-   "unplaced": 1,
+   "unplaced": 0,
    "minClusterSize": 6
   }
  }
