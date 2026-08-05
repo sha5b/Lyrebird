@@ -49,6 +49,56 @@ DEFAULT_MIN_SAMPLES: int | None = None
 ANCHOR_MAJORITY = 0.6
 
 
+def _fit(u: np.ndarray, min_cluster_size: int, min_samples: int | None) -> Any:
+    """
+    Fit HDBSCAN*, on whichever implementation can finish at this corpus's size.
+
+    **This is one algorithm and two minimum-spanning-tree implementations, not a choice
+    between two clusterings.** Both build the exact MST of the same mutual-reachability
+    graph and both select clusters by excess of mass, so the labels agree up to ties. What
+    differs is cost, and at production scale the difference decides whether the map exists.
+
+    `sklearn.cluster.HDBSCAN` runs Prim's algorithm over a dense mutual-reachability graph.
+    That is O(n^2) with no parallel path — `_hdbscan_prims` calls `kneighbors` through
+    joblib's *sequential* output, which is what a live py-spy dump of a production run
+    showed it sitting in. Measured on this corpus's own embedding (32-d unit rows,
+    `min_cluster_size=25`): 13.0 s at n=20 000, 62.5 s at 40 000, 422.2 s at 80 000 — about
+    n^2.5 in this regime, which extrapolates to roughly **8.4 hours at the shipped 444 213
+    points**. A production run was killed at 1 h 40 m having reached about a fifth of it.
+    `n_jobs=-1` halves the wall clock (12.6 / 39.8 / 208.9 s) and does not change the
+    exponent, because the sequential MST is what dominates.
+
+    The standalone `hdbscan` package has a Boruvka MST, which sklearn does not: tree-
+    accelerated and parallel over the core-distance step. Same measurement, same data:
+    44.8 s at 80 000 and 265.2 s at 200 000 — about n^2.0, extrapolating to roughly
+    **22 minutes** at 444 213. So the fast path is preferred when it is installed, and
+    sklearn remains the fallback so a `uv sync` without the optional extra still works on
+    the debug store, where either finishes in seconds.
+
+    `core_dist_n_jobs=-1` on the fast path and `n_jobs=-1` on the fallback: the core
+    distances are an embarrassingly parallel kNN and leaving them on one core was free
+    waste.
+    """
+    try:
+        import hdbscan as hdbscan_pkg
+    except ImportError:
+        return HDBSCAN(
+            min_cluster_size=min_cluster_size,
+            min_samples=None if min_samples is None else int(min_samples),
+            metric="euclidean",  # on unit rows this ranks identically to cosine; see above
+            cluster_selection_method="eom",
+            copy=True,
+            n_jobs=-1,
+        ).fit(u)
+    return hdbscan_pkg.HDBSCAN(
+        min_cluster_size=min_cluster_size,
+        min_samples=None if min_samples is None else int(min_samples),
+        metric="euclidean",
+        cluster_selection_method="eom",
+        core_dist_n_jobs=-1,
+    ).fit(u)
+
+
 def _unit_rows(z: np.ndarray) -> np.ndarray:
     norm = np.linalg.norm(z, axis=1, keepdims=True)
     return z / np.maximum(norm, 1.0e-12)
@@ -79,13 +129,7 @@ def cluster(
 ) -> DensityResult:
     """Find the dense regions of the standardised descriptor space."""
     u = _unit_rows(np.asarray(z, dtype=np.float64))
-    model = HDBSCAN(
-        min_cluster_size=int(max(2, min_cluster_size)),
-        min_samples=None if min_samples is None else int(min_samples),
-        metric="euclidean",  # on unit rows this ranks identically to cosine; see above
-        cluster_selection_method="eom",
-        copy=True,
-    ).fit(u)
+    model = _fit(u, int(max(2, min_cluster_size)), min_samples)
 
     labels = model.labels_.astype(int)
     k = int(labels.max()) + 1 if labels.size and labels.max() >= 0 else 0

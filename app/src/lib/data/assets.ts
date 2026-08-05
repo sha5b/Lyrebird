@@ -568,7 +568,7 @@ function isUnlabelledArrival(speciesId: string, syllableId: string): boolean {
  * fitted rather than authored — and whether it was fitted to a labelled bird at all.
  */
 export function pointProvenance(assets: BirdyAssets): Float32Array {
-	const { n, source, speciesId, syllableId, novel } = assets.points;
+	const { n, source, speciesId, syllableId, songId, novel } = assets.points;
 	const out = new Float32Array(n);
 	for (let i = 0; i < n; i++) {
 		const syl = syllableId[i] ?? '';
@@ -586,9 +586,29 @@ export function pointProvenance(assets: BirdyAssets): Float32Array {
 		}
 		if (!syl) {
 			// Unlabelled field audio is the candidate pool — its `songId` names the
-			// recording bout, not an authored song. A whole-song *render*
-			// (synthetic-song) is still an authored phrase.
-			out[i] = source[i] === 'field' ? PROVENANCE.candidate : PROVENANCE.documented;
+			// recording bout, not an authored song.
+			if (source[i] === 'field') {
+				out[i] = PROVENANCE.candidate;
+				continue;
+			}
+			// **A whole-song render is not automatically an authored phrase, and this
+			// branch used to say it was.** Every one of the 8 583 renders in the shipped
+			// build fell through to `documented` — "a person named this sound" — which
+			// made `synthesized` hold zero points while the class doc above says the mode's
+			// first question is *"did a machine make this sound, or did a bird?"*. On this
+			// corpus the answer was available and being discarded: 7 464 of those renders
+			// are `learned_bout`, the id `learn.py` writes for the bout it sampled from a
+			// bird's own measured grammar, and that sequence is ours. The remaining 1 119
+			// really are authored — 48 renders of authored songs plus 1 056 of the 44
+			// authored calls — and they stay `documented`.
+			//
+			// The test is the song id and not the inventory's `confidence`, which would be
+			// the more direct reading, because the inventory is shard-loaded: at asset-load
+			// time most species' songs are not in memory yet, so a confidence lookup here
+			// would classify the same point differently depending on what had been clicked.
+			// `learned_bout` is a universal id — every fitted species has exactly one, and
+			// nothing authored uses it — so it is stable at load and needs no fetch.
+			out[i] = songId?.[i] === 'learned_bout' ? PROVENANCE.learned : PROVENANCE.documented;
 			continue;
 		}
 		// A fitted type splits on where this particular point's audio came from: the

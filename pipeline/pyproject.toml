@@ -65,6 +65,17 @@ analysis = ["harmonypy>=0.0.9", "pandas>=2.0"]
 # Declaring them is the fix: a tool in this repo is a dependency of this repo.
 whitepaper = ["python-docx>=1.1", "matplotlib>=3.8", "pillow>=10.0"]
 
+# `--clustering hdbscan` at production scale. Same pattern as every extra above:
+# `density.py` imports it lazily inside `_fit` and falls back to sklearn's own HDBSCAN,
+# which is exact and identical in output — so the debug store needs nothing installed.
+# What the extra buys is the Boruvka minimum spanning tree sklearn does not implement.
+# Measured on this corpus (see `density._fit`): sklearn is about n^2.5 and extrapolates to
+# ~8.4 h at 444 213 points, where Boruvka is about n^2.0 and ~22 min. Without this, the
+# unknown map is not buildable at production scale in a sitting.
+density = [
+    "hdbscan>=0.8.38",
+]
+
 [project.scripts]
 birdy-pipeline = "birdy_pipeline.cli:main"
 

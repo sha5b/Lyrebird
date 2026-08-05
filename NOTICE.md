@@ -80,6 +80,7 @@ from this repository.
 | `whitepaper` | python-docx | MIT | |
 | `whitepaper` | matplotlib | Matplotlib licence (BSD-style, PSF-derived) | |
 | `whitepaper` | pillow | MIT-CMU (HPND) | |
+| `density` | hdbscan | BSD-3-Clause | Boruvka MST for `--clustering hdbscan` at production scale; `density.py` falls back to scikit-learn's own exact HDBSCAN when it is absent |
 
 > **`harmonypy` is GPL-3.0-or-later, and that is a real interaction with this
 > project's own licence.** GPL-3.0 is copyleft and does not permit the addition of a

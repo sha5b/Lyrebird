@@ -101,10 +101,28 @@ At 387 287 points the middle is saturated. Contour the dense core and draw indiv
 only where density is low, which is the standard overplotting remedy and makes the core
 legible.
 
-**6. Relations on selection, bundled.**
-`relations.json` ships 14 425 species pairs and nothing draws them. All at once is a
-hairball; the selected species' eight nearest partners as bundled arcs answers "how do these
-interact" without permanent clutter.
+**6. Relations on selection, bundled. — BUILT, and the asset was missing for the whole life
+of the v10 build.**
+`RelationThreads` and the species panel's "Sounds like" chips both read `relations.json`, and
+on selection they draw the eight nearest partners rather than the hairball. The finding was
+that **the asset did not exist**: the v10 chain runs `build --no-relations`, and
+`out/harvest-inband` carried no `embeddings.f32`, so the build logged *"relations skipped"*
+and `app/static/birdy/relations.json` was never written. Because the asset is optional by
+design — the loader treats absent and over-32 MB identically — nothing failed and nothing
+said so; the threads simply drew zero segments and the chips never rendered.
+
+The fix cost eight minutes of compute, which is the part worth recording: `critic embed` on
+the store took **7 seconds** and `compute_relations` **219 s**, giving 3 093 828 species
+pairs and **950 shared-type candidates** under a threshold of **0.0412** (the median
+within-species nearest-type distance). Trimmed to 8 partners per species that is **14 488
+pairs, 3.8 MB** — `analysis/v10_relations_ship.py`, which exists because the standalone
+`relations --out` verb deliberately writes the *complete* document and on this corpus that is
+the 760 MB file that once hung the tab.
+
+*One thing to look at:* the nearest pair comes back at distance −0.0 with 8 shared types
+(`bleda_notatus` / `eurillas_latirostris`). Two different species with identical type
+centroids is either a duplicated recording across two species labels or a real degeneracy in
+the fit, and either way it is not a relation.
 
 **7. Draw the residual, to show whether a render fits. — BLOCKED, and the reason is a
 measurement.** This step assumes every fitted type has a synthetic point to draw the segment
@@ -152,6 +170,26 @@ never could.
 
 Against a 30 MB `points.json`, every one of these is affordable. The work is in the view, not
 in the pipeline, which is the argument for doing them in this order.
+
+## 25.4b Shipped and undrawn: check the view half, not just the pipeline half
+
+Two of the channels this document asked for are in `points.json` right now, at 444 213 values
+each, and **nothing in `app/src` reads either of them.** A grep for `points.snr` and
+`points.knnAgreement` across the app returns the type declaration, two manifest-level reads
+for the HUD's aggregate, and one comment. So about 4 MB of the 41 MB asset is a measurement
+the browser downloads every load and never draws.
+
+The table in §25.4 is what let this sit: it marks brightness = SNR as **BUILT**, and the
+pipeline half genuinely is. A channel is not built until something draws it, and the row said
+"BUILT" while the view had never been touched. Any future row here should name both halves.
+
+The same trap caught the density verdict from the other side. The shader has drawn unassigned
+points **35 % smaller and 45 % fainter** since density clustering was added — defensible on
+the label map, where the class is empty, and exactly backwards on the map whose entire purpose
+is refusing: the discovery surface was the quietest thing on the stage. `uUnheard` now swaps
+figure and ground on that verdict (placed marks to 0.55 size and 0.30 ink, refused ones to 1.6
+and full weight), and the joined `unassigned` channel is what makes it readable on the map that
+actually ships.
 
 ## 25.5 The rule to keep
 
