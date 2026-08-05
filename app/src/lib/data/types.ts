@@ -387,6 +387,30 @@ export interface PointCloudMeta {
 	 * asset set built before the channel existed.
 	 */
 	knnAgreement?: number[];
+	/**
+	 * Per point, 1 where a density clustering put this sound in **no dense region**.
+	 *
+	 * This is the one measurement the shipped map cannot make about itself. Its clustering
+	 * is `label`, which gives every point a knot by construction — `manifest.unassigned`
+	 * is 0 — so "none of these" is outside its output space. The verdict is joined in from
+	 * a separate `--clustering hdbscan` build of the same `PointSet` by row index, which is
+	 * valid because `cmd_build` builds that set once and never reorders it;
+	 * `analysis/v10_unknown_join.py` re-derives the alignment from the five columns the
+	 * clustering cannot touch before it writes anything.
+	 *
+	 * Absent on any build predating the join. Absent means unmeasured, and the renderer
+	 * draws it as "not refused" — never as a discovery.
+	 */
+	unassigned?: number[];
+	/**
+	 * Per point, which dense region the density clustering put it in, or -1 for none.
+	 *
+	 * Joined from the same run as `unassigned`, and the reason it is worth carrying beside
+	 * the flag: a *region* full of syllables no type claims is a candidate type, while a
+	 * lone refused point is only a singleton. The queue in the join's report is ordered on
+	 * this, and the ids index that build's regions, not this build's knots.
+	 */
+	densityRegion?: number[];
 }
 
 export interface Centroid {

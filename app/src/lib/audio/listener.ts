@@ -23,6 +23,15 @@ import type { BirdyEngine } from './engine';
 const IDLE_ALPHA = 0.4;
 /** A finished live path is removed once it has faded this far. */
 const GONE_ALPHA = 0.02;
+/**
+ * How long after its last scheduled note our own voice can still be on the analysis bus.
+ *
+ * `engine.makeImpulse` builds a 1.6 s reverb and `master` feeds `analysisBus` *after* it
+ * (`engine.ts`: `convolver -> wet -> master -> analysisBus`), so the extractor keeps
+ * reading a real signal for the whole ring-out — long after `advance()` has retired the
+ * path at `last.end + 0.25`.
+ */
+const VOICE_TAIL = 1.6;
 
 /**
  * The live loop: analysis bus -> 28-d descriptor -> cluster activations -> per-point
@@ -60,6 +69,12 @@ export class Listener {
 	 */
 	private orphanPulses: { points: number[]; start: number; end: number }[] = [];
 	private orphanWasActive = false;
+
+	/**
+	 * AudioContext time of the end of the last note we scheduled, whether it owned a knot
+	 * or not. `VOICE_TAIL` past this, our own output has stopped reaching the extractor.
+	 */
+	private voiceUntil = 0;
 
 	reading: Reading;
 	onReading: ((reading: Reading) => void) | null = null;
@@ -224,6 +239,8 @@ export class Listener {
 			speciesId,
 			label
 		});
+		const last = cleaned.times?.[cleaned.times.length - 1];
+		if (last) this.voiceUntil = Math.max(this.voiceUntil, last.end);
 		// one slot is reserved for the preview
 		while (this.live.length > MAX_PATHS - 1) this.live.shift();
 		this.publishPaths();
@@ -240,6 +257,7 @@ export class Listener {
 	addOrphanPulse(points: number[], window: { start: number; end: number }): void {
 		if (!points.length) return;
 		this.orphanPulses.push({ points, start: window.start, end: window.end });
+		this.voiceUntil = Math.max(this.voiceUntil, window.end);
 		// A chorus queues songs many seconds out; cap the backlog the way paths are capped.
 		while (this.orphanPulses.length > 64) this.orphanPulses.shift();
 	}
@@ -252,6 +270,19 @@ export class Listener {
 	private orphanSounding(): boolean {
 		const now = this.engine.ctx.currentTime;
 		return this.orphanPulses.some((p) => now >= p.start && now <= p.end);
+	}
+
+	/**
+	 * True while the only thing the extractor can be hearing is our own ring-out.
+	 *
+	 * The microphone is the test, not the level: with a mic open the listener may genuinely
+	 * be hearing a bird over the tail, and suppressing that would break listening. With no
+	 * mic, `analysisBus` carries nothing but `master`, so every match in this window is the
+	 * matcher answering our own reverb.
+	 */
+	private voiceTail(): boolean {
+		if (this.engine.micActive) return false;
+		return this.engine.ctx.currentTime < this.voiceUntil + VOICE_TAIL;
 	}
 
 	/** Writes the current orphan envelopes into the signal buffer the renderer reads. */
@@ -354,6 +385,7 @@ export class Listener {
 		this.extractor.reset();
 		this.orphanPulses = [];
 		this.orphanWasActive = false;
+		this.voiceUntil = 0;
 		this.gate?.reset();
 		this.signal.activations.fill(0);
 		this.signal.pointActivation.fill(0);
@@ -472,6 +504,18 @@ export class Listener {
 			// activates points that are NOT there"). The note's honest display already
 			// exists: the orphan pulse, the syllable's own points at their true positions.
 			// Known-unplaced beats inferred, exactly as known beats inferred above.
+			this.signal.activations.fill(0);
+			this.signal.best = -1;
+			this.signal.unmatched = -1;
+		} else if (this.voiceTail()) {
+			// **The phrase has ended but the room has not.** Same rule as the two branches
+			// above, one step later in time: `advance()` retires a path 0.25 s after its last
+			// note, while the 1.6 s reverb of that note is still going into `analysisBus`. For
+			// that gap the extractor was active, nothing was `singing`, and line ~413 handed
+			// `signal.best` to an unscoped whole-corpus argmax — so the burst ended by striking
+			// a cross on some other bird's knot, in that bird's hue, with the label opening
+			// there too. In single-bird mode this happened on every phrase, which is how it was
+			// found. Our own ring-out is not a sound anyone is asking us to place.
 			this.signal.activations.fill(0);
 			this.signal.best = -1;
 			this.signal.unmatched = -1;

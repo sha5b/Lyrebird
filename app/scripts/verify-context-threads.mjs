@@ -18,6 +18,9 @@
 import {
 	alphaFor,
 	contextSegments,
+	FROM_LIGHT,
+	grammarEnds,
+	TO_LIGHT,
 	WEIGHT_MAX,
 	WEIGHT_MIN
 } from '../src/lib/galaxy/context-threads.ts';
@@ -170,6 +173,44 @@ console.log('\na measured grammar, end to end');
 	ok('a shared transition appears in both passes',
 		songs.some((s) => s.a === 0 && s.b === 1) && grammar.some((s) => s.a === 0 && s.b === 1),
 		'a song and a statistic about it are two claims');
+}
+
+// --- the hue names the bird, and the walk names the direction ------------------------
+//
+// Same failure mode as the alpha above, one channel over. A grammar thread used to be a
+// flat amber for every species and both of its ends, so two quantities it holds — whose
+// transition this is, and which way it runs — were legible as nothing. These checks are
+// that both arrive: that two birds get two hues, that one bird's two knots do not, and
+// that the `from` end is darker than the `to` end by a margin a hairline can show.
+console.log('\nthe bird and the direction arrive');
+
+/** HSL lightness out of `speciesColourScaled`'s `hsl(h, s%, l%)`. */
+const lightnessOf = (css) => Number(css.match(/,\s*([\d.]+)%\)$/)?.[1] ?? NaN);
+const hueOf = (css) => Number(css.match(/^hsl\(([\d.]+)/)?.[1] ?? NaN);
+
+{
+	const tit = grammarEnds('parus_major');
+	const wren = grammarEnds('troglodytes_troglodytes');
+	ok('two birds get two hues', hueOf(tit.from) !== hueOf(wren.from),
+		`${hueOf(tit.from).toFixed(1)} against ${hueOf(wren.from).toFixed(1)}`);
+	ok('one bird keeps one hue across both ends', hueOf(tit.from) === hueOf(tit.to),
+		`${hueOf(tit.from).toFixed(1)}`);
+	ok('the from end is the darker one', lightnessOf(tit.from) < lightnessOf(tit.to),
+		`${lightnessOf(tit.from)}% into ${lightnessOf(tit.to)}%`);
+	ok('and by enough to see on a hairline',
+		lightnessOf(tit.to) - lightnessOf(tit.from) > 12,
+		`${(lightnessOf(tit.to) - lightnessOf(tit.from)).toFixed(1)} points`);
+	// Past ±20 % `speciesColourScaled` clamps, and a walk that hits the clamp would draw
+	// every bird's two ends at the same two lightnesses — the direction would survive and
+	// the identity would not.
+	ok('the walk stays inside the species clamp',
+		FROM_LIGHT >= 0.8 && TO_LIGHT <= 1.2, `${FROM_LIGHT}..${TO_LIGHT}`);
+	// A knot with no species tag must not throw or come back as white: an all-synthetic
+	// knot carries no majority species, and the thread still has to be drawn.
+	const none = grammarEnds('');
+	ok('a knot with no species still yields a colour',
+		Number.isFinite(hueOf(none.from)) && Number.isFinite(lightnessOf(none.to)),
+		none.from);
 }
 
 console.log(

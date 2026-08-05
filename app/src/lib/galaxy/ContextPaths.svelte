@@ -6,20 +6,25 @@
 	 *
 	 *   songs    a sequence a person authored or recorded. Neutral slate, even weight —
 	 *            the established backdrop ink, unchanged.
-	 *   grammar  one transition counted from this bird's own field audio, drawn at an
-	 *            alpha set by **its measured probability**.
+	 *   grammar  one transition counted from this bird's own field audio, drawn in **that
+	 *            bird's hue**, at an alpha set by **its measured probability**, walked from
+	 *            dark to light **in the direction of the transition**.
 	 *
 	 * `RelationThreads` draws the third kind (out to other species that share call shapes)
-	 * and already distinguishes itself by carrying the partner's hue at the far end. So
-	 * three claims now have three inks, where they used to share one grey.
+	 * and distinguishes itself by carrying the partner's hue at the far end. So three claims
+	 * have three inks, where they used to share one grey.
 	 *
-	 * The grammar ink is `PROV_LEARNED` and the choice is not a fresh one: the app already
-	 * says amber for a fitted thing and blue for a documented one wherever provenance is
-	 * the language, so a grammar thread borrowing that amber makes the stage agree with the
-	 * legend rather than inventing a fourth vocabulary. Songs keep the slate rather than
-	 * taking `PROV_DOCUMENTED` blue, because colouring *every* thread was tried on the tags
-	 * and read as too dominant — a thread is an annotation and the cloud is the data. One
-	 * ink added is what the reading needs; two would spend the restraint for nothing.
+	 * The grammar ink used to be a flat `PROV_LEARNED` amber, on the argument that the app
+	 * says amber for a fitted thing wherever provenance is the language. That argument holds
+	 * for a *point*, whose class is the only thing it can be asked; it fails for a thread,
+	 * because a transition already knows two things a constant cannot say — whose grammar it
+	 * is, and which way it runs. Amber said neither, so a hundred birds' graphs were one
+	 * colour and every arrow was drawn as a plain stick. The hue and the walk are in
+	 * `context-threads.ts` with the alpha, and for the same reason: a wrong colour here is a
+	 * legible line, not an error, so it needs an instrument rather than a look.
+	 *
+	 * Songs keep the slate. The split reads as a sentence now: **a hued thread is counted
+	 * from the bird, a slate thread is an order somebody chose.**
 	 *
 	 * Weight is carried as per-vertex alpha rather than line width: `linewidth` is ignored
 	 * by every WebGL renderer, so width is not a channel this project has.
@@ -33,8 +38,8 @@
 	import * as THREE from 'three';
 	import { clusterProvenance } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
-	import { PROV_LEARNED, provenanceColourScaled } from './palette';
-	import { contextSegments, type ThreadSegment } from './context-threads';
+	import { provenanceColourScaled } from './palette';
+	import { contextSegments, grammarEnds, type ThreadSegment } from './context-threads';
 	import type { LayoutView } from './layouts';
 	import type { ContextPath, VisualSignal } from './shaders';
 
@@ -61,7 +66,6 @@
 	// every thread), the class colour in provenance mode — per-vertex, so a thread
 	// never speaks two languages at once.
 	const NEUTRAL = new THREE.Color('#8595ae');
-	const LEARNED = new THREE.Color(PROV_LEARNED);
 
 	const geometry = new THREE.BufferGeometry();
 	const material = new THREE.LineBasicMaterial({
@@ -100,9 +104,16 @@
 				view.centroids[a], view.centroids[a + 1], view.centroids[a + 2],
 				view.centroids[b], view.centroids[b + 1], view.centroids[b + 2]
 			);
-			for (const knot of [seg.a, seg.b]) {
+			// Both knots of a transition belong to one bird — `grammarPathsOf` resolves `to`
+			// within the same species — so either end names the hue. Read from whichever end
+			// has a species tag, because a knot's `speciesId` is its members' majority and an
+			// all-synthetic knot can carry none.
+			const ends = withAlpha
+				? grammarEnds(centroids[seg.a]?.speciesId || centroids[seg.b]?.speciesId || '')
+				: null;
+			for (const [end, knot] of [seg.a, seg.b].entries()) {
 				if (prov) c.setStyle(provenanceColourScaled(klass[knot] ?? 4, 1.0));
-				else if (withAlpha) c.copy(LEARNED);
+				else if (ends) c.setStyle(end === 0 ? ends.from : ends.to);
 				else c.copy(NEUTRAL);
 				colors.push(c.r, c.g, c.b);
 				if (withAlpha) colors.push(seg.alpha);

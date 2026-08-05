@@ -126,6 +126,35 @@ export function confidenceLabel(confidence: string): { text: string; hint: strin
 	}
 }
 
+/**
+ * The *other* axis: who chose the order.
+ *
+ * `confidenceLabel` above answers "how strong is the claim on these sounds", and it is
+ * the only badge the reading panel used to draw. That left the second axis unsayable at
+ * the level of a single sounding thing, and the gap was visible: an improvised bout comes
+ * back from `improvise()` as `confidence: 'unlabelled'` with `source: 'invented'`, so the
+ * panel printed **"field recording"** over a phrase no bird has ever sung. The syllables
+ * were field recordings and the badge was true about them; the sentence a reader took from
+ * it was false about the bout.
+ *
+ * `Phrase.source` has carried the answer all along (`grammar.ts`) and nothing rendered it.
+ * The two badges together are the project's one-line statement of the whole distinction:
+ * **the bird made the sounds; we chose the order** (docs/08 §8.5, HANDOFF's own wording).
+ *
+ * `documented` returns null rather than a second badge. A sequence somebody recorded or
+ * authored needs no disclaimer, and a badge on every phrase would spend the reader's
+ * attention on the case that makes no extra claim.
+ */
+export function sourceLabel(
+	source: 'documented' | 'invented'
+): { text: string; hint: string } | null {
+	if (source === 'documented') return null;
+	return {
+		text: 'our order',
+		hint: 'The syllables are measured; the sequence they are played in is ours, not a bout any bird sang.'
+	};
+}
+
 export function citationsFor(inventory: Inventory, refs: string[]): string[] {
 	return formatRefs(inventory, refs);
 }

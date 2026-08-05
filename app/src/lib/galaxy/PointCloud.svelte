@@ -97,6 +97,16 @@
 		 * "how far apart two neighbouring call types sit" is a fact about this build.
 		 */
 		knotSpacing?: number;
+		/**
+		 * Swap figure and ground on the density verdict: draw the sounds a density
+		 * clustering refused as the picture and the ones it placed as the ground.
+		 *
+		 * Off by default, because at rest the cloud's subject is the structure that was
+		 * found. On, its subject is what nothing claims — which on the shipped `label`
+		 * map is the only question that map cannot answer for itself, and is the reason
+		 * `points.json` now carries the joined `unassigned` channel.
+		 */
+		unheard?: boolean;
 		/** Written, never read: how many points each pass actually drew. See stats.ts. */
 		stats?: GalaxyStats;
 	}
@@ -115,6 +125,7 @@
 		provShown = [true, true, true, true, true],
 		adaptive = true,
 		localKnots = true,
+		unheard = false,
 		knotSpacing = $bindable(),
 		stats
 	}: Props = $props();
@@ -275,6 +286,13 @@
 		g.setAttribute('aBorn', new THREE.BufferAttribute(born, 1));
 		g.setAttribute('aAct', activationAttribute);
 		g.setAttribute('aProv', new THREE.BufferAttribute(pointProvenance(assets), 1));
+		// The joined density verdict. Absent on every build before the join existed, and
+		// absent is written as 0 — "not refused" — rather than left undefined: a missing
+		// measurement must draw as the cloud always drew, never as a discovery.
+		const dense = new Float32Array(assets.points.n);
+		const refused = assets.points.unassigned;
+		if (refused) for (let i = 0; i < assets.points.n; i++) dense[i] = refused[i] ? 1 : 0;
+		g.setAttribute('aDense', new THREE.BufferAttribute(dense, 1));
 		g.setAttribute('aOrphan', orphanAttribute);
 		g.computeBoundingSphere();
 		return g;
@@ -416,7 +434,10 @@
 			// Rewritten from the loaded corpus's own knot spacing (see below); the initial
 			// value is the 149-cluster build's number, sane for the first frame.
 			uWaveLocal: { value: 0.27 },
-			uSurface: { value: new THREE.Color('#fafbfc') }
+			uSurface: { value: new THREE.Color('#fafbfc') },
+			// The figure/ground swap on the density verdict, eased rather than switched —
+			// see uUnheard in shaders.ts for why a cut is the wrong transition here.
+			uUnheard: { value: 0 }
 		},
 		transparent: true,
 		depthWrite: false,
@@ -1374,6 +1395,15 @@
 		const rate = answer > u.uAnswer.value ? ANSWER_RISE : ANSWER_FALL;
 		u.uAnswer.value += (answer - u.uAnswer.value) * (1 - Math.pow(rate, delta * 60));
 		u.uHighlight.value = signal.best;
+
+		// The figure/ground swap, eased on a fixed half-life like every other state change
+		// on this stage. A cut would relabel every mark between two frames and the eye
+		// would have to re-find the cloud; over ~0.4 s it instead watches the ground recede
+		// and the refused points come forward, which is the reading the channel is for.
+		// Held at 0 on a build that measured nothing, so the control cannot lie by moving
+		// a picture that has no data behind it.
+		const wantUnheard = unheard && assets.points.unassigned ? 1 : 0;
+		u.uUnheard.value += (wantUnheard - u.uUnheard.value) * (1 - Math.pow(0.02, delta));
 
 		// **Silent frames upload nothing — after the ring-down has finished.** The four
 		// GPU writes below — three corpus-length attributes (activation, orphan, front

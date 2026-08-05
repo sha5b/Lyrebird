@@ -85,6 +85,23 @@ export function vertexShader(): string {
 		 * 4 candidate.
 		 */
 		attribute float aProv;
+		/**
+		 * 1 where the density clustering put this sound in **no dense region**, 0 where it
+		 * placed it, and 0 on any build that never measured it.
+		 *
+		 * This is the cross-map channel, and it exists because the two questions live in
+		 * two asset sets. The shipped map is --clustering label, which gives every point
+		 * a knot by construction, so on its own it can never say "none of these". The
+		 * hdbscan map can, and analysis/v10_unknown_join.py joins the two by row index —
+		 * legitimate because cmd_build builds one PointSet and never reorders it — and
+		 * writes the verdict back into points.json as unassigned.
+		 *
+		 * So this is not the same thing as aCluster < 0. That says "this map placed
+		 * nothing here"; this says "the *other* map, the one whose whole job is refusing,
+		 * refused it". On the shipped label map aCluster < 0 is empty by construction and
+		 * this channel carries the entire discovery surface.
+		 */
+		attribute float aDense;
 		/** 1 while a scheduled orphan note — a type with points but no cluster — sounds. */
 		attribute float aOrphan;
 		/**
@@ -222,6 +239,26 @@ export function vertexShader(): string {
 		uniform float uUnmatchedStrength;
 		/** 1 for neutral ink/plain points, 0 for the provenance class tint. */
 		uniform float uPlain;
+		/**
+		 * 0..1: how far the figure and the ground have swapped.
+		 *
+		 * At 0 the cloud reads as it always has — the sounds a density clustering placed
+		 * are the picture, and the ones it refused are drawn a third smaller and half as
+		 * dark, because at equal weight a scattered haze reads as structure it has not
+		 * earned.
+		 *
+		 * At 1 that judgement is inverted, and the inversion is the whole point of the
+		 * channel. **On this corpus the refused points are the only place a sound can come
+		 * out as "none of these"** — the shipped label clustering names everything — so the
+		 * discovery surface was being drawn as the quietest thing on the stage. Turned up,
+		 * the placed sounds become faint ground and the refused ones become the figure:
+		 * larger, at full ink, in the numbers analysis/v10_unknown_join.py measured.
+		 *
+		 * Kept as a continuous mix rather than a boolean so the switch is a transition and
+		 * not a cut — the eye keeps track of which marks moved, which is the one thing a
+		 * hard swap of figure and ground destroys.
+		 */
+		uniform float uUnheard;
 
 		varying float vAct;
 		varying float vSeed;
@@ -236,6 +273,8 @@ export function vertexShader(): string {
 		varying float vAccent;
 		/** 1 where the pipeline placed this sound in no cluster at all. */
 		varying float vUnassigned;
+		/** 1 where a density clustering refused this sound — either map's verdict. */
+		varying float vRefused;
 		/** 0..1 while a newly added point is arriving. */
 		varying float vArrive;
 		/** 0..1 across the level-of-detail frontier's fade band (see aRank/uLod). */
@@ -277,6 +316,12 @@ export function vertexShader(): string {
 			bool assigned = aCluster >= -0.5;
 			int index = assigned ? int(aCluster + 0.5) : 0;
 			vUnassigned = assigned ? 0.0 : 1.0;
+			// **Refused by a density clustering, from whichever of the two maps measured it.**
+			// On the hdbscan map that is this map's own -1; on the shipped label map it is
+			// the joined aDense channel, because the label map refuses nothing. Either
+			// way it is the same claim about the same sound, so the view reads one varying
+			// and the figure/ground switch below does not have to know which map is loaded.
+			vRefused = max(vUnassigned, clamp(aDense, 0.0, 1.0));
 			vec4 state = assigned ? clusterState(index) : vec4(0.0);
 			// This knot's own bird, as a hue the fragment can wear. 0 means "no bird
 			// here" — an unassigned point, or a build written before the channel existed
@@ -486,8 +531,15 @@ export function vertexShader(): string {
 			// Unassigned marks are drawn smaller: they are real measurements and they are
 			// not structure, and at the same weight a third of the corpus in no cluster
 			// reads as a cloud that has one.
+			//
+			// uUnheard inverts exactly that judgement, and the two ends are one mix so
+			// there is only one place the size of a refused mark is decided. At 1 the placed
+			// sounds fall to 0.55 and the refused ones rise to 1.6 — the figure/ground
+			// discipline of docs/25 §25.2, applied to the one channel that can answer
+			// "none of these".
+			float refusedSize = mix(1.0 - 0.35 * vRefused, mix(0.55, 1.6, vRefused), uUnheard);
 			float size = uPointSize * (1.0 + grow) * (1.0 + 0.7 * vChosen)
-				* (1.0 - 0.35 * vUnassigned) * mix(0.35, 1.0, vArrive) * mix(0.35, 1.0, vLod);
+				* refusedSize * mix(0.35, 1.0, vArrive) * mix(0.35, 1.0, vLod);
 			// uHighlight idles at -1 in silence, which is also the unassigned marker: without
 			// the guard every unassigned point drew 15 % larger whenever nothing sounded
 			// (the hdbscan map's haze "breathed" at note onsets, inverting the intent).
@@ -557,6 +609,8 @@ export const fragmentShader = /* glsl */ `
 	uniform float uBird;
 	/** 1 for neutral ink/plain points, 0 for the provenance class tint. */
 	uniform float uPlain;
+	/** 0..1 figure/ground swap for the density verdict; see the vertex stage. */
+	uniform float uUnheard;
 	/** The same clock the vertex stage pulses by; the orphan pulse breathes on it. */
 	uniform float uTime;
 	/** Live input level, 0..1 — drives the pulse and the growth in the vertex stage. */
@@ -600,6 +654,7 @@ export const fragmentShader = /* glsl */ `
 	varying float vChosen;
 	varying float vAccent;
 	varying float vUnassigned;
+	varying float vRefused;
 	varying float vArrive;
 	/** 0..1 across the level-of-detail frontier's fade band; 1 in the active pass. */
 	varying float vLod;
@@ -866,9 +921,13 @@ export const fragmentShader = /* glsl */ `
 		// separates from the crowd by weight as well as by everyone else fading.
 		// vLod is the level-of-detail dissolve (see the vertex stage): 1 everywhere
 		// except the narrow band at the frontier, where it fades the new marks in.
+		// The ink half of the figure/ground swap, mirroring refusedSize in the vertex
+		// stage: at rest a refused mark keeps 55 % of the ink, and with uUnheard up the
+		// placed ones drop to 30 % while the refused ones go to full weight.
+		float refusedInk = mix(1.0 - 0.45 * vRefused, mix(0.30, 1.0, vRefused), uUnheard);
 		float alpha =
 			uOpacity * mask * (0.62 + vAct * 0.38) * vFocus * (1.0 + 0.35 * vChosen) *
-			(1.0 - fog * 0.58) * (1.0 - 0.45 * vUnassigned) * vArrive * vLod;
+			(1.0 - fog * 0.58) * refusedInk * vArrive * vLod;
 		// The resting point also gives up a fifth of its weight, so "this knot is
 		// answering" moves two channels at once — class colour to full brightness
 		// above, ink weight here. Rest lands at 0.62 × 0.8 ≈ 0.50 of full alpha

@@ -634,12 +634,16 @@
 					<li>
 						<i class="line grammar"></i>
 						<span>
-							<b>An amber hairline is a measured transition</b> — one syllable following
-							another, counted from this bird's own field recordings, and
-							<b>drawn stronger the more likely it is</b>. Faintest is about one time in
-							twelve, which is the floor below which nothing is drawn at all; solid is
-							nearly always. Amber because it is fitted rather than authored, which is
-							the ink this app already uses for a learned thing.
+							<b>A coloured hairline is a measured transition</b> — one syllable following
+							another, counted from this bird's own field recordings. It carries three
+							numbers at once. It is <b>drawn stronger the more likely it is</b>:
+							faintest is about one time in twelve, the floor below which nothing is
+							drawn at all, and solid is nearly always. It is drawn
+							<b>in that bird's own colour</b>, the same genus hue its tag wears, so a
+							chorus of transition graphs is several colours rather than one. And it
+							runs <b>dark where the syllable starts, light where it lands</b>, because
+							a transition has a direction and a line has no arrowhead. The swatch is
+							one bird's; on the stage the hue is whichever bird you are hearing.
 						</span>
 					</li>
 					<li>
@@ -778,19 +782,25 @@
 	}
 
 	/* The three faint kinds. Each swatch *is* its ink, which is the rule the rest of this
-	   key follows, and the grammar swatch is a gradient because the weight is the whole
-	   reading: one amber, fainter where the transition is less likely.
+	   key follows — and the grammar swatch is the one place that rule cannot hold, because
+	   its ink is the bird's and the legend has no bird in it. So the swatch shows the
+	   *structure* it can show honestly: a dark-to-light walk, which is the direction
+	   channel, at one arbitrary species hue, and the copy beside it says the hue on the
+	   stage is whichever bird is sounding. The weight channel is not in the swatch for the
+	   same reason it cannot be — one swatch cannot be two ramps.
 
-	   These two values mirror ContextPaths' NEUTRAL and palette.ts's PROV_LEARNED. CSS
-	   cannot read either, so they are repeated here on purpose — and a legend that
-	   disagrees with the stage is worse than no legend, so they are named in both places. */
+	   The song value mirrors ContextPaths' NEUTRAL, and the grammar ends mirror
+	   `context-threads.ts`'s FROM_LIGHT/TO_LIGHT walk of `speciesColourScaled` (45 % × 0.82
+	   and × 1.18). CSS cannot read either, so they are repeated here on purpose — and a
+	   legend that disagrees with the stage is worse than no legend, so they are named in
+	   both places. */
 
 	.legend.key i.line.song {
 		background: #8595ae;
 	}
 
 	.legend.key i.line.grammar {
-		background: linear-gradient(to right, rgba(217, 119, 6, 0.24), #d97706);
+		background: linear-gradient(to right, hsl(188, 82%, 36.9%), hsl(188, 82%, 53.1%));
 	}
 
 	.legend.key i.line.relation {

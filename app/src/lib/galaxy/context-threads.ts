@@ -13,7 +13,44 @@
  *            its measured probability — the number the picture used to throw away.
  */
 
+// Extension-explicit, like `listener.ts` -> `features.ts`: `verify:context-threads` runs
+// this module under node's type-stripping loader, which does no extension resolution.
+import { speciesColourScaled } from './palette.ts';
 import type { ContextPath } from './shaders';
+
+/**
+ * A grammar thread's two ends, as the bird's own hue walked in lightness.
+ *
+ * Two things changed here and both are quantities that were being thrown away.
+ *
+ * **Hue was a constant and is now the bird.** Every grammar thread was `PROV_LEARNED`
+ * amber, so a hundred birds' transition graphs were one colour and the star around a
+ * pinned knot said nothing about whose star it was. The hue is the same genus-hashed
+ * `speciesColourScaled` the tag beside it already wears, so a thread and its label cannot
+ * disagree — and `palette.ts`'s rule survives, because hue is still never the sole
+ * carrier: the tag names the bird in text.
+ *
+ * **Direction was not drawn at all.** A first-order grammar is a *directed* transition —
+ * "B follows A with probability p" — and a line segment has no arrowhead, so the picture
+ * stated the pair and dropped the order. The `from` end is drawn darker and the `to` end
+ * lighter, which reads as a thread flowing outward from the syllable that starts it. This
+ * is why the band is asymmetric about 1: it has to stay inside `speciesColourScaled`'s
+ * ±20 % clamp (past that the walk reads as a different bird, which is the one thing the
+ * mapping forbids), and it has to be wide enough to see on a hairline.
+ *
+ * Songs keep the slate. The split is now a sentence: **a hued thread is counted from the
+ * bird, a slate thread is a sequence we or a recordist chose.**
+ */
+export const FROM_LIGHT = 0.82;
+export const TO_LIGHT = 1.18;
+
+/** The `from` and `to` inks for one bird's grammar threads. */
+export function grammarEnds(speciesId: string): { from: string; to: string } {
+	return {
+		from: speciesColourScaled(speciesId, FROM_LIGHT),
+		to: speciesColourScaled(speciesId, TO_LIGHT)
+	};
+}
 
 /**
  * A transition at the floor still has to be visible, and a certain one must not shout.

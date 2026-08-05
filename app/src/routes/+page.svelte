@@ -46,7 +46,7 @@
 		type Provenance,
 		type Token
 	} from '$lib/lang/compose';
-	import { citationsFor, confidenceLabel, type Reading } from '$lib/lang/translate';
+	import { citationsFor, confidenceLabel, sourceLabel, type Reading } from '$lib/lang/translate';
 	import {
 		CATEGORIES,
 		callsFor,
@@ -328,6 +328,30 @@
 	 * integrated GPU is on — see the governor in PointCloud.
 	 */
 	let adaptiveDetail = $state(true);
+	/**
+	 * Figure and ground, swapped on the density verdict. Off by default: the cloud's
+	 * subject at rest is the structure that was found, and this makes its subject the
+	 * sounds nothing claims.
+	 */
+	let unheardFigure = $state(false);
+	/**
+	 * How many points a density clustering refused, counted from the joined channel rather
+	 * than read from the manifest.
+	 *
+	 * The manifest's own `unassigned` is 0 on this build and correctly so — the `label`
+	 * clustering assigns everything — so the number the panel needs is not there to read.
+	 * `null` means the channel is absent, which the control shows as disabled rather than
+	 * as zero: "we did not ask" and "we asked and nothing was refused" are different
+	 * claims, and only one of them is true here.
+	 */
+	const unheardCount = $derived(
+		assets?.points.unassigned
+			? assets.points.unassigned.reduce((sum: number, v: number) => sum + (v ? 1 : 0), 0)
+			: null
+	);
+	const unheardShare = $derived(
+		unheardCount !== null && assets ? unheardCount / assets.points.n : null
+	);
 	const galaxyStats = $derived(
 		assets ? createStats(assets.points.n, assets.centroids.items.length) : null
 	);
@@ -1235,9 +1259,19 @@
 			refs: song.refs,
 			syllables: [],
 			gaps: [],
-			source: 'documented',
+			// **A `learned_bout` is not a documented sequence and must not be rendered as
+			// one.** `learn.py` writes one per fitted species with `confidence: 'invented'`
+			// precisely because "the sequence is ours even though the syllables are
+			// measured", and 2 488 of the 2 509 songs in this build are that. Hardcoding
+			// `documented` here credited every one of them to a literature the corpus does
+			// not hold, and the note underneath said "documented syllable inventory" over
+			// syllables that are all `unlabelled`.
+			source: song.confidence === 'invented' ? 'invented' : 'documented',
 			matched: [],
-			note: 'Rendered from this species’ documented syllable inventory.'
+			note:
+				song.confidence === 'invented'
+					? 'Sampled from a first-order syntax measured from this species’ field recordings. The syllables are measured; the order is ours.'
+					: 'Rendered from this species’ documented syllable inventory.'
 		};
 	}
 
@@ -2312,6 +2346,7 @@ uv run birdy-pipeline build</pre>
 				plain={!provColours}
 				{birdColours}
 				adaptive={adaptiveDetail}
+				unheard={unheardFigure}
 				selectedSpecies={focus >= 0 ? (currentSpecies?.id ?? '') : ''}
 				{provShown}
 				pinned={pinnedCluster}
@@ -2542,6 +2577,44 @@ uv run birdy-pipeline build</pre>
 										}}>show everything</button
 									>
 								{/if}
+							</section>
+							<!--
+								The one question this map cannot answer for itself.
+
+								Its clustering is `label`: every point gets a knot, so "none of these"
+								is not in its output space and `manifest.unassigned` is 0. The verdict
+								is joined in from a separate hdbscan build of the same point set
+								(`analysis/v10_unknown_join.py`), and the control is disabled outright
+								on a build that has no such channel — a switch that moves nothing is
+								worse than an absent one, because it implies a measurement.
+							-->
+							<section class="block">
+								<p class="axis mono">what nothing claims</p>
+								<p class="note faint">
+									{#if unheardShare !== null}
+										A density clustering was asked the same corpus and left
+										<b>{unheardCount?.toLocaleString()}</b> of
+										{assets.points.n.toLocaleString()} sounds — {(unheardShare * 100).toFixed(1)} %
+										— in no dense region at all. This map names every one of them, so
+										that refusal is the only place it can be read.
+									{:else}
+										This build carries no density verdict, so nothing here can be shown
+										as unclaimed. It needs a <code>--clustering hdbscan</code> build of
+										the same point set, joined by row.
+									{/if}
+								</p>
+								<div class="checks">
+									<label
+										class="check"
+										title="Draw the sounds a density clustering refused as the picture, and the ones it placed as faint ground. Off, the cloud's subject is the structure that was found; on, it is what nothing claims."
+									>
+										<input
+											type="checkbox"
+											bind:checked={unheardFigure}
+											disabled={unheardShare === null}
+										/> What nothing claims
+									</label>
+								</div>
 							</section>
 							<!--
 								The cost of the picture, measured. Not decoration: the two renderer
@@ -2795,9 +2868,19 @@ uv run birdy-pipeline build</pre>
 					</div>
 				{:else if lastPhrase}
 					<div class="best">
+						<!-- Two badges, because a phrase makes two claims and they can disagree.
+						     The first is about the sounds (how strong the documented function is),
+						     the second about the order (whether any bird sang this sequence). An
+						     improvisation is 'unlabelled' + 'invented': real audio, our bout. One
+						     badge alone printed "field recording" over a phrase nobody has sung. -->
 						<span class="badge {lastPhrase.confidence}">
 							{confidenceLabel(lastPhrase.confidence).text}
 						</span>
+						{#if sourceLabel(lastPhrase.source)}
+							<span class="badge invented" title={sourceLabel(lastPhrase.source)?.hint}>
+								{sourceLabel(lastPhrase.source)?.text}
+							</span>
+						{/if}
 						<h3 class="strong">{lastPhrase.label}</h3>
 						{#if singer}<p class="accent">sung by {singer}</p>{/if}
 						<p class="accent">“{lastPhrase.gloss}”</p>

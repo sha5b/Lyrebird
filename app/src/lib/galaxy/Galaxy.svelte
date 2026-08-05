@@ -81,6 +81,12 @@
 		 */
 		adaptive?: boolean;
 		/**
+		 * The Display panel's "what nothing claims" switch: swap figure and ground on the
+		 * joined density verdict. Passed straight through to PointCloud, which owns the
+		 * easing and the absent-channel guard.
+		 */
+		unheard?: boolean;
+		/**
 		 * The two-level arrangement (layouts.ts `localShapes`): knot centres from the
 		 * global projection, members from a local projection of their own features.
 		 * Read once at build time — the page remounts the canvas when it changes.
@@ -124,6 +130,7 @@
 		birdColours = false,
 		provShown = [true, true, true, true, true],
 		adaptive = true,
+		unheard = false,
 		localKnots = true,
 		selectedSpecies = '',
 		onpick,
@@ -295,7 +302,7 @@
 			<GridBurst {assets} {signal} {view} prov={!plain} />
 			<ContextPaths {assets} {signal} {view} prov={!plain} />
 			<RelationThreads {assets} {view} speciesId={selectedSpecies} />
-			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} {birdColours} {provShown} {adaptive} {localKnots} bind:knotSpacing {stats} />
+			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} {birdColours} {provShown} {adaptive} {unheard} {localKnots} bind:knotSpacing {stats} />
 			<Trajectory {assets} {signal} {view} {spread} {pointSize} prov={!plain} />
 			{#if labels}
 				<NodeProjector {assets} {signal} elements={labelElements} bind:slots={labelSlots} {focus} {pinned} {view} prov={!plain} related={relatedKnots} {stats} />
