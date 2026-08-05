@@ -2353,6 +2353,7 @@ def cmd_specbench(args: argparse.Namespace) -> int:
         limit=args.limit,
         log=log,
         extra_caches=[Path(p) for p in (args.extra_audio_cache or [])],
+        band_cap_hz=None if args.no_band_cap else args.band_cap_hz,
     )
     log(specbench.format_report(report))
     if args.out:
@@ -3979,6 +3980,19 @@ def build_parser() -> argparse.ArgumentParser:
                           "format — that cache is lossy MP3 against the iNat cache's "
                           "lossless WAV, and every benched row records `audioFormat` so the "
                           "two are read as separate arms rather than averaged")
+    spb.add_argument("--band-cap-hz", type=float, default=11025.0,
+                     help="hold every row's comparison to this band, so rows from "
+                          "caches with different sample rates are comparable at all "
+                          "(default %(default)s Hz, the iNat cache's own Nyquist). "
+                          "Without it a row is banded at its own file's Nyquist and "
+                          "the caches sit an octave apart: wav-backed types read "
+                          "median MCD 78.96 dB against mp3-backed 111.70, which is "
+                          "mostly the band and not the fit. Rows reaching the cap "
+                          "carry `atCap` and are the population to quote")
+    spb.add_argument("--no-band-cap", action="store_true",
+                     help="band each row at its own file's Nyquist instead, "
+                          "reproducing every figure published before the cap existed. "
+                          "NEVER average the arms of such a run")
     spb.add_argument("--limit", type=int, default=200,
                      help="how many fitted types to bench (default %(default)s)")
     spb.add_argument("--calibration-dir", default=None,

@@ -58,6 +58,36 @@ exists to hide from the critic). The bench therefore drops every mel band and ST
 bin above the source file's own Nyquist (`band_hz`), read from the file header before
 decoding. Within the kept band both sides hold real energy and the distance is about
 the bird.
+
+**The band cap, and why an uncapped MCD may not be averaged across caches.** Per-file
+banding keeps each row honest and makes rows *incomparable to each other*. Measured on
+a 60-type run once the xeno-canto cache was reachable:
+
+    reference              n   median MCD   median band
+    wav (iNat)            24     78.96 dB     11 025 Hz
+    mp3 (xeno-canto)      36    111.70 dB     22 050 Hz
+
+That 33 dB is mostly the band, not the fit: a wider band admits more high frequency,
+which is where the render is weakest, and lossy coding attenuates its own high end
+below its Nyquist where the per-file guard cannot reach. Averaging those arms would
+have doubled the bench's population and silently changed what its central number
+means.
+
+`band_cap_hz` closes that by measuring every row in one declared band: the effective
+limit is `min(file Nyquist, cap)`. A row whose own Nyquist is at or above the cap is
+flagged `atCap` and those rows are directly comparable — same bands, same bins, any
+cache. A row below the cap is still measured in its own narrower band, still counted,
+and still excluded from the capped aggregate, because a narrower band is a different
+measurement however it was arrived at. `format_report` reports the capped population
+separately from the per-file one and never pools the two.
+
+`DEFAULT_BAND_CAP_HZ` is 11 025 Hz, the iNat cache's own Nyquist: it is the widest band
+both caches contain, and it sits far below where lossy coding starts thinning the
+spectrum. Passing `band_cap_hz=None` restores per-file banding, which is what every
+figure published before the cap existed used.
+
+Measured, on one run of 60 types held fixed so that only the banding changes: median
+MCD **111.82 dB per-file against 93.67 dB capped**. The band was worth 18 dB.
 """
 
 from __future__ import annotations
@@ -77,6 +107,11 @@ from . import features, harvest, learn, syrinx
 N_MCEC = 25
 #: c0 is log energy; loudness normalisation owns it. The distance runs over c1..c24.
 MCD_SCALE = 10.0 / math.log(10.0)  # natural-log cepstra -> dB
+#: The common band every row is measured in, so rows from different caches are
+#: comparable. 11 025 Hz is the iNat cache's own Nyquist: the widest band both caches
+#: hold, and far below where lossy coding starts thinning the spectrum. See the module
+#: docstring — an uncapped MCD may not be averaged across caches.
+DEFAULT_BAND_CAP_HZ = 11025.0
 #: FFT sizes of the multi-resolution STFT distance (Yamamoto 2019; the auraloss/
 #: neural-vocoder convention): 2048 sees formant-scale structure, 512 sees texture.
 STFT_SIZES = (512, 1024, 2048)
@@ -394,14 +429,18 @@ def run_bench(
     limit: int = 200,
     log: Callable[[str], None] = print,
     extra_caches: "list[Path] | None" = None,
+    band_cap_hz: float | None = DEFAULT_BAND_CAP_HZ,
 ) -> dict[str, Any]:
     """Render up to `limit` fitted types against their original audio and correlate.
 
     A type qualifies when it (a) ships in the inventory with a `learned` block,
     (b) has members in the store's typing.json, and (c) at least one member's
-    recording is iNat audio still sitting in `audio_cache` — the only audio that
-    exists, per AGENTS.md's owner-sanctioned exception. Everything else is skipped
-    with a counted reason, never silently.
+    recording resolves in `audio_cache` or any `extra_caches`. Everything else is
+    skipped with a counted reason, never silently.
+
+    `band_cap_hz` is the common band the comparison is held to, so rows from caches
+    with different sample rates are comparable; see the module docstring. Pass None
+    for per-file banding, which is what every figure published before the cap used.
     """
     audio_cache = Path(audio_cache)
     caches = [audio_cache] + [Path(p) for p in (extra_caches or [])]
@@ -455,8 +494,14 @@ def run_bench(
                     skipped["noCachedAudio"] += 1
                     continue
                 # The file's own Nyquist is the band limit of the comparison:
-                # anything above it measures the format, not the fit.
-                band_hz = float(sf.info(str(wav_path)).samplerate) / 2.0
+                # anything above it measures the format, not the fit. The cap then
+                # holds every row to one band so rows from caches an octave apart
+                # are comparable at all; `atCap` marks the rows that reach it.
+                file_band_hz = float(sf.info(str(wav_path)).samplerate) / 2.0
+                band_hz = (
+                    file_band_hz if band_cap_hz is None
+                    else min(file_band_hz, band_cap_hz)
+                )
                 mono, rate = harvest.decode(wav_path, features.SAMPLE_RATE)
             except Exception as exc:
                 log(f"  skip {sp['id']}/{syl['id']}: decode failed: {exc}")
@@ -495,7 +540,12 @@ def run_bench(
                     # The reference's container, so a lossless arm and a lossy one can be
                     # read separately instead of averaged. See `resolve_audio`.
                     "audioFormat": wav_path.suffix.lstrip(".").lower(),
+                    # `bandHz` is the band this row was actually measured in;
+                    # `fileBandHz` is the reference's own Nyquist. They differ when
+                    # the cap bit. Only `atCap` rows share a band with each other.
                     "bandHz": round(band_hz, 1),
+                    "fileBandHz": round(file_band_hz, 1),
+                    "atCap": bool(band_cap_hz is not None and file_band_hz >= band_cap_hz),
                     "storedCosine": learned_block.get("resynthesisCosine"),
                     "cosine": round(cosine, 4),
                     "melTarget": round(mel_term.similarity(render), 4),
@@ -505,12 +555,23 @@ def run_bench(
             if len(rows) % 25 == 0:
                 log(f"  {len(rows)} types benched")
 
+    capped = [r for r in rows if r["atCap"]]
     report: dict[str, Any] = {
         "store": str(store.root),
         "audioCache": str(audio_cache),
+        "bandCapHz": band_cap_hz,
+        # The comparable population. Rows below the cap keep their own narrower band
+        # and are counted, never pooled with these: a narrower band is a different
+        # measurement however it was arrived at.
+        "atCapTypes": len(capped),
+        "belowCapTypes": len(rows) - len(capped),
         "types": rows,
         "skipped": skipped,
         "correlations": correlations(rows),
+        # Correlations over the comparable rows only. With a cap in force this is the
+        # figure to quote; `correlations` above spans every row for continuity with
+        # runs made before the cap existed.
+        "correlationsAtCap": correlations(capped) if capped else {},
     }
     return report
 
@@ -597,16 +658,48 @@ def format_report(report: dict[str, Any]) -> str:
                 f"{r['mcdDb']:>6.2f} {r['mcdDbRaw']:>6.2f} "
                 f"{r['stftDb']:>6.2f} {r['stftDbRaw']:>6.2f}"
             )
-        mcd = [r["mcdDb"] for r in rows]
-        stft = [r["stftDb"] for r in rows]
-        lines.append(
-            f"\nMCD median {float(np.median(mcd)):.2f} dB "
-            f"(p10 {float(np.percentile(mcd, 10)):.2f}, "
-            f"p90 {float(np.percentile(mcd, 90)):.2f}); "
-            f"STFT error median {float(np.median(stft)):.2f} dB "
-            f"(p10 {float(np.percentile(stft, 10)):.2f}, "
-            f"p90 {float(np.percentile(stft, 90)):.2f})"
-        )
+        cap = report.get("bandCapHz")
+
+        def spread(subset: Sequence[dict[str, Any]], tag: str) -> str:
+            mcd = [r["mcdDb"] for r in subset]
+            stft = [r["stftDb"] for r in subset]
+            return (
+                f"{tag}: MCD median {float(np.median(mcd)):.2f} dB "
+                f"(p10 {float(np.percentile(mcd, 10)):.2f}, "
+                f"p90 {float(np.percentile(mcd, 90)):.2f}); "
+                f"STFT error median {float(np.median(stft)):.2f} dB "
+                f"(p10 {float(np.percentile(stft, 10)):.2f}, "
+                f"p90 {float(np.percentile(stft, 90)):.2f})"
+            )
+
+        # Never one median over both populations: rows measured in different bands
+        # are different measurements, and averaging them changes what MCD means.
+        capped = [r for r in rows if r.get("atCap")]
+        below = [r for r in rows if not r.get("atCap")]
+        if cap is None:
+            lines.append("\n" + spread(rows, f"all {len(rows)} rows, per-file banding"))
+            lines.append(
+                "  no band cap in force — rows are banded per file, so these rows are "
+                "NOT comparable\n  to each other across caches. Do not average the arms."
+            )
+        else:
+            lines.append(f"\nband cap {cap:.0f} Hz")
+            if capped:
+                lines.append("  " + spread(capped, f"at the cap, {len(capped)} rows"))
+            if below:
+                lines.append("  " + spread(below, f"below the cap, {len(below)} rows"))
+                lines.append(
+                    "  the below-cap rows keep their own narrower band, so they are a "
+                    "separate\n  population — quote the at-cap figure, never a median "
+                    "over both."
+                )
+        by_format: dict[str, int] = {}
+        for r in rows:
+            by_format[str(r.get("audioFormat", "?"))] = (
+                by_format.get(str(r.get("audioFormat", "?")), 0) + 1
+            )
+        lines.append("  reference formats: "
+                     + ", ".join(f"{k} {v}" for k, v in sorted(by_format.items())))
     return "\n".join(lines)
 
 

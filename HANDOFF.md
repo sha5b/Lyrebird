@@ -1,3 +1,117 @@
+# Lyrebird — READ THIS FIRST (2026-08-05): the +0.77 dB figure is retired, the lambda curve is withdrawn, and the band cap is built
+
+Three things closed while you were away, and one of them reverses an argument this handoff
+made two entries ago. In the order they matter:
+
+```
+v10_snr_reconcile   the band fix's SNR gain is +2.9 dB per recording, not +0.77.
+                    docs/23's figure REPLICATES; the exchange rate is close, not 4:1
+lambda_recovery     clause 2 FAILED -> the depth reading is withdrawn, as pre-registered
+lambda_null_band    why it failed: at n <= 123, ML puts lambda at the boundary in
+                    85-95 % of draws. The estimator, not the data
+specbench           --band-cap-hz built and verified: same 60 types, median MCD
+                    111.82 -> 93.67 dB. The two cache arms are addable now
+```
+
+## 1. The +0.77 dB was an unstable statistic, and correcting it changes your SNR decision
+
+I asked the docs/23 tension the previous entry flagged, and the answer went against the
+number I had written. `analysis/v10_snr_reconcile.py`, both segmentations on the same cached
+recordings, every statistic reported side by side:
+
+```
+                        n=60, seed 0            n=120, seed 0        docs/23 (n=120)
+as stored, pooled rows  6.36 -> 7.13  (+0.77)   6.45 -> 9.02 (+2.57)
+as stored, per rec.     9.52 -> 11.98 (+2.46)   9.65 -> 12.55 (+2.90)  12.73 -> 15.85 (+3.2)
+  share improving             0.783                   0.775                 0.81
+common band, pooled     2.13 -> 7.09  (+4.96)   2.91 -> 8.95 (+6.04)
+common band, per rec.   6.39 -> 11.96 (+5.56)   8.57 -> 12.48 (+3.91)
+retention                     0.711                   0.712                 0.775
+```
+
+**The +0.77 reproduces exactly at n=60 seed 0, which is how I know it was that run, and it
+becomes +2.57 on 120 recordings from the same cache.** A median over pooled rows lets one
+recording with hundreds of near-floor syllables outvote fifty clean recordings. docs/23's
+statistic is the per-recording one — its own "81 % of recordings improving" already said so —
+and that one is stable: +2.46 and +2.90 across the two samples, 77.5 and 78.3 % improving.
+Its absolute pair sits ~3 dB above this cache's current draw, so **quote the gain and the
+share, never the absolute pair.**
+
+**I also checked the objection that would have killed both figures, and it fails in the
+informative direction.** Each arm measures SNR in the band it segments in (`learn.py`
+~573-587, deliberately), so every cross-arm number here compares two meters. Holding the
+meter fixed enlarges the gain rather than shrinking it: through one common band the full-band
+arm falls to 2.91 dB against the in-band arm's 8.95. Full-band spans sit on rumble peaks, so
+in the band that describes them they are nearly floor — §23.9.1's own mechanism, measured.
+
+**What this does to the decision you left open.** The band fix buys ~+2.9 dB at 0.71
+retention; a 6 dB floor buys +3.3 dB at 0.77 retention and keeps 224 more species. Close, not
+four to one. And they are different kinds of number: **the floor selects rows on the field it
+then reports**, so its median rises by construction and not one span is improved, while the
+band fix changes which spans exist and does not select on SNR at all. The floor still wins on
+species. The trade is yours and it is now much closer than the paragraph I wrote implied.
+
+Written through to `v10_snr_floor.py` (which has now been wrong twice, both corrections kept),
+docs/23 §23.9.1, `analysis/README.md`, and the whitepaper's §`sec:noisegates`.
+
+## 2. The lambda recovery curve: clause 2 failed, so the reading is withdrawn
+
+The curve finished. Clause 1 held — lambda climbs 0.106 to 0.319 across seven floors — and
+clause 3 held. **Clause 2, the one I said would decide it, did not: the matched-n controls
+spread 0.230 against a bar of 0.159 (half the depth spread).** Pre-registered, no threshold
+moves afterwards, so the depth reading is withdrawn.
+
+`analysis/lambda_null_band.py` then asked *why*, with 20 control draws per size instead of the
+curve's one:
+
+```
+     n   reps   p05    median   p95     at boundary
+    70     20   0.000  0.000    0.131      90%
+    76     20   0.000  0.000    0.008      95%
+    82     20   0.000  0.000    0.173      85%
+   123     20   0.000  0.000    0.037      90%
+   651     20   0.000  0.048    0.133      35%
+  1379     20   0.041  0.075    0.104       0%
+```
+
+**At the sizes where the deep arms live, a single ML lambda is close to a coin flip against
+zero.** The curve's single control draw at n=651 happened to land on the boundary, which is
+what 35 % of draws there do. It also exposes an instrument bug worth carrying: the curve's
+`lambda_min/max` ranged over the ten posterior *trees*, not over the sampling of species, so
+it reported zero width beside arms differing by 0.1 — it was measuring the wrong source of
+variation.
+
+Five of six depth arms do sit above the null p95 at their own n, so I think the effect is
+probably real. **That comparison was designed after seeing clause 2 fail, so it is a lead for
+a fresh pre-registration and not a result, and I have written it into the paper as exactly
+that.** What stands on its own: at n=651 a fitted lambda of 0.000 is unremarkable, because a
+third of random draws of 651 species from this same data produce it. The whitepaper previously
+read "both recover together with depth" at §PGLS; that sentence is gone.
+
+## 3. The band cap is built, and the band was worth 18 dB
+
+`specbench --band-cap-hz` (default 11 025 Hz, the iNat cache's own Nyquist — the widest band
+both caches hold, and far below where lossy coding thins the spectrum). Effective band is
+`min(file Nyquist, cap)`; rows reaching it carry `atCap` and are the comparable population;
+rows below keep their own narrower band, stay counted, and are never pooled with the rest.
+`format_report` prints the two populations separately and refuses a single median over both.
+`--no-band-cap` reproduces every pre-cap figure.
+
+Verified on the same 60 types, so only the banding changed: **median MCD 111.82 dB per-file
+against 93.67 dB capped.** The band was worth 18 dB of the 33 dB gap this handoff flagged, and
+the arms are addable now.
+
+## 4. Still open — and it is the same decision, with better numbers
+
+**The SNR floor is yours to call**, and the reconciliation above is the input it was waiting
+on. 0 dB is near-free (3.6 % of rows, 97 species, +0.5 dB). 6 dB buys +3.3 dB at 0.77
+retention and 2 162 species. The band fix buys +2.9 dB at 0.71 retention and 1 938 species.
+They are not mutually exclusive and they are not the same kind of number — see §1.
+
+Both papers still build: system paper **43 pages**, 0 undefined references.
+
+---
+
 # Lyrebird — READ THIS FIRST (2026-08-04, night): the full sweep was authorised, measured, and NOT run — its premise fails, and the measurement found a better lever
 
 **The v10 sweep was not run, on evidence rather than caution.** It was authorised ("now,

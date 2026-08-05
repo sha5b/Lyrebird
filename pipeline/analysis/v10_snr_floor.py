@@ -103,31 +103,53 @@ def main() -> int:
         "corpus_snr_p90": round(st.quantiles(have, n=10)[8], 2) if have else None,
         "fit_floor": FIT_FLOOR,
         "species_over_fit_floor_now": species_now,
-        # **This block was wrong in the first version of this script and the correction
-        # matters.** It asserted that the band fix "buys no SNR, because it is not selecting
-        # on SNR". That was an inference, never measured, and it is false. Segmenting the
-        # same 60 cached recordings both ways and taking the SNR of every resulting row:
-        # full-band median 6.36 dB against in-band 7.13 dB at 0.711 retention. The band fix
-        # does raise median SNR. It raises it by 0.77 dB while removing 29 % of the rows.
+        # **This block has been wrong twice and both corrections are kept, because the
+        # second one reverses the first's conclusion.**
         #
-        # So the honest comparison is an exchange rate rather than a dominance: per row
-        # sacrificed the floor buys about four times the median-SNR gain, and keeps 224 more
-        # species. The band fix is a poor trade, not a worthless one.
+        # v1 asserted the band fix "buys no SNR, because it is not selecting on SNR" — an
+        # inference, never measured, and false.
         #
-        # Unresolved, and flagged rather than smoothed over: docs/23 reports the in-band arm
-        # at an SNR median of 15.9 dB against 12.7 dB over 120 recordings, a +3.2 dB gain
-        # where the measurement above finds +0.77. Different sample, and possibly a different
-        # statistic (per-recording medians averaged, rather than the median over rows). The
-        # two need reconciling before either is quoted as the band fix's SNR yield.
+        # v2 measured 60 cached recordings both ways, took the median over every resulting
+        # row, and found +0.77 dB at 0.711 retention. It flagged docs/23's +3.2 dB as an
+        # unresolved tension and argued the floor buys "about four times the gain per row
+        # sacrificed".
+        #
+        # v3, `analysis/v10_snr_reconcile.py`: **that +0.77 was an unstable statistic, not a
+        # smaller truth.** It reproduces exactly at n=60 seed 0 and becomes +2.57 on 120
+        # recordings from the same cache. A median over rows lets one recording with hundreds
+        # of near-floor syllables outvote fifty clean recordings. The per-recording statistic
+        # — which is docs/23's, and which its "81 % of recordings improving" already implied —
+        # is stable across both samples at +2.46 and +2.90, so docs/23's +3.2 dB replicates
+        # and the figure quoted below is its gain rather than its absolute pair (that pair
+        # sits ~3 dB above this cache's current draw).
+        #
+        # The same script also refutes the obvious objection. Both arms measure SNR in the
+        # band they segment in (`learn.py` ~573-587), so every cross-arm figure here compares
+        # two meters. Scored through one common band, the gain does not shrink — it grows,
+        # full-band spans falling to 2.91 dB against the in-band arm's 8.95, because full-band
+        # spans sit on rumble peaks and are nearly floor in the band that describes them.
+        #
+        # **So the exchange rate below is close, not four to one, and the two gains are not
+        # the same kind of number.** The floor selects rows on the very field it reports, so
+        # its median rises by construction and no span improves; the band fix changes which
+        # spans exist and does not select on SNR. The floor still keeps 224 more species.
         "band_fix_for_comparison": {
             "rows_kept_share": 0.777,
             "species_over_fit_floor": 1938,
-            "median_snr_full_band": 6.36,
-            "median_snr_in_band": 7.13,
-            "snr_gain_db": 0.77,
-            "measured_on": "60 cached iNat recordings, both segmentations, all rows",
-            "docs23_reports_instead": {"from": 12.7, "to": 15.9, "n_recordings": 120},
-            "source": "analysis/v10_resegment_yield.json + this file's docstring",
+            "snr_gain_db_per_recording": 2.9,
+            "snr_gain_db_range": [2.46, 2.9],
+            "share_recordings_improving": 0.775,
+            "statistic": "median of per-recording medians — the pooled-row median is "
+                         "unstable at this sample size and is not quoted",
+            "measured_on": "120 cached iNat recordings, both segmentations "
+                           "(analysis/v10_snr_reconcile.py)",
+            "docs23_agrees": {"gain_db": 3.2, "share_improving": 0.81, "n_recordings": 120},
+            "retired": {"snr_gain_db": 0.77, "why": "pooled-row median, n=60 seed 0; the "
+                        "same statistic gives +2.57 at n=120"},
+            "not_the_same_kind_of_number": "the floor selects on the field it reports, so "
+                                           "its gain is partly definitional; the band fix "
+                                           "does not select on SNR",
+            "source": "analysis/v10_resegment_yield.json + v10_snr_reconcile.json",
         },
         "table": table,
     }
@@ -147,13 +169,14 @@ def main() -> int:
     print()
     b = result["band_fix_for_comparison"]
     print(f"  for comparison, the band-fix sweep: share {b['rows_kept_share']}, "
-          f"species {b['species_over_fit_floor']}, median SNR "
-          f"{b['median_snr_full_band']} -> {b['median_snr_in_band']} dB "
-          f"(+{b['snr_gain_db']})")
-    print("  So it is an exchange rate, not a dominance: per row sacrificed the floor buys")
-    print("  about four times the median-SNR gain, and keeps 224 more species. See the note")
-    print("  in this file about the docs/23 figure, which reports +3.2 dB and needs")
-    print("  reconciling with the +0.77 measured here.")
+          f"species {b['species_over_fit_floor']}, SNR "
+          f"+{b['snr_gain_db_per_recording']} dB per recording "
+          f"({b['share_recordings_improving']:.0%} of recordings improving)")
+    print("  The rates are close: the fix buys +2.9 dB at 0.71 retention, a 6 dB floor buys")
+    print("  +3.3 dB at 0.77 retention and keeps 224 more species. They are also not the same")
+    print("  kind of number — the floor selects rows on the field it then reports, so its")
+    print("  median rises by construction and no span is improved. See v10_snr_reconcile.py;")
+    print("  the +0.77 dB figure this script used to quote is retired as unstable.")
 
     OUT.write_text(json.dumps(result, indent=1))
     print(f"\n  written to {OUT.name}")

@@ -522,23 +522,34 @@ syllables at a pitch median of 3\,179\,Hz instead of 2\,622\,Hz and a signal-to-
 of 15.9\,dB instead of 12.7\,dB, improving 81\,\% of recordings.
 % docs/23 §23.9.1; HANDOFF 2026-08-03 (~19:40)
 
-\textbf{That signal-to-noise gain does not replicate at the size it was first measured, and
-the corpus has still not been re-derived.} A later re-measurement segmented 60 cached
-recordings both ways and took the ratio of every resulting row, rather than per-recording
-medians: it finds the median moving from 6.36\,dB to 7.13\,dB, a gain of 0.77\,dB against the
-3.2\,dB above, at 0.711 retention. The two are not the same statistic on the same sample and we
-have not reconciled them; the smaller figure is the one measured on rows, the larger on 120
-recordings. What the re-measurement also shows is the shape of the disagreement between the two
-segmentations: matched span by span, the rows only the full-band path finds have a median ratio
-of 4.68\,dB and the rows only the band-limited path finds have 2.64\,dB, against 13.61\,dB for
-the rows both find. The two paths agree on the strong material and differ almost entirely on
-marginal spans near the noise floor. Projected over the corpus, re-segmenting costs 22\,\% of
-rows and drops species above the fitting floor from 2\,648 to about 1\,938, while selecting on
-signal-to-noise directly buys roughly four times the median gain per row sacrificed and keeps
-224 more species. So the defect is real and the fix is a poor exchange rate, which is why the
-corpus is still segmented as harvested and why the band fix remains recorded as owed rather
-than applied.
-% analysis/v10_resegment_yield.py, v10_outofband_census.py, v10_snr_floor.py
+\textbf{That gain replicates, but only as a per-recording statistic, and the corpus has still
+not been re-derived.} An intermediate re-measurement on 60 recordings took the median over
+every resulting row instead of per-recording medians and found only 0.77\,dB. That figure is
+withdrawn: the same statistic on 120 recordings from the same cache gives 2.57\,dB, because a
+median over rows lets one recording with hundreds of near-floor syllables outweigh fifty clean
+ones. The per-recording statistic is stable across both samples at 2.46 and 2.90\,dB with 78
+and 77\,\% of recordings improving, which is the 3.2\,dB and 81\,\% above; the absolute pair is
+sample-specific and we quote the gain rather than the levels. A further check holds the meter
+fixed. Each arm ordinarily measures its ratio in the band it segments in, so any cross-arm
+comparison spans two meters; scoring both arms' spans through one common band and one shared
+noise floor, the gain does not shrink but grows, the full-band arm falling to 2.91\,dB against
+the band-limited arm's 8.95\,dB, because full-band spans sit on rumble peaks and are close to
+the floor in the band that describes them.
+
+What the comparison also shows is the shape of the disagreement between the two segmentations:
+matched span by span, the rows only the full-band path finds have a median ratio of 4.68\,dB
+and the rows only the band-limited path finds have 2.64\,dB, against 13.61\,dB for the rows
+both find. The two paths agree on the strong material and differ almost entirely on marginal
+spans near the noise floor. Projected over the corpus, re-segmenting costs 22\,\% of rows and
+drops species above the fitting floor from 2\,648 to about 1\,938, against a 6\,dB
+signal-to-noise floor that buys 3.3\,dB at 0.77 retention and keeps 224 more species. The two
+rates are close rather than four to one, and they are not the same kind of number: a floor
+selects rows on the field it then reports, so its median rises by construction and no span is
+improved, while the band fix changes which spans exist and does not select on signal-to-noise
+at all. The corpus is still segmented as harvested, and the choice between breadth and
+per-recording quality is recorded as open rather than settled.
+% analysis/v10_resegment_yield.py, v10_outofband_census.py, v10_snr_floor.py,
+% v10_snr_reconcile.py
 
 That was a defect, not a filter, and fixing it did not produce a filter. Five candidate
 ingest gates were measured against the one recording a human had labelled noise
@@ -2439,8 +2450,27 @@ $\lambda$ collapsed the range to $[-0.214, -0.207]$. And \textbf{the fitted $\la
 itself a measurement of our own noise}: it comes out at $0.000$ on 651 species and $0.291$ on
 the 76 most deeply sampled, and a $\lambda$ of zero for song frequency cannot be true of
 birds. Measurement error drives $\lambda$ towards zero and attenuates a standardised slope by
-the same mechanism, and both recover together with depth. The shortfall against $-0.510$ at
-full sample is ours and not the birds'.
+the same mechanism. The shortfall against $-0.510$ at full sample is ours and not the birds'.
+
+\textbf{We tested whether that is really a depth effect and the test failed, so we do not
+claim one.} Turning the three points into a curve --- seven sampling floors, each paired with
+a matched-$n$ control subsample of the unfiltered species set --- pre-registered three
+clauses, of which the second decided the reading: the controls must not reproduce the climb.
+They did. $\lambda$ rises 0.106 to 0.319 across the depth arms, but the control arms spread
+0.230 against a bar of half the depth spread, so the depth interpretation is withdrawn as
+pre-registered. A follow-up says why the test could not separate them, and it indicts the
+estimator rather than the data: drawing 20 control subsamples per size instead of one,
+maximum likelihood puts $\lambda$ exactly at its lower boundary in 85 to 95\,\% of draws at
+$n \le 123$ and in 0\,\% at $n = 1\,379$. At the sizes where the deep arms live, a single
+$\lambda$ estimate is mostly a coin flip against zero, and the interval our curve reported
+spanned posterior trees rather than the sampling of species, so it read as zero-width next to
+arms differing by 0.1. Five of six depth arms do sit above the 95th percentile of the null
+band at their own $n$, which is why we think the effect is probably real --- but that
+comparison was designed after seeing the pre-registered one fail, so it is a lead for a
+properly pre-registered test and not a result. What stands is narrower and still useful: at
+$n = 651$ a fitted $\lambda$ of $0.000$ is unremarkable, because a third of random draws of
+651 species from this same data produce it.
+% analysis/lambda_recovery_curve.py, lambda_null_band.py
 
 \paragraph{A recordist-blocked split costs a probe over frozen foundation-model features
 18.51 points of top-1 on Perch and 21.59 on BirdNET, and the gate is met on both.} The

@@ -674,7 +674,27 @@ recordings put over nine tenths of their energy outside the band that describes 
 Fixed: `learn.SEGMENT_BAND_HZ`, a 4th-order Butterworth under `sosfiltfilt` (zero-phase,
 because this pass is about *when* a syllable starts). Over 120 cached recordings, both paths
 on the same audio: **−22.5 % syllables, f0 median 2 622 → 3 179 Hz, SNR median 12.73 → 15.85 dB
-with 81 % of recordings improving.** A spectral mask was tried first and failed — at
+with 81 % of recordings improving.**
+
+> **The statistic here is per-recording, and that matters — it was challenged and it held.**
+> `analysis/v10_snr_reconcile.py` (2026-08-05) re-ran both paths on 120 recordings of the
+> current cache after an intermediate measurement on 60 reported only +0.77 dB. The +0.77 was
+> a **median over pooled rows**, and it is retired: reproduced exactly at n=60 seed 0, it
+> becomes +2.57 at n=120, because one recording with hundreds of near-floor syllables outvotes
+> fifty clean ones. The per-recording statistic above is the stable one — +2.46 dB at n=60 and
+> +2.90 dB at n=120, 78 % and 77 % of recordings improving. **Quote the gain and the share,
+> not the absolute pair:** this cache's current draw gives 9.65 → 12.55 dB, about 3 dB under
+> the levels above, so the levels are a property of the 2026-08-03 draw.
+>
+> One caveat the reconciliation raises and settles. Each arm measures SNR *in the band it
+> segments in* (`learn.py` ~573-587, deliberately — mixing them is how a 98.7 %-rumble
+> recording reports a healthy ratio), so every figure in this section compares two meters.
+> Holding the meter fixed does not shrink the gain, it enlarges it: through one common band
+> and one shared noise floor the full-band arm falls to 2.91 dB against the in-band arm's
+> 8.95 dB. Full-band spans sit on rumble peaks, so in the band that describes them they are
+> nearly floor — §23.9.1's own mechanism, measured directly.
+
+A spectral mask was tried first and failed — at
 `ENV_FRAME` = 512 the bins are 86 Hz, so `F0_MIN_HZ` is bin 4.6 and a Hann main lobe is four
 bins wide; it found 11 segments where there are four.
 
