@@ -1,4 +1,581 @@
-# Lyrebird — READ THIS FIRST (2026-08-05): the +0.77 dB figure is retired, the lambda curve is withdrawn, and the band cap is built
+# Lyrebird — READ THIS FIRST (2026-08-05, night): the build the last entry told you to babysit was already dead, and two of the three undrawn channels now draw
+
+The previous entry opens with "FIRST THING TO DO: the unknown-map build is still running."
+It was not. It died at **19:10:52**, one line into the clustering step, and sat there for
+70 minutes. No traceback, no OOM in the journal, 85 GB of 93 GB free — it went with the
+session that launched it. Relaunched under `setsid nohup` so it outlives this one.
+
+```
+unknown map         RELAUNCHED 20:20, same command, log moved to build-unknown.log.dead-1910.
+                    Boruvka path timed live: clustering entered 20:47:16
+knnAgreement        DRAWN. 444 213 values that nothing read now drive saturation.
+                    Measured: chroma -14.9 %, ink area held to 1.2 % (probe:trust)
+0.0849 -> 0.4574    the figure layouts.ts rests its whole argument on is five builds stale.
+                    This build is 0.4574. Part of that argument is withdrawn
+per-knot tearing     SHIPPED without a rebuild. 6 316 knots, validation reproduced all five
+                    manifest aggregates exactly. Range 1.361 to 4 001.2
+-0.0 relation       NOT a fit degeneracy: two species share a byte-identical recording.
+                    17 cross-species duplicate groups, 35 species, 11 pairs in the asset
+npm run check       4 errors -> 0. The two 404s on every load -> 0
+probe:words         was dying before its first assertion. probe:stage's bird-pick has been
+                    silently skipping, so every tag assertion in it was dead
+```
+
+## 1. The build, and the real cost of the Boruvka path
+
+Relaunched at 20:20 with the exact command the last entry recorded, `learned-v10.json`
+deliberately kept over the newer `learned-inventory.json` the build warns about — the whole
+join rests on row `i` being the same syllable in both asset sets, and swapping the inventory
+breaks that.
+
+**Timed, rather than extrapolated.** The space map came out identical to the shipped build
+(rff median cos **0.918**, linear 0.742), and clustering entered at **20:47:16**:
+
+```
+20:47:16   hdbscan: min_cluster_size=25 on standardised descriptors
+20:57      10 min in, 10 cores busy, 99 threads, 10.2 GB RSS  <- the parallel MST
+21:06      19 min in, CPU drops to ~1 core                    <- single-threaded from here
+```
+
+The ~22 min estimate in the last entry came from 44.8 s at n=80 000 and 265.2 s at
+n=200 000, which is n^1.94 and predicts ~21 min at 444 213. **The parallel MST fits that;
+what the estimate does not cover is the single-threaded tail after it.** If you re-time this
+path, time the two halves separately — the scaling measurement was of the MST alone.
+
+## 2. `knnAgreement` draws, and it spends saturation on purpose
+
+444 213 values, ~2 MB a load, read by nothing for the entire life of the build. It now
+drives colour: a mark whose ten drawn neighbours mostly do not share its type keeps its
+size, its weight and its place, and drains toward its own luminance. Behind the Display
+panel's **"Neighbours disagree"**, off by default, eased like `uUnheard`.
+
+**Why not radius, which is what docs/25 §25.3 proposed.** Size and ink are how this view
+says *this sound is responding*. Spending either on a doubtful position would draw an
+unsupported mark as a quiet sound — and what is in doubt is not the sound, it is where the
+map put it. Draining the hue says "the colour here is standing on less" and moves nothing,
+which is also what lets the same frame be compared with the channel on and off.
+
+Two checks, because "wired, compiled, eased and multiplied by zero" passes everything else:
+
+```
+verify:trust    per-point mean 0.4574 == manifest 0.4574 to four places, one value per
+                point, all finite, all in 0..1, plus the whole source chain
+probe:trust     mean chroma over the ink 0.0502 -> 0.0427 (-14.9 %) with the ink area
+                holding to 1.2 % — colour spent, nothing else
+```
+
+**Per point rather than as a mean: 109 293 of 444 213 sounds (24.6 %) sit among ten
+strangers** — agreement exactly 0. The manifest's mean cannot say that, and it is the number
+the panel prints next to the switch.
+
+## 3. The number that argument rests on is five builds stale, and it moved by 5x
+
+`layouts.ts` justifies the two-level `localShapes` layout with *"`knnAgreement` on this build
+is **0.0849** — 8.5 % of a point's ten nearest neighbours share its type — so what the global
+projection was saying inside a knot was mostly the residue of a fit dominated by everything
+else"*.
+
+**On this build it is 0.4574.** Manifest, HUD (`NEIGHBOURS 46 %`) and a fresh pass over the
+444 213 shipped values all agree to four places. The 0.0849 is traceable and was real — it is
+the figure `types.ts` records against the **13 748**-type inventory, an older corpus than this
+15 341-type one — which makes it stale rather than wrong, and worse in one specific way: it
+reads as current.
+
+**At 46 % the local structure of the global projection is not noise, so "this loses very
+little" is no longer established by the number offered for it.** The layout's other reason is
+untouched and is the stronger one: a knot laid out from its own members cannot be torn by the
+global fit, and 2 035 of 6 316 measured knots are torn in the shipped positions. Whether the
+two-level default holds on that ground alone is the owner's call; it is not resolved by
+re-reading the docstring. Corrected in `layouts.ts`, `types.ts` (both sites) and docs/25.
+
+## 4. Per-knot tearing ships, and it validated against the manifest exactly
+
+`torn_clusters` computed a ratio for every knot and returned five aggregates, discarding all
+6 316. So the manifest could say "2 035 torn, median 3.704" on a map with 0.43 Pearson
+faithfulness while a reader looking at one knot could not ask whether *that* one is torn.
+
+`galaxy.py` now returns the per-knot map as well (a **dict keyed by cluster id**, because the
+old `ratios` list skipped ids through two `continue`s and was never index-aligned), and
+writes `tearing` onto each `centroids.json` item. A rebuild was not affordable, so
+`analysis/v10_tearing_ship.py` does the same write standalone — and refuses to write unless
+its recompute reproduces the manifest:
+
+```
+                manifest  recomputed
+measured            6316        6316
+torn                2035        2035
+severe              1001        1001
+median             3.704       3.704
+worstGap           1.231       1.231     <- so separation + normalisation left even the
+                                            absolute gap untouched at 3 dp
+```
+
+Two properties that decide how it may be drawn:
+
+- **Absent is 9 025 of 15 341 knots, and only 6 771 of those are small.** The other **2 254
+  (26 % of the size-eligible)** are knots whose own 2-means split isolates one or two
+  outliers. Absent is a first-class state, never a synonym for "drawn in one place" — the
+  pinned panel names which of the two causes applies from the knot's own count.
+- **The ratio is unbounded with a violent tail: 1.361 to 4 001.2.** The five worst are
+  Chinese Barbet synthetic knots with two lobes and near-zero internal spread, so the
+  *denominator* drives the extremes while `worstGap` stays at 1.231 of a box. **A big ratio
+  is not a big distance.** The tag therefore bands (`torn: two places` above 5,
+  `torn: two places, far apart` above 8) and prints no figure; a linear meter would render
+  two thousand indistinguishable maxima. Verified in a browser on `psilopogon_faber`.
+
+`verify:tearing` recomputes all four aggregates from the asset and asserts both readouts
+exist and that they band.
+
+## 5. The −0.0 relation is a duplicate recording, and it is a class of rows
+
+Not a degeneracy in the fit. `bleda_notatus` and `eurillas_latirostris` are the same audio
+under two species labels: `out/audio-cache/INAT165079.wav` and `INAT165088.wav` are
+**byte-identical** (965 770 B, same sha256, same iNat rights holder). Each species has
+exactly 1 recording and 146 syllables, every row bit-identical once the ids are stripped,
+embeddings `np.array_equal` True, and all 8 of 8 type centroids bit-identical — "8 shared
+types" is one repertoire counted twice. The `-0.0` is float overshoot on identical unit
+vectors, reproduced exactly; there is no clamp involved.
+
+**Scope, which is the part that matters:**
+
+```
+17 cross-species duplicate groups, 35 recordings, 40 species in the harvest store
+11 duplicate-source pairs survive the trim into the shipped relations.json
+4 of the 5 nearest pairs in the shipped asset are duplicate artefacts:
+  -0.0    bleda_notatus / eurillas_latirostris      (8 shared types)
+  0.014   formicivora / sporophila                 (81 shared types)
+  0.0256  xenops / xenops
+  0.0486  contopus / zenaida
+```
+
+So the head of "Sounds like" — the part a reader trusts most — is mostly artefact. The
+threshold itself is clean: 0.0412 recomputes, and no species has a within-species nearest-type
+distance below 1e-4.
+
+Root cause: `sources.py:190`, `_ingest_staged` dedupes on `store.has(recording_id)` only, and
+no content hash exists anywhere in harvest/sources, so the same bytes under two iNat
+observation ids pass straight through.
+
+**Guards, costed, none applied — this changes a shipped asset and the choice is yours:**
+
+```
+distance floor in compute_relations   drops 1 of 14 488 pairs (0.007 %) and 8 of 526
+                                      shared-type candidates. Any eps in [1e-6, 0.01]
+                                      drops the same single pair — the distribution has a
+                                      hole between -0.0 and 0.014, so the constant is not
+                                      delicate. Removes only the impossible row
+duplicate-content exclusion           nearly free at relations.py:204 (d_ab is already
+                                      computed): drop a pair when >50 % of A's sampled
+                                      syllables have a bit-identical twin in B.
+                                      Costs 11 pairs and 140 of 526 candidates (27 %)
+content hash in note_recording        the durable fix, upstream. Would refuse 35
+                                      recordings across 40 species on the next harvest
+```
+
+Either of the first two needs `analysis/v10_relations_ship.py` re-run — 219 s.
+
+## 6. Numbers the interface said out loud and got wrong
+
+- **"12 of 2 650 species"** in four user-visible places is now **12 of 2 489** (0.48 %, not
+  0.45 %). The reason it rotted is instructive: `verify-functions.mjs` asserted the 12 and
+  never the number it is 12 *of*. It now reads the shipped index and asserts the denominator
+  appears in the refusal sentences, so the next corpus change fails the check instead of
+  shipping quietly.
+- **"Every song but sixteen is `invented`"** is **21**. Measured over the 2 509 shipped
+  songs: invented 2 488, documented 10, experimental 6, inferred 5, unlabelled 0. The 16 is
+  the `documented` chorus class (10 + 6); the 5 `inferred` are a real claim category the
+  filter buckets under `synthesized`, which is exactly the gap between 16 and 21.
+- **`confidenceLabel` had no `invented` case** — it was the `default:`, so every unrecognised
+  string rendered as "invented", a claim about where a sound came from. `invented` is now its
+  own case and the fallthrough returns **"unreadable claim"** naming the value it cannot read.
+- The chorus filter's **`recorded`** checkbox is empty **by construction**, not by accident:
+  the pipeline writes `unlabelled` onto syllables and knots, never onto a song. Kept visible
+  (it already greys itself and reads "none") and both the hint and the note now say why, since
+  deleting the row would hide that the class exists at all. Reverse that if you disagree.
+
+## 7. Errors and dead probes
+
+- **`npm run check`: 4 errors → 0.** Both were optional fields compared without narrowing in
+  `syrinx-processor.js` (`gammaScale`, `tractQ`). Behaviour identical — `verify:synth` still
+  44/44, median pitch error 0.3 %.
+- **The two 404s on every load are gone.** `detectGalaxyMaps` blind-fetched
+  `known/manifest.json` and `unknown/manifest.json`, which *must* 404 on a single-map build —
+  two console errors every load, indistinguishable from two that mean something. `cmd_build`
+  is what makes a cheaper question sufficient: a single-map build writes a root manifest, and
+  `--clustering both` writes **none** at the root. So the root manifest answers it, from cache,
+  and the subdirectory probes are never issued. `probe:stage` now reports 0 console errors and
+  0 404s.
+- **`probe:words` was dying before its first assertion, twice over.** An element screenshot
+  never satisfied Playwright's stability wait on an always-moving stage (fixed with
+  `animations: 'disabled'`), and state 2 selected **`abroscopus_albogularis`, which is not in
+  the shipped inventory** — so the state covering the *majority* answer, the refusal, has been
+  dead since that species left the corpus. It now takes the first unmarked option from the live
+  picker, which cannot rot. All four states pass.
+- **`probe:stage`'s bird-pick had been silently skipping, and six readings were vacuous.** It
+  looked for `page.locator('select')` guarded by `if (await picker.count())`, and the species
+  picker is a custom combobox (`button.picker-btn[aria-haspopup=listbox]`), not a `<select>`.
+  The count was 0, the pick never happened, and every assertion after it reported the *absence*
+  of a tag as a pass. Fixed by driving the combobox and **asserting the pick instead of
+  guarding it**, so a picker that moves again fails loudly. Before and after:
+
+```
+                    was                          now
+chose a bird        (line never printed)         Chinese Barbet (picker reads "Chinese Barbet")
+tags on screen      0                            3
+ring size           (no tag visible)             5px x 5px (tag font 9.36px)
+ring fill           undefined                    rgba(0, 0, 0, 0)   <- "must be none", now checked
+ring border         undefined                    1px color(srgb 0.52 0.87 0.12 / 0.38)
+ring blend mode     undefined                    multiply
+ring --act / --hot  -                            0.003 / 1
+ring transform      undefined                    matrix(1.36, 0, 0, 1.36, -2.5, -2.5)
+```
+
+## 8. `signal.focus` stays unread, and the reason is now written where it will be found
+
+Owner's call: leave single-bird mode unconstrained. Clamping the match to the focused species
+would make the app name a knot of species X for a sound that most resembles Y. The decision,
+and the instruction not to "fix" it, is recorded on the field's own declaration in
+`shaders.ts` — including that the visual `focus` prop is a different thing and *is* honoured.
+
+## 9. The min_cluster_size sweep is written and waiting on the build
+
+Owner's call on the noise share: **sweep it and publish the curve**, rather than accept one
+value. `analysis/v10_mcs_sweep.py` is ready; its `--dry-run` correctly reports itself blocked
+on the three assets the running build has not written yet.
+
+```
+uv run python analysis/v10_mcs_sweep.py --min-cluster-size 25,50,100,200
+```
+
+~21 min per point, **~84 min for four**. Per point: k, noise count and share, median/mean
+cluster size, largest cluster, wall clock, and ARI/AMI against the shipped 15 341-cluster
+label partition — computed **twice**, over the assigned rows only and over all rows with noise
+as its own label, because at ~90 % noise a single number is dominated by the noise class and
+the two say different things.
+
+**One caveat that must travel with its output.** The matrix the build actually clusters,
+`z = (e - mean) / std` at `galaxy.py:1703`, is never written to disk. The default `embed32`
+mode rebuilds it bit-exactly from `harvest-inband/embeddings.f32` and the build's own
+`feature-space.json`, but that store holds only field rows — so it clusters **435 630 of
+444 213 rows (98.07 %)**, missing the 8 583 rendered inventory rows, whose embeddings exist
+only inside a build. The `min_cluster_size=25` row is printed beside the build manifest's own
+`density` block, and that comparison is the measurement of the reconstruction. `--matrix
+features-lo` is the row-complete companion in an 8-d 65 %-variance space, and it warns.
+
+**Correcting the last entry:** it claimed nothing in the repo measures cross-map agreement.
+`analysis/v10_unknown_join.py` already computes `adjusted_rand_score` and
+`adjusted_mutual_info_score` — all rows, noise as its own label, at the build's single
+`min_cluster_size`. The sweep adds the curve and the assigned-only companion.
+
+## 10. State of the tree
+
+Nothing committed. `npm run check` is **0 errors, 0 warnings** (first time — the 4 in
+`syrinx-processor.js` were pre-existing), `birdy-pipeline verify` passes on the modified
+assets, `probe:stage` reports 0 shader errors / 0 console errors / 0 404s, and all 16
+`verify:*` scripts pass.
+
+```
+new    app/scripts/verify-trust.mjs      app/scripts/probe-trust.mjs
+       app/scripts/verify-tearing.mjs    pipeline/analysis/v10_tearing_ship.py
+       pipeline/analysis/v10_mcs_sweep.py
+asset  app/static/birdy/centroids.json   +6 316 lines, 0 deletions, formatting preserved
+```
+
+**Still open, in the order they cost you:** the sweep (84 min, waiting on the build); the
+relations duplicate guard (one decision, 219 s to apply); `points.snr`, still 444 213 values
+and ~2 MB a load that nothing draws; and the `--member-anchor` rebuild, which remains blocked
+while any row-index join is in flight.
+
+
+# Lyrebird — READ THIS FIRST (2026-08-05, evening): three assets the UI reads were never built or were read wrong, and the unknown map is mid-build on a dependency that had to change
+
+Everything here started as "the cloud shows me no meaning". None of it turned out to be a
+rendering problem. Three separate channels were either absent from the assets, present and
+undrawn, or present and misclassified — and the fourth is building as I write this.
+
+```
+relations.json      NEVER EXISTED for v10. --no-relations + no embeddings.f32 in the
+                    store, so the build logged "relations skipped" and the threads drew
+                    zero segments for the whole life of the build. BUILT: 14 488 pairs,
+                    3.8 MB. 8 min of compute (critic embed 7 s, compute_relations 219 s)
+synthesized         was 0 of 444 213 points because the app read it wrong, not because
+                    nothing was synthesized. FIXED, no rebuild: 7 464 synthesized /
+                    1 119 documented. Live key now reads "synthesized 2 %"
+unknown map         MID-BUILD. sklearn's HDBSCAN cannot do 444 213 points in a sitting
+                    (measured ~8.4 h); switched density.py to the hdbscan package's
+                    Boruvka MST (measured ~22 min). NEW OPTIONAL DEP, NOTICE.md updated
+snr, knnAgreement   ship per point, 444 213 values each, and NOTHING in app/src reads
+                    either. ~4 MB downloaded every load and never drawn
+grid-burst bug      FIXED: the burst ended by striking a foreign species' knot, every
+                    phrase, in single-bird mode. Cause was the 1.6 s reverb tail
+```
+
+## 1. FIRST THING TO DO: the unknown-map build is still running
+
+At the time of writing it is 23 minutes in, past render / embed / space map (rff median
+cosine 0.918, matching the shipped build) and entering the clustering. It was launched
+detached, so it should still be going:
+
+```bash
+cd pipeline
+tail -f out/v10/build-unknown.log
+ls out/v10/assets-unknown/            # points.json appearing = clustering finished
+```
+
+The command, if it died and needs restarting:
+
+```bash
+uv run birdy-pipeline build --harvest-store out/harvest-inband \
+  --inventory out/v10/learned-v10.json --space embed --clustering hdbscan \
+  --out out/v10/assets-unknown --projection pacmap \
+  --no-compare-projections --no-relations
+```
+
+When `points.json` exists, the rest is written and waiting:
+
+```bash
+cd pipeline
+uv run python analysis/v10_unknown_join.py \
+    --enrich ../app/static/birdy/points.json
+cd ../app && npm run verify:unheard
+```
+
+The join writes `analysis/v10_unknown_join.json` and adds `unassigned` + `densityRegion`
+to `points.json`. Then the Display panel's **"What nothing claims"** checkbox stops being
+disabled and the figure/ground swap has data behind it.
+
+**One number to look at before believing the result.** The scaling test measured a noise
+share of **93 % at n=80 000 and 86 % at n=200 000** at `min_cluster_size=25`. If the full
+run lands near that, then "in no dense region" is most of the corpus rather than a small
+discovery surface, the figure/ground swap will show nearly everything as the figure, and
+the honest response is to report that and reconsider `min_cluster_size` — **not** to tune it
+until it looks like the answer we wanted. The number is the finding either way.
+
+## 2. sklearn's HDBSCAN cannot cluster this corpus, and the evidence is a py-spy dump
+
+A production run sat in the clustering step for 1 h 40 m with no output. py-spy on the live
+process:
+
+```
+_hdbscan_prims (sklearn/cluster/_hdbscan/hdbscan.py:355)
+  kneighbors (sklearn/neighbors/_base.py:916)
+    _get_sequential_output (joblib/parallel.py:1914)
+```
+
+sklearn builds the MST with **Prim's algorithm over a dense mutual-reachability graph**:
+O(n²), and the kNN was running through joblib's *sequential* path because `density.py`
+never passed `n_jobs`. Measured on this corpus's own 32-d unit rows, `min_cluster_size=25`:
+
+```
+n         sklearn n_jobs=None   sklearn n_jobs=-1   hdbscan pkg (Boruvka)
+20 000            13.0 s              12.6 s
+40 000            62.5 s              39.8 s
+80 000           422.2 s             208.9 s              44.8 s
+200 000                                                 265.2 s
+```
+
+sklearn is about n^2.5 in this regime → **~8.4 h at 444 213**; `n_jobs=-1` halves the clock
+and does not change the exponent, because the sequential MST dominates. The `hdbscan`
+package is about n^2.0 → **~22 min**. That package has a Boruvka MST and sklearn does not
+implement one.
+
+**This is one algorithm and two MST implementations, not two clusterings.** Both build the
+exact MST of the same mutual-reachability graph and both select by excess of mass, so labels
+agree up to ties. `density._fit` now prefers the fast path and falls back to sklearn, so a
+`uv sync` without the extra still works on the debug store where either finishes in seconds.
+
+Declared as an optional extra `density = ["hdbscan>=0.8.38"]` with a `NOTICE.md` row
+(BSD-3-Clause), per the rule that a dependency means a NOTICE row.
+
+**Trap that cost me ten minutes: `uv sync --extra density` silently REMOVED torch.** Always
+name every extra you want: `uv sync --extra density --extra critic`. Verified back at
+torch 2.11.0+cu128 with CUDA available.
+
+## 3. relations.json had never been built, and nothing could say so
+
+`app/static/birdy/relations.json` did not exist. The v10 chain runs `build --no-relations`,
+and `out/harvest-inband` had no `embeddings.f32`, so the build logged *"relations skipped"*.
+Because the asset is **optional** — the loader treats absent and over-32 MB identically —
+nothing failed and nothing warned. `RelationThreads` drew zero segments and the species
+panel's "Sounds like" chips never rendered, for the entire life of the build.
+
+The whole fix was eight minutes of compute: `critic embed --store out/harvest-inband` took
+**7 seconds**, `compute_relations` **219 s** → 3 093 828 species pairs, **950 shared-type
+candidates** under threshold **0.0412** (the median within-species nearest-type distance),
+trimmed to 8 partners per species = **14 488 pairs / 3.8 MB**.
+
+`analysis/v10_relations_ship.py` exists because the standalone `relations --out` verb writes
+the *complete* document on purpose, and on this corpus that is the 760 MB file that once hung
+a browser tab. `build` ships a trimmed copy; this script is that trimmed write on its own.
+
+Verified in a browser: Common Redshank now shows `Sounds like:` with six partners
+(Long-billed Curlew, Eurasian Bullfinch, Japanese bush warbler, European Golden Plover,
+Common blackbird, Eurasian Golden Oriole), each in its own genus hue, each one click away,
+with the honesty line under it. `relations.json` was added to `manifest.files` so the data
+ZIP carries it.
+
+**Look at this before trusting the numbers:** the nearest pair comes back at distance −0.0
+with 8 shared types — `bleda_notatus` / `eurillas_latirostris`. Two different species with
+identical type centroids is either one recording under two species labels or a degeneracy in
+the fit. It is not a relation.
+
+## 4. `synthesized` was empty because the app read the field wrong, not because nothing was synthesized
+
+`pointProvenance` routed **every** non-field render into `documented` — "a person named this
+sound" — so the class held 0 of 444 213 points while its own class doc says the mode's first
+question is *"did a machine make this sound, or did a bird?"* and the panel header says
+*"where the sound came from"*.
+
+The answer was in `points.json` and being discarded. Of the 8 583 renders, **7 464 carry
+`songId === 'learned_bout'`** — the id `learn.py` writes for a bout it sampled from a bird's
+own measured grammar. That sequence is ours. Calling it documented credited it to a
+literature the corpus does not hold.
+
+New split, measured: **7 464 synthesized** (our arrangements) and **1 119 documented**
+(48 renders of genuinely authored songs + 1 056 renders of the 44 authored calls). Both
+classes populated. The live provenance key reads
+`recorded 95 % · unidentified 3 % · synthesized 2 % · documented 0.25 % · unlabelled arrival none`.
+
+**Why the song id and not the inventory's `confidence`,** which would be the more direct
+reading: the inventory is **shard-loaded**, so at asset-load time most species' songs are not
+in memory and a confidence lookup would classify the same point differently depending on what
+had been clicked. `learned_bout` is a universal id, stable at load, and nothing authored uses
+it.
+
+Still needing a rebuild: the **other 15 241** — one render per fitted type, gated behind
+`--member-anchor` (`corpus.py`'s `if not anchor: continue`, `manifest.memberAnchor = false`).
+It buys nothing for the map (+0.02 retrieval, corpus shrinks a quarter); the entire case for
+it is that it unblocks the fidelity/residual channel, since `resynthesisCosine` already ships
+per type and has no spatial expression without an origin point. **It changes the shipped
+point set, so it must not be run while a row-index join with the unknown map is in flight.**
+
+## 5. The single-bird grid burst struck a foreign bird's knot on every phrase
+
+Cause: `master → analysisBus` is wired **post-reverb** and the impulse is 1.6 s, but
+`advance()` retires a path 0.25 s after its last note. In that gap the extractor is still
+active, nothing counts as `singing`, and `signal.best` falls back to an unscoped whole-corpus
+nearest-centroid match — so GridBurst struck a cross on some other species' knot in that
+species' hue, PointCloud eased its accent there, and a label opened there.
+
+Fixed in `listener.ts` with a `voiceTail()` guard: while no mic is open and we are inside the
+ring-out of our own last scheduled note, no inferred positional claim is made. Same rule the
+file already applies twice ("known beats inferred", "known-unplaced beats inferred"), one
+step later in time. `verify-parity` still 18/18.
+
+**Found and deliberately NOT changed: `signal.focus` is written by `setFocus` and read by
+nothing.** Single-bird mode never constrained the match at all. Clamping it would make the app
+name a knot of species X for a sound that best resembles Y, which the honesty rule argues
+against. Owner's call.
+
+## 6. Two channels ship and nothing draws them — check the view half, not the pipeline half
+
+`points.snr` and `points.knnAgreement` are in `points.json` at 444 213 values each. A grep
+across `app/src` finds the type declaration, two manifest-level reads for the HUD's
+aggregate, and one comment. **Nothing reads either array.** About 4 MB of the 41 MB asset is
+downloaded every load and never drawn.
+
+docs/25's own cost table is what let this sit: it marks brightness-by-SNR as **BUILT**, and
+the pipeline half genuinely is. A channel is not built until something draws it. Recorded as
+docs/25 §25.4b; any future row there should name both halves.
+
+The same trap from the other side: **the shader has drawn unassigned points 35 % smaller and
+45 % fainter** since density clustering existed. Defensible on the label map, where that class
+is empty by construction — and exactly backwards on the map whose entire purpose is refusing.
+The discovery surface was the quietest thing on the stage. `uUnheard` now swaps figure and
+ground (placed marks to 0.55 size / 0.30 ink, refused to 1.6 and full weight), eased rather
+than cut, and held at 0 on a build that measured nothing so the control cannot move a picture
+with no data behind it.
+
+## 7. The grammar threads carry three numbers now, and the two axes are separable in the panel
+
+The amber hairlines were a flat `#d97706` for every bird and both ends of every segment. They
+now carry hue = which bird (the genus hash its tag already wears), opacity = the measured
+transition probability (unchanged), and **dark → light along the segment = the direction of
+the transition**. A first-order grammar is directed and a line segment has no arrowhead, so
+the picture was stating the pair and dropping the order. Colour logic lives in
+`context-threads.ts` with the alpha, and `verify:context-threads` asserts all of it.
+
+Also: `Phrase.source` has carried `'documented' | 'invented'` — who chose the order — since it
+was written, and **nothing rendered it**. An improvised bout came back as
+`confidence: 'unlabelled'` + `source: 'invented'` and the panel printed **"field recording"**
+over a phrase no bird has sung. Both badges now render (`invented` · `our order`), verified in
+a browser. And `sing()` hardcoded `source: 'documented'` plus *"Rendered from this species'
+documented syllable inventory"* for **every** song including all 2 488 learned bouts, whose
+syllables are all `unlabelled`; both are now derived from the song's own confidence.
+
+## 8. Numbers this session corrected
+
+- **"Every song but sixteen is invented"** (`+page.svelte`) is wrong: **21** are not. The 16 is
+  the size of the `documented` chorus class (10 documented + 6 experimental). The 5 `inferred`
+  songs get bucketed with `invented` under the filter's "synthesized", so a real claim
+  category is invisible on both sides of that sentence. Real breakdown of 2 509 songs:
+  **invented 2 488, documented 10, experimental 6, inferred 5, unlabelled 0**.
+- The chorus filter's `recorded` maps to `unlabelled`, and **no song in the corpus carries
+  that word** — the pipeline writes it onto syllables and knots only. The checkbox names a
+  kind of song nothing produces and ships permanently greyed.
+- **"12 of 2 650 species"** is stale in six places; the shipped inventory holds **2 489**, so
+  it is 12 of 2 489 = 0.48 %. `verify-functions.mjs` asserts the 12 and not the denominator.
+- `docs/25` and older HANDOFF entries quote 387 287 / 348 461 / 327 164 points; this build is
+  **444 213**. Structural claims survive, the counts do not.
+- `assets.ts`'s provenance docstring justifies the mode with "24 100 of 45 592 points are
+  renders" — that describes a `--member-anchor` build. This one has 8 583 of 444 213.
+- `confidenceLabel` has **no `invented` case**; it is the `default:` fallthrough, so any
+  unrecognised confidence string silently renders as "invented".
+- `InventoryRow.confidence` is loaded and never rendered.
+
+## 9. State of the tree
+
+Committed: `5bad222`, `e7ea418`, `9ab497c`. Working tree at handoff time carried
+`docs/25-seeing-the-data.md` and `app/static/birdy/manifest.json` — the manifest was
+rewritten with `indent=1` to match `galaxy.py`'s `_write_json`, so its diff is the one added
+line (`relations.json`) rather than 3 893.
+
+Green at handoff: `npm run check` (4 pre-existing errors in `syrinx-processor.js`, untouched),
+`verify-parity` 18/18, `probe:stage` zero shader errors, and `context-threads`, `unheard`,
+`functions`, `fade`, `performance`, `check-provenance-buffers` all passing.
+
+New files: `pipeline/analysis/v10_unknown_join.py`, `pipeline/analysis/v10_relations_ship.py`,
+`app/scripts/verify-unheard.mjs`.
+
+## 10. The design that is written down but not built: joining the two maps
+
+The finding that changes the shape of it: **row index `i` is the same syllable in both asset
+sets.** `cmd_build` builds one `PointSet` and never reorders it; the only row-dropping step is
+a deterministic finite mask. `point-features.f32` and `space-map.f32` come out byte-identical,
+and `clusterId` is the *only* per-point array the clustering writes. So the two maps do not
+need to be shown side by side — one number needs to move across the join, which is what
+`unassigned` is.
+
+What is **not** shared: `positions.f32`. After projecting, `separate_clusters` explodes every
+cluster outward by `DEFAULT_SEPARATION = 1.6` using *that map's own* cluster ids, and
+`normalise_positions` re-frames the result. So flipping the map toggle moves every point and
+you cannot tell whether what changed is the clustering or the layout. A `--separation 1.0`
+pair would make the shipped positions comparable — needed for a geometric A/B, *not* needed
+for the channel.
+
+Not yet built, and nothing in the repo measures it (I grepped: no ARI, AMI, adjusted-Rand,
+Procrustes, or cross-map join anywhere) — two named shapes the join script computes but
+nothing draws:
+
+- **named but not dense** — a `label` knot whose members hdbscan mostly refuses. The type is
+  bookkeeping over those points, not a description of a cluster the data supports.
+- **dense but not named** — a region spanning many label knots, or full of syllables no type
+  claims. That is the candidate, and the join's ranked discovery queue orders it.
+
+The read-out worth building: cross `unidentified` provenance (12 519 field syllables with no
+type id) with the per-point `knnAgreement` that already ships and the new `unassigned` byte. A
+sound nothing has named, that no dense region claims, drawn among strangers, is where a wrong
+position and a real discovery look identical — and ranking on that turns a 12 519-point blob
+into an ordered queue.
+
+Caution to build in from the start: the manifest reports **2 035 torn knots of 6 316
+measured** (clusters this projection draws in two places) and faithfulness of **0.43** Pearson.
+Those per-knot tearing ratios are computed and then discarded before they reach the manifest.
+Invite people to read distance and disagreement off this map without that number travelling
+with it and the view will support conclusions the geometry cannot carry.
+
+
+# Lyrebird — (2026-08-05, earlier): the +0.77 dB figure is retired, the lambda curve is withdrawn, and the band cap is built
 
 Three things closed while you were away, and one of them reverses an argument this handoff
 made two entries ago. In the order they matter:

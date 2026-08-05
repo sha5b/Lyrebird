@@ -591,7 +591,12 @@ class Voice {
 		// gamma forces beta down for the same f0, and low beta is where the model's
 		// pulse-like, harmonically dense solutions live. Clamped to the range the Euler
 		// step stays accurate over.
-		const scale = Number.isFinite(syllable.gammaScale) ? syllable.gammaScale : 1;
+		// `typeof` as well as `Number.isFinite`, which does not narrow an optional field for
+		// the checker even though it rejects undefined at runtime. Same value either way.
+		const scale =
+			typeof syllable.gammaScale === 'number' && Number.isFinite(syllable.gammaScale)
+				? syllable.gammaScale
+				: 1;
 		this.gamma = Math.min(
 			150000,
 			Math.max(1200, gammaForContour(syllable.contour) * (scale > 0 ? scale : 1))
@@ -1036,9 +1041,12 @@ class SyrinxProcessor extends AudioWorkletProcessor {
 			// A fitted Q overrides the timbre class's. See the note on `tract_q` in syrinx.py:
 			// the three classes are all broad next to the Q ~ 30 measured for the OEC
 			// resonance, and a broad band leaks the second harmonic.
+			// Read once into a definite number: the field is optional on a fitted syllable,
+			// and an absent Q must fall to the timbre class's rather than compare undefined.
+			const fittedQ = syl.tractQ ?? 0;
 			const tractQ =
-				syl.tractQ > 0
-					? Math.min(Math.max(syl.tractQ, FORMANT_Q_MIN), FORMANT_Q_MAX)
+				fittedQ > 0
+					? Math.min(Math.max(fittedQ, FORMANT_Q_MIN), FORMANT_Q_MAX)
 					: timbre.q;
 			const harmonic = syl.harmonic ?? 0;
 			const twoVoices = syl.two === true;

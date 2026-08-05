@@ -379,12 +379,23 @@ export interface PointCloudMeta {
 	/**
 	 * Per point, the share of its 10 nearest neighbours *in the shipped 3D positions* that
 	 * carry its own type. 1 means a point sits only among its own kind, 0 means it sits
-	 * entirely among others — so it drives radius: agreement out on the rim, ambiguity
-	 * sinking to the core (docs/25 §25.3).
+	 * entirely among others.
 	 *
-	 * Its mean is the manifest's `knnAgreement` (0.4462 on the v9 build) by construction —
-	 * the pipeline computes both from one code path on these exact positions. Absent on an
-	 * asset set built before the channel existed.
+	 * **What reads it, stated exactly, because this docstring used to overstate it.** It
+	 * said the array "drives radius: agreement out on the rim, ambiguity sinking to the
+	 * core (docs/25 §25.3)" — a design that was written down and never built. For the whole
+	 * life of the build nothing in `app/src` read this array at all: 444 213 values were
+	 * downloaded on every load and discarded. It now drives **saturation**, through
+	 * `aTrust`/`uTrust`, behind the Display panel's "Neighbours disagree" switch — colour
+	 * only, so a mark in doubt keeps its size, its weight and its place. Radius was the
+	 * wrong channel for it and that is deliberate: size and ink are how this view says
+	 * "this sound is responding", and a position we cannot vouch for is not a quiet sound.
+	 *
+	 * Its mean is the manifest's `knnAgreement` by construction — the pipeline computes
+	 * both from one code path on these exact positions — and `verify:trust` asserts the two
+	 * agree, because a per-point array and an aggregate measured on different point sets is
+	 * a failure a row-index join can produce in silence. **0.4574 on this build**, 0.4462
+	 * on v9. Absent on an asset set built before the channel existed.
 	 */
 	knnAgreement?: number[];
 	/**
@@ -440,6 +451,31 @@ export interface Centroid {
 	 */
 	blobRank?: number;
 	blobCount?: number;
+	/**
+	 * How badly the projection draws this knot in two places: the distance between its own
+	 * two 3-d halves over their own spread. **Splitting a single blob scores about 2, so 2
+	 * is the null**; the pipeline calls a knot torn above 5 and severe above 8.
+	 *
+	 * **Why it is per knot and not only in the manifest.** The manifest has always reported
+	 * the aggregate — 2 035 torn of 6 316 measured, median 3.704, on a map whose distance
+	 * faithfulness is 0.43 Pearson — while `torn_clusters` computed a ratio for every knot
+	 * and discarded all of them. So a reader could be told a third of the map's knots are
+	 * drawn in two places and had no way to ask whether *this* one is. A view that invites
+	 * distance and neighbourhood to be read off it needs the number to travel with the mark.
+	 *
+	 * **Absent means unmeasured, and it is common: 9 025 of 15 341 knots.** Two causes, and
+	 * only one is size — 6 771 knots hold fewer than 12 points, and a further 2 254 (26 % of
+	 * those eligible) are dropped because their own 2-means split isolates one or two
+	 * outliers, leaving under 3 points on a side. Absent is therefore a first-class state to
+	 * render, never a synonym for "drawn in one place".
+	 *
+	 * **Unbounded, with a violent tail: the range on this build is 1.361 to 4 001.2.** The
+	 * five worst are synthetic knots with two lobes and near-zero internal spread, so the
+	 * *denominator* drives the extreme values while `worstGap` stays at 1.231 of a box — a
+	 * huge ratio does not mean a huge distance. Read it in bands or on a log scale; a linear
+	 * meter renders two thousand indistinguishable maxima.
+	 */
+	tearing?: number;
 	/**
 	 * The centroid in the reduced space of `point-features.f32`. Used only to decide how
 	 * brightly each individual point responds; the reported match still uses `vector`.
@@ -566,10 +602,12 @@ export interface Manifest {
 	faithfulness?: { pearson: number; spearman: number; pairs: number; definition?: string };
 	/**
 	 * The same question locally and much harsher: the share of a point's `k` nearest
-	 * neighbours *on screen* that carry its own type. Measured 0.0849 against a
-	 * 13 748-type inventory: far above the 1-in-13 748 a shuffle would give, and still
-	 * nine neighbours in ten belonging to some other call. The value ships in the
-	 * manifest, so read it from there rather than from this sentence.
+	 * neighbours *on screen* that carry its own type. **0.4574 on this build** against a
+	 * 15 341-type inventory; it was 0.0849 on the 13 748-type one, and both are far above
+	 * the 1-in-13 748 a shuffle would give. The five-fold move between two builds of the
+	 * same corpus is the reason for the instruction that follows: the value ships in the
+	 * manifest, so read it from there rather than from this sentence — a docstring quoting
+	 * the old figure was still being cited as an argument three builds later.
 	 */
 	knnAgreement?: { k: number; value: number; definition?: string };
 	/**

@@ -91,6 +91,15 @@ await page.getByRole('button', { name: 'Compose', exact: true }).click();
 await page.waitForTimeout(1500);
 
 const panel = page.locator('section.block').first();
+/**
+ * `animations: 'disabled'` because the element-stability wait never settles otherwise: the
+ * panel sits on a stage whose marks are always in motion, so Playwright kept waiting for a
+ * box that never stops changing and the run died on a 30 s screenshot timeout before it
+ * reached a single assertion in states 2 and 3. Freezing CSS animations for the capture
+ * changes nothing this probe reads — it asserts on text, not on pixels.
+ */
+const shoot = (name) =>
+	panel.screenshot({ path: `${SHOT}/${name}`, animations: 'disabled', timeout: 15000 });
 const select = panel.locator('select').first();
 const box = panel.locator('textarea').first();
 
@@ -128,19 +137,30 @@ console.log('\nstate 1 — a hit: great tit, "danger"');
 	ok('the call carries its own evidence class', /playback-verified/i.test(t), '');
 	ok('the documented function is quoted', /scan horizontally/i.test(t));
 	ok('the two-link caveat is present', /category is the bird|assignment of your words|reading is ours/i.test(t));
-	await panel.screenshot({ path: `${SHOT}/1-hit.png` });
+	await shoot('1-hit.png');
 }
 
 console.log('\nstate 2 — a refusal: a species with no authored function');
 {
-	await pick('abroscopus_albogularis');
+	// **Chosen from the live picker, not hardcoded.** This state named
+	// `abroscopus_albogularis`, which is not in the shipped inventory any more — so
+	// `selectOption` waited 30 s for an option that cannot exist and the run died before
+	// asserting anything, in the one state that covers the majority answer. The picker marks
+	// the 12 species with an authored function with a leading dot, so the first unmarked
+	// option is a refusal case by construction and stays one whatever the corpus does next.
+	const plain = await select.locator('option').evaluateAll((opts) => {
+		const o = opts.find((x) => !x.textContent.trim().startsWith('•') && x.value);
+		return o ? o.value : '';
+	});
+	ok('the picker offers a species with no authored function', plain !== '', plain);
+	await pick(plain);
 	await type('danger');
 	const t = await readText();
 	ok('no authored call is offered', !/playback-verified/i.test(t));
-	ok('the refusal explains the scale', /2 650|12 of/.test(t));
+	ok('the refusal explains the scale', /2 489/.test(t) && /12 of/.test(t));
 	ok('it still says what will play', /rhythm of your words/i.test(t));
 	ok('it does not claim a function', !/scan horizontally/i.test(t));
-	await panel.screenshot({ path: `${SHOT}/2-refusal.png` });
+	await shoot('2-refusal.png');
 }
 
 console.log('\nstate 3 — the override: chickadee, "hello", corrected to alarm');
@@ -156,7 +176,7 @@ console.log('\nstate 3 — the override: chickadee, "hello", corrected to alarm'
 	ok('the override changes the reading', /We read this as\s*alarm/i.test(after));
 	ok('the alarm call is now offered', /chick-a-dee-dee/i.test(after));
 	ok('the one graded case names its source', /Templeton/.test(after));
-	await panel.screenshot({ path: `${SHOT}/3-override.png` });
+	await shoot('3-override.png');
 
 	// The override is a correction of *this* reading, so typing must clear it.
 	await type('hello there');

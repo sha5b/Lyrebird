@@ -83,12 +83,24 @@ same majority species **through the map as through the critic**"* — it scores 
 map against the critic on a held-out set, so it is a property of that mapping, not of a shipped
 point. There is no per-point version of it, and 387 287 points cannot be given a radius from it.
 
-The statistic that does say this is already computed and already shipped: **`knnAgreement` =
-0.4462**, *"share of a point's 3D k nearest neighbours sharing its type"* at k = 10. That is
-per-point by construction — the manifest reports its mean — so the channel is its per-point
-value, one byte each: a point whose ten nearest neighbours are all its own type sits on the
-rim, a point surrounded by other types sinks toward the core. It also measures the projection
-we actually ship rather than a mapping the browser never uses.
+The statistic that does say this is already computed and already shipped: **`knnAgreement`**,
+*"share of a point's 3D k nearest neighbours sharing its type"* at k = 10 — **0.4574 on this
+build**, 0.4462 on v9. That is per-point by construction — the manifest reports its mean — and
+it measures the projection we actually ship rather than a mapping the browser never uses.
+
+**BUILT, and on a different channel than this section proposed.** The proposal was radius:
+agreement out on the rim, ambiguity sinking toward the core. What shipped is **saturation** — a
+low-agreement mark keeps its size, its weight and its place and loses its colour toward its own
+luminance — behind the Display panel's "Neighbours disagree" switch. Radius was the wrong
+channel and the reason generalises: size and ink are how this view says *this sound is
+responding*, so spending either on a doubtful position would draw an unsupported mark as a
+quiet sound. What is in doubt is not the sound, it is where the map put it. Draining the hue
+says "the colour here is standing on less" and moves nothing, which is also what lets the same
+frame be compared with the channel on and off.
+
+Measured, per point rather than as a mean: **109 293 of 444 213 sounds (24.6 %) sit among ten
+strangers** — agreement exactly 0. A mean of 46 % cannot say that, and it is the number the
+panel now prints next to the switch.
 
 **4. A linked attribute panel, not another colour mode.**
 For many attributes that must stay distinguishable *and* show interaction, the established
@@ -158,15 +170,19 @@ never could.
 
 ## 25.4 What each step costs to ship
 
-| step | pipeline change | asset cost |
-|---|---|---|
-| unknown map | none — `--clustering both` | a second asset set |
-| brightness = SNR | **BUILT** — `PointSet.snr` -> `points.json` | ~0.4 MB |
-| radius = kNN agreement | one parallel array | ~0.4 MB |
-| attribute panel | 3-4 arrays for the brushed fields | ~1.5 MB |
-| density contours | none, view-side | none |
-| relations arcs | none — already shipped | none |
-| residual segments | per-type MCD into the inventory | small |
+Two columns, not one, per §25.4b: a channel is not shipped until both halves exist, and this
+table used to name only the pipeline half.
+
+| step | pipeline half | view half | asset cost |
+|---|---|---|---|
+| unknown map | none — `--clustering both` | `uUnheard` figure/ground swap **BUILT**; needs the joined `unassigned` | a second asset set |
+| brightness = SNR | **BUILT** — `PointSet.snr` -> `points.json` | **nothing reads it**; 444 213 values drawn nowhere | ~0.4 MB |
+| kNN agreement | **BUILT** — `points.knnAgreement` | **BUILT** as saturation, not radius — `aTrust`/`uTrust`, "Neighbours disagree" | ~0.4 MB |
+| attribute panel | 3-4 arrays for the brushed fields | not started | ~1.5 MB |
+| density contours | none, view-side | not started | none |
+| relations arcs | **BUILT** — `relations.json`, 14 488 pairs | **BUILT** — `RelationThreads`, "Sounds like" chips | none |
+| per-knot tearing | ratios computed then discarded | nothing to read | small |
+| residual segments | per-type MCD into the inventory | not started | small |
 
 Against a 30 MB `points.json`, every one of these is affordable. The work is in the view, not
 in the pipeline, which is the argument for doing them in this order.
@@ -179,9 +195,29 @@ each, and **nothing in `app/src` reads either of them.** A grep for `points.snr`
 for the HUD's aggregate, and one comment. So about 4 MB of the 41 MB asset is a measurement
 the browser downloads every load and never draws.
 
-The table in §25.4 is what let this sit: it marks brightness = SNR as **BUILT**, and the
+The table in §25.4 is what let this sit: it marked brightness = SNR as **BUILT**, and the
 pipeline half genuinely is. A channel is not built until something draws it, and the row said
-"BUILT" while the view had never been touched. Any future row here should name both halves.
+"BUILT" while the view had never been touched. That table now has a column per half.
+
+**One of the two is now closed.** `knnAgreement` drives saturation (§25.3 above records which
+channel and why it is not radius). The measured proof that it draws — because "wired, compiled
+and multiplied by zero" passes every other check — is `probe:trust`: mean chroma over the ink
+falls **14.9 %** when the switch comes up while the ink area holds to **1.2 %**, so colour is
+spent and nothing else is. `verify:trust` asserts the other half, that the per-point mean equals
+the manifest aggregate to four places (0.4574), because a per-point array and an aggregate
+measured on different point sets is a failure a row-index join produces in silence.
+
+**`points.snr` is still undrawn**: 444 213 values, ~2 MB a load, nothing reads it. It stays an
+open row rather than a quiet deletion, because the pipeline half is real and the channel is
+wanted; what it needs is a view half and a control, on the pattern the agreement channel now
+sets.
+
+**A third case, found the same way and still open.** `torn_clusters` scores every knot for
+whether the projection draws it in two places, then throws all 6 316 per-knot ratios away and
+keeps five aggregates. The manifest says 2 035 torn and 0.43 Pearson faithfulness while a
+viewer reading distance off one specific knot has no way to learn whether *that* knot is one of
+them. Same shape as the two above: measured in the pipeline, discarded before it could reach a
+reader.
 
 The same trap caught the density verdict from the other side. The shader has drawn unassigned
 points **35 % smaller and 45 % fainter** since density clustering was added — defensible on

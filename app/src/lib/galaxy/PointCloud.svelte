@@ -107,6 +107,15 @@
 		 * `points.json` now carries the joined `unassigned` channel.
 		 */
 		unheard?: boolean;
+		/**
+		 * Drain each mark's colour by how few of its ten drawn neighbours share its type
+		 * (`points.knnAgreement`, see aTrust in shaders.ts).
+		 *
+		 * Off by default: the mean on this build is 0.4574 and 24.6 % of points sit among
+		 * ten strangers, so turning it on drains the colour out of a quarter of the cloud —
+		 * which is the finding rather than a reason to hide it.
+		 */
+		trust?: boolean;
 		/** Written, never read: how many points each pass actually drew. See stats.ts. */
 		stats?: GalaxyStats;
 	}
@@ -126,6 +135,7 @@
 		adaptive = true,
 		localKnots = true,
 		unheard = false,
+		trust = false,
 		knotSpacing = $bindable(),
 		stats
 	}: Props = $props();
@@ -293,6 +303,21 @@
 		const refused = assets.points.unassigned;
 		if (refused) for (let i = 0; i < assets.points.n; i++) dense[i] = refused[i] ? 1 : 0;
 		g.setAttribute('aDense', new THREE.BufferAttribute(dense, 1));
+		// Neighbour agreement, the per-point half of a number the HUD has only ever shown
+		// as a corpus mean. Filled with 1 first, so a build that ships no measurement
+		// draws exactly as it did before the channel existed — the same rule aDense
+		// follows, and the reason absent is 1 here and 0 there is that these two say
+		// opposite things: aDense absent means "not refused", aTrust absent means "no
+		// reason recorded to doubt this position".
+		const trustOf = new Float32Array(assets.points.n).fill(1);
+		const agreement = assets.points.knnAgreement;
+		if (agreement) {
+			for (let i = 0; i < assets.points.n; i++) {
+				const v = agreement[i];
+				trustOf[i] = Number.isFinite(v) ? Math.min(1, Math.max(0, v as number)) : 1;
+			}
+		}
+		g.setAttribute('aTrust', new THREE.BufferAttribute(trustOf, 1));
 		g.setAttribute('aOrphan', orphanAttribute);
 		g.computeBoundingSphere();
 		return g;
@@ -437,7 +462,10 @@
 			uSurface: { value: new THREE.Color('#fafbfc') },
 			// The figure/ground swap on the density verdict, eased rather than switched —
 			// see uUnheard in shaders.ts for why a cut is the wrong transition here.
-			uUnheard: { value: 0 }
+			uUnheard: { value: 0 },
+			// Eased for the same reason as uUnheard: a cut between two colourings of the
+			// whole cloud loses the reader's place in it.
+			uTrust: { value: 0 }
 		},
 		transparent: true,
 		depthWrite: false,
@@ -1404,6 +1432,10 @@
 		// a picture that has no data behind it.
 		const wantUnheard = unheard && assets.points.unassigned ? 1 : 0;
 		u.uUnheard.value += (wantUnheard - u.uUnheard.value) * (1 - Math.pow(0.02, delta));
+		// Held at 0 on a build that ships no per-point agreement, so the control cannot
+		// recolour a picture with no measurement behind it.
+		const wantTrust = trust && assets.points.knnAgreement ? 1 : 0;
+		u.uTrust.value += (wantTrust - u.uTrust.value) * (1 - Math.pow(0.02, delta));
 
 		// **Silent frames upload nothing — after the ring-down has finished.** The four
 		// GPU writes below — three corpus-length attributes (activation, orphan, front

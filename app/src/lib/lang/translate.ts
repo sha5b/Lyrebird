@@ -121,8 +121,20 @@ export function confidenceLabel(confidence: string): { text: string; hint: strin
 				text: 'field recording',
 				hint: 'Real audio of this species with no documented function attached.'
 			};
-		default:
+		case 'invented':
 			return { text: 'invented', hint: 'Our own mapping. Not a claim about real birds.' };
+		default:
+			// **`invented` is now its own case and this fallthrough names itself.** It used to
+			// be the `default`, so every one of the five confidence words the pipeline writes
+			// was handled and every *unrecognised* string — a renamed value, a typo, a field
+			// read from the wrong object — also rendered as "invented", which is a claim about
+			// where a sound came from. The four other classes fail loudly by comparison. An
+			// unknown word is not our arrangement; it is a value this build cannot read, and
+			// saying so is the only honest badge for it.
+			return {
+				text: 'unreadable claim',
+				hint: `This build does not recognise the confidence value "${confidence}", so it cannot say how strong the claim on this sound is.`
+			};
 	}
 }
 

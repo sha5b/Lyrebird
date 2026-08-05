@@ -807,8 +807,10 @@ def faithfulness(
     }
 
 
-def torn_clusters(pos: np.ndarray, cluster_id: np.ndarray, k: int) -> dict[str, Any]:
-    """How many clusters the projection draws in two places at once.
+def torn_clusters(
+    pos: np.ndarray, cluster_id: np.ndarray, k: int
+) -> tuple[dict[str, Any], dict[int, float]]:
+    """How many clusters the projection draws in two places at once, and which ones.
 
     **The failure this catches is worse than an unfaithful distance and it is invisible in
     every other metric on the page.** A projection is free to rearrange the space, but the
@@ -827,8 +829,19 @@ def torn_clusters(pos: np.ndarray, cluster_id: np.ndarray, k: int) -> dict[str, 
     Purity does not see this — it is computed on cluster membership, which the projection
     never touches. Faithfulness does not see it either: it correlates *random pairs*, and
     a handful of torn clusters barely move a 200k-pair correlation.
+
+    Returns `(aggregate, per_cluster)`, where `per_cluster` maps a cluster id to its own
+    ratio. **The per-knot number is the one a reader needs and the aggregate cannot
+    supply it.** "2 035 of 6 316 torn" is a fact about the picture; a viewer taking a
+    distance off one knot is asking about *that* knot, and one third of them are drawn in
+    two places. So the ratio travels with the knot — see the `tearing` field on the
+    centroid items — and the aggregate stays what it always was.
+
+    A cluster is missing from `per_cluster` when it was not measured: fewer than 12
+    members, or a 2-means split that put fewer than 3 points on a side. Missing means
+    "unmeasured", which is a different claim from a low ratio.
     """
-    ratios: list[float] = []
+    per_cluster: dict[int, float] = {}
     worst_gap = 0.0
     for c in range(k):
         members = pos[cluster_id == c]
@@ -844,18 +857,24 @@ def torn_clusters(pos: np.ndarray, cluster_id: np.ndarray, k: int) -> dict[str, 
             float(np.linalg.norm(a - a.mean(axis=0), axis=1).mean())
             + float(np.linalg.norm(b - b.mean(axis=0), axis=1).mean())
         )
-        ratios.append(gap / max(spread, 1.0e-9))
+        per_cluster[c] = gap / max(spread, 1.0e-9)
         worst_gap = max(worst_gap, gap)
-    if not ratios:
-        return {"measured": 0, "torn": 0, "severe": 0, "median": 0.0, "worstGap": 0.0}
-    r = np.asarray(ratios)
-    return {
-        "measured": int(r.size),
-        "torn": int((r > 5).sum()),
-        "severe": int((r > 8).sum()),
-        "median": round(float(np.median(r)), 3),
-        "worstGap": round(worst_gap, 3),
-    }
+    if not per_cluster:
+        return (
+            {"measured": 0, "torn": 0, "severe": 0, "median": 0.0, "worstGap": 0.0},
+            per_cluster,
+        )
+    r = np.asarray(list(per_cluster.values()))
+    return (
+        {
+            "measured": int(r.size),
+            "torn": int((r > 5).sum()),
+            "severe": int((r > 8).sum()),
+            "median": round(float(np.median(r)), 3),
+            "worstGap": round(worst_gap, 3),
+        },
+        per_cluster,
+    )
 
 
 #: Points sampled for trustworthiness/continuity. Both are O(m^2) in memory for the rank
@@ -1877,6 +1896,9 @@ def build_galaxy(
             raise RuntimeError(f"projection {method} produced non-finite positions")
         spaced, cluster_shift = separate_clusters(raw, cluster_id, k_final, separation)
         candidate, candidate_extent, frame = normalise_positions(spaced)
+        # Measured on `candidate`, which is what ships as positions.f32 — after separation
+        # and normalisation, so a knot's ratio is the ratio of the picture the browser draws.
+        tearing, tearing_per_cluster = torn_clusters(candidate, cluster_id, k_final)
         results[method] = {
             "positions": candidate,
             "extent": candidate_extent,
@@ -1889,7 +1911,8 @@ def build_galaxy(
             "neighbourhood": neighbourhood_quality(z, candidate, seed=seed),
             "purity": round(_purity(cluster_id, type_of, k_final), 4),
             "meanRadius": round(float(np.mean(np.linalg.norm(candidate, axis=1))), 4),
-            "tearing": torn_clusters(candidate, cluster_id, k_final),
+            "tearing": tearing,
+            "tearingPerCluster": tearing_per_cluster,
             "clusterShift": cluster_shift,
             "frame": frame,
             "basisParts": basis_parts,
@@ -1901,6 +1924,10 @@ def build_galaxy(
     chosen = results[projection]
     pos = chosen["positions"]
     extent = chosen["extent"]
+    # Per-knot tearing for the shipped projection, so each centroid item can carry its own
+    # ratio. The aggregate in the manifest says a third of the measured knots are drawn in
+    # two places; only this tells a reader whether the knot in front of them is one of them.
+    knot_tearing: dict[int, float] = chosen["tearingPerCluster"]
 
     index = _inventory_index(inventory)
     common_names = {sp["id"]: sp.get("common", sp["id"]) for sp in inventory.get("species", [])}
@@ -1972,6 +1999,13 @@ def build_galaxy(
                     if sel.size
                     else 0.0,
                     4,
+                ),
+                # Absent when the knot was not measured — too few members, or a degenerate
+                # 2-means split. Absent is "unmeasured", never "whole".
+                **(
+                    {"tearing": round(knot_tearing[c], 3)}
+                    if c in knot_tearing
+                    else {}
                 ),
                 "speciesMix": [
                     {"speciesId": sp, "count": int(n)}

@@ -266,8 +266,9 @@ export function categoriesFor(inventory: Inventory, speciesId: string): Function
 /**
  * The species that have any authored function at all.
  *
- * **12 of 2 650.** The picker still offers all of them — hiding the rest would present
- * the best 0.45 % of the corpus as if it were the corpus — but these are marked, so the
+ * **12 of 2 489**, the species count the shipped inventory index actually holds. The
+ * picker still offers all of them — hiding the rest would present
+ * the best 0.48 % of the corpus as if it were the corpus — but these are marked, so the
  * working set is findable without the scale being quietly dropped.
  */
 export function speciesWithFunctions(inventory: Inventory): Set<string> {
@@ -318,7 +319,7 @@ export function refusal(
 		return (
 			`No documented function in this build reads as that. The functions we can read are ` +
 			`alarm, recruitment, contact, territory and courtship — five, because five is what ` +
-			`the corpus holds, and 12 of 2 650 species here have any documented function at all. ` +
+			`the corpus holds, and 12 of 2 489 species here have any documented function at all. ` +
 			`What plays is ${name}'s own measured syntax at the rhythm of your words. It is not a ` +
 			`rendering of what you wrote.`
 		);
@@ -326,7 +327,7 @@ export function refusal(
 	if (!have.length) {
 		return (
 			`We read that as ${reading.category}, and that reading is ours. But ${name} has no ` +
-			`call with a documented function in this build — 12 of 2 650 species do. What plays ` +
+			`call with a documented function in this build — 12 of 2 489 species do. What plays ` +
 			`is its own measured syntax at the rhythm of your words.`
 		);
 	}

@@ -73,14 +73,29 @@ if (await gate.count()) {
 // A tag only exists for a knot that is sounding, selected or pinned. Choosing a bird is the
 // way to make one appear without any audio: NodeProjector gives a chosen bird's knots a tag
 // whether or not they are active.
-const picker = page.locator('select').first();
+//
+// **This block looked for a `<select>` and the species picker is not one.** It is a custom
+// combobox — `button.picker-btn[aria-haspopup="listbox"]` — so `page.locator('select')`
+// counted 0, the `if` skipped the whole pick, and every assertion downstream that needs a tag
+// reported the *absence* of one as a pass: "tags on screen 0", "ring size (no tag visible)",
+// and four `undefined` computed styles. A probe whose subject never appears is worse than no
+// probe, so the pick is now asserted rather than guarded, and `say('chose a bird', ...)`
+// reports the failure instead of falling silent.
+const picker = page.locator('button.picker-btn').first();
 if (await picker.count()) {
-	const options = await picker.locator('option').evaluateAll((os) =>
-		os.map((o) => o.value).filter(Boolean)
-	);
-	if (options.length) {
-		const want = options[Math.min(3, options.length - 1)];
-		await picker.selectOption(want);
+	await picker.click({ force: true });
+	await page.waitForTimeout(600);
+	// The list is filterable; typing narrows it to one row, which is more robust than
+	// indexing into 2 489 options whose order is the inventory's.
+	const search = page.locator('input[type="text"], input[type="search"]').first();
+	const want = 'Chinese Barbet';
+	if (await search.count()) {
+		await search.fill(want);
+		await page.waitForTimeout(800);
+	}
+	const option = page.locator('li, [role="option"], button').filter({ hasText: want }).first();
+	if (await option.count()) {
+		await option.click({ force: true });
 		// The bird's shard has to arrive before its knots can be tagged, and that is a network
 		// fetch — the run where this was given four seconds produced tags and the run where the
 		// chorus was started instead produced none. Wait on the tag, not on a stopwatch.
@@ -89,8 +104,13 @@ if (await picker.count()) {
 				timeout: 45000
 			})
 			.catch(() => {});
-		say('chose a bird', `${want} (selected ${await picker.inputValue()})`);
+		const now = await page.locator('.picker-current').first().innerText().catch(() => '');
+		say('chose a bird', now.includes(want) ? `${want} (picker reads "${now}")` : `*** wanted ${want}, picker reads "${now}" ***`);
+	} else {
+		say('chose a bird', `*** no option matching "${want}" in the picker ***`);
 	}
+} else {
+	say('chose a bird', '*** no picker found: button.picker-btn is absent ***');
 }
 
 // A tag exists only for a knot that is sounding, selected or pinned, so the ring cannot be

@@ -91,6 +91,26 @@
 		c.sources ? ((c.sources['field'] ?? 0) > 0 ? 'measured' : 'invented') : '';
 
 	/**
+	 * Whether this knot's own tag should admit that the projection draws it in two places.
+	 *
+	 * **Shown only above the pipeline's "torn" threshold of 5, and as a word rather than a
+	 * number.** The ratio's range on this build is 1.361 to 4 001.2 because the extremes are
+	 * driven by knots with near-zero internal spread, so a figure on a tag would read as
+	 * precision it does not have. And a value near the null of 2 is the ordinary case for
+	 * two thirds of the map — printing it on every tag would spend the reader's attention on
+	 * the marks that are fine.
+	 *
+	 * Empty when unmeasured, which is 9 025 of 15 341 knots. Absence here says nothing about
+	 * the knot; the pinned panel is where that distinction is stated in words.
+	 */
+	const tearingLabel = (c: Centroid): string => {
+		if (c.tearing === undefined) return '';
+		if (c.tearing > 8) return 'torn: two places, far apart';
+		if (c.tearing > 5) return 'torn: two places';
+		return '';
+	};
+
+	/**
 	 * The tag's hue is the bird's hue — labels are where "which bird" is answered, and
 	 * the points no longer carry it. The per-knot lightness is the heat rule moved off
 	 * the points: the species' core knot carries the hue a touch darker (0.9), its far
@@ -197,6 +217,13 @@
 							{#if centroid.cohesion !== undefined}<span>ρ {centroid.cohesion.toFixed(2)}</span>{/if}
 							{#if centroid.radius !== undefined}<span>r {centroid.radius.toFixed(2)}</span>{/if}
 							{#if evidenceLabel(centroid)}<span class="evidence">{evidenceLabel(centroid)}</span>{/if}
+							{#if tearingLabel(centroid)}<span
+									class="torn"
+									title="This knot's members are drawn in two separate places, so its tag sits between them rather than on its points. Gap between its halves over their own spread: {centroid.tearing?.toFixed(
+										1
+									)} (about 2 is what one blob scores)."
+								>{tearingLabel(centroid)}</span
+								>{/if}
 							<span class="conf">{confidenceLabel(centroid.confidence).text}</span>
 						</div>
 						{#if centroid.function}
@@ -440,6 +467,14 @@
 	.figures .evidence {
 		color: var(--ink-faint);
 		font-style: italic;
+	}
+
+	/* Not red and not a warning colour: a torn knot is a property of the picture, not a
+	   fault in the sound. Same faint ink as the other qualifiers, upright so it reads as a
+	   statement about the mark rather than as another measured figure. */
+	.figures .torn {
+		color: var(--ink-dim);
+		font-style: normal;
 	}
 
 	.function {

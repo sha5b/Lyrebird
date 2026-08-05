@@ -102,6 +102,25 @@ export function vertexShader(): string {
 		 * this channel carries the entire discovery surface.
 		 */
 		attribute float aDense;
+		/**
+		 * How many of this point's ten drawn neighbours share its type, 0..1.
+		 *
+		 * points.knnAgreement — shipped for every point since the channel existed and
+		 * read by nothing until now, so ~2 MB of the asset was downloaded every load and
+		 * discarded. It is the one number that scores *this* mark's own position rather
+		 * than the corpus's: faithfulness correlates random pairs and is dominated by far
+		 * ones, so a point can sit in a perfectly faithful map among strangers.
+		 *
+		 * The mean on this build is **0.4574** — between four and five of a point's ten
+		 * nearest marks on screen share its type — and 109 293 points, 24.6 % of the corpus,
+		 * sit among ten strangers. Off by default because it recolours a quarter of the
+		 * cloud, and that quarter is the finding: those are the marks whose drawn position
+		 * is standing on nothing.
+		 *
+		 * 1 where the build shipped no measurement, so a missing number draws as the
+		 * cloud always drew rather than as a mark to distrust. Same rule as aDense.
+		 */
+		attribute float aTrust;
 		/** 1 while a scheduled orphan note — a type with points but no cluster — sounds. */
 		attribute float aOrphan;
 		/**
@@ -275,6 +294,8 @@ export function vertexShader(): string {
 		varying float vUnassigned;
 		/** 1 where a density clustering refused this sound — either map's verdict. */
 		varying float vRefused;
+		/** Share of this point's ten drawn neighbours that share its type (see aTrust). */
+		varying float vTrust;
 		/** 0..1 while a newly added point is arriving. */
 		varying float vArrive;
 		/** 0..1 across the level-of-detail frontier's fade band (see aRank/uLod). */
@@ -298,6 +319,7 @@ export function vertexShader(): string {
 
 		void main() {
 			vProv = aProv;
+			vTrust = clamp(aTrust, 0.0, 1.0);
 			vOrphan = aOrphan;
 			vWave = aFront;
 			// **A point can belong to no cluster, and that is a result, not a gap.**
@@ -611,6 +633,20 @@ export const fragmentShader = /* glsl */ `
 	uniform float uPlain;
 	/** 0..1 figure/ground swap for the density verdict; see the vertex stage. */
 	uniform float uUnheard;
+	/**
+	 * 0..1: how far the neighbour-agreement channel is applied (see aTrust).
+	 *
+	 * **It spends saturation and nothing else, and that is the whole design.** Size and
+	 * ink weight are taken — activation owns them, and the figure/ground swap owns them
+	 * for the refused marks — but more than that, drawing a low-agreement point smaller or
+	 * fainter would say "this sound matters less", which is a claim about the sound. What
+	 * is actually in doubt is the *position*: a mark among strangers may be a real rarity
+	 * or a projection artefact, and the map cannot tell you which. Draining the hue toward
+	 * the mark's own grey says "the colour here is standing on less" and leaves the mark
+	 * exactly as present as it was. Nothing moves, so it can be compared frame to frame
+	 * with the channel on and off.
+	 */
+	uniform float uTrust;
 	/** The same clock the vertex stage pulses by; the orphan pulse breathes on it. */
 	uniform float uTime;
 	/** Live input level, 0..1 — drives the pulse and the growth in the vertex stage. */
@@ -655,6 +691,8 @@ export const fragmentShader = /* glsl */ `
 	varying float vAccent;
 	varying float vUnassigned;
 	varying float vRefused;
+	/** Share of this point's ten drawn neighbours that share its type (see aTrust). */
+	varying float vTrust;
 	varying float vArrive;
 	/** 0..1 across the level-of-detail frontier's fade band; 1 in the active pass. */
 	varying float vLod;
@@ -888,6 +926,19 @@ export const fragmentShader = /* glsl */ `
 		// brightness walk, no halo, a fifth of the ripple's tone swing at most.
 		colour = mix(colour, vec3(0.45, 0.48, 0.53), clamp(vUnmatchedRing, 0.0, 1.0) * 0.28);
 
+		// **Neighbour agreement, spent as saturation.** A mark whose ten drawn neighbours
+		// mostly do not share its type keeps its size, its weight and its position and
+		// loses its colour toward its own luminance — the one channel that can say "read
+		// this position with less confidence" without saying "this sound is less
+		// important". Held at 0 until asked for, and at 0 the expression below is exactly
+		// the colour that was there before the channel existed.
+		//
+		// Luminance-matched grey rather than uSurface or ink: mixing toward either would
+		// also move the mark lighter or darker, which is the depth cue, and two channels
+		// competing for tone is how the SNR row in docs/25 ended up unreadable.
+		float agreed = clamp(vTrust, 0.0, 1.0);
+		colour = mix(colour, vec3(dot(colour, vec3(0.2126, 0.7152, 0.0722))), (1.0 - agreed) * uTrust);
+
 		// Aerial perspective: far points wash toward the paper and thin out, near ones keep
 		// their weight. This is what makes a rotating scatter read as a volume rather than
 		// as a disc — the size cue alone is too weak once the sizes are compressed, and
@@ -1112,7 +1163,24 @@ export interface VisualSignal {
 	 */
 	context: ContextPath[];
 	contextVersion: number;
-	/** Species index to keep at full strength; -1 shows every species equally. */
+	/**
+	 * Species index to keep at full strength; -1 shows every species equally.
+	 *
+	 * **Written by `Listener.setFocus` and read by nothing, and that is a decision rather
+	 * than an oversight (owner, 2026-08-05).** Single-bird mode therefore never constrains
+	 * the nearest-centroid match: `signal.best` is always the whole corpus's answer, so
+	 * choosing one bird and singing can light a knot belonging to a different species.
+	 *
+	 * Clamping the match to the focused species would make the two agree, at the cost of
+	 * the app naming a knot of species X for a sound that most resembles Y — asserting a
+	 * resemblance the geometry does not support in order to keep the interface tidy. That
+	 * is the trade this project refuses everywhere else, so the field stays unread.
+	 *
+	 * The visual focus that *is* honoured is a different thing and comes down the prop
+	 * chain as `focus` on Galaxy/PointCloud: it dims the other species without touching
+	 * what the match is allowed to claim. If you are here because "the wrong bird lit up",
+	 * that is this, it is intended, and the fix is not to clamp the match.
+	 */
 	focus: number;
 }
 

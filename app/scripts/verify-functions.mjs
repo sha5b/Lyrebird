@@ -160,6 +160,24 @@ console.log('\nthe counts the interface says out loud');
 		}
 		return true;
 	})());
+
+	// **The denominator, which is the half that rotted.** This block asserted the 12 and
+	// never the number it is 12 *of*, so "12 of 2 650" survived three rebuilds in the
+	// refusal sentences, the picker comment and this module's own docstring while the
+	// shipped index came down to 2 489. A fraction is two numbers and a stale denominator
+	// misstates the scale of the refusal, which is the one thing the sentence exists to
+	// convey. Read from the shipped index rather than hardcoded, so the next rebuild that
+	// changes the corpus fails here instead of shipping a wrong number quietly.
+	const shipped = JSON.parse(readFileSync(join(here, '../static/birdy/inventory.json'), 'utf8'));
+	const total = shipped.species.length;
+	const grouped = String(total).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+	ok('the shipped index is the denominator the sentences quote', total > 0, `${total}`);
+	for (const [label, text] of [
+		['refusal, no reading', refusal(inventory, 'abroscopus_albogularis', null)],
+		['refusal, category with no call', refusal(inventory, 'abroscopus_albogularis', { category: 'alarm', intensity: null })]
+	]) {
+		ok(`${label} quotes 12 of ${grouped}`, text.includes(`12 of ${grouped}`));
+	}
 }
 
 console.log('\nrefusal — the majority answer, so it must be a real sentence');

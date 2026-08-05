@@ -23,12 +23,33 @@ const ROOT = 'birdy';
 export type GalaxyMap = 'known' | 'unknown';
 
 /**
- * Whether this asset root carries both clustering maps. Decided once at startup by the
- * two manifest probes; when either is absent the interface stays exactly the single-map
- * one — no toggle, and no further fetch mentions the subdirectories.
+ * Whether this asset root carries both clustering maps. Decided once at startup; when
+ * either is absent the interface stays exactly the single-map one — no toggle, and no
+ * further fetch mentions the subdirectories.
+ *
+ * **Asked of the root manifest, because the subdirectory probes cost two 404s on every
+ * load of the build that actually ships.** They were unconditional, so a single-map build
+ * — which is every production build so far — fetched `known/manifest.json` and
+ * `unknown/manifest.json`, got two 404s, and logged two console errors before deciding
+ * correctly that there is one map. Two failed requests that always fail on the shipped
+ * asset set are indistinguishable in a console from two that fail because something is
+ * broken, and `probe:stage` reported them as "other console errors 2" for exactly that
+ * reason.
+ *
+ * `cmd_build` is what makes the root manifest a sufficient answer: a single-map build
+ * writes `manifest.json` at the root, and `--clustering both` writes **no root manifest at
+ * all** — it copies the calibration into `known/` and `unknown/` and writes a complete
+ * asset set inside each. So a readable root manifest means one map, and it is the same URL
+ * with the same empty cache-buster that `loadAssets` has already fetched, which the
+ * browser serves from cache rather than as a second request.
+ *
+ * The dual-map case still spends one 404 on the root probe. That one is load-bearing —
+ * it is the question — rather than a request whose failure is already known.
  */
 export async function detectGalaxyMaps(fetcher: typeof fetch = fetch): Promise<boolean> {
 	try {
+		const root = await fetcher(assetUrl('manifest.json', ''));
+		if (root.ok) return false;
 		const [known, unknown] = await Promise.all([
 			fetcher(assetUrl('known/manifest.json', '')),
 			fetcher(assetUrl('unknown/manifest.json', ''))

@@ -352,6 +352,34 @@
 	const unheardShare = $derived(
 		unheardCount !== null && assets ? unheardCount / assets.points.n : null
 	);
+	/**
+	 * The Display panel's neighbour-agreement switch: drain each mark's colour by how few
+	 * of its ten drawn neighbours share its type.
+	 */
+	let trustColour = $state(false);
+	/**
+	 * The per-point agreement, summarised over the points themselves rather than read from
+	 * the manifest — and the difference matters, because the manifest's mean is the only
+	 * form this number has ever been shown in and a mean cannot say how many marks are at
+	 * zero. `null` means the build shipped no per-point channel, which the control shows
+	 * as disabled rather than as agreement of nothing.
+	 */
+	const trustStats = $derived.by<{ mean: number; alone: number; share: number } | null>(() => {
+		const agreement = assets?.points.knnAgreement;
+		if (!agreement || !assets) return null;
+		let total = 0;
+		let alone = 0;
+		for (let i = 0; i < agreement.length; i++) {
+			const v = agreement[i] ?? 0;
+			total += v;
+			if (v <= 0) alone++;
+		}
+		return {
+			mean: total / agreement.length,
+			alone,
+			share: alone / agreement.length
+		};
+	});
 	const galaxyStats = $derived(
 		assets ? createStats(assets.points.n, assets.centroids.items.length) : null
 	);
@@ -397,12 +425,19 @@
 	 * looking live.
 	 *
 	 * **These are songs by claim strength, and the points' classes are sounds by origin.
-	 * They are two axes, and on this corpus they nearly invert.** Every song but sixteen
-	 * is `invented` — our arrangement — while 94 % of the *points* are `field`, real
+	 * They are two axes, and on this corpus they nearly invert.** Every song but 21 is
+	 * `invented` — our arrangement — while 94 % of the *points* are `field`, real
 	 * recorded audio. An invented song made of recorded syllables is the normal case
 	 * here, not a contradiction: we chose the order, the bird made the sounds. Sharing
 	 * one vocabulary across both filters was meant to remove a parallel taxonomy and
 	 * instead implied the two were the same question. Both filters now name their axis.
+	 *
+	 * Measured over the 2 509 songs the shipped inventory holds: **invented 2 488,
+	 * documented 10, experimental 6, inferred 5, unlabelled 0.** So `documented` draws on
+	 * 16 and `synthesized` on 2 493. The 5 `inferred` songs are a real claim category that
+	 * this vocabulary buckets under `synthesized`, which is why the count above is 21 and
+	 * not 16 — the number a reader gets from "all but the documented ones" is wrong by the
+	 * inferred five.
 	 *
 	 * `null` while the inventory is unread — in shard mode `species` starts empty and a
 	 * count of zero would be a statement about the loader, not about the corpus.
@@ -2347,6 +2382,7 @@ uv run birdy-pipeline build</pre>
 				{birdColours}
 				adaptive={adaptiveDetail}
 				unheard={unheardFigure}
+				trust={trustColour}
 				selectedSpecies={focus >= 0 ? (currentSpecies?.id ?? '') : ''}
 				{provShown}
 				pinned={pinnedCluster}
@@ -2613,6 +2649,44 @@ uv run birdy-pipeline build</pre>
 											bind:checked={unheardFigure}
 											disabled={unheardShare === null}
 										/> What nothing claims
+									</label>
+								</div>
+							</section>
+							<!--
+								**The per-point half of a number that has only ever shipped as a mean.**
+								`points.knnAgreement` has been in the asset at one value per point since
+								the channel existed and nothing read it, so the HUD could say the corpus
+								averages 46 % while no mark on the stage could be asked whether it was
+								one of the ones standing on nothing. Same absent-channel discipline as
+								the block above: disabled when the build carries no measurement.
+							-->
+							<section class="block">
+								<p class="axis mono">how much its neighbours agree</p>
+								<p class="note faint">
+									{#if trustStats}
+										Of every sound's ten nearest marks <i>on screen</i>, the share that
+										share its type averages
+										<b>{(trustStats.mean * 100).toFixed(1)} %</b> — and
+										<b>{trustStats.alone.toLocaleString()}</b> sounds
+										({(trustStats.share * 100).toFixed(1)} %) sit among ten strangers.
+										Turned on, the marks with the least support lose their colour and keep
+										their size and place, so a low-agreement mark reads as a position to
+										doubt rather than a sound that matters less.
+									{:else}
+										This build carries no per-point agreement, so nothing here can be
+										shown as unsupported.
+									{/if}
+								</p>
+								<div class="checks">
+									<label
+										class="check"
+										title="Drain each mark's colour by how few of its ten drawn neighbours share its type. Nothing moves and nothing changes size, so the same frame can be compared with the channel on and off."
+									>
+										<input
+											type="checkbox"
+											bind:checked={trustColour}
+											disabled={trustStats === null}
+										/> Neighbours disagree
 									</label>
 								</div>
 							</section>
@@ -3196,7 +3270,7 @@ uv run birdy-pipeline build</pre>
 											? 'A person named this song — described in the literature or established by playback experiments.'
 											: cls === 'synthesized'
 												? 'Our own mapping: fitted from recordings or composed from them. Not a claim about real birds.'
-												: 'Real audio of this species with no documented function attached.'}
+												: 'Real audio with no documented function attached. Empty in this build by construction: the pipeline writes `unlabelled` onto syllables and knots, never onto a song, so no song can carry this word however many recordings are loaded.'}
 									{@const have = chorusClassSongs === null ? null : chorusClassSongs.counts[cls]}
 									{@const settled = chorusClassSongs !== null && !chorusClassSongs.partial}
 									{@const share =
@@ -3244,7 +3318,9 @@ uv run birdy-pipeline build</pre>
 								{#if chorusClassSongs && !chorusClassSongs.partial}
 									Nearly every song in this corpus is our own arrangement, so
 									<b>synthesized</b> is almost the whole pool — switching the other two off
-									is a real filter with almost nothing to remove.
+									is a real filter with almost nothing to remove. <b>recorded</b> is empty
+									because song confidence is derived from syllables and no song is ever
+									written <i>unlabelled</i>, not because this corpus happens to hold none.
 								{:else if chorusClassSongs?.partial}
 									Counts are over the birds loaded so far.
 								{/if}
@@ -3317,9 +3393,9 @@ uv run birdy-pipeline build</pre>
 							     only `dispatch` may write it. `chooseBird` is also where the tab guard lives:
 							     a pick on this tab records the bird and does not take the air, because this
 							     tab has no chorus controls to give it back with. -->
-						<!-- All 2 650 stay in the list. Narrowing it to the 12 with authored
+						<!-- All 2 489 stay in the list. Narrowing it to the 12 with authored
 							     functions would work nearly always and would quietly present the best
-							     0.45 % of the corpus as if it were the corpus. The dot marks them
+							     0.48 % of the corpus as if it were the corpus. The dot marks them
 							     instead, so the working set is findable without the scale being lost. -->
 							<select value={speciesId} onchange={(e) => chooseBird(e.currentTarget.value)}>
 								{#each species as s (s.id)}
@@ -3760,6 +3836,34 @@ uv run birdy-pipeline build</pre>
 							<dl class="facts mono">
 								<div><dt>points</dt><dd>{pinned.count}</dd></div>
 								{#if pinned.cohesion !== undefined}<div><dt>cohesion</dt><dd>{pinned.cohesion.toFixed(3)}</dd></div>{/if}
+								<!--
+									**Where the knot says whether the picture can be trusted about it.** The
+									manifest has always carried the aggregate — 2 035 of 6 316 measured knots
+									drawn in two places, on a map whose distance faithfulness is 0.43 — and the
+									per-knot ratios were computed and thrown away, so this panel could describe
+									a knot's cohesion and radius while staying silent about whether its mark is
+									in one piece. Unmeasured is printed as unmeasured: 9 025 of 15 341 knots
+									have no value, and only 6 771 of those are the small ones.
+								-->
+								<div>
+									<dt>drawn in</dt>
+									<dd>
+										{#if pinned.tearing === undefined}
+											<!-- The two causes are distinguishable from the knot's own count, and
+											     they are different claims: one is "too small to ask", the other is
+											     "asked, and its own split was degenerate". Neither is "one place". -->
+											{pinned.count < 12
+												? 'not measured — fewer than 12 points'
+												: 'not measured — its own split isolates one point'}
+										{:else if pinned.tearing > 8}
+											two places, far apart ({pinned.tearing.toFixed(1)})
+										{:else if pinned.tearing > 5}
+											two places ({pinned.tearing.toFixed(1)})
+										{:else}
+											one place ({pinned.tearing.toFixed(1)})
+										{/if}
+									</dd>
+								</div>
 								{#if pinned.meanDuration}<div><dt>duration</dt><dd>{Math.round(pinned.meanDuration * 1000)} ms</dd></div>{/if}
 								{#if pinned.functionClass}<div><dt>class</dt><dd>{pinned.functionClass}</dd></div>{/if}
 							</dl>

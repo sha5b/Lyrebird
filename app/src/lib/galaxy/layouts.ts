@@ -339,12 +339,28 @@ function membersOf(clusterId: ArrayLike<number>, k: number): { starts: Int32Arra
  *   knot's own members, in the 8-d feature space, laid out around that centre. A knot
  *   cannot then be torn by the global fit, because the global fit never places a member.
  *
- * **Why this loses less than it sounds.** The picture's local structure was already
- * close to noise: `knnAgreement` on this build is **0.0849** — 8.5 % of a point's ten
- * nearest neighbours in 3-d share its type — so what the global projection was saying
- * inside a knot was mostly the residue of a fit dominated by everything else. A local
- * projection of a couple of dozen members into three dimensions loses very little of
- * what those members actually differ by. What the picture claims splits cleanly in two:
+ * **Why this loses less than it sounds — and the number this rests on has moved.** The
+ * argument was that the picture's local structure was already close to noise, quoting
+ * `knnAgreement` **0.0849**: 8.5 % of a point's ten nearest neighbours in 3-d share its
+ * type, so what the global projection said inside a knot was mostly the residue of a fit
+ * dominated by everything else, and a local projection of a couple of dozen members into
+ * three dimensions could not lose much.
+ *
+ * **On this build that figure is 0.4574**, and the two agree on nothing. It is the
+ * manifest's own `knnAgreement`, it is the number the HUD prints as `NEIGHBOURS 46 %`,
+ * and re-deriving it from the 444 213 shipped per-point values gives 0.4574 to four
+ * places (`scripts/verify-trust.mjs` asserts that the two halves agree). The 0.0849 was
+ * real and is traceable — it is the figure `types.ts` records against the **13 748**-type
+ * inventory, an older corpus than this 15 341-type one — so this is a stale number rather
+ * than a wrong one, which is worse in one specific way: it reads as current and it
+ * overstates the case by a factor of five.
+ *
+ * At 46 % the global projection's local structure is not noise, so **"this loses very
+ * little" is no longer established by the number that was offered for it.** The layout's
+ * other reason stands untouched and is the stronger one anyway: a knot laid out from its
+ * own members cannot be torn by the global fit, and 2 035 of 6 316 measured knots are
+ * torn in the shipped positions. Owner's call whether to keep the two-level default on
+ * that ground alone; it is not resolved by re-reading this docstring. What the picture claims splits cleanly in two:
  * *knot centres are the coarse acoustic arrangement; spread inside a knot is that
  * knot's own variation.* Both are true. The single global claim was not.
  *
