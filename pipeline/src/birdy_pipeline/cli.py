@@ -45,7 +45,14 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_OUT = REPO_ROOT / "app" / "static" / "birdy"
 DEFAULT_INVENTORY = REPO_ROOT / "data" / "inventory.json"
 DEFAULT_DEMO_OUT = REPO_ROOT / "pipeline" / "out" / "demo"
-DEFAULT_HARVEST_STORE = REPO_ROOT / "pipeline" / "out" / "harvest"
+#: The production store, and the one `data/learned-inventory.json` was learned from.
+#: It is not `out/harvest`: that is a 39 930-syllable experiment store from 2026-07-30,
+#: one of eight under `out/`, and pointing 24 subcommands at it meant any command run
+#: without an explicit `--store` silently worked on a tenth of the corpus. That is how
+#: a specbench run came back with a clean-looking correlation table drawn from 86 of
+#: 16 239 types — see `specbench.MIN_PAIRING_SHARE`, which now catches the pairing.
+#: Owner decision 2026-08-05. Experiment stores are reached with an explicit `--store`.
+DEFAULT_HARVEST_STORE = REPO_ROOT / "pipeline" / "out" / "harvest-gan"
 DEFAULT_LEARNED_INVENTORY = REPO_ROOT / "data" / "learned-inventory.json"
 DEFAULT_DISCOVERED = REPO_ROOT / "data" / "discovered-species.json"
 DEFAULT_CRITIC = REPO_ROOT / "pipeline" / "out" / "critic.pt"

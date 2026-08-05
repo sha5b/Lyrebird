@@ -98,10 +98,107 @@ rows below keep their own narrower band, stay counted, and are never pooled with
 `--no-band-cap` reproduces every pre-cap figure.
 
 Verified on the same 60 types, so only the banding changed: **median MCD 111.82 dB per-file
-against 93.67 dB capped.** The band was worth 18 dB of the 33 dB gap this handoff flagged, and
-the arms are addable now.
+against 93.67 dB capped.** The band was worth 18 dB of the 33 dB gap this handoff flagged.
 
-## 4. Still open — and it is the same decision, with better numbers
+**CORRECTED an hour later, and the correction matters: a common band does NOT make the arms
+addable.** The first full capped run — 1 200 types, `noMembers 0`, `noCachedAudio 0`, both
+caches reached, every row measured at 11 025 Hz — still splits by reference format:
+
+```
+wav (iNat)          n= 230   median MCD  71.49 dB
+mp3 (xeno-canto)    n= 970   median MCD  95.23 dB
+                    Mann-Whitney p 3.3e-06, gap 23.74 dB
+```
+
+So "mostly band, not fit" was half right: 18 dB was the band and **23.7 dB is something
+else**. `analysis/v10_bench_format_paired.py` settled which, pre-registered: score **one**
+render of the same type against a wav reference and an mp3 reference, on the 1 110 types with
+members in both caches, so the type, its fit and its render are held fixed and population is
+gone by construction.
+
+```
+273 types paired      wav median MCD 97.21 dB     mp3 median MCD 98.15 dB
+                      median difference +0.72 dB  (p10 -22.39, p90 +26.43)
+                      mp3 worse on 53.1 % of types, Wilcoxon p 0.244
+                      STFT +0.06 dB, mp3 worse on 54.6 %, p 0.135
+```
+
+**Clause 1 held: the 23.74 dB is population.** Hold the type fixed and the format is worth
+0.72 dB and a coin flip — 53 % is not a preference. So once the band is capped, a lossy
+xeno-canto reference is as good a reference as a lossless iNat one, and the arms differ only
+because each cache covers different types that the fit handles differently. (The paired wav
+median of 97.21 against the wav arm's overall 71.49 says the same thing from the other side:
+the types that appear in both caches are harder than the wav arm at large.)
+
+**What this changes.** "Never average the arms" was right before the cap and is now obsolete:
+**at the cap, pool them** — 89.81 dB median MCD over 1 200 types is a legitimate corpus
+figure. What stays forbidden is reading the wav-vs-mp3 arm difference as a statement about
+audio quality; it is a statement about which birds each archive holds.
+
+One limit kept rather than smoothed: the paired gap is free of population but still contains
+both lossy coding and whatever separates an iNat recording from a xeno-canto one. It says
+their *sum* is near zero, not that each is.
+
+## 4. The first corpus-wide fidelity number, and the anti-correlation replicates
+
+`analysis/specbench_capped_n1200.json` — 1 200 types, `noMembers 0`, **`noCachedAudio 0`**,
+`pairingShare 1.0`, every row at the 11 025 Hz cap, references 970 mp3 and 230 wav:
+
+```
+                     Pearson   Spearman          p
+cosine vs MCD         +0.083     +0.233     2.7e-16
+cosine vs STFT        +0.076     +0.207     4.8e-13
+mel target vs MCD     -0.329     -0.385     1.1e-43
+mel target vs STFT    -0.285     -0.370     3.9e-40
+
+MCD median 89.81 dB (p10 47.70, p90 209.25)   1 200 types, one band
+```
+
+**The published caveat is gone and the finding survives it.** docs/19's n=1200 read Spearman
++0.200 on an iNat-only, per-file-banded population with 753 types skipped for want of audio.
+That skip is now zero, 81 % of the references are xeno-canto, the band is common — and the
+cosine still runs the wrong way at +0.233, the mel target still ranks correctly at -0.385. So
+the wrong-sign correlation belongs to the objective, not to which archive supplied the audio
+or to how each row was banded. Written into the whitepaper at §19.2.
+
+## 5. The default store was a trap, and it is closed
+
+`DEFAULT_HARVEST_STORE` pointed at `out/harvest`: a **39 930-syllable experiment store from
+2026-07-30**, one of eight under `out/`, while production is `out/harvest-gan` at **378 224**.
+24 subcommands defaulted to it, so anything run without an explicit `--store` silently worked
+on a tenth of the corpus. That is not hypothetical — it is how I got a clean-looking
+correlation table off **86 of 16 239 types** before noticing, and the run printed no complaint.
+
+Two fixes, and the second matters more than the first:
+
+- `DEFAULT_HARVEST_STORE` is now `out/harvest-gan` (owner decision 2026-08-05). Experiment
+  stores are reached with an explicit `--store`.
+- `specbench.MIN_PAIRING_SHARE` — the bench now measures what share of the inventory's learned
+  types resolve to members of the store it was pointed at, records it as `pairingShare`, and
+  shouts when it is under 0.5. On the mismatch above it prints *"only 125 of 16 239 learned
+  types (0.8 %) resolve"* and *"read nothing below as a corpus figure"*. The instrument now
+  reports when it has been wired wrong instead of answering anyway.
+
+## 6. What reaches the browser, measured rather than assumed
+
+Asked whether the important data is piped into the UI. It is not, and here is the count. The
+store holds **24 fields per syllable** (18 of them measured acoustics: `snr`, `flatness`,
+`harmonic`, `noise_frac`, `am`, `am_depth`, `vib_rate`, `vib_depth`, `attack`, `level`, `dur`,
+`gap_before`, `novel`, `timbre`, `hold`, `clipped`, …) and **17 per recording** (`recordist`,
+`country`, `date`, `quality`, `sex`, `stage`, `licence`, …).
+
+`points.json` ships six parallel arrays: `speciesId`, `syllableId`, `songId`, `clusterId`,
+`durations`, `source`. So of 18 measured acoustic fields, **one** reaches the browser (`dur`),
+and of 17 recording fields, **none** do. `point-features.f32`'s 8 floats per point are the
+reduced basis for the live cosine, not interpretable attributes, so they cannot be repurposed.
+This confirms docs/25 §25.1 by direct inspection rather than by reading the doc.
+
+**The newest build is what is showing.** `app/static/birdy` is the v9 build of
+2026-08-03T21:14 from `out/v9/learned-v9.json` — 387 287 points, 2 650 species, 16 283 types,
+`typeCoverage` 1.0 — and it is byte-identical in size to `out/v9/assets/inventory.json`. No
+newer build exists, because the v10 sweep was cancelled on evidence (§1 of the entry below).
+
+## 7. Still open — and it is the same decision, with better numbers
 
 **The SNR floor is yours to call**, and the reconciliation above is the input it was waiting
 on. 0 dB is near-free (3.6 % of rows, 97 species, +0.5 dB). 6 dB buys +3.3 dB at 0.77

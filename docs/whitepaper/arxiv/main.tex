@@ -1198,6 +1198,27 @@ cached audio and 443 are too short to bench. The benched set therefore over-repr
 whose members survived the audio cache, and nothing here corrects for that.
 % analysis/specbench_n1200.json — production store out/harvest-gan, shipped inventory
 
+\textbf{That caveat has since been removed, and the result replicates without it.} Caching the
+store's own xeno-canto audio takes the missing-audio skip to \textbf{zero}: a rerun benches
+1\,200 types with nothing skipped for want of audio and 347 skipped only as too short, on
+references that are 970 lossy and 230 lossless. Because per-file band limiting makes rows from
+archives an octave apart incomparable, every row in that rerun is instead held to one common
+11\,025\,Hz band. On that population the cosine's Spearman against mel-cepstral distortion is
+$+0.233$ at $p = 3\times10^{-16}$ against the $+0.200$ above, and the mel target's is $-0.385$
+at $p = 1\times10^{-43}$ against $-0.456$. Both signs and both magnitudes hold, so the
+wrong-way correlation is a property of the objective and not of which archive supplied the
+audio or of how each row was banded.
+
+Pooling those references is licensed by measurement rather than assumed. At the common band the
+lossless-backed rows still read a median distortion of 71.49\,dB against the lossy-backed
+95.23 (Mann--Whitney $p = 3\times10^{-6}$), which would ordinarily forbid averaging them. That
+residual is population: scoring \emph{one} render of the same type against a lossless and a
+lossy reference, across 273 types that appear in both archives, moves the median by
+$+0.72$\,dB with the lossy side worse on 53.1\,\% of types ($p = 0.24$). Holding the type
+fixed, the archive does not matter; the arm gap records which birds each archive happens to
+hold.
+% analysis/specbench_capped_n1200.json, v10_bench_format_paired.json
+
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{ruler}

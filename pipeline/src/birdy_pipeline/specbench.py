@@ -88,6 +88,16 @@ figure published before the cap existed used.
 
 Measured, on one run of 60 types held fixed so that only the banding changes: median
 MCD **111.82 dB per-file against 93.67 dB capped**. The band was worth 18 dB.
+
+**A capped run may be pooled across caches, and that was tested rather than assumed.**
+At the cap the arms still differ — over 1 200 types, wav-backed rows read a median MCD
+of 71.49 dB against mp3-backed 95.23 (Mann-Whitney p 3.3e-06). That residual is
+*population*, not the audio: `analysis/v10_bench_format_paired.py` scored one render of
+the same type against a wav and an mp3 reference across 273 types holding the type, its
+fit and its render fixed, and found a median difference of **+0.72 dB with mp3 worse on
+53.1 % of types** (Wilcoxon p 0.244). So a lossy reference is as good a reference as a
+lossless one once the band is common, and the arm gap says which birds each archive
+holds. Pool a capped run; never read the arm difference as an audio-quality statement.
 """
 
 from __future__ import annotations
@@ -112,6 +122,10 @@ MCD_SCALE = 10.0 / math.log(10.0)  # natural-log cepstra -> dB
 #: hold, and far below where lossy coding starts thinning the spectrum. See the module
 #: docstring — an uncapped MCD may not be averaged across caches.
 DEFAULT_BAND_CAP_HZ = 11025.0
+#: Share of the inventory's learned types that must resolve to members of the store
+#: before the bench trusts the pairing. Below this the two were built from different
+#: runs and the bench says so loudly — see `run_bench`.
+MIN_PAIRING_SHARE = 0.5
 #: FFT sizes of the multi-resolution STFT distance (Yamamoto 2019; the auraloss/
 #: neural-vocoder convention): 2048 sees formant-scale structure, 512 sees texture.
 STFT_SIZES = (512, 1024, 2048)
@@ -457,6 +471,34 @@ def run_bench(
         if o is not None:
             members_of.setdefault((e["speciesId"], str(e["typeId"])), []).append(o)
 
+    # Does this inventory even belong to this store? `noMembers` is counted below and
+    # reported, but it was possible to read a clean-looking correlation table off 86
+    # benched types while 16 114 were skipped because the default `--store` is a stale
+    # 39 930-syllable store and the inventory was built from the 378 224-syllable one.
+    # A type-id space that does not intersect the store's typing.json is a wiring
+    # mistake, not a finding, and the bench has to say so before it prints anything.
+    inventory_types = sum(
+        1
+        for sp in inventory.get("species", [])
+        for syl in sp.get("syllables", [])
+        if syl.get("learned")
+    )
+    resolvable = sum(
+        1
+        for sp in inventory.get("species", [])
+        for syl in sp.get("syllables", [])
+        if syl.get("learned") and members_of.get((sp["id"], str(syl.get("id", ""))))
+    )
+    pairing_share = resolvable / inventory_types if inventory_types else 0.0
+    if pairing_share < MIN_PAIRING_SHARE:
+        log(
+            f"  WARNING: only {resolvable} of {inventory_types} learned types "
+            f"({pairing_share:.1%}) resolve to members of {store.root}. The inventory "
+            f"and this store's typing.json are probably from different builds — check "
+            f"--store (the production store is the one `learn` wrote the inventory "
+            f"from). Every number below is drawn from that {pairing_share:.1%}."
+        )
+
     rows: list[dict[str, Any]] = []
     skipped = {
         "noMembers": 0,
@@ -560,6 +602,10 @@ def run_bench(
         "store": str(store.root),
         "audioCache": str(audio_cache),
         "bandCapHz": band_cap_hz,
+        # The store/inventory pairing, so a report can never be read without it.
+        "inventoryTypes": inventory_types,
+        "typesResolvingToStore": resolvable,
+        "pairingShare": round(pairing_share, 4),
         # The comparable population. Rows below the cap keep their own narrower band
         # and are counted, never pooled with these: a narrower band is a different
         # measurement however it was arrived at.
@@ -619,12 +665,21 @@ def correlations(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
 def format_report(report: dict[str, Any]) -> str:
     """The correlation table and the three rows a reader reaches for first."""
     rows = report["types"]
-    lines = [
+    lines = []
+    share = report.get("pairingShare")
+    if share is not None and share < MIN_PAIRING_SHARE:
+        lines.append(
+            f"!! store/inventory pairing {share:.1%} "
+            f"({report.get('typesResolvingToStore')} of "
+            f"{report.get('inventoryTypes')} learned types resolve). These were built "
+            f"from different runs — read nothing below as a corpus figure."
+        )
+    lines.append(
         f"specbench: {len(rows)} types benched "
         f"(skipped {sum(report['skipped'].values())}: "
         + ", ".join(f"{k} {v}" for k, v in report["skipped"].items())
-        + ")",
-    ]
+        + ")"
+    )
     corr = report["correlations"]
     lines.append(
         f"{'correlation':<16} {'pearson':>8} {'p':>10} {'spearman':>9} "
