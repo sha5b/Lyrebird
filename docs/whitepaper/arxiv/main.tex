@@ -522,6 +522,24 @@ syllables at a pitch median of 3\,179\,Hz instead of 2\,622\,Hz and a signal-to-
 of 15.9\,dB instead of 12.7\,dB, improving 81\,\% of recordings.
 % docs/23 §23.9.1; HANDOFF 2026-08-03 (~19:40)
 
+\textbf{That signal-to-noise gain does not replicate at the size it was first measured, and
+the corpus has still not been re-derived.} A later re-measurement segmented 60 cached
+recordings both ways and took the ratio of every resulting row, rather than per-recording
+medians: it finds the median moving from 6.36\,dB to 7.13\,dB, a gain of 0.77\,dB against the
+3.2\,dB above, at 0.711 retention. The two are not the same statistic on the same sample and we
+have not reconciled them; the smaller figure is the one measured on rows, the larger on 120
+recordings. What the re-measurement also shows is the shape of the disagreement between the two
+segmentations: matched span by span, the rows only the full-band path finds have a median ratio
+of 4.68\,dB and the rows only the band-limited path finds have 2.64\,dB, against 13.61\,dB for
+the rows both find. The two paths agree on the strong material and differ almost entirely on
+marginal spans near the noise floor. Projected over the corpus, re-segmenting costs 22\,\% of
+rows and drops species above the fitting floor from 2\,648 to about 1\,938, while selecting on
+signal-to-noise directly buys roughly four times the median gain per row sacrificed and keeps
+224 more species. So the defect is real and the fix is a poor exchange rate, which is why the
+corpus is still segmented as harvested and why the band fix remains recorded as owed rather
+than applied.
+% analysis/v10_resegment_yield.py, v10_outofband_census.py, v10_snr_floor.py
+
 That was a defect, not a filter, and fixing it did not produce a filter. Five candidate
 ingest gates were measured against the one recording a human had labelled noise
 (Figure~\ref{fig:noisegates}), and four of them place it mid-distribution or in the wrong
@@ -1359,6 +1377,30 @@ from both sides, against a shuffled null 95th percentile of $+0.140$. 83\,\% of 
 findable in both spaces. Two architectures trained by different groups agree about \emph{which
 people} are identifiable, which locates the structure in the recordists' equipment, sites and
 habits and not in either model's inductive bias.
+
+\textbf{One thing this limit does \emph{not} reach, and it is worth as much as the rest.} The
+question a comparative ornithologist would ask is whether the signature reaches the
+\emph{estimate} --- the single number per species that every cross-species acoustic comparison
+built on an opportunistic archive rests on. It does, and it is large. Over 797 species with two
+or more recordists contributing at least 20 syllables each, the within-species
+between-recordist variance in median $\log f_0$ is $0.0446$, against $0.0033$ for a null that
+shuffles recordist labels \emph{inside} each species --- twelve times the null, and
+\textbf{0.638 of the variance that separates different species}. Two people recording the same
+bird disagree about its pitch by nearly two thirds of what separates one bird from another.
+
+And the comparative slope survives it. Estimating the mass/frequency relationship the standard
+way (one median over all of a species' syllables) gives a slope of $-0.1655$; estimating it
+recordist-balanced (each recordist one vote, then the median across them) gives $-0.1672$, a
+change of \textbf{1.0\,\%} against a pre-registered tolerance of 15\,\%. A recordist effect
+that is large but close to mean-zero across species \emph{attenuates} a slope rather than
+tilting it, and the supporting correlations agree: a species' recordist count correlates with
+its naive $f_0$ at only $+0.125$. This is the reassuring half of the limit, and it also names a
+specific component of the noise behind two numbers this paper already reports --- G2's
+standardised slope of $-0.211$ against the published $-0.510$, and a fitted Pagel's $\lambda$ of
+$0.000$ that cannot be true of birdsong. The population is also an order of magnitude larger
+than the one G3 could reach, because this test is a direct measurement rather than a fitted
+parameter and it is paired \emph{within} species, so the selection that binds G3 barely applies.
+% analysis/recordist_bias_comparative.py, 797 species / 782 with AVONET mass
 
 Two earlier measurements sharpen the same limit. Both are reported in full in
 Section~\ref{sec:phase0}. \textbf{The structure is not an artefact of any model

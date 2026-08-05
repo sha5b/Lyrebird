@@ -1,4 +1,305 @@
-# Lyrebird — READ THIS FIRST (2026-08-04, evening): two items the last handoff parked for the owner are closed, and one of them reverses a published claim's reach
+# Lyrebird — READ THIS FIRST (2026-08-04, night): the full sweep was authorised, measured, and NOT run — its premise fails, and the measurement found a better lever
+
+**The v10 sweep was not run, on evidence rather than caution.** It was authorised ("now,
+before publishing"), the audio fetch it needs is running, and then the pre-flight
+measurements said its premise is wrong. Three numbers, in the order they landed:
+
+```
+v10_resegment_yield      in-band re-segmentation SHRINKS the corpus: ratio 0.777,
+                         378 224 -> ~293 700 syllables, and ~710 of 2 648 fitted
+                         species fall below the floor of 24
+v10_outofband_census     what it removes and adds, matched span by span on the same
+                         audio: both paths AGREE on the strong material and disagree
+                         almost only on marginal rows near the noise floor
+v10_snr_floor            an SNR floor is a far better exchange rate than the band fix:
+                         at the same corpus cost it keeps 224 more species and buys
+                         about four times the median-SNR gain per row sacrificed
+```
+
+**CORRECTED, same night, before anything was quoted.** The first version of this entry said
+the band fix "buys no SNR" and that the floor "dominates on both axes". That was an
+inference, never measured, and it is false — see §2.
+
+## 1. The sweep costs ~710 species, and the band fix does not buy quality for them
+
+`analysis/v10_resegment_yield.py` (n = 250 recordings, `max_seconds` 90 to match harvest,
+Monte Carlo over the measured per-recording ratios so the yield-nothing tail is carried
+rather than averaged away):
+
+```
+corpus ratio in-band / full-band      0.777
+projected syllables                   378 224 -> 293 731     syllableCap 400 000, no collision
+recordings yielding nothing in-band   37 of 250   (14.8 %)
+species over the fitting floor of 24  2 648 -> ~1 938        [p05 1 902, p94 1 978]
+```
+
+So the cap fear was unfounded and a different cost appeared: **the sweep would drop the
+project's headline resource claim from 2 650 fitted species to about 1 938.**
+
+`analysis/v10_outofband_census.py` then asked what those rows *are*, by running both
+segmentations on the same 120 cached recordings and matching syllables by time overlap:
+
+```
+                     n      median SNR   share under 6 dB   median dur
+found by both      1 770      13.61 dB        15 %            93 ms
+removed by the fix 2 293       4.68 dB        66 %            61 ms
+added by the fix   1 122       2.64 dB        80 %            75 ms
+```
+
+**The rows the fix adds are weaker than the ones it removes.** The two segmentations agree
+on the strong material and disagree almost entirely on marginal calls near the noise floor.
+That is a change in which marginal rows get kept, not a purification — so the ~710 species
+buy nothing measurable on quality.
+
+**Two method traps inside this one script, both recorded rather than deleted.** The first
+version classified every stored row by whether its pitch contour fell inside
+`SEGMENT_BAND_HZ` and reported **100.0 % inside, 0 below, 0 above** over all 378 224 rows.
+Tautological: `extract_syllables` tracks f0 only within `[F0_MIN_HZ, F0_MAX_HZ]`, so a
+stored contour cannot lie outside the band by construction, and `segment_band` moves
+*boundaries* — the full-band path lands on rumble amplitude peaks and then reports a
+perfectly in-band f0 for a span that was never a syllable. The instrument constrained the
+answer and the number looked like a clean result. Second, the pre-registered prediction
+used `harmonic`, and `harmonic` **saturates at exactly 1.0** on 64 % of disagreed rows
+against 21 % of agreed ones — a degenerate estimate on short weak spans, not a quality
+signal. The prediction is recorded as failed and the verdict rests on SNR, which is
+robust. **Do not use `harmonic` as a quality field on short syllables.**
+
+## 2. The better lever, and it is a dominance argument
+
+`analysis/v10_snr_floor.py`, an exact census over all 378 224 rows, no audio and no
+sampling. Every row already carries `snr`:
+
+```
+floor      rows kept   share   species >= 24   median SNR kept
+ 0.0 dB      364 577   0.964        2 551          12.46
+ 3.0 dB      336 748   0.890        2 410          13.50
+ 6.0 dB      290 492   0.768        2 162          15.28
+ 9.0 dB      238 886   0.632        1 804          17.52
+12.0 dB      194 165   0.513        1 380          19.83
+
+the band-fix sweep       0.777        1 938          no SNR selection at all
+```
+
+**The comparison is an exchange rate, and this is the corrected version.** I first wrote that
+the sweep "buys no SNR, because it is not selecting on SNR", and that the floor dominates it.
+The first half was an inference I never tested and it is wrong. Segmenting the same 60 cached
+recordings both ways and taking the SNR of every resulting row:
+
+```
+full-band corpus (what the store has)   median SNR 6.36 dB   48 % under 6 dB
+in-band corpus (what a sweep gives)     median SNR 7.13 dB   47 % under 6 dB, 0.711 retention
+```
+
+So the band fix does raise median SNR — by **0.77 dB, while removing 29 % of the rows**. Set
+against the floor's +3.32 dB for 23 % of rows, the floor buys roughly **four times the gain
+per row sacrificed** and keeps 224 more species. That is a poor trade for the band fix, not a
+worthless one, and "dominates" was too strong.
+
+**One tension left open rather than smoothed over.** docs/23 reports the in-band arm at an SNR
+median of **15.9 dB against 12.7 dB** over 120 recordings — a +3.2 dB gain where the
+measurement above finds +0.77 on 60. Different sample, and possibly a different statistic
+(per-recording medians averaged, against the median over rows). The whitepaper quotes the
+docs/23 figure at \S`sec:noisegates`. **Reconcile the two before either is quoted as the band
+fix's SNR yield**; if docs/23's is right the exchange rate is much closer than the paragraph
+above implies.
+
+The 0 dB floor — dropping only negative-SNR rows — costs 3.6 % of rows and 97 species for
++0.5 dB, which is close to free either way.
+
+This is a trade, not a recommendation: a floor buys median quality and costs species, and
+the project's resource claim is breadth. The right floor is the owner's, and it now has a
+table instead of an argument.
+
+## 3. What IS running, and why it is worth finishing regardless
+
+`analysis/v10_fetch_xc_audio.py` — the store's own 3 731 xeno-canto recordings, by id, so
+the cache matches the corpus rather than whatever a fresh query returns. ~2 h, ~29 GB,
+resumable (an existing file is skipped, so re-running retries the HTTP 500s), `out/` is
+gitignored and NOTICE.md's no-redistribution rule is untouched because this is a local
+cache.
+
+**It is worth finishing even though the sweep is off**, for the reason the owner gave:
+`specbench` can only bench a type whose audio is cached, which is why the paper's own
+caveat reads "1 196 skipped (753 no cached audio, 443 too short)". The xeno-canto side is
+39.9 % of the corpus (151 093 of 378 224 syllables) that the independent fidelity
+instrument has never been able to see. Harvest streams and deletes by design, so that
+audio was simply absent; keeping it lifts the bench's reach over two fifths of the corpus
+and is what makes "do our renders match the real thing" answerable there.
+
+## 4. NEW RESULT: every blocking variable leaks, and country costs more than recordist
+
+`analysis/w0_blocking_variables.py`. W0 measured one blocking variable; this asks the same
+question of geography and time, on the **same 8 287 recordings, same 884 species, same frozen
+embeddings, same probe, same seeds, same paired class-set correction**. No re-embedding. The
+recordist arm therefore doubles as a replication check, and it passes tightly:
+**18.38 against the published 18.51.**
+
+Held recording share matched across variables (see the trap below), 20 paired folds:
+
+```
+blocked by      levels  classes   Perch drop   BirdNET drop   err ratio
+recordist          646    716.2      19.02        22.07        1.97
+location 1 deg   1 128    726.2      18.26        20.68        1.94
+country            116    501.8      23.87        26.97        2.27
+year                36    706.0      19.11        21.50        1.91
+```
+
+**Two of four pre-registered clauses failed, which is the informative part.** Clause 1
+(replication) and clause 2 (geography clears the 10-point gate — everything here is 17-27
+points) both held. Clause 3 said location would be **no larger** than recordist: country is
+larger on both models. Clause 4 said year would be smallest: once the held share is matched
+it costs about what recordist costs. Under W0's own level rule year did look smallest
+(17.11) — because 30 % of 36 years strands only 23.9 % of the recordings, which is exactly
+the trap below.
+
+**The trap, and it is the reason this script exists in two arms.** Holding out a fixed share
+of *levels* is right when comparing one variable against a random split, and wrong when
+comparing variables against each other: 30 % of 116 countries strands 43 % of the recordings
+while 30 % of 646 recordists strands 34 %, and the arm with less training data loses accuracy
+for reasons that have nothing to do with leakage. So the second arm adds shuffled levels
+until the held *recordings* reach a target. Same spirit as W0's class-set correction.
+
+**Why country is suggestive rather than settled, stated because two biases oppose here.**
+Even matched, country still holds 0.436 against recordist's 0.402 — 116 coarse levels cannot
+be matched finely, and that residual favours a bigger country drop. Against it, country's
+folds survive with far fewer classes (501.8 vs 716.2), and W0's own class sweep established
+that fewer classes make the drop *smaller*. So one bias inflates and one deflates, and the
+result is worth reporting with both named rather than as a settled ordering. What would
+settle it: sub-sample within countries to match the held share exactly, or re-run at matched
+class counts.
+
+**These are not independent variables, and the association is measured rather than assumed**
+(normalised mutual information, 0 = independent, 1 = identical):
+
+```
+recordist | location 1 deg   0.817
+recordist | country          0.733
+location  | country          0.754
+recordist | year             0.246
+location  | year             0.315
+country   | year             0.161
+```
+
+A recordist records near home, so a location-blocked split is substantially a
+recordist-blocked one. The claim is **not** four independent leaks; it is that the cost of
+blocking is 17-27 points whichever of these axes you choose, and that a geographically
+blocked benchmark is the most expensive of the four — which is directly actionable for
+benchmark design, and unpublished.
+
+## 5. NEW RESULT: the recordist signature is large in the species pitch estimate, and the comparative slope survives it
+
+`analysis/recordist_bias_comparative.py`. The question no arm of this project had asked:
+does the recordist signature reach the *estimate* a comparative ornithologist would use? It
+survives where G1, W2 and W4 died because it is a **direct measurement** (f0 off the measured
+contour, not a fitted parameter) and it is **paired within species**, so the between-species
+selection that blocked G3 barely applies. Population **797 species** with two or more
+recordists at 20+ syllables each, 782 of them joined to AVONET mass — against G3's 77 of
+3 636.
+
+Both clauses were pre-registered in the script's docstring before the run, and both held.
+
+**H1: the signature is in the estimate, and it is big.**
+
+```
+within-species, between-recordist variance of median log f0   0.044582
+the same, with recordist labels shuffled INSIDE each species  0.003269 median, 0.003725 p95
+between-species variance                                      0.069898
+within / between                                              0.638
+```
+
+Twelve times the null. And the ratio is the number to quote: **two recordists recording the
+same species disagree on its median pitch by nearly two thirds of the variance that separates
+different species.** The null shuffles labels *within* each species — pooling that species'
+syllables and re-dealing them into groups of the same sizes — so it keeps the bird and
+destroys the recordist, which is what makes it a test of the recordist rather than of pitch.
+
+**H2: and it does not bias the mass/frequency slope.**
+
+```
+slope of log f0 on log mass, standard estimator (one median over all syllables)   -0.1655
+the same, recordist-balanced (each recordist one vote, then median across them)   -0.1672
+relative change                                                                   1.0 %
+                                                                   tolerance was 15 %
+```
+
+**So this is a reassurance for the comparative literature, with the noise it carries now
+quantified.** A recordist effect that is large but roughly mean-zero across species
+attenuates a slope rather than tilting it, and the supporting numbers agree: the correlation
+between a species' recordist count and its naive f0 is only +0.125, and between recordist
+count and the two estimators' disagreement only −0.159. Nobody has decomposed species-level
+acoustic estimates from an opportunistic archive into species and recordist and then shown
+the comparative slope robust to it.
+
+**And it explains something this project already measured but could not source.** G2's
+standardised slope is −0.211 over all species against Mikula et al. 2021's −0.510, and the
+PGLS arm fitted Pagel's lambda at **0.000**, which cannot be true of birdsong — both read at
+the time as "the shortfall is our noise, not the birds". This names a specific component of
+that noise and shows it is the attenuating kind. The standardised slopes here, −0.344 and
+−0.381 on the well-sampled 782, sit between G2's −0.211 and the published −0.510, which is
+the direction depth predicts.
+
+## 6. The fetch's payoff, measured
+
+Member coverage over the 16 239 fitted (species, type) pairs, from `typing.json`:
+
+```
+benchable now, >= 2 iNat members       14 518    89.4 %
+after the xeno-canto audio lands       15 721    96.8 %
+newly reachable                         1 203    +7.4 points
+types with NO iNat member at all        1 033     6.4 %   <- structurally invisible today
+  of those, >= 2 XC members             1 016
+```
+
+So 1 033 fitted types are currently unreachable by the independent fidelity instrument for
+no reason except which archive their audio came from, and the fetch reaches 1 016 of them.
+This is member coverage, an upper bound: `specbench` also skips on decode and duration, so
+treat it as the ceiling the fetch raises rather than a promise about the bench's own count.
+
+## 7. The fetch LANDED, and specbench can now reach the whole corpus — with one trap
+
+```
+3 726 of 3 728 fetched, 18 GB, out/audio-xc/. Two permanent failures:
+  XC102788  http 500 on three attempts   XC135521  http 404 (withdrawn or redacted)
+```
+
+`specbench` was hardcoded to `audio_cache / f"{id}.wav"` **and** to
+`recording_id.startswith("INAT")`, so it could only ever see the iNaturalist side. It now
+resolves a reference through `specbench.resolve_audio` across any number of caches and any
+supported suffix, wired up as `--extra-audio-cache DIR` (repeatable). Verified on a 60-type
+run: **`noCachedAudio` went to 0**, and `stored` matched the recomputed cosine exactly
+(0.802/0.802, 0.972/0.972), which is the store/inventory pairing check.
+
+**THE TRAP, and it is why the arms must never be averaged.** On that run:
+
+```
+reference   n    median MCD   median STFT   median bandHz
+wav        24      78.96         7.75         11 025
+mp3        36     111.70         8.11         22 050
+```
+
+`band_hz` is the reference file's own Nyquist, and the two caches sit an octave apart — iNat
+WAV at 22.05 kHz, xeno-canto MP3 at 48 kHz. So most of that 33 dB is **band, not fit**: a
+wider band admits more high-frequency content, which is where the render is weakest. The MP3
+cache is lossy on top of that, attenuating its high end *below* its own Nyquist where
+`band_hz` cannot help. Every row now records `audioFormat` and `bandHz`.
+
+**Owed before any cross-arm number is quoted: an explicit band cap so both arms score to the
+same ceiling.** Until then read the arms separately. Had this been blended, the bench's
+population would have doubled and its metric would have silently changed meaning.
+
+## 8. What this means for the papers
+
+Nothing published is invalidated — the store is untouched and every number still describes
+`out/harvest-gan`. What changes is the *owed* work: the whitepaper's corpus section names
+the band fix as applied in code and not to the corpus, and that is still true, but the
+reason to apply it is now measured and weak. The honest write-up is that re-segmenting
+in-band trades marginal rows near the noise floor and costs 27 % of fitted species, while
+an SNR floor at the same cost dominates it — which is a publishable statement about
+quality control on opportunistic archives, and nobody has put a table on it.
+
+---
+
+# Lyrebird — (2026-08-04, evening): two items the last handoff parked for the owner are closed, and one of them reverses a published claim's reach
 
 Both were parked as "needs a human": the gate tally, and which inventory pairs with which
 store. Neither needed one. **The second turned into a result: the two-voice adoption survives

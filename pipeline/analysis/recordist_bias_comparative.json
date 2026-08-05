@@ -1,0 +1,29 @@
+{
+ "min_syllables_per_recordist": 20,
+ "min_recordists_per_species": 2,
+ "species_in_population": 797,
+ "species_with_mass": 782,
+ "h1": {
+  "within_species_between_recordist_var": 0.04458199614480673,
+  "between_species_var": 0.06989835961468874,
+  "variance_ratio_within_over_between": 0.6378117654056945,
+  "shuffled_null_p95": 0.0037251996540779942,
+  "shuffled_null_median": 0.0032686245158523525,
+  "shuffles": 500,
+  "held": true
+ },
+ "h2": {
+  "slope_naive": -0.16554180970126736,
+  "slope_recordist_balanced": -0.16719491845390505,
+  "standardised_naive": -0.34445452938958687,
+  "standardised_balanced": -0.38139680592331476,
+  "relative_change": 0.009986049781749079,
+  "tolerance": 0.15,
+  "held": true
+ },
+ "context": {
+  "median_abs_disagreement_dex": 0.036046432259351446,
+  "r_log_recordists_vs_disagreement": -0.15853550810407516,
+  "r_log_recordists_vs_naive_f0": 0.12463876440489151
+ }
+}

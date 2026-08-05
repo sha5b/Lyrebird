@@ -1,0 +1,244 @@
+{
+ "population": {
+  "recordings": 8287,
+  "species": 884
+ },
+ "grid_degrees": 1.0,
+ "repeats": 20,
+ "published_perch_drop": 18.51,
+ "arms": {
+  "perch": {
+   "recordist": {
+    "levels": 646,
+    "random_top1": 81.54496680081469,
+    "blocked_top1": 63.16329273759995,
+    "drop_points": 18.38167406321474,
+    "folds": 20,
+    "classes": 663.6,
+    "held_share": 0.35629692519401274,
+    "per_fold_sd": 2.6654553040791495,
+    "folds_blocked_worse": 20,
+    "error_ratio": 1.9960249794633906,
+    "exceeds_gate": true
+   },
+   "location_1deg": {
+    "levels": 1128,
+    "random_top1": 81.26188182586647,
+    "blocked_top1": 63.36067947927272,
+    "drop_points": 17.90120234659375,
+    "folds": 20,
+    "classes": 684.5,
+    "held_share": 0.34710976558704554,
+    "per_fold_sd": 1.9479461274664929,
+    "folds_blocked_worse": 20,
+    "error_ratio": 1.9553361858558946,
+    "exceeds_gate": true
+   },
+   "country": {
+    "levels": 116,
+    "random_top1": 82.07886490790608,
+    "blocked_top1": 59.69047653626852,
+    "drop_points": 22.38838837163756,
+    "folds": 20,
+    "classes": 471.0,
+    "held_share": 0.4096014173004379,
+    "per_fold_sd": 3.927714753105766,
+    "folds_blocked_worse": 20,
+    "error_ratio": 2.2492728979825842,
+    "exceeds_gate": true
+   },
+   "year": {
+    "levels": 36,
+    "random_top1": 79.4661800453722,
+    "blocked_top1": 62.35644199610739,
+    "drop_points": 17.109738049264806,
+    "folds": 20,
+    "classes": 474.85,
+    "held_share": 0.44591234922321377,
+    "per_fold_sd": 4.203605200085519,
+    "folds_blocked_worse": 20,
+    "error_ratio": 1.83324671625012,
+    "exceeds_gate": true
+   }
+  },
+  "birdnet": {
+   "recordist": {
+    "levels": 646,
+    "random_top1": 78.93607115559233,
+    "blocked_top1": 57.494556596840816,
+    "drop_points": 21.441514558751514,
+    "folds": 20,
+    "classes": 663.6,
+    "held_share": 0.35629692519401274,
+    "per_fold_sd": 2.9121285752602186,
+    "folds_blocked_worse": 20,
+    "error_ratio": 2.0179257021390904,
+    "exceeds_gate": true
+   },
+   "location_1deg": {
+    "levels": 1128,
+    "random_top1": 78.42325628433376,
+    "blocked_top1": 58.286719998745774,
+    "drop_points": 20.136536285587987,
+    "folds": 20,
+    "classes": 684.5,
+    "held_share": 0.34710976558704554,
+    "per_fold_sd": 1.4704594335921086,
+    "folds_blocked_worse": 20,
+    "error_ratio": 1.9332518637169258,
+    "exceeds_gate": true
+   },
+   "country": {
+    "levels": 116,
+    "random_top1": 79.41774373373904,
+    "blocked_top1": 53.99035992578237,
+    "drop_points": 25.427383807956673,
+    "folds": 20,
+    "classes": 471.0,
+    "held_share": 0.4096014173004379,
+    "per_fold_sd": 3.8683304014437945,
+    "folds_blocked_worse": 20,
+    "error_ratio": 2.235403129716055,
+    "exceeds_gate": true
+   },
+   "year": {
+    "levels": 36,
+    "random_top1": 76.04998019376937,
+    "blocked_top1": 57.29576209496524,
+    "drop_points": 18.75421809880413,
+    "folds": 20,
+    "classes": 474.85,
+    "held_share": 0.44591234922321377,
+    "per_fold_sd": 5.309727697272739,
+    "folds_blocked_worse": 20,
+    "error_ratio": 1.783056475549352,
+    "exceeds_gate": true
+   }
+  }
+ },
+ "association_nmi": {
+  "recordist|location_1deg": 0.8172431499990075,
+  "recordist|country": 0.73340519006998,
+  "recordist|year": 0.2460283731034054,
+  "location_1deg|country": 0.754085382954532,
+  "location_1deg|year": 0.3151904313711133,
+  "country|year": 0.16115451882088327
+ },
+ "matched_held_share_target": 0.35629692519401274,
+ "arms_matched": {
+  "perch": {
+   "recordist": {
+    "levels": 646,
+    "random_top1": 80.30605172433776,
+    "blocked_top1": 61.281525937450574,
+    "drop_points": 19.02452578688719,
+    "folds": 20,
+    "classes": 716.25,
+    "held_share": 0.40220193168037593,
+    "per_fold_sd": 1.9554233646515224,
+    "folds_blocked_worse": 20,
+    "error_ratio": 1.966008721085029,
+    "exceeds_gate": true
+   },
+   "location_1deg": {
+    "levels": 1128,
+    "random_top1": 80.53927605481725,
+    "blocked_top1": 62.27522804310579,
+    "drop_points": 18.26404801171146,
+    "folds": 20,
+    "classes": 726.25,
+    "held_share": 0.39379907780438417,
+    "per_fold_sd": 1.884378311008401,
+    "folds_blocked_worse": 20,
+    "error_ratio": 1.9385081491910525,
+    "exceeds_gate": true
+   },
+   "country": {
+    "levels": 116,
+    "random_top1": 81.2006068353201,
+    "blocked_top1": 57.3269948064452,
+    "drop_points": 23.873612028874902,
+    "folds": 20,
+    "classes": 501.75,
+    "held_share": 0.4363938425012793,
+    "per_fold_sd": 4.4187399258251565,
+    "folds_blocked_worse": 20,
+    "error_ratio": 2.2699139711450043,
+    "exceeds_gate": true
+   },
+   "year": {
+    "levels": 36,
+    "random_top1": 79.08216983857861,
+    "blocked_top1": 59.9762238597519,
+    "drop_points": 19.10594597882671,
+    "folds": 20,
+    "classes": 706.0,
+    "held_share": 0.4391852266527708,
+    "per_fold_sd": 2.3474049538890767,
+    "folds_blocked_worse": 20,
+    "error_ratio": 1.913380873225736,
+    "exceeds_gate": true
+   }
+  },
+  "birdnet": {
+   "recordist": {
+    "levels": 646,
+    "random_top1": 77.36716062890876,
+    "blocked_top1": 55.30103728877861,
+    "drop_points": 22.066123340130154,
+    "folds": 20,
+    "classes": 716.25,
+    "held_share": 0.40220193168037593,
+    "per_fold_sd": 1.9042586824262868,
+    "folds_blocked_worse": 20,
+    "error_ratio": 1.9749604536280612,
+    "exceeds_gate": true
+   },
+   "location_1deg": {
+    "levels": 1128,
+    "random_top1": 77.70726395168934,
+    "blocked_top1": 57.02474686187716,
+    "drop_points": 20.68251708981218,
+    "folds": 20,
+    "classes": 726.25,
+    "held_share": 0.39379907780438417,
+    "per_fold_sd": 1.6599116317970928,
+    "folds_blocked_worse": 20,
+    "error_ratio": 1.927769343565143,
+    "exceeds_gate": true
+   },
+   "country": {
+    "levels": 116,
+    "random_top1": 78.18320206680387,
+    "blocked_top1": 51.21697104005594,
+    "drop_points": 26.966231026747934,
+    "folds": 20,
+    "classes": 501.75,
+    "held_share": 0.4363938425012793,
+    "per_fold_sd": 4.394264605049326,
+    "folds_blocked_worse": 20,
+    "error_ratio": 2.2360306544214037,
+    "exceeds_gate": true
+   },
+   "year": {
+    "levels": 36,
+    "random_top1": 76.1609081041226,
+    "blocked_top1": 54.661559092487686,
+    "drop_points": 21.499349011634912,
+    "folds": 20,
+    "classes": 706.0,
+    "held_share": 0.4391852266527708,
+    "per_fold_sd": 3.2854564665305115,
+    "folds_blocked_worse": 20,
+    "error_ratio": 1.9018526840509762,
+    "exceeds_gate": true
+   }
+  }
+ },
+ "replication": {
+  "published": 18.51,
+  "reproduced": 18.38167406321474,
+  "tolerance": 1.5,
+  "ok": true
+ }
+}

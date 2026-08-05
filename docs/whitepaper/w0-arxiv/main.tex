@@ -609,6 +609,72 @@ makes them measurable is the population where the confound is weakest. The pre-r
 10-point gate should not have been treated as likely on the strength of $+0.488$.
 
 % =====================================================================
+\section{Recordist is not the only axis, and it is not the most expensive}
+\label{sec:axes}
+
+Everything above prices one blocking variable. A benchmark designer chooses among several, and
+two others are standard: \textbf{geography}, because train-here-deploy-there is the deployment
+case, and \textbf{time}, because equipment and archive conventions drift. Both are answerable on
+this population without re-embedding anything, since every recording carries a country, a
+date, and --- where xeno-canto publishes it --- a latitude and longitude.
+
+Everything is held identical to \S\ref{sec:results}: the same 8\,287 recordings, the same 884
+species, the same frozen embeddings, the same probe, the same held fraction, the same seeds and
+the same paired class-set correction. Only the blocking variable changes. The recordist arm is
+therefore a replication check on this harness, and it reproduces: $18.38$ against the $18.51$
+of \S\ref{sec:results}.
+
+\paragraph{The unit has to be recordings, not levels.} Holding out a fixed share of blocking
+\emph{levels} is right when comparing one variable against a random split, and wrong when
+comparing variables against each other, because the variables differ enormously in how many
+levels they have. Thirty per cent of 116 countries strands 43\,\% of the recordings; thirty per
+cent of 646 recordists strands 34\,\%. The arm with less training data then loses accuracy for
+a reason that has nothing to do with leakage. So each arm below adds shuffled levels until the
+held \emph{recordings} reach a common target --- the same correction in spirit as the class-set
+pairing that \S\ref{sec:method} applies.
+
+\begin{table}[t]
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{Top-1 drop by blocking variable, held recording share matched across arms, 20 paired
+folds. Every axis costs far more than the pre-registered 10-point gate, and country costs the
+most on both models.}
+\label{tab:axes}
+\begin{tabular}{L{2.5cm} r r r r}
+\toprule
+blocked by & levels & classes & Perch & BirdNET \\
+\midrule
+recordist & 646 & 716 & $19.02$ & $22.07$ \\
+location, $1^\circ$ cell & 1\,128 & 726 & $18.26$ & $20.68$ \\
+\textbf{country} & 116 & 502 & $\mathbf{23.87}$ & $\mathbf{26.97}$ \\
+year & 36 & 706 & $19.11$ & $21.50$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{These axes are not independent, and that is the point.} A recordist records near
+home, so a location-blocked split is substantially a recordist-blocked split. Measured as
+normalised mutual information, recordist against $1^\circ$ cell is $0.817$ and recordist
+against country is $0.733$; recordist against year is only $0.246$. So the transferable claim
+is \emph{not} that there are four separate leaks to close. It is that blocking costs 17--27
+points on whichever of these axes a benchmark chooses, and that a geographically blocked
+benchmark is the most expensive of the four.
+
+\paragraph{Why the country result is reported as suggestive.} Two biases oppose each other in
+it and neither can be removed on this population. Even matched, country holds $0.436$ of the
+recordings against recordist's $0.402$, because 116 coarse levels cannot be matched finely, and
+that residual favours a larger country drop. Against it, country's folds survive with far fewer
+classes (502 against 716), and \S\ref{sec:sweep} established that a smaller label set makes the
+drop \emph{smaller}. Sub-sampling within countries to match the held share exactly, or
+re-running every arm at a common class count, would settle the ordering. We report the numbers
+with both biases named rather than the ordering as a finding.
+
+\paragraph{What does survive without qualification} is the weaker and more useful statement:
+there is no cheap axis. A designer hoping that blocking by place or by year avoids the cost of
+blocking by recordist does not get that discount --- year costs what recordist costs, and place
+costs at least as much.
+
+% =====================================================================
 \section{Threats to validity}
 \label{sec:threats}
 

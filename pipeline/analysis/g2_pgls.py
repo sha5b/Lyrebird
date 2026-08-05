@@ -38,7 +38,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from w2_learners import TREES, gls, vcv  # noqa: E402
+from w2_learners import gls, tree_path, vcv  # noqa: E402
 
 F0_CACHE = ROOT / "out/external/species-f0.json"
 TAXON = ROOT / "out/external/BLIOCPhyloMasterTax.csv"
@@ -161,7 +161,7 @@ def main() -> int:
     print(f"  reading {TREE_SAMPLE} posterior trees...")
     wanted = {r["tip"] for r in rows}
     trees = []
-    with TREES.open() as fh:
+    with tree_path().open() as fh:
         for i, line in enumerate(fh):
             if i >= TREE_SAMPLE:
                 break

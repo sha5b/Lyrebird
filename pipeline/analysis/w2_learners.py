@@ -69,10 +69,37 @@ INVENTORY = ROOT.parent / "data/learned-inventory.json"
 TAXON = ROOT / "out/external/BLIOCPhyloMasterTax.csv"
 AVONET = ROOT / "out/external/AVONET.xlsx"
 F0_CACHE = ROOT / "out/external/species-f0.json"
-TREES = Path(
-    "/tmp/claude-1000/-home-sha5b-Documents-GitHub-Birdy/"
-    "c1c0b9d0-6d5e-4390-9f42-087508a40cb8/scratchpad/AllBirdsEricson1.tre"
-)
+#: The BirdTree posterior, extracted from the archive next to it on demand.
+#:
+#: **This was a hardcoded path into a session scratchpad that no longer exists**, which meant
+#: this script and `g2_pgls.py` could not be re-run as committed — the 10-tree PGLS numbers in
+#: the paper were reproducible only inside the session that produced them. `tree_path()`
+#: extracts the 0.46 GB newick from `EricsonStage2.zip` into `out/external/` the first time it
+#: is needed and returns it thereafter, so both scripts reproduce from what the repo has.
+TREES_ZIP = ROOT / "out/external/EricsonStage2.zip"
+TREES = ROOT / "out/external/AllBirdsEricson1.tre"
+
+
+def tree_path() -> Path:
+    """`TREES`, extracting it from `TREES_ZIP` if it is not already on disk."""
+    if TREES.exists() and TREES.stat().st_size > 0:
+        return TREES
+    import zipfile
+
+    if not TREES_ZIP.exists():
+        raise FileNotFoundError(
+            f"neither {TREES} nor {TREES_ZIP} is present; the BirdTree posterior is a "
+            "download, see docs/24 W2"
+        )
+    with zipfile.ZipFile(TREES_ZIP) as z:
+        name = next(n for n in z.namelist() if n.endswith(".tre"))
+        TREES.parent.mkdir(parents=True, exist_ok=True)
+        with z.open(name) as src, TREES.open("wb") as dst:
+            while chunk := src.read(1 << 22):
+                dst.write(chunk)
+    return TREES
+
+
 OUT = Path(__file__).resolve().parent / "w2_learners.json"
 
 TREE_SAMPLE = 10
@@ -320,7 +347,7 @@ def main() -> int:
     print(f"  reading {TREE_SAMPLE} posterior trees...")
     tips_wanted = {r["tip"] for r in rows}
     trees = []
-    with TREES.open() as fh:
+    with tree_path().open() as fh:
         for i, line in enumerate(fh):
             if i >= TREE_SAMPLE:
                 break

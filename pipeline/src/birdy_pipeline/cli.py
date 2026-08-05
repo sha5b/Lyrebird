@@ -2352,6 +2352,7 @@ def cmd_specbench(args: argparse.Namespace) -> int:
         calibration,
         limit=args.limit,
         log=log,
+        extra_caches=[Path(p) for p in (args.extra_audio_cache or [])],
     )
     log(specbench.format_report(report))
     if args.out:
@@ -3969,6 +3970,15 @@ def build_parser() -> argparse.ArgumentParser:
                      help="learned inventory holding the fitted types")
     spb.add_argument("--audio-cache", default=str(REPO_ROOT / "pipeline" / "out" / "audio-cache"),
                      help="the owner-sanctioned iNat WAV cache (read only)")
+    spb.add_argument("--extra-audio-cache", action="append", default=None,
+                     metavar="DIR",
+                     help="another read-only cache to resolve references from, repeatable. "
+                          "Use it to reach the xeno-canto side of the corpus, whose audio "
+                          "harvest streams and deletes: 1 033 fitted types (6.4 %%) have no "
+                          "iNat member at all and are otherwise unbenchable. Mind the "
+                          "format — that cache is lossy MP3 against the iNat cache's "
+                          "lossless WAV, and every benched row records `audioFormat` so the "
+                          "two are read as separate arms rather than averaged")
     spb.add_argument("--limit", type=int, default=200,
                      help="how many fitted types to bench (default %(default)s)")
     spb.add_argument("--calibration-dir", default=None,

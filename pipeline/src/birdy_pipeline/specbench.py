@@ -350,6 +350,42 @@ def _medoid_member(
     return rows[int(np.argmin(np.linalg.norm(d - centre, axis=1)))]
 
 
+#: Suffixes a cached recording may carry, in preference order. `.wav` first so a lossless
+#: copy wins wherever both exist.
+BENCH_SUFFIXES = (".wav", ".flac", ".ogg", ".oga", ".aiff", ".aif", ".w64", ".mp3")
+
+
+def resolve_audio(recording_id: str, caches: "list[Path]") -> Path | None:
+    """The first cached file for this recording, across every cache and suffix.
+
+    **Why this is not just `cache / f"{id}.wav"` any more.** `harvest` streams and deletes, so
+    for most of the project the only audio on disk was the owner-sanctioned iNaturalist WAV
+    cache — which is why this bench was gated on `recording_id.startswith("INAT")` and why the
+    paper's population caveat reads "753 skipped, no cached audio". 1 033 fitted types (6.4 %)
+    had no iNaturalist member at all and were unreachable here for no reason except which
+    archive their audio came from.
+
+    **The two caches are NOT interchangeable references, and this is measured.** On a 60-type
+    run the arms come out at median MCD 78.96 dB for WAV-backed types against 111.70 for
+    MP3-backed ones — but their comparison bands differ by an octave, because `band_hz` is the
+    reference file's own Nyquist and the caches sit at 22.05 kHz and 48 kHz. Most of
+    that 33 dB is therefore band, not fit: a wider band admits more high-frequency content,
+    which is where the render is weakest. The MP3 cache is also lossy, so its high end is
+    attenuated *below* its own Nyquist in a way `band_hz` does not reach at all.
+
+    So `audioFormat` and `bandHz` are recorded on every row, and a cross-arm MCD comparison
+    needs a common band before it means anything. **Owed:** an explicit band cap so both arms
+    are scored to the same ceiling. Until then, read the arms separately and never average
+    them.
+    """
+    for cache in caches:
+        for suffix in BENCH_SUFFIXES:
+            p = cache / f"{recording_id}{suffix}"
+            if p.exists():
+                return p
+    return None
+
+
 def run_bench(
     store: harvest.HarvestStore,
     inventory: dict[str, Any],
@@ -357,6 +393,7 @@ def run_bench(
     calibration: syrinx.Calibration | None,
     limit: int = 200,
     log: Callable[[str], None] = print,
+    extra_caches: "list[Path] | None" = None,
 ) -> dict[str, Any]:
     """Render up to `limit` fitted types against their original audio and correlate.
 
@@ -367,6 +404,7 @@ def run_bench(
     with a counted reason, never silently.
     """
     audio_cache = Path(audio_cache)
+    caches = [audio_cache] + [Path(p) for p in (extra_caches or [])]
     frame = learn.population_frame(store.syllables)
     if frame is None:
         raise RuntimeError("the store holds no syllable descriptors to frame against")
@@ -402,12 +440,7 @@ def run_bench(
             if not members:
                 skipped["noMembers"] += 1
                 continue
-            cached = [
-                o
-                for o in members
-                if o.recording_id.startswith("INAT")
-                and (audio_cache / f"{o.recording_id}.wav").exists()
-            ]
+            cached = [o for o in members if resolve_audio(o.recording_id, caches)]
             if not cached:
                 skipped["noCachedAudio"] += 1
                 continue
@@ -417,7 +450,10 @@ def run_bench(
                 skipped["noMembers"] += 1
                 continue
             try:
-                wav_path = audio_cache / f"{member.recording_id}.wav"
+                wav_path = resolve_audio(member.recording_id, caches)
+                if wav_path is None:
+                    skipped["noCachedAudio"] += 1
+                    continue
                 # The file's own Nyquist is the band limit of the comparison:
                 # anything above it measures the format, not the fit.
                 band_hz = float(sf.info(str(wav_path)).samplerate) / 2.0
@@ -456,6 +492,9 @@ def run_bench(
                     "typeId": str(syl.get("id", "")),
                     "members": len(members),
                     "recordingId": member.recording_id,
+                    # The reference's container, so a lossless arm and a lossy one can be
+                    # read separately instead of averaged. See `resolve_audio`.
+                    "audioFormat": wav_path.suffix.lstrip(".").lower(),
                     "bandHz": round(band_hz, 1),
                     "storedCosine": learned_block.get("resynthesisCosine"),
                     "cosine": round(cosine, 4),
