@@ -144,12 +144,20 @@ const grid = await page.evaluate(() => {
 say('grid layers (vignette + 2 lines)', grid?.layers);
 say('grid tile', `${grid?.coarsePx} (offset ${grid?.at})`);
 say('grid background-size', grid?.size);
-const caption = await page.locator('.ruler-caption').first().innerText().catch(() => '');
-say('ruler caption', JSON.stringify(caption.trim()));
+// The corner caption was removed at the owner's request; the unit statement moved onto the
+// ruler band as its label, so this reads it from there. Asserted rather than reported: a
+// ruler whose numbers have no unit anywhere invites being read as projection units.
+const caption = await page
+	.locator('.ruler-top')
+	.first()
+	.getAttribute('aria-label')
+	.catch(() => '');
+say('ruler unit (on the band, not a caption)', JSON.stringify((caption ?? '').trim()));
+if (!/knot-spacing/.test(caption ?? '')) say('*** the ruler states no unit', '***');
 
-// Grid tile must equal step * pxPerKnot, i.e. the caption's tick. Cross-check the numbers.
-const tickMatch = /=\s*([\d.]+)\s*knot/.exec(caption);
-say('caption tick value', tickMatch?.[1] ?? '(none)');
+// Grid tile must equal step * pxPerKnot, i.e. the stated tick. Cross-check the numbers.
+const tickMatch = /=\s*([\d.]+)\s*knot/.exec(caption ?? '');
+say('stated tick value', tickMatch?.[1] ?? '(none)');
 
 // --- the label dots --------------------------------------------------------------------
 const dot = await page.evaluate(() => {

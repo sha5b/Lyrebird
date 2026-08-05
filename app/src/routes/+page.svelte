@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { biplotAxes } from '$lib/galaxy/biplot';
+	import { doubtRange, type DoubtSource } from '$lib/galaxy/doubt';
 	import { onMount, untrack } from 'svelte';
 	import Galaxy from '$lib/galaxy/Galaxy.svelte';
 	import SpeciesPicker from '$lib/SpeciesPicker.svelte';
@@ -356,7 +357,7 @@
 	 * The Display panel's neighbour-agreement switch: drain each mark's colour by how few
 	 * of its ten drawn neighbours share its type.
 	 */
-	let trustColour = $state(false);
+	let trustColour = $state<DoubtSource>('');
 	/**
 	 * The per-point agreement, summarised over the points themselves rather than read from
 	 * the manifest — and the difference matters, because the manifest's mean is the only
@@ -364,6 +365,13 @@
 	 * zero. `null` means the build shipped no per-point channel, which the control shows
 	 * as disabled rather than as agreement of nothing.
 	 */
+	/**
+	 * The SNR ramp's ends, in dB, from `doubtRange` — **the same function PointCloud fills
+	 * the attribute with**, so the number this panel prints and the number the shader draws
+	 * cannot drift apart. That mattering is not hypothetical: a clamped scale whose printed
+	 * ends disagree with its drawn ends is a picture that lies with a caption.
+	 */
+	const snrStats = $derived(assets?.points.snr ? doubtRange(assets.points.snr) : null);
 	const trustStats = $derived.by<{ mean: number; alone: number; share: number } | null>(() => {
 		const agreement = assets?.points.knnAgreement;
 		if (!agreement || !assets) return null;
@@ -439,6 +447,13 @@
 	 * not 16 — the number a reader gets from "all but the documented ones" is wrong by the
 	 * inferred five.
 	 *
+	 * **The panel counts more songs than the asset holds, and that is correct.** It reports
+	 * 2 867, because `withDetectedSongs` mines **358** further song types in the browser from
+	 * `grammar.songTypes` across 102 species — sequences measured from a bird's own bouts that
+	 * exist only at runtime. They land in `synthesized`, so the live figure is 2 851 of 2 867
+	 * rather than 2 493 of 2 509. A count over the asset and a count over the pool the chorus
+	 * can actually draw are different numbers, and this control has to report the second.
+	 *
 	 * `null` while the inventory is unread — in shard mode `species` starts empty and a
 	 * count of zero would be a statement about the loader, not about the corpus.
 	 */
@@ -448,6 +463,15 @@
 		/** True while only some shards have arrived, so a zero means "not yet" not "none". */
 		partial: boolean;
 	} | null>(() => {
+		// **`inventoryVersion`, or this never recomputes and the panel shows nothing.**
+		// `assets` is `$state.raw` and `inventory.species` is a plain array that
+		// `loadSpecies`/`ensureSpecies` mutate in place, so a derived that reads only
+		// `assets.inventory.species` runs exactly once — at load, in shard mode, when the
+		// array is still empty. It returned `null` forever: no counts beside any checkbox,
+		// `settled` never true, so the permanently-empty `recorded` class never disabled and
+		// three live controls looked identical to three dead ones. The filter underneath was
+		// working the whole time; what was missing was every signal that it had.
+		void inventoryVersion;
 		const species = assets?.inventory.species ?? [];
 		if (!species.length) return null;
 		const out: Record<string, number> = { documented: 0, synthesized: 0, recorded: 0 };
@@ -2557,11 +2581,9 @@ uv run birdy-pipeline build</pre>
 									"what don't we know" is a picture, not a count. Hiding a class
 									removes its points from the picture, never from the corpus.
 								-->
-								<p class="axis mono">where the sound came from</p>
+								<p class="axis mono">points, by where the sound came from</p>
 								<p class="note faint">
-									{provColours
-										? 'These colours are the ones on the points: the list is the key as well as the filter.'
-										: 'A filter, not a key — the points are neutral ink until Provenance colours is on.'}
+									{provColours ? 'Key and filter.' : 'Filter only — the points are neutral ink.'}
 								</p>
 								<div class="checks">
 									{#each provFilterOrder as cls (cls)}
@@ -2593,8 +2615,12 @@ uv run birdy-pipeline build</pre>
 												style:background={provColours ? provenanceColour(cls) : 'transparent'}
 											></i>
 											{PROV_NAMES[cls]}
+											<!-- "of points", for the same reason the chorus list now says "songs":
+											     these two lists share five words and count different things. -->
 											<span class="mono faint"
-												>{share === 0 ? 'none' : `${(share * 100).toFixed(share < 0.01 ? 2 : 0)}%`}</span
+												>{share === 0
+													? 'no points'
+													: `${(share * 100).toFixed(share < 0.01 ? 2 : 0)}% of points`}</span
 											>
 										</label>
 									{/each}
@@ -2625,18 +2651,14 @@ uv run birdy-pipeline build</pre>
 								worse than an absent one, because it implies a measurement.
 							-->
 							<section class="block">
-								<p class="axis mono">what nothing claims</p>
+								<p class="axis mono">unclaimed</p>
 								<p class="note faint">
 									{#if unheardShare !== null}
-										A density clustering was asked the same corpus and left
-										<b>{unheardCount?.toLocaleString()}</b> of
-										{assets.points.n.toLocaleString()} sounds — {(unheardShare * 100).toFixed(1)} %
-										— in no dense region at all. This map names every one of them, so
-										that refusal is the only place it can be read.
+										<b>{unheardCount?.toLocaleString()}</b> of {assets.points.n.toLocaleString()}
+										({(unheardShare * 100).toFixed(1)} %) in no dense region.
 									{:else}
-										This build carries no density verdict, so nothing here can be shown
-										as unclaimed. It needs a <code>--clustering hdbscan</code> build of
-										the same point set, joined by row.
+										No density verdict on this build. Needs a
+										<code>--clustering hdbscan</code> join.
 									{/if}
 								</p>
 								<div class="checks">
@@ -2661,32 +2683,59 @@ uv run birdy-pipeline build</pre>
 								the block above: disabled when the build carries no measurement.
 							-->
 							<section class="block">
-								<p class="axis mono">how much its neighbours agree</p>
+								<!--
+									**The prose here was four times this long and it was the reason the panel
+									read as overwhelming** (owner, 2026-08-05: streamline it, keep the text
+									short). The figures stay — this project does not ship an unlabelled control
+									— but the sentences that explained *why* the channel is saturation and what
+									the clamp protects against belong in `doubt.ts`, where a reader who wants
+									them is already looking, not in a card someone is trying to skim. Each
+									`title` carries the one-line version.
+								-->
+								<p class="axis mono">doubt · colour drains</p>
 								<p class="note faint">
 									{#if trustStats}
-										Of every sound's ten nearest marks <i>on screen</i>, the share that
-										share its type averages
-										<b>{(trustStats.mean * 100).toFixed(1)} %</b> — and
-										<b>{trustStats.alone.toLocaleString()}</b> sounds
-										({(trustStats.share * 100).toFixed(1)} %) sit among ten strangers.
-										Turned on, the marks with the least support lose their colour and keep
-										their size and place, so a low-agreement mark reads as a position to
-										doubt rather than a sound that matters less.
+										Neighbours agree <b>{(trustStats.mean * 100).toFixed(0)} %</b>;
+										<b>{trustStats.alone.toLocaleString()}</b> among strangers.
 									{:else}
-										This build carries no per-point agreement, so nothing here can be
-										shown as unsupported.
+										No per-point agreement on this build.
+									{/if}
+									{#if snrStats}
+										SNR ramp <b>{snrStats.lo.toFixed(1)}</b>–<b>{snrStats.hi.toFixed(1)} dB</b>
+										(p5–p95); {snrStats.absent.toLocaleString()} renders unmeasured.
 									{/if}
 								</p>
+								<!--
+									**One channel, two numbers, taking turns** — the pattern the provenance and
+									bird-colour switches already use. Saturation is the last free channel (hue is
+									provenance or genus, size and ink are activation and the figure/ground swap,
+									tone is depth, the inner gradient is pitch, the edge is pinned at one pixel),
+									so the two doubts share it rather than one of them going undrawn. Choosing one
+									clears the other, and the same frame can be compared under both.
+								-->
 								<div class="checks">
 									<label
 										class="check"
-										title="Drain each mark's colour by how few of its ten drawn neighbours share its type. Nothing moves and nothing changes size, so the same frame can be compared with the channel on and off."
+										title="Drain each mark's colour by how few of its ten drawn neighbours share its type — doubt about where the map put it. Nothing moves and nothing changes size, so the same frame can be compared with the channel on and off."
 									>
 										<input
 											type="checkbox"
-											bind:checked={trustColour}
+											checked={trustColour === 'agreement'}
 											disabled={trustStats === null}
+											onchange={(e) =>
+												(trustColour = e.currentTarget.checked ? 'agreement' : '')}
 										/> Neighbours disagree
+									</label>
+									<label
+										class="check"
+										title="Drain each mark's colour by how noisy the recording it came from was, on a 5th-to-95th-percentile ramp — doubt about the measurement rather than about its position."
+									>
+										<input
+											type="checkbox"
+											checked={trustColour === 'snr'}
+											disabled={snrStats === null}
+											onchange={(e) => (trustColour = e.currentTarget.checked ? 'snr' : '')}
+										/> Recording is noisy
 									</label>
 								</div>
 							</section>
@@ -3298,15 +3347,25 @@ uv run birdy-pipeline build</pre>
 											The number is what tells you a working toggle has almost nothing to
 											act on.
 										-->
+										<!--
+											**The unit, on the number** (owner, 2026-08-05: "why is the number in
+											the chorus another than the view? shouldn't it be the same!"). It should
+											not be the same and it cannot be: this list counts *songs by claim
+											strength* and the provenance list counts *points by origin* — 2 851
+											songs against 2 % of 444 213 sounds. Both were right and neither said
+											what it was counting, so two unrelated quantities wearing the same five
+											words read as one quantity reported inconsistently. Naming the axis in a
+											header six lines up was not enough; the unit has to sit on the figure.
+										-->
 										{#if have !== null}
 											<span class="mono faint">
 												{have === 0
 													? chorusClassSongs?.partial
 														? '…'
-														: 'none'
+														: 'no songs'
 													: share !== null && share < 99.5
-														? `${have} · ${share < 1 ? share.toFixed(1) : Math.round(share)}%`
-														: `${have}`}
+														? `${have} songs · ${share < 1 ? share.toFixed(1) : Math.round(share)}%`
+														: `${have} songs`}
 											</span>
 										{/if}
 									</label>
@@ -4133,19 +4192,28 @@ uv run birdy-pipeline build</pre>
 		top: calc(var(--ruler) + 1rem);
 		left: calc(var(--ruler) + 1rem);
 		width: 20rem;
+		/* **Percentages, not a pixel budget** — see `.readout`. The two cards share the
+		   left column and this is the half that decides they cannot collide at any window
+		   height. `.cardbody` scrolls, so a squeezed tab loses no content. */
+		max-height: calc(58% - var(--ruler));
 	}
 
-	/* The reading stays a card floating over the specimen rather than a third column:
-	   it reports on one moment, and it belongs next to the thing it is reporting on.
-	   Same shell as the left column, so the two read as one instrument. */
+	/* **The reading moved from bottom-right to under the controls** (owner, 2026-08-05).
+	   It used to float over the specimen, on the argument that a report belongs next to the
+	   thing it reports on. Against that: it shared the right-hand side with the Display
+	   panel dropping from the button above it, so the one card that changes on every sound
+	   was the one competing for space with a card you open on purpose. On the left it sits
+	   under the controls that caused the sound, which is the order they happen in.
+
+	   Fixed to the same left edge and width as `.controls` so the two read as one column
+	   rather than two cards that happen to be near each other. */
 	.readout {
 		bottom: 1rem;
-		right: 1rem;
-		width: min(21rem, calc(100% - 2rem));
-		/* Short enough that the display panel, which drops from the button above it, has
-		   somewhere to be. The body scrolls, so this costs nothing but the illusion that
-		   a long reading has to be read all at once. */
-		max-height: min(26rem, calc(100% - 2rem - var(--ruler)));
+		left: calc(var(--ruler) + 1rem);
+		width: min(20rem, calc(100% - 2rem));
+		/* 38 + 58 leaves the gap between them. The body scrolls, so this costs nothing but
+		   the illusion that a long reading has to be read all at once. */
+		max-height: 38%;
 	}
 
 	.readout .best,
@@ -4483,10 +4551,15 @@ uv run birdy-pipeline build</pre>
 	.history {
 		position: absolute;
 		bottom: 1rem;
-		/* the lane between the two columns: it clips at the left rather than sliding
-		   under the controls, and stops before the reading card rather than behind it */
+		/* **Anchored to the right edge now the reading card has left it** (owner,
+		   2026-08-05). It used to run in the lane between two columns, reserving 23rem on
+		   the right for a reading card that sat there; with that card moved under the
+		   controls, the reserve was holding empty paper and squeezing the strip into the
+		   middle of the stage. It still clips at the left rather than sliding under the left
+		   column, and `row-reverse` already packs the newest chip at the right end, so the
+		   strip now grows leftwards out of the corner and the mask fades its old end. */
 		left: calc(var(--ruler) + 20rem + 3rem);
-		right: calc(21rem + 2rem);
+		right: 1rem;
 		z-index: 2;
 		display: flex;
 		flex-direction: row-reverse;

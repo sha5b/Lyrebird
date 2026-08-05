@@ -176,8 +176,8 @@ table used to name only the pipeline half.
 | step | pipeline half | view half | asset cost |
 |---|---|---|---|
 | unknown map | none — `--clustering both` | `uUnheard` figure/ground swap **BUILT**; needs the joined `unassigned` | a second asset set |
-| brightness = SNR | **BUILT** — `PointSet.snr` -> `points.json` | **nothing reads it**; 444 213 values drawn nowhere | ~0.4 MB |
-| kNN agreement | **BUILT** — `points.knnAgreement` | **BUILT** as saturation, not radius — `aTrust`/`uTrust`, "Neighbours disagree" | ~0.4 MB |
+| SNR | **BUILT** — `PointSet.snr` -> `points.json` | **BUILT** as saturation on a p5..p95 ramp, not brightness — "Recording is noisy" | ~0.4 MB |
+| kNN agreement | **BUILT** — `points.knnAgreement` | **BUILT** as saturation — `aTrust`/`uTrust`, "Neighbours disagree" | ~0.4 MB |
 | attribute panel | 3-4 arrays for the brushed fields | not started | ~1.5 MB |
 | density contours | none, view-side | not started | none |
 | relations arcs | **BUILT** — `relations.json`, 14 488 pairs | **BUILT** — `RelationThreads`, "Sounds like" chips | none |
@@ -207,10 +207,33 @@ spent and nothing else is. `verify:trust` asserts the other half, that the per-p
 the manifest aggregate to four places (0.4574), because a per-point array and an aggregate
 measured on different point sets is a failure a row-index join produces in silence.
 
-**`points.snr` is still undrawn**: 444 213 values, ~2 MB a load, nothing reads it. It stays an
-open row rather than a quiet deletion, because the pipeline half is real and the channel is
-wanted; what it needs is a view half and a control, on the pattern the agreement channel now
-sets.
+**`points.snr` draws too, and it did not get a channel of its own — it shares one.** The row
+this document asked for was *brightness* = SNR, and brightness is the one channel it could not
+have: tone is the depth cue, and the aerial-perspective mix deliberately darkens the near side
+as well as paling the far one, because that is what makes a rotating scatter read as a volume.
+The inner gradient is pitch. The mark's edge is pinned to one pixel by `fwidth` for the same
+reason a constant feather was rejected — five-pixel marks become smudges. Size and ink weight
+are activation and the figure/ground swap. Hue is provenance or genus.
+
+So **saturation carries both doubts and the two take turns on it**, the way the provenance and
+bird-colour modes already share hue. Choosing one clears the other, and the comparison that
+buys is the point: the same marks, the same frame, drained first by *where the map put this*
+and then by *what the recording was like*. Measured, they are different pictures — 23.0 % and
+20.7 % chroma down from the same frame, 3.0 % apart from each other, with the ink area holding
+to 0.7 %. `probe:trust` asserts that difference, because two sources sharing one buffer fail by
+drawing identically, which looks like success from every other angle.
+
+Two rules the SNR ramp needed, both in `doubt.ts`:
+
+- **The ramp is the corpus's own p5..p95, 2.14 to 39.34 dB, and everything outside saturates.**
+  The array reaches **166.95 dB** and 85 values sit above 100 dB — a ratio of ten billion,
+  which is a noise floor estimated at nearly zero rather than a clean recording. Linear, those
+  85 points would own the top of the scale and the 14.5 % of the corpus below 6 dB would be
+  crowded into the bottom few percent. The panel prints both ends, so "fully coloured" cannot
+  be read as "cleanest in the corpus" when it means "at or above the 95th percentile".
+- **Absent stays absent.** All 8 583 nulls are the rendered inventory rows, which have no noise
+  floor to measure a ratio against, so a zero would report our own synthesis as the noisiest
+  audio in the corpus. They fill with `NO_DOUBT` and draw exactly as they always did.
 
 **A third case, found the same way and still open.** `torn_clusters` scores every knot for
 whether the projection draws it in two places, then throws all 6 316 per-knot ratios away and

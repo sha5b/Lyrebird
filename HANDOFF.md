@@ -6,10 +6,19 @@ It was not. It died at **19:10:52**, one line into the clustering step, and sat 
 session that launched it. Relaunched under `setsid nohup` so it outlives this one.
 
 ```
-unknown map         RELAUNCHED 20:20, same command, log moved to build-unknown.log.dead-1910.
-                    Boruvka path timed live: clustering entered 20:47:16
-knnAgreement        DRAWN. 444 213 values that nothing read now drive saturation.
-                    Measured: chroma -14.9 %, ink area held to 1.2 % (probe:trust)
+unknown map         BUILT. 1 151 dense regions, 353 285 of 444 213 points (79.5 %) in none
+                    of them. Assets written 21:42 to out/v10/assets-unknown
+the two maps agree  adjusted Rand 0.0001, AMI 0.1573. Essentially unrelated partitions
+                    78.3 % of label knots are refused ENTIRELY by the density clustering
+refusal is real     knn agreement placed 0.8505 vs refused 0.3562 — two independent
+                    measures agreeing. And NOT a recording artefact: SNR 18.67 vs 17.27 dB
+chorus filter       BUG FIXED: the counts never appeared, so three live controls looked
+                    dead. `chorusClassSongs` never read `inventoryVersion`
+same word, two units  the chorus said `synthesized 2851` and the view said `synthesized 2 %`.
+                    Both right — songs vs points. Every count now carries its unit
+knnAgreement + snr  BOTH DRAWN, sharing the saturation channel because it is the only one
+                    left. -23.0 % and -20.7 % chroma, 3.0 % apart, ink held to 0.7 %.
+                    snr on a p5..p95 ramp: 2.14..39.34 dB, absent (8 583 renders) unchanged
 0.0849 -> 0.4574    the figure layouts.ts rests its whole argument on is five builds stale.
                     This build is 0.4574. Part of that argument is withdrawn
 per-knot tearing     SHIPPED without a rebuild. 6 316 knots, validation reproduced all five
@@ -28,21 +37,80 @@ deliberately kept over the newer `learned-inventory.json` the build warns about 
 join rests on row `i` being the same syllable in both asset sets, and swapping the inventory
 breaks that.
 
-**Timed, rather than extrapolated.** The space map came out identical to the shipped build
-(rff median cos **0.918**, linear 0.742), and clustering entered at **20:47:16**:
+**Timed, rather than extrapolated, and the published figure is short.** The space map came
+out identical to the shipped build (rff median cos **0.918**, linear 0.742), and clustering
+entered at **20:47:16**:
 
 ```
 20:47:16   hdbscan: min_cluster_size=25 on standardised descriptors
 20:57      10 min in, 10 cores busy, 99 threads, 10.2 GB RSS  <- the parallel MST
 21:06      19 min in, CPU drops to ~1 core                    <- single-threaded from here
+~21:22     1 151 clusters, 353 285 points in none of them (79.5 %)
+21:42      whole asset set written
 ```
 
-The ~22 min estimate in the last entry came from 44.8 s at n=80 000 and 265.2 s at
-n=200 000, which is n^1.94 and predicts ~21 min at 444 213. **The parallel MST fits that;
-what the estimate does not cover is the single-threaded tail after it.** If you re-time this
-path, time the two halves separately — the scaling measurement was of the MST alone.
+The ~22 min estimate came from 44.8 s at n=80 000 and 265.2 s at n=200 000 — n^1.94, which
+predicts ~21 min at 444 213. **The clustering step actually took 32–37 min** (the exact
+minute is between two 30 s monitor polls), and the projection plus asset write took a further
+20. So the parallel MST matches the fit and the *step* does not: what the scaling measurement
+never covered is the single-threaded tail after the MST. **If you re-time this path, time the
+two halves separately, and do not quote ~21 min for the step.**
 
-## 2. `knnAgreement` draws, and it spends saturation on purpose
+The build process was still resident after writing its assets (final self-tests); the assets
+themselves are complete and were read by the join below.
+
+**79.5 % is lower than the scaling test implied and the trend is the reassuring part.** That
+test measured 93 % noise at n=80 000 and 86 % at n=200 000, both at `min_cluster_size=25` —
+falling with n — and 444 213 continues it to 79.5 %. The extrapolation's *direction* was
+right, so the sweep is measuring a real curve rather than chasing noise.
+
+## 2. Both undrawn per-point channels now draw, and they share one
+
+Owner's call, after the numbers were on the table: **SNR shares the saturation channel rather
+than getting one of its own.** `points.snr` was the last row in docs/25 marked BUILT on the
+pipeline side with nothing reading it — 444 213 values, ~2 MB a load. The row asked for
+*brightness*, and brightness is the one channel it could not have.
+
+**Every channel it would have used is spoken for, and one was spent deliberately against it.**
+Tone is the depth cue, and the aerial-perspective mix darkens the near side as well as paling
+the far one on purpose — that gradient is what makes a rotating scatter read as a volume. The
+inner gradient is pitch. The mark's edge is pinned to one pixel with `fwidth` because a
+constant feather turns a five-pixel mark into a smudge, which was itself a fix. Size and ink
+weight are activation plus the figure/ground swap. Hue is provenance or genus. Saturation was
+the only one left, and agreement had just taken it.
+
+So the two take turns on it, the way the provenance and bird-colour modes already share hue —
+`aTrust` stays one attribute (the program is at 11 of a budget that failed to link at 15) and
+is **rewritten in place when the switch moves**, 1.8 MB on a control change and never on a
+frame, the same trade `aMisc`'s LOD rank already makes at 5.6 MB. Both normalise through one
+function in `doubt.ts`, so the ramp the panel prints is the ramp the shader draws.
+
+```
+                       chroma over the ink       ink area
+off                    0.0535                    279 579 px
+Neighbours disagree    0.0412  (-23.0 %)
+Recording is noisy     0.0424  (-20.7 %)         277 483 px  (0.7 % drift)
+between the two        3.0 % apart
+```
+
+**That last row is the assertion that matters.** Two sources sharing one buffer fail by drawing
+*identically* — the rewrite never happens and the second control is decorative — and that
+failure looks like success from every other angle. `probe:trust` now requires the two frames to
+differ.
+
+Two rules the SNR ramp needed, both measured:
+
+- **p5..p95, 2.14 to 39.34 dB, and everything outside saturates.** The array reaches
+  **166.95 dB**, with 85 values above 100 dB — a ratio of ten billion, which is a noise floor
+  estimated at nearly zero rather than a clean recording. Linear, those 85 points would own the
+  top of the scale while the 14.5 % of the corpus below 6 dB — the sounds a viewer most needs to
+  distrust — crowded into the bottom few percent. Both ends print in the panel, because a
+  clamped scale with unstated ends invites "fully coloured" to be read as "cleanest recording".
+- **Absent stays absent.** All 8 583 nulls are exactly rows 0–8582, every one a render. A render
+  has no noise floor to measure a ratio against, so a zero would report our own synthesis as the
+  noisiest audio in the corpus.
+
+## 2b. `knnAgreement` draws, and it spends saturation on purpose
 
 444 213 values, ~2 MB a load, read by nothing for the entire life of the build. It now
 drives colour: a mark whose ten drawn neighbours mostly do not share its type keeps its
@@ -282,9 +350,11 @@ asset  app/static/birdy/centroids.json   +6 316 lines, 0 deletions, formatting p
 ```
 
 **Still open, in the order they cost you:** the sweep (84 min, waiting on the build); the
-relations duplicate guard (one decision, 219 s to apply); `points.snr`, still 444 213 values
-and ~2 MB a load that nothing draws; and the `--member-anchor` rebuild, which remains blocked
-while any row-index join is in flight.
+relations duplicate guard (one decision, 219 s to apply); and the `--member-anchor` rebuild,
+which remains blocked while any row-index join is in flight. **No per-point array in
+`points.json` is undrawn any more** — snr, knnAgreement, unassigned and the per-knot tearing
+all reach a reader, and each has a two-sided check (the asset agrees with the aggregate, and
+the pixels actually move).
 
 
 # Lyrebird — READ THIS FIRST (2026-08-05, evening): three assets the UI reads were never built or were read wrong, and the unknown map is mid-build on a dependency that had to change

@@ -35,6 +35,7 @@
 		speciesHue
 	} from './palette';
 	import { buildLayout, nearestNeighbourDistances, type LayoutView } from './layouts';
+	import { doubtRange, toDoubtBuffer, type DoubtSource } from './doubt';
 	import type { GalaxyStats } from './stats';
 
 	interface Props {
@@ -108,14 +109,15 @@
 		 */
 		unheard?: boolean;
 		/**
-		 * Drain each mark's colour by how few of its ten drawn neighbours share its type
-		 * (`points.knnAgreement`, see aTrust in shaders.ts).
+		 * Which doubt drains each mark's colour, or `''` for none. See `doubt.ts` for why
+		 * the two sources share one channel and take turns on it.
 		 *
-		 * Off by default: the mean on this build is 0.4574 and 24.6 % of points sit among
-		 * ten strangers, so turning it on drains the colour out of a quarter of the cloud —
+		 * `'agreement'` is `points.knnAgreement` — doubt about where the map put the mark.
+		 * `'snr'` is `points.snr` on a p5..p95 ramp — doubt about the recording it came
+		 * from. Off by default either way: agreement alone drains a quarter of the cloud,
 		 * which is the finding rather than a reason to hide it.
 		 */
-		trust?: boolean;
+		trust?: DoubtSource;
 		/** Written, never read: how many points each pass actually drew. See stats.ts. */
 		stats?: GalaxyStats;
 	}
@@ -135,7 +137,7 @@
 		adaptive = true,
 		localKnots = true,
 		unheard = false,
-		trust = false,
+		trust = '',
 		knotSpacing = $bindable(),
 		stats
 	}: Props = $props();
@@ -268,6 +270,25 @@
 		new THREE.BufferAttribute(misc, 4).setUsage(THREE.DynamicDrawUsage)
 	);
 
+	/**
+	 * Per-point doubt, 0..1 (see `doubt.ts`). Held here rather than inside the geometry
+	 * block because the switch rewrites it: the resting cells and the active pass copy this
+	 * geometry's attribute *objects* at construction, so rewriting this one array reaches
+	 * every pass, while a replacement attribute would reach none of them.
+	 */
+	const trustAttribute = untrack(() =>
+		new THREE.BufferAttribute(
+			toDoubtBuffer(assets.points.n, assets.points.knnAgreement),
+			1
+		).setUsage(THREE.DynamicDrawUsage)
+	);
+	/** Which source the attribute currently holds, so the rewrite happens once per switch. */
+	let trustDrawn: DoubtSource = 'agreement';
+	/** The SNR ramp's ends in dB, measured once from the shipped values. */
+	const snrRange = untrack(() =>
+		assets.points.snr ? doubtRange(assets.points.snr) : null
+	);
+
 	const geometry = untrack(() => {
 		const g = new THREE.BufferGeometry();
 		g.setAttribute('position', positionAttribute);
@@ -303,21 +324,17 @@
 		const refused = assets.points.unassigned;
 		if (refused) for (let i = 0; i < assets.points.n; i++) dense[i] = refused[i] ? 1 : 0;
 		g.setAttribute('aDense', new THREE.BufferAttribute(dense, 1));
-		// Neighbour agreement, the per-point half of a number the HUD has only ever shown
-		// as a corpus mean. Filled with 1 first, so a build that ships no measurement
-		// draws exactly as it did before the channel existed — the same rule aDense
-		// follows, and the reason absent is 1 here and 0 there is that these two say
-		// opposite things: aDense absent means "not refused", aTrust absent means "no
-		// reason recorded to doubt this position".
-		const trustOf = new Float32Array(assets.points.n).fill(1);
-		const agreement = assets.points.knnAgreement;
-		if (agreement) {
-			for (let i = 0; i < assets.points.n; i++) {
-				const v = agreement[i];
-				trustOf[i] = Number.isFinite(v) ? Math.min(1, Math.max(0, v as number)) : 1;
-			}
-		}
-		g.setAttribute('aTrust', new THREE.BufferAttribute(trustOf, 1));
+		// The doubt channel, filled with 1 — "no recorded reason to doubt this position" — so
+		// a build that ships no measurement draws exactly as it did before the channel
+		// existed. The reason absent is 1 here and 0 in aDense is that the two say opposite
+		// things: aDense absent means "not refused", aTrust absent means "nothing measured".
+		//
+		// Dynamic, and rewritten in place when the source switches. One attribute rather
+		// than one per source: the vertex program is at eleven attributes and Mesa's Intel
+		// driver in Firefox failed to link the fifteen-attribute version, so a 1.8 MB
+		// re-upload on a control change is the cheaper side of that trade — the same
+		// judgement `aMisc`'s LOD rank already makes at 5.6 MB.
+		g.setAttribute('aTrust', trustAttribute);
 		g.setAttribute('aOrphan', orphanAttribute);
 		g.computeBoundingSphere();
 		return g;
@@ -1432,9 +1449,22 @@
 		// a picture that has no data behind it.
 		const wantUnheard = unheard && assets.points.unassigned ? 1 : 0;
 		u.uUnheard.value += (wantUnheard - u.uUnheard.value) * (1 - Math.pow(0.02, delta));
-		// Held at 0 on a build that ships no per-point agreement, so the control cannot
-		// recolour a picture with no measurement behind it.
-		const wantTrust = trust && assets.points.knnAgreement ? 1 : 0;
+		// Held at 0 on a build that ships no measurement for the chosen source, so the
+		// control cannot recolour a picture with nothing behind it.
+		const hasSource =
+			trust === 'snr' ? !!assets.points.snr : trust === 'agreement' ? !!assets.points.knnAgreement : false;
+		const source: DoubtSource = hasSource ? trust : '';
+		if (source && source !== trustDrawn) {
+			// Rewritten in place, on a control change and never on a frame.
+			trustAttribute.array.set(
+				source === 'snr'
+					? toDoubtBuffer(assets.points.n, assets.points.snr, snrRange ?? undefined)
+					: toDoubtBuffer(assets.points.n, assets.points.knnAgreement)
+			);
+			trustAttribute.needsUpdate = true;
+			trustDrawn = source;
+		}
+		const wantTrust = source ? 1 : 0;
 		u.uTrust.value += (wantTrust - u.uTrust.value) * (1 - Math.pow(0.02, delta));
 
 		// **Silent frames upload nothing — after the ring-down has finished.** The four

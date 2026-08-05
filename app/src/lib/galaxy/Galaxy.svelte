@@ -6,6 +6,7 @@
 	import type { OrbitControls as OrbitControlsInstance } from 'three/examples/jsm/controls/OrbitControls.js';
 	import type { BirdyAssets } from '$lib/data/types';
 	import { biplotAxes, type ScreenReading } from './biplot';
+	import type { DoubtSource } from './doubt';
 	import { TARGET_PX, gridOffsetPx, tickStep } from './ticks';
 	import ContextPaths from './ContextPaths.svelte';
 	import Framing from './Framing.svelte';
@@ -87,11 +88,11 @@
 		 */
 		unheard?: boolean;
 		/**
-		 * The Display panel's "how much its neighbours agree" switch: drain each mark's
-		 * colour by `points.knnAgreement`. Passed straight through to PointCloud, which
-		 * owns the easing and the absent-channel guard.
+		 * Which doubt drains each mark's colour — neighbour agreement, recording SNR, or
+		 * none. Passed straight through to PointCloud, which owns the easing, the ramp and
+		 * the absent-channel guard. See `doubt.ts` for why the two share one channel.
 		 */
-		trust?: boolean;
+		trust?: DoubtSource;
 		/**
 		 * The two-level arrangement (layouts.ts `localShapes`): knot centres from the
 		 * global projection, members from a local projection of their own features.
@@ -137,7 +138,7 @@
 		provShown = [true, true, true, true, true],
 		adaptive = true,
 		unheard = false,
-		trust = false,
+		trust = '',
 		localKnots = true,
 		selectedSpecies = '',
 		onpick,

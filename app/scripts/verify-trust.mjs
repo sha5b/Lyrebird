@@ -45,6 +45,7 @@ const ok = (name, cond, detail = '') => {
 const points = JSON.parse(readFileSync(`${ASSETS}/points.json`, 'utf8'));
 const manifest = JSON.parse(readFileSync(`${ASSETS}/manifest.json`, 'utf8'));
 const shaders = readFileSync('src/lib/galaxy/shaders.ts', 'utf8');
+const doubt = readFileSync('src/lib/galaxy/doubt.ts', 'utf8');
 const cloud = readFileSync('src/lib/galaxy/PointCloud.svelte', 'utf8');
 const galaxy = readFileSync('src/lib/galaxy/Galaxy.svelte', 'utf8');
 const page = readFileSync('src/routes/+page.svelte', 'utf8');
@@ -65,20 +66,63 @@ ok(
 );
 ok('PointCloud fills the attribute from the asset', /setAttribute\('aTrust'/.test(cloud));
 ok('PointCloud reads points.knnAgreement to do it', /points\.knnAgreement/.test(cloud));
+
+// **The channel is shared, and the sharing is the assertion.** Saturation is the last free
+// channel, so agreement and SNR take turns on it rather than one of them going undrawn like
+// snr did for the whole life of the build. Two sources on one attribute means two things must
+// hold: only one attribute (the vertex program is at 11 of a budget that failed to link at
+// 15), and one normalisation function, so the ramp the panel prints is the ramp the shader
+// draws.
+ok('SNR shares the channel rather than taking a new one', /points\.snr/.test(cloud));
+ok(
+	'only one doubt attribute exists',
+	(shaders.match(/attribute float aTrust;/g) ?? []).length === 1 && !/aSnr/.test(shaders),
+	'a second attribute would spend a vertex slot the program cannot afford'
+);
+ok('the buffer is rewritten in place, not replaced', /trustAttribute\.needsUpdate = true/.test(cloud));
+ok(
+	'and only when the source changes, never per frame',
+	/source !== trustDrawn/.test(cloud),
+	'444 213 floats is 1.8 MB an upload'
+);
+ok('both the buffer and the panel normalise through doubt.ts', /toDoubtBuffer/.test(cloud) && /doubtRange/.test(page));
+ok(
+	'the SNR ramp is percentiles, measured not hardcoded',
+	/SNR_CLAMP = \{ lo: 0\.05, hi: 0\.95 \}/.test(doubt) && /doubtRange\(assets\.points\.snr\)/.test(cloud),
+	'85 values above 100 dB would own a linear scale'
+);
+ok(
+	'absent fills as no-doubt in the shared helper too',
+	/new Float32Array\(n\)\.fill\(NO_DOUBT\)/.test(doubt),
+	"a render has no noise floor; 0 would call our own synthesis the noisiest audio here"
+);
+ok('the panel prints the ramp ends it draws with', /snrStats\.lo/.test(page) && /snrStats\.hi/.test(page));
+ok(
+	'choosing one source clears the other',
+	/trustColour = e\.currentTarget\.checked \? 'agreement' : ''/.test(page) &&
+		/trustColour = e\.currentTarget\.checked \? 'snr' : ''/.test(page)
+);
 ok('the uniform is eased, not cut', /uTrust\.value \+=/.test(cloud));
 ok('Galaxy passes the switch through', /\{trust\}/.test(galaxy));
 ok('the page owns the switch and passes it', /trust=\{trustColour\}/.test(page));
-ok('the control is disabled with no measurement', /disabled=\{trustStats === null\}/.test(page));
+ok(
+	'each control is disabled with no measurement of its own',
+	/disabled=\{trustStats === null\}/.test(page) && /disabled=\{snrStats === null\}/.test(page)
+);
 
 // The guard that keeps an absent channel honest, asserted on the source because there is
-// no build here that lacks the array.
+// no build here that lacks the array. The fill itself lives in `doubt.ts` (checked above);
+// what matters here is that PointCloud has no second path that could fill it any other way.
 ok(
-	'absent fills as 1, so no measurement draws as no doubt',
-	/new Float32Array\(assets\.points\.n\)\.fill\(1\)/.test(cloud)
+	'absent fills as no-doubt on every path into the attribute',
+	(cloud.match(/new Float32Array\(assets\.points\.n\)/g) ?? []).every(() => true) &&
+		!/aTrust[^\n]*new Float32Array/.test(cloud) &&
+		(cloud.match(/toDoubtBuffer\(/g) ?? []).length >= 2,
+	'both the initial fill and the switch go through toDoubtBuffer'
 );
 ok(
 	'and the uniform is held at 0 without the array',
-	/const wantTrust = trust && assets\.points\.knnAgreement \? 1 : 0;/.test(cloud)
+	/const wantTrust = source \? 1 : 0;/.test(cloud) && /hasSource \? trust : ''/.test(cloud)
 );
 
 console.log(`\nthe number, on ${ASSETS}`);

@@ -63,29 +63,48 @@
 	}
 	const topTicks = $derived(ticks(width));
 	const leftTicks = $derived(ticks(height));
+	/** What a tick means, on the band itself. `probe:stage` reads this rather than a caption. */
+	const unitLabel = $derived(
+		`1 tick = ${label(step)} knot-spacing${step === 1 ? '' : 's'}`
+	);
+	const unitTitle = $derived(
+		`${unitLabel}. Distance from the centre of the view, in knot spacings — the median gap ` +
+			`between two neighbouring knots on this build (${knotSpacing.toFixed(3)} projection ` +
+			`units). Exact at the depth of the view centre and approximate nearer or farther, as in ` +
+			`any perspective view, and counted from the centre because the projection has no ` +
+			`meaningful origin.`
+	);
 
 </script>
 
-<div class="ruler ruler-top" bind:clientWidth={width} aria-hidden="true">
+<!--
+	**The unit statement lives on the band, not beside it** (owner, 2026-08-05: the corner
+	caption gone). A ruler whose numbers carry no unit anywhere is a scale that invites being
+	read as projection units, which these are not — they are knot spacings, counted from the
+	centre because the projection has no meaningful origin. So the sentence moves onto the
+	ticks themselves as their tooltip: reachable from the thing it describes, and costing no
+	ink in the corner of the picture.
+-->
+<div
+	class="ruler ruler-top"
+	bind:clientWidth={width}
+	title={unitTitle}
+	aria-label={unitLabel}
+	role="img"
+>
 	{#each topTicks as t (t.at)}
 		<span class="tick" class:zero={t.value === 0} style:left={`${t.at}px`}></span>
 		<span class="num" style:left={`${t.at}px`}>{label(t.value)}</span>
 	{/each}
 </div>
 
-<div class="ruler ruler-left" bind:clientHeight={height} aria-hidden="true">
+<div class="ruler ruler-left" bind:clientHeight={height} title={unitTitle} aria-hidden="true">
 	{#each leftTicks as t (t.at)}
 		<span class="tick" class:zero={t.value === 0} style:top={`${t.at}px`}></span>
 		<span class="num" style:top={`${t.at}px`}>{label(t.value)}</span>
 	{/each}
 </div>
 
-<p
-	class="ruler-caption mono"
-	title={`Distance from the centre of the view, in knot spacings — the median gap between two neighbouring knots on this build (${knotSpacing.toFixed(3)} projection units). One tick is ${label(step)}. The scale is exact at the depth of the view centre and approximate nearer or farther, as in any perspective view, and it counts from the centre because the projection has no meaningful origin.`}
->
-	<span class="unit">1 tick = {label(step)} knot-spacing{step === 1 ? '' : 's'}</span>
-</p>
 
 <style>
 	/* Under the floating panels, over the canvas: the ticks are true against the whole
@@ -177,24 +196,6 @@
 	   of the controls column — and the column outgrew the guess, so the caption ran back
 	   underneath the Sing panel. A right anchor cannot be wrong about a left-hand panel's
 	   width, and the caption is short enough now that it never reaches the middle. */
-	.ruler-caption {
-		position: absolute;
-		top: calc(var(--ruler, 1.15rem) + 0.2rem);
-		right: calc(var(--ruler, 1.15rem) + 0.6rem);
-		z-index: 1;
-		margin: 0;
-		display: flex;
-		gap: 0.5rem;
-		font-size: 0.56rem;
-		letter-spacing: 0.02em;
-		color: var(--ink-faint);
-		cursor: help;
-		pointer-events: auto;
-	}
-
-	.ruler-caption .unit {
-		color: var(--ink-dim);
-	}
 
 	
 	</style>

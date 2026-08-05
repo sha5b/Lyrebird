@@ -1,0 +1,279 @@
+{
+  "points": 444213,
+  "labelKnots": 15341,
+  "densityRegions": 1151,
+  "unassigned": 353285,
+  "unassignedShare": 0.7953,
+  "provenanceMix": {
+    "documented": 8583,
+    "recorded": 423111,
+    "unidentified": 12519
+  },
+  "agreement": {
+    "adjustedRand": 0.0001,
+    "adjustedMutualInfo": 0.1573,
+    "definition": "how much the label partition and the density partition describe the same grouping; 0 is chance, 1 is identical. hdbscan's noise is kept as one label rather than dropped, because refusing 40 % of the corpus IS a disagreement"
+  },
+  "namedButNotDense": {
+    "threshold": 0.9,
+    "knotsMeasured": 15341,
+    "knots": 12012,
+    "knotShare": 0.783,
+    "pointsInThem": 253179,
+    "medianRefusedShare": 1.0,
+    "definition": "a knot the label clustering named whose members the density clustering puts in no dense region at all. The type is bookkeeping over these points, not a description of a cluster the data supports"
+  },
+  "denseButNotNamed": {
+    "regionsMeasured": 1151,
+    "medianLabelKnotsSpanned": 4.0,
+    "maxLabelKnotsSpanned": 84,
+    "regionsSpanningOverTen": 86,
+    "definition": "one dense region, and how many of the label map's knots its members are spread across. Above one means the label map splits what the density of the data holds together"
+  },
+  "discoveryQueue": {
+    "unidentifiedPoints": 12519,
+    "inADenseRegion": 136,
+    "inNoDenseRegion": 12383,
+    "regionsHoldingAny": 32,
+    "top": [
+      {
+        "region": 911,
+        "points": 602,
+        "unidentified": 77,
+        "unidentifiedShare": 0.128,
+        "labelKnotsSpanned": 84,
+        "topSpecies": "vanellus_cinereus",
+        "topSpeciesShare": 0.154
+      },
+      {
+        "region": 891,
+        "points": 179,
+        "unidentified": 11,
+        "unidentifiedShare": 0.061,
+        "labelKnotsSpanned": 14,
+        "topSpecies": "cecropis_cucullata",
+        "topSpeciesShare": 0.542
+      },
+      {
+        "region": 774,
+        "points": 201,
+        "unidentified": 6,
+        "unidentifiedShare": 0.03,
+        "labelKnotsSpanned": 10,
+        "topSpecies": "glaucidium_nubicola",
+        "topSpeciesShare": 0.846
+      },
+      {
+        "region": 909,
+        "points": 59,
+        "unidentified": 4,
+        "unidentifiedShare": 0.068,
+        "labelKnotsSpanned": 19,
+        "topSpecies": "cisticola_fulvicapilla",
+        "topSpeciesShare": 0.288
+      },
+      {
+        "region": 444,
+        "points": 137,
+        "unidentified": 3,
+        "unidentifiedShare": 0.022,
+        "labelKnotsSpanned": 6,
+        "topSpecies": "myrmoborus_leucophrys",
+        "topSpeciesShare": 0.723
+      },
+      {
+        "region": 445,
+        "points": 183,
+        "unidentified": 3,
+        "unidentifiedShare": 0.016,
+        "labelKnotsSpanned": 23,
+        "topSpecies": "arundinax_aedon",
+        "topSpeciesShare": 0.661
+      },
+      {
+        "region": 727,
+        "points": 301,
+        "unidentified": 3,
+        "unidentifiedShare": 0.01,
+        "labelKnotsSpanned": 13,
+        "topSpecies": "grallaria_blakei",
+        "topSpeciesShare": 0.924
+      },
+      {
+        "region": 143,
+        "points": 43,
+        "unidentified": 2,
+        "unidentifiedShare": 0.047,
+        "labelKnotsSpanned": 8,
+        "topSpecies": "dichrozona_cincta",
+        "topSpeciesShare": 0.884
+      },
+      {
+        "region": 643,
+        "points": 29,
+        "unidentified": 2,
+        "unidentifiedShare": 0.069,
+        "labelKnotsSpanned": 5,
+        "topSpecies": "melanerpes_flavifrons",
+        "topSpeciesShare": 0.931
+      },
+      {
+        "region": 750,
+        "points": 95,
+        "unidentified": 2,
+        "unidentifiedShare": 0.021,
+        "labelKnotsSpanned": 15,
+        "topSpecies": "leptotila_verreauxi",
+        "topSpeciesShare": 0.442
+      },
+      {
+        "region": 775,
+        "points": 118,
+        "unidentified": 2,
+        "unidentifiedShare": 0.017,
+        "labelKnotsSpanned": 15,
+        "topSpecies": "ornorectes_cristatus",
+        "topSpeciesShare": 0.627
+      },
+      {
+        "region": 111,
+        "points": 46,
+        "unidentified": 1,
+        "unidentifiedShare": 0.022,
+        "labelKnotsSpanned": 5,
+        "topSpecies": "mirafra_affinis",
+        "topSpeciesShare": 0.978
+      },
+      {
+        "region": 289,
+        "points": 126,
+        "unidentified": 1,
+        "unidentifiedShare": 0.008,
+        "labelKnotsSpanned": 9,
+        "topSpecies": "sitta_ledanti",
+        "topSpeciesShare": 0.587
+      },
+      {
+        "region": 332,
+        "points": 100,
+        "unidentified": 1,
+        "unidentifiedShare": 0.01,
+        "labelKnotsSpanned": 6,
+        "topSpecies": "scytalopus_micropterus",
+        "topSpeciesShare": 0.99
+      },
+      {
+        "region": 347,
+        "points": 26,
+        "unidentified": 1,
+        "unidentifiedShare": 0.038,
+        "labelKnotsSpanned": 5,
+        "topSpecies": "megascops_kennicottii",
+        "topSpeciesShare": 0.923
+      },
+      {
+        "region": 391,
+        "points": 195,
+        "unidentified": 1,
+        "unidentifiedShare": 0.005,
+        "labelKnotsSpanned": 12,
+        "topSpecies": "caprimulgus_poliocephalus",
+        "topSpeciesShare": 0.933
+      },
+      {
+        "region": 393,
+        "points": 32,
+        "unidentified": 1,
+        "unidentifiedShare": 0.031,
+        "labelKnotsSpanned": 3,
+        "topSpecies": "colibri_thalassinus",
+        "topSpeciesShare": 0.969
+      },
+      {
+        "region": 419,
+        "points": 176,
+        "unidentified": 1,
+        "unidentifiedShare": 0.006,
+        "labelKnotsSpanned": 9,
+        "topSpecies": "myrmochanes_hemileucus",
+        "topSpeciesShare": 0.966
+      },
+      {
+        "region": 458,
+        "points": 36,
+        "unidentified": 1,
+        "unidentifiedShare": 0.028,
+        "labelKnotsSpanned": 9,
+        "topSpecies": "alectoris_chukar",
+        "topSpeciesShare": 0.972
+      },
+      {
+        "region": 466,
+        "points": 79,
+        "unidentified": 1,
+        "unidentifiedShare": 0.013,
+        "labelKnotsSpanned": 8,
+        "topSpecies": "cisticola_anonymus",
+        "topSpeciesShare": 0.924
+      },
+      {
+        "region": 510,
+        "points": 64,
+        "unidentified": 1,
+        "unidentifiedShare": 0.016,
+        "labelKnotsSpanned": 6,
+        "topSpecies": "tyrannus_dominicensis",
+        "topSpeciesShare": 0.969
+      },
+      {
+        "region": 512,
+        "points": 74,
+        "unidentified": 1,
+        "unidentifiedShare": 0.014,
+        "labelKnotsSpanned": 10,
+        "topSpecies": "myrmothera_campanisona",
+        "topSpeciesShare": 0.473
+      },
+      {
+        "region": 523,
+        "points": 67,
+        "unidentified": 1,
+        "unidentifiedShare": 0.015,
+        "labelKnotsSpanned": 4,
+        "topSpecies": "chlorothraupis_stolzmanni",
+        "topSpeciesShare": 0.985
+      },
+      {
+        "region": 530,
+        "points": 38,
+        "unidentified": 1,
+        "unidentifiedShare": 0.026,
+        "labelKnotsSpanned": 4,
+        "topSpecies": "bucco_tamatia",
+        "topSpeciesShare": 0.947
+      },
+      {
+        "region": 664,
+        "points": 77,
+        "unidentified": 1,
+        "unidentifiedShare": 0.013,
+        "labelKnotsSpanned": 3,
+        "topSpecies": "megascops_choliba",
+        "topSpeciesShare": 0.987
+      }
+    ],
+    "definition": "an unidentified point is real field audio carrying no type id. One sitting in a dense region is a candidate type \u2014 the density of the data claims it even though no type does. One in no dense region is a singleton, and not yet a finding"
+  },
+  "knnByDensity": {
+    "assignedMean": 0.8505,
+    "unassignedMean": 0.3562,
+    "unidentifiedAndUnassignedMean": 0.1828,
+    "definition": "mean share of a point's ten nearest 3D neighbours sharing its type, split by whether the density clustering placed it. A gap means the two measurements agree about which points are badly placed"
+  },
+  "snrByDensity": {
+    "assignedMedian": 18.67,
+    "unassignedMedian": 17.27,
+    "measured": 435630,
+    "definition": "ingest signal-to-noise in dB, split by the density verdict. If the refused points are simply the quiet ones, the discovery surface is a recording-quality artefact and has to be read as one"
+  }
+}
