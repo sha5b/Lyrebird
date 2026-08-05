@@ -72,10 +72,23 @@ SNR floor dominates the segmentation-band fix on both species retained and quali
 (`analysis/v10_snr_floor.py`). Mapping brightness to it makes the weak fifth of the corpus
 visibly faint, so the quality distribution is seen rather than read. One byte per point.
 
-**3. Radius = whether a sound's nearest knot is its own type.**
-Colibrì sinks generalists to the core; the analogue here is the statistic that actually
-measures this map, `speciesAgreement` = 0.4895. Points whose nearest knot is their own type
-sit out on the rim and ambiguous ones sink in, which turns a manifest line into geometry.
+**3. Radius = whether a sound's neighbours share its type.**
+Colibrì sinks generalists to the core, and the analogue here is worth building. **The
+statistic this section originally cited for it was the wrong one**, and the correction
+changes which number the channel reports.
+
+`speciesAgreement` = 0.4895 does *not* measure "is my nearest knot my own type". Its own
+definition in the manifest reads: *"share of held-out syllables whose nearest knot carries the
+same majority species **through the map as through the critic**"* — it scores the 28-d → 32-d
+map against the critic on a held-out set, so it is a property of that mapping, not of a shipped
+point. There is no per-point version of it, and 387 287 points cannot be given a radius from it.
+
+The statistic that does say this is already computed and already shipped: **`knnAgreement` =
+0.4462**, *"share of a point's 3D k nearest neighbours sharing its type"* at k = 10. That is
+per-point by construction — the manifest reports its mean — so the channel is its per-point
+value, one byte each: a point whose ten nearest neighbours are all its own type sits on the
+rim, a point surrounded by other types sinks toward the core. It also measures the projection
+we actually ship rather than a mapping the browser never uses.
 
 **4. A linked attribute panel, not another colour mode.**
 For many attributes that must stay distinguishable *and* show interaction, the established
@@ -105,8 +118,8 @@ never could.
 | step | pipeline change | asset cost |
 |---|---|---|
 | unknown map | none — `--clustering both` | a second asset set |
-| brightness = SNR | one parallel array in `points.json` | ~0.4 MB |
-| radius = agreement | one parallel array | ~0.4 MB |
+| brightness = SNR | **BUILT** — `PointSet.snr` -> `points.json` | ~0.4 MB |
+| radius = kNN agreement | one parallel array | ~0.4 MB |
 | attribute panel | 3-4 arrays for the brushed fields | ~1.5 MB |
 | density contours | none, view-side | none |
 | relations arcs | none — already shipped | none |

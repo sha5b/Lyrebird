@@ -367,6 +367,26 @@ export interface PointCloudMeta {
 	 * the renderer treats absence as "unknown", never as "known not novel".
 	 */
 	novel?: boolean[];
+	/**
+	 * Ingest-measured signal-to-noise in dB per point, and `null` where no ratio exists —
+	 * a synthetic render has no recording, and a row from a store predating the field was
+	 * never measured. Both mean "no evidence", which must be drawn as unmeasured and never
+	 * as poor. Absent on an asset set built before the channel existed.
+	 *
+	 * This is the corpus's real quality axis: median 11.96 dB, p10 2.62 on the v9 build.
+	 */
+	snr?: (number | null)[];
+	/**
+	 * Per point, the share of its 10 nearest neighbours *in the shipped 3D positions* that
+	 * carry its own type. 1 means a point sits only among its own kind, 0 means it sits
+	 * entirely among others — so it drives radius: agreement out on the rim, ambiguity
+	 * sinking to the core (docs/25 §25.3).
+	 *
+	 * Its mean is the manifest's `knnAgreement` (0.4462 on the v9 build) by construction —
+	 * the pipeline computes both from one code path on these exact positions. Absent on an
+	 * asset set built before the channel existed.
+	 */
+	knnAgreement?: number[];
 }
 
 export interface Centroid {

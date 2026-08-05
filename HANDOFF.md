@@ -198,7 +198,102 @@ This confirms docs/25 §25.1 by direct inspection rather than by reading the doc
 `typeCoverage` 1.0 — and it is byte-identical in size to `out/v9/assets/inventory.json`. No
 newer build exists, because the v10 sweep was cancelled on evidence (§1 of the entry below).
 
-## 7. Still open — and it is the same decision, with better numbers
+## 7. The re-derivation, stage 1: the corpus GREW, and it costs 160 species, not 710
+
+Owner decisions 2026-08-05: apply the band fix to the corpus, with a **0 dB SNR floor**.
+`analysis/v10_resegment_store.py` re-segments from the local caches — `out/harvest-gan` is
+opened read-only and a new store is written to **`out/harvest-inband`**.
+
+```
+recordings          11 685 of 11 687 processed (2 permanent XC fetch failures)
+                    1 514 yield nothing in band
+syllables           378 215 -> 435 630 kept, retention 1.15   (projection said 0.777)
+                    399 771 after syllableCap 400 000 binds
+dropped by 0 dB     12 805 rows
+species >= 24       2 648 -> 2 488                            (projection said ~1 938)
+median SNR          11.96 -> 16.65 dB, share under 6 dB 15.7 %
+segmentBand         [400, 12000] and now TRUE OF EVERY ROW
+```
+
+**The 0.777 / ~1 938 projection was pessimistic, and the reason is structural.** It was
+measured per recording and then applied as if the recording set were fixed. It is not:
+`state.json` lists 11 687 recordings but only **9 026** contributed a syllable, because
+`add_syllables` enforces the cap by retiring whole recordings. In-band segmentation yields
+about a fifth fewer rows per recording, so the cap binds *less* on the way back and 2 661
+previously-retired recordings return. Re-running the ingest faithfully over all 11 687 —
+rather than re-cutting only the 9 026 — turns the species count into an outcome. **The cost is
+160 species, not 710.**
+
+**Two things not to over-read.** The SNR gain is partly a change of meter: the new rows are
+measured in-band (band numerator over band noise floor) while most old rows were measured
+full-band, and `v10_snr_reconcile.py` showed those are two meters. The direction is safe —
+holding the meter fixed made the gain *larger*, not smaller — but 11.96 -> 16.65 is not a
+clean like-for-like. And **the cap now binds**: 435 630 syllables were kept and 399 771 fit, so
+`syllableCap` is what limits the corpus, not the segmentation.
+
+The gain nobody projected: `segmentBand` in the new store is true of every row. The old corpus
+mixes ~340 000 full-band rows with the rest in-band and its `state.json` cannot say so, so
+every per-row statistic on it is pooled across two meters. This store is the first internally
+consistent one.
+
+**The store validates**: 435 630 syllables, every one carrying a descriptor and a mel patch,
+3 603 species, 2 488 over the fitting floor, median SNR 17.54 dB, minimum 0.00 (the floor bit),
+14.5 % under 6 dB. `segmentBand [400, 12000]` and now true of every row rather than of the
+latest ingest only.
+
+**The cap fix bought no species, and that is worth recording.** Re-running with a non-binding
+600 000 cap kept all 435 630 rows instead of 399 771, and the species count over the floor was
+**2 488 either way** — the ~36 000 capped rows belonged to species already well clear of it. So
+raising the cap removed a confound (the new store now differs from v9's by the segmentation and
+the floor, not also by cap trimming) and did not buy coverage. Both are true and only the first
+was the reason.
+
+**Stages 2-4 are running**: `analysis/run_production_v10.sh`, derived from the v9 script the
+same way v9 was derived from v8, so the recipe is the record. `--clustering label` matches v9 so
+the assets stay comparable; the hdbscan map is left to its own build rather than changed inside
+the one run that has to stay comparable. One recorded deviation: `learn --jobs 8`, because v9's
+serial fit took 2 h 58 m on a corpus 15 % smaller and `cli.py` states a pool gives "identical
+results, all cores" — a claim of identity is still a claim, so it is written down as a deviation
+rather than treated as free.
+
+## 8. Two data channels now ship, and docs/25 cited the wrong statistic for one of them
+
+Owner picked brightness = SNR, radius = agreement, and the linked attribute panel. The
+pipeline half of the first two is built and tested.
+
+**Brightness = SNR.** `PointSet.snr` carries the ingest-measured ratio from the store's
+observations, through `concat` and the embed-space subsetting path, into `points.json`. One
+design point worth keeping: **`null` is a real value in that column, not a gap.** A synthetic
+render has no ratio *because a render has no recording*, so the column survives if **any** part
+carries it and the parts that cannot contribute `None` per row — deliberately the opposite rule
+to `embeddings` and `novel`, where partial population makes "unflagged" ambiguous. Tested for
+row alignment in both concat orders.
+
+**Radius = kNN agreement, and this corrects docs/25 §25.3 step 3.** That step justified the
+channel with `speciesAgreement` = 0.4895. That statistic does not say what the channel needs —
+its own manifest definition is *"share of held-out syllables whose nearest knot carries the same
+majority species **through the map as through the critic**"*, i.e. a property of the 28-d → 32-d
+mapping measured on a held-out set. There is no per-point version of it and 387 287 points
+cannot take a radius from it.
+
+The statistic that does say it was already shipped: **`knnAgreement` = 0.4462**, *"share of a
+point's 3D k nearest neighbours sharing its type"* at k = 10. `knn_label_agreement_per_point`
+now returns that per point and `knn_label_agreement` is a mean over it, so **the channel and the
+manifest scalar are one measurement at two resolutions** and cannot drift. It is computed on
+`pos` — the array written to `positions.f32` — with the same labels the projection comparison
+scored, so it describes the geometry the browser actually draws. Verified: per-point mean equals
+the scalar to 1e-12. docs/25 is corrected in place.
+
+**The app side is deliberately not half-wired.** `PointCloudMeta` declares both channels so the
+contract is recorded, and nothing reads them yet. The reason is a constraint in
+`PointCloud.svelte`: Mesa's Intel driver in Firefox reports fewer than 15 vertex attribute slots
+and a 15-attribute program failed to link there, which is why four floats already ride one
+`aMisc` vec4 — whose x/y/z/w are all taken (seed, bloom, blossom, LOD rank). So the two new
+channels want **one** new packed vec4 rather than two slots, and that plus the brightness term in
+a 1 438-line shader is its own pass. It should also be done after the re-derived build, because
+the 0 dB floor and in-band segmentation move the SNR distribution the ramp has to span.
+
+## 9. Still open — and it is the same decision, with better numbers
 
 **The SNR floor is yours to call**, and the reconciliation above is the input it was waiting
 on. 0 dB is near-free (3.6 % of rows, 97 species, +0.5 dB). 6 dB buys +3.3 dB at 0.77

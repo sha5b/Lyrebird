@@ -747,6 +747,10 @@ class HarvestStore:
             song_id=[o.recording_id for o in kept],
             duration=[float(o.dur) for o in kept],
             source=[SOURCE] * len(kept),
+            # Carried through to `points.json` as a data channel, so the browser can show
+            # the corpus's quality axis instead of only its shape. `None` where the row
+            # was never measured, which the pipeline treats as neutral and not as bad.
+            snr=[None if o.snr is None else float(o.snr) for o in kept],
         )
 
     def summary(self) -> str:

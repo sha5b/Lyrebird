@@ -89,6 +89,17 @@ def main() -> int:
                     help="only process this many recordings (for a smoke run)")
     ap.add_argument("--dry-run", action="store_true",
                     help="measure the yield and write the report, but no store")
+    # **Why this is raised rather than inherited.** `out/harvest-gan` was built under a
+    # syllableCap of 400 000 and held 378 224 rows, so its cap never bound and the
+    # per-species retirement in `add_syllables` never ran. In band the corpus keeps
+    # 435 630, which does bind — and then the new store would differ from the old by the
+    # segmentation *and* by cap trimming, two changes at once. Raising the cap past the
+    # yield keeps the segmentation the only difference, which is the whole point of
+    # deriving a comparison store.
+    ap.add_argument("--syllable-cap", type=int, default=600_000,
+                    help="store syllable cap (default %(default)s, chosen to not bind: "
+                         "the in-band yield is ~435 630 against the old store's 378 224 "
+                         "under a 400 000 cap that never bound)")
     args = ap.parse_args()
 
     out_root = Path(args.out)
@@ -179,6 +190,7 @@ def main() -> int:
         "segmentBand": list(learn.SEGMENT_BAND_HZ) if learn.SEGMENT_BAND_HZ else None,
         "snrFloorDb": SNR_FLOOR_DB,
         "maxSeconds": MAX_SECONDS,
+        "syllableCap": args.syllable_cap,
         "recordingsConsidered": len(order),
         "recordingsMissingAudio": missing_audio,
         "recordingsYieldingNothing": yielded_nothing,
@@ -230,7 +242,9 @@ def main() -> int:
         if srcf.exists():
             shutil.copy2(srcf, out_root / name)
     shutil.copy2(SOURCE / "state.json", out_root / "state.json")
-    dst = harvest.HarvestStore(out_root, load_syllables=True)
+    dst = harvest.HarvestStore(
+        out_root, load_syllables=True, syllable_cap=args.syllable_cap
+    )
     dst.syllables = []
     for rid, info in recordings.items():
         dst.note_recording(rid, info)

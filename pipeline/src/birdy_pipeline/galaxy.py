@@ -236,6 +236,16 @@ class PointSet:
     #: never scored — every build path, where the flag changes nothing. Only `grow`
     #: reads it, to hold a new point back from force-assignment to the nearest knot.
     novel: list[bool] | None = None
+    #: Ingest-measured signal-to-noise in dB per row, `None` on a row that has none.
+    #: This is a *data channel*, not an input to the build: nothing here clusters,
+    #: projects or separates on it, and `point-features.f32` remains the reduced basis
+    #: for the live cosine (docs/25 §25.1 — those 8 floats cannot be repurposed).
+    #:
+    #: `None` is a real value here rather than a gap to be filled. A synthetic render has
+    #: no recording and therefore no ratio, and a row harvested before the field existed
+    #: was never measured — both are "no evidence", which the pipeline carries as neutral
+    #: and never as bad (`learn.SyllableObservation.snr`).
+    snr: list[float | None] | None = None
 
     def __len__(self) -> int:
         return int(self.x.shape[0])
@@ -267,6 +277,17 @@ class PointSet:
             if all(p.novel is not None for p in kept)
             else None
         )
+        # **`any`, not `all`, and that is the opposite rule to the two above.** For
+        # embeddings and `novel` a partly-populated corpus is ambiguous, so the whole
+        # column is dropped. Signal-to-noise is different: a synthetic part has none
+        # *because a render has no recording*, which is information rather than absence
+        # of it. So the column survives if any part carries it and the parts that cannot
+        # contribute `None` per row, which is exactly what they mean.
+        snr = (
+            [v for p in kept for v in (p.snr or [None] * len(p))]
+            if any(p.snr is not None for p in kept)
+            else None
+        )
         return PointSet(
             x=np.concatenate([p.x for p in kept], axis=0),
             species_id=[v for p in kept for v in p.species_id],
@@ -276,6 +297,7 @@ class PointSet:
             source=[v for p in kept for v in p.source],
             embeddings=embeddings,
             novel=novel,
+            snr=snr,
         )
 
 
@@ -908,6 +930,32 @@ def neighbourhood_quality(
     }
 
 
+def knn_label_agreement_per_point(
+    pos: np.ndarray, labels: Sequence[Any], k: int = KNN_AGREEMENT_K
+) -> np.ndarray:
+    """Per point: the share of its k nearest 3D neighbours that share its type.
+
+    The per-point form exists so the shipped **data channel** and the manifest's scalar
+    come from one code path and cannot drift apart. A point at 1.0 is surrounded only by
+    its own type and belongs on the rim; a point near 0 sits among other types and belongs
+    in the core (docs/25 §25.3, step 3).
+
+    It is measured on the positions that ship — `normalise_positions` has already applied
+    the cluster separation and the soft limit by the time the projection comparison calls
+    this — so the channel describes the geometry a viewer actually sees rather than an
+    intermediate one.
+    """
+    n = pos.shape[0]
+    k_eff = min(k, n - 1)
+    if k_eff < 1:
+        return np.ones(n)
+    nn = NearestNeighbors(n_neighbors=k_eff + 1).fit(pos)
+    _, idx = nn.kneighbors(pos)
+    lab = np.asarray([hash(x) for x in labels])
+    same = lab[idx[:, 1:]] == lab[:, None]
+    return same.mean(axis=1)
+
+
 def knn_label_agreement(
     pos: np.ndarray, labels: Sequence[Any], k: int = KNN_AGREEMENT_K
 ) -> float:
@@ -916,15 +964,8 @@ def knn_label_agreement(
     How *tidy* the picture looks, as opposed to how faithful its distances are - the
     two pull in opposite directions, which is the trade-off worth knowing about.
     """
-    n = pos.shape[0]
-    k_eff = min(k, n - 1)
-    if k_eff < 1:
-        return 1.0
-    nn = NearestNeighbors(n_neighbors=k_eff + 1).fit(pos)
-    _, idx = nn.kneighbors(pos)
-    lab = np.asarray([hash(x) for x in labels])
-    same = lab[idx[:, 1:]] == lab[:, None]
-    return float(same.mean())
+    per = knn_label_agreement_per_point(pos, labels, k)
+    return float(per.mean()) if per.size else 1.0
 
 
 def _purity(cluster_id: np.ndarray, types: Sequence[Any], k: int) -> float:
@@ -1626,6 +1667,13 @@ def build_galaxy(
                     if kept.novel is not None
                     else None
                 ),
+                # Subset with the same mask as every other column, or the data channels
+                # silently desync from the positions they describe.
+                snr=(
+                    [v for v, m in zip(kept.snr, finite) if m]
+                    if kept.snr is not None
+                    else None
+                ),
             )
             x = kept.x
             z28 = z28[finite]
@@ -2085,6 +2133,10 @@ def build_galaxy(
         if verbose:
             print(f"wrote {out_dir / 'projection-basis.json'}", file=sys.stderr)
 
+    # The radius channel, computed on `pos` — the array written immediately below — with
+    # the same labels the projection comparison scored, so `points.json`'s per-point column
+    # and the manifest's scalar are the same measurement at two resolutions.
+    point_knn_agreement = knn_label_agreement_per_point(pos, kept.types())
     (out_dir / "positions.f32").write_bytes(
         pos.astype("<f4", copy=False).ravel(order="C").tobytes()
     )
@@ -2101,6 +2153,18 @@ def build_galaxy(
             "clusterId": [int(v) for v in cluster_id],
             "durations": [round(v, 6) for v in kept.duration],
             "source": kept.source,
+            # A data channel, not a build input. `null` means "no ratio exists for this
+            # row" — a synthetic render, or a row from a store that predates the field —
+            # and a consumer must draw that as unmeasured rather than as poor.
+            **(
+                {"snr": [None if v is None else round(float(v), 2) for v in kept.snr]}
+                if kept.snr is not None
+                else {}
+            ),
+            # Per-point neighbourhood agreement, for the radius channel of docs/25 §25.3.
+            # Measured on these exact positions, so its mean equals the manifest's
+            # `knnAgreement` by construction rather than by coincidence.
+            "knnAgreement": [round(float(v), 3) for v in point_knn_agreement],
         },
     )
     # The sidecar's layout, stated in the file that points at it so a consumer needs
