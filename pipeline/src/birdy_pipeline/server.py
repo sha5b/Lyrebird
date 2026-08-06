@@ -33,6 +33,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from . import harvest, learn
+from . import verbs as verbs_mod
 from .corpus import load_inventory
 
 #: Ceiling on the fit's fork pool. The pool is measured bit-identical to the serial
@@ -1131,7 +1132,19 @@ class Pipeline:
         return missing
 
     def _rebuild(self, job: Job) -> None:
-        """A full build from the fitted inventory, cancellable like any other step."""
+        """A full build from the fitted inventory, cancellable like any other step.
+
+        **It rebuilds the map the galaxy already is, rather than the parser's default.**
+        `--clustering` was omitted here, so this took `cmd_build`'s default of `kmeans`
+        while the shipped galaxy is a `label` build — and this is the *automatic* rebuild,
+        the one the learning loop fires on its own when drift says the frame has stopped
+        describing its contents. A loop left running therefore replaced a 15 341-knot
+        label map with a k-means one, silently, as a side effect of learning. The method
+        is a property of the galaxy being extended, not a preference of this call, so it
+        is read back from the manifest of the build on disk; the parser default only
+        applies when there is no build to read, which is a first build and genuinely has
+        no method to preserve.
+        """
         from .cli import build_parser, cmd_build
         from .corpus import Cancelled
 
@@ -1142,6 +1155,13 @@ class Pipeline:
             "--no-compare-projections",
             "--inventory", str(self.learned_path),
         ]
+        manifest = self._manifest()
+        clustering = str(manifest.get("clustering") or "")
+        # `both` writes two subdirectory maps and no root manifest, so a galaxy built that
+        # way is not what this path extends; the others are passed straight back.
+        if clustering in ("kmeans", "hdbscan", "label"):
+            argv += ["--clustering", clustering]
+            harvest.log(f"rebuilding as a {clustering} map, matching the build on disk")
         if (self.store_path / "state.json").exists():
             argv += ["--harvest-store", str(self.store_path)]
         try:
@@ -1151,6 +1171,17 @@ class Pipeline:
             return
         if code != 0:
             raise RuntimeError(f"rebuild exited {code}")
+        # The same gate `build` grew on 2026-08-01, for the same reason: assets that do not
+        # verify are what the app loads next. It was on the button and not here, so the
+        # rebuild nobody presses — the one the loop fires unattended — was the one shipping
+        # unchecked assets.
+        from .cli import verify
+
+        if verify(self.out_path) != 0:
+            raise RuntimeError(
+                f"the rebuild wrote {self.out_path} but it does not verify — "
+                "the assets on disk are not safe to load"
+            )
 
     def grow(self, body: dict[str, Any]) -> dict[str, Any]:
         """Add the newest harvested audio to the built galaxy, leaving it in place."""
@@ -1268,6 +1299,124 @@ class Pipeline:
             parts.append("+ harvest")
         return self.start("build", " ".join(parts), run)
 
+    # -- the registered verbs (verbs.py) --
+
+    def _verb_ctx(self) -> "verbs_mod.Ctx":
+        """The paths every registered verb's argv is built from.
+
+        Read off this process's own configuration, never off the request. A caller chooses
+        which declared verb runs and its in-range parameters; it cannot choose what the run
+        reads or writes. See the header of `verbs.py` for why that matters on a socket that
+        answers `Access-Control-Allow-Origin: *`.
+        """
+        return verbs_mod.Ctx(
+            store=self.store_path,
+            out=self.out_path,
+            learned=self.learned_path,
+            inventory=self.inventory_path,
+            critic=self.critic_path,
+            # `.../pipeline/src/birdy_pipeline/server.py` -> `.../pipeline`.
+            pipeline_root=Path(__file__).resolve().parents[2],
+        )
+
+    def verb_specs(self) -> dict[str, Any]:
+        ctx = self._verb_ctx()
+        return {
+            "ok": True,
+            "groups": [
+                {"id": gid, "title": title, "note": note}
+                for gid, title, note in verbs_mod.GROUPS
+            ],
+            "verbs": [verbs_mod.to_dict(v, ctx) for v in verbs_mod.VERBS],
+        }
+
+    def verb_reports(self) -> dict[str, Any]:
+        """Every verb's report as a bounded table, read from disk.
+
+        Its own endpoint rather than a block on `status`, and that is a size decision:
+        `status` is polled every 1.5 s and is already the largest payload here. These
+        change only when a job finishes, which is when the page asks again.
+        """
+        ctx = self._verb_ctx()
+        return {
+            "ok": True,
+            "reports": [
+                verbs_mod.read_report(v, ctx) for v in verbs_mod.VERBS if v.has_report
+            ],
+        }
+
+    def run_verb(self, body: dict[str, Any]) -> dict[str, Any]:
+        """Run one registered verb, with its measurement ending up on the page.
+
+        Two things this does that the hand-written routes do not need to.
+
+        **stdout is teed as well as stderr.** `start` redirects stderr, which is where
+        `harvest.log` writes, and that is all the existing jobs produce. But most of these
+        verbs `print` their measurement — `placement`'s four numbers, `critic groupings`'
+        table, `verify`'s `FAIL` lines are all stdout — so redirecting stderr alone would
+        stream the timing and drop the result. A button whose readout is missing is the
+        failure this whole surface was added to fix.
+
+        **A non-zero exit is a failed job.** These verbs return 2 for a precondition and 1
+        for "the measurement itself says no" (`verify` found a broken invariant, `quality
+        remeasure` found drift). Both are outcomes a reader must see; swallowing them would
+        leave the job reading `done` over a check that failed.
+
+        One honest limit: none of these take a `should_stop`, so Stop cannot interrupt one.
+        It is recorded on the job's detail so the page can say so rather than offer a
+        button that does nothing.
+        """
+        verb_id = str(body.get("verb") or "")
+        verb = verbs_mod.BY_ID.get(verb_id)
+        if verb is None:
+            return {
+                "ok": False,
+                "error": f"{verb_id or 'that'} is not a verb this process runs",
+            }
+        params = body.get("params") or {}
+        if not isinstance(params, dict):
+            return {"ok": False, "error": "params must be an object"}
+        ctx = self._verb_ctx()
+        try:
+            argv = verbs_mod.build_argv(verb, ctx, params)
+        except verbs_mod.Refused as exc:
+            return {"ok": False, "error": str(exc)}
+        # Checked before starting rather than inside the job: a missing critic is a
+        # sentence to read, not a traceback to scroll a log for.
+        missing = [n["what"] for n in verbs_mod.unmet(verb, ctx) if not n["ok"]]
+        if missing:
+            return {
+                "ok": False,
+                "error": f"{verb.title} needs {'; '.join(missing)}",
+            }
+
+        def run(job: Job) -> None:
+            from .cli import build_parser
+
+            if verb.has_report:
+                ctx.reports.mkdir(parents=True, exist_ok=True)
+            job.log.append(f"birdy-pipeline {' '.join(argv)}")
+            args = build_parser().parse_args(argv)
+            out_tee = _Tee(job.log.append, harvest.sys.stdout)
+            with contextlib.redirect_stdout(out_tee):
+                code = args.func(args)
+            if code:
+                raise RuntimeError(
+                    f"{verb.title} exited {code} — "
+                    + (
+                        "the measurement itself says no; the log has the detail"
+                        if code == 1
+                        else "something it needs is missing or wrong"
+                    )
+                )
+            if verb.has_report:
+                # The summary the page tables, attached to the finished job so the result
+                # is on screen without waiting for the next reports fetch.
+                job.result = verbs_mod.read_report(verb, ctx)
+
+        chosen = ", ".join(f"{k} {v}" for k, v in sorted(params.items())) or "defaults"
+        return self.start(verb_id, chosen, run)
+
 
 # --- startup ------------------------------------------------------------------------
 
@@ -1379,6 +1528,13 @@ def make_handler(pipeline: Pipeline) -> type[BaseHTTPRequestHandler]:
                 self._send(pipeline.status())
             elif self.path.startswith("/api/job"):
                 self._send({"ok": True, "job": pipeline.job.to_dict() if pipeline.job else None})
+            # The registry is static for the life of the process, so the page fetches it
+            # once. `needs` travels with it and is not static, which is why the reports
+            # call — made again after every job — carries the fresher copy.
+            elif self.path.startswith("/api/verbs"):
+                self._send(pipeline.verb_specs())
+            elif self.path.startswith("/api/reports"):
+                self._send(pipeline.verb_reports())
             else:
                 self._send({"ok": False, "error": "unknown endpoint"}, 404)
 
@@ -1410,6 +1566,10 @@ def make_handler(pipeline: Pipeline) -> type[BaseHTTPRequestHandler]:
                 "/api/learn": pipeline.learn,
                 "/api/build": pipeline.build,
                 "/api/expand": pipeline.expand,
+                # One route for the twenty registered verbs. Not a way to pass argv — see
+                # the header of `verbs.py` for why that distinction is the security
+                # property and not a style choice.
+                "/api/run": pipeline.run_verb,
             }
             for path, fn in routes.items():
                 if self.path.startswith(path):
@@ -1606,5 +1766,15 @@ def self_test(verbose: bool = True) -> None:
         (parent / "empty-dir").mkdir()
         assert newer_stores(old) == [new], "non-store siblings must not warn"
 
+    # The verb registry, checked here because this is the function `cmd_serve` runs at
+    # startup and the registry's own failure mode is a button that argparse refuses. It
+    # parses every declared argv against the real CLI and runs nothing, so a flag renamed
+    # in `cli.py` stops a `serve` from starting instead of surfacing as a job that exits 2
+    # once somebody presses the control it broke.
+    verbs_mod.self_test(verbose=False)
+
     if verbose:
-        harvest.log("server self-test ok")
+        harvest.log(
+            f"server self-test ok — {len(verbs_mod.VERBS)} registered verbs, "
+            "every argv parses"
+        )

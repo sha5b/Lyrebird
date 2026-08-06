@@ -1,0 +1,92 @@
+{
+  "question": "how k and the noise share move with min_cluster_size, and how much each clustering agrees with the shipped label map",
+  "matrix": {
+    "kind": "embed32",
+    "what": "the build's own clustering matrix z = (e - mean)/max(std, 1e-6) over the 32-d critic embeddings, restricted to the field rows",
+    "rows": 435630,
+    "dims": 32,
+    "rowsOfBuild": 444213,
+    "rowsMissing": 8583,
+    "rowsMissingShare": 0.0193,
+    "missing": "the rendered inventory points, whose embeddings exist only inside a build (rendered audio through the critic) and are in no asset",
+    "embeddings": "/home/sha5b/Documents/GitHub/Birdy/pipeline/out/harvest-inband/embeddings.f32",
+    "moments": "/home/sha5b/Documents/GitHub/Birdy/pipeline/out/v10/assets-unknown/feature-space.json",
+    "critic": "out/critic.pt",
+    "exact": true
+  },
+  "rowsClustered": 435630,
+  "shipped": {
+    "assets": "/home/sha5b/Documents/GitHub/Birdy/app/static/birdy",
+    "points": 444213,
+    "distinctClusters": 15341,
+    "fieldStart": 8583,
+    "joinedRows": 435630
+  },
+  "build": {
+    "points": 444213,
+    "clustering": "hdbscan",
+    "space": "embed",
+    "density": {
+      "algorithm": "hdbscan",
+      "clusters": 1151,
+      "noise": 353285,
+      "noiseShare": 0.7953,
+      "anchored": 18,
+      "confirmed": 562,
+      "unknown": 1,
+      "mixed": 570,
+      "pointsGivenACandidate": 73,
+      "definition": "anchored: a dense region holding both documented renders and unlabelled field audio, so the field audio inherits a candidate identity. unknown: dense, real, and nothing documented in it \u2014 a candidate new syllable. noise: in no dense region at all."
+    }
+  },
+  "embeddings": {
+    "n": 435630,
+    "dim": 32,
+    "countNaN": 0,
+    "writtenAt": "2026-08-05T16:08:35+00:00",
+    "critic": "2026-07-30T11:55:45+00:00"
+  },
+  "implementation": "hdbscan (boruvka)",
+  "sweep": [
+    {
+      "minClusterSize": 25,
+      "clusters": 1128,
+      "noise": 345437,
+      "noiseShare": 0.793,
+      "medianClusterSize": 58.0,
+      "meanClusterSize": 80.0,
+      "largestCluster": 719,
+      "seconds": 2797.2,
+      "ariAssigned": 0.4436,
+      "amiAssigned": 0.8013,
+      "ariAll": 0.0001,
+      "amiAll": 0.158,
+      "agreementSeconds": 21.7,
+      "pointsScoredAssigned": 90193,
+      "pointsScoredAll": 435630
+    },
+    {
+      "minClusterSize": 100,
+      "clusters": 2,
+      "noise": 160325,
+      "noiseShare": 0.368,
+      "medianClusterSize": 137652.5,
+      "meanClusterSize": 137652.5,
+      "largestCluster": 275175,
+      "seconds": 1110.5,
+      "ariAssigned": 0.0,
+      "amiAssigned": 0.0006,
+      "ariAll": 0.0003,
+      "amiAll": 0.0434,
+      "agreementSeconds": 0.2,
+      "pointsScoredAssigned": 275305,
+      "pointsScoredAll": 435630
+    }
+  ],
+  "definitions": {
+    "noiseShare": "share of the clustered rows HDBSCAN put in no dense region",
+    "ariAssigned": "adjusted Rand against the shipped label clustering over the non-noise rows only \u2014 agreement about the points this clustering placed",
+    "ariAll": "adjusted Rand over every clustered row with noise as one label of its own \u2014 agreement about the corpus, which a partition refusing most of it does not have",
+    "notMeasured": "neither figure is accuracy: the label partition is bookkeeping over the type inventory and has no claim to be correct. The curve identifies no best min_cluster_size; it makes the trade-off visible"
+  }
+}

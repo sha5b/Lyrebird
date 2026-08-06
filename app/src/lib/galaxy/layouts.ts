@@ -356,13 +356,31 @@ function membersOf(clusterId: ArrayLike<number>, k: number): { starts: Int32Arra
  * overstates the case by a factor of five.
  *
  * At 46 % the global projection's local structure is not noise, so **"this loses very
- * little" is no longer established by the number that was offered for it.** The layout's
- * other reason stands untouched and is the stronger one anyway: a knot laid out from its
- * own members cannot be torn by the global fit, and 2 035 of 6 316 measured knots are
- * torn in the shipped positions. Owner's call whether to keep the two-level default on
- * that ground alone; it is not resolved by re-reading this docstring. What the picture claims splits cleanly in two:
- * *knot centres are the coarse acoustic arrangement; spread inside a knot is that
- * knot's own variation.* Both are true. The single global claim was not.
+ * little" is not established by the number that was offered for it** — and that number was
+ * the whole argument for spending the local structure. The layout's other reason stands
+ * untouched: a knot laid out from its own members cannot be torn by the global fit, and
+ * 2 035 of 6 316 measured knots are torn in the shipped positions.
+ *
+ * **Owner's call, taken: the default is off.** The two-level pass is kept and is one
+ * argument away, because the tearing it fixes is real and measured. But it is no longer
+ * what the galaxy draws by default, and the reasoning is that the two claims are not
+ * symmetric. Turning it on *discards* a measured signal — 46 % neighbour agreement in the
+ * global projection, which is a real acoustic arrangement inside a knot — in exchange for
+ * repairing the drawing of 2 035 knots out of 6 316. When the discarded thing was 8.5 %
+ * that trade was obviously worth making; at 46 % it is a trade the number no longer
+ * supports, and the honest default is the arrangement that throws nothing away.
+ *
+ * What the picture claims is therefore one thing again: *position is the acoustic
+ * arrangement, at every scale.* With the local pass on it splits in two — knot centres
+ * are the coarse arrangement, spread inside a knot is that knot's own variation — and both
+ * halves are true, but the reader is not told where the seam is.
+ *
+ * **What turning it off gives back up.** The 385 torn knots draw torn again, 219 of them
+ * torn only by the squeeze into three dimensions, with the tag in the gap between the two
+ * halves. That is a real cost and it is why the pass survives: `buildLayout(assets, true)`
+ * restores it, and the per-knot `tearing` figure now shipped on every centroid says which
+ * knots are affected. The honest repair for them is upstream in the clustering, which is
+ * where it was always said to belong.
  *
  * **What it does not fix, and must not pretend to.** 166 of the 385 torn knots are two
  * blobs in the feature space too — the type genuinely holds two kinds of sound. Those
@@ -821,7 +839,7 @@ export function drawnLobes(positions: Float32Array, clusterId: number[], k: numb
 	};
 }
 
-export function buildLayout(assets: BirdyAssets, local = true): Layout {
+export function buildLayout(assets: BirdyAssets, local = false): Layout {
 	const base = expandClusters(
 		assets.positions,
 		assets.points.clusterId,

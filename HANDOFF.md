@@ -1,4 +1,273 @@
-# Lyrebird — READ THIS FIRST (2026-08-05, night): the build the last entry told you to babysit was already dead, and two of the three undrawn channels now draw
+# Lyrebird — READ THIS FIRST (2026-08-06): the sweep says 79.5 % noise is not a tunable number, the two maps agree far more than the last entry could see, and `learn` was broken on main
+
+The sweep the last entry left ready is run. Two of its numbers change what the previous
+entry concluded, and one thing found on the way blocked `birdy-pipeline learn` entirely.
+
+```
+mcs sweep RUN        25 -> k=1128, 79.3 % noise.  100 -> k=2, 36.8 % noise, largest
+                     cluster 275 175. The noise share moves, degenerately: raising
+                     min_cluster_size does not find structure, it makes one lump
+reconstruction OK    sweep 1128 / 79.3 % against the build's own 1151 / 79.5 % on a
+                     1.93 %-larger corpus. The rebuilt matrix is the build's matrix
+THE TWO MAPS AGREE   AMI over the PLACED points is 0.8013, not 0.1580. The last entry
+                     measured all rows only, where one 79.5 % noise class crushes it
+`learn` was BROKEN   learn.self_test failed on main, and cmd_learn runs it before fitting.
+                     Cause: density.py's sklearn -> hdbscan backend switch changed
+                     small-n clustering. Fixed by choosing the backend by size
+allow_single_cluster MEASURED AND REFUSED. It would have unblocked learn too; on 100 000
+                     real rows it collapses 158 clusters / 90.4 % noise into ONE cluster
+                     of 66 371 and 33.6 % noise. Not shipped
+Learn page           now reaches all 20 remaining pipeline verbs, from one server-side
+                     registry (verbs.py). 15 of them table a real report
+relations RESHIPPED  duplicate-content guard applied: 13 pairs refused, and all four
+                     artefacts that headed "Sounds like" are gone
+localShapes          DEFAULT OFF, owner's call, because the 0.0849 it rested on is 0.4574
+_rebuild             two defects fixed: it rebuilt as kmeans over a label map, and it
+                     skipped the verify gate the Build button got on 2026-08-01
+placement            its printed table compared 2.7 % against a "> 35 %" target set on a
+                     reference set 100x smaller. Now prints the multiple of chance (97x)
+```
+
+## 1. The sweep, and the thing it settles
+
+```
+  mcs       k     noise  noise%  median    mean  largest  ARI(asg)  AMI(asg)  ARI(all)  AMI(all)        s
+   25    1128    345437    79.3    58.0    80.0      719    0.4436    0.8013    0.0001    0.1580   2797.2
+  100       2    160325    36.8 137652.5 137652.5   275175    0.0000    0.0006    0.0003    0.0434   1110.5
+```
+
+**Read the reconstruction check first, because the rest depends on it.** The build's own
+density block is 1 151 clusters and 79.5 % noise over 444 213 rows; the sweep rebuilds the
+matrix from `embeddings.f32` and gets **1 128 clusters and 79.3 % noise over 435 630 rows**
+(98.07 % of the corpus — the 8 583 rendered rows exist only inside a build). Two percent
+fewer clusters on two percent fewer points. The reconstruction is the build's matrix, so
+every other row in the table can be believed.
+
+**`min_cluster_size=100` is not a better answer, it is a collapse.** The noise share does
+fall — 79.3 % to 36.8 % — and that is the only encouraging thing about it. `k` goes to
+**2**, the largest cluster holds **275 175 of 435 630 points**, and the median cluster size
+is 137 652. Agreement with the label map among the points it places falls to
+**ARI 0.0000, AMI 0.0006**: it has stopped distinguishing anything. So the answer to "can
+the noise share be tuned down" is yes, and it costs the map. **Do not raise
+min_cluster_size to make the refusal look smaller.** 79.5 % is what this corpus does at a
+setting that still separates things.
+
+**Wall clock, with a caveat that has to travel with it.** 2 797 s at mcs=25 and 1 110 s at
+mcs=100. The mcs=25 figure is **contaminated** — I ran a `spacemap` alongside it for about
+twenty minutes to smoke-test a new route, which was careless. Treat 2 797 s as an upper
+bound; the 1 110 s at mcs=100 is clean. The `k` and noise and agreement figures are
+properties of the clustering and are unaffected.
+
+## 2. The correction that matters most: the two maps agree, among the points that were placed
+
+The last entry's headline was *"adjusted Rand 0.0001, AMI 0.1573 — essentially unrelated
+partitions"*. The sweep reproduces those exactly as the all-rows figures (0.0001 / 0.1580)
+and adds the companion the join never computed:
+
+```
+                     over ALL rows      over the PLACED rows only
+adjusted Rand           0.0001                  0.4436
+adjusted mutual info    0.1580                  0.8013
+```
+
+**Among the 90 193 points hdbscan actually placed, AMI against the 15 341-knot label map is
+0.8013.** That is not "unrelated partitions" by any reading. What is true is the thing the
+`median refused share 1.0` already said: the density clustering **refuses** most of the
+corpus, and the all-rows figures are dominated by that one refusal class. Where it commits,
+it largely agrees with the labels.
+
+So the honest summary replaces the last entry's: **the dense regions are not a coarsening of
+the label knots because they do not cover the corpus — but on what they do cover, they and
+the labels are describing the same thing.** That is a much better argument for the
+`unassigned` column than "two unrelated maps", and it is the sentence to use.
+
+## 3. `birdy-pipeline learn` was broken on main, and the cause was the backend switch
+
+`learn.self_test()` fails at `2078e1a`, and `cmd_learn` runs it before it fits anything
+(`cli.py`, after the store check), so **the learn command could not run at all**. It failed
+on section 10, the unlabelled pool: `0 candidate type(s) from the remaining 16, 16
+unplaceable`.
+
+Bisected rather than guessed. The assertion arrived 2026-07-29 in `d2f4d8a` and **passes at
+that commit** — a clean worktree there reports `2 candidate type(s) from the remaining 16, 0
+unplaceable`. What changed between then and now is `density.py`'s `_fit`, which gained the
+standalone `hdbscan` package's Boruvka MST for the 444 213-point build and preferred it
+whenever installed.
+
+**The two implementations do not agree at pool scale, and `density.py`'s docstring claimed
+they did.** Same 16 arrivals, same `min_cluster_size=8`, same parameters: sklearn returns
+two clusters of eight and no noise, the `hdbscan` package returns one cluster of eight and
+eight noise. The docstring's "the labels agree up to ties" is true at production scale and
+false here, and the fast path was only ever needed for scale — `density.py`'s own numbers
+put sklearn at 13.0 s for n = 20 000.
+
+Fixed by choosing the implementation by size: `FAST_PATH_MIN_ROWS = 20_000`, sklearn below
+it, Boruvka above. `learn.self_test` passes and reproduces `d2f4d8a`'s result exactly. **No
+build is affected** — every build is far above the threshold and takes the same path it took
+before.
+
+**And the fix that was asked for and then refused on measurement.** The obvious reading was
+`allow_single_cluster`: HDBSCAN never returns its own root, so one dense region comes back as
+k=0. Setting it globally does unblock `learn`. On **100 000 real rows** at
+`min_cluster_size=25` it also turns **158 clusters and 90.4 % noise into one cluster holding
+66 371 points and 33.6 % noise** — the same degeneracy the sweep found at mcs=100. It is not
+shipped, and the measurement is recorded on `_fit` so nobody re-proposes it from first
+principles.
+
+## 4. The Learn page reaches the whole pipeline now, from one registry
+
+The tab drove 8 of 22 subcommands. The other fourteen are where the measurements live, and
+each wrote its answer to a file only a terminal could read — so the page could print a
+resynthesis cosine and could not print whether that cosine meant anything audible.
+
+`pipeline/src/birdy_pipeline/verbs.py` declares each verb once: its flags with types,
+ranges and glosses, its preconditions, its cost, what it overwrites, and where its report
+lands. That one declaration drives the argv, the form and the result table together.
+
+**Three properties worth keeping:**
+
+- **It is a whitelist, and that is the security property rather than a style choice.**
+  `server.py` answers `Access-Control-Allow-Origin: *` so Vite on another port can reach it,
+  which means any page in the browser can post to this socket. A route that forwarded a
+  command line would hand every website a shell here — the loopback bind does not help,
+  because the request comes *from* the browser on this machine. Every parameter is coerced
+  and clamped to its declaration, every path comes from the server's own config, and
+  anything undeclared is refused. Verified over HTTP: `{"ks":"4;rm -rf /"}` comes back as
+  `ks is not of the form [0-9]{1,3}(,[0-9]{1,3}){0,5}`.
+- **`verbs.self_test()` parses all 40 argvs against the real CLI**, and `server.self_test`
+  calls it, so a flag renamed in `cli.py` stops a `serve` from starting instead of surfacing
+  as a job that exits 2 when somebody presses the control it broke. Proven non-vacuous by
+  renaming a flag and watching it fail.
+- **stdout is teed as well as stderr.** `start` redirected stderr only, which is where
+  `harvest.log` writes; but `placement`, `critic groupings` and `verify` all `print` their
+  measurements, so the old path would have streamed the timing and dropped the result.
+
+**Reports.** Seven verbs wrote a JSON report and all seven made it optional, so the ordinary
+way to run them left nothing on disk — the tab now always passes the flag, into
+`out/reports/<verb>.json`. Five more gained a `--json`: `placement`, `critic groupings`,
+`verify`, `thresholds`, `subset`. Two already wrote sidecars (`out/critic.json`,
+`out/inverse.json`) and are pointed at them rather than made to write the same numbers
+twice. **15 of 20 verbs now table a measurement**; the five that do not are collectors and
+actions, not measurements, and the page says the log is their readout.
+
+The table's columns are read off the data rather than hardcoded, calibrated against the two
+report shapes actually in the tree (`out/respfit-gan-report.json` is a `records` row list,
+`analysis/v10_unknown_join.json` is nested scalar blocks). A hardcoded spec naming a renamed
+field draws a column of blanks, which reads as "measured, and zero".
+
+## 5. `_rebuild` had two defects, both on the unattended path
+
+- **It rebuilt as `kmeans` over a `label` map.** `_rebuild` passed no `--clustering`, so it
+  took the parser default while the shipped manifest says `label`. This is the *automatic*
+  rebuild the learning loop fires on its own when drift says the frame has stopped
+  describing its contents — so a loop left running replaced the 15 341-knot label galaxy
+  with a k-means one, silently, as a side effect of learning. It now reads the method back
+  from the manifest of the build on disk.
+- **It skipped the verify gate.** `Pipeline.build` gained one on 2026-08-01 because the tab
+  had been shipping assets unchecked; `_rebuild` never got it, so the rebuild nobody watches
+  was the one shipping unverified assets. Fixed.
+
+## 6. relations is reshipped and the head of "Sounds like" is clean
+
+Owner's call: the duplicate-content exclusion. At `relations.py`, a pair is refused when
+more than half of one species' sampled syllables have a bit-identical twin in the other —
+symmetric (`max` of the two shares), because which species is `a` is decided by the sort and
+nothing else.
+
+```
+                     before                                    after
+pairs                14 488                                    14 495
+nearest pair         -0.0   bleda / eurillas  (duplicate)      0.0311 acrocephalus / emberiza
+refused                  -                                     13 duplicate-source pairs
+```
+
+All four artefacts that headed the list are gone, and the new nearest pair is a genuine one.
+`verify` passes on the reshipped assets. The exclusion is **counted in the file**
+(`duplicateSourcePairs` plus its definition), because an exclusion nobody can see reads as a
+corpus that has no duplicates in it. `relations.self_test` now plants a duplicated
+repertoire as well as a shared type, and it is non-vacuous — disabling the guard fails it.
+
+**Still open upstream:** `sources.py:190`'s `_ingest_staged` dedupes on the recording id
+alone and no content hash exists in harvest/sources, so the next harvest re-admits these. The
+durable fix would refuse 35 recordings across 40 species.
+
+## 7. `localShapes` defaults off
+
+Owner's call, taken. The two-level layout's stated justification was `knnAgreement`
+**0.0849**; on this build it is **0.4574**. At 46 % the global projection's local structure
+is not noise, so turning the pass on *discards* a measured acoustic arrangement inside each
+knot in order to repair the drawing of 2 035 knots in 6 316. At 8.5 % that trade was
+obviously worth making; at 46 % the number no longer supports it.
+
+The pass is kept and is one argument away (`buildLayout(assets, true)`, or the `localKnots`
+prop). What it gives back up is real and stated on `localShapes`: 385 knots draw torn again,
+219 of them torn only by the squeeze into three dimensions. The honest repair for those is
+upstream in the clustering, which is where it was always said to belong.
+
+## 8. `placement` was comparing figures from different corpora
+
+Its printed table read:
+
+```
+nearest own SPECIES     2.7%      > 35 %
+  (chance)              0.0%
+```
+
+which reads as a collapse 13x below target. It is not comparable. This corpus has **3 603
+species with descriptors**, so chance is 0.028 % — and 2.7 % is **97x chance**. docs/09's
+35 % was set against a reference set of a few dozen species, where chance is a few percent
+and 35 % is under 9x. Rounding chance to "0.0 %" destroyed the one number that would have
+shown it. The table now prints the multiple of chance beside the share and names the
+reference count, and the report carries `nearestOwnSpeciesTimesChance`.
+
+The other three, for the record: nearest own type **73.0 %** (target ≥ 56 %), median
+resynthesis cosine **0.737** (target ≥ 0.74), median |F0 error| **5.3 %** (target ≤ 5 %).
+Render-free, on 435 630 stored syllables: **19.3 %** in the 28-d descriptor space and
+**28.7 %** in the 32-d embedding.
+
+## 9. State of the tree
+
+`npm run check` 0 errors / 0 warnings, proven non-vacuous by injecting a type error and
+watching it fail. Every module self-test passes (20 modules). `verify:layout`,
+`verify:split-knots`, `verify:tearing`, `verify:trust`, `verify:functions`,
+`verify:context-threads` all pass. `birdy-pipeline verify` passes on the reshipped assets.
+
+```
+new    pipeline/src/birdy_pipeline/verbs.py      app/src/lib/PipelineVerbs.svelte
+       app/src/lib/ReportTable.svelte
+       pipeline/out/reports/{verify,thresholds,placement}.json
+asset  app/static/birdy/relations.json           reshipped, 13 duplicate pairs refused
+```
+
+Everything in this entry is **uncommitted**, on top of `2078e1a`.
+
+## 10. FIRST THING TO DO
+
+**The join with `--enrich`, which the last entry deliberately held back until the curve was
+visible.** It is visible, and it says the refusal is real rather than a parameter artefact
+(mcs=100 is worse in every way that matters), so the verdict can now be written into the
+shipped asset:
+
+```bash
+cd pipeline
+uv run python analysis/v10_unknown_join.py --enrich ../app/static/birdy/points.json
+cd ../app && npm run verify:unheard
+```
+
+That is what un-disables the Display panel's **"What nothing claims"** checkbox.
+
+**Then, with the AMI 0.8013 finding in hand,** reconsider how the `unassigned` column is
+described in the interface. The copy written for it was drafted against "two unrelated
+maps"; the measurement says "a map that refuses four fifths of the corpus and agrees with
+the labels on the rest", which is a different and better claim.
+
+**Also still open:** the upstream content hash in `note_recording` (§6); the
+`--member-anchor` rebuild, still blocked while any row-index join is in flight; and
+`sources fetch` leaves `embeddings.f32` stale by design — the Learn page's verb says so, but
+nothing enforces re-running `critic embed` after a fetch.
+
+
+# Lyrebird — READ THIS FIRST (2026-08-05, night): the build the last entry told you to babysit was already dead; it is built now, four birds in five are refused, and the two maps agree on almost nothing
 
 The previous entry opens with "FIRST THING TO DO: the unknown-map build is still running."
 It was not. It died at **19:10:52**, one line into the clustering step, and sat there for
@@ -17,8 +286,9 @@ chorus filter       BUG FIXED: the counts never appeared, so three live controls
 same word, two units  the chorus said `synthesized 2851` and the view said `synthesized 2 %`.
                     Both right — songs vs points. Every count now carries its unit
 knnAgreement + snr  BOTH DRAWN, sharing the saturation channel because it is the only one
-                    left. -23.0 % and -20.7 % chroma, 3.0 % apart, ink held to 0.7 %.
-                    snr on a p5..p95 ramp: 2.14..39.34 dB, absent (8 583 renders) unchanged
+                    left. -18 % chroma each, and per pixel they sit 0.0136 apart against
+                    their own 0.017 effect. snr on a p5..p95 ramp: 2.14..39.34 dB, absent
+                    (8 583 renders) unchanged
 0.0849 -> 0.4574    the figure layouts.ts rests its whole argument on is five builds stale.
                     This build is 0.4574. Part of that argument is withdrawn
 per-knot tearing     SHIPPED without a rebuild. 6 316 knots, validation reproduced all five
@@ -26,8 +296,12 @@ per-knot tearing     SHIPPED without a rebuild. 6 316 knots, validation reproduc
 -0.0 relation       NOT a fit degeneracy: two species share a byte-identical recording.
                     17 cross-species duplicate groups, 35 species, 11 pairs in the asset
 npm run check       4 errors -> 0. The two 404s on every load -> 0
-probe:words         was dying before its first assertion. probe:stage's bird-pick has been
-                    silently skipping, so every tag assertion in it was dead
+probe:words         was dying before its first assertion. probe:stage's bird-pick had been
+                    silently skipping, so six tag readings were vacuous. Both fixed
+my own probe        flapped 3.0 % / 0.5 % because it compared two means that could not
+                    differ. A check that flaps is measuring the wrong thing
+NOT DONE            the min_cluster_size sweep — written, READY, stopped before starting
+                    because the machine was going off. See section 11
 ```
 
 ## 1. The build, and the real cost of the Boruvka path
@@ -335,12 +609,164 @@ features-lo` is the row-complete companion in an 8-d 65 %-variance space, and it
 `adjusted_mutual_info_score` — all rows, noise as its own label, at the build's single
 `min_cluster_size`. The sweep adds the curve and the assigned-only companion.
 
+## 9b. The join is run and the two maps disagree almost completely
+
+`analysis/v10_unknown_join.py`, on the finished build. **Report only — I did not pass
+`--enrich`, so the shipped `points.json` is untouched and the "What nothing claims" control is
+still disabled.** That is deliberate: the owner's call was to see the min_cluster_size curve
+before a verdict is written into a shipped asset.
+
+```
+joined 444213 rows; the five invariant columns agree
+label knots 15341, density regions 1151, in no dense region 353285 (79.5 %)
+agreement: adjusted Rand 0.0001, AMI 0.1573
+named but not dense: 12012 of 15341 knots (78.3 %), median refused share 1.0
+dense but not named: 1151 regions, median 4.0 label knots each, max 84
+discovery queue: 12519 unidentified points, 136 of them in a dense region across 32 regions
+knn agreement: placed 0.8505, refused 0.3562
+snr: placed median 18.67 dB, refused 17.27 dB
+```
+
+**Read the ARI and the AMI together, because on their own each one misleads.** Adjusted Rand
+**0.0001** is the number you would get from two unrelated partitions — but ARI is dominated by
+pair counts, and one label class holding 79.5 % of the points will crush it whatever the
+structure is. AMI **0.1573** says there *is* shared information, about a sixth of the way to
+identical. The honest summary is: the dense regions are not a coarsening of the label knots,
+and they are not independent of them either.
+
+**The finding that costs the most: `median refused share 1.0`.** For **12 012 of 15 341 label
+knots (78.3 %)**, the density clustering refuses *every one* of their members. That is not a
+tie-break or a boundary effect — for four types in five, "this is a syllable type" is
+bookkeeping over points that no density estimate will group at this `min_cluster_size`. Before
+that is read as a verdict on the types, note it is also what a 79.5 %-noise clustering *has*
+to imply, which is exactly why the sweep matters.
+
+**Two independent measures agreeing, which is the strongest thing here.** kNN agreement is
+**0.8505 among the placed points and 0.3562 among the refused ones** — a channel built this
+session from a different array, measured on the *other* map's positions, separating the two
+classes by a factor of 2.4. The refusal is not an artefact of one algorithm's parameters.
+
+**And a negative result worth as much: the refusal is not about recording quality.** SNR is
+**18.67 dB median for placed points against 17.27 dB for refused** — 1.4 dB apart on a
+distribution spanning p5 2.14 to p95 39.34. So "hdbscan refused it" does not mean "the audio
+was bad", and the discovery surface cannot be dismissed as noise. This is the pair of numbers
+to quote if anyone proposes an SNR floor to clean the map up.
+
+**The discovery queue is nearly empty and that is a real finding, not a bug.** Of 12 519
+unidentified points — field syllables no type claims — only **136 sit in a dense region**,
+across 32 regions. The read-out the last entry proposed ("a sound nothing has named, that a
+density clustering *did* place, is the strongest candidate") therefore ranks 136 points, not
+12 519. Small enough to listen to by hand.
+
+The unknown map's own quality numbers, for comparison with the shipped label map:
+
+```
+                     unknown (hdbscan)   shipped (label)
+faithfulness pearson        0.3016            0.429
+knnAgreement                0.2945            0.4574
+tearing                321 torn / 937      2 035 / 6 316
+type coverage           918 of 15 241 types have a region carrying their name (6.0 %)
+```
+
+**Do not ship the unknown map as the map.** Its faithfulness and neighbour agreement are both
+materially worse, and 14 323 types cannot light, label or draw a trajectory in it. Its value is
+the single `unassigned` column travelling across the join, which is what the design in the
+previous entry said and is now measured.
+
+## 9c. Three live chorus controls looked dead, and the cause was one missing line
+
+Reported from the interface: *"the toggles in the chorus are not working, it's not doing
+anything."* The filter was working the whole time. What was missing was every signal that it
+was — **the counts beside the three checkboxes never appeared at all.**
+
+`chorusClassSongs` reads `assets.inventory.species`, and `assets` is `$state.raw` while
+`inventory.species` is a plain array that `loadSpecies`/`ensureSpecies` mutate **in place**. So
+the derived ran exactly once, at load, in shard mode, when that array is still empty — returned
+`null`, and never recomputed. Consequences, all of which read as a broken control:
+
+- no count or share beside any class,
+- `settled` never true, so the permanently-empty `recorded` class never disabled,
+- and the "counts are over the birds loaded so far" fallback never resolved.
+
+The fix is `void inventoryVersion;` — the counter that exists for exactly this, which
+`inventoryRows` already reads and this derived did not. **If you write a derived over
+`assets.inventory` anywhere, it needs that line or it is a snapshot of an empty inventory.**
+
+## 9d. Two numbers under one word: `synthesized 2851` and `synthesized 2 %`
+
+Reported next, and the sharpest catch of the session: the chorus panel says **synthesized
+2 851** while the view panel says **synthesized 2 %**. Both are correct. They count different
+things:
+
+```
+chorus       2 851 of 2 867 SONGS       by how strong the claim on the song is
+view          2 % of 444 213 POINTS     by where the audio came from
+```
+
+Nothing on screen said which, and the five words are identical in both lists, so two unrelated
+quantities read as one quantity reported inconsistently. Naming the axis in a header six lines
+up was not enough. **Every count in both lists now carries its unit** — `2 851 songs · 99%`
+and `2 % of points` — and the provenance header reads *points, by where the sound came from*.
+
+**While checking the 2 851 I found the panel counts more songs than the asset holds, and it is
+right to.** The shipped inventory has 2 509 songs; `withDetectedSongs` mines a further **358**
+song types in the browser from `grammar.songTypes` across **102 species** — sequences measured
+from a bird's own bouts that exist only at runtime. 2 488 invented + 5 inferred + 358 detected
+= 2 851. A count over the asset and a count over the pool the chorus can draw are different
+numbers, and this control has to report the second. Anything quoting "2 509 songs" is quoting
+the asset.
+
+## 9e. The stage layout, at the owner's direction
+
+- **The reading card moved from bottom-right to under the controls, bottom-left.** It used to
+  float over the specimen, which put the card that changes on every sound in competition for
+  space with the Display panel dropping from the button above it. Both left-column cards are
+  now capped in **percentages** (58 % and 38 %) rather than pixels, so they cannot collide at
+  any window height, and both bodies scroll.
+- **The recently-sung strip is anchored to the right edge.** It was reserving 23 rem on the
+  right for the reading card that is no longer there, which squeezed it into the middle of the
+  stage. `row-reverse` already packed the newest chip rightwards, so it now grows out of the
+  corner.
+- **The ruler's corner caption is gone.** The unit statement moved onto the ruler band itself as
+  its `title`/`aria-label`, because a ruler whose numbers carry no unit anywhere invites being
+  read as projection units, which they are not. `probe:stage` reads it from the band now and
+  says so if it is ever absent.
+- **The Display panel's prose is cut to one compact line per block.** The figures stay — this
+  project does not ship an unlabelled control — but the sentences explaining *why* saturation
+  and what the clamp protects against moved into `doubt.ts`, where a reader who wants them is
+  already looking. `doubt · colour drains` now reads
+  `Neighbours agree 46 %; 109,293 among strangers. SNR ramp 2.1–39.4 dB (p5–p95); 8,583
+  renders unmeasured.`
+
+## 9f. One of my own checks was measuring nothing, found by it flapping
+
+`probe:trust` asserts that agreement and SNR draw *different* pictures, because two sources
+sharing one buffer fail by drawing identically. I first wrote that as a comparison of the two
+frames' **mean chroma**, and it read 3.0 % apart on one run and 0.5 % on the next — passing,
+then failing, on the same code.
+
+The mean was never a discriminator. The two channels drain *different marks* but a similar
+*amount* — mean agreement 0.457 against a median SNR sitting at 0.41 of its own ramp — so the
+two means were never going to differ, and what the check actually measured was the galaxy
+drifting between screenshots. It now turns **Rotate off** and compares the frames **per pixel**:
+
+```
+agreement moved 0.0167    snr moved 0.0194    the two sit 0.0136 apart
+mean chroma alone: 0.9 % — which is why the first version was worthless
+```
+
+The two sources differ by ~70 % of either one's own effect. **A check that flaps is a check
+that is measuring the wrong thing; it is not a flaky check.**
+
 ## 10. State of the tree
 
-Nothing committed. `npm run check` is **0 errors, 0 warnings** (first time — the 4 in
-`syrinx-processor.js` were pre-existing), `birdy-pipeline verify` passes on the modified
-assets, `probe:stage` reports 0 shader errors / 0 console errors / 0 404s, and all 16
-`verify:*` scripts pass.
+Commit `1fb7209` carries the first half of this session. The second half — the shared doubt
+channel, the chorus-count fix, the units, the layout moves, `doubt.ts` — is **uncommitted**.
+
+`npm run check` is **0 errors, 0 warnings** (the 4 in `syrinx-processor.js` were pre-existing
+and are fixed), `birdy-pipeline verify` passes on the modified assets, `probe:stage` reports 0
+shader errors / 0 console errors / 0 404s with a real bird picked, `probe:words` passes all
+four states, `probe:trust` passes both sources, and every `verify:*` script passes.
 
 ```
 new    app/scripts/verify-trust.mjs      app/scripts/probe-trust.mjs
@@ -349,12 +775,42 @@ new    app/scripts/verify-trust.mjs      app/scripts/probe-trust.mjs
 asset  app/static/birdy/centroids.json   +6 316 lines, 0 deletions, formatting preserved
 ```
 
-**Still open, in the order they cost you:** the sweep (84 min, waiting on the build); the
-relations duplicate guard (one decision, 219 s to apply); and the `--member-anchor` rebuild,
-which remains blocked while any row-index join is in flight. **No per-point array in
-`points.json` is undrawn any more** — snr, knnAgreement, unassigned and the per-knot tearing
-all reach a reader, and each has a two-sided check (the asset agrees with the aggregate, and
-the pixels actually move).
+```
+new    app/src/lib/galaxy/doubt.ts        pipeline/analysis/v10_unknown_join.json
+```
+
+## 11. FIRST THING TO DO: the sweep, which is written, validated and not run
+
+Everything it needs now exists — its `--dry-run` reports **READY** — and it was stopped before
+starting because the machine was going off. Nothing partial was written.
+
+```bash
+cd pipeline
+uv run python analysis/v10_mcs_sweep.py --min-cluster-size 25,50,100,200
+```
+
+**Budget 84 min minimum and expect longer.** That projection is 21 min per point from the same
+n^1.94 fit that just under-called the real clustering step by half, and for the same reason —
+it covers the MST and not the serial tail. Four points at the *measured* 32–37 min each is
+**over two hours**. Consider running `25,100` first: the two ends of the curve answer "does the
+noise share move at all" for half the clock, and 25 is already measured at 79.5 % so it doubles
+as a check on the reconstruction.
+
+One caveat that must travel with its output: the matrix the build clusters is never written to
+disk, so the sweep rebuilds it bit-exactly for **435 630 of 444 213 rows (98.07 %)**, missing
+the 8 583 rendered rows, whose embeddings exist only inside a build. The `mcs=25` row printed
+beside the build's own `density` block (1 151 clusters, 79.5 %) *is* the measurement of that
+reconstruction — check those two agree before reading the rest of the curve.
+
+**Then, and only then, the join with `--enrich`.** The verdict written into the shipped
+`points.json` should be the one chosen with the curve visible, which is why this entry runs the
+join in report-only mode.
+
+**Also still open:** the relations duplicate guard (one decision, 219 s to apply, §5); and the
+`--member-anchor` rebuild, blocked while any row-index join is in flight. **No per-point array
+in `points.json` is undrawn any more** — snr, knnAgreement, unassigned and the per-knot tearing
+all reach a reader, and each has a two-sided check: the asset agrees with its aggregate, and
+the pixels actually move.
 
 
 # Lyrebird — READ THIS FIRST (2026-08-05, evening): three assets the UI reads were never built or were read wrong, and the unknown map is mid-build on a dependency that had to change

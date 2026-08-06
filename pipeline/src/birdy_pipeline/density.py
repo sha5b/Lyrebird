@@ -45,6 +45,14 @@ DEFAULT_MIN_CLUSTER_SIZE = 25
 #: How conservative the density estimate is. Left at min_cluster_size by default, which is
 #: HDBSCAN's own recommendation when you have no reason to prefer otherwise.
 DEFAULT_MIN_SAMPLES: int | None = None
+
+#: Rows below which the sklearn implementation is used regardless of what is installed.
+#:
+#: The two MST implementations do not agree at this scale — see `_fit` — and sklearn is the
+#: one every small-n result here was measured against. 20 000 because that is the smallest
+#: size density.py has a timing for on the slow path (13.0 s), so everything below it is
+#: free either way and nothing that matters for wall clock is affected.
+FAST_PATH_MIN_ROWS = 20_000
 #: A cluster is called anchored when this much of its labelled membership agrees.
 ANCHOR_MAJORITY = 0.6
 
@@ -71,15 +79,44 @@ def _fit(u: np.ndarray, min_cluster_size: int, min_samples: int | None) -> Any:
     The standalone `hdbscan` package has a Boruvka MST, which sklearn does not: tree-
     accelerated and parallel over the core-distance step. Same measurement, same data:
     44.8 s at 80 000 and 265.2 s at 200 000 — about n^2.0, extrapolating to roughly
-    **22 minutes** at 444 213. So the fast path is preferred when it is installed, and
-    sklearn remains the fallback so a `uv sync` without the optional extra still works on
-    the debug store, where either finishes in seconds.
+    **22 minutes** at 444 213. So the fast path is preferred at any size where it matters,
+    and sklearn also remains the fallback so a `uv sync` without the optional extra still
+    works.
+
+    **The "labels agree up to ties" claim above is true at production scale and measurably
+    false at pool scale, which is why the choice is now made by size.** On
+    `learn.self_test`'s 16-arrival unlabelled pool at `min_cluster_size=8`, sklearn returns
+    two clusters of eight and no noise; the `hdbscan` package returns one cluster of eight
+    and eight noise. Same data, same parameters, same algorithm on paper. Preferring the
+    fast path unconditionally therefore changed what `learn_unlabelled` discovers, and it
+    did so silently — the symptom was `learn.self_test` beginning to fail on an assertion
+    about candidate members, which blocks `learn` outright because `cmd_learn` runs the
+    self-tests before it fits.
+
+    So below `FAST_PATH_MIN_ROWS` this uses sklearn, which is the implementation every
+    small-n behaviour in this project was measured against and which costs 13.0 s at
+    n = 20 000 — the pool is a few dozen rows and the difference is unmeasurable. Above it
+    the Boruvka path is the only one that finishes, and it is the one every published
+    figure for the galaxy was measured on.
 
     `core_dist_n_jobs=-1` on the fast path and `n_jobs=-1` on the fallback: the core
     distances are an embarrassingly parallel kNN and leaving them on one core was free
     waste.
+
+    **A single dense region comes back as noise, and that is HDBSCAN, not a bug here.**
+    The condensed tree never returns its own root as a cluster, so a set of points that is
+    *one* region gets k=0 no matter how tight it is. `allow_single_cluster=True` would lift
+    that, and it is measured here as the wrong answer for this corpus: on 100 000 real rows
+    at `min_cluster_size=25` it collapses 158 clusters and 90.4 % noise into **one cluster
+    holding 66 371 points and 33.6 % noise** — the root swallowing two thirds of the map.
+    That is the same degeneracy the min_cluster_size sweep found at 100 (k=2, largest
+    cluster 275 175). So it stays off, and the pool-scale problem it looked like the fix for
+    is really the size mismatch below.
+
     """
     try:
+        if u.shape[0] < FAST_PATH_MIN_ROWS:
+            raise ImportError("below the fast path's size; see the note above")
         import hdbscan as hdbscan_pkg
     except ImportError:
         return HDBSCAN(

@@ -88,6 +88,13 @@
 		 * layouts.ts). Off draws the raw projection, which is what every earlier build
 		 * did — kept so the two can be compared rather than argued about. Read once, at
 		 * build time: the page remounts the canvas when it changes.
+		 *
+		 * **Defaults off, and that is a reversal.** It defaulted on while the case for it
+		 * rested on `knnAgreement` 0.0849 — at 8.5 % neighbour agreement the global
+		 * projection's local structure was near enough noise to spend. On this build the
+		 * figure is 0.4574, so turning this on discards a real acoustic arrangement inside
+		 * each knot to repair the drawing of 2 035 knots in 6 316. The full argument is on
+		 * `localShapes`.
 		 */
 		localKnots?: boolean;
 		/**
@@ -135,7 +142,7 @@
 		birdColours = false,
 		provShown = [true, true, true, true, true],
 		adaptive = true,
-		localKnots = true,
+		localKnots = false,
 		unheard = false,
 		trust = '',
 		knotSpacing = $bindable(),

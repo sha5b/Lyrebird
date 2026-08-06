@@ -97,6 +97,9 @@
 		 * The two-level arrangement (layouts.ts `localShapes`): knot centres from the
 		 * global projection, members from a local projection of their own features.
 		 * Read once at build time — the page remounts the canvas when it changes.
+		 *
+		 * **Off by default since the figure it rested on moved**: the case for it was
+		 * `knnAgreement` 0.0849, and this build measures 0.4574. See `localShapes`.
 		 */
 		localKnots?: boolean;
 		/**
@@ -139,7 +142,7 @@
 		adaptive = true,
 		unheard = false,
 		trust = '',
-		localKnots = true,
+		localKnots = false,
 		selectedSpecies = '',
 		onpick,
 		onbackground,

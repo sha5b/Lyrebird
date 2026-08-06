@@ -19,6 +19,7 @@
 	 * is its only reader.
 	 */
 	import InventoryTable from '$lib/InventoryTable.svelte';
+	import PipelineVerbs from '$lib/PipelineVerbs.svelte';
 	import { BOUT_GLOSS } from '$lib/lang/glossary';
 	import type { PipelineClient, PipelineStatus } from '$lib/data/pipeline';
 	import type { InventoryRow } from '$lib/data/inventory-rows';
@@ -873,6 +874,27 @@ uv run birdy-pipeline serve</pre>
 		{/if}
 	</section>
 
+	</details>
+
+	<hr class="groupsplit" />
+
+	<!--
+		The rest of the pipeline, and most of its measurements.
+
+		Harvest, fit and build are the three verbs that make the galaxy, and until now they
+		were the only ones this page could reach. The other twenty are what tell you whether
+		the galaxy is any good: whether a resynthesis lands nearest its own species, whether
+		a cosine gain is an audible gain, whether the space map the browser uses actually
+		reproduces the embedding it stands in for. Each one wrote its answer to a file only a
+		terminal could read, which is why this page could show a cosine and not show whether
+		that cosine meant anything.
+
+		In a drawer, and below the split, because none of them is what somebody comes here to
+		press. They are how you find out whether the pressing worked.
+	-->
+	<details class="rollup block">
+		<summary class="mono faint">measure, train and check</summary>
+		<PipelineVerbs {pipeline} {job} {jobRunning} {pipelineBusy} {runPipeline} />
 	</details>
 {/if}
 {/snippet}

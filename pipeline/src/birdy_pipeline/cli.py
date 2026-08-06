@@ -1118,6 +1118,38 @@ def cmd_subset(args: argparse.Namespace) -> int:
     log(f"debug cycle: uv run birdy-pipeline learn --store {out} --jobs 8")
     log(f"         then uv run birdy-pipeline build --harvest-store {out} "
         f"--inventory <learned.json> --space embed")
+    if getattr(args, "json", None):
+        # What was kept, against what there was — the two numbers that say whether the
+        # subset is a fair miniature or a slice of the twelve biggest birds. The diverse
+        # pick's coverage figures ride along when that arm ran, because they are the only
+        # evidence that "spread out" actually spread anything.
+        report: dict[str, Any] = {
+            "definition": (
+                f"a debug store cut from {store.root}: {len(keep)} of {len(counts)} "
+                "species kept whole. Stream statistics are the parent's — they report on "
+                "the harvest stream, not on this slice."
+            ),
+            "source": str(store.root),
+            "out": str(out),
+            "diverse": bool(getattr(args, "diverse", False)),
+            "kept": {
+                "species": len(keep),
+                "syllables": len(sub.syllables),
+                "descriptors": sum(len(st.rows) for st in sub.strata.values()),
+                "recordings": len(sub.recordings),
+            },
+            "source_totals": {
+                "species": len(counts),
+                "syllables": len(store.syllables),
+                "descriptors": len(store),
+            },
+        }
+        if getattr(args, "diverse", False) and stats:
+            report["coverage"] = {k: float(v) for k, v in stats.items()}
+        out_path = Path(args.json)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(report, indent=1) + "\n", encoding="utf-8")
+        log(f"wrote {out_path}")
     return 0
 
 
@@ -2090,7 +2122,23 @@ def cmd_critic_groupings(args: argparse.Namespace) -> int:
         blocks=blocks,
     )
     log(geo.format_table(relations))
-    log(f"  => {geo.summarise(relations)['headline']}")
+    summary = geo.summarise(relations)
+    log(f"  => {summary['headline']}")
+    # `geo.summarise` is already the manifest form — definition, headline and one row per
+    # grouping, every nan encoded as null — so this writes it rather than assembling a
+    # second shape that could disagree with the one a build records.
+    if getattr(args, "json", None):
+        out_path = Path(args.json)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(
+            json.dumps(
+                {"store": str(store.root), "embeddings": str(emb_path), **summary},
+                indent=1,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        log(f"wrote {out_path}")
     return 0
 
 
@@ -2238,15 +2286,28 @@ def cmd_placement(args: argparse.Namespace) -> int:
     log(f"{Path(args.inventory).name}: {len(rows)} learned types over "
         f"{len({r[0] for r in rows})} species, placed against {len(names)} species references")
     log("")
-    log(f"{'metric':44} {'measured':>12} {'docs/09 target':>16}")
+    # **The target and the measurement are not always on the same scale, and the printed
+    # table used to imply they were.** docs/09's "> 35 %" was measured against a reference
+    # set of a few dozen species, where chance is a few percent. This corpus has 3 603
+    # species with descriptors, so chance is 0.03 % — and 2.7 % against 3 603 references is
+    # nearly ninety times chance, while 35 % against 25 would be under nine. Printing the
+    # two side by side with chance rounded to "0.0 %" turned a stronger result into a
+    # catastrophic-looking one. So chance prints at the precision it actually has, the
+    # multiple of chance prints beside the share, and the target names the reference count
+    # it was set against.
+    species_share = placed_species / len(rows)
+    log(f"{'metric':44} {'measured':>12} {'x chance':>10} {'docs/09 target':>16}")
     log(f"{'nearest own SPECIES':44} "
-        f"{placed_species / len(rows):11.1%} {'> 35 %':>16}")
-    log(f"{'  (chance)':44} {chance:11.1%} {'':>16}")
-    log(f"{'nearest own type':44} {placed_type / len(rows):11.1%} {'>= 56 %':>16}")
+        f"{species_share:11.1%} {species_share / chance:9.0f}x {'> 35 %':>16}")
+    log(f"{f'  (chance, 1 of {len(names)} references)':44} "
+        f"{chance:11.3%} {'1x':>10} {'':>16}")
+    log(f"{'  NOTE':44} {'':>12} {'':>10} "
+        f"{'set on a smaller reference set — compare the multiple, not the share':>16}")
+    log(f"{'nearest own type':44} {placed_type / len(rows):11.1%} {'':>10} {'>= 56 %':>16}")
     log(f"{'median resynthesis cosine':44} "
-        f"{(np.median(cosines) if cosines else float('nan')):11.3f} {'>= 0.74':>16}")
+        f"{(np.median(cosines) if cosines else float('nan')):11.3f} {'':>10} {'>= 0.74':>16}")
     log(f"{'median |F0 error|':44} "
-        f"{np.median(errors):10.1f} % {'<= 5 %':>16}")
+        f"{np.median(errors):10.1f} % {'':>10} {'<= 5 %':>16}")
     log("")
     log("A rise in species placement *with* the cosine roughly held is the win condition.")
     log("A rise in placement with the cosine collapsing means the critic is being gamed —")
@@ -2291,6 +2352,9 @@ def cmd_placement(args: argparse.Namespace) -> int:
         if args.embeddings
         else Path(args.store) / EMBEDDINGS_NAME
     )
+    # None, not 0.0: a space that was not measured and a space that scores nothing are
+    # different claims, and the report below has to be able to say the first one.
+    share32: float | None = None
     if emb_path.exists():
         emb = read_store_embeddings(emb_path, len(store.syllables), log=log)
         if emb is None:
@@ -2311,16 +2375,90 @@ def cmd_placement(args: argparse.Namespace) -> int:
         log(f"  32-d embedding space:  not measured — no {emb_path.name}; run "
             f"`birdy-pipeline critic embed --store {args.store}` first")
 
+    per_species_rows = [
+        {
+            "speciesId": sid,
+            "types": len(mine),
+            "ownSpeciesShare": sum(1 for r in mine if r[2]) / len(mine),
+            "ownTypeShare": sum(1 for r in mine if r[3]) / len(mine),
+            "medianCosine": (
+                round(float(np.median([r[4] for r in mine if r[4]])), 4)
+                if any(r[4] for r in mine)
+                else None
+            ),
+        }
+        for sid, mine in (
+            (sid, [r for r in rows if r[0] == sid]) for sid in sorted({r[0] for r in rows})
+        )
+    ]
+
     if args.per_species:
         log("")
         log(f"{'species':28} {'types':>6} {'own species':>12} {'own type':>9} {'cosine':>8}")
-        for sid in sorted({r[0] for r in rows}):
-            mine = [r for r in rows if r[0] == sid]
-            cos = [r[4] for r in mine if r[4]]
-            log(f"{sid:28} {len(mine):6d} "
-                f"{sum(1 for r in mine if r[2]) / len(mine):11.0%} "
-                f"{sum(1 for r in mine if r[3]) / len(mine):8.0%} "
-                f"{(np.median(cos) if cos else float('nan')):8.3f}")
+        for row in per_species_rows:
+            log(f"{row['speciesId']:28} {row['types']:6d} "
+                f"{row['ownSpeciesShare']:11.0%} {row['ownTypeShare']:8.0%} "
+                f"{(row['medianCosine'] if row['medianCosine'] is not None else float('nan')):8.3f}")
+
+    # --- the same numbers, as a file -----------------------------------------------------
+    #
+    # **This command's four figures were printed and nowhere else.** They are the guardrail
+    # `learn` cannot give — a fit that clusters tidily and resynthesises to the wrong bird
+    # scores well on the median cosine and badly here — and reading them meant scrolling a
+    # terminal, so nothing in the interface could quote them and no two fits could be
+    # compared except by eye.
+    #
+    # `species` rather than `records` for the per-species list, deliberately: the report
+    # readers table a row list when they find one, and the headline here is the four global
+    # figures. The breakdown stays in the file for whoever wants it.
+    if getattr(args, "json", None):
+        report = {
+            "definition": (
+                f"{len(rows)} learned types from {Path(args.inventory).name}, scored "
+                f"against {len(names)} per-species references. 'nearest own species' is the "
+                "share whose resynthesis lands closer to its own species' mean than to any "
+                "other's — the between-species question learn cannot ask."
+            ),
+            "inventory": str(args.inventory),
+            "store": str(store.root),
+            "global": {
+                "typesScored": len(rows),
+                "speciesScored": len({r[0] for r in rows}),
+                "referenceSpecies": len(names),
+                "nearestOwnSpeciesShare": round(placed_species / len(rows), 4),
+                "chanceShare": round(chance, 6),
+                # The comparable figure. The share alone cannot be read against docs/09's
+                # target, which was set on a reference set two orders of magnitude smaller.
+                "nearestOwnSpeciesTimesChance": round(
+                    (placed_species / len(rows)) / chance, 1
+                ),
+                "nearestOwnTypeShare": round(placed_type / len(rows), 4),
+                "medianCosine": (
+                    round(float(np.median(cosines)), 4) if cosines else None
+                ),
+                "medianF0ErrorPercent": round(float(np.median(errors)), 3),
+            },
+            # docs/09 §9.3's own targets, written beside the measurements rather than left
+            # in a docstring: a figure with no target beside it invites being read as a pass.
+            "targets": {
+                "nearestOwnSpeciesShare": 0.35,
+                "nearestOwnTypeShare": 0.56,
+                "medianCosine": 0.74,
+                "medianF0ErrorPercent": 5.0,
+            },
+            "renderFree": {
+                "storedSyllables": len(obs),
+                "species": n_species,
+                "chanceShare": round(1.0 / n_species, 4),
+                "share28": round(float(share28), 4),
+                "share32": round(float(share32), 4) if share32 is not None else None,
+            },
+            "species": per_species_rows,
+        }
+        out_path = Path(args.json)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(report, indent=1) + "\n", encoding="utf-8")
+        log(f"wrote {out_path}")
     return 0
 
 
@@ -2834,7 +2972,10 @@ def cmd_demo(args: argparse.Namespace) -> int:
 
 
 def cmd_verify(args: argparse.Namespace) -> int:
-    return verify(Path(args.out))
+    return verify(
+        Path(args.out),
+        Path(args.json) if getattr(args, "json", None) else None,
+    )
 
 
 # Where the browser's match ramp sits in the distribution of real field syllables.
@@ -2999,6 +3140,42 @@ def cmd_thresholds(args: argparse.Namespace) -> int:
     }
     log("what the corpus says is not birdsong:")
     probe_scores: list[float] = []
+    probe_rows: list[dict[str, Any]] = []
+
+    def write_report(ramp: dict[str, Any] | None, wrote: bool) -> None:
+        """The measurement as a file, when asked.
+
+        Both of this command's exits go through here, including the one that runs without a
+        harvest store: a report that exists only on the complete path is a report a reader
+        cannot tell apart from a run that never happened. `probes` is not a key the report
+        readers table, so the ramp's own figures stay the table and the four probes stay in
+        the file — which is the right way round, because the ramp is the thing that ships.
+        """
+        if not getattr(args, "json", None):
+            return
+        report: dict[str, Any] = {
+            "definition": (
+                "where the browser's match ramp sits in the distribution of real field "
+                "syllables. Below the floor a sound reads as no match; above the ceiling "
+                "it reads as a full one. Both ends are percentiles of this corpus, so the "
+                "constants in features.ts are only ever this measurement's last answer."
+            ),
+            "out": str(out),
+            "store": str(args.store),
+            "writtenToManifest": wrote,
+            "probes": probe_rows,
+        }
+        if ramp is not None:
+            report["ramp"] = {
+                k: v for k, v in ramp.items() if not isinstance(v, dict)
+            }
+            # Hoisted out of `ramp` so they reach the table: the report readers flatten one
+            # level, and these sit two deep.
+            report["percentiles"] = ramp.get("percentiles") or {}
+        out_path = Path(args.json)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(report, indent=1) + "\n", encoding="utf-8")
+        log(f"wrote {out_path}")
     for name, audio in probes.items():
         d = features.descriptor(syrinx.peak_normalise(audio), rate)
         if d is None:
@@ -3008,6 +3185,7 @@ def cmd_thresholds(args: argparse.Namespace) -> int:
         # cluster is a bin of wind and rain". Only the second has a fix.
         score, index = best_match(d)
         probe_scores.append(score)
+        probe_rows.append({"probe": name, "score": round(score, 4), "matched": name_of(index)})
         log(f"  {name:24} {score:.3f}  -> {name_of(index)}")
 
     # Real birds, from the harvested syllables: this is the case the ramp has to let in.
@@ -3015,6 +3193,7 @@ def cmd_thresholds(args: argparse.Namespace) -> int:
     ramp = measure_match_ramp(out, store_path, sample=args.sample, seed=args.seed)
     if ramp is None:
         log(f"\nno harvest store at {store_path}: skipping the real-audio side")
+        write_report(None, wrote=False)
         return 0
 
     log(f"\nreal field syllables (n={ramp['sampled']} of {ramp['population']}):")
@@ -3047,11 +3226,17 @@ def cmd_thresholds(args: argparse.Namespace) -> int:
         log(f"\nwrote matchRamp to {out / 'manifest.json'}")
     else:
         log("\n--write puts this in the manifest, which is where the app reads it from.")
+    write_report(ramp, wrote=bool(args.write))
     return 0
 
 
-def verify(out: Path) -> int:
-    """Check the generated asset set for the invariants of 8.3/8.4."""
+def verify(out: Path, json_path: Path | None = None) -> int:
+    """Check the generated asset set for the invariants of 8.3/8.4.
+
+    `json_path` writes the verdict as a report as well as printing it. Optional, and
+    defaulted, because the two callers that gate a build on this — `Pipeline.build` and
+    `Pipeline._rebuild` — want the exit code and nothing else.
+    """
     problems: list[str] = []
 
     points = json.loads((out / "points.json").read_text())
@@ -3265,6 +3450,24 @@ def verify(out: Path) -> int:
                 median = f", median field syllable {p50:.3f}" if isinstance(p50, float) else ""
                 log(f"  match ramp        {ramp.get('rule', '?')} = {floor:.3f}..{ceiling:.3f} "
                     f"over {ramp.get('sampled', '?')} field syllables{median}")
+    # The verdict as a file, when asked. `checks` is a row list so a *failing* verify tables
+    # its problems — which is the thing a reader needs — while a passing one has no rows and
+    # falls through to the two figures, which is the whole of what a pass has to say.
+    if json_path is not None:
+        report = {
+            "definition": (
+                f"the invariants of contract 8.3/8.4 over {out}: the manifest against the "
+                "files, the points against their positions, the centroids against their "
+                "clusters. Every problem is a reason the app should not load these assets."
+            ),
+            "out": str(out),
+            "passed": not problems,
+            "problemCount": len(problems),
+            "checks": [{"problem": p} for p in problems],
+        }
+        json_path.parent.mkdir(parents=True, exist_ok=True)
+        json_path.write_text(json.dumps(report, indent=1) + "\n", encoding="utf-8")
+        log(f"  wrote {json_path}")
     if problems:
         for p in problems:
             log(f"  FAIL: {p}")
@@ -3857,6 +4060,8 @@ def build_parser() -> argparse.ArgumentParser:
     crg.add_argument("--embeddings", default=None,
                      help="embeddings file (default: <store>/%s)" % EMBEDDINGS_NAME)
     crg.add_argument("--seed", type=int, default=0)
+    crg.add_argument("--json", default=None, metavar="PATH",
+                     help="also write the measurement to this JSON file. The Learn tab always passes it, so pressing the button leaves a report a reader can open")
     crg.set_defaults(func=cmd_critic_groupings)
 
     crl = cr_sub.add_parser(
@@ -3970,6 +4175,8 @@ def build_parser() -> argparse.ArgumentParser:
                          "(default: <store>/%s when it exists)" % EMBEDDINGS_NAME)
     pl.add_argument("--per-species", action="store_true",
                     help="also break the placement down species by species")
+    pl.add_argument("--json", default=None, metavar="PATH",
+                    help="also write the measurement to this JSON file. The Learn tab always passes it, so pressing the button leaves a report a reader can open")
     pl.set_defaults(func=cmd_placement)
 
     spb = sub.add_parser(
@@ -4098,6 +4305,8 @@ def build_parser() -> argparse.ArgumentParser:
     sb.add_argument("--seed", type=int, default=0,
                     help="seed for the diverse pick's clustering (default %(default)s)")
     sb.add_argument("--out", required=True, help="target store directory (never the source)")
+    sb.add_argument("--json", default=None, metavar="PATH",
+                    help="also write the measurement to this JSON file. The Learn tab always passes it, so pressing the button leaves a report a reader can open")
     sb.set_defaults(func=cmd_subset)
 
     g = sub.add_parser(
@@ -4186,6 +4395,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     v = sub.add_parser("verify", help="check a generated asset directory")
     v.add_argument("--out", default=str(DEFAULT_OUT))
+    v.add_argument("--json", default=None, metavar="PATH",
+                   help="also write the measurement to this JSON file. The Learn tab always passes it, so pressing the button leaves a report a reader can open")
     v.set_defaults(func=cmd_verify)
 
     q = sub.add_parser(
@@ -4219,6 +4430,8 @@ def build_parser() -> argparse.ArgumentParser:
     th.add_argument("--seed", type=int, default=0)
     th.add_argument("--write", action="store_true",
                     help="write the measured ramp into the asset set's manifest.json")
+    th.add_argument("--json", default=None, metavar="PATH",
+                    help="also write the measurement to this JSON file. The Learn tab always passes it, so pressing the button leaves a report a reader can open")
     th.set_defaults(func=cmd_thresholds)
     return p
 

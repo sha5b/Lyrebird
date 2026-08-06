@@ -50,6 +50,41 @@ RELATIONS_NAME = "relations.json"
 #: does not need at the cost of minutes per build.
 NN_SAMPLE = 400
 
+# --- the duplicate-recording guard -------------------------------------------------
+#
+# **Two species can be the same audio under two labels, and the pair then reads as the
+# closest relation in the corpus.** `bleda_notatus` and `eurillas_latirostris` are
+# `INAT165079.wav` and `INAT165088.wav`: byte-identical, 965 770 bytes, same sha256, same
+# iNaturalist rights holder. Each has one recording and 146 syllables, every row identical
+# once the ids are stripped, all 8 of 8 type centroids bit-identical — so "8 shared types"
+# is one repertoire counted twice, and the pair came out at distance -0.0, the float
+# overshoot of a unit vector against itself.
+#
+# It is a class of row, not one row: 17 cross-species duplicate groups over 35 recordings
+# and 40 species in the harvest store, of which 11 pairs survived the trim into the shipped
+# asset. **Four of the five nearest pairs in that asset were duplicate artefacts**, which
+# means the head of "Sounds like" — the part a reader trusts most, because it is the part
+# the interface shows first — was mostly not a finding about birds.
+#
+# The durable fix is upstream: `sources.py`'s `_ingest_staged` dedupes on the recording id
+# alone and no content hash exists anywhere in harvest/sources, so the same bytes under two
+# iNaturalist observation ids pass straight through. This guard is the downstream half, and
+# it is nearly free here because `d_ab` is already computed for the distance.
+#
+# Costed before it was applied: 11 pairs and 140 of 526 shared-type candidates (27 %).
+
+#: Cosine distance under which two sampled syllables are the same sound. Identical unit
+#: vectors score exactly 0.0 or -0.0, so this is "bit-identical" and not "very similar" —
+#: deliberately far below the 0.014 of the nearest *genuine* pair in the corpus. The
+#: distribution has a hole between -0.0 and 0.014, so the constant is not delicate.
+DUPLICATE_TWIN_DISTANCE = 1.0e-9
+
+#: Share of one species' sampled syllables that must have an identical twin in the other
+#: before the pair is refused. Half, because a duplicate *recording* shared between two
+#: species duplicates most of both repertoires, while two birds genuinely singing one call
+#: share a handful of types out of dozens.
+DUPLICATE_TWIN_SHARE = 0.5
+
 
 def _unit_rows(z: np.ndarray) -> np.ndarray:
     return z / np.maximum(np.linalg.norm(z, axis=1, keepdims=True), 1.0e-12)
@@ -190,6 +225,10 @@ def compute_relations(
     }
 
     pairs_out: list[dict[str, Any]] = []
+    #: Pairs refused as the same audio under two labels. Kept and reported rather than
+    #: silently dropped: an exclusion nobody can see reads as a corpus that simply has no
+    #: duplicates in it, and this one costs 27 % of the shared-type candidates.
+    duplicate_pairs: list[dict[str, Any]] = []
     for ai, a in enumerate(species):
         for b in species[ai + 1 :]:
             centroid_dist = float(
@@ -202,6 +241,25 @@ def compute_relations(
             nn_dist = None
             if a in per_species_rows and b in per_species_rows:
                 d_ab = 1.0 - per_species_rows[a] @ per_species_rows[b].T
+                # The duplicate-recording guard. Symmetric — `max` of the two shares, not
+                # A's alone — because which species is `a` is decided by the sort and
+                # nothing else, and a recording that duplicates all of a small repertoire
+                # into a large one shows up in only one direction. Taking the larger share
+                # makes the verdict independent of the ordering.
+                twin_a = float((d_ab.min(axis=1) <= DUPLICATE_TWIN_DISTANCE).mean())
+                twin_b = float((d_ab.min(axis=0) <= DUPLICATE_TWIN_DISTANCE).mean())
+                if max(twin_a, twin_b) > DUPLICATE_TWIN_SHARE:
+                    duplicate_pairs.append(
+                        {
+                            "a": a,
+                            "b": b,
+                            "aCommon": names.get(a, ""),
+                            "bCommon": names.get(b, ""),
+                            "identicalShare": round(max(twin_a, twin_b), 4),
+                            "sharedTypesRefused": len(shared.get((a, b), [])),
+                        }
+                    )
+                    continue
                 nn_dist = float(
                     0.5 * (d_ab.min(axis=1).mean() + d_ab.min(axis=0).mean())
                 )
@@ -234,6 +292,14 @@ def compute_relations(
             "usually are. A distance, not a claim of borrowing or kinship."
         ),
         "speciesPairs": pairs_out,
+        "duplicateSourcePairs": duplicate_pairs,
+        "duplicateSourceDefinition": (
+            "pairs refused because more than half of one species' sampled syllables have "
+            "a bit-identical twin in the other — the same recording ingested under two "
+            "labels, which scores as the closest relation in the corpus and is not a "
+            "relation at all. The upstream fix is a content hash in the harvester; until "
+            "that exists these are excluded here, and counted so the exclusion is visible."
+        ),
         "generatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
 
@@ -387,6 +453,43 @@ def self_test(verbose: bool = True) -> None:
     assert top["distance"] < 0.01, f"planted pair too far: {top['distance']}"
     # ...and uniquely close: everything else is ordinary cross-species spacing.
     assert all(p["distance"] > 0.9 for p in shared[1:]), shared
+    # The genuine pair must survive the duplicate guard: a planted *shared type* is one
+    # type of several, not a duplicated repertoire, and refusing it would throw away the
+    # finding this module exists to make.
+    assert not doc["duplicateSourcePairs"], doc["duplicateSourcePairs"]
+
+    # --- and the duplicate guard, on a repertoire that really is a copy ----------------
+    #
+    # Byte-identical rows under two labels, which is what `INAT165079.wav` and
+    # `INAT165088.wav` are. Checked here rather than trusted, because the failure mode is
+    # silent in both directions: too tight a threshold ships the artefact at the head of
+    # "Sounds like", and too loose a one refuses two birds that genuinely share a call.
+    copy_store = Store()
+    copy_store.syllables = []
+    copy_entries: list[dict[str, Any]] = []
+    copy_rows: list[np.ndarray] = []
+    block = rng.normal(size=(6, 32))
+    for sid in ("orig", "dupe", "other"):
+        rows = block if sid != "other" else rng.normal(size=(6, 32))
+        for k, row in enumerate(rows):
+            copy_store.syllables.append(obs(sid, f"{sid}-rec", k))
+            copy_entries.append(
+                {"speciesId": sid, "recordingId": f"{sid}-rec", "order": k, "typeId": f"T{k}"}
+            )
+            copy_rows.append(row)
+    dup_doc = compute_relations(
+        copy_store, np.stack(copy_rows), {"version": 1, "entries": copy_entries}
+    )
+    refused = dup_doc["duplicateSourcePairs"]
+    assert len(refused) == 1, f"the duplicated repertoire was not refused: {refused}"
+    assert {refused[0]["a"], refused[0]["b"]} == {"orig", "dupe"}, refused
+    assert refused[0]["identicalShare"] == 1.0, refused
+    # Both genuine pairings survive — the guard must cost exactly the duplicate.
+    assert len(dup_doc["speciesPairs"]) == 2, dup_doc["speciesPairs"]
+    assert all(
+        "dupe" not in (p["a"], p["b"]) or "orig" not in (p["a"], p["b"])
+        for p in dup_doc["speciesPairs"]
+    )
     if verbose:
         print(
             f"relations self-test ok: planted shared type found at "

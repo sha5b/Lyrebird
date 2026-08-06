@@ -104,6 +104,133 @@ export interface CriticStatus {
 	};
 }
 
+/**
+ * One control on a verb's form, declared by the server rather than by this file.
+ *
+ * **The registry is in `pipeline/src/birdy_pipeline/verbs.py` and it is the only place
+ * that says what the tab may run.** Sixteen bespoke endpoints and sixteen hand-written
+ * forms would be sixteen chances for the interface to drift from the CLI it is driving;
+ * one declared registry drives the argv, this form, and the result table at once, so a
+ * flag that moves takes its control with it. It also means the server accepts only the
+ * parameters it declared, coerced and clamped — see the note on `run`.
+ */
+export interface VerbParam {
+	name: string;
+	label: string;
+	kind: 'int' | 'float' | 'bool' | 'choice' | 'text';
+	default: number | string | boolean | null;
+	lo?: number;
+	hi?: number;
+	step?: number;
+	choices?: { value: string; label: string }[];
+	/** What the parameter does, for the control's own tooltip. */
+	gloss: string;
+	/** Rarely touched: folded into a drawer rather than shown with the primary controls. */
+	advanced: boolean;
+}
+
+/** A precondition the server checked on disk, so the button can say why it is disabled. */
+export interface VerbNeed {
+	ok: boolean;
+	what: string;
+}
+
+export interface VerbSpec {
+	id: string;
+	/** The CLI subcommand it runs, for the reader who wants to run it in a terminal. */
+	command: string;
+	title: string;
+	/** Which of the four groups it belongs to — see `verbs.py`. */
+	group: string;
+	/** One line: the question this verb answers. */
+	measures: string;
+	params: VerbParam[];
+	/**
+	 * What it overwrites, in words, or empty when it writes nothing but a report.
+	 *
+	 * Shown on the button's own surface. The distinction between "this measures" and
+	 * "this replaces a shipped asset" is the only one on this page that cannot be undone
+	 * by pressing something else.
+	 */
+	writes: string;
+	/**
+	 * Whether it rewrites a file in the harvest store that a row-index join keys on
+	 * (`typing.json`, `embeddings.f32`). Those joins assume row `i` is the same syllable
+	 * in every asset, and a verb that rewrites them mid-analysis breaks that silently.
+	 */
+	mutatesStore: boolean;
+	/** Rough wall clock, as a phrase rather than a number. */
+	cost: string;
+	needs: VerbNeed[];
+	/** The JSON report it writes, if any — the file the table below it is read from. */
+	report: string | null;
+}
+
+/**
+ * The groups the page draws, in the order it draws them.
+ *
+ * Ordered by how far a press reaches: a measurement writes a report and nothing else, a
+ * check can rewrite one field of one asset, a corpus verb changes what everything
+ * downstream is fitted to. `verbs.py` owns both the order and the sentence.
+ */
+export interface VerbGroup {
+	id: string;
+	title: string;
+	note: string;
+}
+
+export interface VerbRegistry {
+	groups: VerbGroup[];
+	verbs: VerbSpec[];
+}
+
+export interface ReportColumn {
+	key: string;
+	label: string;
+	kind: 'text' | 'num' | 'pct' | 'chip';
+	/** A grid track, when the default for the kind is wrong for these values. */
+	width?: string;
+	digits?: number;
+	/** What the column measures, as the heading's tooltip. */
+	title?: string;
+}
+
+/**
+ * A report reduced to a table the status payload can afford.
+ *
+ * **Bounded on the server.** `Job.result`'s own note says anything big belongs in the
+ * log, and the reason is that this page polls; a specbench over four thousand types is
+ * a megabyte, and sending it on a timer is the mistake `typing.json` already made once.
+ * So the server caps the rows, says what it capped in `truncated`, and names the file
+ * that holds the rest.
+ */
+export interface ReportTable {
+	columns: ReportColumn[];
+	rows: Record<string, string | number | null>[];
+	truncated?: { shown: number; total: number };
+	path?: string;
+	caption?: string;
+}
+
+/**
+ * What one verb's report says right now, read from disk rather than remembered.
+ *
+ * Read from the file on every request (mtime-cached) so the tables are populated the
+ * moment the page opens, without running anything. A process that only remembered the
+ * jobs it had itself run would show a blank table for a measurement that is sitting on
+ * disk from last week, which reads as "not measured".
+ */
+export interface VerbReport {
+	verb: string;
+	exists: boolean;
+	path: string | null;
+	/** When the report file was last written, ISO 8601. */
+	ranAt?: string | null;
+	/** The headline figure, in words, when the report has one. */
+	headline?: string | null;
+	table?: ReportTable | null;
+}
+
 export interface PipelineStatus {
 	ok: true;
 	hasKey: boolean;
@@ -269,6 +396,54 @@ export class PipelineClient {
 		passes?: number;
 	} = {}) {
 		return this.call<{ job: JobStatus }>('/api/loop', options);
+	}
+
+	/**
+	 * The verbs this control process will run, and what each one needs.
+	 *
+	 * Fetched once when the page opens rather than polled: the registry is static for the
+	 * life of the process, and `needs` — which is not — is re-read with the reports.
+	 * Returns null on a process too old to have the route, which is the ordinary case
+	 * after this shipped: `serve` is started once and outlives many edits.
+	 */
+	async verbs(): Promise<VerbRegistry | null> {
+		try {
+			const data = await this.call<VerbRegistry>('/api/verbs');
+			return { groups: data.groups ?? [], verbs: data.verbs ?? [] };
+		} catch {
+			return null;
+		}
+	}
+
+	/**
+	 * What every verb's report says, read from disk.
+	 *
+	 * Its own endpoint rather than a block on `/api/status`, and that is a size decision:
+	 * status is polled every 1.5 s and is already the largest payload here. These are
+	 * fetched when the page opens and again when a job finishes, which is exactly when
+	 * they can have changed.
+	 */
+	async reports(): Promise<VerbReport[] | null> {
+		try {
+			const data = await this.call<{ reports: VerbReport[] }>('/api/reports');
+			return data.reports ?? [];
+		} catch {
+			return null;
+		}
+	}
+
+	/**
+	 * Run one registered verb.
+	 *
+	 * `params` carries only the keys the verb declared; the server coerces and clamps each
+	 * one against that declaration and refuses anything else. **It is not a way to pass
+	 * argv.** This socket answers `Access-Control-Allow-Origin: *` so that Vite on another
+	 * port can reach it, which means any page in the browser can post here — a route that
+	 * forwarded a command line would hand every website a shell on this machine. The
+	 * whitelist is what makes the route safe, not the loopback bind.
+	 */
+	run(verb: string, params: Record<string, number | string | boolean> = {}) {
+		return this.call<{ job: JobStatus }>('/api/run', { verb, params });
 	}
 
 	/**
