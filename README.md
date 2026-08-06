@@ -37,7 +37,6 @@ land — `adapter-static`, `ssr = false`, and about 113 MB of corpus parsed in t
 - [What it will not say](#what-it-will-not-say) — the confidence labels, and why they exist
 - [Run it](#run-it) — three commands
 - [Seeing it](#seeing-it) — the stage, colour, the two pages
-- [On a phone](#on-a-phone) — the dock and the drawers
 - [The galaxy](#the-galaxy) — the camera, the tags, the chorus, the controls
 - [Listening](#listening) — microphone, computer audio, and what the match meter means
 - [Growing the corpus](#growing-the-corpus-from-real-recordings) — harvest, learn, critic
@@ -133,47 +132,6 @@ normative: if the halves disagree, the galaxy lights the wrong stars.
 
 ---
 
-## On a phone
-
-<table>
-<tr>
-<td width="33%"><img src="docs/figures/phone-stage.png" alt="A phone showing the galaxy filling the screen, with the header at the top and a four-item dock along the bottom."></td>
-<td width="33%"><img src="docs/figures/phone-sing.png" alt="The Sing drawer open on a phone: the stage has shrunk to the band above it, so the corpus is still visible while the controls are in use."></td>
-<td width="33%"><img src="docs/figures/phone-reading.png" alt="The Reading drawer open on a phone, with the live instrument figures at the top of it."></td>
-</tr>
-</table>
-
-The bench layout — a 20 rem control column pinned top-left, a reading card under it, a
-display panel hanging off the top-right corner — has no 375 px version. What existed before
-was that layout with pieces deleted: the readings row and the whole reading card were
-`display: none`, and since the Info and Learn openers live in the readings row, **neither
-page was reachable on a phone at all.** Nothing failed; the buttons were in the DOM, sized
-zero, and every check passed.
-
-Below 860 px the arrangement is a different one rather than a squeezed one:
-
-- **The stage keeps the screen.** 85–88 % of it with everything shut.
-- **The panels are drawers**, opened one at a time from a dock along the bottom edge —
-  Sing, Compose, Listen, Reading. Tapping the open one shuts it.
-- **A drawer takes room rather than covering the picture.** Its measured height comes off
-  the stage, so the canvas, the labels and the ruler move up together and the corpus
-  re-centres into the band that is left. This is the case that matters: you open Sing,
-  press Chorus, and the knots that answer are exactly the ones a floating sheet would sit on.
-- **On its side the drawer goes to the side**, because a bottom sheet on a 390 px-tall
-  screen would leave the galaxy a centimetre.
-
-![A phone on its side: the Sing drawer occupies the left third and the galaxy fills the rest, with the history strip along the bottom.](docs/figures/phone-landscape.png)
-
-Touch targets are held to the 44 px floor by `@media (pointer: coarse)`, with three stated
-exceptions — a table row whose height is shared with the window arithmetic, a word inside a
-sentence, and the knot ring, which is a `<button>` whose size is a *measurement* (the knot's
-own diameter at the current zoom) and which buys its reach from an invisible pad instead.
-That last one was found by breaking it: the floor turned every ring in the galaxy into a
-5 × 44 px capsule for one round of probing. `npm run probe:mobile` now asserts, at three
-viewports, that nothing overflows, that every drawer opens alone, that every control clears
-the floor, and that a ring is round, correctly sized and centred on its knot.
-
----
 
 ## The galaxy
 
