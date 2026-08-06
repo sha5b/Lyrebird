@@ -29,11 +29,11 @@ from pathlib import Path
 
 import numpy as np
 
-from birdy_pipeline.cli import log
-from birdy_pipeline.galaxy import torn_clusters
+from lyrebird_pipeline.cli import log
+from lyrebird_pipeline.galaxy import torn_clusters
 
 REPO = Path(__file__).resolve().parents[2]
-ASSETS = REPO / "app" / "static" / "birdy"
+ASSETS = REPO / "app" / "static" / "lyrebird"
 
 #: The aggregate keys the manifest carries. `definition` is prose and `worstGap` is a
 #: distance rather than a ratio, so the four counted/ordered numbers are the check.

@@ -154,7 +154,7 @@ def main() -> None:
             break
 
         cmd = [
-            "uv", "run", "birdy-pipeline", "sources", "fetch",
+            "uv", "run", "lyrebird-pipeline", "sources", "fetch",
             "--source", "inat-sounds",
             "--species", name,
             "--limit", str(args.per_file),

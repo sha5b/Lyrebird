@@ -50,7 +50,7 @@ OLD_STORE = ROOT / "out/harvest-gan"
 DEST = ROOT / "out/audio-xc"
 PROGRESS = DEST / "_fetch-progress.json"
 
-USER_AGENT = "birdy-pipeline/1.0 (research; contact via repository)"
+USER_AGENT = "lyrebird-pipeline/1.0 (research; contact via repository)"
 DOWNLOAD_TIMEOUT = 120
 #: xeno-canto's public per-recording download endpoint. The catalogue's own `file` field
 #: is exactly this URL (`https://xeno-canto.org/1080577/download`), so the id is enough

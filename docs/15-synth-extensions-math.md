@@ -2,7 +2,7 @@
 
 ## 0. Baseline this extends (so the deltas are precise)
 
-Current contract (`pipeline/src/birdy_pipeline/syrinx.py`, mirrored in `app/src/lib/audio/syrinx-processor.js`):
+Current contract (`pipeline/src/lyrebird_pipeline/syrinx.py`, mirrored in `app/src/lib/audio/syrinx-processor.js`):
 
 ```
 x' = y

@@ -2,7 +2,7 @@
 
 **Why a registry rather than sixteen routes.**
 
-`birdy-pipeline` has twenty-two subcommands and the Learn tab drove eight of them. The
+`lyrebird-pipeline` has twenty-two subcommands and the Learn tab drove eight of them. The
 other fourteen are where most of this project's measurements live — `placement`,
 `specbench`, `spacemap`, `syntax`, `songspace`, `relations`, `critic groupings` — and
 every one of them was reachable only from a terminal. So the interface could print a

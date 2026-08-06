@@ -4,18 +4,74 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="text-scale" content="scale" />
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link
-			href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
-			rel="stylesheet"
-		/>
+
 		<!--
-			**The icon set, declared here rather than only in the layout.** `+layout.svelte` imports
-			`$lib/assets/favicon.svg` through Vite, which gets it a hashed filename and covers the
-			SVG case. It cannot cover the rest: a browser with no SVG-favicon support wants the .ico,
-			iOS wants a 180 px PNG at a link it can find before any JavaScript runs, and both have to
-			be at stable paths under `static/`. So both declarations exist and neither is redundant.
+			**Every SEO surface lives in this file, and it has to.**
+
+			`+layout.ts` sets `ssr = false`, because all of this app's computation belongs on the
+			reader's machine. The consequence caught us: with SSR off, `<svelte:head>` is never
+			rendered into the prerendered document. A full head block written there — title, OG
+			card, JSON-LD, the lot — produced a built `index.html` with no title at all. It was
+			invisible to every crawler that does not execute JavaScript, which is most of them, and
+			nothing failed. `app.html` is the one file emitted verbatim, so this is where it goes.
+
+			The same rule applies to the `<noscript>` block in the body below: it is the only prose
+			in the served document.
+
+			The figures here are literals rather than interpolations, because there is nothing to
+			interpolate from — the head is written before any asset is fetched. `npm run verify:seo`
+			reconciles every one of them against the shipped `manifest.json`, and against
+			`static/llms.txt`, so the mirror cannot drift in silence.
+		-->
+		<title>Lyrebird — a physical syrinx model for 2,650 wild bird species</title>
+		<meta
+			name="description"
+			content="An art–science instrument by Shahab Nedaei. Lyrebird measures 444,213 syllables from wild bird recordings, fits a Laje–Mindlin syrinx oscillator to each of 15,341 call types, and sings them back in the browser inside an audio-reactive 3D embedding of the corpus. No audio is sampled or shipped: every note is integrated from the two parameters real birds control, air-sac pressure and syringeal tension. It does not translate birdsong into language, and it states where each claim comes from."
+		/>
+		<link rel="canonical" href="https://lyrebird.variable.gallery/" />
+		<meta name="author" content="Shahab Nedaei" />
+		<meta name="theme-color" content="#fafbfc" />
+		<meta
+			name="keywords"
+			content="birdsong, bioacoustics, syrinx model, Laje-Mindlin oscillator, physical modelling synthesis, xeno-canto, audio embedding, art and science, media art, Shahab Nedaei, variable.gallery, generative sound, WebAudio, AudioWorklet"
+		/>
+
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="Lyrebird" />
+		<meta property="og:url" content="https://lyrebird.variable.gallery/" />
+		<meta
+			property="og:title"
+			content="Lyrebird — a physical syrinx model for 2,650 wild bird species"
+		/>
+		<meta
+			property="og:description"
+			content="444,213 measured syllables, 15,341 fitted call types, and a syrinx oscillator that sings them in your browser. No audio sampled. An art–science instrument by Shahab Nedaei."
+		/>
+		<meta property="og:image" content="https://lyrebird.variable.gallery/brand/og-card.png" />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta
+			property="og:image:alt"
+			content="The Lyrebird mark — a bifurcating syrinx — beside the project name and its figures: 444,213 measured syllables, 2,650 species, 15,341 call types, no audio shipped."
+		/>
+		<meta property="og:locale" content="en_GB" />
+
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta
+			name="twitter:title"
+			content="Lyrebird — a physical syrinx model for 2,650 wild bird species"
+		/>
+		<meta
+			name="twitter:description"
+			content="444,213 measured syllables, 15,341 fitted call types, and a syrinx oscillator that sings them in your browser. No audio sampled."
+		/>
+		<meta name="twitter:image" content="https://lyrebird.variable.gallery/brand/og-card.png" />
+
+		<!--
+			**The icon set.** `+layout.svelte` also imports `$lib/assets/favicon.svg` through Vite,
+			which gets it a hashed filename and covers the SVG case. It cannot cover the rest: a
+			browser with no SVG-favicon support wants the .ico, iOS wants a 180 px PNG at a link it
+			can find before any JavaScript runs, and both have to be at stable paths under `static/`.
 
 			Order matters: browsers take the last icon they understand, so the SVG is listed first
 			and `alternate icon` carries the fallback.
@@ -23,9 +79,204 @@
 		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 		<link rel="alternate icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
 		<link rel="apple-touch-icon" href="/brand/apple-touch-icon.png" />
+		<link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+			rel="stylesheet"
+		/>
+
+		<!--
+			**The entity register.** One `@graph` rather than several disconnected blocks, so the
+			artist, the artwork, the corpus, the source and the paper are stated as one set of
+			related entities whose `@id`s reference each other. That relatedness is the part a
+			knowledge graph can use; five isolated snippets describing the same thing are five
+			guesses at one entity, and `sameAs` on the Person is the same idea applied to identity.
+
+			`Dataset` earns its place: the corpus is the substance of the work, it has a licence and
+			a measurable size, and dataset markup is the one type that surfaces bioacoustics work to
+			people looking for bioacoustics rather than for art.
+
+			Deliberately absent: `aggregateRating`, `review`, `offers`, and any ORCID or DOI. Nothing
+			here is sold or rated, and `CITATION.cff` still holds placeholders for the identifiers —
+			a wrong identifier is worse than a missing one, because a knowledge graph will believe
+			it. `verify:seo` fails if any of them appears.
+		-->
+		<script type="application/ld+json">
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@type": "Person",
+						"@id": "https://lyrebird.variable.gallery/#shahab-nedaei",
+						"name": "Shahab Nedaei",
+						"givenName": "Shahab",
+						"familyName": "Nedaei",
+						"jobTitle": "Artist",
+						"description": "Multidisciplinary artist working across painting, video and 3D forms — exploring how light, memory and material shape what we perceive.",
+						"url": "https://shahabnedaei.variable.gallery/",
+						"sameAs": [
+							"https://shahabnedaei.variable.gallery/",
+							"https://variable.gallery/",
+							"https://github.com/sha5b"
+						],
+						"affiliation": {
+							"@type": "Organization",
+							"name": "variable.gallery",
+							"url": "https://variable.gallery/"
+						}
+					},
+					{
+						"@type": "WebSite",
+						"@id": "https://lyrebird.variable.gallery/#website",
+						"url": "https://lyrebird.variable.gallery/",
+						"name": "Lyrebird",
+						"inLanguage": "en-GB",
+						"author": { "@id": "https://lyrebird.variable.gallery/#shahab-nedaei" },
+						"publisher": { "@id": "https://lyrebird.variable.gallery/#shahab-nedaei" },
+						"mainEntity": { "@id": "https://lyrebird.variable.gallery/#lyrebird" }
+					},
+					{
+						"@type": ["CreativeWork", "SoftwareApplication"],
+						"@id": "https://lyrebird.variable.gallery/#lyrebird",
+						"name": "Lyrebird",
+						"alternateName": "Lyrebird — a physical syrinx model for 2,650 wild bird species",
+						"url": "https://lyrebird.variable.gallery/",
+						"image": "https://lyrebird.variable.gallery/brand/og-card.png",
+						"applicationCategory": "MultimediaApplication",
+						"operatingSystem": "Any browser with WebGL2 and WebAudio",
+						"browserRequirements": "WebGL2, WebAudio, AudioWorklet",
+						"creator": { "@id": "https://lyrebird.variable.gallery/#shahab-nedaei" },
+						"author": { "@id": "https://lyrebird.variable.gallery/#shahab-nedaei" },
+						"license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+						"isBasedOn": { "@id": "https://lyrebird.variable.gallery/#corpus" },
+						"genre": ["media art", "art and science", "generative sound", "data visualisation"],
+						"keywords": "birdsong, bioacoustics, syrinx model, Laje-Mindlin oscillator, physical modelling synthesis, audio embedding, art and science, media art",
+						"about": [
+							{ "@type": "Thing", "name": "Birdsong" },
+							{ "@type": "Thing", "name": "Bioacoustics" },
+							{ "@type": "Thing", "name": "Syrinx" },
+							{ "@type": "Thing", "name": "Physical modelling synthesis" }
+						],
+						"description": "Lyrebird measures syllables in wild bird recordings and sings them back from a physical model of the syrinx. It ships no audio: every note is integrated in the browser from the Laje–Mindlin normal-form oscillator, driven by the two parameters real birds control — air-sac pressure and syringeal tension. The corpus holds 444,213 measured syllables from 2,489 species, grouped into 15,341 call types and projected into a 3D embedding that flares where a live sound lands in it. It does not translate birdsong into language, and it says so in the interface. Machine learning can characterise a repertoire and link calls to behaviour; it cannot recover propositional meaning. Every phrase carries a confidence label naming where the claim came from — playback-verified, documented, inferred, field recording, or invented.",
+						"disambiguatingDescription": "Not a birdsong translator and not a sample library. A physically interpretable synthesis model with stated provenance for every claim."
+					},
+					{
+						"@type": "Dataset",
+						"@id": "https://lyrebird.variable.gallery/#corpus",
+						"name": "Lyrebird syllable inventory and embedding",
+						"url": "https://lyrebird.variable.gallery/",
+						"creator": { "@id": "https://lyrebird.variable.gallery/#shahab-nedaei" },
+						"license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+						"isAccessibleForFree": true,
+						"measurementTechnique": [
+							"syllable segmentation of field recordings",
+							"28-dimensional acoustic descriptors",
+							"contrastive embedding",
+							"coordinate-descent fit of the Laje–Mindlin syrinx oscillator"
+						],
+						"variableMeasured": [
+							"fundamental frequency track",
+							"syllable duration",
+							"timbre class",
+							"modulation depth and rate",
+							"signal-to-noise ratio",
+							"nearest-neighbour type agreement"
+						],
+						"description": "444,213 syllables measured from wild bird recordings (xeno-canto, iNaturalist) across 2,489 species, fitted to 15,341 call types and projected to three dimensions. The pipeline decodes each recording, describes it as numbers, and deletes it: no audio is redistributed and no model weights reach the browser. Recordists are credited individually and their licences are their own.",
+						"citation": { "@id": "https://lyrebird.variable.gallery/#paper" },
+						"distribution": {
+							"@type": "DataDownload",
+							"encodingFormat": "application/zip",
+							"contentUrl": "https://lyrebird.variable.gallery/",
+							"description": "The loaded build is downloadable from inside the app as the exact bytes the browser received."
+						}
+					},
+					{
+						"@type": "SoftwareSourceCode",
+						"@id": "https://lyrebird.variable.gallery/#source",
+						"name": "Lyrebird source",
+						"codeRepository": "https://github.com/sha5b/Lyrebird",
+						"programmingLanguage": ["TypeScript", "Svelte", "GLSL", "Python"],
+						"author": { "@id": "https://lyrebird.variable.gallery/#shahab-nedaei" },
+						"license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+						"about": { "@id": "https://lyrebird.variable.gallery/#lyrebird" }
+					},
+					{
+						"@type": "ScholarlyArticle",
+						"@id": "https://lyrebird.variable.gallery/#paper",
+						"name": "Lyrebird: a physically interpretable syllable inventory for 2,650 wild bird species",
+						"url": "https://lyrebird.variable.gallery/lyrebird-whitepaper.pdf",
+						"author": { "@id": "https://lyrebird.variable.gallery/#shahab-nedaei" },
+						"about": { "@id": "https://lyrebird.variable.gallery/#lyrebird" },
+						"abstract": "Lyrebird measures syllables in wild bird recordings from xeno-canto and iNaturalist. It fits the Laje–Mindlin normal-form syrinx oscillator to each measured syllable type by coordinate descent, learns a per-species type inventory and a first-order grammar over it, and ships the result as a browser application. The pipeline decodes each recording, describes it as numbers, and deletes it: no audio is redistributed and no model weights reach the browser. Fifty-eight gates were registered before their runs and thirty-six ended in a written refusal, which are as much of the contribution as the system is."
+					}
+				]
+			}
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
+		<!--
+			**The only prose in the served document, and the reason it is a `<noscript>`.**
+
+			With `ssr = false` nothing else on this page exists until JavaScript runs. That is
+			correct for an instrument whose whole argument is that the computation happens on the
+			reader's own machine, and it leaves the served HTML with no readable content.
+
+			This is the honest repair rather than the SEO one. A hidden div of keywords would be
+			invisible to a reader and would be cloaking; a `<noscript>` is shown to exactly the
+			audience that cannot see the app — a reader with scripting off, and a crawler that does
+			not execute — and it tells them what the thing is and where the writing about it lives.
+			Nothing here is withheld from anyone who can see the app; they get the app instead,
+			which says considerably more.
+
+			Styled inline because the app's own CSS is component-scoped and hashed, so none of its
+			class names would reach this block.
+		-->
+		<noscript>
+			<div
+				style="max-width: 46rem; margin: 0 auto; padding: 3rem 1.5rem; font-family: system-ui, sans-serif; color: #10161f; line-height: 1.6;"
+			>
+				<h1 style="font-size: 1.6rem; margin: 0 0 0.2rem;">Lyrebird</h1>
+				<p style="margin: 0 0 1.6rem; color: #52606f; font-family: monospace; font-size: 0.85rem;">
+					wild birdsong, measured and resynthesized · syrinx model · no samples
+				</p>
+				<p>
+					<strong
+						>Lyrebird measures wild birdsong and sings it back from a physical model of the
+						syrinx.</strong
+					>
+					It is an art–science instrument by
+					<a href="https://shahabnedaei.variable.gallery/">Shahab Nedaei</a>. Every note is
+					integrated in your browser from the Laje–Mindlin oscillator, driven by the two
+					parameters real birds control: air-sac pressure and syringeal tension. No audio is
+					sampled and none is shipped.
+				</p>
+				<p>
+					The corpus holds <strong>444,213 measured syllables</strong> from
+					<strong>2,489 species</strong>, grouped into <strong>15,341 call types</strong> and
+					projected into a three-dimensional embedding that flares where a live sound lands in it.
+				</p>
+				<p>
+					<strong
+						>It does not translate birdsong into language, and it says so in the interface.</strong
+					>
+					Machine learning can characterise a repertoire and link calls to behaviour; it cannot
+					recover propositional meaning. Every phrase carries a label naming where its claim came
+					from — playback-verified, documented, inferred, field recording, or invented.
+				</p>
+				<p style="color: #52606f;">
+					This page needs JavaScript, because there is no server here to do the work: the
+					measurement, the clustering read-out and the synthesis all run locally. The writing is
+					readable without it — <a href="/lyrebird-whitepaper.pdf">the paper</a>,
+					<a href="/llms.txt">a plain-text summary</a>, and
+					<a href="https://github.com/sha5b/Lyrebird">the source</a>.
+				</p>
+			</div>
+		</noscript>
 		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 </html>

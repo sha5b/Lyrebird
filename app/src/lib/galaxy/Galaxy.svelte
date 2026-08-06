@@ -4,7 +4,7 @@
 	import { OrbitControls } from '@threlte/extras';
 	import type * as THREE from 'three';
 	import type { OrbitControls as OrbitControlsInstance } from 'three/examples/jsm/controls/OrbitControls.js';
-	import type { BirdyAssets } from '$lib/data/types';
+	import type { LyrebirdAssets } from '$lib/data/types';
 	import { biplotAxes, type ScreenReading } from './biplot';
 	import { doubtRange } from './doubt';
 	import { TARGET_PX, gridOffsetPx, tickStep } from './ticks';
@@ -27,7 +27,7 @@
 	import type { GalaxyStats } from './stats';
 
 	interface Props {
-		assets: BirdyAssets;
+		assets: LyrebirdAssets;
 		signal: VisualSignal;
 		pointSize?: number;
 		spin?: boolean;

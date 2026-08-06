@@ -548,11 +548,11 @@ act_ema = 0.82 * act_ema + 0.18 * act          # ~120 ms smoothing at 60 Hz
 
 ## 8.3 Generated asset layout
 
-The pipeline writes only into `app/static/birdy/`. The app fetches everything at
+The pipeline writes only into `app/static/lyrebird/`. The app fetches everything at
 runtime.
 
 ```
-app/static/birdy/
+app/static/lyrebird/
   manifest.json            what was built, when, with which parameters (incl. `space`)
   inventory.json           verbatim copy of data/inventory.json
   syrinx-calibration.json  beta <-> f0 table (§8.4)

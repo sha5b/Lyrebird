@@ -30,7 +30,7 @@
 	 * attached to until navigation. The `sessionStorage` flag is what stops that from becoming
 	 * a loop if the eviction ever fails to take.
 	 */
-	const EVICTED = 'birdy:evicted-foreign-sw';
+	const EVICTED = 'lyrebird:evicted-foreign-sw';
 
 	onMount(() => {
 		if (!('serviceWorker' in navigator)) return;

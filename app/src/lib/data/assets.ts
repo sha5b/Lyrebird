@@ -11,9 +11,9 @@ export {
 	clusterIndicesFor,
 	type ClusterLookup
 } from './cluster-lookup';
-import type { BirdyAssets, Centroid, Centroids, EmbeddingSpace, FeatureSpace, Inventory, InventoryIndex, Manifest, PointCloudMeta, RelationsDoc, Species, SpeciesIndexEntry, SyrinxCalibration } from './types';
+import type { LyrebirdAssets, Centroid, Centroids, EmbeddingSpace, FeatureSpace, Inventory, InventoryIndex, Manifest, PointCloudMeta, RelationsDoc, Species, SpeciesIndexEntry, SyrinxCalibration } from './types';
 
-const ROOT = 'birdy';
+const ROOT = 'lyrebird';
 
 /**
  * The two maps a `build --clustering both` writes side by side: `known` is the kmeans
@@ -65,7 +65,7 @@ export class AssetsMissingError extends Error {
 	constructor(readonly file: string) {
 		super(
 			`Missing generated asset "${file}". Build it first:\n` +
-				`  cd pipeline && uv sync && uv run birdy-pipeline build`
+				`  cd pipeline && uv sync && uv run lyrebird-pipeline build`
 		);
 		this.name = 'AssetsMissingError';
 	}
@@ -309,7 +309,7 @@ export async function loadAssets(
 	bust = '',
 	map: '' | GalaxyMap = '',
 	onProgress?: LoadProgress
-): Promise<BirdyAssets> {
+): Promise<LyrebirdAssets> {
 	const dir = map ? `${map}/` : '';
 	// `step` counts completed stages, so the label reported is the one about to run: a
 	// progress line that names what just finished tells the reader about the past.
@@ -535,7 +535,7 @@ async function loadPointFeatures(
  * recordings of something not in the inventory) are appended, so no point is left
  * without an index.
  */
-export function buildSpeciesIndex(assets: BirdyAssets): Map<string, number> {
+export function buildSpeciesIndex(assets: LyrebirdAssets): Map<string, number> {
 	const index = new Map<string, number>();
 	assets.inventoryIndex.forEach((s) => index.set(s.id, index.size));
 	for (const id of assets.points.speciesId) {
@@ -634,7 +634,7 @@ function isUnlabelledArrival(speciesId: string, syllableId: string): boolean {
  * says whether anything named it, and the L/U prefix says whether that name was
  * fitted rather than authored — and whether it was fitted to a labelled bird at all.
  */
-export function pointProvenance(assets: BirdyAssets): Float32Array {
+export function pointProvenance(assets: LyrebirdAssets): Float32Array {
 	const { n, source, speciesId, syllableId, songId, novel } = assets.points;
 	const out = new Float32Array(n);
 	for (let i = 0; i < n; i++) {
@@ -706,7 +706,7 @@ export function pointProvenance(assets: BirdyAssets): Float32Array {
  * Ties break toward the stronger claim (the lower PROVENANCE index), so a knot that is
  * half authored and half fitted is called authored rather than the reverse.
  */
-export function clusterProvenance(assets: BirdyAssets, k?: number): Float32Array {
+export function clusterProvenance(assets: LyrebirdAssets, k?: number): Float32Array {
 	const classes = pointProvenance(assets);
 	const count = k ?? assets.centroids.items.length;
 	const { clusterId } = assets.points;
@@ -743,7 +743,7 @@ export function clusterProvenance(assets: BirdyAssets, k?: number): Float32Array
  * capped at twice it. 0 is the species' core knot, 1 its far edge; a species with a
  * single knot — or all its knots on one spot — gets the flat mid value.
  */
-export function knotHeat(assets: BirdyAssets): Float32Array {
+export function knotHeat(assets: LyrebirdAssets): Float32Array {
 	const items = assets.centroids.items;
 	const out = new Float32Array(items.length).fill(0.5);
 	const bySpecies = new Map<string, number[]>();
@@ -782,7 +782,7 @@ export function knotHeat(assets: BirdyAssets): Float32Array {
  * so `clusterIndexFor` says -1) can still honestly show when it is sung: its own
  * points have positions, they just have no knot.
  */
-export function buildSyllablePointIndex(assets: BirdyAssets): Map<string, number[]> {
+export function buildSyllablePointIndex(assets: LyrebirdAssets): Map<string, number[]> {
 	const map = new Map<string, number[]>();
 	const { n, speciesId, syllableId } = assets.points;
 	for (let i = 0; i < n; i++) {
@@ -831,7 +831,7 @@ export interface RelationPartner {
 	threads: { from: number; to: number; distance: number }[];
 }
 
-const relationPartnerCache = new WeakMap<BirdyAssets, Map<string, RelationPartner[]>>();
+const relationPartnerCache = new WeakMap<LyrebirdAssets, Map<string, RelationPartner[]>>();
 
 /**
  * The relations graph keyed by species id: each species' partners, each partner's
@@ -839,7 +839,7 @@ const relationPartnerCache = new WeakMap<BirdyAssets, Map<string, RelationPartne
  * pairs, one pass) and cached on the assets object, so the scene component and the
  * label projector share one build. Empty when the build predates relations.json.
  */
-export function relationPartners(assets: BirdyAssets): Map<string, RelationPartner[]> {
+export function relationPartners(assets: LyrebirdAssets): Map<string, RelationPartner[]> {
 	const held = relationPartnerCache.get(assets);
 	if (held) return held;
 	const out = new Map<string, RelationPartner[]>();
@@ -890,7 +890,7 @@ export function relationPartners(assets: BirdyAssets): Map<string, RelationPartn
  * measurement, and the honest one — nothing was measured, so nothing is claimed.
  */
 export function knotDoubt(
-	assets: BirdyAssets,
+	assets: LyrebirdAssets,
 	values: readonly (number | null | undefined)[] | undefined,
 	range?: DoubtRange
 ): Float32Array {

@@ -8,7 +8,7 @@ unreachable in the tree and "it looks better" is not why anything ships here.
 
 Two `learn` runs on the **debug-100 subset**, identical but for one flag:
 
-- **A (shipped):** `learn --store /tmp/birdy-debug/harvest-100`
+- **A (shipped):** `learn --store /tmp/lyrebird-debug/harvest-100`
 - **B (encoder):** the same, `+ --inverse out/inverse.pt`
 
 Everything else is held: same store, same seed, same inventory, same calibration, same
@@ -145,9 +145,9 @@ back to it: `inverse.apply_prediction` returns `dict(syllable)` (a copy), and
 `invert_gestures` only ever *reassigns* `t.syllable` to a fresh `_with` trial and touches
 nothing else on the type. So no deep copy is needed and the median result survives.
 
-**Arms.** Baseline is the existing **arm A** (`learn --store /tmp/birdy-debug/harvest-100`,
+**Arms.** Baseline is the existing **arm A** (`learn --store /tmp/lyrebird-debug/harvest-100`,
 1 661 types, median cosine 0.7410 by the log). Candidate is **arm C**, identical plus
-`--inverse /tmp/birdy-debug/inverse-100.pt --inverse-two-start`. `app/static/birdy/syrinx-calibration.json`
+`--inverse /tmp/lyrebird-debug/inverse-100.pt --inverse-two-start`. `app/static/lyrebird/syrinx-calibration.json`
 is the file both read for calibration and it was confirmed **byte-identical** (md5
 `7b8f631a…`) to what arm A read, despite the production assets having been installed over
 that directory in between — otherwise the arms would not be comparable.

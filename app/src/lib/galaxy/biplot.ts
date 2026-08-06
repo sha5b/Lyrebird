@@ -23,7 +23,7 @@
  * meaningful — spectral centroid and spectral flatness — and three more are honest
  * aggregates. Naming a direction "mfcc7_mean" would be a label, not an explanation.
  */
-import type { BirdyAssets } from '$lib/data/types';
+import type { LyrebirdAssets } from '$lib/data/types';
 
 /** One nameable acoustic quantity, and where to find it in the shipped 28-d descriptor. */
 interface Attribute {
@@ -90,7 +90,7 @@ export interface BiplotAxis {
  * count, so a knot holding 1 828 sounds counts for more than one holding 13 — otherwise
  * the fit is dominated by the long tail of tiny knots, which is most of them.
  */
-export function biplotAxes(assets: BirdyAssets, centroids: Float32Array): BiplotAxis[] {
+export function biplotAxes(assets: LyrebirdAssets, centroids: Float32Array): BiplotAxis[] {
 	const names = assets.featureSpace.dimNames ?? [];
 	const items = assets.centroids.items;
 	const k = items.length;

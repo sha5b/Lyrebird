@@ -85,7 +85,7 @@ def subset(inv: dict, keys: set[tuple[str, str]], strip_respiration: bool) -> di
 
 def bench(inv_path: Path, out_path: Path) -> dict:
     cmd = [
-        str(ROOT / ".venv/bin/birdy-pipeline"), "specbench",
+        str(ROOT / ".venv/bin/lyrebird-pipeline"), "specbench",
         "--store", str(STORE),
         "--inventory", str(inv_path),
         "--calibration-dir", str(CALIB_DIR),

@@ -21,13 +21,13 @@
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
 	import { clusterProvenance } from '$lib/data/assets';
-	import type { BirdyAssets } from '$lib/data/types';
+	import type { LyrebirdAssets } from '$lib/data/types';
 	import { provenanceColour, speciesColour } from './palette';
 	import type { LayoutView } from './layouts';
 	import { waveClaim, type VisualSignal } from './shaders';
 
 	interface Props {
-		assets: BirdyAssets;
+		assets: LyrebirdAssets;
 		signal: VisualSignal;
 		/** Where the centroids are right now, so a cross lands on its knot. */
 		view: LayoutView;

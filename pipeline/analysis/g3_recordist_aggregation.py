@@ -96,8 +96,8 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from birdy_pipeline import geometry  # noqa: E402
-from birdy_pipeline.harvest import HarvestStore  # noqa: E402
+from lyrebird_pipeline import geometry  # noqa: E402
+from lyrebird_pipeline.harvest import HarvestStore  # noqa: E402
 
 STORE = ROOT / "out/harvest-gan"
 OUT = Path(__file__).resolve().parent / "g3_recordist_aggregation.json"

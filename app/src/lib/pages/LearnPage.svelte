@@ -23,10 +23,10 @@
 	import { BOUT_GLOSS } from '$lib/lang/glossary';
 	import type { PipelineClient, PipelineStatus } from '$lib/data/pipeline';
 	import type { InventoryRow } from '$lib/data/inventory-rows';
-	import type { BirdyAssets, Species } from '$lib/data/types';
+	import type { LyrebirdAssets, Species } from '$lib/data/types';
 
 	interface Props {
-		assets: BirdyAssets;
+		assets: LyrebirdAssets;
 		/** The control-process client. Every job goes through `runPipeline` below, never direct. */
 		pipeline: PipelineClient;
 		pipelineStatus: PipelineStatus | null;
@@ -313,7 +313,7 @@
 			backend and is unaffected.
 		</p>
 		<pre class="mono">cd pipeline
-uv run birdy-pipeline serve</pre>
+uv run lyrebird-pipeline serve</pre>
 		<p class="note faint">Binds to 127.0.0.1 only.</p>
 		<button onclick={refreshPipeline}>Check again</button>
 	{:else}
@@ -371,7 +371,7 @@ uv run birdy-pipeline serve</pre>
 		{:else}
 			<p
 				class="note faint"
-				title="Run `birdy-pipeline critic train` to learn a syllable embedding from the harvested patches. Until then, syllable types are decided by seven hand-weighted numbers."
+				title="Run `lyrebird-pipeline critic train` to learn a syllable embedding from the harvested patches. Until then, syllable types are decided by seven hand-weighted numbers."
 			>
 				typing <b class="mono">hand-written</b> · no critic trained
 			</p>

@@ -25,10 +25,10 @@
 	import { doubtColourScaled, provenanceColourScaled, speciesColourScaled } from './palette';
 	import type { DoubtRange } from './doubt';
 	import { describeForm } from '$lib/data/syllable-name';
-	import type { BirdyAssets, Centroid } from '$lib/data/types';
+	import type { LyrebirdAssets, Centroid } from '$lib/data/types';
 
 	interface Props {
-		assets: BirdyAssets;
+		assets: LyrebirdAssets;
 		/**
 		 * Centroid index bound into each slot, or -1. Owned by Galaxy, written by
 		 * NodeProjector, read here. Reactive, because a rebind has to re-render the tag's

@@ -390,11 +390,11 @@ now measurable at every k. Raising it is a space problem (docs/17, docs/23 W1/W6
 clustering one.
 
 **Built end to end, and it verifies.** `build --clustering label` on the debug-100 store
-(`/tmp/birdy-debug/assets-label`, 214 154 points, 375 s after the render): k = 4 298 read
+(`/tmp/lyrebird-debug/assets-label`, 214 154 points, 375 s after the render): k = 4 298 read
 off the labels — 2 143 types, all 2 143 source-split, plus 12 kmeans clusters for the 300
 song-level points that carry no syllable — **type coverage 2 143/2 143 (100.0 %)**, every
 `verify` check green. Against the kmeans build of the same corpus
-(`/tmp/birdy-debug/assets-8192`), where coverage is 1 984/2 143.
+(`/tmp/lyrebird-debug/assets-8192`), where coverage is 1 984/2 143.
 
 **The documented-knot question, on a corpus that has documented calls.** §22.6 could not
 ask it — debug-100 is the deepest hundred species and holds none. The fast-loop store

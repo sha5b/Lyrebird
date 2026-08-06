@@ -18,7 +18,7 @@
 
 import { assetUrl } from './assets';
 import type { GalaxyMap } from './assets';
-import type { BirdyAssets } from './types';
+import type { LyrebirdAssets } from './types';
 import { zip, type ZipEntry } from './zip';
 
 export interface PackProgress {
@@ -50,7 +50,7 @@ export function buildFileName(builtAt: string): string {
  * means the archive cannot be assembled from two builds.
  */
 export async function packBuild(
-	assets: BirdyAssets,
+	assets: LyrebirdAssets,
 	mapDir: '' | GalaxyMap,
 	fetcher: typeof fetch = fetch,
 	onProgress?: (p: PackProgress) => void

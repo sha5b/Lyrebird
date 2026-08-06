@@ -1,8 +1,13 @@
 # Lyrebird
 
+**→ [lyrebird.variable.gallery](https://lyrebird.variable.gallery)**
+
 Record real birds, match their calls against documented call functions, and sing back
 synthetic birdsong from a physical model of the syrinx — inside an audio-reactive 3D
 embedding galaxy that flares where the sound lands in the corpus.
+
+An art–science work by [Shahab Nedaei](https://shahabnedaei.variable.gallery/) ·
+[variable.gallery](https://variable.gallery/)
 
 Nothing is sampled. Every note is integrated from the Mindlin–Laje syrinx oscillator in
 an AudioWorklet, driven by the two parameters real birds control: air-sac pressure and
@@ -153,7 +158,7 @@ node while nothing was playing.
 
 The activation is scaled by an absolute measure of how well the best centroid actually
 matches, and the thresholds come from the corpus rather than from taste. Re-measured by
-`birdy-pipeline thresholds` against the assets of the time — **the 176-cluster build, not
+`lyrebird-pipeline thresholds` against the assets of the time — **the 176-cluster build, not
 the shipped production one**; the thresholds have not been re-measured since, and the
 numbers below should be read as that build's:
 
@@ -248,7 +253,7 @@ offline, so build them first:
 ```bash
 cd pipeline
 uv sync
-uv run birdy-pipeline build      # writes app/static/birdy/
+uv run lyrebird-pipeline build      # writes app/static/lyrebird/
 ```
 
 ## Growing the corpus from real recordings
@@ -258,9 +263,9 @@ grow it from field audio without ever holding more than one recording at a time:
 
 ```bash
 cp .env.example .env && $EDITOR .env                   # your xeno-canto v3 key
-uv run birdy-pipeline harvest --per-species 40         # stream in, keep a bounded sample
-uv run birdy-pipeline learn                            # fit syllables + syntax, verify them
-uv run birdy-pipeline build --inventory ../data/learned-inventory.json \
+uv run lyrebird-pipeline harvest --per-species 40         # stream in, keep a bounded sample
+uv run lyrebird-pipeline learn                            # fit syllables + syntax, verify them
+uv run lyrebird-pipeline build --inventory ../data/learned-inventory.json \
                             --harvest-store out/harvest \
                             --clustering label
 ```
@@ -278,10 +283,10 @@ than deciding it by hand. They need `uv sync --extra critic` (PyTorch; the wheel
 by default and CPU works too), and nothing they produce ever reaches the browser:
 
 ```bash
-uv run birdy-pipeline critic train --store out/harvest-gan \
+uv run lyrebird-pipeline critic train --store out/harvest-gan \
                                    --inventory ../data/learned-inventory.json
-uv run birdy-pipeline learn --store out/harvest-gan --critic out/critic.pt --embed-typing
-uv run birdy-pipeline placement --store out/harvest-gan --inventory <the fit>
+uv run lyrebird-pipeline learn --store out/harvest-gan --critic out/critic.pt --embed-typing
+uv run lyrebird-pipeline placement --store out/harvest-gan --inventory <the fit>
 ```
 
 `critic train` trains one small CNN on log-mel patches of the harvested syllables, with
@@ -441,10 +446,10 @@ See [`NOTICE.md`](NOTICE.md) §3 for what that obliges, and
 
 `npm run dev` starts the control process for you — a Vite plugin
 ([`app/vite-plugin-pipeline.ts`](app/vite-plugin-pipeline.ts)) runs
-`uv run birdy-pipeline serve` in the background, hands its job log to Vite's output and
+`uv run lyrebird-pipeline serve` in the background, hands its job log to Vite's output and
 kills it when the dev server stops. If something already answers on the port it is left
 alone, and if `uv` is missing dev keeps serving and the Learn tab says how to start the
-process yourself. `BIRDY_PIPELINE=0` turns the autostart off; `BIRDY_PIPELINE_PORT`
+process yourself. `LYREBIRD_PIPELINE=0` turns the autostart off; `LYREBIRD_PIPELINE_PORT`
 moves it.
 
 The app's **Learn** tab picks that up and gives you the same three operations with the
@@ -457,7 +462,7 @@ the offline stage; the built site never talks to it.
 
 #### When the Learn tab says the pipeline is not running and you know it is
 
-The tab shows its "start `birdy-pipeline serve`" panel whenever a status request fails, and
+The tab shows its "start `lyrebird-pipeline serve`" panel whenever a status request fails, and
 "failed" covers two different things. Both have been hit for real:
 
 - **Something holds the port but never answers.** A `serve` started in the background by an
@@ -502,6 +507,47 @@ npm run dev
 Lyrebird v1 needs no backend: `adapter-static`, precomputed assets, client-side features and
 client-side synthesis. Audio never leaves the browser and no model runs on a server.
 
+## Deploying it
+
+**Fully client-side, by commitment rather than by default.** `app/src/routes/+layout.ts` sets
+`ssr = false` and `prerender = true`, and the adapter is `@sveltejs/adapter-static`: the built
+`app/build/` is a directory of files any static server can hand out. Every measurement, the
+nearest-knot matching, the grammar walk and all synthesis run on the reader's machine. There is
+no server-side computation anywhere, and no request leaves the browser after the assets land.
+
+Verified, not assumed: `npm run build` then serving `app/build/` with a plain file server boots
+the app, loads all 444 213 points, and reports no 4xx and no console errors.
+
+### Railway (railpack)
+
+Two files in `app/` configure it, and two settings go in the Railway service:
+
+| file | what it does |
+|---|---|
+| `app/railpack.json` | pins Node 22, `npm ci`, `npm run build` |
+| `app/Caddyfile` | how the built site is served — cache headers, and a real 404 rather than an SPA rewrite |
+
+In the Railway service:
+
+- **Root Directory** → `app` (the repository root is the pipeline; the deployable is the app)
+- **Variable** `RAILPACK_SPA_OUTPUT_DIR` → `build` (railpack's Node provider detects Vite and
+  serves the static output through Caddy, but defaults to `dist`; SvelteKit's static adapter
+  writes `build`)
+
+`package.json` deliberately has no `start` script. Railpack's start-command priority is
+`start` → `main` → `index.js`, and only when all three are absent does it serve the build as
+static files through Caddy — which is what this app wants, because there is nothing to start.
+
+The corpus is about 118 MB built, most of it `app/static/lyrebird/`. It is committed, so the
+deploy needs no pipeline run.
+
+### Anywhere else
+
+`app/build/` on any static host — Netlify, Cloudflare Pages, GitHub Pages, S3, nginx. The only
+requirements are that `404.html` is served for unknown paths and that `/lyrebird/*` is not cached
+by filename for long (the app appends the build stamp as a query string, so a short max-age is
+enough). `app/Caddyfile` states both rules if you need a reference.
+
 ## Verifying it
 
 Two checks run the browser's own DSP outside the browser, by loading the AudioWorklet
@@ -513,6 +559,21 @@ npm run verify:synth      # renders all 44 syllables, checks measured F0 vs the 
 npm run verify:features   # renders each syllable, then asks which galaxy cluster it lands in
 npm run verify:layout     # the knot-spacing grid against the brute-force loop it replaced
 npm run demo:wav          # writes listenable wavs to app/out/wav
+```
+
+A further set checks the things a type-checker cannot see. `verify:glsl` exists because a
+backtick in a GLSL comment closes the JavaScript template literal the shader lives in, and the
+resulting error points at the shader body rather than at the prose that broke it — twice in one
+session. `verify:seo` reconciles every corpus figure quoted in the JSON-LD, the meta
+description, the `<noscript>` block and `static/llms.txt` against the shipped manifest, because
+with `ssr = false` those four surfaces are the only thing a crawler reads and nothing else in
+the app would notice them going stale.
+
+```bash
+npm run verify:glsl      # no backticks inside the shader template literals
+npm run verify:seo       # the SEO figures against manifest.json
+npm run verify:trust     # both doubt ramps, end to end
+npm run verify:unheard   # the density verdict, and which set the swap promotes
 ```
 
 `verify:features` is the one that matters most: it crosses the language boundary. A high
@@ -560,7 +621,7 @@ reads 94.5 % there and the manifest says in as many words that this is *not* a
 measurement — a type is a cluster under label assignment, so purity is 1.0 by
 construction on the labelled ones.
 
-`uv run birdy-pipeline verify` checks the generated assets, including that the per-point
+`uv run lyrebird-pipeline verify` checks the generated assets, including that the per-point
 feature rows are unit vectors and still separate their own cluster from the rest — a
 mirrored PCA sign would otherwise light the wrong points with total confidence.
 

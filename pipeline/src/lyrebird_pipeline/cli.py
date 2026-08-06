@@ -1,4 +1,4 @@
-"""`birdy-pipeline` command line: build, calibrate, demo, verify."""
+"""`lyrebird-pipeline` command line: build, calibrate, demo, verify."""
 
 from __future__ import annotations
 
@@ -42,7 +42,7 @@ from .syrinx import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_OUT = REPO_ROOT / "app" / "static" / "birdy"
+DEFAULT_OUT = REPO_ROOT / "app" / "static" / "lyrebird"
 DEFAULT_INVENTORY = REPO_ROOT / "data" / "inventory.json"
 DEFAULT_DEMO_OUT = REPO_ROOT / "pipeline" / "out" / "demo"
 #: The production store, and the one `data/learned-inventory.json` was learned from.
@@ -100,7 +100,7 @@ def read_store_embeddings(
             log(
                 f"{path} holds {rows} embedding rows but the store has {n_syllables} "
                 "syllables — the store changed since `critic embed` wrote it. Re-run "
-                "`birdy-pipeline critic embed` against this store."
+                "`lyrebird-pipeline critic embed` against this store."
             )
         return None
     return raw.reshape(n_syllables, -1).astype(np.float64)
@@ -376,7 +376,7 @@ def cmd_build(
                 log("--space embed needs a critic: the rendered inventory and any "
                     "un-embedded observations must be embedded before they can join a "
                     "galaxy that lives in the embedding space. Pass --critic, or train "
-                    "one with `birdy-pipeline critic train`")
+                    "one with `lyrebird-pipeline critic train`")
                 return 2
         log(f"feature space: {space}"
             + (" (auto)" if args.space == "auto" else ""))
@@ -710,7 +710,7 @@ def cmd_build(
                 if store_embeddings is None:
                     raise RuntimeError(
                         f"{embeddings_path} is stale against this store — re-run "
-                        "`birdy-pipeline critic embed`"
+                        "`lyrebird-pipeline critic embed`"
                     )
             relations_doc = relations_mod.compute_relations(
                 store, store_embeddings, typing, inventory
@@ -877,7 +877,7 @@ def cmd_harvest(args: argparse.Namespace) -> int:
     log(harvest.format_report(report, store))
     log(f"\nstore written to {store.root} in {time.time() - t0:.1f}s "
         f"(attribution in {store.root / 'CREDITS.md'})")
-    log("next: uv run birdy-pipeline build --harvest-store " + str(store.root))
+    log("next: uv run lyrebird-pipeline build --harvest-store " + str(store.root))
     return 0
 
 
@@ -1115,8 +1115,8 @@ def cmd_subset(args: argparse.Namespace) -> int:
     log(f"wrote {out}: {len(keep)} species, {len(sub.syllables)} syllables, "
         f"{sum(len(st.rows) for st in sub.strata.values())} descriptors "
         f"(of {len(counts)} / {len(store.syllables)} / {len(store)} in {store.root})")
-    log(f"debug cycle: uv run birdy-pipeline learn --store {out} --jobs 8")
-    log(f"         then uv run birdy-pipeline build --harvest-store {out} "
+    log(f"debug cycle: uv run lyrebird-pipeline learn --store {out} --jobs 8")
+    log(f"         then uv run lyrebird-pipeline build --harvest-store {out} "
         f"--inventory <learned.json> --space embed")
     if getattr(args, "json", None):
         # What was kept, against what there was — the two numbers that say whether the
@@ -1681,7 +1681,7 @@ def cmd_learn(args: argparse.Namespace) -> int:
             f"{len(grammar.get('transitions', {}))} states{chunks}{songs}, "
             f"example bout {' '.join(bout) or '(none)'}")
     log("")
-    log("next: uv run birdy-pipeline build --inventory " + str(out) +
+    log("next: uv run lyrebird-pipeline build --inventory " + str(out) +
         " --harvest-store " + str(store.root))
     return 0
 
@@ -1924,7 +1924,7 @@ def load_critic(path: str | None, prefer_gpu: bool = True) -> Any | None:
         return None
     p = Path(path)
     if not p.exists():
-        log(f"no critic at {p} — train one with `birdy-pipeline critic train`")
+        log(f"no critic at {p} — train one with `lyrebird-pipeline critic train`")
         return None
     trained = critic_mod.Critic.load(p, prefer_gpu=prefer_gpu)
     r = trained.report
@@ -2082,8 +2082,8 @@ def cmd_critic(args: argparse.Namespace) -> int:
     log("A syllable flagged novel is still `unlabelled` (§8.5): knowing a sound is new is not")
     log("knowing what it means, and the interface has to keep saying so.")
     log("")
-    log(f"next: uv run birdy-pipeline learn --store {store.root} --critic {out} --embed-typing")
-    log("      then: uv run birdy-pipeline placement --store " + str(store.root) +
+    log(f"next: uv run lyrebird-pipeline learn --store {store.root} --critic {out} --embed-typing")
+    log("      then: uv run lyrebird-pipeline placement --store " + str(store.root) +
         " --inventory <the fit you just wrote>")
     log("")
     log("Note the flag that is *not* in that line. `--critic-weight` defaults to 0 because a")
@@ -2121,7 +2121,7 @@ def cmd_critic_embed(args: argparse.Namespace) -> int:
     write_store_embeddings(
         store, trained, Path(args.critic), out=args.out, batch=args.batch, log=log
     )
-    log("next: uv run birdy-pipeline build --harvest-store " + str(store.root) +
+    log("next: uv run lyrebird-pipeline build --harvest-store " + str(store.root) +
         " --space embed")
     return 0
 
@@ -2191,7 +2191,7 @@ def cmd_critic_groupings(args: argparse.Namespace) -> int:
         Path(args.embeddings) if args.embeddings else Path(args.store) / EMBEDDINGS_NAME
     )
     if not emb_path.exists():
-        log(f"no embeddings at {emb_path} — run `birdy-pipeline critic embed "
+        log(f"no embeddings at {emb_path} — run `lyrebird-pipeline critic embed "
             f"--store {args.store}` first")
         return 2
     emb = read_store_embeddings(emb_path, len(store.syllables), log=log)
@@ -2488,7 +2488,7 @@ def cmd_placement(args: argparse.Namespace) -> int:
             f"(the galaxy's geometry once built with --space embed)")
     else:
         log(f"  32-d embedding space:  not measured — no {emb_path.name}; run "
-            f"`birdy-pipeline critic embed --store {args.store}` first")
+            f"`lyrebird-pipeline critic embed --store {args.store}` first")
 
     per_species_rows = [
         {
@@ -2718,7 +2718,7 @@ def cmd_spacemap(args: argparse.Namespace) -> int:
         Path(args.embeddings) if args.embeddings else Path(args.store) / EMBEDDINGS_NAME
     )
     if not emb_path.exists():
-        log(f"no embeddings at {emb_path} — run `birdy-pipeline critic embed "
+        log(f"no embeddings at {emb_path} — run `lyrebird-pipeline critic embed "
             f"--store {args.store}` first")
         return 2
 
@@ -2833,7 +2833,7 @@ def cmd_relations(args: argparse.Namespace) -> int:
         Path(args.embeddings) if args.embeddings else Path(args.store) / EMBEDDINGS_NAME
     )
     if not emb_path.exists():
-        log(f"no embeddings at {emb_path} — run `birdy-pipeline critic embed "
+        log(f"no embeddings at {emb_path} — run `lyrebird-pipeline critic embed "
             f"--store {args.store}` first; relations live in the critic's space")
         return 2
     relations_mod.self_test(verbose=False)
@@ -3603,7 +3603,7 @@ def _count_confidence(centroids: dict[str, Any]) -> dict[str, int]:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="birdy-pipeline", description=__doc__)
+    p = argparse.ArgumentParser(prog="lyrebird-pipeline", description=__doc__)
     sub = p.add_subparsers(dest="command", required=True)
 
     b = sub.add_parser("build", help="render the corpus and build the galaxy")
@@ -3964,7 +3964,7 @@ def build_parser() -> argparse.ArgumentParser:
                           "the plan's own test of whether the learned objective is better")
     lrn.add_argument("--inverse", default=None, metavar="PT",
                      help="re-initialise each type's gesture axes from its own mean mel "
-                          "patch with the trained encoder of `birdy-pipeline inverse` "
+                          "patch with the trained encoder of `lyrebird-pipeline inverse` "
                           "(docs/09 §9.3 Part 2) before the coordinate descent runs. The "
                           "descent still decides — it only moves on an improvement — so "
                           "this proposes a basin and cannot force a worse fit than it "

@@ -109,7 +109,7 @@ def loso(uz: np.ndarray, species: np.ndarray, label: np.ndarray, k: int = 1,
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--assets", default="app/static/birdy", type=Path)
+    ap.add_argument("--assets", default="app/static/lyrebird", type=Path)
     ap.add_argument("--permutations", type=int, default=2000)
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()

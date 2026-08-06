@@ -197,7 +197,7 @@ console.log(`wrote ${CASES.length} cases to ${path}`);
 
 const python = join(REPO_ROOT, 'pipeline/.venv/bin/python');
 console.log(
-	execFileSync(python, ['-m', 'birdy_pipeline.parity', path], {
+	execFileSync(python, ['-m', 'lyrebird_pipeline.parity', path], {
 		cwd: join(REPO_ROOT, 'pipeline'),
 		encoding: 'utf8'
 	})

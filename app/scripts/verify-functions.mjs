@@ -168,7 +168,7 @@ console.log('\nthe counts the interface says out loud');
 	// misstates the scale of the refusal, which is the one thing the sentence exists to
 	// convey. Read from the shipped index rather than hardcoded, so the next rebuild that
 	// changes the corpus fails here instead of shipping a wrong number quietly.
-	const shipped = JSON.parse(readFileSync(join(here, '../static/birdy/inventory.json'), 'utf8'));
+	const shipped = JSON.parse(readFileSync(join(here, '../static/lyrebird/inventory.json'), 'utf8'));
 	const total = shipped.species.length;
 	const grouped = String(total).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 	ok('the shipped index is the denominator the sentences quote', total > 0, `${total}`);

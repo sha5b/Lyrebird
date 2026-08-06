@@ -24,9 +24,9 @@ from pathlib import Path
 
 import numpy as np
 
-from birdy_pipeline import galaxy
+from lyrebird_pipeline import galaxy
 
-root = Path(sys.argv[1] if len(sys.argv) > 1 else "app/static/birdy")
+root = Path(sys.argv[1] if len(sys.argv) > 1 else "app/static/lyrebird")
 centroids = json.loads((root / "centroids.json").read_text())
 blocks = galaxy.centroid_vectors(root, centroids)
 z = blocks.get("vector32")

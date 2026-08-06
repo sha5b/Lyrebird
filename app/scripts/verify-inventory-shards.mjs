@@ -15,7 +15,7 @@
  *     present → index + one shard, no whole file; shards absent → index 404s once and
  *     the whole file loads instead.
  *
- * Everything lands in /tmp/birdy-shards-verify; app/static/birdy is never touched.
+ * Everything lands in /tmp/lyrebird-shards-verify; app/static/lyrebird is never touched.
  * Run from the repo root: `node app/scripts/verify-inventory-shards.mjs`.
  */
 import assert from 'node:assert/strict';
@@ -105,7 +105,7 @@ const inventory = {
 	species: [fakeSpecies('aves_alpha', 'alpha finch', 'XC'), fakeSpecies('aves_beta', 'beta owl', 'INAT')]
 };
 
-const work = mkdtempSync(join(tmpdir(), 'birdy-shards-verify-'));
+const work = mkdtempSync(join(tmpdir(), 'lyrebird-shards-verify-'));
 const outDir = join(work, 'out');
 const inventoryPath = join(work, 'inventory.json');
 writeFileSync(inventoryPath, JSON.stringify(inventory, null, 1));
@@ -121,7 +121,7 @@ function runWriter(inv) {
 			'python',
 			'-c',
 			'import json, shutil, sys; from pathlib import Path; ' +
-				'from birdy_pipeline.galaxy import _write_inventory_shards; ' +
+				'from lyrebird_pipeline.galaxy import _write_inventory_shards; ' +
 				'out, src = Path(sys.argv[1]), Path(sys.argv[2]); out.mkdir(parents=True, exist_ok=True); ' +
 				'shutil.copyfile(src, out / "inventory.json"); ' +
 				'_write_inventory_shards(out, json.loads(src.read_text(encoding="utf-8")))',

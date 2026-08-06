@@ -1,9 +1,9 @@
 [project]
-name = "birdy-pipeline"
+name = "lyrebird-pipeline"
 version = "0.1.0"
 description = "Offline Lyrebird pipeline: syrinx calibration, synthetic corpus, 28-d features, UMAP galaxy."
 readme = "README.md"
-# Non-commercial. The distribution name stays `birdy-pipeline` (an identifier, not the
+# Non-commercial. The distribution name stays `lyrebird-pipeline` (an identifier, not the
 # product name); the licence covers this project's own code and prose only. The harvested
 # recordings carry their own per-recording Creative Commons licences and are not ours to
 # relicense — see the repository's NOTICE.md §3.
@@ -77,14 +77,14 @@ density = [
 ]
 
 [project.scripts]
-birdy-pipeline = "birdy_pipeline.cli:main"
+lyrebird-pipeline = "lyrebird_pipeline.cli:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/birdy_pipeline"]
+packages = ["src/lyrebird_pipeline"]
 
 # CUDA 12.8 wheels: the development machine is an RTX 3500 Ada (compute 8.9, 12 GB).
 # `critic.py` picks the device at runtime and falls back to CPU when no GPU is visible, so

@@ -38,11 +38,11 @@ from pathlib import Path
 
 import numpy as np
 
-sys.path.insert(0, "/home/sha5b/Documents/GitHub/Birdy/pipeline/src")
+sys.path.insert(0, "/home/sha5b/Documents/GitHub/Lyrebird/pipeline/src")
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from birdy_pipeline import geometry  # noqa: E402
-from birdy_pipeline.harvest import HarvestStore  # noqa: E402
+from lyrebird_pipeline import geometry  # noqa: E402
+from lyrebird_pipeline.harvest import HarvestStore  # noqa: E402
 from w6_t1_perch_recordist import CACHE, SEED, STORE, critic_embed, load_model, log, perch_embed  # noqa: E402
 
 MIN_PER_SPECIES = 2

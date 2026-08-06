@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from birdy_pipeline.harvest import XenoCanto  # noqa: E402
+from lyrebird_pipeline.harvest import XenoCanto  # noqa: E402
 
 CACHE = ROOT / "out/audio-postcutoff"
 FULL = CACHE / "_catalogue_full.json"

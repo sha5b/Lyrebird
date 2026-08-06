@@ -28,7 +28,7 @@ Findings 1–28 came from the repository audit. Findings 29–31 came from a sec
 **Where.**
 `docs/07-references.md:52-54` · `docs/08-implementation.md:172-179` ·
 `docs/21-syrinx-fidelity.md:50` and `:242` ·
-`pipeline/src/birdy_pipeline/syrinx.py:844-852` (the `gamma_scale` docstring)
+`pipeline/src/lyrebird_pipeline/syrinx.py:844-852` (the `gamma_scale` docstring)
 
 **Claimed.** "The spectral content index (SCI = spectral centroid ÷ f0) is a function of
 `beta` alone and is invariant to `gamma`", attributed to Sitt et al. 2008 (*Phys. Rev. E*
@@ -59,7 +59,7 @@ point toward low tension, which `sitt2008` shows is the pulse-like SNILC regime.
 ## 2. Period doubling and chaos are attributed to the wrong two papers — HIGH
 
 **Where.**
-`docs/21-syrinx-fidelity.md:158-161` · `pipeline/src/birdy_pipeline/syrinx.py:1248-1251`
+`docs/21-syrinx-fidelity.md:158-161` · `pipeline/src/lyrebird_pipeline/syrinx.py:1248-1251`
 
 **Claimed.** docs/21: "The model *contains* that middle: period-doubled and chaotic solutions
 (Sitt et al. 2008; Amador & Mindlin 2008, *Chaos* 18:043123)." syrinx.py: `rough` reaches
@@ -119,8 +119,8 @@ response to real song, with burst timing locked to gesture-trajectory extrema."
 `docs/whitepaper/build_whitepaper.py:872-873` (the fabricated title) ·
 `docs/07-references.md:31` ("full syrinx ODE published") and `:68-71` ·
 `docs/21-syrinx-fidelity.md:150` and `:213-214` ·
-`pipeline/src/birdy_pipeline/syrinx.py:1261-1266` ·
-`pipeline/src/birdy_pipeline/syrinx.py:216-219`
+`pipeline/src/lyrebird_pipeline/syrinx.py:1261-1266` ·
+`pipeline/src/lyrebird_pipeline/syrinx.py:216-219`
 
 **Claimed.** Three separate things: (a) that the Front. Neurosci. 15:647978 article is titled
 "Low-dimensional dynamics of birdsong production and imitation"; (b) that it is where "the
@@ -193,7 +193,7 @@ but must be labelled as the project's own, not as the paper's.
 
 **Where.**
 `docs/07-references.md:93-94` · `docs/08-implementation.md:207` ·
-`docs/21-syrinx-fidelity.md:81` · `pipeline/src/birdy_pipeline/syrinx.py:139` and `:870-874`
+`docs/21-syrinx-fidelity.md:81` · `pipeline/src/lyrebird_pipeline/syrinx.py:139` and `:870-874`
 
 **Claimed.** (a) The OEC resonance accounts for "11–14 dB of f0-to-harmonic difference".
 (b) "Cardinal tracheal resonances ≈ 2, 5, 8, 12 kHz **(1:3:5:7)**".
@@ -268,8 +268,8 @@ tradition. The repo conflates the two, and inside a single sentence
 ## 11. A 140 Hz low-pass does not select the 80–250 Hz band — MEDIUM
 
 **Where.**
-`pipeline/src/birdy_pipeline/syrinx.py:1271-1273` · `docs/08-implementation.md:244` ·
-`docs/07-references.md:73` · `pipeline/src/birdy_pipeline/syrinx.py:211-214`
+`pipeline/src/lyrebird_pipeline/syrinx.py:1271-1273` · `docs/08-implementation.md:244` ·
+`docs/07-references.md:73` · `pipeline/src/lyrebird_pipeline/syrinx.py:211-214`
 
 **Claimed.** "ROUGH_LP_HZ sits inside the 80-250 Hz band that syringeal muscle can actually
 follow (Riede & Goller); below 80 Hz the modulation would be respiratory, which is what `am`
@@ -298,8 +298,8 @@ this. The current single 140 Hz low-pass sits across both.
 ## 12. `syrinx.py`'s own docstring says `rough` perturbs alpha; the code perturbs beta — HIGH
 
 **Where.**
-`pipeline/src/birdy_pipeline/syrinx.py:1247` (docstring) against `:1258-1281` (code) ·
-`pipeline/src/birdy_pipeline/syrinx.py:210-211` (the `ROUGH_LP_HZ` comment)
+`pipeline/src/lyrebird_pipeline/syrinx.py:1247` (docstring) against `:1258-1281` (code) ·
+`pipeline/src/lyrebird_pipeline/syrinx.py:210-211` (the `ROUGH_LP_HZ` comment)
 
 **Claimed.** Line 1247: "`rough` perturbs **alpha** before integration". Line 210: "Pressure
 perturbation is lowpassed to this before it reaches **alpha**."
@@ -417,7 +417,7 @@ Brainard (2009), *Nature Neuroscience* 12:927–931, and Sober, Wohlgemuth & Bra
 **Where.**
 `docs/07-references.md:74-75` · `docs/whitepaper/build_whitepaper.py:916-917` ·
 `docs/08-implementation.md:243` (claim used, no citation) ·
-`pipeline/src/birdy_pipeline/syrinx.py:1269` (claim used, no citation)
+`pipeline/src/lyrebird_pipeline/syrinx.py:1269` (claim used, no citation)
 
 **Claimed.** "Chen et al., PLOS ONE 2013 — rendition-to-rendition f0 and amplitude are
 near-uncorrelated (R² ≈ 0.03), so independent output jitter and shimmer would be the wrong
@@ -509,7 +509,7 @@ between-individual variability stated.
 ## 22. Lu et al. 2025 does not claim POMMs beat HMMs — MEDIUM
 
 **Where.**
-`docs/18-syntax-roadmap.md:14` · `pipeline/src/birdy_pipeline/syntax.py:7` ·
+`docs/18-syntax-roadmap.md:14` · `pipeline/src/lyrebird_pipeline/syntax.py:7` ·
 `docs/whitepaper/build_whitepaper.py:944-945`
 
 **Claimed.** "Lu et al. 2025 show POMMs **beat** HMMs on Bengalese finch song."
@@ -569,7 +569,7 @@ Present it as such, and cite Patel-Grosz et al. only for the methodological fram
 ## 25. The Perch 2.0 numbers are internally inconsistent, and `docs/03` describes Perch 1.0 — HIGH
 
 **Where.**
-`docs/03-decoding-science.md:37-39` · `pipeline/src/birdy_pipeline/perch.py:58-59` and `:78` ·
+`docs/03-decoding-science.md:37-39` · `pipeline/src/lyrebird_pipeline/perch.py:58-59` and `:78` ·
 `docs/whitepaper/build_whitepaper.py:933-934` and `:2596` ·
 `pipeline/analysis/w6_t1_perch_recordist.py:88`
 
@@ -592,7 +592,7 @@ a module whose whole job is to name a species conservatively.
 ## 26. Morocutti et al. 2023 measured device shift, not bioacoustic shift — MEDIUM
 
 **Where.**
-`pipeline/src/birdy_pipeline/critic.py:193` and `:276` · `docs/17-source-invariance.md:10`
+`pipeline/src/lyrebird_pipeline/critic.py:193` and `:276` · `docs/17-source-invariance.md:10`
 
 **Claimed.** `critic.py:276` refers to "the channel-simulation half of the recipe's other arm
 (**arXiv 2305.07499 measured** …)", implying the paper measured this effect in the project's
@@ -633,10 +633,10 @@ licence needs checking against that plan before the adapter is built, not after.
 ## 28. Four methods are used with no citation anywhere in the repository — MEDIUM
 
 **Where.**
-UMAP — `pipeline/src/birdy_pipeline/galaxy.py:25`, `:30-36`, `:344-355` ·
-HDBSCAN — `pipeline/src/birdy_pipeline/density.py:11-46`,
-`pipeline/src/birdy_pipeline/learn.py:1998-2030` ·
-SimCLR / NT-Xent — `pipeline/src/birdy_pipeline/critic.py:139`, `:519`, `:849`, `:941` ·
+UMAP — `pipeline/src/lyrebird_pipeline/galaxy.py:25`, `:30-36`, `:344-355` ·
+HDBSCAN — `pipeline/src/lyrebird_pipeline/density.py:11-46`,
+`pipeline/src/lyrebird_pipeline/learn.py:1998-2030` ·
+SimCLR / NT-Xent — `pipeline/src/lyrebird_pipeline/critic.py:139`, `:519`, `:849`, `:941` ·
 random Fourier features — `docs/whitepaper/figures/eq/rff.png`
 
 **What is missing.** These four are load-bearing methods, and `critic.py:139` even appeals to
@@ -740,7 +740,7 @@ rhetorical position, because it is the phrasing that survives scrutiny. Severity
 
 **Hartley & Suthers' crossover is a gap, not a threshold** —
 `docs/15-synth-extensions-math.md:61` and `:69`, `docs/09-learned-objective-plan.md:269`,
-`pipeline/src/birdy_pipeline/respiration.py:33`. The repo says "mini-breaths below ~30 Hz
+`pipeline/src/lyrebird_pipeline/respiration.py:33`. The repo says "mini-breaths below ~30 Hz
 syllable rate, pulsatile expiration above". The paper reports mini-breaths at **2–27
 notes/s** and pulsatile expiration at **30–38 notes/s** — with no data between 27 and 30.
 "~30 Hz" is a fair approximation; stating the two measured ranges is better, and makes clear

@@ -22,12 +22,12 @@
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
 	import { relationPartners } from '$lib/data/assets';
-	import type { BirdyAssets } from '$lib/data/types';
+	import type { LyrebirdAssets } from '$lib/data/types';
 	import type { LayoutView } from './layouts';
 	import { speciesColourScaled } from './palette';
 
 	interface Props {
-		assets: BirdyAssets;
+		assets: LyrebirdAssets;
 		/** Where the centroids are right now; seeded once at load. */
 		view: LayoutView;
 		/** The selected species' id; empty draws nothing. */

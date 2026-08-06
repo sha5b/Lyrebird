@@ -41,14 +41,14 @@ from pathlib import Path
 
 import numpy as np
 
-sys.path.insert(0, "/home/sha5b/Documents/GitHub/Birdy/pipeline/src")
+sys.path.insert(0, "/home/sha5b/Documents/GitHub/Lyrebird/pipeline/src")
 
-from birdy_pipeline import geometry, perch  # noqa: E402
-from birdy_pipeline.harvest import HarvestStore  # noqa: E402
+from lyrebird_pipeline import geometry, perch  # noqa: E402
+from lyrebird_pipeline.harvest import HarvestStore  # noqa: E402
 
-STORE = Path("/home/sha5b/Documents/GitHub/Birdy/pipeline/out/harvest-gan")
-CACHE = Path("/home/sha5b/Documents/GitHub/Birdy/pipeline/out/audio-cache")
-MODEL_DIR = Path("/home/sha5b/Documents/GitHub/Birdy/pipeline/out/perch")
+STORE = Path("/home/sha5b/Documents/GitHub/Lyrebird/pipeline/out/harvest-gan")
+CACHE = Path("/home/sha5b/Documents/GitHub/Lyrebird/pipeline/out/audio-cache")
+MODEL_DIR = Path("/home/sha5b/Documents/GitHub/Lyrebird/pipeline/out/perch")
 OUT = Path(__file__).resolve().parent / "w6_t1_perch_recordist.json"
 MIN_PER_RECORDIST = 8
 MAX_PER_RECORDIST = 20

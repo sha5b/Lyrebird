@@ -2448,7 +2448,7 @@ def build_galaxy(
 
     manifest = {
         "builtAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "pipeline": "birdy-pipeline",
+        "pipeline": "lyrebird-pipeline",
         "contract": "docs/08-implementation.md v1",
         "inventoryVersion": inventory.get("version"),
         # Which inventory this galaxy was built from, and when that file was last written.

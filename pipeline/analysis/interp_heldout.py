@@ -112,7 +112,7 @@ def score(
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--assets", default="app/static/birdy", type=Path)
+    ap.add_argument("--assets", default="app/static/lyrebird", type=Path)
     ap.add_argument("--min-types", type=int, default=3,
                     help="a species needs this many fitted types to hold one out")
     ap.add_argument("--seed", type=int, default=0)

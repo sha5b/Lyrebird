@@ -100,7 +100,7 @@ from typing import Any
 import numpy as np
 
 REPO = Path(__file__).resolve().parents[2]
-ASSETS = REPO / "app" / "static" / "birdy"
+ASSETS = REPO / "app" / "static" / "lyrebird"
 UNKNOWN = REPO / "pipeline" / "out" / "v10" / "assets-unknown"
 STORE = REPO / "pipeline" / "out" / "harvest-inband"
 REPORT = Path(__file__).with_suffix(".json")
@@ -165,7 +165,7 @@ def load_embed32(
     if raw.size != rows * dim:
         raise SystemExit(
             f"embeddings.f32 holds {raw.size} floats, embeddings.json says {rows} x {dim} — "
-            "re-run `birdy-pipeline critic embed` against this store"
+            "re-run `lyrebird-pipeline critic embed` against this store"
         )
     if rows != n_field:
         raise SystemExit(
@@ -259,7 +259,7 @@ def sweep_point(
     z: np.ndarray, shipped: np.ndarray, min_cluster_size: int
 ) -> dict[str, Any]:
     """One clustering, and everything measured about it."""
-    from birdy_pipeline import density
+    from lyrebird_pipeline import density
 
     t0 = time.time()
     found = density.cluster(z, min_cluster_size=min_cluster_size)

@@ -7,7 +7,7 @@ xeno-canto mirror (264 flacs over 88 UK species, with a metadata csv), warblr an
 ff1010bird (bird/no-bird control sets), BirdCLEF's competition archives, BirdSet's
 ~520 000-recording xeno-canto repackaging, the XCDC dawn-chorus set, iNatSounds'
 230 000-observation iNaturalist dump. This module puts them behind one interface so
-`birdy-pipeline sources list` can say, honestly, which of them this machine can use
+`lyrebird-pipeline sources list` can say, honestly, which of them this machine can use
 right now.
 
 Two rules bind every adapter, and they are the same rules `harvest.py` lives by:
@@ -987,13 +987,13 @@ class GbifSource(Source):
 class XenoCantoListing(Source):
     """Not an adapter — the availability row that completes the picture.
 
-    xeno-canto already has its own command (`birdy-pipeline harvest`); it appears in
+    xeno-canto already has its own command (`lyrebird-pipeline harvest`); it appears in
     `sources list` so the table answers "what can this machine fetch from, right now"
     in one place.
     """
 
     name = "xeno-canto"
-    summary = "the main harvest path: birdy-pipeline harvest"
+    summary = "the main harvest path: lyrebird-pipeline harvest"
 
     def available(self) -> tuple[bool, str]:
         if os.environ.get("XC_API_KEY"):
@@ -1003,7 +1003,7 @@ class XenoCantoListing(Source):
     def fetch(self, store, species=None, limit=5,
               max_seconds=harvest.DEFAULT_MAX_SECONDS, item=None) -> HarvestReport:
         log("xeno-canto is harvested by its own command: "
-            "uv run birdy-pipeline harvest [--species ...]")
+            "uv run lyrebird-pipeline harvest [--species ...]")
         return HarvestReport()
 
 

@@ -2,7 +2,7 @@
 	/**
 	 * Everything the pipeline can do that is not harvest, fit or build — and what it found.
 	 *
-	 * The Learn tab drove eight of `birdy-pipeline`'s twenty-two subcommands. The other
+	 * The Learn tab drove eight of `lyrebird-pipeline`'s twenty-two subcommands. The other
 	 * fourteen are where this project's measurements live: whether a resynthesis lands
 	 * nearest its own species (`placement`), whether a cosine gain is an audible gain
 	 * (`specbench`), whether the browser's space map reproduces the critic's embedding
@@ -139,7 +139,7 @@
 			here.
 		</p>
 		<pre class="mono">cd pipeline
-uv run birdy-pipeline serve</pre>
+uv run lyrebird-pipeline serve</pre>
 	</section>
 {:else if loaded && verbs.length}
 	{#each groups as group (group.id)}
@@ -222,7 +222,7 @@ uv run birdy-pipeline serve</pre>
 							disabled={jobRunning || pipelineBusy || stops.length > 0}
 							title={stops.length
 								? stops.map((n) => n.what).join('; ')
-								: `Runs birdy-pipeline ${verb.command}. It cannot be interrupted — Stop takes effect only on the runs that check for it.`}
+								: `Runs lyrebird-pipeline ${verb.command}. It cannot be interrupted — Stop takes effect only on the runs that check for it.`}
 							onclick={() => runPipeline(() => pipeline.run(verb.id, payload(verb)))}
 						>
 							Run

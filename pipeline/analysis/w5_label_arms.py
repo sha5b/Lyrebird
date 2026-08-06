@@ -31,9 +31,9 @@ from collections import Counter
 import numpy as np
 from sklearn.cluster import KMeans
 
-sys.path.insert(0, "/home/sha5b/Documents/GitHub/Birdy/pipeline/src")
+sys.path.insert(0, "/home/sha5b/Documents/GitHub/Lyrebird/pipeline/src")
 
-from birdy_pipeline.galaxy import (  # noqa: E402
+from lyrebird_pipeline.galaxy import (  # noqa: E402
     PointSet,
     _purity,
     _type_seed_means,
@@ -45,7 +45,7 @@ from birdy_pipeline.galaxy import (  # noqa: E402
 
 #: The debug-100 `build --dump-points` matrix of docs/22 §22.6. Rewrite this for a
 #: fresh dump; every arm in this file is only comparable to the table while it is fixed.
-NPZ = "/tmp/birdy-debug/points-debug100.npz"
+NPZ = "/tmp/lyrebird-debug/points-debug100.npz"
 
 
 def load() -> tuple[np.ndarray, PointSet]:

@@ -3,7 +3,7 @@
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
 	import { clusterProvenance, knotHeat } from '$lib/data/assets';
-	import type { BirdyAssets } from '$lib/data/types';
+	import type { LyrebirdAssets } from '$lib/data/types';
 	import { ACCENT, provenanceColourScaled, speciesColourScaled } from './palette';
 	import type { LayoutView } from './layouts';
 	import {
@@ -19,7 +19,7 @@
 	import { allocateRibbon, buildRibbon, RIBBON_VERTICES_PER_SEGMENT } from './ribbon';
 
 	interface Props {
-		assets: BirdyAssets;
+		assets: LyrebirdAssets;
 		signal: VisualSignal;
 		/** Where the centroids are right now; moves while the cloud rearranges. */
 		view: LayoutView;

@@ -8,7 +8,7 @@
  * the layout where distance is a measurement, plus the plumbing the rest of the galaxy
  * reads positions from.
  */
-import type { BirdyAssets } from '$lib/data/types';
+import type { LyrebirdAssets } from '$lib/data/types';
 
 /**
  * Where the cluster centroids are *right now*, shared between the point cloud (which
@@ -33,7 +33,7 @@ export interface LayoutView {
 	version: number;
 }
 
-export function createLayoutView(assets: BirdyAssets): LayoutView {
+export function createLayoutView(assets: LyrebirdAssets): LayoutView {
 	return {
 		centroids: Float32Array.from(assets.centroids.items.flatMap((c) => c.position)),
 		counts: Uint32Array.from(assets.centroids.items.map((c) => c.count ?? 0)),
@@ -398,7 +398,7 @@ function membersOf(clusterId: ArrayLike<number>, k: number): { starts: Int32Arra
  * a knot is not a claim; distance from its centre is. The signs are pinned to the
  * member with the largest coordinate so a reload draws the same picture.
  */
-function localShapes(assets: BirdyAssets, positions: Float32Array): LocalReport | null {
+function localShapes(assets: LyrebirdAssets, positions: Float32Array): LocalReport | null {
 	const features = assets.pointFeatures;
 	const d = assets.pointFeatureDims;
 	if (!features || d < 2) return null;
@@ -839,7 +839,7 @@ export function drawnLobes(positions: Float32Array, clusterId: number[], k: numb
 	};
 }
 
-export function buildLayout(assets: BirdyAssets, local = false): Layout {
+export function buildLayout(assets: LyrebirdAssets, local = false): Layout {
 	const base = expandClusters(
 		assets.positions,
 		assets.points.clusterId,

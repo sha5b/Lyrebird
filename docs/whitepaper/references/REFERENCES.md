@@ -5,7 +5,7 @@ Every work cited anywhere in this repository, checked against the primary litera
 **Audit date:** 2026-08-01. **Scope:** `docs/07-references.md`, the `REFERENCES` list inside
 `docs/whitepaper/build_whitepaper.py`, `docs/01`–`docs/23`, `README.md`, `AGENTS.md`,
 `HANDOFF.md`, `pipeline/README.md`, and the docstrings/comments in
-`pipeline/src/birdy_pipeline/*.py`.
+`pipeline/src/lyrebird_pipeline/*.py`.
 
 **Method.** Bibliographic fields were resolved against the Crossref REST API, Europe PMC,
 arXiv, HAL and publisher pages. Open-access status came from Unpaywall plus direct fetch.
@@ -63,7 +63,7 @@ See the finding on the Takens–Bogdanov attribution under `laje2002b`.
 Laje, R. & Mindlin, G. B. (2002). Diversity within a birdsong. *Physical Review Letters*
 **89**(28), 288102. <https://doi.org/10.1103/PhysRevLett.89.288102>
 · OA: no. Author copy: <http://lsd.df.uba.ar/papers/diversity.pdf>
-· **Used for:** `docs/whitepaper/build_whitepaper.py` annotates it "the normal form Birdy
+· **Used for:** `docs/whitepaper/build_whitepaper.py` annotates it "the normal form Lyrebird
 implements"; `docs/21` line 13–16 cites it for "the minimal dynamical system sitting at the
 Takens–Bogdanov point".
 · **Corrected:** bibliographic fields are right; the **attribution is wrong**. This paper is

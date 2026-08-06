@@ -63,7 +63,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from birdy_pipeline import harvest, learn, specbench  # noqa: E402
+from lyrebird_pipeline import harvest, learn, specbench  # noqa: E402
 
 SOURCE = ROOT / "out/harvest-gan"
 CACHES = [ROOT / "out/audio-cache", ROOT / "out/audio-xc"]

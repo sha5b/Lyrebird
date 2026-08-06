@@ -36,7 +36,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from birdy_pipeline import learn  # noqa: E402
+from lyrebird_pipeline import learn  # noqa: E402
 
 OUT = Path(__file__).resolve().parent / "song_funnel_stages.json"
 

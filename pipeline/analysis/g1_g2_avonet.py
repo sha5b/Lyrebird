@@ -44,7 +44,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from birdy_pipeline.syrinx import f0_reference  # noqa: E402
+from lyrebird_pipeline.syrinx import f0_reference  # noqa: E402
 
 LEARN_LOG = ROOT / "out/v9/learn.log"
 STORE = ROOT / "out/harvest-gan/syllables.jsonl"

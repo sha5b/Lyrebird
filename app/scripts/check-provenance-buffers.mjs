@@ -4,7 +4,7 @@
  * (`pointProvenance`, `centroidProvenance`, `buildSyllablePointIndex`), re-derived
  * here so the check is independent of the code it checks.
  *
- * Verifies, against `app/static/birdy/`:
+ * Verifies, against `app/static/lyrebird/`:
  *  - one provenance category per point, in {0,1,2,3}, never NaN;
  *  - every syllable-point index is in range;
  *  - every inventory syllable that owns no cluster (an orphan) still owns at least
@@ -21,7 +21,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const dir = new URL('../static/birdy/', import.meta.url).pathname;
+const dir = new URL('../static/lyrebird/', import.meta.url).pathname;
 const read = (name) => JSON.parse(readFileSync(join(dir, name), 'utf8'));
 
 const points = read('points.json');

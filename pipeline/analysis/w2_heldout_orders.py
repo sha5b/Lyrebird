@@ -14,8 +14,8 @@ import json
 import time
 from pathlib import Path
 
-from birdy_pipeline import seqstats
-from birdy_pipeline.harvest import HarvestStore
+from lyrebird_pipeline import seqstats
+from lyrebird_pipeline.harvest import HarvestStore
 
 t0 = time.time()
 store = HarvestStore(Path("out/harvest-gan"))

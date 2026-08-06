@@ -1,0 +1,16 @@
+# The repository root has had no ignore file until now: `app/` and `pipeline/` each carry
+# their own, and everything else at this level was either committed or absent. These are the
+# directories that exist at the root and should not travel with it.
+
+# Drafts of outward-facing text — forum posts, mailing-list drafts, dataset-card copy — written
+# to be sent once and not to be read as documentation of the project. Kept locally because the
+# wording is worth reusing; untracked because a half-finished announcement in a public
+# repository is a statement nobody has approved.
+publish/
+
+# Scratch output from ad-hoc runs at the root. The pipeline writes to `pipeline/out/`, which
+# `pipeline/.gitignore` already covers; this one only ever holds throwaway files.
+out/
+
+# Local helper scripts, not part of the build or the pipeline contract.
+tools/

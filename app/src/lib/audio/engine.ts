@@ -1,5 +1,5 @@
 import workletUrl from './worklets/syrinx-processor.js?url';
-import type { BirdyAssets, Species, Syllable } from '$lib/data/types';
+import type { LyrebirdAssets, Species, Syllable } from '$lib/data/types';
 import { songSyllables, speciesById } from '$lib/data/assets';
 import { applyVoice, createPopulation, type Individual } from './individual.ts';
 
@@ -70,7 +70,7 @@ function jitterSyllable(syllable: Syllable, amount: number): Syllable {
  */
 const MAX_VOLUME = 3;
 
-export class BirdyEngine {
+export class LyrebirdEngine {
 	readonly ctx: AudioContext;
 	readonly analyser: AnalyserNode;
 	private readonly synth: AudioWorkletNode;
@@ -127,7 +127,7 @@ export class BirdyEngine {
 		  }) => void)
 		| null = null;
 
-	private constructor(ctx: AudioContext, synth: AudioWorkletNode, private readonly assets: BirdyAssets) {
+	private constructor(ctx: AudioContext, synth: AudioWorkletNode, private readonly assets: LyrebirdAssets) {
 		this.ctx = ctx;
 		this.synth = synth;
 
@@ -200,7 +200,7 @@ export class BirdyEngine {
 		};
 	}
 
-	static async create(assets: BirdyAssets): Promise<BirdyEngine> {
+	static async create(assets: LyrebirdAssets): Promise<LyrebirdEngine> {
 		const ctx = new AudioContext({ sampleRate: assets.featureSpace.sampleRate, latencyHint: 'interactive' });
 		await ctx.audioWorklet.addModule(workletUrl);
 		const synth = new AudioWorkletNode(ctx, 'syrinx-processor', {
@@ -209,7 +209,7 @@ export class BirdyEngine {
 			// stereo, because each voice carries its own pan (worklet-side equal-power pan)
 			outputChannelCount: [2]
 		});
-		const engine = new BirdyEngine(ctx, synth, assets);
+		const engine = new LyrebirdEngine(ctx, synth, assets);
 		if (assets.calibration) {
 			synth.port.postMessage({ type: 'calibration', calibration: toPlain(assets.calibration) });
 		}
@@ -431,7 +431,7 @@ export class BirdyEngine {
 		if (!navigator.mediaDevices?.enumerateDevices) return null;
 		const all = await navigator.mediaDevices.enumerateDevices();
 		const monitors = all.filter(
-			(d) => d.kind === 'audioinput' && BirdyEngine.MONITOR_RE.test(d.label)
+			(d) => d.kind === 'audioinput' && LyrebirdEngine.MONITOR_RE.test(d.label)
 		);
 		if (!monitors.length) return null;
 
@@ -486,12 +486,12 @@ export class BirdyEngine {
 		};
 		let stream: MediaStream;
 		if (source === 'system') {
-			let monitor = await BirdyEngine.monitorDevice();
+			let monitor = await LyrebirdEngine.monitorDevice();
 			if (!monitor) {
 				try {
 					const probe = await navigator.mediaDevices.getUserMedia({ audio: true });
 					probe.getTracks().forEach((t) => t.stop());
-					monitor = await BirdyEngine.monitorDevice();
+					monitor = await LyrebirdEngine.monitorDevice();
 				} catch {
 					// Permission refused, or no input at all. Display capture is still worth
 					// offering — it is the only route on a machine with no monitor source.

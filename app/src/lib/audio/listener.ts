@@ -16,8 +16,8 @@ import {
 	type LivePath,
 	type VisualSignal
 } from '$lib/galaxy/shaders';
-import type { BirdyAssets } from '$lib/data/types';
-import type { BirdyEngine } from './engine';
+import type { LyrebirdAssets } from '$lib/data/types';
+import type { LyrebirdEngine } from './engine';
 
 /** A path with nothing scheduled behind it fades to this and stays as a faint thread. */
 const IDLE_ALPHA = 0.4;
@@ -103,8 +103,8 @@ export class Listener {
 	private readonly gate: SessionGate | null;
 
 	constructor(
-		private readonly engine: BirdyEngine,
-		private readonly assets: BirdyAssets
+		private readonly engine: LyrebirdEngine,
+		private readonly assets: LyrebirdAssets
 	) {
 		// A browser may refuse the requested rate and hand back 44100. The mel bank and the
 		// bin-to-Hz mapping must then follow the *actual* rate, or every descriptor is

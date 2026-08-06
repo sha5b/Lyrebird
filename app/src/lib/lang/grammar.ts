@@ -394,7 +394,7 @@ export function improvise(inventory: Inventory, speciesId: string, maxSyllables 
 	}
 
 	if (!syllables.length) return null;
-	// A grammar fitted by `birdy-pipeline learn` is measured from field recordings, not
+	// A grammar fitted by `lyrebird-pipeline learn` is measured from field recordings, not
 	// taken from the literature, so it must not borrow the citation that belongs to the
 	// hand-authored one. Syllables with no documented function are the tell: only the
 	// learned inventory produces them.

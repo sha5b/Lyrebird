@@ -28,11 +28,11 @@ TOLERANCE = 5.0e-6
 
 def main(argv: list[str]) -> int:
     if len(argv) < 2:
-        print("usage: python -m birdy_pipeline.parity <parity-js.json>", file=sys.stderr)
+        print("usage: python -m lyrebird_pipeline.parity <parity-js.json>", file=sys.stderr)
         return 2
     cases = json.loads(Path(argv[1]).read_text(encoding="utf-8"))
 
-    cal_path = Path(__file__).resolve().parents[3] / "app/static/birdy/syrinx-calibration.json"
+    cal_path = Path(__file__).resolve().parents[3] / "app/static/lyrebird/syrinx-calibration.json"
     calibration = Calibration.from_dict(json.loads(cal_path.read_text(encoding="utf-8")))
 
     print(f"parity against the worklet, tolerance {TOLERANCE:.0e}")

@@ -2469,8 +2469,8 @@ difference between a blurred answer and a wrong one. It does not make the raw fi
 and the raw figure is the one to hold. Taken with the 0.602 retrieval ceiling of
 \S\ref{sec:internal}, the bound on ``sing and the right region lights'' at production scale is
 lower than any debug number in this paper.
-% app/static/birdy/feature-space.json embedding.mapQuality, production v5 (348 461 points,
-% k = 14 003); debug comparators /tmp/birdy-debug/assets-label (k = 4 298) and assets-w5.
+% app/static/lyrebird/feature-space.json embedding.mapQuality, production v5 (348 461 points,
+% k = 14 003); debug comparators /tmp/lyrebird-debug/assets-label (k = 4 298) and assets-w5.
 
 \emph{Unrun.} Five things carry a gate in the project's plan document and have not been run:
 
@@ -2813,7 +2813,11 @@ grant, institutional or commercial support of any kind.
 
 % =====================================================================
 \bibliographystyle{plainnat}
-\bibliography{../references/references}
+% `references`, not `../references/references`. arXiv always compiles from the root of the
+% submission directory, so a path that climbs above it resolves to nothing there and the
+% bibliography comes out empty. An identical copy of the file sits next to this one, so this
+% form builds locally and on arXiv alike.
+\bibliography{references}
 
 % =====================================================================
 \appendix
@@ -3014,7 +3018,7 @@ failure was that a corpus assembled from overlapping open archives contains the 
 twice, and a similarity measure over it will find that first and rank it highest. Any
 comparative claim drawn from archive-scale bioacoustic data has this exposure, and a
 distance of exactly zero between two species is the symptom to look for.
-% pipeline/src/birdy_pipeline/relations.py; HANDOFF 2026-08-05, 2026-08-06
+% pipeline/src/lyrebird_pipeline/relations.py; HANDOFF 2026-08-05, 2026-08-06
 
 \section{The oscillator and its fitted parameters}
 \label{app:model}

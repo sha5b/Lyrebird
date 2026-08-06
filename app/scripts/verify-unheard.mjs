@@ -21,8 +21,8 @@
  */
 import { readFileSync, existsSync } from 'node:fs';
 
-const ASSETS = process.env.BIRDY_ASSETS ?? 'static/birdy';
-const REPORT = process.env.BIRDY_JOIN_REPORT ?? '../pipeline/analysis/v10_unknown_join.json';
+const ASSETS = process.env.LYREBIRD_ASSETS ?? 'static/lyrebird';
+const REPORT = process.env.LYREBIRD_JOIN_REPORT ?? '../pipeline/analysis/v10_unknown_join.json';
 
 let failures = 0;
 const ok = (name, cond, detail = '') => {

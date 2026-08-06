@@ -29,7 +29,7 @@ not a whistle.
 ### Which equations match
 
 The ODE ships bit-identically on both sides of the contract (Python
-`pipeline/src/birdy_pipeline/syrinx.py`, JS `app/src/lib/audio/worklets/syrinx-processor.js`):
+`pipeline/src/lyrebird_pipeline/syrinx.py`, JS `app/src/lib/audio/worklets/syrinx-processor.js`):
 
 ```
 x' = y

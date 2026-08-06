@@ -29,7 +29,7 @@
  */
 import { readFileSync } from 'node:fs';
 
-const ASSETS = process.env.BIRDY_ASSETS ?? 'static/birdy';
+const ASSETS = process.env.LYREBIRD_ASSETS ?? 'static/lyrebird';
 
 let failures = 0;
 const ok = (name, cond, detail = '') => {

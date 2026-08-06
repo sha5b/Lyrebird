@@ -27,7 +27,7 @@ What survives is a **bounded, species-stratified reservoir** of descriptors:
 
 Running statistics (Welford, elementwise over 28 dims) are kept over *every* descriptor
 ever seen, including the discarded ones. They cost 3 floats per dimension and they are
-what tells you whether the retained sample is representative: `birdy-pipeline harvest
+what tells you whether the retained sample is representative: `lyrebird-pipeline harvest
 --stats` prints the drift between the reservoir's own mean/std and the full stream's.
 If that drift is large, the cap is too small for the diversity being fed in.
 
@@ -63,9 +63,9 @@ from .syrinx import SAMPLE_RATE, peak_normalise
 XC_API = "https://xeno-canto.org/api/3/recordings"
 XC_PAGE_PAUSE = 1.0
 # The repo URL is the live one. The product is now called Lyrebird, but the GitHub repo is
-# still `Birdy` — the owner renames it separately, and until then this URL must resolve,
+# still `Lyrebird` — the owner renames it separately, and until then this URL must resolve,
 # because xeno-canto's terms ask a bulk client to be identifiable.
-USER_AGENT = "birdy-pipeline/0.1 (research; https://github.com/sha5b/Birdy)"
+USER_AGENT = "lyrebird-pipeline/0.1 (research; https://github.com/sha5b/Lyrebird)"
 DOWNLOAD_TIMEOUT = 60
 # Searching is slower than downloading, and by a lot.
 #

@@ -170,7 +170,7 @@ The build finds 117 shared-type candidates. Congeners rank high
 honest misses (`cuculus_canorus` sits far from its congeners). This is the same
 acoustic-neighbourhood geometry, now a product feature.
 
-**Expand.** `birdy-pipeline expand` ranks discovered-but-uncovered species (congeners of
+**Expand.** `lyrebird-pipeline expand` ranks discovered-but-uncovered species (congeners of
 high-novelty genera first). It runs the existing harvest → embed → learn → grow chain per
 target, with rate-limit pauses intact. `--dry-run` prints targets with no network. The
 server wires it as `/api/expand` next to `/api/loop`.

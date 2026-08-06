@@ -1,7 +1,7 @@
 # One-off measurement runners
 
 Arms that were run once, against a fixed store or a fixed dumped matrix, to settle a
-question recorded in `docs/`. They are here rather than in `src/birdy_pipeline/` because
+question recorded in `docs/`. They are here rather than in `src/lyrebird_pipeline/` because
 nothing imports them and nothing ships them — but they are here rather than in `/tmp`
 because **the pre-registered gate of each run is the docstring at the top of its file**,
 and a result whose gate cannot be re-read is not evidence.
@@ -58,7 +58,7 @@ rule this directory runs on. Adding a row means reading the file, not guessing f
 `w5_field_retrieval.py` and `w6_t3_perch_species.py` import helpers from their siblings, so
 run them from this directory (or with it on `sys.path`; the W6 pair does that itself).
 
-The two W5 runners read one fixed matrix, `/tmp/birdy-debug/points-debug100.npz` — the
+The two W5 runners read one fixed matrix, `/tmp/lyrebird-debug/points-debug100.npz` — the
 debug-100 `build --dump-points` set (214 154 points, 2 143 types, 96 MB) that docs/22 §22.6's
 table was measured on. It is outside the repo on purpose and it is not backed up: regenerate
 it with `build --dump-points` and expect the absolute numbers to move, since the arms are

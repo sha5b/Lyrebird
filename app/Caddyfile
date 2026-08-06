@@ -18,7 +18,7 @@
 	# **The hashed bundles are immutable and the corpus is not.**
 	#
 	# Vite fingerprints everything under `_app/immutable`, so those may be cached forever — the
-	# filename changes when the contents do. The corpus under `/birdy` is the opposite case: the
+	# filename changes when the contents do. The corpus under `/lyrebird` is the opposite case: the
 	# filenames are stable across rebuilds (`points.json` is always `points.json`) and the
 	# contents change whenever the pipeline runs, so caching them by name would serve last
 	# week's galaxy against this week's manifest. The app already appends the build stamp as a
@@ -27,7 +27,7 @@
 	@immutable path /_app/immutable/*
 	header @immutable Cache-Control "public, max-age=31536000, immutable"
 
-	@corpus path /birdy/*
+	@corpus path /lyrebird/*
 	header @corpus Cache-Control "public, max-age=300, must-revalidate"
 
 	# `adapter-static` is configured with `fallback: '404.html'` (see vite.config.ts), so an

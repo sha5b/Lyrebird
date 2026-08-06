@@ -14,7 +14,7 @@ import json
 import numpy as np
 from sklearn.cluster import KMeans
 
-ROOT = "app/static/birdy"
+ROOT = "app/static/lyrebird"
 
 pts = json.load(open(f"{ROOT}/points.json"))
 n = pts["n"]

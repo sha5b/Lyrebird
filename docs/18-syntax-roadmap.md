@@ -88,7 +88,7 @@ negative result down instead of deleting it.
 
 ## P1 result (2026-07-31): the grammar bake-off — first-order stays
 
-`syntax.py` + `birdy-pipeline syntax`, run on the debug store (30 qualifying
+`syntax.py` + `lyrebird-pipeline syntax`, run on the debug store (30 qualifying
 species, 3 750 bouts ≥ 3 tokens, seeded 80/20 bout splits, add-α 0.1 backoff,
 deterministic — two runs bit-identical). The pre-registered table:
 
@@ -134,7 +134,7 @@ are judged against.
 
 ## P2 result (2026-07-31): the song-level kernel baseline does not hold
 
-`songspace.py` + `birdy-pipeline songspace`: bouts as (type, gap) sequences, with a
+`songspace.py` + `lyrebird-pipeline songspace`: bouts as (type, gap) sequences, with a
 weighted edit-distance kernel. Substitution/indel costs 1, and the match
 cost |Δlog gap| is priced inside the DP, so the edit path *is* the rhythm alignment.
 The pre-registered rule judges it: species kNN lift must beat bag-of-types over the

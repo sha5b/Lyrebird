@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from w5_label_arms import load, cluster_names, unit
-from birdy_pipeline.galaxy import FIELD_SOURCE, PointSet, cluster_plan, label_assign, type_seeds
+from lyrebird_pipeline.galaxy import FIELD_SOURCE, PointSet, cluster_plan, label_assign, type_seeds
 from sklearn.cluster import KMeans
 
 z, pts = load()

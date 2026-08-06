@@ -30,7 +30,7 @@ const ok = (name, cond, detail = '') => {
 	}
 };
 
-const dir = mkdtempSync(join(tmpdir(), 'birdy-zip-'));
+const dir = mkdtempSync(join(tmpdir(), 'lyrebird-zip-'));
 const BUILT = new Date('2026-08-03T08:51:31Z');
 const enc = new TextEncoder();
 

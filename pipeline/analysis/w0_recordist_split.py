@@ -63,7 +63,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from birdy_pipeline import perch  # noqa: E402
+from lyrebird_pipeline import perch  # noqa: E402
 
 CACHE = ROOT / "out/audio-postcutoff"
 META = ROOT / "out/audio-postcutoff/_meta.json"

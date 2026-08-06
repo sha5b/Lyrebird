@@ -1,5 +1,5 @@
 import { RealFft } from './fft.ts';
-import type { BirdyAssets, Centroids, FeatureSpace } from '$lib/data/types';
+import type { LyrebirdAssets, Centroids, FeatureSpace } from '$lib/data/types';
 
 /**
  * The 28-dimensional clip/window descriptor of docs/08-implementation.md §8.2,
@@ -263,7 +263,7 @@ function cosine(a: Float32Array | number[], b: Float32Array | number[]): number 
  * birdsong pegged the ramp at full strength and the ramp had stopped ramping. Nothing
  * caught it for a month, because a constant cannot notice that its corpus was rebuilt.
  * The values below are v6's measurement, kept in step by
- * `uv run birdy-pipeline thresholds --write`.
+ * `uv run lyrebird-pipeline thresholds --write`.
  *
  * **The cosine alone can no longer carry this test, and the old comment claiming it
  * could was measuring a corpus that no longer exists.** Against centroids fitted to two
@@ -733,7 +733,7 @@ export class PointTracker {
 	private readonly zLo: Float32Array;
 	private readonly smoothing: number;
 
-	constructor(assets: BirdyAssets, smoothing = 0.7) {
+	constructor(assets: LyrebirdAssets, smoothing = 0.7) {
 		const n = assets.points.n;
 		this.smoothing = smoothing;
 		this.activation = new Float32Array(n);

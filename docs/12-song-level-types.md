@@ -7,7 +7,7 @@ cluster of similar type-id sequences. A bout in no cluster is the song-level nov
 answer: a sequence this bird has not been heard repeating.
 
 Implementation: `learn.bout_sequences` / `cluster_song_types` / `attach_song_types`
-(pipeline/src/birdy_pipeline/learn.py), wired into `cmd_learn` and the Learn-tab fit
+(pipeline/src/lyrebird_pipeline/learn.py), wired into `cmd_learn` and the Learn-tab fit
 (server.py `_fit`) right after `attach_chunks`. Output: `grammar.songTypes` +
 `grammar.songTyping` per species in the learned inventory, and a store-side
 `song-typing.json` (one row per typed bout, keyed by first syllable, beside

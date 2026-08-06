@@ -451,7 +451,7 @@ def fake_patches(
     if not patches:
         raise ValueError(
             "the inventory has no learned syllables for any harvested species — run "
-            "`birdy-pipeline learn` first, so there is something for the critic to argue with"
+            "`lyrebird-pipeline learn` first, so there is something for the critic to argue with"
         )
     return PatchSet(np.stack(patches), np.asarray(labels, dtype=np.int64), list(names), False)
 

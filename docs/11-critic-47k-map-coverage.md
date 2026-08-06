@@ -114,7 +114,7 @@ coincide.
 
 ## 11.5 Multi-source harvesting: what is actually out there
 
-`sources.py` adds `birdy-pipeline sources list/fetch` (subagent-built, live-probed
+`sources.py` adds `lyrebird-pipeline sources list/fetch` (subagent-built, live-probed
 2026-07-29). Every adapter stages audio and ingests it through the *same* decode →
 describe → delete-by-default machinery as xeno-canto. When its key or package is missing, an adapter
 skips with a reason, never an error. `pipeline/.env.example` documents `XC_API_KEY`,

@@ -11,7 +11,7 @@ QUORUM DECIDED     found by route: a fitted type founds its knot on arrival (it 
                    OBS_PER_TYPE=12 upstream), an ingest-flagged syllable keeps the quorum
                    of 8. Section 1a, which also corrects 1's framing: a pooled point
                    already renders at clusterId -1, so both options were on screen
-BUILT              `birdy-pipeline synthesise`. Section 1b. Building it found grow could
+BUILT              `lyrebird-pipeline synthesise`. Section 1b. Building it found grow could
                    not READ a galaxy built since 2026-08-01 (sidecar move, wrong error
                    message) and that founding a knot CORRUPTED the sidecar. Both fixed
 T3 ARMED           w6_t3 fires automatically when critic groupings exits — out/t3-chain.log
@@ -126,7 +126,7 @@ re-centring, not only that points have moved.
 
 ### 1b. It is built, and building it found that `grow` had been broken since 2026-08-01
 
-`birdy-pipeline synthesise` renders the fitted types the galaxy has no knot for and grows
+`lyrebird-pipeline synthesise` renders the fitted types the galaxy has no knot for and grows
 them in. 20 module self-tests pass, 0 failures, `grow` among them for the first time.
 
 ```
@@ -243,7 +243,7 @@ both be true; the comment now says so and names re-running `critic groupings` as
   two archives the entire corpus comes from. Their only remaining appearances were in
   comments. Re-attached at the harvester description: dropping data-source attribution from a
   paper built on licensed archive audio is not a thing to do silently.
-- **The repository is `Lyrebird`, not `Birdy`.** Reproducibility now gives
+- **The repository is `Lyrebird`, not `Lyrebird`.** Reproducibility now gives
   `https://github.com/sha5b/Lyrebird` and the running application at
   `https://lyrebird.variable.gallery`. Both are for a repository that is not public yet.
 - **Funding: none.** Its own section: independent work by an artist, at the boundary of art
@@ -319,7 +319,7 @@ untouched; the three `<link>` lines are in `brand/README.md`.
 ## 7. Test state, and four app errors that are not from this work
 
 **Pipeline: 21 modules, every `self_test` passes, 0 failures.** That includes `learn`, whose
-self-test was failing on main earlier today and blocking `birdy-pipeline learn` outright — see
+self-test was failing on main earlier today and blocking `lyrebird-pipeline learn` outright — see
 the entry below for the density-backend cause and the `FAST_PATH_MIN_ROWS` fix.
 
 **`npm run check` reports 4 errors, and none of them are in files this work authored or
@@ -341,7 +341,7 @@ places to write it into are the `0.488` hits in `main.tex`.
 # Lyrebird — READ THIS FIRST (2026-08-06): the sweep says 79.5 % noise is not a tunable number, the two maps agree far more than the last entry could see, and `learn` was broken on main
 
 The sweep the last entry left ready is run. Two of its numbers change what the previous
-entry concluded, and one thing found on the way blocked `birdy-pipeline learn` entirely.
+entry concluded, and one thing found on the way blocked `lyrebird-pipeline learn` entirely.
 
 ```
 mcs sweep RUN        25 -> k=1128, 79.3 % noise.  100 -> k=2, 36.8 % noise, largest
@@ -421,7 +421,7 @@ the label knots because they do not cover the corpus — but on what they do cov
 the labels are describing the same thing.** That is a much better argument for the
 `unassigned` column than "two unrelated maps", and it is the sentence to use.
 
-## 3. `birdy-pipeline learn` was broken on main, and the cause was the backend switch
+## 3. `lyrebird-pipeline learn` was broken on main, and the cause was the backend switch
 
 `learn.self_test()` fails at `2078e1a`, and `cmd_learn` runs it before it fits anything
 (`cli.py`, after the store check), so **the learn command could not run at all**. It failed
@@ -460,7 +460,7 @@ The tab drove 8 of 22 subcommands. The other fourteen are where the measurements
 each wrote its answer to a file only a terminal could read — so the page could print a
 resynthesis cosine and could not print whether that cosine meant anything audible.
 
-`pipeline/src/birdy_pipeline/verbs.py` declares each verb once: its flags with types,
+`pipeline/src/lyrebird_pipeline/verbs.py` declares each verb once: its flags with types,
 ranges and glosses, its preconditions, its cost, what it overwrites, and where its report
 lands. That one declaration drives the argv, the form and the result table together.
 
@@ -570,13 +570,13 @@ Render-free, on 435 630 stored syllables: **19.3 %** in the 28-d descriptor spac
 `npm run check` 0 errors / 0 warnings, proven non-vacuous by injecting a type error and
 watching it fail. Every module self-test passes (20 modules). `verify:layout`,
 `verify:split-knots`, `verify:tearing`, `verify:trust`, `verify:functions`,
-`verify:context-threads` all pass. `birdy-pipeline verify` passes on the reshipped assets.
+`verify:context-threads` all pass. `lyrebird-pipeline verify` passes on the reshipped assets.
 
 ```
-new    pipeline/src/birdy_pipeline/verbs.py      app/src/lib/PipelineVerbs.svelte
+new    pipeline/src/lyrebird_pipeline/verbs.py      app/src/lib/PipelineVerbs.svelte
        app/src/lib/ReportTable.svelte
        pipeline/out/reports/{verify,thresholds,placement}.json
-asset  app/static/birdy/relations.json           reshipped, 13 duplicate pairs refused
+asset  app/static/lyrebird/relations.json           reshipped, 13 duplicate pairs refused
 ```
 
 Everything in this entry is **uncommitted**, on top of `2078e1a`.
@@ -584,14 +584,14 @@ Everything in this entry is **uncommitted**, on top of `2078e1a`.
 ## 10. FIRST THING TO DO
 
 **DONE, 2026-08-06.** The join ran with `--enrich` against both `pipeline/out/v10/assets/`
-and `app/static/birdy/`, and it took **22 seconds** each — the 90 minutes was the second
+and `app/static/lyrebird/`, and it took **22 seconds** each — the 90 minutes was the second
 `--clustering hdbscan` build, which was already on disk at `pipeline/out/v10/assets-unknown/`.
 `npm run verify:unheard` passes on all eleven checks. The Display panel's **"What nothing
 claims"** checkbox is live.
 
 ```bash
 cd pipeline
-uv run python analysis/v10_unknown_join.py --enrich ../app/static/birdy/points.json
+uv run python analysis/v10_unknown_join.py --enrich ../app/static/lyrebird/points.json
 cd ../app && npm run verify:unheard
 ```
 
@@ -1110,7 +1110,7 @@ Commit `1fb7209` carries the first half of this session. The second half — the
 channel, the chorus-count fix, the units, the layout moves, `doubt.ts` — is **uncommitted**.
 
 `npm run check` is **0 errors, 0 warnings** (the 4 in `syrinx-processor.js` were pre-existing
-and are fixed), `birdy-pipeline verify` passes on the modified assets, `probe:stage` reports 0
+and are fixed), `lyrebird-pipeline verify` passes on the modified assets, `probe:stage` reports 0
 shader errors / 0 console errors / 0 404s with a real bird picked, `probe:words` passes all
 four states, `probe:trust` passes both sources, and every `verify:*` script passes.
 
@@ -1118,7 +1118,7 @@ four states, `probe:trust` passes both sources, and every `verify:*` script pass
 new    app/scripts/verify-trust.mjs      app/scripts/probe-trust.mjs
        app/scripts/verify-tearing.mjs    pipeline/analysis/v10_tearing_ship.py
        pipeline/analysis/v10_mcs_sweep.py
-asset  app/static/birdy/centroids.json   +6 316 lines, 0 deletions, formatting preserved
+asset  app/static/lyrebird/centroids.json   +6 316 lines, 0 deletions, formatting preserved
 ```
 
 ```
@@ -1197,7 +1197,7 @@ ls out/v10/assets-unknown/            # points.json appearing = clustering finis
 The command, if it died and needs restarting:
 
 ```bash
-uv run birdy-pipeline build --harvest-store out/harvest-inband \
+uv run lyrebird-pipeline build --harvest-store out/harvest-inband \
   --inventory out/v10/learned-v10.json --space embed --clustering hdbscan \
   --out out/v10/assets-unknown --projection pacmap \
   --no-compare-projections --no-relations
@@ -1208,7 +1208,7 @@ When `points.json` exists, the rest is written and waiting:
 ```bash
 cd pipeline
 uv run python analysis/v10_unknown_join.py \
-    --enrich ../app/static/birdy/points.json
+    --enrich ../app/static/lyrebird/points.json
 cd ../app && npm run verify:unheard
 ```
 
@@ -1265,7 +1265,7 @@ torch 2.11.0+cu128 with CUDA available.
 
 ## 3. relations.json had never been built, and nothing could say so
 
-`app/static/birdy/relations.json` did not exist. The v10 chain runs `build --no-relations`,
+`app/static/lyrebird/relations.json` did not exist. The v10 chain runs `build --no-relations`,
 and `out/harvest-inband` had no `embeddings.f32`, so the build logged *"relations skipped"*.
 Because the asset is **optional** — the loader treats absent and over-32 MB identically —
 nothing failed and nothing warned. `RelationThreads` drew zero segments and the species
@@ -1398,7 +1398,7 @@ syllables are all `unlabelled`; both are now derived from the song's own confide
 ## 9. State of the tree
 
 Committed: `5bad222`, `e7ea418`, `9ab497c`. Working tree at handoff time carried
-`docs/25-seeing-the-data.md` and `app/static/birdy/manifest.json` — the manifest was
+`docs/25-seeing-the-data.md` and `app/static/lyrebird/manifest.json` — the manifest was
 rewritten with `indent=1` to match `galaxy.py`'s `_write_json`, so its diff is the one added
 line (`relations.json`) rather than 3 893.
 
@@ -1642,7 +1642,7 @@ and of 17 recording fields, **none** do. `point-features.f32`'s 8 floats per poi
 reduced basis for the live cosine, not interpretable attributes, so they cannot be repurposed.
 This confirms docs/25 §25.1 by direct inspection rather than by reading the doc.
 
-**The newest build is what is showing.** `app/static/birdy` is the v9 build of
+**The newest build is what is showing.** `app/static/lyrebird` is the v9 build of
 2026-08-03T21:14 from `out/v9/learned-v9.json` — 387 287 points, 2 650 species, 16 283 types,
 `typeCoverage` 1.0 — and it is byte-identical in size to `out/v9/assets/inventory.json`. No
 newer build exists, because the v10 sweep was cancelled on evidence (§1 of the entry below).
@@ -1792,7 +1792,7 @@ rather than on a fixture.
 **INSTALLED, owner decision 2026-08-05 — "the fit is the point".**
 
 ```
-app/static/birdy         <- out/v10/assets     (rsync --delete, exact)
+app/static/lyrebird         <- out/v10/assets     (rsync --delete, exact)
 data/learned-inventory   <- learned-v10.json   2 489 species / 15 241 types
 shipped manifest         builtAt 2026-08-05T13:38, 444 213 points
 verify on the installed path   all checks passed
@@ -2415,7 +2415,7 @@ species. Whatever gets written about W2 says r = +0.852 in the same paragraph.
 this, refuse the file and re-embed in memory — and then never wrote it back, so the on-disk
 sidecar stayed stale and every analysis script that reads it, `w6_t1_perch_recordist.py`
 included, was quietly working on 90 % of the store. Regenerated with
-`birdy-pipeline critic embed --store out/harvest-gan`: 378 224 x 32, 0 NaN, 5.3 s. **Any
+`lyrebird-pipeline critic embed --store out/harvest-gan`: 378 224 x 32, 0 NaN, 5.3 s. **Any
 recordist or species number produced by those scripts before 2026-08-04 was computed on a
 partial store and should be re-run rather than trusted.**
 
@@ -2773,7 +2773,7 @@ no cached audio, 443 too short), so the benched set over-represents types whose 
 the cache. Nothing corrects for that.
 
 `analysis/specbench_n1200.json`. Reproduce with:
-`birdy-pipeline specbench --limit 1200 --store out/harvest-gan --inventory ../data/learned-inventory.json --calibration-dir out --out analysis/specbench_n1200.json`
+`lyrebird-pipeline specbench --limit 1200 --store out/harvest-gan --inventory ../data/learned-inventory.json --calibration-dir out --out analysis/specbench_n1200.json`
 
 ### And the re-judgment ran too. A cosine-gated adoption made the sound WORSE
 
@@ -3184,7 +3184,7 @@ write the negative result and close the biology.
 store        pipeline/out/harvest-gan   378 224 observations, 3 636 species with syllables
              snr on 97.1 % of rows, segmentBand [400, 12000] recorded in state.json
              headroom 21 776 of syllableCap 400 000
-installed    app/static/birdy = v9: 387 287 points, 16 380 knots, verify passes
+installed    app/static/lyrebird = v9: 387 287 points, 16 380 knots, verify passes
              data/learned-inventory.json = 2 650 species, 16 283 types
              committed as 569ddef; ROLLBACK IS 94c4ad8 (348 461 points, 2 423 species)
              — named explicitly because HEAD has since moved and "HEAD~1" no longer
@@ -3292,7 +3292,7 @@ iNat recordings in the store          5,368
   ...still in out/audio-cache         5,366      6.3 GB
 ```
 
-`birdy-pipeline quality remeasure` (new, `quality.py`) fills them. **It is exact, not
+`lyrebird-pipeline quality remeasure` (new, `quality.py`) fills them. **It is exact, not
 approximate:** it does not re-segment, it reproduces the segmentation the store already
 holds and measures the two quality fields on the segment the stored row names, matching by
 `(recording_id, order)` and verifying `start`/`dur` agree to a millisecond before writing
@@ -3373,7 +3373,7 @@ Held until the gate landed, then started, so the top-up is ingested under the ne
 segmentation rather than needing the same audit again afterwards:
 
 ```
-setsid nohup uv run birdy-pipeline sources fetch --source inat-sounds \
+setsid nohup uv run lyrebird-pipeline sources fetch --source inat-sounds \
   --species-file out/underfloor-species.txt --per-species 1 --limit 1500 \
   --keep-audio out/audio-cache --store out/harvest-gan > out/inat-topup.log 2>&1 &
 ```
@@ -3600,12 +3600,12 @@ grammar chunks              1272           2389     +88 %
 `learn` took 10 683 s for 2 648 species / 16 239 types. `verify` on the installed assets:
 387 287 points, 16 380 clusters, PaCMAP purity 95.3 %, all checks passed.
 
-**Installed** (owner's call, on those numbers): `out/v9/assets` -> `app/static/birdy/`,
+**Installed** (owner's call, on those numbers): `out/v9/assets` -> `app/static/lyrebird/`,
 `learned-v9.json` -> `data/learned-inventory.json`, re-verified in place. The install is
 **committed** as `569ddef`, whose `manifest.json` is byte-identical to the built one
 (sha256 `c83c2ee5...`), so `git status` is clean for those paths and git is no longer the
 rollback point. **`HEAD~1` is**: it carries 348 461 points / 13 848 clusters / 2 423
-species, so `git checkout HEAD~1 -- app/static/birdy data/learned-inventory.json` puts v8
+species, so `git checkout HEAD~1 -- app/static/lyrebird data/learned-inventory.json` puts v8
 back. One reason install was the right way and not merely the nicer
 one: `learn` writes `typing.json` **into the store**, so after the chain the store described
 v9 while the installed inventory was v8, and only 91.4 % of v8's types still had typed
@@ -3799,7 +3799,7 @@ docstring says why.
 ## The audio came from iNaturalist, not xeno-canto
 
 `out/harvest-gan/CREDITS.md` is full of `INAT…` ids against `visipedia/inat_sounds`, and
-`birdy-pipeline sources list` reports **iNatSounds 2024 (AWS Open Data): 111k Aves recordings,
+`lyrebird-pipeline sources list` reports **iNatSounds 2024 (AWS Open Data): 111k Aves recordings,
 3 846 species, keyless** — which is the 3 581 in the store. So the top-up belongs to
 `sources fetch --source inat-sounds`, not to the xeno-canto harvest: same archive, no API key,
 no quota, and `--per-species` makes a balanced take instead of the archive's first species in
@@ -5010,7 +5010,7 @@ retrieval template and `geometry.py` supplies the null.
 # Lyrebird — the v8 chain LANDED and it reproduced v7 bit-for-bit (2026-08-03, 15:12)
 
 **Finished 15:12:55, 3 h 31 m. Nothing was installed, because there is nothing to install:
-v8 is byte-identical to what `app/static/birdy` already holds.** Every asset file md5-matches
+v8 is byte-identical to what `app/static/lyrebird` already holds.** Every asset file md5-matches
 the installed one and the inventory matches too (`de98ec12…` both). Every manifest number is
 the same figure rather than a near one — knnAgreement 0.4685, faithfulness 0.4745 / 0.4829,
 torn 1864 / 5320, severe 1009, trustworthiness 0.9247, continuity 0.9036, purity 0.9452,
@@ -5630,7 +5630,7 @@ here — the bug is *in the lookup*, so a test that reimplements it would reprod
   metric really does move the points, so the round-trip is not vacuous.
 - `verify --out` reports the match ramp and fails on an inverted one.
 
-Found on the way and fixed: **`birdy-pipeline build --help` has been crashing**, on a single
+Found on the way and fixed: **`lyrebird-pipeline build --help` has been crashing**, on a single
 unescaped `%` in one help string (`type coverage 100 %)`) among a dozen correctly doubled ones.
 argparse only formats help when it prints it, so nobody had ever run it.
 
@@ -6034,7 +6034,7 @@ drop is the corpus, not this work — nothing in this round touches the renderer
 
 ## `thresholds` — one of the WORK QUEUE's four unrun tests, now run, and it found something
 
-`uv run birdy-pipeline thresholds --out app/static/birdy --store out/harvest`, measured on the
+`uv run lyrebird-pipeline thresholds --out app/static/lyrebird --store out/harvest`, measured on the
 **installed v6 assets** (2 000 of 39 930 field syllables):
 
 | | v6 (now) | the constants were tuned against |
@@ -6437,7 +6437,7 @@ weakest available GPU.**
 # Lyrebird — WORK QUEUE (owner round, 2026-08-02) — read this before touching the galaxy
 
 **v6 IS NOW INSTALLED** (this supersedes the "parked" entry below, which is kept for its
-measurements). `app/static/birdy` = 348 461 points, **13 848 clusters**, built
+measurements). `app/static/lyrebird` = 348 461 points, **13 848 clusters**, built
 2026-08-02T09:27; `data/learned-inventory.json` = 13 748 syllables. Owner accepted the
 song-layer trade with the measurement in hand. v5 is in git, which is where a revert comes
 from. Whole suite green: parity **18/18** at 2.78e-08, synth **44/44** at
@@ -6531,7 +6531,7 @@ app first**, because the gap may be visibility rather than absence.
 # Lyrebird — Session Handoff (2026-08-02: v6 built, and a UI sweep is owed)
 
 **v6 is built, verified green by the build's own checks, and DELIBERATELY NOT INSTALLED.**
-It lives at `/tmp/birdy-prod/v6/` (assets + `learned-v6.json`). `app/static/birdy` and
+It lives at `/tmp/lyrebird-prod/v6/` (assets + `learned-v6.json`). `app/static/lyrebird` and
 `data/learned-inventory.json` are untouched and still the **v5** build. The reason for
 parking is one number, below.
 
@@ -6666,7 +6666,7 @@ Known already from this session and worth folding into that sweep: the memberles
 `(0,0,0)` invariant is still unguarded in `ContextPaths`, `Trajectory` and `NodeProjector`;
 and `centroids.json` ships a prose `note` carrying a stale "44 MB" figure.
 
-# Birdy — Session Handoff (2026-08-01, late 5: knot pins, focus cloud, wave reveal)
+# Lyrebird — Session Handoff (2026-08-01, late 5: knot pins, focus cloud, wave reveal)
 
 **Owner round on the pointcloud's readability, all app-side, checks green** (4
 baseline / 0 warnings, parity 18/18, layout, build). Owner confirmed the
@@ -6695,7 +6695,7 @@ call-types, lat/lng) — unpicked, debug-subset discipline when it starts.
   `stats.pointsRevealed`, shown in the cost readout as "· N revealed". Watch it on
   the iGPU during chorus: the active pass is deliberately not LOD-bounded.
 
-# Birdy — Session Handoff (2026-08-01, late 4: relations, roster, place-names; spaces research)
+# Lyrebird — Session Handoff (2026-08-01, late 4: relations, roster, place-names; spaces research)
 
 **Four sense-making features shipped, plus the owner's "how do we find new songs"
 research answered.** Checks green throughout (4 baseline errors, 0 warnings, parity
@@ -6738,7 +6738,7 @@ research answered.** Checks green throughout (4 baseline errors, 0 warnings, par
   a visible "what comes next" ghost-thread from the sounding knot along the measured
   transitions is the natural next build.
 
-# Birdy — Session Handoff (2026-08-01, late 3: adaptive density, knot spacing, bird mode out)
+# Lyrebird — Session Handoff (2026-08-01, late 3: adaptive density, knot spacing, bird mode out)
 
 **Owner round 3 on the galaxy: mid-zoom fps still tanked, knots too tight, bird
 colouring "useless".** All three addressed app-side; checks green (4 baseline errors,
@@ -6767,7 +6767,7 @@ colouring "useless".** All three addressed app-side; checks green (4 baseline er
   their species palettes with the mode. Taste knobs for the owner: the 20/13 ms
   governor band, KNOT_GAP 1.3, blossom 1.35/0.6.
 
-# Birdy — Session Handoff (2026-08-01, late 2: cloud visuals — blossom, ring-down, haze)
+# Lyrebird — Session Handoff (2026-08-01, late 2: cloud visuals — blossom, ring-down, haze)
 
 **Owner asked for visual enhancement of the point cloud: spacing, lab-style finish,
 better animations/activations.** All implemented app-side; `npm run check` at the 4
@@ -6812,7 +6812,7 @@ still owed** — every piece reverts independently if the taste read disagrees.
   function binding, and `labelElements` is `$state` — free, since the array is only
   written at mount (the per-frame positioning goes straight to `node.style`).
 
-# Birdy — Session Handoff (2026-08-01, late: smooth LOD, chorus stops on Compose, text-first Compose tab)
+# Lyrebird — Session Handoff (2026-08-01, late: smooth LOD, chorus stops on Compose, text-first Compose tab)
 
 **Three owner-reported UI issues fixed, all in the app.** Checks green: `npm run check`
 at the 4 baseline errors, `verify-parity` 18/18, `verify:layout` green. **Not yet
@@ -6861,9 +6861,9 @@ machine with the Display panel's cost readout open.
   rhythm + measured grammar. The centroid vectors are audio embeddings with no text
   alignment — a true cross-modal bridge is pipeline-side research, not a UI change.
 
-# Birdy — Session Handoff (2026-08-01, night: the production build landed, and the 1 fps was the labels)
+# Lyrebird — Session Handoff (2026-08-01, night: the production build landed, and the 1 fps was the labels)
 
-**The production build is done and green.** `/tmp/birdy-prod/assets-v5`, `--space embed
+**The production build is done and green.** `/tmp/lyrebird-prod/assets-v5`, `--space embed
 --clustering label`, **348 461 points, k = 14 003** (13 903 type blobs with 0 source
 splits + 100 kmeans clusters for the 20 241 points with no label), **type coverage
 13 903/13 903 = 100 %**, 1 136.8 s, **all checks passed**. The size predictions held to
@@ -7001,7 +7001,7 @@ camera is moving**, which is the worst possible moment for a GC pause.
 
 **The production assets are INSTALLED, and `verify:features` went green for the first time**
 
-`app/static/birdy` now holds the v5 build (176 MB, `clustering: label`, 348 461 points,
+`app/static/lyrebird` now holds the v5 build (176 MB, `clustering: label`, 348 461 points,
 k = 14 003, coverage 100 %), committed in `409b4d3`. **`relations.json` is deliberately
 absent** — see the 760 MB note above; the app treats it as an absent optional asset and
 the "shares call shapes with" line simply does not appear. Regenerating a small one is a
@@ -7047,7 +7047,7 @@ provenance, so it was not done.
   top-level 28 and the anchors are 28 wide.
 - **`listener.ts`'s mic-only guard on the gate is load-bearing, and its comment now says
   so.** It used to claim corpus audio "would never — and should never — flag"; the first
-  half is false at 11.02 against 3.92. Without the `if (micActive)`, playing Birdy's own
+  half is false at 11.02 against 3.92. Without the `if (micActive)`, playing Lyrebird's own
   voice near an open mic would light the Reading panel's *first* branch — "off the map,
   positions are guesses" — about our own corpus.
 
@@ -7092,7 +7092,7 @@ it; the figures were in the build all along, in `feature-space.json`'s
 
 - **What it means for the central gesture.** Agreement is the nearest-centroid lookup the live
   path performs: sing, map the 28-d descriptor into the 32-d space, take the nearest knot. On
-  the build now in `app/static/birdy`, that lookup lands on the same region the embedding
+  the build now in `app/static/lyrebird`, that lookup lands on the same region the embedding
   itself would choose **less than half the time** (0.4909), and the same species just over
   half (0.5619). The tie-adjusted 0.7056 says most of the disagreement is a near-miss between
   *adjacent* knots rather than an unrelated region — a blurred answer rather than a wrong one —
@@ -7172,7 +7172,7 @@ there the file *is* the analysis rather than a shipped asset.
   headline statistics are still taken from the *complete* document, so the finding is
   reported whole even though the asset is not. `RelationsDoc.retention` is declared in
   `types.ts` so a reader of the schema knows the field exists.
-- Installed at `app/static/birdy/relations.json`, produced by running the pipeline's own
+- Installed at `app/static/lyrebird/relations.json`, produced by running the pipeline's own
   `shipped_relations` over the build's own output — not hand-edited, which was the reason
   it was left absent in the first place.
 
@@ -7187,7 +7187,7 @@ there the file *is* the analysis rather than a shipped asset.
    will answer it in a second.
 3. **The pipeline's `relations.json` size** (above) — an app guard is not a fix.
 
-# Birdy — Session Handoff (2026-08-01, evening: knots, W2/W5/W6, licences, the inverse)
+# Lyrebird — Session Handoff (2026-08-01, evening: knots, W2/W5/W6, licences, the inverse)
 
 **Read this first if you are here for the point cloud.** The corpus the renderer draws
 changed shape today and the numbers below are the ones that matter to it: **points roughly
@@ -7202,8 +7202,8 @@ knowing before tuning anything visual. Nothing about knots or matching depends o
 positions.
 
 **PRODUCTION BUILT AND VERIFIED, and it fixes the thing §22.5 was written about.**
-`/tmp/birdy-prod/assets-v5`, 19 minutes, `--space embed --clustering label` with today's
-defaults. **Not copied into `app/static/birdy`** — that placement is one command and it is
+`/tmp/lyrebird-prod/assets-v5`, 19 minutes, `--space embed --clustering label` with today's
+defaults. **Not copied into `app/static/lyrebird`** — that placement is one command and it is
 the owner's.
 
 | | old (v4, kmeans k=1024) | **new (v5, label + W5)** |
@@ -7303,7 +7303,7 @@ corpus it draws is half the size and every type owns a knot. Specifics worth kno
   `[lat, lon, week]`; the store keeps `date` and `country` and **no coordinates**. Both
   archives return them; the harvester never recorded them.
 
-# Birdy — Session Handoff (2026-08-01, label assignment + W2 + W5 + W6)
+# Lyrebird — Session Handoff (2026-08-01, label assignment + W2 + W5 + W6)
 
 **In one paragraph:** the production knot problem now has its instrument.
 `build --clustering label` (docs/22 §22.8) stops clustering the 96 % of points that
@@ -7363,7 +7363,7 @@ are why it ships as a flag rather than as the default.
   0.6831**, tie-adjusted **0.8032 → 0.8136**. More near-ties, not worse decisions —
   centroids at label means are less separated than centroids Lloyd's pushed apart. Anyone
   switching a build whose headline is the species claim should read that row first.
-- **Built and verified end to end**: `/tmp/birdy-debug/assets-label`, 214 154 points,
+- **Built and verified end to end**: `/tmp/lyrebird-debug/assets-label`, 214 154 points,
   k = 4 298 (2 143 types all source-split + 12 for the 300 song-level points), 375 s after
   the render, `verify` all checks passed, **type coverage 2 143/2 143**. The app says what
   it is: the manifest carries `clustering: label`, its `kmeans` block states that kmeans
@@ -7391,7 +7391,7 @@ are why it ships as a flag rather than as the default.
      centroids.json's own `vectors` block, values rounded exactly as before so no match
      moves. Contract in docs/08 §8.3. Readers: `galaxy.centroid_vectors` and
      `app/src/lib/data/centroid-vectors.ts`, **both of which still read the old inline
-     layout**, so `app/static/birdy` keeps verifying untouched.
+     layout**, so `app/static/lyrebird` keeps verifying untouched.
 
   Measured together: **centroids.json 6.86 MB → 1.18 MB** + 0.59 MB binary on debug-100
   (548 B of JSON and 272 B of float per cluster). At production's 14 003 clusters that is
@@ -7460,7 +7460,7 @@ are why it ships as a flag rather than as the default.
 - **The amortised inverse: BUILT, WIRED, MEASURED, NOT ADOPTED** (docs/09 §9.3 Part 2 status
   note; gate and result in `pipeline/analysis/inverse_gate.md`). `inverse.py` had been
   complete and **imported by nothing** for weeks — 984 lines, self-test green, unreachable.
-  It is now reachable: `birdy-pipeline inverse` trains it (150 k free, perfectly-labelled
+  It is now reachable: `lyrebird-pipeline inverse` trains it (150 k free, perfectly-labelled
   pairs from our own forward model; early stop epoch 26, best val 1.333, on the GPU) and
   `learn --inverse PT` re-initialises each type's gesture axes from its own mean mel patch
   before the same coordinate descent runs. The seam keeps the measured contour and duration.
@@ -7546,7 +7546,7 @@ are why it ships as a flag rather than as the default.
   not 0.423 — 0.423 is the k = 1 024 figure from §22.6's table, carried into the paragraph
   about the 4 298-cluster build by mistake. The manifest has said 0.5797 since it was built.
 
-# Birdy — Session Handoff (2026-08-01, data audit)
+# Lyrebird — Session Handoff (2026-08-01, data audit)
 
 **The day's second half in one paragraph:** the data was audited against the code that
 produces it, and four of the six proposals died on their own pre-registered gates. Songs:
@@ -7632,9 +7632,9 @@ configuration the command line abandoned, and was fixed. Evidence: docs/22.
   nothing shed: **type coverage 42.6 % -> 92.6 %**, and the symptom the owner reported —
   "sound plays, nothing reacts" — went from **26 songs that could light nothing to 1**
   (songs lighting every note 28 -> 85; song types referencing no knot 54 -> 6). Those
-  assets are what `app/static/birdy` now holds (214 154 points, purity 0.423). 4 298
+  assets are what `app/static/lyrebird` now holds (214 154 points, purity 0.423). 4 298
   clusters is itself the proof the texture works: the old uniform arrays could not hold
-  it. **Production is NOT rebuilt at the new cap** — `/tmp/birdy-prod/assets-v4` is
+  it. **Production is NOT rebuilt at the new cap** — `/tmp/lyrebird-prod/assets-v4` is
   green but was built under 1 024 (7.0 % coverage), and production wants 27 862 seeds so
   8 192 still binds there; at that scale the answer is docs/22 §22.5's label assignment,
   not a bigger k-means.
@@ -7717,12 +7717,12 @@ configuration the command line abandoned, and was fixed. Evidence: docs/22.
    0.423 -> 0.577, coverage 0.432, on 25 % fewer points. It ships today as
    `--member-variants 0 --no-member-anchor`, off. It changes what the map contains — the
    rendered voice loses its own place — so it is a claim, not a default.
-2. **Production build at the new cap.** `/tmp/birdy-prod/assets-v4` is green but capped
+2. **Production build at the new cap.** `/tmp/lyrebird-prod/assets-v4` is green but capped
    at 1 024. A production rebuild wants 27 862 seeds against `K_CAP` 8 192, so it still
    sheds, and k-means at that k on 694 936 points is the wrong instrument. docs/22 §22.5:
    assign labelled points to their own type, cluster only what has no label.
 3. **Whitepaper structure.** Both STE passes landed and the PDF is at
-   `docs/whitepaper/birdy-whitepaper.pdf` (25 pages, verified). The agent flagged one
+   `docs/whitepaper/lyrebird-whitepaper.pdf` (25 pages, verified). The agent flagged one
    thing prose cannot fix: the document's spine is a 28-row pre-registered gate ledger,
    so it reads like a test report *structurally*. Making it narrative is a restructure
    (results section, ledger to an appendix) and was deliberately not done.
@@ -7756,7 +7756,7 @@ configuration the command line abandoned, and was fixed. Evidence: docs/22.
     hand and undeclared, and a plain `uv sync` removed them.
 
 
-# Birdy — Session Handoff (2026-07-31)
+# Lyrebird — Session Handoff (2026-07-31)
 
 **Landed today (uncommitted at this writing — user commits):**
 
@@ -7886,7 +7886,7 @@ configuration the command line abandoned, and was fixed. Evidence: docs/22.
 - **P0 depth harvest COMPLETE (owner call, batched — docs/18 P0).** 100 species
   (the debug-100 working corpus, deepest-first) × up to 30 recordings each,
   four 25-species batches run singularly with per-species logs in
-  /tmp/birdy-p0/, every species exit 0. **+139 440 syllables** (200 k → 340 k
+  /tmp/lyrebird-p0/, every species exit 0. **+139 440 syllables** (200 k → 340 k
   observations), 7 992 → 10 184 recordings. Depth on the target 100: **median
   29 recordings/species, 71/100 at 20+** (the syntax threshold; p10 = 5 —
   xeno-canto simply has no more for those). Caps raised for the phase
@@ -7994,8 +7994,8 @@ configuration the command line abandoned, and was fixed. Evidence: docs/22.
   value-equivalent at 5e-7, groupings battery bit-identical). Deliberately not
   done: gating relations.json on `--no-relations` — the flag skips analysis,
   relations.json is a cheap shipped asset the app consumes.
-- **Dangling dev symlinks removed** (app/static/birdy/{known,unknown} → the
-  wiped /tmp/birdy-debug) — they were the app's ENOENT on startup; absent
+- **Dangling dev symlinks removed** (app/static/lyrebird/{known,unknown} → the
+  wiped /tmp/lyrebird-debug) — they were the app's ENOENT on startup; absent
   subdirs restore the old single-map behavior. Re-link to fresh debug assets
   when wanted.
 - **OWNER RULE (restated twice today, now in AGENTS.md): debug-100 only, always.**
@@ -8008,7 +8008,7 @@ configuration the command line abandoned, and was fixed. Evidence: docs/22.
   in place, unbuilt.
 
 - **Spectral bench — the uncomfortable finding (docs/19, `specbench.py` +
-  `birdy-pipeline specbench`):** the 28-d resynthesis cosine, the pipeline's
+  `lyrebird-pipeline specbench`):** the 28-d resynthesis cosine, the pipeline's
   universal fit objective, does NOT correlate with audible spectral distortion
   (Pearson/Spearman ≈ 0.1 vs both MCD and multi-res STFT, n=200 on debug-100 vs the
   iNat cache; robustness: recomputed cosine matches stored at 0.921, MCD↔STFT agree
@@ -8092,8 +8092,8 @@ configuration the command line abandoned, and was fixed. Evidence: docs/22.
   ("this view cannot report an unidentified sound" vs "N of M sounds sit in no
   region — unidentified: real acoustics, no documented function"); fit-quality
   copy now says the cosine is a clustering match with audible fidelity measured
-  separately on the bench (docs/19). Dev symlinks at app/static/birdy/{known,
-  unknown} → /tmp/birdy-debug/assets-100 (gitignored). Not browser-click-tested.
+  separately on the bench (docs/19). Dev symlinks at app/static/lyrebird/{known,
+  unknown} → /tmp/lyrebird-debug/assets-100 (gitignored). Not browser-click-tested.
 - **Stage 1 verdict: NO ADOPTION (documented, docs/17).** The machinery is in
   critic.py (channel-EQ, MixStyle, recordist-adversarial head — all default-off),
   plus `critic groupings` (the battery without a build) and a recordist probe in the
@@ -8107,7 +8107,7 @@ configuration the command line abandoned, and was fixed. Evidence: docs/22.
   now, no new data) → P2 song-level embedding (gated on P0 + source invariance) →
   P3 CETI-style factorization → P4 dialect maps. Structure first; meaning only from
   playback.
-- **P1 done, first-order stays** (`syntax.py` + `birdy-pipeline syntax`, docs/18 P1
+- **P1 done, first-order stays** (`syntax.py` + `lyrebird-pipeline syntax`, docs/18 P1
   result): M2 repeat-count loses decisively (−0.348 nats/token, 0/30 species); M3
   HMM wins the pre-registered rule (+0.422, 29/30) **but the decomposition reverses
   adoption** — on the 90 % seen transitions first-order is best, and M3's whole edge
@@ -8119,7 +8119,7 @@ configuration the command line abandoned, and was fixed. Evidence: docs/22.
   +2.32 nats/token on unseen-context transitions, seen side bit-identical).
   Full-tail gain is +0.37/+0.65 (80 % of the tail is seen-context, out of scope) —
   and it narrows the HMM's tail advantage, confirming M3's win was smoothing shape.
-- **Debug-100 cycle run end-to-end** (/tmp/birdy-debug/harvest-100): subset → learn
+- **Debug-100 cycle run end-to-end** (/tmp/lyrebird-debug/harvest-100): subset → learn
   (100/100 species fitted) → bake-off re-run (M3 wins the rule again at +0.240, but
   only 12/100 species have ≥ 20 bouts — the depth ceiling in one number) →
   `--clustering both` build. The user's full-harvest stop stands: depth work uses
@@ -8163,7 +8163,7 @@ impulse-response augmentation + domain-invariant contrastive losses, AVEX: corpu
 diversity > architecture) and CETI-style structure-first semantics. Report is in the
 session log; candidates for docs/17.
 
-# Birdy — Session Handoff (2026-07-30, end of day)
+# Lyrebird — Session Handoff (2026-07-30, end of day)
 
 **The day in one paragraph:** the corpus grew 36 → 3 811 species (iNatSounds, 6 453
 recordings, 6.3 GB audio cache), the critic retrained to 2 686 species (novelty ROC

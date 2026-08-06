@@ -1,5 +1,5 @@
 /**
- * End-to-end contract test across the two halves of Birdy.
+ * End-to-end contract test across the two halves of Lyrebird.
  *
  * Renders each syllable with the browser's own AudioWorklet, runs it through the
  * browser's own feature extractor, and asks which cluster of the Python-built galaxy it
@@ -42,7 +42,7 @@ if (centroids?.vectors) {
 }
 
 if (!rawSpace || !centroids) {
-	console.error('Generated assets missing. Run: cd pipeline && uv run birdy-pipeline build');
+	console.error('Generated assets missing. Run: cd pipeline && uv run lyrebird-pipeline build');
 	process.exit(2);
 }
 

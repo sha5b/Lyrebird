@@ -164,7 +164,7 @@ for them.
 
 - `docs/13-sources-and-complexification.md`, in a bullet headed **Perch 2.0**: "the same forward
   pass yields a 1280-d **second embedding**".
-- `docs/16` §16.6, `docs/23` §23.6.1/2/3, `pipeline/src/birdy_pipeline/perch.py`: **1536-d**.
+- `docs/16` §16.6, `docs/23` §23.6.1/2/3, `pipeline/src/lyrebird_pipeline/perch.py`: **1536-d**.
 
 Resolved by external check: **1280 is Perch 1.0's embedding dimension and 1536 is Perch 2.0's.**
 Perch 1.0 is an EfficientNet-B1 with a 1280-d embedding at 5 s / 32 kHz; Perch 2.0 is an
@@ -362,7 +362,7 @@ Shipped today: 348\,461 points, 14\,003 clusters, 2\,421 species, 10\,184 record
 
 In the left panel the per-row species-count annotations are drawn on top of the store names, so
 five of five row labels are illegible ("original 22-species" overprinted with "22 sp", etc.).
-The figure ships in `birdy-whitepaper.pdf`. `fig_corpus` in `build_whitepaper.py` places the
+The figure ships in `lyrebird-whitepaper.pdf`. `fig_corpus` in `build_whitepaper.py` places the
 annotation at a fixed x inside the label gutter.
 
 The new manuscript does not use this figure and requests a corrected one.
@@ -522,7 +522,7 @@ correction in place.
 Appended 2026-08-01 by the agent that wrote `docs/whitepaper/arxiv/figures.py`.
 Collected while joining `data/learned-inventory.json` to
 `pipeline/out/harvest-gan/{typing.json,syllables.jsonl}` and the audio cache,
-rendering through `birdy_pipeline.syrinx`, and re-plotting every chart in
+rendering through `lyrebird_pipeline.syrinx`, and re-plotting every chart in
 `docs/whitepaper/build_whitepaper.py` against `docs/01`–`docs/23`.
 
 **Nothing here was fixed.** Numbering continues from the list above.

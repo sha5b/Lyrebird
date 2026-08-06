@@ -13,7 +13,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { buildLayout } from '../src/lib/galaxy/layouts.ts';
 
-const ROOT = process.argv[2] ?? path.join(import.meta.dirname, '..', 'static', 'birdy');
+const ROOT = process.argv[2] ?? path.join(import.meta.dirname, '..', 'static', 'lyrebird');
 if (!fs.existsSync(path.join(ROOT, 'manifest.json'))) {
 	console.log(`no galaxy at ${ROOT} — pass an asset root as the first argument`);
 	process.exit(0);

@@ -2,12 +2,12 @@
 Write the *shipped* relations.json for the v10 build, which no run has produced yet.
 
 The v10 chain skipped it (`--no-relations`, and `out/harvest-inband` had no
-`embeddings.f32` until now), so `app/static/birdy/relations.json` has never existed and
+`embeddings.f32` until now), so `app/static/lyrebird/relations.json` has never existed and
 `RelationThreads` has been drawing nothing for the whole life of this build. The asset is
 optional by design — the loader treats absent and over-budget identically — which is why
 the omission was silent.
 
-The standalone `birdy-pipeline relations --out` verb is not the thing to use here: it
+The standalone `lyrebird-pipeline relations --out` verb is not the thing to use here: it
 writes the *complete* document on purpose, because that verb's output is the analysis. On
 this corpus that is 2 929 410 species pairs, and the 2026-08-01 build wrote 760 MB of it
 into the assets and hung the tab. `build` ships a trimmed copy instead
@@ -25,8 +25,8 @@ import json
 import time
 from pathlib import Path
 
-from birdy_pipeline import harvest, learn, relations as relations_mod
-from birdy_pipeline.cli import EMBEDDINGS_NAME, load_inventory, log, read_store_embeddings
+from lyrebird_pipeline import harvest, learn, relations as relations_mod
+from lyrebird_pipeline.cli import EMBEDDINGS_NAME, load_inventory, log, read_store_embeddings
 
 REPO = Path(__file__).resolve().parents[2]
 STORE = REPO / "pipeline" / "out" / "harvest-inband"

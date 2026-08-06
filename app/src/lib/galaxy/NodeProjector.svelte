@@ -22,7 +22,7 @@
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
 	import { buildSpeciesIndex, clusterProvenance, knotDoubt, knotHeat } from '$lib/data/assets';
-	import type { BirdyAssets } from '$lib/data/types';
+	import type { LyrebirdAssets } from '$lib/data/types';
 	import { doubtColourScaled, provenanceColourScaled, speciesColourScaled } from './palette';
 	import type { DoubtRange } from './doubt';
 	import { LABEL_SLOTS, MAX_LABELS } from './labels';
@@ -31,7 +31,7 @@
 	import type { GalaxyStats } from './stats';
 
 	interface Props {
-		assets: BirdyAssets;
+		assets: LyrebirdAssets;
 		signal: VisualSignal;
 		/** Filled by NodeLabels; **slot-aligned**, length `LABEL_SLOTS`. */
 		elements: (HTMLElement | null)[];

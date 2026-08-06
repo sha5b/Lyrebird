@@ -85,8 +85,8 @@ from pathlib import Path
 
 import numpy as np
 
-from birdy_pipeline import learn
-from birdy_pipeline.harvest import decode
+from lyrebird_pipeline import learn
+from lyrebird_pipeline.harvest import decode
 
 ROOT = Path(__file__).resolve().parents[1]
 CACHE = ROOT / "out/audio-cache"

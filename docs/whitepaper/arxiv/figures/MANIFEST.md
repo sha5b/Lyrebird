@@ -244,7 +244,7 @@ for signs.
 
 - **width** full (target 7.0 in, drawn 7.00 x 5.85 in), 97 kB
 - **shows** for three fitted types spanning the corpus's fit quality, the original recording's syllable, our resynthesis of the type on the same axes and colour scale, and the measured pitch contours of every cached member against the contour the fit ships
-- **source** pipeline/out/harvest-gan/{typing.json,syllables.jsonl}, data/learned-inventory.json, pipeline/out/audio-cache/, rendered through birdy_pipeline.syrinx.render_syllable with app/static/birdy/syrinx-calibration.json
+- **source** pipeline/out/harvest-gan/{typing.json,syllables.jsonl}, data/learned-inventory.json, pipeline/out/audio-cache/, rendered through lyrebird_pipeline.syrinx.render_syllable with app/static/lyrebird/syrinx-calibration.json
 - **caption**
 
   > What the physical model reproduces, and what it misses. Three fitted types, taken from the top, the middle and the bottom of the resynthesis-cosine ordering over the types whose members have cached audio; the corpus median is 0.699 over 16\,239 types, so the middle row is a median type rather than a chosen success. Top: a clean descending whistle, which the oscillator and its tracking tract reproduce closely. Middle: the median case --- the pitch is right, and the pulse train that carries the real syllable's timbre is replaced by a steady tone. Bottom: a failure, and the third panel says why --- the type's member contours disagree by kilohertz, so the cluster median the fit starts from describes no member well. The cosine is the objective the fit optimised and is \emph{not} a ranking of audible fidelity (Section~\ref{sec:walls}).
@@ -253,7 +253,7 @@ for signs.
 
 - **width** full (target 7.0 in, drawn 7.00 x 2.95 in), 20 kB
 - **shows** the fitted air-sac pressure and labial-tension contours behind the three acoustic examples, with the measured tension-clamp incidence for each
-- **source** data/learned-inventory.json rendered through birdy_pipeline.syrinx.render_plan / beta_for / clamp_incidence with app/static/birdy/syrinx-calibration.json; the corpus-wide clamp total from cli.py report_reachability
+- **source** data/learned-inventory.json rendered through lyrebird_pipeline.syrinx.render_plan / beta_for / clamp_incidence with app/static/lyrebird/syrinx-calibration.json; the corpus-wide clamp total from cli.py report_reachability
 - **caption**
 
   > The fitted gestures behind the three acoustic examples. Every syllable in the corpus is two named physical contours --- air-sac pressure and labial tension --- rather than a latent code, and this is the whole of the interpretability claim. The dashed line is the tension clamp of the parameterisation; a contour that rides it is at a limit of the parameterisation rather than at a fitted value, which happens in 6\,617 of 12\,724 types across the production learn.

@@ -37,14 +37,14 @@
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
 	import { clusterProvenance } from '$lib/data/assets';
-	import type { BirdyAssets } from '$lib/data/types';
+	import type { LyrebirdAssets } from '$lib/data/types';
 	import { provenanceColourScaled } from './palette';
 	import { contextSegments, grammarEnds, type ThreadSegment } from './context-threads';
 	import type { LayoutView } from './layouts';
 	import type { ContextPath, VisualSignal } from './shaders';
 
 	interface Props {
-		assets: BirdyAssets;
+		assets: LyrebirdAssets;
 		signal: VisualSignal;
 		/** Where the centroids are right now; moves while the cloud rearranges. */
 		view: LayoutView;

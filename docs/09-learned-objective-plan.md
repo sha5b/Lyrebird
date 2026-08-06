@@ -164,7 +164,7 @@ mean-centered.
 3. Re-harvest into a **new** store (`out/harvest-gan`). Never delete `out/harvest`. It holds
    39 976 observations gathered under xeno-canto rate limits, and it is the only copy. Five
    species already exist in `out/harvest-mp` if you want a fast loop first.
-4. New module `pipeline/src/birdy_pipeline/critic.py`:
+4. New module `pipeline/src/lyrebird_pipeline/critic.py`:
    - `uv add torch` (CPU is enough at this scale. ~1–3 M parameters).
    - Architecture: 4 conv layers on the `1×32×26` patch → global pool → 1 logit. Use spectral
      normalization on every conv. Then the critic stays Lipschitz, and its gradient is a usable
@@ -219,7 +219,7 @@ This is DDSP's architecture, with our syrinx as the decoder instead of a learned
 why it keeps the interpretability DDSP normally gives up.
 
 **Status, 2026-08-01: built, wired, measured, NOT ADOPTED.** `inverse.py` had been complete
-and imported by nothing for weeks. It is now reachable — `birdy-pipeline inverse` trains it
+and imported by nothing for weeks. It is now reachable — `lyrebird-pipeline inverse` trains it
 (150 k pairs, early stop at epoch 26, best val 1.333, on the GPU) and `learn --inverse PT`
 re-initialises each type's gesture axes from its own mean mel patch before the same descent
 runs. The gate was written before the run (`pipeline/analysis/inverse_gate.md`) and **fails
@@ -312,9 +312,9 @@ respond to it indistinguishably from real song (Bistel, Amador & Mindlin, Phys. 
 
 ## 9.7 Results: the embedding works, the objective does not
 
-We implemented everything above. `pipeline/src/birdy_pipeline/critic.py` is the network,
+We implemented everything above. `pipeline/src/lyrebird_pipeline/critic.py` is the network,
 `features.mel_patch` is its input, `learn.typing_space` / `learn.RealismTerm` are the two
-places it attaches, and `birdy-pipeline critic train` / `learn --embed-typing` /
+places it attaches, and `lyrebird-pipeline critic train` / `learn --embed-typing` /
 `placement` are the commands.
 
 **The measurement store is not the one in the table in §9.3.** `out/harvest` has no patches.
@@ -417,12 +417,12 @@ It also means "hold out a species" is a harder test than "hear a genuinely new s
 
 ```bash
 uv sync --extra critic                                   # torch; CUDA wheels, CPU works too
-uv run birdy-pipeline harvest --store out/harvest-gan    # a store WITH patches
-uv run birdy-pipeline learn   --store out/harvest-gan --out /tmp/base.json --learned-only
-uv run birdy-pipeline critic train --store out/harvest-gan --inventory /tmp/base.json \
+uv run lyrebird-pipeline harvest --store out/harvest-gan    # a store WITH patches
+uv run lyrebird-pipeline learn   --store out/harvest-gan --out /tmp/base.json --learned-only
+uv run lyrebird-pipeline critic train --store out/harvest-gan --inventory /tmp/base.json \
                                    --out out/critic.pt
-uv run birdy-pipeline learn   --store out/harvest-gan --critic out/critic.pt --embed-typing
-uv run birdy-pipeline placement --store out/harvest-gan --inventory <the fit>
+uv run lyrebird-pipeline learn   --store out/harvest-gan --critic out/critic.pt --embed-typing
+uv run lyrebird-pipeline placement --store out/harvest-gan --inventory <the fit>
 ```
 
 ### What is still open

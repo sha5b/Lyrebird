@@ -103,7 +103,7 @@ carry noise 0.05–0.25 and rough up to 0.65 instead.
 **Status, both halves landed.** The per-species fit pass completed on the full
 store (`out/respfit-gan-report.json`: 12 680 types scored, respiration won 445,
 two-voice won 2 027 of 5 922 screened, median cosine 0.650 → 0.6623, gate held
-everywhere). The pure-tone documented re-fit is `docrefit.py` (`birdy-pipeline
+everywhere). The pure-tone documented re-fit is `docrefit.py` (`lyrebird-pipeline
 docrefit`). It matches each authored one-tone call to the same bird's nearest
 learned type by pitch (cap 0.5 octaves). It searches the call's `noise`×`rough`
 grid against that type's measured reference. A texture ships only where it
@@ -119,7 +119,7 @@ them. The full-store run is pending the production learn.
 
 ## 16.5 Perch 2.0 label-novel
 
-`birdy-pipeline critic label-novel` (perch.py, ONNX port of Perch 2.0, no TF
+`lyrebird-pipeline critic label-novel` (perch.py, ONNX port of Perch 2.0, no TF
 dep, ~48 ms/window CPU) labels the critic's novel-flagged syllables from the
 audio cache as **metadata**. The honesty line is "closest documented species
 (Perch 2.0 inference, unverified)" — never type identity. Spike findings:

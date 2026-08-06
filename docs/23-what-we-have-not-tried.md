@@ -761,7 +761,7 @@ weight it already has — which is what `snr` and `clipped` are, and what §23.6
 would say about a Perch score.
 
 Everything needed to make that labelling cheap now exists: `out/audio-cache` holds 5 366
-recordings, both shortlists rank them, and `birdy-pipeline quality remeasure` demonstrated
+recordings, both shortlists rank them, and `lyrebird-pipeline quality remeasure` demonstrated
 that an audio-derived measurement can be written back into `syllables.jsonl` **exactly** —
 188 986 of 188 986 rows matched, zero drifted.
 

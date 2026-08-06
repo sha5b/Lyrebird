@@ -1,7 +1,7 @@
-# birdy-pipeline
+# lyrebird-pipeline
 
 Offline half of Lyrebird. It calibrates the syrinx model, renders a corpus, computes the
-28-d descriptors and builds the 3D galaxy into `app/static/birdy/`.
+28-d descriptors and builds the 3D galaxy into `app/static/lyrebird/`.
 
 The contract is `docs/08-implementation.md`. The browser implements the same model and
 the same feature extractor, so nothing here may drift from that document without being
@@ -16,14 +16,14 @@ Requires `uv` and nothing else. Python 3.11 or 3.12 (numba/umap-learn do not sup
 cd pipeline
 uv sync
 
-uv run birdy-pipeline build            # calibrate if needed, render, embed, write assets
-uv run birdy-pipeline calibrate        # only re-measure the syrinx table
-uv run birdy-pipeline harvest          # stream real recordings into a bounded store
-uv run birdy-pipeline sources list     # which audio sources this machine can use, and why not
-uv run birdy-pipeline learn            # fit syllables + syntax to what was harvested
-uv run birdy-pipeline serve            # drive the above from the app's Learn tab
-uv run birdy-pipeline demo             # a few example wavs into pipeline/out/demo
-uv run birdy-pipeline verify           # re-check an existing asset directory
+uv run lyrebird-pipeline build            # calibrate if needed, render, embed, write assets
+uv run lyrebird-pipeline calibrate        # only re-measure the syrinx table
+uv run lyrebird-pipeline harvest          # stream real recordings into a bounded store
+uv run lyrebird-pipeline sources list     # which audio sources this machine can use, and why not
+uv run lyrebird-pipeline learn            # fit syllables + syntax to what was harvested
+uv run lyrebird-pipeline serve            # drive the above from the app's Learn tab
+uv run lyrebird-pipeline demo             # a few example wavs into pipeline/out/demo
+uv run lyrebird-pipeline verify           # re-check an existing asset directory
 ```
 
 A synthetic-only build takes about 27 s on a laptop: 4287 clips, 882 s of synthesised
@@ -48,7 +48,7 @@ and the harvested store together — at **348,461 points in 14,003 knots, about 
 | `--member-variants N` | - | jittered renders per member observation |
 | `--no-relations` | off | skip the cross-species relations battery (not the shipped `relations.json`) |
 | `--dump-points` | off | write the point matrix for offline arms |
-| `--out DIR` | `app/static/birdy` | where the assets go |
+| `--out DIR` | `app/static/lyrebird` | where the assets go |
 | `--wav-out DIR` | - | also write every corpus clip as a wav |
 | `--projection umap\|pca\|cmds` | `cmds` | 3D layout; see "Galaxy shape" below |
 | `--no-compare-projections` | off | skip building the other two just to measure them |
@@ -56,7 +56,7 @@ and the harvested store together — at **348,461 points in 14,003 knots, about 
 | `--recalibrate` | off | re-measure the syrinx table even if it exists |
 | `--beta-min F` | 0.15 | beta clamp floor - see the note below, this one matters |
 
-Progress goes to stderr, so `uv run birdy-pipeline build 2>build.log` keeps it out of
+Progress goes to stderr, so `uv run lyrebird-pipeline build 2>build.log` keeps it out of
 the way.
 
 ## What it writes
@@ -257,23 +257,23 @@ grid.
   `render_plan` applies the 8.1 parameter mapping on its own, and `clamp_incidence`
   reports how often the beta clamp actually bites for a syllable.
 - `features.py` - the 28-d descriptor: own Hann window, own mel bank, own DCT-II. Run
-  `uv run python -m birdy_pipeline.features` for its self-test (the DCT-II is compared
+  `uv run python -m lyrebird_pipeline.features` for its self-test (the DCT-II is compared
   against a naive double loop, and a 4 kHz sine must land its centroid on 4 kHz).
 
 `calibrate.py` also carries the reference table of contract 8.6 as a regression test.
-`birdy-pipeline verify` fails the build if this implementation drifts from it by more
+`lyrebird-pipeline verify` fails the build if this implementation drifts from it by more
 than 3 % on F0 or 5 % on ampPP. Current worst case: 0.03 % and 1.64 %.
 
 ## Using real recordings (`--source local`)
 
 ```bash
-uv run birdy-pipeline build --source local --audio-dir ~/birdy-corpus --out ../app/static/birdy
+uv run lyrebird-pipeline build --source local --audio-dir ~/lyrebird-corpus --out ../app/static/lyrebird
 ```
 
 Expected layout - **the parent directory name becomes the point label**:
 
 ```
-~/birdy-corpus/
+~/lyrebird-corpus/
   parus_minor/XC123456.wav
   parus_minor/XC123457.flac
   strix_aluco/XC998877.wav
@@ -297,10 +297,10 @@ ones documented above.
 
 ```bash
 cp .env.example .env             # then paste your key into it
-uv run birdy-pipeline harvest --per-species 20 --quality A --dry-run
-uv run birdy-pipeline harvest --per-species 20 --quality A
-uv run birdy-pipeline harvest --stats
-uv run birdy-pipeline build --harvest-store ../pipeline/out/harvest
+uv run lyrebird-pipeline harvest --per-species 20 --quality A --dry-run
+uv run lyrebird-pipeline harvest --per-species 20 --quality A
+uv run lyrebird-pipeline harvest --stats
+uv run lyrebird-pipeline build --harvest-store ../pipeline/out/harvest
 ```
 
 The point of `harvest` is what it throws away. One recording is fetched, decoded,
@@ -330,7 +330,7 @@ faithful miniature of everything fed through it. If it is not, raise `--cap`.
 XC_API_KEY=your-key-here
 ```
 
-It is read by `birdy-pipeline` at startup and never overrides a variable already in the
+It is read by `lyrebird-pipeline` at startup and never overrides a variable already in the
 environment, so `XC_API_KEY=... uv run ...` still wins. `.env` is gitignored. The same
 file holds the keys for the other sources (`KAGGLE_USERNAME`/`KAGGLE_KEY`, `HF_TOKEN`,
 `ZENODO_TOKEN` — see `.env.example`); every one of them is optional, and an unfilled key
@@ -399,10 +399,10 @@ xeno-canto is one API key and one rate limit; the open-dataset world is not. `so
 puts four more services behind the same decode -> describe -> (by default) delete loop:
 
 ```bash
-uv run birdy-pipeline sources list        # what this machine can use, and why not
-uv run birdy-pipeline sources fetch --source internet-archive \
+uv run lyrebird-pipeline sources list        # what this machine can use, and why not
+uv run lyrebird-pipeline sources fetch --source internet-archive \
     --species "Turdus merula" --limit 5 --store out/harvest
-uv run birdy-pipeline sources fetch --source zenodo --limit 3        # XCDC soundscapes
+uv run lyrebird-pipeline sources fetch --source zenodo --limit 3        # XCDC soundscapes
 ```
 
 `sources list` prints the availability table; an unfilled key or a missing package is a
@@ -429,8 +429,8 @@ recording's exact licence lands in the store.
 ## Learning: fit the model to what was heard
 
 ```bash
-uv run birdy-pipeline learn --types 8
-uv run birdy-pipeline build --inventory ../data/learned-inventory.json \
+uv run lyrebird-pipeline learn --types 8
+uv run lyrebird-pipeline build --inventory ../data/learned-inventory.json \
                             --harvest-store ../pipeline/out/harvest
 ```
 
@@ -508,7 +508,7 @@ meaning.
 ## `serve`: the same three operations, from the interface
 
 ```bash
-uv run birdy-pipeline serve            # http://127.0.0.1:8781
+uv run lyrebird-pipeline serve            # http://127.0.0.1:8781
 ```
 
 `npm run dev` in `app/` already starts this for you and stops it again on exit

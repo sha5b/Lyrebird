@@ -51,7 +51,7 @@ SOURCES
 `docs/17`, `docs/19`, `docs/20`, `docs/21`, `docs/22`, `docs/23`, `HANDOFF.md`,
 and for the spectral figures: `pipeline/out/harvest-gan/{typing,syllables}`,
 `data/learned-inventory.json`, `pipeline/out/audio-cache/`,
-`app/static/birdy/syrinx-calibration.json`.
+`app/static/lyrebird/syrinx-calibration.json`.
 """
 
 from __future__ import annotations
@@ -88,7 +88,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 # The syrinx renderer is the repository's own; never reimplement the synth.
 sys.path.insert(0, str(ROOT / "pipeline" / "src"))
-from birdy_pipeline.syrinx import (  # noqa: E402
+from lyrebird_pipeline.syrinx import (  # noqa: E402
     BETA_MIN,
     SAMPLE_RATE,
     Calibration,
@@ -521,7 +521,7 @@ def fig_claim_ladder():
     """FULL WIDTH. The evidence labels with the production region counts.
 
     docs/08 §8.5 for the levels; the region mix is the installed v9 build's, read
-    from `birdy-pipeline verify app/static/birdy` (16 291 unlabelled, 28 documented,
+    from `lyrebird-pipeline verify app/static/lyrebird` (16 291 unlabelled, 28 documented,
     9 experimental, 16 inferred, 36 invented over 16 380 regions).
     """
     rows = [
@@ -2158,8 +2158,8 @@ def fig_spectral_examples(fitted, measured, calibration):
               "against the contour the fit ships",
         source="pipeline/out/harvest-gan/{typing.json,syllables.jsonl}, "
                "data/learned-inventory.json, pipeline/out/audio-cache/, rendered "
-               "through birdy_pipeline.syrinx.render_syllable with "
-               "app/static/birdy/syrinx-calibration.json",
+               "through lyrebird_pipeline.syrinx.render_syllable with "
+               "app/static/lyrebird/syrinx-calibration.json",
         caption="What the physical model reproduces, and what it misses. Three fitted "
                 "types, taken from the top, the middle and the bottom of the "
                 "resynthesis-cosine ordering over the types whose members have cached "
@@ -2248,8 +2248,8 @@ def fig_gestures(fitted, calibration):
               "three acoustic examples, with the measured tension-clamp incidence for "
               "each",
         source="data/learned-inventory.json rendered through "
-               "birdy_pipeline.syrinx.render_plan / beta_for / clamp_incidence with "
-               "app/static/birdy/syrinx-calibration.json; the corpus-wide clamp total "
+               "lyrebird_pipeline.syrinx.render_plan / beta_for / clamp_incidence with "
+               "app/static/lyrebird/syrinx-calibration.json; the corpus-wide clamp total "
                "from cli.py report_reachability",
         caption="The fitted gestures behind the three acoustic examples. Every "
                 "syllable in the corpus is two named physical contours --- air-sac "
@@ -2392,7 +2392,7 @@ def main():
     fig_external_spaces()
 
     calibration = Calibration.from_dict(
-        json.loads((ROOT / "app" / "static" / "birdy"
+        json.loads((ROOT / "app" / "static" / "lyrebird"
                     / "syrinx-calibration.json").read_text())
     )
     fitted, measured = _load_examples()

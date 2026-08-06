@@ -2,7 +2,7 @@
 
 **Nothing in this file has been fixed.** It is a list of things that look wrong in the
 **code** or in the project's **assumptions**, found while correcting the documentation. The
-doc corrections, the new `LICENSE`/`NOTICE.md` and the Birdy → Lyrebird prose rename are
+doc corrections, the new `LICENSE`/`NOTICE.md` and the Lyrebird → Lyrebird prose rename are
 done; everything below is a decision for the owner.
 
 Ordered by how much it matters. The first three are licensing correctness.
@@ -11,17 +11,17 @@ Ordered by how much it matters. The first three are licensing correctness.
 
 ## 1. ND-licensed xeno-canto recordings are measured and their derivatives ship — the ND refusal is only on *retention*
 
-**Where:** `pipeline/src/birdy_pipeline/harvest.py` — the licence gate
+**Where:** `pipeline/src/lyrebird_pipeline/harvest.py` — the licence gate
 `audio_may_be_cached` is at line 992 and is called **only** at line 1229, inside the
 `if keep_audio is not None:` branch. The ingest path immediately above it
 (`ingest_file(store, audio_path, ...)`, line 1214) has **no licence check at all**.
-Contrast `pipeline/src/birdy_pipeline/sources.py:735-758`, where the iNat adapter's
+Contrast `pipeline/src/lyrebird_pipeline/sources.py:735-758`, where the iNat adapter's
 `LICENCES_OK = {0, 1, 3, 4, 6}` refuses ND **at ingest** and skips the file entirely.
 
 **What is wrong:** the two adapters apply opposite policies to the same clause. For
 xeno-canto, an ND recording is downloaded, decoded, reduced to 28-d descriptors, log-mel
 patches and syllable observations, folded into the store, and those measurements go into
-`app/static/birdy/` and ship to every browser. Only the *audio file* is refused.
+`app/static/lyrebird/` and ship to every browser. Only the *audio file* is refused.
 `README.md` measured the old harvest at 68 of 435 recordings CC BY-NC-**ND**, so this is
 not hypothetical.
 
@@ -46,7 +46,7 @@ re-joining `CREDITS.md`, which it can do, since every recording's licence is rec
 
 **Where:** `harvest.py:497-514` (`write_credits`) writes `CREDITS.md` into
 `<store>/CREDITS.md`. The store lives under `pipeline/out/`, which is **gitignored**.
-Checked directly against the built assets: no file in `app/static/birdy/` contains the
+Checked directly against the built assets: no file in `app/static/lyrebird/` contains the
 string `recordist` or `licence`/`license` — not `manifest.json`, not `points.json`, not
 `inventory.json`, not any of the 2 423 `inventory/*.json` shards.
 
@@ -75,7 +75,7 @@ long as the flag existed.
 **Where:** `pipeline/pyproject.toml`, the `analysis` extra:
 `analysis = ["harmonypy>=0.0.9", "pandas>=2.0"]`. Confirmed against the installed
 distribution metadata: `harmonypy: GPL-3.0-or-later`. Consumer:
-`pipeline/src/birdy_pipeline/batcheffect.py` (lazy import).
+`pipeline/src/lyrebird_pipeline/batcheffect.py` (lazy import).
 
 **What is wrong:** nothing, yet — but it was undeclared anywhere. GPL-3.0 is copyleft and
 specifically does not permit adding a NonCommercial restriction to the GPL'd work or to a
@@ -111,9 +111,9 @@ count from one place.
 
 ## 5. `centroids.json` ships a `note` field containing a stale size figure
 
-**Where:** `pipeline/src/birdy_pipeline/galaxy.py`, the `vectors` block's `"note"` string
+**Where:** `pipeline/src/lyrebird_pipeline/galaxy.py`, the `vectors` block's `"note"` string
 (around line 1722), which is written **into the asset** and is therefore present in
-`app/static/birdy/centroids.json` on the shipped build. It read "at k = 27 862 that is a
+`app/static/lyrebird/centroids.json` on the shipped build. It read "at k = 27 862 that is a
 44 MB parse on every cold load" — a pre-W5, pre-sidecar figure describing a build that was
 never shipped.
 
@@ -127,7 +127,7 @@ be computed at write time from the thing it describes, or not be a number.
 
 ## 6. The `K_CAP` comment still justifies the cap with two facts that are no longer true
 
-**Where:** `pipeline/src/birdy_pipeline/galaxy.py:44-45` (as it was), inside the `K_CAP`
+**Where:** `pipeline/src/lyrebird_pipeline/galaxy.py:44-45` (as it was), inside the `K_CAP`
 comment block: "Nothing downstream is quadratic in it — the shader holds one float per
 cluster and the labels cull by collision."
 
@@ -166,7 +166,7 @@ not.
 
 ## 8. The pipeline writes 2.9 M relation pairs and ships 14 425 — the analysis path is still quadratic
 
-**Where:** `pipeline/src/birdy_pipeline/relations.py` — `compute_relations` returns every
+**Where:** `pipeline/src/lyrebird_pipeline/relations.py` — `compute_relations` returns every
 unordered species pair. `shipped_relations` trims the browser's copy and `write_relations`
 applies it by default, which is the fix that took the asset from 760 MB to 5.6 MB.
 
@@ -200,21 +200,21 @@ check" item noting the manuscript uses Lyrebird throughout "with one footnote".
 
 ## 10. Package identifiers and the product name have permanently diverged
 
-**Where:** distribution `birdy-pipeline`, package `birdy_pipeline`, CLI entry point
-`birdy-pipeline`, asset root `app/static/birdy/` (`cli.py:45` `DEFAULT_OUT`, mirrored by
-`app/src/lib/data/assets.ts:5` `const ROOT = 'birdy'`), manifest field
-`"pipeline": "birdy-pipeline"` (`galaxy.py:1930`), HTTP `Server:` header
-`"birdy-pipeline"` (`server.py:1304`, which `vite-plugin-pipeline.ts` health-probes),
-env vars `BIRDY_PIPELINE` / `BIRDY_PIPELINE_PORT` / `BIRDY_XC_PAUSE`, sessionStorage key
-`birdy:evicted-foreign-sw`, type names `BirdyAssets` / `BirdyEngine`.
+**Where:** distribution `lyrebird-pipeline`, package `lyrebird_pipeline`, CLI entry point
+`lyrebird-pipeline`, asset root `app/static/lyrebird/` (`cli.py:45` `DEFAULT_OUT`, mirrored by
+`app/src/lib/data/assets.ts:5` `const ROOT = 'lyrebird'`), manifest field
+`"pipeline": "lyrebird-pipeline"` (`galaxy.py:1930`), HTTP `Server:` header
+`"lyrebird-pipeline"` (`server.py:1304`, which `vite-plugin-pipeline.ts` health-probes),
+env vars `LYREBIRD_PIPELINE` / `LYREBIRD_PIPELINE_PORT` / `LYREBIRD_XC_PAUSE`, sessionStorage key
+`lyrebird:evicted-foreign-sw`, type names `LyrebirdAssets` / `LyrebirdEngine`.
 
 **Status:** all left alone deliberately, per the rename brief — they are contracts, and
-`app/static/birdy/` in particular is the shipped asset contract. Recorded so the divergence
+`app/static/lyrebird/` in particular is the shipped asset contract. Recorded so the divergence
 is a known state rather than an oversight, and so whoever eventually does the code-level
 rename has the list. **The three that are more than cosmetic**, because something outside
 the repo depends on them: the `Server:` header (probed by the Vite plugin), the asset root
 (a URL path in built output), and the outbound `User-Agent`, which embeds the live GitHub URL
-`https://github.com/sha5b/Birdy` and must keep resolving until the repo is actually renamed.
+`https://github.com/sha5b/Lyrebird` and must keep resolving until the repo is actually renamed.
 That URL was caught being renamed by the sweep and reverted.
 
 ---
@@ -222,7 +222,7 @@ That URL was caught being renamed by the sweep and reverted.
 ## 11. `docs/08` §8.3 listed an asset that does not ship and omitted four that do
 
 **Where:** `docs/08-implementation.md` §8.3 — the normative asset layout. It listed
-`novel-pool.json`, which is absent from `app/static/birdy/`, and omitted
+`novel-pool.json`, which is absent from `app/static/lyrebird/`, and omitted
 `point-features.f32`, `space-map.f32`, `projection-basis.json` and the `inventory/` shard
 directory, all four of which are present.
 
@@ -237,8 +237,8 @@ have caught this.
 
 ## Minor, recorded without argument
 
-- `pipeline/src/birdy_pipeline/learn.py:271` — "Frames whose peak is outside the birdy
-  band". "birdy" here is a descriptive adjective for the bird-frequency band, not the product
+- `pipeline/src/lyrebird_pipeline/learn.py:271` — "Frames whose peak is outside the birdy
+  band". "lyrebird" here is a descriptive adjective for the bird-frequency band, not the product
   name, so the rename correctly skipped it. It now reads oddly next to a product called
   Lyrebird. Reword to "the bird band" whenever that file is next touched.
 - `docs/README.md` said "These 21 notes" with 23 notes present, and its index stopped at 21,

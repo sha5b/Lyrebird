@@ -8,7 +8,7 @@
 		clusterProvenance,
 		pointProvenance
 	} from '$lib/data/assets';
-	import type { BirdyAssets } from '$lib/data/types';
+	import type { LyrebirdAssets } from '$lib/data/types';
 	import {
 		FRONT_LIFE,
 		FRONT_ONSET,
@@ -43,7 +43,7 @@
 	import type { GalaxyStats } from './stats';
 
 	interface Props {
-		assets: BirdyAssets;
+		assets: LyrebirdAssets;
 		signal: VisualSignal;
 		pointSize?: number;
 		/** Species index to keep at full strength; -1 shows every species equally. */

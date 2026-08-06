@@ -146,8 +146,8 @@ so retrieval, not lift, is the right verdict metric.
 more genuinely-different domains per species (BirdCLEF/BirdSet/iNat merges),
 not more loss engineering. critic.py gained the machinery default-off
 (`merge_patchsets`, `PatchSet.domains`, `CriticConfig.cross_domain_positives`,
-pairing covered by self-test). The driver is `/tmp/birdy-debug/avex_driver.py`,
-and the report is `/tmp/birdy-debug/avex/avex-report.json`.
+pairing covered by self-test). The driver is `/tmp/lyrebird-debug/avex_driver.py`,
+and the report is `/tmp/lyrebird-debug/avex/avex-report.json`.
 
 ## 17.5 Follow-up sweep (pre-registered 2026-07-31, before any run)
 
@@ -192,7 +192,7 @@ regression here, and the knob stays at zero.
 
 ### 17.5.1 The numbers: NO ADOPTION — the factorization works, the target stays out of reach
 
-The sweep ran 2026-07-31 (driver `/tmp/birdy-inv/sweep.sh`, store a /tmp copy
+The sweep ran 2026-07-31 (driver `/tmp/lyrebird-inv/sweep.sh`, store a /tmp copy
 of `out/harvest`, seed 0, 236 recording classes over 22 species for the head).
 Baseline re-run sanity: probe 0.425 / lift +0.277 / species +0.412 / AUC 0.986
 / acc 0.891 against §17.3's 0.442 / +0.285 / +0.429 / 0.989 / 0.908 — close, not
@@ -266,8 +266,8 @@ verdict stands, and the machinery stays default-off.
 
 ### 17.6.1 The re-test numbers: NO ADOPTION — the mechanism's boost was small-sample
 
-The re-test ran 2026-07-31 (driver `/tmp/birdy-avex/driver.py`, report
-`/tmp/birdy-avex/avex2-report.json`): 63 both-domain species, 47 trained / 16
+The re-test ran 2026-07-31 (driver `/tmp/lyrebird-avex/driver.py`, report
+`/tmp/lyrebird-avex/avex2-report.json`): 63 both-domain species, 47 trained / 16
 held out, 6 561 real patches (~104/species — the both-domain species are thin,
 mostly iNat-side), 14 208 synthetic, seed 0, one shared fake side.
 

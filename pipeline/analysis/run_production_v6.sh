@@ -23,7 +23,7 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."          # pipeline/
 
-STAGE=/tmp/birdy-prod/v6
+STAGE=/tmp/lyrebird-prod/v6
 STORE=out/harvest-gan
 INV=../data/learned-inventory.json
 LEARNED=$STAGE/learned-v6.json
@@ -53,7 +53,7 @@ say "stage 1: learn, with the two-start descent (this is the long one, ~2 h)"
 # FITTED types — so every fitted type was merged in as though a person had written it and
 # the inventory came out doubled: hirundo_rustica had 16 syllables with L09/L13/L14/L19/L21
 # each appearing twice. Arms A-D omitted the flag and were clean. Omit it.
-uv run birdy-pipeline learn \
+uv run lyrebird-pipeline learn \
     --store "$STORE" \
     --out "$LEARNED" \
     --inverse out/inverse.pt \
@@ -62,7 +62,7 @@ uv run birdy-pipeline learn \
 tail -4 "$STAGE/learn.log" | tee -a "$LOG"
 
 say "stage 2: docrefit - a measured texture for the authored documented calls"
-uv run birdy-pipeline docrefit \
+uv run lyrebird-pipeline docrefit \
     --store "$STORE" \
     --inventory "$LEARNED" \
     --out "$LEARNED" \
@@ -71,7 +71,7 @@ uv run birdy-pipeline docrefit \
 tail -6 "$STAGE/docrefit.log" | tee -a "$LOG"
 
 say "stage 3: respfit - respiration and two-voice where they win their gate"
-uv run birdy-pipeline respfit \
+uv run lyrebird-pipeline respfit \
     --store "$STORE" \
     --inventory "$LEARNED" \
     --out "$LEARNED" \
@@ -81,7 +81,7 @@ uv run birdy-pipeline respfit \
 tail -6 "$STAGE/respfit.log" | tee -a "$LOG"
 
 say "stage 4: build the galaxy from the re-derived inventory"
-uv run birdy-pipeline build \
+uv run lyrebird-pipeline build \
     --harvest-store "$STORE" \
     --inventory "$LEARNED" \
     --space embed \
@@ -93,7 +93,7 @@ uv run birdy-pipeline build \
 tail -20 "$STAGE/build.log" | tee -a "$LOG"
 
 say "stage 5: verify the built assets"
-uv run birdy-pipeline verify --out "$STAGE/assets" >> "$STAGE/verify.log" 2>&1 || die "verify"
+uv run lyrebird-pipeline verify --out "$STAGE/assets" >> "$STAGE/verify.log" 2>&1 || die "verify"
 tail -6 "$STAGE/verify.log" | tee -a "$LOG"
 
 say "CHAIN COMPLETE - nothing installed yet, by design"

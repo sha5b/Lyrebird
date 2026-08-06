@@ -22,11 +22,11 @@ Copyright (c) 2026 the Lyrebird authors. Licensed CC BY-NC-SA 4.0.
 
 | what | where |
 |---|---|
-| the offline pipeline | `pipeline/src/birdy_pipeline/`, `pipeline/analysis/` |
+| the offline pipeline | `pipeline/src/lyrebird_pipeline/`, `pipeline/analysis/` |
 | the browser application | `app/src/`, `app/scripts/`, `app/*.ts` |
 | the research record | `docs/*.md`, `README.md`, `AGENTS.md`, `HANDOFF.md` |
 | the hand-authored inventory | `data/inventory.json` — our own reading of the cited literature |
-| the syrinx implementation | `pipeline/src/birdy_pipeline/syrinx.py` and its JS mirror `app/src/lib/audio/worklets/syrinx-processor.js` |
+| the syrinx implementation | `pipeline/src/lyrebird_pipeline/syrinx.py` and its JS mirror `app/src/lib/audio/worklets/syrinx-processor.js` |
 
 The syrinx model itself is **published physics, not our invention**. The ODE is the
 normal form of the Laje & Mindlin / Amador & Mindlin lineage, term for term
@@ -36,10 +36,10 @@ ours; the model is theirs and is cited, not licensed.
 `app/src/routes/`, `app/src/app.html` and `app/src/app.css` began as the SvelteKit
 `sv` scaffold (MIT, © the Svelte contributors) and have since been rewritten.
 
-**Note on the package name.** The distribution is `birdy-pipeline` and the Python
-package is `birdy_pipeline`. Those are identifiers, not the product name. The product
+**Note on the package name.** The distribution is `lyrebird-pipeline` and the Python
+package is `lyrebird_pipeline`. Those are identifiers, not the product name. The product
 is Lyrebird. The identifiers were left alone deliberately — renaming them would break
-the shipped asset contract at `app/static/birdy/`.
+the shipped asset contract at `app/static/lyrebird/`.
 
 ---
 
@@ -143,7 +143,7 @@ record, and it is written for every recording that contributes so much as a sing
 descriptor.
 
 **Known gap, recorded rather than papered over:** the store lives under
-`pipeline/out/`, which is gitignored, and the assets in `app/static/birdy/` carry no
+`pipeline/out/`, which is gitignored, and the assets in `app/static/lyrebird/` carry no
 recordist or licence field at all. So the shipped galaxy is derived from ~10 000
 attributed recordings and ships none of the attribution. See
 `docs/DOC-AUDIT-FINDINGS.md` — this is a finding, not a resolved question.

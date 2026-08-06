@@ -206,7 +206,7 @@ source section. No figure-generating Python was written. In priority order:
 |---|---|---|
 | 1 | title block | author name, affiliation, ORCID |
 | 2 | §"Where the descent starts" | **the two-start descent's result** — median gain, share improved, worst species. The gate and the run's wall-clock cost are in `pipeline/analysis/inverse_gate.md`; the result table is not. See finding #2. |
-| 3 | §Limitations | **production v5's `centroidAgreement`, `centroidAgreementTieAdjusted` and `speciesAgreement`**, from the built manifest at `/tmp/birdy-prod/assets-v5`. See finding #7. |
+| 3 | §Limitations | **production v5's `centroidAgreement`, `centroidAgreementTieAdjusted` and `speciesAgreement`**, from the built manifest at `/tmp/lyrebird-prod/assets-v5`. See finding #7. |
 | 4 | §Reproducibility | repository URL and an archived release DOI (Zenodo) |
 | 5 | §Acknowledgements | acknowledgements and funding, or an explicit statement of none |
 
@@ -244,7 +244,7 @@ so in prose:
    framing you want on a public preprint, and add an explicit licence for the manuscript itself
    (arXiv asks: CC BY 4.0, CC BY-SA, CC BY-NC-SA, CC0, or arXiv's non-exclusive licence).
 8. **Rename check.** The manuscript uses **Lyrebird** throughout, with one footnote saying the
-   repository is named `Birdy`. If the repository is going to be renamed, do it before the
+   repository is named `Lyrebird`. If the repository is going to be renamed, do it before the
    preprint cites a URL.
 
 ### Suggested arXiv categories

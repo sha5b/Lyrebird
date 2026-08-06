@@ -51,7 +51,7 @@ export function loadInventory() {
 }
 
 /** Where `build` writes; the binary sidecars live here beside the JSON. */
-export const GENERATED_DIR = join(APP_ROOT, 'static/birdy');
+export const GENERATED_DIR = join(APP_ROOT, 'static/lyrebird');
 
 /** The generated asset, or null when the pipeline has not been run. */
 export function loadGenerated(name) {

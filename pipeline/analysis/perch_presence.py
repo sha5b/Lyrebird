@@ -49,7 +49,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from birdy_pipeline import harvest, perch  # noqa: E402
+from lyrebird_pipeline import harvest, perch  # noqa: E402
 
 #: Perch's class list mixes 14 595 `"Genus species"` taxa with 200 FSD50K sound-event
 #: labels (`Wind`, `Engine`, `Chirp_and_tweet`, ...). The binomial pattern is what separates

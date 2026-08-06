@@ -140,7 +140,7 @@ class Pipeline:
         #: flag should be visible in the shell history; this is the surface where it should
         #: just do the better thing. `--no-embed-typing` turns it off.
         embed_typing: bool = True,
-        #: The amortised inverse encoder, when one has been trained (`birdy-pipeline inverse`).
+        #: The amortised inverse encoder, when one has been trained (`lyrebird-pipeline inverse`).
         #: Absent on most machines and absent until something has been trained, in which case
         #: every fit here starts from the cluster median exactly as before.
         inverse_path: Path | None = None,
@@ -396,7 +396,7 @@ class Pipeline:
             finally:
                 job.finished = time.time()
 
-        threading.Thread(target=run, daemon=True, name=f"birdy-{name}").start()
+        threading.Thread(target=run, daemon=True, name=f"lyrebird-{name}").start()
         return {"ok": True, "job": job.to_dict()}
 
     def stop(self) -> dict[str, Any]:
@@ -1307,7 +1307,7 @@ class Pipeline:
             learned=self.learned_path,
             inventory=self.inventory_path,
             critic=self.critic_path,
-            # `.../pipeline/src/birdy_pipeline/server.py` -> `.../pipeline`.
+            # `.../pipeline/src/lyrebird_pipeline/server.py` -> `.../pipeline`.
             pipeline_root=Path(__file__).resolve().parents[2],
         )
 
@@ -1387,7 +1387,7 @@ class Pipeline:
 
             if verb.has_report:
                 ctx.reports.mkdir(parents=True, exist_ok=True)
-            job.log.append(f"birdy-pipeline {' '.join(argv)}")
+            job.log.append(f"lyrebird-pipeline {' '.join(argv)}")
             args = build_parser().parse_args(argv)
             out_tee = _Tee(job.log.append, harvest.sys.stdout)
             with contextlib.redirect_stdout(out_tee):
@@ -1481,7 +1481,7 @@ def default_store_report(store_path: Path) -> list[str]:
 
 def make_handler(pipeline: Pipeline) -> type[BaseHTTPRequestHandler]:
     class Handler(BaseHTTPRequestHandler):
-        server_version = "birdy-pipeline"
+        server_version = "lyrebird-pipeline"
 
         def log_message(self, *args: Any) -> None:  # quiet; the job log is what matters
             pass
@@ -1599,7 +1599,7 @@ def serve(pipeline: Pipeline, port: int = DEFAULT_PORT) -> None:
         harvest.log(diagnose_port(port))
         raise SystemExit(2) from None
 
-    harvest.log(f"birdy-pipeline control on http://{BIND_HOST}:{port} (loopback only)")
+    harvest.log(f"lyrebird-pipeline control on http://{BIND_HOST}:{port} (loopback only)")
     harvest.log("the app's Learn tab will pick this up automatically; ctrl-c to stop")
     try:
         server.serve_forever()
@@ -1695,7 +1695,7 @@ def diagnose_port(port: int) -> str:
 
     if state == "healthy":
         return (
-            f"a birdy-pipeline server is already running on {BIND_HOST}:{port}, so this one "
+            f"a lyrebird-pipeline server is already running on {BIND_HOST}:{port}, so this one "
             f"is not needed.{where}\n"
             f"  The app's Learn tab is already talking to it. Use `--port` to run a second "
             f"one on purpose."
@@ -1713,7 +1713,7 @@ def diagnose_port(port: int) -> str:
         )
     if state == "foreign":
         return (
-            f"{BIND_HOST}:{port} is held by something that is not a birdy-pipeline "
+            f"{BIND_HOST}:{port} is held by something that is not a lyrebird-pipeline "
             f"server.{where}\n"
             f"  Use `--port` to pick another, or stop that process."
         )

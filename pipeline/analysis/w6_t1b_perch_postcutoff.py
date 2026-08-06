@@ -45,8 +45,8 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from birdy_pipeline import geometry, perch  # noqa: E402
-from birdy_pipeline.harvest import XenoCanto  # noqa: E402
+from lyrebird_pipeline import geometry, perch  # noqa: E402
+from lyrebird_pipeline.harvest import XenoCanto  # noqa: E402
 
 CACHE = ROOT / "out/audio-postcutoff"
 CATALOGUE = CACHE / "_catalogue.json"

@@ -56,7 +56,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from birdy_pipeline import features, harvest, learn, specbench, syrinx  # noqa: E402
+from lyrebird_pipeline import features, harvest, learn, specbench, syrinx  # noqa: E402
 
 STORE = ROOT / "out/harvest-gan"
 INVENTORY = ROOT.parent / "data/learned-inventory.json"

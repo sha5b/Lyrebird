@@ -25,10 +25,10 @@
 	import { BOUT_GLOSS } from '$lib/lang/glossary';
 	import { packBuild, saveBlob } from '$lib/data/asset-download';
 	import type { GalaxyMap } from '$lib/data/assets';
-	import type { BirdyAssets } from '$lib/data/types';
+	import type { LyrebirdAssets } from '$lib/data/types';
 
 	interface Props {
-		assets: BirdyAssets;
+		assets: LyrebirdAssets;
 		/** The fitted axis directions and the share each explains, from `biplotAxes`. */
 		axes: { name: string; r2: number }[];
 		/** The loaded build's own projection scores. Null before the manifest is read. */
@@ -89,6 +89,26 @@
 	/** How many files the build says it is, so the button can be honest before it is pressed. */
 	const buildFiles = $derived(assets.manifest.files?.length ?? 0);
 
+	/**
+	 * How many sounds a second, independent clustering refused to place, and how many it
+	 * placed. Counted from the shipped `unassigned` column, not read from the manifest —
+	 * the manifest's own `unassigned` is 0 on a `label` build and correctly so, because
+	 * label assignment places every point by the name it already carries.
+	 *
+	 * This page states the figure because a reader is owed the answer to "does the picture
+	 * prove its own types". It does not, and the number is how much of the corpus the
+	 * question is open over. `null` means the build ships no such column, which reads as
+	 * "we did not ask" rather than as "nothing was refused" — different claims.
+	 */
+	const refusedCount = $derived(
+		assets?.points.unassigned
+			? assets.points.unassigned.reduce((sum: number, v: number) => sum + (v ? 1 : 0), 0)
+			: null
+	);
+	const placedCount = $derived(
+		refusedCount !== null && assets ? assets.points.n - refusedCount : null
+	);
+
 	async function downloadBuild() {
 		if (packing) return;
 		packError = '';
@@ -127,38 +147,46 @@
 				<section class="pagesection">
 					<h3><span class="num">§1</span> What this is</h3>
 				<p class="note measure">
-						Lyrebird holds no recordings of birds. A physical model of the <b>syrinx</b> makes
-						every note as you hear it. That model is the two-parameter oscillator a real bird
-						drives with air-sac pressure and syringeal tension. Nothing here is a sample and
-						nothing is pre-rendered.
+						<b>Lyrebird is a map of bird sound that you can play.</b> Every note you hear, it
+						computes while you listen. It computes that note from a physical model of the
+						<b>syrinx</b>, which is the organ a bird sings with.
 					</p>
 					<p class="note measure">
-						The cloud you arrived at is a corpus of {assets.points.n.toLocaleString()} measured
-						sounds from {assets.inventoryIndex.length.toLocaleString()} species. {sourceMix
-							? `${sourceMix.field.toLocaleString()} of them are measurements of real field recordings. The other ${sourceMix.rendered.toLocaleString()} are this synthesizer's own renders of the documented repertoire.`
+						The model has two controls. One is the air pressure from the air sacs. The other
+						is the tension in the muscles of the syrinx. A real bird sings with the same two.
+						So a note here is what the model does, and never a clip of a bird.
+					</p>
+					<p class="note measure">
+						Each mark in the cloud is one measured sound. There are
+						{assets.points.n.toLocaleString()} of them, from
+						{assets.inventoryIndex.length.toLocaleString()} species.{sourceMix
+							? ` ${sourceMix.field.toLocaleString()} come from real field recordings. The other ${sourceMix.rendered.toLocaleString()} are this model's own renders of calls that scientists have already described.`
 							: ''}
-						The pipeline measures each recording and then discards it. It keeps only the
-						measurements, and it never sends audio to your browser.
 					</p>
 					<p class="note measure">
-						<b>What this app will say, and what it will not</b> is the whole design. So it is a
-						table and not a paragraph:
+						The pipeline measures every recording, then deletes the audio and keeps the
+						numbers. Your browser receives those numbers. No audio ever reaches it, and none
+						is stored here.
+					</p>
+					<p class="note measure">
+						<b>The design is what this app will say, and what it refuses to say.</b> That
+						belongs in a table rather than a paragraph:
 					</p>
 				<dl class="claims">
 						<div>
-							<dt>It names the function of a call when a source named it.</dt>
+							<dt>It names what a call is for, when a scientist named it first.</dt>
 							<dd>
-								The app shows the citation and a confidence label with the name.
+								The name arrives with its citation and a confidence label.
 								{corpusHealth
 									? `${corpusHealth.documented.toLocaleString()} of the ${corpusHealth.clusters.toLocaleString()} knots in this build carry one`
-									: 'Every documented call carries one'}.
+									: 'Every documented call carries one'}. The rest carry none, and say so.
 							</dd>
 						</div>
 						<div>
 							<dt>It reports what a live sound is most like.</dt>
 							<dd>
-								The app finds the nearest cluster and gives the match a strength. The gate is
-								the fifth percentile of real field syllables, {Math.round((matchFloor ?? 0) * 100)} %
+								Sing or play something. The app finds the nearest knot and rates the match.
+								The gate is the fifth percentile of real field syllables, {Math.round((matchFloor ?? 0) * 100)} %
 								on this build. A weak match therefore reads as weak.
 							</dd>
 						</div>
@@ -168,6 +196,38 @@
 								There are no sentences here. Machine learning can describe a repertoire. It can
 								also link a call to a behavior. It cannot recover meaning, and nothing on this
 								screen says that it can.
+							</dd>
+						</div>
+						<!--
+							The row that answers the question a reader is entitled to ask and this page
+							never answered: does the picture show that these types are real?
+
+							It does not, and the reason is structural rather than a shortfall. This build
+							clusters by `label`, so every point goes to the knot of the name it already
+							carries — the arrangement cannot then be evidence for the names, because the
+							names produced it. Saying so is the honest move, and leaving the reader there
+							would not be: the question does have an answer, from a clustering that reads
+							no names at all, and that answer is mostly reassuring. Both halves belong here.
+
+							The counts are derived from the shipped `unassigned` column. The agreement
+							figure is not — it is a published measurement, and it is attributed as one so
+							nobody mistakes it for something read off this manifest.
+						-->
+						<div>
+							<dt class="no">It does not prove its own types, and cannot.</dt>
+							<dd>
+								This map puts every sound in the knot of the name it already carries. The
+								arrangement therefore cannot be evidence for the names, because the names
+								made it.
+								{#if placedCount !== null && refusedCount !== null}
+									A second method grouped the same sounds by density alone and read no names.
+									It placed {placedCount.toLocaleString()} of them and refused
+									{refusedCount.toLocaleString()}.
+								{/if}
+								Where both methods committed, they described the same thing — adjusted mutual
+								information 0.80, a published figure rather than one from this build. So the
+								refusal is a matter of how much of the corpus is dense enough to group, and
+								not a disagreement about what is in it. The whitepaper gives the tests.
 							</dd>
 						</div>
 						<div>
@@ -355,18 +415,18 @@
 				<section class="pagesection">
 					<h3><span class="num">§5</span> What the picture is worth</h3>
 					<p class="note measure">
-						Read from the loaded build's own manifest, not written into this page. Every one of
-						these is a cost of squeezing {assets.featureSpace.dims} dimensions into three, and
-						the reason they are all here is that any one of them alone flatters it.
+						These come from the loaded build's own manifest. Nobody wrote them into this page.
+						Each one is a cost of squeezing {assets.featureSpace.dims} dimensions into three.
+						They are all here because any one of them alone flatters the picture.
 					</p>
 					<dl class="claims">
 						<div>
 							<dt>Neighbours on screen share the mark's own type</dt>
 							<dd>
 								{projQuality?.knn != null ? `${Math.round(projQuality.knn * 100)} %` : '—'} of a
-								point's {projQuality?.knnK ?? 10} nearest marks. Chance on this corpus is far
-								under one percent, so this is real structure — and it is also the limit on
-								reading two neighbouring marks as the same sound.
+								point's {projQuality?.knnK ?? 10} nearest marks. Chance on this corpus sits far
+								under one percent, so this is real structure. It is also the limit on reading
+								two neighbouring marks as the same sound.
 							</dd>
 						</div>
 						<div>
@@ -423,9 +483,9 @@
 							loading="lazy"
 						/>
 						<figcaption>
-							<b>Fig 1</b> The whole instrument. The cloud in the middle is the corpus; the panel
-							on the left makes a sound, the panel on the right reports one. Nothing in the cloud
-							is coloured until it sounds, which is why it arrives grey.
+							<b>Fig 1</b> The whole instrument. The cloud in the middle is the corpus. The
+							panel on the left makes a sound. The panel on the right reports one. Nothing in
+							the cloud takes a colour until it sounds, which is why it arrives grey.
 						</figcaption>
 					</figure>
 					<p class="note measure">
@@ -440,9 +500,9 @@
 							loading="lazy"
 						/>
 						<figcaption>
-							<b>Fig 2</b> A lit knot, named. The tag is filled with that bird's own colour and
-							carries the knot number, the bird, how many sounds fell into it and how strongly a
-							live sound is matching it. A documented call adds its function underneath; a fitted
+							<b>Fig 2</b> A lit knot, named. The tag takes that bird's own colour. It carries
+							the knot number, the bird, how many sounds fell into it, and how strongly a live
+							sound is matching it. A documented call adds its function underneath. A fitted
 							type adds nothing there, because there is nothing to add. Where a phrase runs
 							through several knots, a thread joins them in the order they were sung.
 						</figcaption>
@@ -466,12 +526,12 @@
 							loading="lazy"
 						/>
 						<figcaption>
-							<b>Fig 4</b> The inventory on the <b>learn</b> page, which is §2 as rows. Note the
-							two kinds together on one bird: the Japanese great tit's <b class="mono">jar</b> and
-							<b class="mono">tsupi</b> are named by Suzuki 2014; its <b class="mono">L32</b> and
-							<b class="mono">L33</b> were fitted from recordings and are described rather than
-							named. While something is singing, the row of the sounding note is marked and the
-							list scrolls to it.
+							<b>Fig 4</b> The inventory on the <b>learn</b> page, which is §2 as rows. One bird
+							carries both kinds. Suzuki 2014 named the Japanese great tit's
+							<b class="mono">jar</b> and <b class="mono">tsupi</b>. The pipeline fitted its
+							<b class="mono">L32</b> and <b class="mono">L33</b> from recordings, so the app
+							describes those two rather than naming them. While something sings, the app marks
+							the row of the sounding note and scrolls the list to it.
 						</figcaption>
 					</figure>
 				</section>
@@ -555,10 +615,10 @@
 						<i class="ring"></i>
 						<span>
 							<b>Movement, when a sound lands.</b> The knot it matched swells from the inside
-							out — each member moves as the front reaches its own true distance from the
-							landing point, so what you see is the knot's internal geometry, not an
+							out. Each member moves as the front reaches its own true distance from the
+							landing point. So you are watching the knot's internal geometry, not an
 							animation. A wave then travels out from that knot across about four
-							knot-spacings; two waves crossing add and cancel like real ones, which is the
+							knot-spacings. Two waves crossing add and cancel like real ones. That is the
 							only mark on screen of two calls arriving in the same region.
 						</span>
 					</li>
@@ -642,8 +702,8 @@
 							<b>in that bird's own colour</b>, the same genus hue its tag wears, so a
 							chorus of transition graphs is several colours rather than one. And it
 							runs <b>dark where the syllable starts, light where it lands</b>, because
-							a transition has a direction and a line has no arrowhead. The swatch is
-							one bird's; on the stage the hue is whichever bird you are hearing.
+							a transition has a direction and a line has no arrowhead. The swatch shows one
+							bird. On the stage the hue is whichever bird you are hearing.
 						</span>
 					</li>
 					<li>

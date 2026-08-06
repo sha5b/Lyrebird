@@ -173,7 +173,7 @@ console.log('\nthe screen readout');
 
 console.log('\nagainst the shipped build');
 {
-	const dir = new URL('../static/birdy/', import.meta.url).pathname;
+	const dir = new URL('../static/lyrebird/', import.meta.url).pathname;
 	const centroids = JSON.parse(readFileSync(join(dir, 'centroids.json'), 'utf8'));
 	const space = JSON.parse(readFileSync(join(dir, 'feature-space.json'), 'utf8'));
 	const blk = centroids.vectors;

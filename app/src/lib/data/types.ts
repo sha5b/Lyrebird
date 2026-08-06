@@ -648,7 +648,7 @@ export interface Manifest {
 	};
 	/**
 	 * Where the live match ramp sits for *this* asset set, measured by the build against
-	 * the centroids it just wrote (`birdy-pipeline thresholds`, or the build's own pass).
+	 * the centroids it just wrote (`lyrebird-pipeline thresholds`, or the build's own pass).
 	 *
 	 * **The two numbers in `features.ts` are the fallback, not the answer.** They were
 	 * hand-tuned against a 2026-07 corpus and went stale in silence: by v6 the whole
@@ -686,7 +686,7 @@ export interface Manifest {
 }
 
 /** Everything the client needs, fetched once at startup. */
-export interface BirdyAssets {
+export interface LyrebirdAssets {
 	manifest: Manifest;
 	/**
 	 * The canonical inventory. When the build ships per-species shards this starts as the

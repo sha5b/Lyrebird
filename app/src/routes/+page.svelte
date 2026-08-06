@@ -25,7 +25,7 @@
 		type ClusterLookup,
 		type GalaxyMap
 	} from '$lib/data/assets';
-	import { BirdyEngine, type ScheduledSyllable } from '$lib/audio/engine';
+	import { LyrebirdEngine, type ScheduledSyllable } from '$lib/audio/engine';
 	import { Listener } from '$lib/audio/listener';
 	import { SoundingLog } from '$lib/audio/sounding';
 	import {
@@ -72,13 +72,12 @@
 		speciesColour as speciesHue
 	} from '$lib/galaxy/palette';
 	import favicon from '$lib/assets/favicon.svg';
-	import { SEO_GRAPH } from '$lib/data/seo';
 	import { PipelineClient, type PipelineStatus } from '$lib/data/pipeline';
-	import type { BirdyAssets, SongType, Species, SpeciesRelation } from '$lib/data/types';
+	import type { LyrebirdAssets, SongType, Species, SpeciesRelation } from '$lib/data/types';
 
 	// $state.raw, not $state: a deep reactive proxy of the corpus cannot be structured-cloned
 	// into the AudioWorklet, and there is nothing here that benefits from deep reactivity.
-	let assets = $state.raw<BirdyAssets | null>(null);
+	let assets = $state.raw<LyrebirdAssets | null>(null);
 	let loadError = $state<string | null>(null);
 	/**
 	 * What the asset loader is doing, for the first-load screen.
@@ -92,7 +91,7 @@
 	// Annotated, because `LOAD_STAGES` is `as const` and its `.length` is the literal 10 — an
 	// unannotated `$state` would take that literal as its type and refuse the callback's number.
 	let loadTotal = $state<number>(LOAD_STAGES.length);
-	let engine = $state<BirdyEngine | null>(null);
+	let engine = $state<LyrebirdEngine | null>(null);
 	let listener = $state<Listener | null>(null);
 	// The renderer reads `signal` every frame and mutates it in place, so it must not be a
 	// reactive proxy; the meters the UI shows come from the listener's callback instead.
@@ -956,7 +955,7 @@
 		// withheld — so the picker can show what is plugged in straight away, and track
 		// it when hardware comes and goes.
 		const refreshDevices = () => {
-			BirdyEngine.inputDevices().then((d) => (inputDevices = d));
+			LyrebirdEngine.inputDevices().then((d) => (inputDevices = d));
 		};
 		refreshDevices();
 		navigator.mediaDevices?.addEventListener('devicechange', refreshDevices);
@@ -1090,7 +1089,7 @@
 	async function enter() {
 		if (!assets || engine) return;
 		try {
-			const created = await BirdyEngine.create(assets);
+			const created = await LyrebirdEngine.create(assets);
 			await created.resume();
 			created.setDistance(distance);
 			created.setVolume(volume);
@@ -1568,7 +1567,7 @@
 				inputVia = engine.inputVia;
 				// Device labels are withheld until permission has been granted once, so the
 				// list is worth re-reading the moment it has been.
-				inputDevices = await BirdyEngine.inputDevices();
+				inputDevices = await LyrebirdEngine.inputDevices();
 			}
 		} catch (err) {
 			audioError = describeInputError(err, inputSource);
@@ -1609,7 +1608,7 @@
 			if (engine.recording) await toggleRecording();
 			await engine.startInput(inputSource, inputDeviceId || undefined);
 			inputVia = engine.inputVia;
-			inputDevices = await BirdyEngine.inputDevices();
+			inputDevices = await LyrebirdEngine.inputDevices();
 		} catch (err) {
 			audioError = describeInputError(err, inputSource);
 			micOn = false;
@@ -1639,7 +1638,7 @@
 			recording = false;
 			if (blob) {
 				const url = URL.createObjectURL(blob);
-				recordings = [...recordings, { url, name: `birdy-${recordings.length + 1}.webm` }];
+				recordings = [...recordings, { url, name: `lyrebird-${recordings.length + 1}.webm` }];
 			}
 		} else if (engine.startRecording()) {
 			recording = true;
@@ -2392,141 +2391,17 @@
 </script>
 
 <!--
-	**The head, and the one thing about it that cannot be fixed here.**
+	**There is no `<svelte:head>` in this file, and that is not an omission.**
 
-	This app sets `ssr = false` (see `+layout.ts`) because every measurement and every note is
-	computed on the reader's machine, and that is a design commitment rather than a default. The
-	cost is that the prerendered HTML is an empty shell — grep the built `index.html` for any of
-	the figures below and you get nothing. Meta tags do not repair that: a crawler that does not
-	execute JavaScript sees a title, a description and no content at all.
+	`+layout.ts` sets `ssr = false`, so `<svelte:head>` is never rendered into the prerendered
+	document. A full head block written here — title, canonical, OG card, JSON-LD — produced a
+	built `index.html` with no title at all: invisible to every crawler that does not execute
+	JavaScript, with nothing failing to say so. Every SEO surface therefore lives in `src/app.html`,
+	which is the one file emitted verbatim, and `npm run verify:seo` reconciles its figures against
+	the shipped manifest.
 
-	So the indexable substance lives in three places that do not need the app to run, and each
-	one is doing a job the other two cannot:
-
-	  1. **The JSON-LD graph below** — the entity register. Person, artwork, dataset, source and
-	     paper, with `sameAs` links so the artist resolves to one identity rather than five.
-	     This is what AI crawlers and search engines read to decide what the page IS.
-	  2. **`static/llms.txt`** — the whole project as prose, for LLM retrieval. Plain markdown at
-	     a stable path, no execution required.
-	  3. **The `<noscript>` block further down** — the honest fallback for a reader (or crawler)
-	     with no JavaScript, saying what the thing is and where the writing about it lives.
-
-	The figures are hardcoded rather than read from `assets`, and that is deliberate: this head
-	is emitted before the corpus is fetched, so an interpolated count would render as blank in
-	the served HTML — which is exactly the failure mode the three mechanisms above exist to
-	avoid. They are checked against the manifest by `verify:seo`.
+	The `<noscript>` fallback moved there for the same reason.
 -->
-<svelte:head>
-	<!--
-		**The title is the project's own claim, not a keyword string.** It was "what birds have
-		been saying all along", which is the one sentence this project spends its whole interface
-		refusing to make — it does not translate birdsong and says so in six places. A title that
-		contradicts the artwork is worse than a dull one.
-	-->
-	<title>Lyrebird — a physical syrinx model for 2,650 wild bird species</title>
-	<meta
-		name="description"
-		content="An art–science instrument by Shahab Nedaei. Lyrebird measures 444,213 syllables from wild bird recordings, fits a Laje–Mindlin syrinx oscillator to each of 15,341 call types, and sings them back in the browser inside an audio-reactive 3D embedding of the corpus. No audio is sampled or shipped: every note is integrated from the two parameters real birds control, air-sac pressure and syringeal tension. It does not translate birdsong into language, and it states where each claim comes from."
-	/>
-	<link rel="canonical" href="https://lyrebird.variable.gallery/" />
-	<meta name="author" content="Shahab Nedaei" />
-	<meta name="theme-color" content="#fafbfc" />
-	<!--
-		Still read by several AI crawlers even though Google has ignored it since 2009 — cheap,
-		and the terms here are the ones a bioacoustics reader would actually search.
-	-->
-	<meta
-		name="keywords"
-		content="birdsong, bioacoustics, syrinx model, Laje-Mindlin oscillator, physical modelling synthesis, xeno-canto, audio embedding, art and science, media art, Shahab Nedaei, variable.gallery, generative sound, WebAudio, AudioWorklet"
-	/>
-
-	<!-- Open Graph, for link unfurls and for the crawlers that prefer it to the description. -->
-	<meta property="og:type" content="website" />
-	<meta property="og:site_name" content="Lyrebird" />
-	<meta property="og:url" content="https://lyrebird.variable.gallery/" />
-	<meta property="og:title" content="Lyrebird — a physical syrinx model for 2,650 wild bird species" />
-	<meta
-		property="og:description"
-		content="444,213 measured syllables, 15,341 fitted call types, and a syrinx oscillator that sings them in your browser. No audio sampled. An art–science instrument by Shahab Nedaei."
-	/>
-	<meta property="og:image" content="https://lyrebird.variable.gallery/brand/og-card.png" />
-	<meta property="og:image:width" content="1200" />
-	<meta property="og:image:height" content="630" />
-	<meta
-		property="og:image:alt"
-		content="The Lyrebird mark — a bifurcating syrinx — beside the project name and its figures: 444,213 measured syllables, 2,650 species, 15,341 call types, no audio shipped."
-	/>
-	<meta property="og:locale" content="en_GB" />
-
-	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:title" content="Lyrebird — a physical syrinx model for 2,650 wild bird species" />
-	<meta
-		name="twitter:description"
-		content="444,213 measured syllables, 15,341 fitted call types, and a syrinx oscillator that sings them in your browser. No audio sampled."
-	/>
-	<meta name="twitter:image" content="https://lyrebird.variable.gallery/brand/og-card.png" />
-
-	<!--
-		**The entity register.** One `@graph` rather than several disconnected blocks, so the
-		artist, the artwork, the corpus, the code and the paper are stated as one set of related
-		entities with `@id`s that reference each other. That relatedness is the part a knowledge
-		graph can use; five isolated snippets describing the same thing are five guesses.
-
-		`Dataset` earns its place: the corpus is the substance of the work, it has a licence and a
-		measurable size, and dataset markup is the one type that gets bioacoustics work surfaced
-		to people looking for bioacoustics work rather than for art.
-	-->
-	{@html `<script type="application/ld+json">${JSON.stringify(SEO_GRAPH)}</${'script'}>`}
-</svelte:head>
-
-<!--
-	**The only prose in the served HTML, and the reason it is a `<noscript>`.**
-
-	`ssr = false`, so nothing else on this page exists until JavaScript runs — which is correct
-	for an instrument whose whole argument is that the computation happens on the reader's own
-	machine, and which leaves the served document with no readable content at all.
-
-	This is the honest repair rather than the SEO one. A hidden div of keywords would be
-	invisible to a reader and would be cloaking; a `<noscript>` is shown to exactly the audience
-	that cannot see the app — a reader with scripting off, and a crawler that does not execute —
-	and it tells them what the thing is and where the writing about it lives. Nothing here is
-	hidden from anybody who can see the app; they get the app instead, which says more.
--->
-<noscript>
-	<div class="centred">
-		<div class="card">
-			<h1>Lyrebird</h1>
-			<p class="strap">syrinx model · documented call functions · no samples</p>
-			<p>
-				<b>Lyrebird measures wild birdsong and sings it back from a physical model of the
-					syrinx.</b>
-				It is an art–science instrument by <a href="https://shahabnedaei.variable.gallery/"
-					>Shahab Nedaei</a
-				>. Every note is integrated in your browser from the Laje–Mindlin oscillator, driven by
-				the two parameters real birds control: air-sac pressure and syringeal tension. No audio
-				is sampled and none is shipped.
-			</p>
-			<p>
-				The corpus holds <b>444,213 measured syllables</b> from <b>2,489 species</b>, grouped
-				into <b>15,341 call types</b> and projected into a three-dimensional embedding that
-				flares where a live sound lands in it.
-			</p>
-			<p>
-				<b>It does not translate birdsong into language, and it says so in the interface.</b>
-				Machine learning can characterise a repertoire and link calls to behaviour; it cannot
-				recover propositional meaning. Every phrase carries a label naming where its claim came
-				from — playback-verified, documented, inferred, field recording, or invented.
-			</p>
-			<p class="faint">
-				This page needs JavaScript, because there is no server here to do the work: the
-				measurement, the clustering read-out and the synthesis all run locally. The writing is
-				readable without it — <a href="/lyrebird-whitepaper.pdf">the paper</a>,
-				<a href="/llms.txt">a plain-text summary</a>, and
-				<a href="https://github.com/sha5b/Birdy">the source</a>.
-			</p>
-		</div>
-	</div>
-</noscript>
 
 {#if loadError}
 	<div class="centred">
@@ -2539,8 +2414,8 @@
 			</p>
 			<pre class="mono">cd pipeline
 uv sync
-uv run birdy-pipeline build</pre>
-			<p class="faint">That writes <code>app/static/birdy/</code>. Reload afterwards.</p>
+uv run lyrebird-pipeline build</pre>
+			<p class="faint">That writes <code>app/static/lyrebird/</code>. Reload afterwards.</p>
 		</div>
 	</div>
 {:else if !assets}
@@ -3869,7 +3744,7 @@ uv run birdy-pipeline build</pre>
 									A master gain of 1.0 was the loudest the app could go, and it was not loud:
 									every note is normalised by `ampPP` so no syllable ever approaches full
 									scale, and the reverb split takes another chunk. Above 1.0 the sum of a
-									twelve-voice chorus would hard-clip at the output, so `BirdyEngine` now
+									twelve-voice chorus would hard-clip at the output, so `LyrebirdEngine` now
 									ends in a limiter and the extra headroom is usable rather than distorted.
 								-->
 								<input type="range" min="0" max="3" step="0.02" bind:value={volume} />
@@ -4339,7 +4214,7 @@ uv run birdy-pipeline build</pre>
 									Segmented into syllables and folded into the learning store; fit them on the
 									<b>learn</b> page, from the header.
 								{:else}
-									Start <span class="mono">birdy-pipeline serve</span> to send a recording into
+									Start <span class="mono">lyrebird-pipeline serve</span> to send a recording into
 									the learning store.
 								{/if}
 							</p>

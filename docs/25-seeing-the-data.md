@@ -119,7 +119,7 @@ of the v10 build.**
 on selection they draw the eight nearest partners rather than the hairball. The finding was
 that **the asset did not exist**: the v10 chain runs `build --no-relations`, and
 `out/harvest-inband` carried no `embeddings.f32`, so the build logged *"relations skipped"*
-and `app/static/birdy/relations.json` was never written. Because the asset is optional by
+and `app/static/lyrebird/relations.json` was never written. Because the asset is optional by
 design — the loader treats absent and over-32 MB identically — nothing failed and nothing
 said so; the threads simply drew zero segments and the chips never rendered.
 

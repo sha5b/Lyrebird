@@ -4,7 +4,7 @@
  * The running app still needs no backend — the galaxy is precomputed and everything
  * audible is synthesised in the browser (`docs/06-architecture.md` §6.1). This only
  * covers the Learn tab, which drives the offline Python pipeline and therefore needs
- * `birdy-pipeline serve` alive somewhere. Asking for a second terminal to run one
+ * `lyrebird-pipeline serve` alive somewhere. Asking for a second terminal to run one
  * fixed command is a step that can be taken for you, so it is.
  *
  * The rules it keeps:
@@ -16,7 +16,7 @@
  * - **Dies with the dev server.** The child is killed when Vite closes, so a stale
  *   server is not left holding the port after ctrl-c.
  *
- * Off with `BIRDY_PIPELINE=0`; another port with `BIRDY_PIPELINE_PORT`.
+ * Off with `LYREBIRD_PIPELINE=0`; another port with `LYREBIRD_PIPELINE_PORT`.
  */
 
 import { spawn, type ChildProcess } from 'node:child_process';
@@ -86,8 +86,8 @@ async function portIsSilent(port: number): Promise<boolean> {
 	});
 }
 
-export function birdyPipeline(): Plugin {
-	const port = Number(process.env.BIRDY_PIPELINE_PORT || DEFAULT_PORT);
+export function lyrebirdPipeline(): Plugin {
+	const port = Number(process.env.LYREBIRD_PIPELINE_PORT || DEFAULT_PORT);
 	let child: ChildProcess | null = null;
 	let stopping = false;
 
@@ -98,14 +98,14 @@ export function birdyPipeline(): Plugin {
 	}
 
 	return {
-		name: 'birdy-pipeline',
+		name: 'lyrebird-pipeline',
 		apply: 'serve',
 
 		async configureServer(server) {
 			const info = (msg: string) => server.config.logger.info(`  \x1b[2mpipeline\x1b[0m  ${msg}`);
 			const warn = (msg: string) => server.config.logger.warn(`  pipeline  ${msg}`);
 
-			if (process.env.BIRDY_PIPELINE === '0') return;
+			if (process.env.LYREBIRD_PIPELINE === '0') return;
 			// `closeBundle` covers a clean `server.close()`; this covers the rest.
 			process.once('exit', stop);
 			server.httpServer?.once('close', stop);
@@ -120,7 +120,7 @@ export function birdyPipeline(): Plugin {
 			if (await portIsSilent(port)) {
 				warn(
 					`127.0.0.1:${port} is held by a process that accepts connections but never ` +
-						`answers — most likely a suspended or wedged \`birdy-pipeline serve\` from an ` +
+						`answers — most likely a suspended or wedged \`lyrebird-pipeline serve\` from an ` +
 						`earlier session. The Learn tab will show the pipeline as not running until ` +
 						`it is cleared.`
 				);
@@ -128,14 +128,14 @@ export function birdyPipeline(): Plugin {
 					`  find it with:  ss -tlnp | grep ${port}      ` +
 						`then:  kill -CONT <pid> && kill <pid>`
 				);
-				warn(`  or set BIRDY_PIPELINE_PORT to use a different port.`);
+				warn(`  or set LYREBIRD_PIPELINE_PORT to use a different port.`);
 				return;
 			}
 
 			// `uv run` resolves the pipeline's own virtualenv, so this works from a clean
 			// checkout without anything activated. stdin is closed: it must never be able
 			// to steal the terminal from Vite.
-			child = spawn('uv', ['run', 'birdy-pipeline', 'serve', '--port', String(port)], {
+			child = spawn('uv', ['run', 'lyrebird-pipeline', 'serve', '--port', String(port)], {
 				cwd: PIPELINE_DIR,
 				stdio: ['ignore', 'pipe', 'pipe'],
 				env: process.env
@@ -162,13 +162,13 @@ export function birdyPipeline(): Plugin {
 				warn(
 					err.code === 'ENOENT'
 						? `uv is not on PATH, so the Learn tab has no backend. Install uv, or run ` +
-							`\`cd pipeline && uv run birdy-pipeline serve\` yourself.`
+							`\`cd pipeline && uv run lyrebird-pipeline serve\` yourself.`
 						: `could not start: ${err.message}`
 				);
 			});
 			child.on('exit', (code) => {
 				if (stopping || code === 0) return;
-				warn(`exited with code ${code}. Run \`cd pipeline && uv run birdy-pipeline serve\` to see why.`);
+				warn(`exited with code ${code}. Run \`cd pipeline && uv run lyrebird-pipeline serve\` to see why.`);
 				child = null;
 			});
 

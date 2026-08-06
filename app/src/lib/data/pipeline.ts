@@ -1,5 +1,5 @@
 /**
- * Client for the optional local pipeline control surface (`birdy-pipeline serve`).
+ * Client for the optional local pipeline control surface (`lyrebird-pipeline serve`).
  *
  * Everything here degrades to "not running". The galaxy is precomputed and the app
  * needs no backend to show it; this only exists so harvesting and learning can be
@@ -68,7 +68,7 @@ export interface JobStatus {
 }
 
 /**
- * The learned critic, when one has been trained (`birdy-pipeline critic train`).
+ * The learned critic, when one has been trained (`lyrebird-pipeline critic train`).
  *
  * Present so the interface can say *which objective* produced the numbers next to each
  * learned syllable — a fit run with `--embed-typing` defines syllable types differently from
@@ -107,7 +107,7 @@ export interface CriticStatus {
 /**
  * One control on a verb's form, declared by the server rather than by this file.
  *
- * **The registry is in `pipeline/src/birdy_pipeline/verbs.py` and it is the only place
+ * **The registry is in `pipeline/src/lyrebird_pipeline/verbs.py` and it is the only place
  * that says what the tab may run.** Sixteen bespoke endpoints and sixteen hand-written
  * forms would be sixteen chances for the interface to drift from the CLI it is driving;
  * one declared registry drives the argv, this form, and the result table at once, so a
@@ -310,7 +310,7 @@ export class PipelineClient {
 			if ((data.error ?? '').includes('unknown endpoint')) {
 				throw new Error(
 					`This control process does not have ${path}. It was started before that ` +
-						'route existed — restart it (birdy-pipeline serve) and try again.'
+						'route existed — restart it (lyrebird-pipeline serve) and try again.'
 				);
 			}
 			throw new Error(data.error ?? 'the pipeline refused that');
