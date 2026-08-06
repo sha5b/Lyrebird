@@ -41,14 +41,19 @@ from pathlib import Path
 
 import numpy as np
 
-sys.path.insert(0, "/home/sha5b/Documents/GitHub/Lyrebird/pipeline/src")
+# `PIPELINE`, not a hardcoded absolute path. These paths named the checkout
+# directory, so renaming that directory silently broke every one of them: the
+# store, the audio cache and the model weights all resolved to nothing. Derived
+# from this file's own location, they survive the directory being renamed.
+PIPELINE = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PIPELINE / "src"))
 
 from lyrebird_pipeline import geometry, perch  # noqa: E402
 from lyrebird_pipeline.harvest import HarvestStore  # noqa: E402
 
-STORE = Path("/home/sha5b/Documents/GitHub/Lyrebird/pipeline/out/harvest-gan")
-CACHE = Path("/home/sha5b/Documents/GitHub/Lyrebird/pipeline/out/audio-cache")
-MODEL_DIR = Path("/home/sha5b/Documents/GitHub/Lyrebird/pipeline/out/perch")
+STORE = PIPELINE / "out" / "harvest-gan"
+CACHE = PIPELINE / "out" / "audio-cache"
+MODEL_DIR = PIPELINE / "out" / "perch"
 OUT = Path(__file__).resolve().parent / "w6_t1_perch_recordist.json"
 MIN_PER_RECORDIST = 8
 MAX_PER_RECORDIST = 20

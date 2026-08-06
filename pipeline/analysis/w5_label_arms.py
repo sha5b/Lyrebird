@@ -31,7 +31,12 @@ from collections import Counter
 import numpy as np
 from sklearn.cluster import KMeans
 
-sys.path.insert(0, "/home/sha5b/Documents/GitHub/Lyrebird/pipeline/src")
+# `PIPELINE`, not a hardcoded absolute path. These paths named the checkout
+# directory, so renaming that directory silently broke every one of them: the
+# store, the audio cache and the model weights all resolved to nothing. Derived
+# from this file's own location, they survive the directory being renamed.
+PIPELINE = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PIPELINE / "src"))
 
 from lyrebird_pipeline.galaxy import (  # noqa: E402
     PointSet,
