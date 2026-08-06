@@ -1,19 +1,52 @@
-# Lyrebird
+<div align="center">
 
-**→ [lyrebird.variable.gallery](https://lyrebird.variable.gallery)**
+<img src="app/static/brand/og-card.png" alt="Lyrebird — a browser instrument that measures wild birdsong and sings it back from a physical model of the syrinx. 444,213 measured syllables · 2,650 species · 15,341 call types · no audio shipped." width="820">
+
+### **[→ lyrebird.variable.gallery](https://lyrebird.variable.gallery)**
+
+An art–science work by **[Shahab Nedaei](https://shahabnedaei.variable.gallery/)** · [variable.gallery](https://variable.gallery/)
+[The paper](app/static/lyrebird-whitepaper.pdf) · [The research notes](docs/) · [What the licence covers](NOTICE.md)
+
+</div>
+
+---
+
+![The whole instrument: the corpus as a cloud of 444,213 measured syllables, the Sing panel on the left, the reading panel under it, and a knot lit green with its specimen tag where a sound has just landed.](docs/figures/stage.png)
 
 Record real birds, match their calls against documented call functions, and sing back
 synthetic birdsong from a physical model of the syrinx — inside an audio-reactive 3D
 embedding galaxy that flares where the sound lands in the corpus.
 
-An art–science work by [Shahab Nedaei](https://shahabnedaei.variable.gallery/) ·
-[variable.gallery](https://variable.gallery/)
-
-Nothing is sampled. Every note is integrated from the Mindlin–Laje syrinx oscillator in
+**Nothing is sampled.** Every note is integrated from the Mindlin–Laje syrinx oscillator in
 an AudioWorklet, driven by the two parameters real birds control: air-sac pressure and
-syringeal tension.
+syringeal tension. The pipeline measures each recording, deletes the audio and keeps the
+numbers; your browser receives the numbers.
 
-## What it does not do
+**It runs entirely on your machine.** No server, no backend, no request after the assets
+land — `adapter-static`, `ssr = false`, and about 113 MB of corpus parsed in the tab.
+
+| | |
+|---|---|
+| **444,213** measured syllables | from wild recordings (xeno-canto, iNaturalist) |
+| **2,489** species | in the shipped build |
+| **15,341** call types | each with a fitted syrinx oscillator |
+| **0 bytes** of audio shipped | every note is integrated in the browser |
+
+### Contents
+
+- [What it will not say](#what-it-will-not-say) — the confidence labels, and why they exist
+- [Run it](#run-it) — three commands
+- [Seeing it](#seeing-it) — the stage, colour, the two pages
+- [On a phone](#on-a-phone) — the dock and the drawers
+- [The galaxy](#the-galaxy) — the camera, the tags, the chorus, the controls
+- [Listening](#listening) — microphone, computer audio, and what the match meter means
+- [Growing the corpus](#growing-the-corpus-from-real-recordings) — harvest, learn, critic
+- [What the fitted voices actually achieve](#what-the-fitted-voices-actually-achieve) — the honest numbers
+- [Deploying it](#deploying-it) · [Verifying it](#verifying-it) · [Licence](#licence)
+
+---
+
+## What it will not say
 
 It does not translate birdsong into sentences, and it says so in the interface. Machine
 learning today can characterise a repertoire and link calls to behaviour; it cannot
@@ -35,16 +68,112 @@ established functions (the Japanese great tit's ABC-D compound, chickadee note
 composition, Siberian jay alarm types), which are rendered as the real syllable sequence
 with its citation.
 
-## Layout
+---
+
+## Run it
+
+The galaxy, the cluster centroids and the oscillator calibration table are generated
+offline, so build them first:
+
+```bash
+cd pipeline
+uv sync
+uv run lyrebird-pipeline build      # writes app/static/lyrebird/
+```
+
+Then the app:
+
+```bash
+cd app
+npm install
+npm run dev
+```
+
+Lyrebird v1 needs no backend: `adapter-static`, precomputed assets, client-side features and
+client-side synthesis. Audio never leaves the browser and no model runs on a server.
+
+### Layout of the repository
 
 ```
 data/inventory.json   canonical data: 12 species, 44 syllable types, songs, grammars,
                       documented functions with citations. Read by BOTH halves.
 docs/                 the research this is built on; 08-implementation.md is the contract
+docs/figures/         the README's figures — regenerate with `npm run figures` in app/
 pipeline/             offline Python (uv): renders a corpus, calibrates the oscillator,
                       harvests and learns from field audio, builds the galaxy
 app/                  SvelteKit + TypeScript: realtime synthesis, mic analysis, 3D galaxy
 ```
+
+The two halves implement the same physical model and the same feature extractor, both
+specified in [`docs/08-implementation.md`](docs/08-implementation.md). That document is
+normative: if the halves disagree, the galaxy lights the wrong stars.
+
+---
+
+## Seeing it
+
+<table>
+<tr>
+<td width="50%"><img src="docs/figures/colour.png" alt="The same cloud with the provenance tint on: almost all of it is one green, because 94 % of the corpus is field audio."></td>
+<td width="50%"><img src="docs/figures/display.png" alt="The Display panel open over the stage, with its four folding sections: view, colour, filter and the density verdict."></td>
+</tr>
+<tr>
+<td><b>Colour says one thing at a time.</b> The provenance tint answers <i>where did this sound come from</i>. It is nearly one green here, and that is the finding: 94 % of the corpus is real field audio.</td>
+<td><b>Every panel folds.</b> Point size, rotation, labels, the level-of-detail governor, four colour languages that are mutually exclusive by rule, and per-class visibility.</td>
+</tr>
+<tr>
+<td><img src="docs/figures/info.png" alt="The Info page: what this is, what it refuses to claim, and a legend for every mark on the stage."></td>
+<td><img src="docs/figures/learn.png" alt="The Learn page: the pipeline's controls on the left and the fitted inventory as a windowed table on the right."></td>
+</tr>
+<tr>
+<td><b>The Info page</b> states what the app will say and what it refuses to say, in a table rather than a paragraph, and carries the whitepaper and the loaded build as a download.</td>
+<td><b>The Learn page</b> drives the pipeline from the interface and lists every fitted syllable type, following whatever is singing.</td>
+</tr>
+</table>
+
+---
+
+## On a phone
+
+<table>
+<tr>
+<td width="33%"><img src="docs/figures/phone-stage.png" alt="A phone showing the galaxy filling the screen, with the header at the top and a four-item dock along the bottom."></td>
+<td width="33%"><img src="docs/figures/phone-sing.png" alt="The Sing drawer open on a phone: the stage has shrunk to the band above it, so the corpus is still visible while the controls are in use."></td>
+<td width="33%"><img src="docs/figures/phone-reading.png" alt="The Reading drawer open on a phone, with the live instrument figures at the top of it."></td>
+</tr>
+</table>
+
+The bench layout — a 20 rem control column pinned top-left, a reading card under it, a
+display panel hanging off the top-right corner — has no 375 px version. What existed before
+was that layout with pieces deleted: the readings row and the whole reading card were
+`display: none`, and since the Info and Learn openers live in the readings row, **neither
+page was reachable on a phone at all.** Nothing failed; the buttons were in the DOM, sized
+zero, and every check passed.
+
+Below 860 px the arrangement is a different one rather than a squeezed one:
+
+- **The stage keeps the screen.** 85–88 % of it with everything shut.
+- **The panels are drawers**, opened one at a time from a dock along the bottom edge —
+  Sing, Compose, Listen, Reading. Tapping the open one shuts it.
+- **A drawer takes room rather than covering the picture.** Its measured height comes off
+  the stage, so the canvas, the labels and the ruler move up together and the corpus
+  re-centres into the band that is left. This is the case that matters: you open Sing,
+  press Chorus, and the knots that answer are exactly the ones a floating sheet would sit on.
+- **On its side the drawer goes to the side**, because a bottom sheet on a 390 px-tall
+  screen would leave the galaxy a centimetre.
+
+![A phone on its side: the Sing drawer occupies the left third and the galaxy fills the rest, with the history strip along the bottom.](docs/figures/phone-landscape.png)
+
+Touch targets are held to the 44 px floor by `@media (pointer: coarse)`, with three stated
+exceptions — a table row whose height is shared with the window arithmetic, a word inside a
+sentence, and the knot ring, which is a `<button>` whose size is a *measurement* (the knot's
+own diameter at the current zoom) and which buys its reach from an invisible pad instead.
+That last one was found by breaking it: the floor turned every ring in the galaxy into a
+5 × 44 px capsule for one round of probing. `npm run probe:mobile` now asserts, at three
+viewports, that nothing overflows, that every drawer opens alone, that every control clears
+the floor, and that a ring is round, correctly sized and centred on its knot.
+
+---
 
 ## The galaxy
 
@@ -64,11 +193,16 @@ that carry a label, plus 100 k-means clusters for the 20,241 points that carry n
 coverage is **13,903/13,903 = 100 %**, because a cluster is what carries a name, a
 function and a citation, and a type with no cluster carries none of the three.
 
-> *Superseded measurement, kept on the record.* This read **31,328 points in 176
-> clusters** — 11,328 clips rendered from the inventory plus 20,000 descriptors of real
-> xeno-canto audio from 434 recordings across twelve species, one cluster per syllable
-> type over the 44 authored and 132 fitted ones. Most of the corpus statistics quoted
-> further down this file were measured on that build and are marked where they appear.
+<details>
+<summary><i>Superseded measurement, kept on the record</i></summary>
+
+This read **31,328 points in 176 clusters** — 11,328 clips rendered from the inventory plus
+20,000 descriptors of real xeno-canto audio from 434 recordings across twelve species, one
+cluster per syllable type over the 44 authored and 132 fitted ones. Most of the corpus
+statistics quoted further down this file were measured on that build and are marked where
+they appear.
+
+</details>
 
 Points are individual clips; clusters are call types. Selecting a bird dims the other
 species and narrows the floating node labels to that repertoire, so the picture changes
@@ -79,7 +213,7 @@ its cluster responds.
 
 At most twenty-six tags are drawn at once, and they are spent in a fixed order:
 whatever is responding, then whatever has a documented function, then whatever is
-nearest. The budget is now a **fixed pool of 28 tag elements** bound to knots by slot, so
+nearest. The budget is a **fixed pool of 28 tag elements** bound to knots by slot, so
 both the DOM cost and the per-frame cost are the pool's and neither moves when the corpus
 grows — the earlier layer built one tag per knot and wrote to every one of them every
 frame, which at 14,003 knots would have been ~250,000 elements and ~98,000 style writes a
@@ -111,19 +245,19 @@ across, and a viewer that cannot back away from it turns the control into a wall
 per-point pulse that follows the sound. It stretches time and nothing else: pitch comes from
 a syllable's contour and length from its `dur`, so unlike a tape slowing down, a bird
 slowed here keeps its pitch and simply sings longer. Trill and vibrato rates are divided
-by the same factor, or a slowed call stops sounding like itself.
+by the same factor, or a slowed call stops sounding like itself. It no longer touches the
+cloud's rotation, and it lives with Distance and Volume rather than under *Display*:
+multiplying the drift by it made one control do two unrelated jobs, so slowing the birds
+down to hear a call also froze the picture you were trying to read it in. *Rotate* is the
+control for the rotation.
 
-It no longer touches the cloud's rotation, and it lives with Distance and Volume rather than
-under *Display*. Multiplying the drift by it made one control do two unrelated jobs: slowing
-the birds down to hear a call also froze the picture you were trying to read it in. *Rotate*
-is the control for the rotation.
-
-**What has been sung** runs along the bottom of the view, in the lane between the two
-panels: newest against the reading card and older ones extending left until they clip. A
-chorus goes past faster than anyone can read; clicking an entry draws that phrase's path
-back onto the galaxy, selects its bird, and **flies the camera to it** — the knot it
-lives in is one of fourteen thousand in a cloud you may have orbited away from, and
-"it is highlighted somewhere behind you" is not a way to find anything.
+**What has been sung** runs along the bottom of the view, growing leftwards out of the
+right-hand corner: the newest phrase is where your eye already is, and older ones extend
+left until they clip. A chorus goes past faster than anyone can
+read; clicking an entry draws that phrase's path back onto the galaxy, selects its bird,
+and **flies the camera to it** — the knot it lives in is one of fourteen thousand in a
+cloud you may have orbited away from, and "it is highlighted somewhere behind you" is not
+a way to find anything.
 
 The flight ends the moment you touch the controls. The *lock* on the phrase does not:
 the cloud is drifting, and without it the thing you just asked to see rotates back out of
@@ -149,6 +283,43 @@ they stay welded to their knots through the transition. Nothing about the cluste
 matching or the descriptors changes — it is a rearrangement of where the marks are drawn,
 and *Sound* is always one click away.
 
+### Colour
+
+Every point has a **pale resting tint** and a **saturated responding one** in the same
+hue. Response is a walk between them, so identity never moves and intensity always
+does — and unlike a walk from dark to darker it stays legible when forty points of one
+cluster overlap. Anything responding also gets a ring of the background colour around
+it; without that a lit knot fuses into a single silhouette and the per-point response,
+which is the entire point of the view, disappears.
+
+Since the arrangement says what the grouping is, colour only has to say whether to
+carry it: the display control offers **Monochrome** and **Coloured**, and what a colour
+*means* follows the arrangement — species hues under Sound and Bird, the three-step
+claim palette under Meaning. Monochrome drops the category entirely and leaves response
+to value, size and the ring, which is most of what carried it anyway.
+
+**Meaning** gives each cluster a colour for how much meaning is claimed for it —
+*referential* (names something outside the bird), *social* (says something about the
+singer), *structural* (a song element carrying syntax and no referential meaning). The
+pipeline sorts each documented function into a behavioural class using a keyword table it
+writes into `manifest.json`, so the grouping can be audited.
+
+<details>
+<summary><b>What colour can and cannot carry here</b> — the arithmetic behind "colour is orienting, not identifying"</summary>
+
+Twelve species hues cannot be told apart by colour alone, and that is arithmetic rather
+than a failure of taste: at usable chroma, clearing the ΔE 15 normal-vision floor needs
+about 52° between hues, so a wheel holds roughly seven, and colour-vision deficiency cuts
+that to about three. Separating on lightness as well as hue takes the worst species pair
+from ΔE 5 to 12.9, which is better but still short. So colour in the Bird view is
+*orienting*: every cluster carries a label naming its species, selecting a bird dims the
+others, and the reading panel says which bird it heard. Turn the colour off entirely and
+nothing becomes unreadable. The three-step Meaning palette is the one held to the full
+gate — worst pair ΔE 9.2 deutan, 24.0 normal — because there it is doing real categorical
+work.
+
+</details>
+
 ### Nothing matching has to look like nothing matching
 
 Softmax is a relative measure — its outputs sum to 1, so whatever you feed it, some
@@ -157,10 +328,18 @@ arbitrary call and hold it there indefinitely, which is what made the galaxy han
 node while nothing was playing.
 
 The activation is scaled by an absolute measure of how well the best centroid actually
-matches, and the thresholds come from the corpus rather than from taste. Re-measured by
-`lyrebird-pipeline thresholds` against the assets of the time — **the 176-cluster build, not
-the shipped production one**; the thresholds have not been re-measured since, and the
-numbers below should be read as that build's:
+matches, and the thresholds come from the corpus rather than from taste. So there are two
+tests now, and both have to pass. The cosine ramps from **0.62 to 0.86**, which lets in
+about nine real syllables in ten. On top of it a **tonality gate** zeroes anything whose
+spectral flatness runs from 0.40 to 0.55 — a margin that touches under 1 % of genuine
+birdsong and kills both noise probes outright.
+
+<details>
+<summary><b>Why the cosine alone is not enough</b> — the measurements, and the one probe that is deliberately not rejected</summary>
+
+Re-measured by `lyrebird-pipeline thresholds` against the assets of the time — **the
+176-cluster build, not the shipped production one**; the thresholds have not been
+re-measured since, and the numbers below should be read as that build's:
 
 | input | best-centroid cosine | spectral flatness |
 |---|---|---|
@@ -178,22 +357,18 @@ p99 0.941 individually and 0.996 pooled. Dropping the worst cluster only promote
 next one, and the top three (1064 points, 3.4 % of the corpus) shade into a genuine
 continuum: a wren's trill really is broadband.
 
-So there are two tests now, and both have to pass. The cosine ramps from **0.62 to
-0.86**, which lets in about nine real syllables in ten. On top of it a **tonality gate**
-zeroes anything whose spectral flatness runs from 0.40 to 0.55 — a margin that touches
-under 1 % of genuine birdsong and kills both noise probes outright.
-
 The hum is deliberately *not* rejected. A 1 kHz sine has flatness 0.000 and scores 0.917
 against a tawny owl whose learned call sits at 907 Hz; those two sounds really are close
 in this feature space, and reporting a strong match is the honest answer rather than a
 bug. `npm run verify:features` asserts all of this on every build, so the gate cannot
 quietly stop holding.
 
-The **match** meter in the header shows the resulting number, so a stuck reading is
-visible rather than mysterious. Below about 25 % the reading panel reports nothing.
+</details>
 
-If your input device is a system-audio loopback rather than a microphone, Lyrebird will
-hear its own output — the match meter is the way to tell.
+The **match** meter in the header shows the resulting number, so a stuck reading is
+visible rather than mysterious. Below about 25 % the reading panel reports nothing. If
+your input device is a system-audio loopback rather than a microphone, Lyrebird will hear
+its own output — the match meter is the way to tell.
 
 ### Listening
 
@@ -208,53 +383,7 @@ goes through the pipeline's own segmenter — the same function that processes d
 audio — rather than a second implementation in the browser, so a bird recorded at your
 desk and one fetched from xeno-canto are analysed by identical code.
 
-### Colour
-
-Every point has a **pale resting tint** and a **saturated responding one** in the same
-hue. Response is a walk between them, so identity never moves and intensity always
-does — and unlike a walk from dark to darker it stays legible when forty points of one
-cluster overlap. Anything responding also gets a ring of the background colour around
-it; without that a lit knot fuses into a single silhouette and the per-point response,
-which is the entire point of the view, disappears.
-
-Since the arrangement now says what the grouping is, colour only has to say whether to
-carry it: the display control offers **Monochrome** and **Coloured**, and what a colour
-*means* follows the arrangement — species hues under Sound and Bird, the three-step
-claim palette under Meaning. Monochrome drops the category entirely and leaves response
-to value, size and the ring, which is most of what carried it anyway.
-
-**Meaning** gives each cluster a colour for
-how much meaning is claimed for it — *referential* (names something outside the bird),
-*social* (says something about the singer), *structural* (a song element carrying syntax
-and no referential meaning). The pipeline sorts each documented function into a
-behavioural class using a keyword table it writes into `manifest.json`, so the grouping
-can be audited.
-
-**What colour can and cannot carry here.** Twelve species hues cannot be told apart by
-colour alone, and that is arithmetic rather than a failure of taste: at usable chroma,
-clearing the ΔE 15 normal-vision floor needs about 52° between hues, so a wheel holds
-roughly seven, and colour-vision deficiency cuts that to about three. Separating on
-lightness as well as hue takes the worst species pair from ΔE 5 to 12.9, which is better
-but still short. So colour in the Bird view is *orienting*: every cluster carries a
-label naming its species, selecting a bird dims the others, and the reading panel says
-which bird it heard. Turn the colour off entirely and nothing becomes unreadable. The
-three-step Meaning palette is the one held to the full gate — worst pair ΔE 9.2 deutan,
-24.0 normal — because there it is doing real categorical work.
-
-The two halves implement the same physical model and the same feature extractor, both
-specified in [`docs/08-implementation.md`](docs/08-implementation.md). That document is
-normative: if the halves disagree, the galaxy lights the wrong stars.
-
-## Running it
-
-The galaxy, the cluster centroids and the oscillator calibration table are generated
-offline, so build them first:
-
-```bash
-cd pipeline
-uv sync
-uv run lyrebird-pipeline build      # writes app/static/lyrebird/
-```
+---
 
 ## Growing the corpus from real recordings
 
@@ -262,7 +391,7 @@ The shipped galaxy is rendered from the hand-authored inventory. Two further com
 grow it from field audio without ever holding more than one recording at a time:
 
 ```bash
-cp .env.example .env && $EDITOR .env                   # your xeno-canto v3 key
+cp .env.example .env && $EDITOR .env                      # your xeno-canto v3 key
 uv run lyrebird-pipeline harvest --per-species 40         # stream in, keep a bounded sample
 uv run lyrebird-pipeline learn                            # fit syllables + syntax, verify them
 uv run lyrebird-pipeline build --inventory ../data/learned-inventory.json \
@@ -277,6 +406,40 @@ pre-registered gate** on a corpus small enough that the cluster cap does not bin
 (+2.5 points of type retrieval against a +10 bar) and passes by +14.2 where the cap
 binds, which is production's condition. Add `--keep-audio DIR` to `harvest` if you want
 the audio kept where its licence permits.
+
+`harvest` fetches, decodes, analyses and **deletes** each recording before the next one
+starts, keeping a species-stratified reservoir of 28-d descriptors capped at a size you
+choose. It also tracks statistics over every descriptor it discards, so it can tell you
+how far the sample it kept has drifted from the stream it came from.
+
+Deleting is the default, not an invariant. Since **2026-08-01** `harvest --keep-audio DIR`
+may keep a recording on the machine where its licence permits, gated per recording:
+**NoDerivatives is refused** and **an unrecorded licence is refused**, because absence of
+a licence is not permission. Nothing audio ever ships to the browser. See
+[`NOTICE.md`](NOTICE.md) §3.4 for the policy and its measurements.
+
+`learn` fits syllable parameters to the segmented audio, then renders each fitted
+syllable through the same syrinx oscillator the app uses and records how close it lands
+— descriptor cosine and F0 error, written next to every learned syllable. Syllable order
+within a recording gives a first-order grammar, which is what lets Lyrebird compose phrases
+no bird sang in a syntax measured from birds that did. Those phrases are labelled
+*invented*; their syllables are labelled *field recording*.
+
+`learn` writes the fitted types **next to** the documented ones rather than instead of
+them: fitted ids start with `L`, carry `unlabelled` confidence and no function, and
+every playback-verified call keeps its citation. `--learned-only` writes the fitted
+repertoire on its own.
+
+Still nothing is sampled. The recordings are the *measurement*, not the material: what
+survives one is a few dozen numbers per syllable — duration, level, attack, an F0
+contour, modulation depths, a timbre class — and the note you hear afterwards is
+integrated from the oscillator, as every note in Lyrebird is. That is the route the
+research names for "record a real bird, then re-sing it synthetically"
+([`docs/04-synthetic-bird-voices.md`](docs/04-synthetic-bird-voices.md) §4.2, Boari
+et al. 2015), and the resynthesis cosine printed next to each fitted syllable is how
+you know whether the model really caught the bird.
+
+### Learning what a syllable is
 
 Two further commands learn *what a syllable is* from the ones already harvested, rather
 than deciding it by hand. They need `uv sync --extra critic` (PyTorch; the wheels are CUDA
@@ -311,39 +474,9 @@ embedding, thresholded so the false-positive rate is chosen rather than discover
 (measured: 4.7 % against a requested 5 %). A syllable it flags is still labelled
 `unlabelled`: knowing a sound is new is not knowing what it means.
 
-`harvest` fetches, decodes, analyses and **deletes** each recording before the next one
-starts, keeping a species-stratified reservoir of 28-d descriptors capped at a size you
-choose. It also tracks statistics over every descriptor it discards, so it can tell you
-how far the sample it kept has drifted from the stream it came from.
+---
 
-Deleting is the default, not an invariant. Since **2026-08-01** `harvest --keep-audio DIR`
-may keep a recording on the machine where its licence permits, gated per recording:
-**NoDerivatives is refused** and **an unrecorded licence is refused**, because absence of
-a licence is not permission. Nothing audio ever ships to the browser. See
-[`NOTICE.md`](NOTICE.md) §3.4 for the policy and its measurements.
-
-`learn` fits syllable parameters to the segmented audio, then renders each fitted
-syllable through the same syrinx oscillator the app uses and records how close it lands
-— descriptor cosine and F0 error, written next to every learned syllable. Syllable order
-within a recording gives a first-order grammar, which is what lets Lyrebird compose phrases
-no bird sang in a syntax measured from birds that did. Those phrases are labelled
-*invented*; their syllables are labelled *field recording*.
-
-Still nothing is sampled. The recordings are the *measurement*, not the material: what
-survives one is a few dozen numbers per syllable — duration, level, attack, an F0
-contour, modulation depths, a timbre class — and the note you hear afterwards is
-integrated from the oscillator, as every note in Lyrebird is. That is the route the
-research names for "record a real bird, then re-sing it synthetically"
-([`docs/04-synthetic-bird-voices.md`](docs/04-synthetic-bird-voices.md) §4.2, Boari
-et al. 2015), and the resynthesis cosine printed next to each fitted syllable is how
-you know whether the model really caught the bird.
-
-`learn` writes the fitted types **next to** the documented ones rather than instead of
-them: fitted ids start with `L`, carry `unlabelled` confidence and no function, and
-every playback-verified call keeps its citation. `--learned-only` writes the fitted
-repertoire on its own.
-
-### What the fitted voices actually achieve
+## What the fitted voices actually achieve
 
 Measured on the 434-recording harvest of 2026-07 — 31,653 segmented syllables, 12 fitted
 types per species. **These numbers have not been re-taken on the production store**
@@ -374,13 +507,16 @@ a room; a two-parameter oscillator carries none of that, and 26 MFCC dimensions 
 How much they notice is worth stating as its own number, because it turns out to be the
 largest single effect in the whole system. Of the 176 clusters in the galaxy of the time,
 **82 hold nothing but field audio, 86 hold nothing but synthetic renders, and exactly one
-is a mixture.** A real call and Lyrebird's resynthesis of that same call do not merely score
-poorly against each other — they are never even grouped together. The dominant axis of
-this feature space is *was this recorded or synthesised*, not *what does it sound like*,
+is a mixture.** A real call and Lyrebird's resynthesis of that same call do not merely
+score poorly against each other — they are never even grouped together. The dominant axis
+of this feature space is *was this recorded or synthesised*, not *what does it sound like*,
 and that is why one sound can light two knots on opposite sides of the galaxy: the note
 being sung is the synthetic cluster, and the field cluster of the same call is somewhere
 else. See the pipeline README, "The loudest thing in this space is the microphone", for
 what it costs and what would fix it.
+
+<details>
+<summary><b>What was done about it</b> — W5, and what the fix costs</summary>
 
 **That measurement is what W5 acted on, and W5 is now the default** (docs/22 §22.6,
 docs/23 §23.5). A type that has real member observations no longer renders a synthetic
@@ -394,14 +530,19 @@ place on the map**, and 3D distance faithfulness fell 0.903 → 0.747 on debug-1
 removing the rendered copies removed structure the projection found easy. Nothing about
 knots or matching uses those 3D positions.
 
-The numbers only say this because of how they are taken, and that is worth stating,
-because the previous version of this check said nothing at all. It compared a fitted
-syllable against the *recording-level* descriptor — a five-second window average over
-everything that recording contained, identical for every type of a species — in the
-corpus statistics of a synthetic build. In that frame every field syllable scores 0.99
-against every other, so the check could not fail. It now compares against the syllable's
-own audio, in a frame centred on the harvested population, where 0.78 and 0.49 are
-measurably different numbers.
+</details>
+
+<details>
+<summary><b>Why the numbers say this at all</b> — the previous version of this check could not fail</summary>
+
+It compared a fitted syllable against the *recording-level* descriptor — a five-second
+window average over everything that recording contained, identical for every type of a
+species — in the corpus statistics of a synthetic build. In that frame every field
+syllable scores 0.99 against every other, so the check could not fail. It now compares
+against the syllable's own audio, in a frame centred on the harvested population, where
+0.78 and 0.49 are measurably different numbers.
+
+</details>
 
 ### Why not just play the recordings back?
 
@@ -416,13 +557,6 @@ audio cannot legally be pitch-shifted or time-stretched at all, because that mak
 derivative. A *shipped* sample bank would additionally mean carrying per-clip attribution
 into the interface, and the majority of the corpus is CC BY-NC-SA, which is
 non-commercial in its own right.
-
-> *Superseded measurement, kept on the record.* An earlier draft of this section counted
-> the 435-recording harvest of 2026-07: 344 CC BY-NC-SA, 68 CC BY-NC-**ND**, 18 CC BY-NC,
-> three CC BY-SA, one CC0 — so four could be redistributed commercially. That corpus is
-> 24x smaller than the production store and the conclusion it was used for ("accepting
-> non-commercial for the whole app") is no longer hypothetical: **the project is
-> non-commercial**, see [`LICENSE`](LICENSE) and [`NOTICE.md`](NOTICE.md).
 
 The second is the claim. "Nothing is sampled; every note is integrated from the syrinx
 model" is what makes the galaxy's response mean anything — the app is showing you what a
@@ -442,7 +576,23 @@ store. xeno-canto recordings are individually licensed and CC-BY-NC-SA is common
 See [`NOTICE.md`](NOTICE.md) §3 for what that obliges, and
 [`pipeline/README.md`](pipeline/README.md) for the mechanics.
 
-### Driving it from the interface instead
+<details>
+<summary><i>Superseded measurement, kept on the record</i></summary>
+
+An earlier draft of this section counted the 435-recording harvest of 2026-07: 344 CC
+BY-NC-SA, 68 CC BY-NC-**ND**, 18 CC BY-NC, three CC BY-SA, one CC0 — so four could be
+redistributed commercially. That corpus is 24x smaller than the production store and the
+conclusion it was used for ("accepting non-commercial for the whole app") is no longer
+hypothetical: **the project is non-commercial**, see [`LICENSE`](LICENSE) and
+[`NOTICE.md`](NOTICE.md).
+
+</details>
+
+---
+
+## Driving the pipeline from the interface
+
+![The Learn page: the pipeline's own controls on the left with the store's figures, and every fitted syllable type as a windowed table on the right.](docs/figures/learn.png)
 
 `npm run dev` starts the control process for you — a Vite plugin
 ([`app/vite-plugin-pipeline.ts`](app/vite-plugin-pipeline.ts)) runs
@@ -452,23 +602,32 @@ alone, and if `uv` is missing dev keeps serving and the Learn tab says how to st
 process yourself. `LYREBIRD_PIPELINE=0` turns the autostart off; `LYREBIRD_PIPELINE_PORT`
 moves it.
 
-The app's **Learn** tab picks that up and gives you the same three operations with the
+The app's **Learn** page picks that up and gives you the same three operations with the
 store's figures in front of you and the job's log streaming back. It binds to
 `127.0.0.1` only and the address is not configurable — every endpoint runs pipeline
-code, so exposing it on a network would be handing out remote execution.
+code, so exposing it on a network would be handing out remote execution. The running app
+still needs no backend: this is a developer-facing process for driving the offline stage,
+and the built site never talks to it.
 
-The running app still needs no backend. This is a developer-facing process for driving
-the offline stage; the built site never talks to it.
+**A build re-places every point at once**, and there is no way around that: clustering,
+the projection and the per-point feature space are all computed over the whole corpus, so
+a syllable learned a minute ago has no position until the build that places every other
+point again. What the app does do is remove the step after it. Each build stamps
+`manifest.json` with `builtAt`; the Learn page compares that stamp with the one the
+running session loaded, and when they differ it re-fetches the assets under that stamp
+and swaps the galaxy, the inventory and the voices in place. New nodes, new birds and
+new syntax appear without a page reload.
 
-#### When the Learn tab says the pipeline is not running and you know it is
+<details>
+<summary><b>When the Learn page says the pipeline is not running and you know it is</b></summary>
 
-The tab shows its "start `lyrebird-pipeline serve`" panel whenever a status request fails, and
-"failed" covers two different things. Both have been hit for real:
+The page shows its "start `lyrebird-pipeline serve`" panel whenever a status request fails,
+and "failed" covers two different things. Both have been hit for real:
 
 - **Something holds the port but never answers.** A `serve` started in the background by an
   editor session can be left *suspended* (process state `T`) when that session goes away. It
   keeps the listening socket, so the kernel still completes the TCP handshake and the status
-  request connects and then waits forever — the tab reports the pipeline as absent while a new
+  request connects and then waits forever — the page reports the pipeline as absent while a new
   `serve` fails with "address already in use". `serve` now diagnoses this instead of raising:
   it names the holding pid and its state, and a stopped process needs
   `kill -CONT <pid> && kill <pid>`, because it cannot act on SIGTERM while suspended. Starting
@@ -487,25 +646,9 @@ ss -tlnp | grep 8781
 curl -sS -m 5 http://127.0.0.1:8781/api/status | head -c 200
 ```
 
-**A build re-places every point at once**, and there is no way around that: clustering,
-the projection and the per-point feature space are all computed over the whole corpus, so
-a syllable learned a minute ago has no position until the build that places every other
-point again. What the app does do is remove the step after it. Each build stamps
-`manifest.json` with `builtAt`; the Learn tab compares that stamp with the one the
-running session loaded, and when they differ it re-fetches the assets under that stamp
-and swaps the galaxy, the inventory and the voices in place. New nodes, new birds and
-new syntax appear without a page reload.
+</details>
 
-Then the app:
-
-```bash
-cd app
-npm install
-npm run dev
-```
-
-Lyrebird v1 needs no backend: `adapter-static`, precomputed assets, client-side features and
-client-side synthesis. Audio never leaves the browser and no model runs on a server.
+---
 
 ## Deploying it
 
@@ -548,6 +691,8 @@ requirements are that `404.html` is served for unknown paths and that `/lyrebird
 by filename for long (the app appends the build stamp as a query string, so a short max-age is
 enough). `app/Caddyfile` states both rules if you need a reference.
 
+---
+
 ## Verifying it
 
 Two checks run the browser's own DSP outside the browser, by loading the AudioWorklet
@@ -576,6 +721,14 @@ npm run verify:trust     # both doubt ramps, end to end
 npm run verify:unheard   # the density verdict, and which set the swap promotes
 ```
 
+Three need a dev server, because only a running browser can answer them:
+
+```bash
+npm run probe:stage      # shaders, computed styles, the two pages, at 1600x1000
+npm run probe:mobile     # the phone layout at three viewports: overflow, drawers, touch, rings
+npm run figures          # retakes every figure in this README
+```
+
 `verify:features` is the one that matters most: it crosses the language boundary. A high
 hit rate means the two ODE implementations, the two MFCC implementations and the
 standardisation statistics all agree. Drift shows up here rather than as a galaxy that
@@ -588,8 +741,15 @@ the 44 authored syllables.
 computes the median nearest-neighbour knot distance against the brute-force `k²` loop it
 replaced, on six shapes at six knot counts, and agrees exactly on all 36 cases.
 
-> *Superseded measurement, kept on the record.* This section previously read **35/44
-> exact, 36/44 same species** on a 384-cluster build carrying 284 types.
+`uv run lyrebird-pipeline verify` checks the generated assets, including that the per-point
+feature rows are unit vectors and still separate their own cluster from the rest — a
+mirrored PCA sign would otherwise light the wrong points with total confidence.
+
+<details>
+<summary><b>The 25/44 that was blamed on the wrong thing</b> — a diagnosis that was wrong, and the two fixes that were not</summary>
+
+*Superseded measurement, kept on the record: this section previously read **35/44 exact,
+36/44 same species** on a 384-cluster build carrying 284 types.*
 
 **An earlier version of this section read 25/44 and blamed the learned inventory, and that
 diagnosis was wrong.** The cost was not competition between a rendered `cuck` and some
@@ -621,9 +781,9 @@ reads 94.5 % there and the manifest says in as many words that this is *not* a
 measurement — a type is a cluster under label assignment, so purity is 1.0 by
 construction on the labelled ones.
 
-`uv run lyrebird-pipeline verify` checks the generated assets, including that the per-point
-feature rows are unit vectors and still separate their own cluster from the rest — a
-mirrored PCA sign would otherwise light the wrong points with total confidence.
+</details>
+
+---
 
 ## Credits
 

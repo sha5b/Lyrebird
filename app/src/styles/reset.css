@@ -26,6 +26,33 @@ body {
 	text-rendering: optimizeLegibility;
 }
 
+/**
+ * The phone, at the root.
+ *
+ * **13 px is the bench's unit and it is too small for a hand.** Every size in this app is
+ * a fraction of it — `.note` is 0.74 rem, which is 9.6 px, and the panel headers are
+ * 0.58 rem — because at a metre from a 1600 px screen that reads as an instrument's fine
+ * print. At arm's length on a 375 px screen it reads as nothing at all. Raising the root
+ * rather than overriding forty declarations keeps every proportion the design was drawn
+ * with and moves all of them together.
+ *
+ * `dvh` for the height, because a phone's viewport is not one number: `100%` resolves
+ * against the large viewport in some browsers, so the dock — which sits at the bottom of
+ * a full-height grid — spent its life under the address bar. `dvh` follows the toolbars.
+ *
+ * `overscroll-behavior: none` because the stage is orbited with a finger, and a downward
+ * drag near the top of it is also the gesture for pull-to-refresh. Reloading this app
+ * costs a 60 MB fetch, so the accident is expensive as well as surprising.
+ */
+@media (max-width: 860px) {
+	html,
+	body {
+		font-size: 15px;
+		height: 100dvh;
+		overscroll-behavior: none;
+	}
+}
+
 h1,
 h2,
 h3 {

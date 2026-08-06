@@ -214,6 +214,121 @@
 	let recordings = $state<{ url: string; name: string }[]>([]);
 	let viewOpen = $state(false);
 	/**
+	 * **The phone layout, and the one number that turns it on.**
+	 *
+	 * The bench was drawn for a 1600 px screen: a 20 rem control column pinned to the top-left,
+	 * a reading card under it, a display panel hanging off the top-right corner, and a history
+	 * strip running in the lane between them. On a 375 px phone all four of those wanted the
+	 * same rectangle, and the CSS that used to handle it did so by *deleting* things — the
+	 * readings row and the whole reading card were `display: none`, which also removed the only
+	 * two openers the Info and Learn pages have. Neither page was reachable on a phone at all.
+	 *
+	 * So below this width the arrangement is a different one rather than a squeezed one: the
+	 * stage keeps the screen, and the panels are drawers over it that open one at a time from a
+	 * dock along the bottom edge. 860 px because that is where the 20 rem column plus the
+	 * 16 rem display panel plus a readable gap between them stop fitting side by side; a tablet
+	 * in landscape stays on the bench layout, which is what it has room for.
+	 *
+	 * Read from `window` at creation rather than defaulting: `ssr = false`, so this runs in the
+	 * browser, and seeding it with a desktop width would draw one bench frame on a phone before
+	 * the binding corrected it.
+	 */
+	const NARROW_PX = 860;
+	let winW = $state(typeof window === 'undefined' ? 1600 : window.innerWidth);
+	const narrow = $derived(winW <= NARROW_PX);
+	/**
+	 * Which drawer the dock has open, or `''` for the bare stage.
+	 *
+	 * The first three are the control panel's own tabs, so the dock *is* the tab strip on a
+	 * phone and the strip inside the panel is hidden — two identical rows of Sing/Compose/Listen
+	 * a finger's width apart read as two different controls. `reading` is the fourth because on
+	 * a phone the reading card has nowhere to live beside the stage, and it is the one card that
+	 * answers "what am I hearing".
+	 *
+	 * Only consulted while `narrow`. On the bench both cards are simply always on screen, which
+	 * is the whole point of a bench.
+	 */
+	type Sheet = '' | 'sing' | 'words' | 'listen' | 'reading';
+	let sheet = $state<Sheet>('');
+	/**
+	 * Tapping a dock item opens its drawer; tapping the open one closes it and gives the galaxy
+	 * the whole screen back. One at a time, always: a phone has room for one drawer, and two
+	 * stacked would leave neither readable.
+	 */
+	function openSheet(next: Sheet) {
+		sheet = sheet === next ? '' : next;
+		if (sheet && sheet !== 'reading') tab = sheet;
+		if (sheet) {
+			viewOpen = false;
+			costOpen = false;
+		}
+	}
+	/**
+	 * The two corner icons obey the same one-at-a-time rule on a phone, and keep their bench
+	 * behaviour otherwise — on the bench the Display panel and the cost readout are a stack of
+	 * two small cards in a corner, and making them exclusive there would remove a working
+	 * arrangement to fix a problem the bench does not have.
+	 */
+	function toggleView() {
+		viewOpen = !viewOpen;
+		if (!viewOpen || !narrow) return;
+		costOpen = false;
+		sheet = '';
+	}
+	function toggleCost() {
+		costOpen = !costOpen;
+		if (!costOpen || !narrow) return;
+		viewOpen = false;
+		sheet = '';
+	}
+	/** Whatever is open, shut it: the lid of every drawer calls this. */
+	function closeSheet() {
+		sheet = '';
+		viewOpen = false;
+		costOpen = false;
+	}
+	/**
+	 * **How much room the open drawer is taking, so the stage can give it rather than lose it.**
+	 *
+	 * A bottom sheet that floats over the picture is the usual phone idiom and it is the wrong
+	 * one here: the corpus is drawn centred, so a drawer over the bottom 60 % covers the middle
+	 * of the cloud — you open Sing, press Chorus, and the knots that answer light up underneath
+	 * the panel you pressed it from. The instrument's whole subject would be behind the control.
+	 *
+	 * So the drawer's measured height becomes padding on `.stage-wrap`, whose padding box is
+	 * what `.stage` is `inset: 0` against — canvas, label layer and ruler together. The picture
+	 * re-centres into the band that is left, the camera's aspect follows (threlte resizes on its
+	 * own), and the ruler keeps measuring the picture actually on screen rather than a picture
+	 * that is half behind a card. It costs one canvas resize per open, which is the honest price
+	 * of the panel having somewhere to be.
+	 *
+	 * Both axes are measured because a phone on its side puts the drawer at the left instead;
+	 * which of the two is spent is the orientation query's business, in the stylesheet.
+	 */
+	let sheetH = $state(0);
+	let sheetW = $state(0);
+	/**
+	 * The header's height, measured rather than assumed.
+	 *
+	 * A landscape drawer runs the full height of the stage and is `position: fixed`, so its top
+	 * is the top of the *window* unless it is told otherwise — which put its lid, grab bar and
+	 * close behind the title bar. The header's height changes with the root font size and with
+	 * whether the strap is showing, so it is read from the element.
+	 */
+	let hudH = $state(0);
+	/** A page replaces the stage, so a drawer over it would be a card floating on a document. */
+	function openPage(which: '' | 'info' | 'learn') {
+		page = page === which ? '' : which;
+		if (page && narrow) closeSheet();
+	}
+	/** What the dock's four items are, in the order a phone reader meets them. */
+	const DOCK: { key: Sheet; label: string }[] = [
+		{ key: 'sing', label: 'Sing' },
+		{ key: 'words', label: 'Compose' },
+		{ key: 'listen', label: 'Listen' },
+		{ key: 'reading', label: 'Reading' }
+	];
+	/**
 	 * Which Display sections are open. One bit each, so folding one leaves the others alone.
 	 *
 	 * `filter` starts shut and the rest start open: it is the longest list in the panel and
@@ -390,6 +505,23 @@
 	 * drawing the readout cannot itself become the thing being measured.
 	 */
 	let costOpen = $state(false);
+	/** Whether a drawer is over the stage right now — the strip along the bottom hides under it. */
+	const sheetOpen = $derived(narrow && (sheet !== '' || viewOpen || costOpen));
+	/**
+	 * Give the room back the moment the last drawer shuts.
+	 *
+	 * `bind:clientHeight` writes on mount and on resize; it does not write on *unmount*, so a
+	 * shut drawer would leave its last height standing and the stage would keep paying for a
+	 * panel that is no longer there. An effect on the one derived that knows whether anything
+	 * is open covers every path into that state — the lid, the dock, a page opening, and the
+	 * window simply being made wide again.
+	 */
+	$effect(() => {
+		if (!sheetOpen) {
+			sheetH = 0;
+			sheetW = 0;
+		}
+	});
 	/**
 	 * The density governor's switch: on, the measured frame time may hold the level of detail
 	 * back; off, the camera alone decides how much draws.
@@ -2403,6 +2535,63 @@
 	The `<noscript>` fallback moved there for the same reason.
 -->
 
+<!-- The one measurement the layout branches on. See `NARROW_PX`. -->
+<svelte:window bind:innerWidth={winW} />
+
+<!--
+	The live figures, defined once and rendered in whichever surface has room for them: the
+	header's readings row on a bench, the Reading drawer on a phone. See the row itself for why
+	they had to become movable.
+-->
+{#snippet liveReadings()}
+	{#if assets}
+		<div><dt>points</dt><dd>{assets.points.n.toLocaleString()}</dd></div>
+		<div><dt>clusters</dt><dd>{assets.centroids.k}</dd></div>
+		<!--
+			Both halves, because the projector was chosen on the second and reading only
+			the first would say this build got worse. `distance r` is global and
+			dominated by far pairs; `neighbours` is the share of a point's ten drawn
+			neighbours that share its type, which is what proximity on screen claims.
+		-->
+		<div><dt>distance r</dt><dd>{faithfulness?.toFixed(3) ?? '—'}</dd></div>
+		{#if projQuality?.knn != null}
+			<div title="Share of a point's {projQuality.knnK} nearest neighbours ON SCREEN that carry its own syllable type. Chance on this corpus is far under one percent, so anything here is real structure — but it is also the honest limit on reading two nearby marks as the same sound.">
+				<dt>neighbours</dt>
+				<dd>{Math.round(projQuality.knn * 100)} %</dd>
+			</div>
+		{/if}
+		<div><dt>voices</dt><dd>{voices}</dd></div>
+		<div><dt>f0</dt><dd>{pitch > 20 ? Math.round(pitch) : '—'}<span class="unit">Hz</span></dd></div>
+		<div class="meter">
+			<dt>level</dt>
+			<dd><span class="level"><span style:width={`${Math.min(100, level * 100)}%`}></span></span></dd>
+		</div>
+		<div class="meter">
+			<dt>match</dt>
+			<dd>
+				<span class="level"><span class="hot" style:width={`${strength * 100}%`}></span></span>
+			</dd>
+		</div>
+	{/if}
+{/snippet}
+
+<!--
+	A drawer's lid: the grab bar every phone reader already knows, the drawer's name where the
+	panel has no header of its own, and a close that is a real target rather than a hairline ×.
+
+	The whole bar is the button, for the reason the fold headers in the Display panel are
+	buttons — "minimize when clicking in it anywhere" is the owner's rule for this app's panels,
+	and a drawer on a phone is the case where it matters most, because the alternative is
+	hunting a 12 px glyph with a thumb.
+-->
+{#snippet sheetHandle(title: string)}
+	<button class="sheethead" onclick={closeSheet} aria-label="Close this panel">
+		<i class="grabber" aria-hidden="true"></i>
+		{#if title}<span class="axis mono sheetname">{title}</span>{/if}
+		<span class="sheetx" aria-hidden="true">close</span>
+	</button>
+{/snippet}
+
 {#if loadError}
 	<div class="centred">
 		<div class="card">
@@ -2458,8 +2647,8 @@ uv run lyrebird-pipeline build</pre>
 		</div>
 	</div>
 {:else}
-	<div class="bench">
-		<header class="hud">
+	<div class="bench" style:--hud-h={`${hudH}px`}>
+		<header class="hud" bind:clientHeight={hudH}>
 		<div class="brand">
 				<h1>Lyrebird</h1>
 				<!--
@@ -2483,43 +2672,26 @@ uv run lyrebird-pipeline build</pre>
 			</div>
 			<dl class="readings mono">
 				<!--
-					A page opener in the shape of a reading. The row is already where a viewer looks
-					for what the build is, so what the build MEANS belongs at the end of it rather
-					than behind an icon on the far edge of the stage.
+					**The figures are a snippet because on a phone they are somewhere else.**
+
+					Eight cells of monospaced instrument readout do not fit beside the name on a
+					375 px screen, and the rule that used to handle that was `display: none` on the
+					whole row — which took the Info and Learn openers with it, because they live in
+					this row. Both pages were then unreachable on a phone, silently: the buttons
+					were in the DOM, sized zero, and every check we have passed.
+
+					So the openers stay in the header at every width (they are doors, and a door
+					has to be where you can see it), and the figures render inside the Reading
+					drawer instead, which is where a phone reader goes to ask what is sounding.
+					One definition, two places, so the two cannot drift.
 				-->
-				<div><dt>points</dt><dd>{assets.points.n.toLocaleString()}</dd></div>
-				<div><dt>clusters</dt><dd>{assets.centroids.k}</dd></div>
-				<!--
-					Both halves, because the projector was chosen on the second and reading only
-					the first would say this build got worse. `distance r` is global and
-					dominated by far pairs; `neighbours` is the share of a point's ten drawn
-					neighbours that share its type, which is what proximity on screen claims.
-				-->
-				<div><dt>distance r</dt><dd>{faithfulness?.toFixed(3) ?? '—'}</dd></div>
-				{#if projQuality?.knn != null}
-					<div title="Share of a point's {projQuality.knnK} nearest neighbours ON SCREEN that carry its own syllable type. Chance on this corpus is far under one percent, so anything here is real structure — but it is also the honest limit on reading two nearby marks as the same sound.">
-						<dt>neighbours</dt>
-						<dd>{Math.round(projQuality.knn * 100)} %</dd>
-					</div>
-				{/if}
-				<div><dt>voices</dt><dd>{voices}</dd></div>
-				<div><dt>f0</dt><dd>{pitch > 20 ? Math.round(pitch) : '—'}<span class="unit">Hz</span></dd></div>
-				<div class="meter">
-					<dt>level</dt>
-					<dd><span class="level"><span style:width={`${Math.min(100, level * 100)}%`}></span></span></dd>
-				</div>
-				<div class="meter">
-					<dt>match</dt>
-					<dd>
-						<span class="level"><span class="hot" style:width={`${strength * 100}%`}></span></span>
-					</dd>
-				</div>
+				{#if !narrow}{@render liveReadings()}{/if}
 				<button
 					class="reading-open"
 					class:on={page === 'info'}
 					aria-pressed={page === 'info'}
 					title="The paper, what this is, and what every mark on the stage means."
-					onclick={() => (page = page === 'info' ? '' : 'info')}
+					onclick={() => openPage('info')}
 				>
 					<dt>info</dt>
 					<dd>{page === 'info' ? 'close' : 'open'}</dd>
@@ -2535,7 +2707,7 @@ uv run lyrebird-pipeline build</pre>
 					class:on={page === 'learn'}
 					aria-pressed={page === 'learn'}
 					title="Harvest, fit and rebuild — and every syllable type the pipeline has fitted, as a table that follows what is singing."
-					onclick={() => (page = page === 'learn' ? '' : 'learn')}
+					onclick={() => openPage('learn')}
 				>
 					<dt>learn</dt>
 					<dd>
@@ -2549,7 +2721,15 @@ uv run lyrebird-pipeline build</pre>
 			</dl>
 		</header>
 
-		<div class="stage-wrap">
+		<!--
+			The drawer's own size, handed to the stage as padding. See `sheetH` for why the
+			picture gives the room rather than being covered by it.
+		-->
+		<div
+			class="stage-wrap"
+			style:--sheet-h={narrow && sheetH ? `${sheetH}px` : '0px'}
+			style:--sheet-w={narrow && sheetW ? `${sheetW}px` : '0px'}
+		>
 			{#key galaxyVersion}
 			<Galaxy
 				{assets}
@@ -2672,7 +2852,7 @@ uv run lyrebird-pipeline build</pre>
 						class:open={viewOpen}
 						aria-label="Display settings"
 						aria-expanded={viewOpen}
-						onclick={() => (viewOpen = !viewOpen)}
+						onclick={toggleView}
 					>
 						<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
 							<circle cx="8" cy="8" r="2.4" fill="none" stroke="currentColor" stroke-width="1.3" />
@@ -2691,7 +2871,7 @@ uv run lyrebird-pipeline build</pre>
 						aria-label="What this costs"
 						aria-expanded={costOpen}
 						title="Frame rate, how many points and tags the stage actually drew, and which GPU the browser gave us."
-						onclick={() => (costOpen = !costOpen)}
+						onclick={toggleCost}
 					>
 						<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
 							<path
@@ -2704,7 +2884,13 @@ uv run lyrebird-pipeline build</pre>
 					</button>
 				</div>
 				{#if viewOpen}
-					<div class="panel viewpanel">
+					<div
+						class="panel viewpanel"
+						class:sheet={narrow}
+						bind:clientHeight={sheetH}
+						bind:clientWidth={sheetW}
+					>
+						{#if narrow}{@render sheetHandle('display')}{/if}
 						<h2>Display</h2>
 						<div class="cardbody">
 							<!--
@@ -3036,7 +3222,13 @@ uv run lyrebird-pipeline build</pre>
 					this page for some other control — nothing is measured here that was not measured anyway.
 				-->
 				{#if costOpen}
-					<div class="panel viewpanel statspanel">
+					<div
+						class="panel viewpanel statspanel"
+						class:sheet={narrow}
+						bind:clientHeight={sheetH}
+						bind:clientWidth={sheetW}
+					>
+						{#if narrow}{@render sheetHandle('statistics')}{/if}
 						<h2>Statistics</h2>
 						<div class="cardbody">
 							<section class="block">
@@ -3161,8 +3353,14 @@ uv run lyrebird-pipeline build</pre>
 					memory of its own.
 				-->
 				<!-- `group`, not `list`: these are controls, and each one selects the phrase it names. -->
+				<!--
+					`tucked` while a drawer is open on a phone: the strip lives a finger's width above
+					the dock, which is exactly where a drawer's lid lands. Hidden rather than pushed,
+					because a strip that moves whenever a panel opens is a strip you cannot aim at.
+				-->
 				<div
 					class="history"
+					class:tucked={sheetOpen}
 					role="group"
 					aria-label="Phrases already sung — select one to go back to it"
 					onpointerenter={() => (historyFrozen = true)}
@@ -3190,7 +3388,20 @@ uv run lyrebird-pipeline build</pre>
 				is where a thing that outlives every selection belongs. The panel beside the
 				stage is for what is sounding on the stage.
 			-->
-			<aside class="panel readout">
+			<!--
+				On a phone this is a drawer the dock opens, and it is the drawer the live figures
+				move into: `narrow` renders the readings row at the top of its body, so "what is
+				sounding" and "what the instrument reads" are one surface rather than one surface
+				and one deleted row.
+			-->
+			{#if !narrow || sheet === 'reading'}
+			<aside
+				class="panel readout"
+				class:sheet={narrow}
+				bind:clientHeight={sheetH}
+				bind:clientWidth={sheetW}
+			>
+				{#if narrow}{@render sheetHandle('')}{/if}
 				<h2>
 					Reading
 					{#if selectedSung !== null || pinnedCluster >= 0}
@@ -3198,6 +3409,9 @@ uv run lyrebird-pipeline build</pre>
 					{/if}
 				</h2>
 				<div class="cardbody">
+				{#if narrow}
+					<dl class="readings mono inpanel">{@render liveReadings()}</dl>
+				{/if}
 				{#if sessionGate?.flagged && reading?.active}
 					<!--
 						The docs/20 session gate, first in the chain: when the live session
@@ -3422,8 +3636,22 @@ uv run lyrebird-pipeline build</pre>
 				</p>
 				</div>
 			</aside>
+			{/if}
 
-			<aside class="panel controls">
+			<!--
+				On a phone the dock along the bottom is this panel's tab strip, so the strip inside
+				it is hidden and the panel is mounted only for the tab the dock chose. Mounted, not
+				merely hidden: an unmounted Compose tab is a canvas and two indexes the phone does
+				not have to keep.
+			-->
+			{#if !narrow || (sheet !== '' && sheet !== 'reading')}
+			<aside
+				class="panel controls"
+				class:sheet={narrow}
+				bind:clientHeight={sheetH}
+				bind:clientWidth={sheetW}
+			>
+			{#if narrow}{@render sheetHandle(DOCK.find((d) => d.key === sheet)?.label ?? '')}{/if}
 			<!-- Three, and all three are ways of making or hearing a sound. Learn was the odd
 			     one and is a page off the header now. -->
 			<nav class="tabs">
@@ -4269,7 +4497,40 @@ uv run lyrebird-pipeline build</pre>
 			{#if rateNote}<p class="note faint pad">{rateNote}</p>{/if}
 			{#if audioError}<p class="error note pad">{audioError}</p>{/if}
 			</aside>
+			{/if}
 		</div>
+
+		<!--
+			**The dock, and it is a row of the bench rather than a bar floating over it.**
+
+			A floating bar would cover the bottom of the galaxy permanently, and the bottom of the
+			galaxy is where this app already puts the history strip and the ruler. As a grid row it
+			takes its 3.4 rem out of the layout once and the stage is told about it, so nothing is
+			ever underneath it — which is the same reason the header is a row and not an overlay.
+
+			Four items, all of them a way of making or hearing a sound, which is the split the tab
+			strip already made on the bench. How the picture is drawn stays on the two corner icons
+			over the stage, where it is on the bench too: one vocabulary, re-anchored, rather than a
+			second one invented for small screens.
+		-->
+		{#if narrow}
+			<nav class="dock" aria-label="Panels">
+				{#each DOCK as item (item.key)}
+					<button
+						class:on={sheet === item.key}
+						aria-pressed={sheet === item.key}
+						onclick={() => openSheet(item.key)}
+					>
+						{item.label}
+						<!-- A live match, on the closed drawer: the one thing the Reading card says that
+						     a reader would want to know without opening it. -->
+						{#if item.key === 'reading' && readingIsLive && sheet !== 'reading'}
+							<i class="docklive" aria-hidden="true"></i>
+						{/if}
+					</button>
+				{/each}
+			</nav>
+		{/if}
 	</div>
 
 	{#if !engine}
@@ -4415,6 +4676,16 @@ uv run lyrebird-pipeline build</pre>
 		height: 2rem;
 		padding: 0;
 		color: var(--ink-dim);
+	}
+
+	/* Square, and big enough to hit. The element rule in controls.css gives every button a
+	   2.6 rem floor on a touch screen, which on its own would have left these two 2 rem wide
+	   and 2.6 rem tall — the one shape an icon button must not be. */
+	@media (pointer: coarse) {
+		.viewbtn {
+			width: max(2.6rem, 44px);
+			height: max(2.6rem, 44px);
+		}
 	}
 
 	/* --- folding sections ---
@@ -5170,21 +5441,318 @@ uv run lyrebird-pipeline build</pre>
 		font-size: 1.25rem;
 	}
 
-	@media (max-width: 1180px) {
-		.readout {
-			display: none;
-		}
+	/* --- the drawers ---------------------------------------------------------------
+
+	   Everything from here down is the phone arrangement. It is a different layout rather
+	   than a squeezed one: on the bench the panels are cards floating over a picture wide
+	   enough to hold them, and on a phone there is no such width, so they become drawers
+	   that open one at a time from the dock and shut again to give the galaxy the screen.
+
+	   The lid, and it is only ever drawn on a phone — `.sheet` is bound to `narrow`. */
+
+	.sheethead {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		width: 100%;
+		padding: 0.55rem 1rem 0.45rem;
+		border: 0;
+		border-bottom: 1px solid var(--rule);
+		border-radius: 0;
+		background: none;
+		cursor: pointer;
 	}
 
-	@media (max-width: 760px) {
-		.controls {
-			left: calc(var(--ruler) + 0.6rem);
-			right: 0.6rem;
-			width: auto;
-			max-height: calc(100% - 1.2rem - var(--ruler));
+	/* The grab bar. It does not drag — the drawer has two sizes, open and shut, and a
+	   height a thumb can set is a control nobody can return to a known state. It is here
+	   because it is the one shape that says "this panel came up from the bottom edge and
+	   goes back down", which is a thing to know before you start hunting for a close. */
+	.grabber {
+		flex: none;
+		width: 2rem;
+		height: 3px;
+		border-radius: 999px;
+		background: var(--rule-strong);
+	}
+
+	.sheetname {
+		margin: 0;
+	}
+
+	.sheetx {
+		margin-left: auto;
+		font-size: 0.6rem;
+		letter-spacing: 0.09em;
+		text-transform: uppercase;
+		color: var(--ink-faint);
+	}
+
+	/* The dock: the phone's tab strip, and a row of the bench rather than a bar over it. */
+
+	.dock {
+		display: flex;
+		z-index: 5;
+		background: var(--paper-raised);
+		border-top: 1px solid var(--rule);
+		padding-bottom: env(safe-area-inset-bottom, 0px);
+	}
+
+	.dock button {
+		position: relative;
+		flex: 1;
+		min-width: 0;
+		height: var(--dock-h);
+		padding: 0 0.2rem;
+		border: 0;
+		border-radius: 0;
+		background: none;
+		font-size: 0.64rem;
+		font-weight: 600;
+		letter-spacing: 0.09em;
+		text-transform: uppercase;
+		color: var(--ink-faint);
+		/* The open drawer's item, marked on the edge the drawer comes from. */
+		border-top: 2px solid transparent;
+		margin-top: -1px;
+	}
+
+	.dock button.on {
+		color: var(--ink);
+		border-top-color: var(--signal);
+		background: var(--signal-soft);
+	}
+
+	/* A live match on the shut Reading drawer. Same dot as the running-job one in the
+	   header, same meaning: something is happening in a surface you are not looking at. */
+	.docklive {
+		display: inline-block;
+		width: 5px;
+		height: 5px;
+		margin-left: 0.3rem;
+		border-radius: 50%;
+		background: var(--signal);
+		vertical-align: middle;
+		animation: joblive 1.6s ease-in-out infinite;
+	}
+
+	@media (max-width: 860px) {
+		/* The dock's height, named once: the drawers sit on top of it and the stage above
+		   them, so all three have to agree about one number. */
+		.bench {
+			--dock-h: 3.4rem;
+			grid-template-rows: auto 1fr auto;
+		}
+
+		/* The header gives back everything it can. The strap is three disclaimers in a
+		   9 px face — unreadable at this width and two lines tall — and `title` still
+		   carries it for anyone who asks. What stays is the name and the two page doors. */
+		.hud {
+			padding: 0.4rem 0.7rem;
+			gap: 0.5rem;
+		}
+
+		.brand .strap {
+			display: none;
 		}
 
 		.readings {
+			flex: none;
+		}
+
+		/* A door, at a size a thumb can hit. */
+		.readings > .reading-open {
+			display: grid;
+			align-content: center;
+			min-height: 2.6rem;
+			padding: 0 0.6rem;
+		}
+
+		/* Every drawer, wherever its opener lives: the two dock cards, the two corner ones.
+		   Fixed rather than absolute, because the corner pair hang inside `.viewctl`, which is
+		   itself pinned to the top-right — positioning them against the viewport is what lets
+		   one rule serve all four. They stop at the dock, which therefore always stays live:
+		   the way out of a drawer is the item that opened it. */
+		.panel.sheet,
+		.viewctl .viewpanel.sheet {
+			position: fixed;
+			left: 0;
+			right: 0;
+			bottom: var(--dock-h);
+			top: auto;
+			width: auto;
+			max-width: none;
+			/**
+			 * How much a drawer may take, now that what it takes is *the stage's* and not the
+			 * stage's cover. 55 % leaves the galaxy about 200 px of a 667 px phone once the
+			 * header and the dock are paid for — a band, but a band with the whole corpus
+			 * centred in it, which is enough to watch knots answer while you drive them. The
+			 * drawers scroll, so the cap costs a reader nothing but a swipe.
+			 */
+			max-height: min(55dvh, calc(100dvh - 12rem));
+			border-radius: 14px 14px 0 0;
+			border-bottom: 0;
+			/* Flex, not the bench's two-row grid: a drawer has a lid, a header and a body,
+			   and the body is the part that scrolls whichever of the other two are present. */
+			display: flex;
+			flex-direction: column;
+		}
+
+		.panel.sheet > .cardbody,
+		.panel.sheet > .tabbody {
+			flex: 1 1 auto;
+		}
+
+		/* The dock is this panel's tab strip on a phone; two identical rows of
+		   Sing/Compose/Listen a finger's width apart read as two different controls. */
+		.controls.sheet > .tabs {
+			display: none;
+		}
+
+		/* The figures, in the drawer they moved into. A wrapping grid rather than the
+		   header's single row: there is no width to run them along, and the divider rules
+		   that separate cells in a row read as a table's when the row wraps. */
+		.readings.inpanel {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+			gap: 0.5rem 0.75rem;
+			padding: 0.8rem 1rem;
+			border-bottom: 1px solid var(--rule);
+		}
+
+		.readings.inpanel > div {
+			padding: 0;
+			border-left: 0;
+		}
+
+		/* The corner pair keeps its place — how the picture is drawn is a property of the
+		   picture, so its controls stay on it — but at a size a finger can hit. */
+		.viewctl {
+			top: calc(var(--ruler) + 0.5rem);
+			right: 0.5rem;
+		}
+
+		.mapctl button {
+			padding: 0.5rem 0.6rem;
+		}
+
+		/**
+		 * **The open drawer's height, taken out of the stage rather than laid over it.**
+		 *
+		 * The stage shrinks to the band above the drawer, so the canvas, the label layer and the
+		 * ruler move up together and the camera follows — threlte watches the canvas and updates
+		 * the aspect on its own. The picture then re-centres into what is left instead of having
+		 * its middle hidden under the panel that is driving it, which is the case that matters:
+		 * you open Sing, press Chorus, and the knots that answer are exactly the ones a floating
+		 * sheet would be sitting on.
+		 *
+		 * **`margin`, not `padding`, and the difference is the whole mechanism.** `.stage` is
+		 * `inset: 0` inside this element, and an absolutely positioned box resolves its offsets
+		 * against the containing block's *padding box* — which includes the padding. Padding
+		 * therefore changed nothing at all: measured with 413 px of it, the wrap and the canvas
+		 * were both still the full 564 px tall. A margin shrinks the grid item itself, and the
+		 * canvas is stretched to the item.
+		 *
+		 * The value is the measured height of whichever drawer is open (see `sheetH`) rather
+		 * than the 62 % cap: the Listen drawer is a third of that and should not cost the
+		 * picture the difference.
+		 */
+		.stage-wrap {
+			margin-bottom: var(--sheet-h, 0px);
+			transition: margin-bottom 160ms ease;
+		}
+
+		/* Full width above the dock — or above the drawer, once the stage has shrunk to make
+		   room for one. */
+		.history {
+			left: 0.5rem;
+			right: 0.5rem;
+			bottom: 0.5rem;
+			mask-image: linear-gradient(to right, transparent, #000 1.5rem);
+		}
+
+		/* The band left over a drawer is about 250 px, and a 44 px strip of chips across the
+		   bottom of it is a sixth of the picture spent on what was sung a minute ago. The
+		   drawer is the thing being read while it is open. */
+		.history.tucked {
+			display: none;
+		}
+
+		.sung {
+			max-width: 9rem;
+		}
+
+		/* The gate is the first thing a phone reader meets, so it is the first thing that
+		   has to fit: full width less a margin, and its own scroll if the text runs long. */
+		.centred {
+			padding: 1rem;
+		}
+
+		.card {
+			max-width: 100%;
+			max-height: calc(100dvh - 2rem);
+			overflow-y: auto;
+			padding: 1.2rem;
+		}
+
+		.loading {
+			max-width: 100%;
+		}
+	}
+
+	/* A phone on its side is a different problem: 390 px of height, of which a bottom drawer
+	   at 62 % would leave the galaxy about a centimetre. So the drawer goes to the side it has
+	   room on, which is the arrangement the bench already uses — a column against the left
+	   edge, full height, over the picture. The dock stays where it is: it is 3.4 rem, and
+	   moving it too would mean two dock layouts to keep true. */
+	@media (max-width: 860px) and (orientation: landscape) {
+		.panel.sheet,
+		.viewctl .viewpanel.sheet {
+			right: auto;
+			/* Under the header, not behind it. A side drawer is full height, and `top: 0` on a
+			   fixed box is the top of the *window* — which put the drawer's own lid, with its
+			   grab bar and its close, underneath the title bar where neither could be seen or
+			   pressed. The header measures itself into `--hud-h`. */
+			top: var(--hud-h, 0px);
+			bottom: var(--dock-h);
+			width: min(21rem, 62vw);
+			/* `height: auto`, and it is the whole rule working. `.panel` is `height:
+			   fit-content` so a card is as tall as what is in it — correct on a bench, and
+			   here it means `top` and `bottom` are both set and the height obeys neither:
+			   the Sing drawer measured 634 px inside a 390 px screen and ran off the bottom
+			   with its own controls on the far side of the edge. `auto` is what lets the two
+			   offsets decide, which is what a side drawer is. */
+			height: auto;
+			max-height: none;
+			border-radius: 0 14px 14px 0;
+			border-left: 0;
+		}
+
+		/* The same trade on the other axis: the drawer's measured width comes off the side of
+		   the stage, so the picture sits beside the panel instead of under it. */
+		.stage-wrap {
+			margin-bottom: 0;
+			margin-left: var(--sheet-w, 0px);
+			transition: margin-left 160ms ease;
+		}
+
+		.history {
+			left: 0.5rem;
+		}
+
+		/* There is room for both here — the strip runs along the bottom of a stage that has
+		   already given up its left edge — and it is the one place a landscape phone can read
+		   what a knot is called without opening anything. */
+		.history.tucked {
+			display: flex;
+		}
+	}
+
+	/* The bench, once there is room for a column beside the stage but not for a second card
+	   under it. Unchanged behaviour, stated as a range rather than as a ceiling: below
+	   861 px the reading is a drawer the dock opens, and a bare `max-width` here would
+	   `display: none` it out of that drawer. */
+	@media (min-width: 861px) and (max-width: 1180px) {
+		.readout {
 			display: none;
 		}
 	}

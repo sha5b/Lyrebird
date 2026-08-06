@@ -677,6 +677,35 @@ button.link {
 	font-size: inherit;
 }
 
+/**
+ * An inline word gets its touch target from padding instead of from height.
+ *
+ * `button.link` is `display: inline`, and vertical padding on an inline box does not move
+ * the line it sits in — but it is painted and it is hit-tested. So this buys about 10 px of
+ * reach above and below the word without opening a hole in the paragraph, which is what the
+ * 44 px floor in controls.css would do to the sentence these live in ("Meant something else?
+ * alarm recruitment contact"). It lands under the floor, and that is the trade.
+ *
+ * It is here rather than beside the floor it is excepted from, because `app.css` imports
+ * controls.css *before* this file and the two selectors have the same specificity — written
+ * there, `padding: 0` three lines above would have won and the exception would have been a
+ * dead rule that measured 17 px.
+ */
+@media (pointer: coarse) {
+	button.link {
+		padding: 0.4rem 0.15rem;
+	}
+
+	/* The line has to open up with the target. Padding on an inline box reaches above and
+	   below the line without moving it, so on a paragraph that wraps — and the five category
+	   words below the composer's reading always do — the second row's targets reach up into
+	   the first row's. Two controls sharing a strip of glass is worse than one small control,
+	   because a mis-tap there silently relabels what the composer thinks you said. */
+	p:has(button.link) {
+		line-height: 2.1;
+	}
+}
+
 /* How much of something the galaxy can place, as a tally beside its label. Three
    characters where there used to be a paragraph; the sentence lives in the tooltip. */
 
@@ -808,4 +837,79 @@ button.link {
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
+}
+
+/**
+ * The shared vocabulary on a phone.
+ *
+ * Only the values that are about *width* are here — the page gutters, the two-column keys,
+ * the checkbox rows. Everything about the stage's own arrangement (the drawers, the dock,
+ * the history strip) is in `+page.svelte`, for the reason the header of this file gives:
+ * one screen's arrangement is not a vocabulary.
+ *
+ * The gutters are the whole of it. `2.6rem` of padding either side is a quarter of a
+ * 375 px screen spent on margin, and the material inside is tables of figures and
+ * screenshots that then have nowhere to go.
+ */
+@media (max-width: 860px) {
+	.pagehead {
+		padding: 0.9rem 1rem 0.7rem;
+	}
+
+	.pagebody {
+		padding: 1.2rem 1rem 3rem;
+	}
+
+	.pagesection {
+		padding-bottom: 1.6rem;
+	}
+
+	/* A definition list of terms is the one shape here that is already a column, so it
+	   only has to stop reserving a 7 rem gutter for its own term. */
+	.deflist > div {
+		grid-template-columns: 1fr;
+	}
+
+	/* Both of these are sized for prose at a bench measure, and a phone column is the
+	   measure now. */
+	.deflist,
+	.claims,
+	.measure,
+	.figure figcaption {
+		max-width: none;
+	}
+
+	/* A block's padding is its rhythm, and at this width the rhythm is the only thing
+	   holding the sides off the glass — but 1rem of a 15px root is more than the bench's,
+	   so it comes down a little rather than up. */
+	.block {
+		padding: 0.9rem 0.85rem;
+	}
+
+	.note.pad {
+		padding: 0 0.85rem 0.9rem;
+	}
+}
+
+/**
+ * A checkbox and its words are one target under a finger.
+ *
+ * The box itself is 1.25 rem there (see controls.css) and the label beside it was the part
+ * a thumb actually lands on — but a `display: flex` row with no height is exactly as tall
+ * as its text, about 18 px, so half of every tap missed. The row is the control now.
+ */
+@media (pointer: coarse) {
+	.check {
+		min-height: max(2.4rem, 44px);
+		gap: 0.6rem;
+	}
+
+	/* A fold header is the whole click target by design; on a touch screen it needs to be
+	   the whole *touch* target, which is a taller thing. */
+	.rollup > summary,
+	.diag summary {
+		min-height: max(2.4rem, 44px);
+		display: flex;
+		align-items: center;
+	}
 }

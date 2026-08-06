@@ -943,6 +943,27 @@ uv run lyrebird-pipeline serve</pre>
 		}
 	}
 
+	/**
+	 * On a phone the two panes stack, and the split between them has to be stated.
+	 *
+	 * This page cannot scroll as a document — the note on `.stagepage.tall` says why: the
+	 * table's drawn slice is computed from one scroll offset, and a scrolling page gives it a
+	 * second. So the panes are two boxes of stated height that each scroll on their own, and
+	 * without a template the first one (nine sections of pipeline controls) took the whole
+	 * page and pushed the table off the bottom, where it had no height to compute a window
+	 * from and drew nothing.
+	 *
+	 * The controls get half and the table gets the rest, with a floor of 12 rem so a window
+	 * of at least a dozen rows exists at any height a phone has.
+	 */
+	@media (max-width: 860px) {
+		.learngrid {
+			grid-template-rows: minmax(0, 1fr) minmax(12rem, 1fr);
+			gap: 1rem;
+			padding: 1rem 0.85rem 1.2rem;
+		}
+	}
+
 	.learncol {
 		display: flex;
 		flex-direction: column;

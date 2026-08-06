@@ -207,6 +207,33 @@
 		letter-spacing: 0.04em;
 	}
 
+	/**
+	 * Nine columns do not fit in a hand, so the table scrolls sideways rather than dropping
+	 * columns.
+	 *
+	 * Its narrowest honest width is 44 rem — the sum of the nine tracks, their eight gaps and
+	 * the row padding — and below that the grid was quietly compressing the two flexible
+	 * columns into their minimums and clipping the rest against `.tbody`'s `overflow-x:
+	 * hidden`. The figures in the fit columns are the reason to open this table at all, so
+	 * hiding them to make it fit would leave a table that fits and does not answer anything.
+	 *
+	 * The wrapper is the scroller, not the body: the header and the rows share one grid
+	 * template, and two scroll containers would let the header's columns walk away from the
+	 * rows'. The body keeps its own vertical scroll, and its content now fits its own width,
+	 * so nothing is clipped by it.
+	 */
+	@media (max-width: 860px) {
+		.tablewrap {
+			overflow-x: auto;
+		}
+
+		.thead,
+		.trow,
+		.tbody {
+			min-width: 44rem;
+		}
+	}
+
 	.tbody {
 		flex: 1;
 		min-height: 0;
@@ -221,8 +248,16 @@
 
 	.trow {
 		/* Fixed, and the same number as ROW_PX above. A row that grew to fit its content
-		   would put every row below it somewhere the window arithmetic does not expect. */
+		   would put every row below it somewhere the window arithmetic does not expect.
+
+		   `min-height` is pinned with it, because the touch-target floor in controls.css
+		   gives every `button` a 2.6 rem minimum on a coarse pointer and a minimum beats a
+		   height. That would not have shown up as a row that looks wrong — it would have
+		   shown up as the wrong rows being drawn, because `ROW_PX` is what the window
+		   arithmetic multiplies. This table is scrolled rather than tapped, so the floor is
+		   the wrong instrument here anyway. */
 		height: 24px;
+		min-height: 0;
 		width: 100%;
 		border: 0;
 		border-radius: 0;

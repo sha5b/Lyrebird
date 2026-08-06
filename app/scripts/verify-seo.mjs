@@ -25,7 +25,11 @@
  */
 import { readFileSync, existsSync, statSync } from 'node:fs';
 
-const ASSETS = process.env.BIRDY_ASSETS ?? 'static/birdy';
+// `static/lyrebird`, which is where `build` writes and where the app fetches from. The
+// default said `static/birdy` — the repository's old name — so the check did not run at all:
+// it died on ENOENT before its first assertion. Loudly, at least, but a check that has never
+// once compared a figure is not a check.
+const ASSETS = process.env.BIRDY_ASSETS ?? 'static/lyrebird';
 
 let failures = 0;
 const ok = (name, cond, detail = '') => {

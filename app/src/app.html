@@ -2,7 +2,14 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<!--
+			`viewport-fit=cover` so the stage reaches the glass on a notched phone; the dock pays
+			for it with `env(safe-area-inset-bottom)`, which is the only element that sits on the
+			home indicator. No `maximum-scale` and no `user-scalable=no`: this is a picture of a
+			corpus with 9 px captions on it, and pinching into one is a thing a reader is entitled
+			to do.
+		-->
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<meta name="text-scale" content="scale" />
 
 		<!--

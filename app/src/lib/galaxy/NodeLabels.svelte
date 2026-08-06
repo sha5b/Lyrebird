@@ -294,6 +294,43 @@
 		transition: opacity 140ms linear;
 	}
 
+	/**
+	 * The tag with its card on the other side, for a knot too near the right edge to hang one
+	 * to the right. NodeProjector decides — see `tagWidthPx` there — and moves the box left by
+	 * its own width; this turns the row around inside it so the ring stays on the knot.
+	 *
+	 * The card's rule moves with it. That hairline is the card's tether to the mark, and left
+	 * on the far side it points away from the thing the card is about.
+	 */
+	/* `:global(.flip)` because NodeProjector adds the class from JavaScript, per frame, and
+	   Svelte's scoped-CSS pass prunes any selector it cannot see used in this component's
+	   markup. Written as a plain `.tag.flip` these two rules compiled to nothing — and the
+	   failure is not a missing decoration: without `row-reverse` the box still moves left by
+	   its own width and the ring goes with it, so the mark ends up a card's width away from
+	   the knot it is naming. */
+	.tag:global(.flip) {
+		flex-direction: row-reverse;
+	}
+
+	/**
+	 * The ring's own centring, mirrored.
+	 *
+	 * `translate(-50%, -50%)` puts the ring's centre on the tag box's *left* edge, which is the
+	 * knot in the ordinary case. Flipped, the knot is the box's right edge and the ring's layout
+	 * position is already at that edge less its own width, so the same −50 % walks it a full
+	 * ring-width inland — measured at 5 px off its knot, on every flipped tag. The sign is what
+	 * makes the mark true, and the mark being true is the only reason the ring exists.
+	 */
+	.tag:global(.flip) .dot {
+		transform: translate(50%, -50%) scale(calc(1 + var(--ring-on) * 0.9));
+	}
+
+	.tag:global(.flip) .card {
+		border-left: 0;
+		border-right: 1px solid
+			color-mix(in srgb, var(--accent, var(--signal)) calc(var(--hot, 0) * 100%), var(--rule));
+	}
+
 	/* Everything that reacts is driven by the two custom properties NodeProjector writes per
 	   frame — `--hot`, a binary for "this card is open", and `--act`, the eased 0..1 activation
 	   — through calc/color-mix rather than by a class, so no per-frame state has to cross into
@@ -326,6 +363,23 @@
 		   rather than a fixed number of pixels. */
 		width: var(--ring, 5px);
 		height: var(--ring, 5px);
+		/**
+		 * **The touch-target floor must not reach this element, and finding out why cost a
+		 * round.** `.dot` is a `<button>`, so the `min-height: max(2.6rem, 44px)` that
+		 * controls.css gives every button on a coarse pointer applied here too — and a
+		 * minimum beats a height. Every knot ring on a phone became a 5 × 44 px capsule
+		 * standing on the cloud: measured at 6.8 × 59.8 with the activation scale on it,
+		 * and reported as "on mobile the centroids get squished bad".
+		 *
+		 * It is the right floor and the wrong element. A control's size is a matter of the
+		 * hand; this ring's size is a *measurement* — it is the knot's own diameter at the
+		 * current zoom, which is what lets a reader compare a ring against the particles
+		 * under it. The target it needs is bought below instead, where it costs the drawing
+		 * nothing.
+		 */
+		min-height: 0;
+		/* The pad below is positioned against this. */
+		position: relative;
 		/* **No vertical offset, and that is a fix.** `.tag` is transformed so its origin sits
 		   exactly on the knot's projected position, and `translate(-50%, -50%)` below puts the
 		   ring's centre on that origin — but a `margin-top: 0.26em` (about 3 px) was pushing it
@@ -382,6 +436,34 @@
 	}
 
 	/**
+	 * The ring's reach on a touch screen: a transparent disc, centred on the mark, that a
+	 * thumb can land on. Nothing is painted, so the drawn ring stays the knot's diameter and
+	 * the annotation still says what it measures.
+	 *
+	 * **It does take a bite out of the drag surface**, and that is the trade rather than an
+	 * oversight: the tags sit above the canvas, so a gesture that starts inside one of these
+	 * discs picks the knot instead of orbiting the galaxy. At most twenty-six tags exist at
+	 * once (the label pool's cap) and each holds about 1 500 px² — roughly seven per cent of
+	 * a phone screen — against the alternative, which is that a 5 px ring is the only way to
+	 * reach a knot's card and no thumb can hit one.
+	 *
+	 * Sized in `px` and not `em`, because a fingertip is 9 mm wide whatever the zoom is
+	 * doing to the ring inside it.
+	 */
+	@media (pointer: coarse) {
+		.dot::after {
+			content: '';
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			width: 44px;
+			height: 44px;
+			transform: translate(-50%, -50%);
+			border-radius: 50%;
+		}
+	}
+
+	/**
 	 * Near-paper, with the colour spent on the left rule and the name.
 	 *
 	 * **A filled version of this was tried and taken back out.** Filling the card with the
@@ -397,7 +479,12 @@
 		   itself. The card is what moves to meet the mark, never the other way round. */
 		margin-top: -0.55rem;
 		padding: 0.15rem 0.4rem;
-		max-width: 15rem;
+		/* 15 rem is the card's measure; the share is what a narrow stage can actually hold.
+		   On a 375 px phone a 15 rem card is more than half the glass, so a knot anywhere near
+		   the middle has room for it on neither side and the flip in NodeProjector has nowhere
+		   to put it. `TAG_SHARE` there is this number plus a little, so the decision to flip is
+		   always taken before the clip would happen — the two are a pair. */
+		max-width: min(15rem, 44vw);
 		overflow: hidden;
 		border-left: 1px solid
 			color-mix(in srgb, var(--accent, var(--signal)) calc(var(--hot, 0) * 100%), var(--rule));

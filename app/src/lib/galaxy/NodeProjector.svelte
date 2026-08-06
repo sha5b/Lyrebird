@@ -237,6 +237,53 @@
 	const matchShown = new Int16Array(LABEL_SLOTS).fill(-1);
 	/** Last visibility written per slot, so `visibility` is not rewritten every frame. */
 	const wasVisible = new Int8Array(LABEL_SLOTS).fill(-1);
+	/**
+	 * Which side of its knot each slot's card is hanging on, so the class is toggled on the
+	 * frame it changes rather than every frame. -1 unwritten, 0 right, 1 left.
+	 */
+	const wasFlipped = new Int8Array(LABEL_SLOTS).fill(-1);
+	/**
+	 * **The card hangs to the left when there is no room on the right, and on a phone there
+	 * usually is not.**
+	 *
+	 * A tag is the ring on the knot plus a card of up to 15 rem beside it. On a 1600 px bench
+	 * that card runs off the edge only for knots in the last sixth of the screen; on a 375 px
+	 * phone the card is more than half the width of the glass, so every knot right of centre
+	 * had its name cut in half by `.layer`'s clip — "Black-crested Bulbu", against a ring
+	 * whose species you then cannot read.
+	 *
+	 * The flip is a class and a `translateX(-100%)`, which is self-referential: the browser
+	 * resolves it against the element's own box at composite time, so nothing here has to
+	 * measure a card. What this constant decides is only *when* to flip, and it is the widest
+	 * a tag can be — `.card`'s 15 rem cap, plus the gap and the ring — so a card flips when it
+	 * could overflow rather than when it does. Read from the root at call time because the
+	 * root font size is 13 px on a bench and 15 px on a phone.
+	 */
+	const TAG_REM = 15.8;
+	/**
+	 * And the same cap the card itself carries on a narrow stage, as a share of the width.
+	 *
+	 * **The flip alone is not enough, and the first version proved it.** With only "is there
+	 * room on the right", a knot at x = 165 on a 375 px screen flipped a 236 px card and put
+	 * it 72 px off the *left* edge — the same clipping, mirrored. On a phone there is a band
+	 * in the middle where neither side has room for a 15 rem card, so the card is capped at a
+	 * share of the stage as well, and this is that share plus a little: flipping has to happen
+	 * before clipping does, never after.
+	 *
+	 * It mirrors `.card`'s own `max-width: min(15rem, 44vw)` in NodeLabels.svelte. The two are
+	 * a pair; changing one without the other puts a name back over the edge.
+	 */
+	const TAG_SHARE = 0.46;
+	/**
+	 * Cached, and recomputed only when the stage's width changes.
+	 *
+	 * `getComputedStyle` forces a style recalculation, which is exactly the kind of work this
+	 * file exists to keep out of the frame loop. The two things it depends on — the root font
+	 * size and the layout — only move together and only on a resize, so a resize is when it
+	 * is read.
+	 */
+	let tagW = 0;
+	let tagWAt = -1;
 
 	/**
 	 * Labels closer together than this collide and the weaker one is dropped. The box is
@@ -254,6 +301,11 @@
 		if (!cam || !anchor || !el.length) return;
 		const width = size.current.width;
 		const height = size.current.height;
+		if (width !== tagWAt) {
+			tagWAt = width;
+			const root = parseFloat(getComputedStyle(document.documentElement).fontSize) || 13;
+			tagW = Math.min(TAG_REM * root, TAG_SHARE * width);
+		}
 
 		anchor.updateWorldMatrix(true, false);
 		const matrix = anchor.matrixWorld;
@@ -484,7 +536,19 @@
 			const node = el[s];
 			if (!node) continue;
 			const i = ch.ci;
-			node.style.transform = `translate3d(${ch.x.toFixed(1)}px, ${ch.y.toFixed(1)}px, 0)`;
+			// The card goes to whichever side of the knot has room for it. `translateX(-100%)`
+			// is the whole of the move — the browser resolves the percentage against the tag's
+			// own box, so a card of any width lands with its ring still on the knot — and the
+			// class is what turns the row around inside that box.
+			// Both halves of the test matter: flip when the right cannot hold the card, and
+			// only if the left can. Without the second, a knot in the middle of a phone screen
+			// flipped a card straight off the other edge.
+			const flip = ch.x > width - tagW && ch.x >= tagW ? 1 : 0;
+			node.style.transform = `translate3d(${ch.x.toFixed(1)}px, ${ch.y.toFixed(1)}px, 0)${flip ? ' translateX(-100%)' : ''}`;
+			if (wasFlipped[s] !== flip) {
+				node.classList.toggle('flip', flip === 1);
+				wasFlipped[s] = flip;
+			}
 			// 0.44 rather than 0.35 at rest. The base is what a tag is worth when its knot is
 			// silent, and at 0.35 a silent tag on the far side sat under the ink of its own
 			// thread even with the floor above; the two together are what make the far end of

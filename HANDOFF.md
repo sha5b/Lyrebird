@@ -1,3 +1,111 @@
+# Lyrebird — READ THIS FIRST (2026-08-06, last): the app has a phone layout, two pages were unreachable on one, and the touch-target floor turned every knot ring into a capsule
+
+Continues the entries below, which are from earlier the same day and still current. Nothing
+here contradicts them. This one is the app's layout only — no pipeline, no corpus, no numbers
+about birds changed.
+
+```
+BUILT           a phone layout below 860 px: the stage keeps 85–88 % of the screen and the
+                panels are drawers opened one at a time from a dock (Sing / Compose /
+                Listen / Reading). Section 1
+WAS BROKEN      Info and Learn were UNREACHABLE on a phone. Their openers live inside
+                `.readings`, which the old mobile CSS set to `display: none` — the buttons
+                were in the DOM, sized zero, and every check passed. Section 1a
+DRAWERS TAKE    a drawer's measured height comes off the stage (margin, not padding — an
+ROOM            `inset: 0` child resolves against the PADDING box, so padding shrank
+                nothing and was measured doing nothing). The corpus re-centres into the
+                band that is left instead of sitting under the panel driving it
+RING REGRESSION `.dot` is a `<button>`, so `min-height: max(2.6rem, 44px)` on coarse
+                pointers made every knot ring 5 × 44 px. Owner saw it before the probe did
+                ("on mobile the centroids get sqished bad"). Fixed with `min-height: 0`
+                plus an invisible 44 px pad; three exemptions to the floor are now stated
+                in controls.css, and `.trow`'s is load-bearing (ROW_PX)
+TAGS FLIP       a card that cannot fit to the right of its knot hangs to the left, capped
+                at 44vw. The CSS was pruned as an unused selector on the first attempt
+                (the class comes from JS) and the ring then sat a card's width off its knot
+NEW PROBE       `npm run probe:mobile` — three viewports; overflow, drawers, touch floor,
+                and that a ring is round, correctly sized and on its knot. All clear
+NEW FIGURES     `npm run figures` regenerates every README image from a running app.
+                `static/figures/fig-stage.png` had gone stale (it still shows a Stop button)
+README          rewritten around 9 figures, a contents list and folds. Every measurement
+                kept; "Learn tab" corrected to "Learn page"
+verify:seo      was dead on `static/birdy` (the repo's old name) and never ran a single
+                assertion. Default fixed to `static/lyrebird`; it passes
+```
+
+## 1. The phone layout: a different arrangement, not a squeezed one
+
+Below **860 px** (`NARROW_PX` in `+page.svelte`, matched by `@media (max-width: 860px)` in
+every stylesheet that reacts):
+
+- **The dock** is a row of the bench grid, not a bar floating over it, so its 3.4 rem is
+  taken out of the layout once and nothing is ever underneath it. Four items, all of them a
+  way of making or hearing a sound — the split the tab strip already made. *How the picture
+  is drawn* stays on the two corner icons over the stage, where it is on the bench too.
+- **One drawer at a time.** `openSheet` / `toggleView` / `toggleCost` enforce it, and only
+  while `narrow`: on the bench the Display panel and the cost readout are a stack of two
+  cards in a corner and making them exclusive there would remove a working arrangement.
+- **A drawer takes stage rather than covering it.** Each panel reports `clientHeight` /
+  `clientWidth`; the open one's measurement becomes a margin on `.stage-wrap`. **Margin, and
+  the first attempt used padding** — `.stage` is `inset: 0`, and an absolutely positioned box
+  resolves against the containing block's *padding box*, which includes the padding. Measured
+  with 413 px of it: wrap 375×564, canvas 375×564, nothing moved. With margin: canvas 375×151.
+- **Landscape puts the drawer at the side**, because a bottom sheet on a 390 px-tall screen
+  leaves the galaxy a centimetre. Its `top` is `--hud-h` (the header measures itself) — with
+  `top: 0` the drawer's own lid sat behind the title bar.
+- Root font size goes 13 px → 15 px on phones, because every size in this app is a fraction
+  of the root and `.note` at 0.74 rem is 9.6 px.
+
+### 1a. Two pages were unreachable, and nothing said so
+
+The Info and Learn openers are cells of `.readings`, and the old mobile rule was
+`.readings { display: none }`. So on any screen under 760 px the paper, the legend, the
+whitepaper download and the entire pipeline surface could not be opened at all. The buttons
+were present, focusable in principle, and 0 × 0.
+
+The figures moved instead of the row: `liveReadings` is a snippet rendered in the header on a
+bench and inside the Reading drawer on a phone. The openers stay in the header at every width.
+
+### 1b. The touch floor is right, and it reached three elements it must not
+
+`controls.css` now gives every `button` `min-height: max(2.6rem, 44px)` under
+`@media (pointer: coarse)` — the pixel half is load-bearing, because a finger is 9 mm wide
+whatever the root font size is. Three exemptions, each for its own reason and each written
+where it is:
+
+1. **`.trow`** (InventoryTable) — its height is `ROW_PX`, a number shared with the window
+   arithmetic. A floor here does not make rows taller, it makes the drawn slice land
+   somewhere else than the scroll offset says.
+2. **`button.link`** — a word inside a sentence. It buys reach from padding on an inline box
+   (~26 px, stated as under the floor) and the paragraph's line-height opens to match, or the
+   second row's targets reach up into the first row's.
+3. **`.dot`** — the knot ring, and this one shipped broken for a round. It is a `<button>`
+   whose *size is a measurement*: the knot's own diameter at the current zoom. The floor made
+   every ring in the galaxy 5 × 44 px (measured 6.8 × 59.8 with the activation scale on it).
+   The owner reported it before the probe existed. It now has `min-height: 0` and a
+   transparent 44 px `::after` pad, which does take a bite out of the drag surface — about
+   7 % of a phone screen at the label pool's cap of 26 tags — and that trade is stated.
+
+### 1c. What to do if you touch the tags again
+
+`NodeProjector` decides the flip (`tagW`, `TAG_SHARE`) and `NodeLabels` styles it
+(`.tag:global(.flip)`, `.card { max-width: min(15rem, 44vw) }`). The pair is coupled twice
+over and both were found by measuring, not by reading:
+
+- `:global(.flip)` because the class is added from JavaScript and Svelte's scoped-CSS pass
+  **prunes selectors it cannot see in the markup**. Written plainly, the two rules compiled to
+  nothing, and the failure is not cosmetic: without `row-reverse` the box still moves left by
+  its own width and takes the ring with it.
+- The flipped ring needs `translate(50%, -50%)`, not `-50%`. With the sign unchanged every
+  flipped ring sat 5 px off its knot — all 11 of them, in the sampler.
+- `TAG_SHARE` (0.46) must stay a little above the card's `44vw`, so the decision to flip is
+  always taken before the clip would happen.
+
+`npm run probe:mobile` asserts all of it. Its ring section runs **before** the drawer loop on
+purpose: opening Compose silences the aviary by design, and a ring check after the loop
+measures a stage where nothing can sound — it reported "no knot tag ever appeared" for three
+viewports, which is the shape of a probe whose subject never arrives.
+
 # Lyrebird — READ THIS FIRST (2026-08-06, later): synthesis at fit time is possible and the machinery is already written; the whitepaper's open list was two days stale; the mark is redrawn flat
 
 Continues the entry below, which is from earlier the same day and still current. Nothing here

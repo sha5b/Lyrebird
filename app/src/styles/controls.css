@@ -100,3 +100,74 @@ textarea {
 a {
 	color: var(--signal);
 }
+
+/**
+ * The same controls, under a finger.
+ *
+ * Keyed on the pointer rather than on the width, because the thing that changed is the
+ * instrument doing the pointing: a mouse resolves a 20 px target and a fingertip covers
+ * about 9 mm of glass, which is why both platform guidelines put the floor at 44–48 px.
+ * A tablet with a stylus keeps the tight spacing; a phone in landscape gets the room even
+ * though it is 844 px wide.
+ *
+ * Ranges get the most of it. A 4 px track with a 12 px thumb is the one control here that
+ * cannot be hit at all with a thumb, and every panel in this app is mostly sliders.
+ */
+@media (pointer: coarse) {
+	/**
+	 * `max(2.6rem, 44px)` rather than a plain rem, and the pixel is the load-bearing half.
+	 * A finger is 9 mm wide whatever the root font-size is, so a target stated only in rem
+	 * is a target that shrinks when the type does — at the bench's 13 px root, 2.6 rem is
+	 * 34 px and misses the floor by a quarter. The rem is still there because it is what
+	 * keeps the control in proportion with its own label when the root goes the other way.
+	 */
+	button {
+		min-height: max(2.6rem, 44px);
+		padding: 0.5rem 0.8rem;
+	}
+
+	/**
+	 * The three buttons the floor must not touch, and each is a different reason.
+	 *
+	 * `.trow` is a row of the windowed inventory table, whose height is a *number shared
+	 * with JavaScript* — `ROW_PX` in InventoryTable.svelte, which the window arithmetic
+	 * multiplies to find the slice to draw. A floor here does not merely make the rows
+	 * taller, it makes the drawn slice land somewhere else than the scroll offset says.
+	 *
+	 * `.link` is a word inside a sentence; a 2.6 rem minimum on an inline button opens a
+	 * hole in the paragraph around it.
+	 *
+	 * `.chip` is a token on the compose strip, and there can be a dozen in a row. It gets
+	 * a floor of its own instead — enough to hit, short of turning a phrase into a wall.
+	 */
+	button.trow,
+	button.link {
+		min-height: 0;
+	}
+
+	button.chip {
+		display: inline-flex;
+		align-items: center;
+		min-height: 2rem;
+	}
+
+	select,
+	input[type='text'],
+	textarea {
+		min-height: max(2.6rem, 44px);
+		padding: 0.5rem 0.6rem;
+		/* 16 px is the size below which iOS Safari zooms the page on focus, and the zoom is
+		   not undone when the field blurs — it leaves the stage scrolled and scaled with no
+		   way back that a reader would find. */
+		font-size: max(1rem, 16px);
+	}
+
+	input[type='range'] {
+		height: max(2.2rem, 44px);
+	}
+
+	input[type='checkbox'] {
+		width: 1.25rem;
+		height: 1.25rem;
+	}
+}
