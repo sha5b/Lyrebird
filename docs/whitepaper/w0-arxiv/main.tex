@@ -808,11 +808,26 @@ records exactly which recordings were used.
 
 \section*{Acknowledgements}
 
-\todo{acknowledgements, funding statement, or an explicit statement of none.} The recordings
-this paper is about were contributed to xeno-canto \citep{xenocanto} by volunteers, and the
-recordist metadata that makes the measurement possible is their work.
+The recordings this paper is about were contributed to xeno-canto \citep{xenocanto} by
+volunteers, and the recordist metadata that makes the measurement possible is their work. It
+is worth being precise about the debt: this paper reports a confound carried by *who* recorded
+each file, and that confound is only measurable because those contributors are named. An
+archive that discarded attribution would have hidden the effect rather than prevented it.
+
+The measurement also depends on Perch and BirdNET being released with usable weights. A
+claim that an evaluation protocol is optimistic is worth much less when the models under test
+cannot be run by the people being asked to change the protocol, and both can.
+
+\section*{Funding}
+
+None. This is independent work by an artist, made at the boundary of art and science, with no
+grant, institutional or commercial support of any kind.
 
 \bibliographystyle{plainnat}
-\bibliography{../references/references}
+% `references`, not `../references/references`. A preprint server compiles from the root of
+% the submission directory, so a path that climbs above it resolves to nothing and the
+% bibliography comes out empty. An identical copy sits next to this file, so this form builds
+% locally and on a submission server alike.
+\bibliography{references}
 
 \end{document}

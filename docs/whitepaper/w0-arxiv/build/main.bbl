@@ -1,0 +1,44 @@
+\begin{thebibliography}{4}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Kahl et~al.(2021)Kahl, Wood, Eibl, and Klinck]{birdnet2021}
+Stefan Kahl, Connor~M. Wood, Maximilian Eibl, and Holger Klinck.
+\newblock {BirdNET}: A deep learning solution for avian diversity monitoring.
+\newblock \emph{Ecological Informatics}, 61:\penalty0 101236, 2021.
+\newblock \doi{10.1016/j.ecoinf.2021.101236}.
+\newblock URL \url{https://doi.org/10.1016/j.ecoinf.2021.101236}.
+\newblock Model weights CC BY-NC-SA 4.0; the BirdNET-Analyzer code is MIT.
+
+\bibitem[Stowell and Plumbley(2014)]{stowell2014}
+Dan Stowell and Mark~D. Plumbley.
+\newblock Automatic large-scale classification of bird sounds is strongly
+  improved by unsupervised feature learning.
+\newblock \emph{PeerJ}, 2:\penalty0 e488, 2014.
+\newblock \doi{10.7717/peerj.488}.
+\newblock URL \url{https://doi.org/10.7717/peerj.488}.
+\newblock Source of the recordist-stratified split. Verified against the full
+  text: the stratification is applied to the \texttt{bldawn} dataset only ---
+  20 recordings each from three UK recordists, three-fold, training on two
+  recordists and testing on the held-out third --- and the paper reports
+  \emph{no} random-against-blocked accuracy comparison.
+
+\bibitem[van Merri{\"e}nboer et~al.(2025)van Merri{\"e}nboer, Dumoulin, Hamer,
+  Harrell, Burns, and Denton]{perch2}
+Bart van Merri{\"e}nboer, Vincent Dumoulin, Jenny Hamer, Lauren Harrell, Andrea
+  Burns, and Tom Denton.
+\newblock Perch 2.0: The bittern lesson for bioacoustics, 2025.
+\newblock URL \url{https://arxiv.org/abs/2508.04665}.
+\newblock 1536-d embedding, EfficientNet-B3 trunk, 14\,795 output classes of
+  which 14\,597 are species, 5\,s at 32\,kHz; code Apache 2.0.
+
+\bibitem[{Xeno-canto Foundation}()]{xenocanto}
+{Xeno-canto Foundation}.
+\newblock xeno-canto: sharing wildlife sounds from around the world.
+\newblock \url{https://xeno-canto.org}.
+\newblock Per-recording Creative Commons licences; accessed 2026-08-01.
+
+\end{thebibliography}
