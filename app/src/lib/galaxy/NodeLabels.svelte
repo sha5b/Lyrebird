@@ -21,8 +21,9 @@
 	 */
 	import { untrack } from 'svelte';
 	import { confidenceLabel } from '$lib/lang/translate';
-	import { clusterProvenance, knotHeat } from '$lib/data/assets';
-	import { provenanceColourScaled, speciesColourScaled } from './palette';
+	import { clusterProvenance, knotDoubt, knotHeat } from '$lib/data/assets';
+	import { doubtColourScaled, provenanceColourScaled, speciesColourScaled } from './palette';
+	import type { DoubtRange } from './doubt';
 	import { describeForm } from '$lib/data/syllable-name';
 	import type { BirdyAssets, Centroid } from '$lib/data/types';
 
@@ -46,6 +47,16 @@
 		 * switch the viewer flips, so the tags have to follow it live.
 		 */
 		prov?: boolean;
+	/**
+	 * Colour the tags by neighbour agreement (rose) and/or recording SNR (amber), matching the
+	 * points. Either overrides `prov` and the species hue; both together compose into the
+	 * bivariate scheme in `palette.ts`, whose worst corner is bad on both counts.
+	 */
+	doubtAgree?: boolean;
+	doubtSnr?: boolean;
+	/** The SNR ramp's ends, so a tag clamps before averaging exactly as the buffer does. */
+	doubtRange?: DoubtRange;
+
 		/**
 		 * The stage's scale — pixels per knot spacing — so the ring on a knot can be the size
 		 * of the knot rather than a fixed number of pixels.
@@ -64,6 +75,9 @@
 		slots,
 		elements = $bindable(),
 		prov = false,
+		doubtAgree = false,
+		doubtSnr = false,
+		doubtRange = undefined,
 		pxPerKnot = 0,
 		onpick
 	}: Props = $props();
@@ -133,9 +147,27 @@
 	 */
 	let heat: Float32Array | null = null;
 	let knotClass: Float32Array | null = null;
+	/**
+	 * Each knot's mean doubt per channel, built lazily and kept: two passes over the corpus
+	 * at most, and only for a channel the reader actually switched on.
+	 */
+	let knotAgree: Float32Array | null = null;
+	let knotSnr: Float32Array | null = null;
+	const doubtOf = (i: number) => {
+		if (doubtAgree) knotAgree ??= knotDoubt(assets, assets.points.knnAgreement);
+		if (doubtSnr) knotSnr ??= knotDoubt(assets, assets.points.snr, doubtRange);
+		return {
+			agree: doubtAgree ? (knotAgree?.[i] ?? 1) : undefined,
+			snr: doubtSnr ? (knotSnr?.[i] ?? 1) : undefined
+		};
+	};
 	const knotColour = (c: Centroid, i: number): string => {
 		heat ??= knotHeat(assets);
 		const light = 0.9 + (heat[i] ?? 0.5) * 0.2;
+		// First, because doubt is a mode rather than a tint: with it on, the tag says what
+		// the points under it say, and neither the class nor the bird hue is on screen to
+		// be confused with it.
+		if (doubtAgree || doubtSnr) return doubtColourScaled(doubtOf(i), light);
 		if (prov) {
 			knotClass ??= clusterProvenance(assets);
 			return provenanceColourScaled(knotClass[i] ?? 4, light);

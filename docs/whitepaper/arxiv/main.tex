@@ -164,13 +164,6 @@ as the system is.
 \noindent\textbf{Keywords:} bioacoustics; birdsong; syrinx model; gesture inversion;
 contrastive embeddings; sequence statistics; negative results; pre-registration.
 
-\vspace{1em}
-\noindent\small
-The software repository is named \texttt{Birdy}; the system is called Lyrebird here and
-in all subsequent writing. Internal provenance for every number in this paper is given
-as a comment in the \LaTeX{} source, naming the research note and section that measured
-it.
-\normalsize
 \vspace{1.4em}
 \end{@twocolumnfalse}]
 \makeatother
@@ -266,19 +259,6 @@ labels, because a label has to be grounded in a mechanism a reader can inspect, 
 generator's mechanism is a weight matrix. The decision to keep the synthesiser physical is
 therefore not a tooling preference; it is what makes the honesty rule enforceable.
 % docs/21 §21.4
-
-\subsection*{Three things changed recently enough to matter}
-
-Archive scale: xeno-canto and iNaturalist
-between them now expose enough recordings that per-species syllable inventories over
-thousands of species are a matter of compute, not of
-fieldwork \citep{xenocanto,inatsounds2024}. Foundation models: Perch, BirdNET, AVES, BirdMAE
-and NatureLM-audio give an outside opinion on any embedding one
-builds \citep{perch2,birdnet2021,aves2022,birdmae2025,naturelm2024}, which changes
-what a self-reported embedding quality number is worth. And browser capability: a
-physically integrated syrinx runs in an AudioWorklet at 48\,kHz with 16- to 64-fold
-oversampling, so the interpretable synthesiser and the map can be the same artefact,
-with no server in the loop.
 
 % =====================================================================
 \section{Related work}
@@ -478,7 +458,8 @@ evidence labels of Section~\ref{sec:premise} sit over everything stage 5 display
 
 \subsection{Harvest: decode, describe, delete}
 
-The harvester fetches from xeno-canto and iNaturalist through one loop that decodes a
+The harvester fetches from xeno-canto \citep{xenocanto} and iNaturalist
+\citep{inatsounds2024} through one loop that decodes a
 recording, segments it, describes every syllable, and deletes the file; peak memory is one
 recording. What is retained per syllable is a 28-dimensional descriptor, a
 $32 \times 23$ log-mel patch (736 numbers, log-magnitude only, no phase), a four-knot
@@ -1354,7 +1335,15 @@ now have a named cost --- a refit with the stage disabled --- rather than an ope
 In the critic's embedding, the strongest relation is not the animal. Nearest-neighbour lift
 over a permutation null, blocked by recording, is $+0.488$ for recordist and $+0.196$ for
 species.
-% docs/14 §14.4, production store
+% docs/14 §14.4. PROVENANCE, corrected 2026-08-06: this comment previously read "production
+% store". WHITEPAPER-FINDINGS #6 records that the pair was measured on the 121-species store
+% with the un-retrained 16-species critic read off-distribution, i.e. the worst-conditioned
+% embedding in the record, and that docs/16 §16.2 promised a re-measurement after the
+% production build which docs/16 §16.6 does not contain. The figure is the one the project
+% has consistently cited and the direction is corroborated four independent ways
+% (Sections~\ref{sec:internal}, \ref{sec:external}); the magnitude should not be read as a
+% production measurement until `critic groupings` is re-run on the production store.
+% Re-running it is the outstanding item, not a re-derivation of the conclusion.
 Every consumer of the embedding inherits that: typing, the map, the relations document,
 novelty and the unknown-bird path.
 
@@ -1520,10 +1509,13 @@ is one static fitted depth per type.
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{tonal-pin}
-\caption{The tonal-regime pin. Left: share of syllables above two spectral-content
-thresholds, resynthesis against real. Right: median spectral flatness on a log axis. The
-model contains the pulse-like regime that produces the missing tail; the fit does not reach
-it.}
+\caption{The tonal-regime pin, in three panels. Left: share of syllables above two
+spectral-content thresholds, resynthesis against real. Centre: median spectral flatness on a
+log axis, three orders too pure. Right: the share of fitted types whose tension contour rides
+the clamp of the parameterisation --- 6\,617 of 12\,724, so half the corpus sits at a limit of
+the parameterisation rather than at a fitted value, which is a different failure from the
+first two and is the one that bounds them. The model contains the pulse-like regime that
+produces the missing tail; the fit does not reach it.}
 \label{fig:tonalpin}
 \end{figure*}
 
@@ -1718,6 +1710,100 @@ centroids placed at label means are less separated than centroids Lloyd's iterat
 apart, so more live sounds land between two regions, and the ones that land decisively
 land better. A build whose headline is the species claim should read that row first.
 % docs/22 §22.8
+
+\subsection{The discovery mode at production scale}
+\label{sec:density}
+
+The clustering arms above are two ways of naming everything. The build's third mode is the
+only one that can decline: HDBSCAN* finds however many dense regions the corpus holds and
+leaves the rest unassigned, so a sound can come out as \emph{none of these}. Every number
+reported for it until now was a debug-scale extrapolation. This is the production
+measurement, and it is a negative result with one genuinely encouraging half.
+
+The matrix is the one the build clusters, rebuilt from the harvest store's 32-dimensional
+embeddings and the build's own standardisation moments: 435\,630 of the shipped 444\,213
+rows (98.07\,\%). The missing 8\,583 are rendered anchors whose embeddings exist only
+inside a build, so the reconstruction is checked against the build's own manifest before
+anything else is read from it, and it holds --- 1\,128 regions and 79.3\,\% unassigned here
+against the build's 1\,151 and 79.5\,\% on a corpus 1.93\,\% larger.
+% pipeline/analysis/v10_mcs_sweep.json; build manifest out/v10/assets-unknown
+
+\begin{table*}[t]
+\centering
+\small
+\caption{The discovery mode on the production corpus (435\,630 rows, 32-d critic
+embedding). Agreement is against the shipped 15\,341-knot label partition and is computed
+\emph{twice}: over the rows this clustering placed, and over every row with
+\emph{unassigned} as a label of its own. At four fifths unassigned the two ask different
+questions, and reporting either alone misleads. Production scale.}
+\label{tab:density}
+\begin{tabular}{r r r r r r r r}
+\toprule
+& & & \multicolumn{2}{c}{cluster size} & \multicolumn{2}{c}{placed rows only} & all rows \\
+\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-8}
+min.\ cluster & regions & unassigned & median & largest & ARI & AMI & AMI \\
+\midrule
+\textbf{25} & \textbf{1\,128} & \textbf{79.3\,\%} & 58 & 719 & \textbf{0.4436} & \textbf{0.8013} & 0.1580 \\
+100 & 2 & 36.8\,\% & 137\,652 & 275\,175 & 0.0000 & 0.0006 & 0.0434 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+% pipeline/analysis/v10_mcs_sweep.json
+
+\textbf{The refusal is not a parameter that can be tuned away.} Raising the minimum cluster
+size from 25 to 100 does cut the unassigned share from 79.3\,\% to 36.8\,\%, and that is the
+only thing about it that improves. The number of regions falls to \textbf{two}, the larger
+holding 275\,175 of 435\,630 rows, and agreement with the label partition over the rows it
+places falls to nothing (ARI 0.0000, AMI 0.0006). It has stopped distinguishing anything.
+So the honest report of the discovery mode on this corpus is that it declines four
+syllables in five at the only setting that still separates them, and the alternative is not
+a coarser map but a single lump. A reader tempted to read 79\,\% as a tuning failure should
+read the second row.
+
+\textbf{Where it does commit, it and the labels are describing the same thing.} This is the
+half that changes the interpretation, and it is why the table reports agreement twice.
+Over all rows, adjusted Rand is 0.0001 and adjusted mutual information 0.1580 --- the
+figures of two unrelated partitions, and the ones a single class holding 79.3\,\% of the
+points will produce whatever the structure is. Over the 90\,193 rows the clustering
+actually placed, adjusted mutual information is \textbf{0.8013}. The dense regions are
+therefore not a coarsening of the label knots, because they do not cover the corpus; and
+they are not independent of them either. The refusal is a coverage property, not a
+disagreement about what the corpus contains.
+
+\textbf{And the refusal is not an artefact of recording quality}, which is the first
+alternative explanation to reach for and the one that would make the whole discovery
+surface dismissible. Two independent channels say otherwise. Neighbour agreement --- the
+share of a point's ten drawn neighbours sharing its type, computed from a different array
+and on the \emph{other} map's positions --- is 0.8505 among placed points and 0.3562 among
+refused ones, separating the two classes by a factor of 2.4. Signal-to-noise ratio barely
+moves: a median of 18.67\,dB for placed points against 17.27\,dB for refused, 1.4\,dB apart
+on a distribution spanning 2.14 to 39.34\,dB between its fifth and ninety-fifth
+percentiles. So ``the density estimate declined it'' does not mean ``the audio was bad'',
+and an SNR floor would not clean this map up.
+% pipeline/analysis/v10_unknown_join.json
+
+The consequence adopted is the narrow one. The discovery map is not shipped as the map: its
+projection faithfulness (Pearson 0.3016 against 0.429) and neighbour agreement (0.2945
+against 0.4574) are both materially worse than the label build's, and 14\,323 of 15\,241
+types have no region carrying their name, so they could not be lit, labelled or given a
+trajectory in it. What ships from it is one column --- whether each point fell in any dense
+region at all --- which is what lets the interface mark the four fifths of the corpus that
+no density estimate will group, rather than implying that every drawn point sits in a
+region something has claimed.
+% out/v10/assets-unknown/manifest.json
+
+\textbf{One reproducibility note that cost a working command to find.} HDBSCAN* here is one
+algorithm with two minimum-spanning-tree implementations: scikit-learn's Prim's algorithm,
+and the standalone package's Boruvka tree, which is the only one that finishes at this scale
+(roughly 22 minutes against an extrapolated 8.4 hours). They are widely treated as
+interchangeable and at this scale they are. \emph{At pool scale they are not}: on sixteen
+observations at a minimum cluster size of eight, scikit-learn returns two clusters and no
+noise where the standalone package returns one cluster and eight noise. Preferring the fast
+implementation unconditionally therefore changed what the unlabelled-arrival path
+discovers, silently, and the symptom appeared as a self-test failure rather than as a
+clustering difference. The implementation is now selected by row count. Anyone swapping an
+MST implementation on the strength of ``same algorithm, same labels up to ties'' should
+measure the small-$n$ case.
 
 \subsection{The synthetic member anchor (``W5'')}
 
@@ -2227,9 +2313,11 @@ nothing on top of the data.
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{avex}
-\caption{Cross-domain species retrieval for three training arms at two scales. Both panels
-are debug-scale and absolute levels are comparable only arm against arm inside each panel.
-The pre-registered re-test shrank every effect; the ordering survived.}
+\caption{Cross-domain species retrieval for three training arms at two scales. The left two
+panels are the two scales; both are debug-scale, and absolute levels are comparable only arm
+against arm inside each panel. Right: the two effect sizes at both scales against the $+10$
+point adoption gate, which is the panel that carries the verdict --- the pre-registered
+re-test shrank every effect and no arm reaches the gate, while the ordering survived.}
 \label{fig:avex}
 \end{figure*}
 
@@ -2677,8 +2765,11 @@ hedging.
 \addcontentsline{toc}{section}{Reproducibility}
 
 The pipeline, the browser application and the complete research record are at
-\url{https://github.com/sha5b/Birdy}
-\todo{archived release DOI, once a release is minted on Zenodo}. The harvest stores are not distributed:
+\url{https://github.com/sha5b/Lyrebird}, and the running application is at
+\url{https://lyrebird.variable.gallery}. No archived release DOI exists: the work is a moving
+record rather than a versioned artefact, and minting one would date a repository that is still
+being measured. The commit the numbers here were read from is the state of that repository on
+the date of this preprint. The harvest stores are not distributed:
 they contain no audio, but they were gathered under archive rate limits and are the only
 copies. Every one-off measurement in Sections~\ref{sec:internal} and~\ref{sec:external} is a
 committed script whose pre-registered gate is the docstring at the top of the file, on the
@@ -2700,7 +2791,25 @@ This is a non-commercial research project.
 
 \section*{Acknowledgements}
 
-\todo{acknowledgements, funding statement or explicit statement of none}
+This work owes its existence to people who released their results, their recordings and their
+code for others to build on. The physical syrinx model is not ours: it is taken from the
+published normal-form work and used term for term, and the fits reported here are only
+possible because that literature stated its equations and its parameter ranges plainly enough
+to be reimplemented. The corpus exists because tens of thousands of recordists uploaded field
+audio to xeno-canto and iNaturalist under licences that permit derived measurement, and
+because both archives publish it with attribution intact. The external opinions that closed
+this paper's central negative result four ways come from Perch, BirdNET, AVES, BirdMAE and
+NatureLM-audio, all of which were released with usable weights; a self-reported embedding
+quality number is worth much less than one an outside model can contradict, and that
+contradiction was only available because those models are open. The methods borrowed from
+other fields --- Harmony from genomics, MixStyle and gradient reversal from domain
+adaptation, HDBSCAN* and UMAP and random Fourier features from the clustering and kernel
+literature --- were likewise all reimplementable from open descriptions and open code.
+
+\section*{Funding}
+
+None. This is independent work by an artist, made at the boundary of art and science, with no
+grant, institutional or commercial support of any kind.
 
 % =====================================================================
 \bibliographystyle{plainnat}
@@ -2873,6 +2982,39 @@ checked against the complete document across all 2\,421 species at the applicati
 limit with zero mismatches. The file declares the retention rule and both totals, and states
 in as many words that the kept shared-type count is not the corpus's shared-type count.
 % HANDOFF 2026-08-01
+
+
+\textbf{A data-integrity finding about that same document, because it reached the interface
+before it was caught.} The nearest species pairs are the part of a similarity asset a reader
+trusts most, being the part shown first. In the shipped 14\,488-pair document, \emph{four of
+the five nearest pairs were the same recording under two species labels}. The clearest is a
+pair at a distance of $-0.0$: two iNaturalist observation identifiers resolving to
+byte-identical audio, 965\,770 bytes with the same SHA-256 and the same rights holder, each
+carrying one recording and 146 syllables, every row identical once the identifiers are
+stripped, all eight of eight type centroids bit-identical. Its ``eight shared types'' is one
+repertoire counted twice, and its distance is float overshoot on a unit vector against
+itself rather than a clamp.
+
+It is a class of row and not one row: 17 cross-species duplicate groups over 35 recordings
+and 40 species in the harvest store. The cause is upstream and simple --- the multi-source
+ingest de-duplicates on the source's recording identifier and no content hash exists
+anywhere in the harvester, so the same bytes under two observation identifiers pass straight
+through. The downstream guard applied here refuses a pair when more than half of one
+species' sampled syllables have a bit-identical twin in the other, symmetrically, which
+costs 13 pairs and 27\,\% of the shared-type candidates and removes all four artefacts from
+the head of the list; the new nearest pair is a genuine one at 0.0311. The count and the
+rule are written into the asset, because an exclusion nobody can see reads as a corpus with
+no duplicates in it. The durable fix, a content hash at ingest, is not yet applied and would
+refuse those 35 recordings on the next harvest.
+
+\textbf{Why it is worth a paragraph in a methods paper.} Nothing in the pipeline was wrong:
+the distance was computed correctly, the threshold was derived correctly, and the assertion
+that no species has a within-species nearest-type distance below $10^{-4}$ still holds. The
+failure was that a corpus assembled from overlapping open archives contains the same audio
+twice, and a similarity measure over it will find that first and rank it highest. Any
+comparative claim drawn from archive-scale bioacoustic data has this exposure, and a
+distance of exactly zero between two species is the symptom to look for.
+% pipeline/src/birdy_pipeline/relations.py; HANDOFF 2026-08-05, 2026-08-06
 
 \section{The oscillator and its fitted parameters}
 \label{app:model}

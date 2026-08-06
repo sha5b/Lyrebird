@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img"
+     aria-labelledby="lyrebird-mark-title lyrebird-mark-desc">
+  <title id="lyrebird-mark-title">Lyrebird</title>
+  <desc id="lyrebird-mark-desc">A bifurcating syrinx: one tracheal stem dividing into two
+  unequal bronchi, each ending in a vibrating membrane.</desc>
+
+  <!--
+    The reversed pair of `lyrebird-mark-solid.svg`: ink strokes on a paper disc, for placing on
+    a dark surface or wherever a filled disc would be too heavy.
+
+    **Use the solid one for icons.** At 16 and 32 pixels a filled disc with paper strokes holds
+    its shape, and this outline version loses the disc's edge against a light background — the
+    same finding the previous mark recorded. Everything else about the geometry, and the note
+    about the letter Y, is in the solid file; this is the same paths with the two colours
+    exchanged, and it must be edited in step.
+  -->
+  <circle cx="32" cy="32" r="31" fill="var(--paper, #fafbfc)" stroke="currentColor"
+          stroke-width="1.4"/>
+
+  <g fill="none" stroke="currentColor" stroke-width="4.2" stroke-linecap="round">
+    <path d="M31 50 V37"/>
+    <path d="M31 37 C31 27 26 24 21 19"/>
+    <path d="M31 37 C33 30 38 29 44 26"/>
+  </g>
+  <circle cx="20" cy="17" r="4.2" fill="currentColor"/>
+  <circle cx="46" cy="25" r="3.2" fill="currentColor"/>
+</svg>

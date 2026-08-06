@@ -1,0 +1,44 @@
+# How the built site is served, stated rather than generated.
+#
+# Railpack serves a detected static build through Caddy and will generate a Caddyfile if the
+# project has none. This file exists so the serving rules are reviewable in the repository
+# instead of being a property of the builder version — and because two of the rules below are
+# specific to this app and no generated default would guess them.
+#
+# Railway injects PORT; the fallback keeps `caddy run` usable locally for a smoke test.
+{
+	admin off
+	auto_https off
+}
+
+:{$PORT:8080} {
+	root * {$RAILPACK_STATIC_FILE_ROOT:build}
+	encode zstd gzip
+
+	# **The hashed bundles are immutable and the corpus is not.**
+	#
+	# Vite fingerprints everything under `_app/immutable`, so those may be cached forever — the
+	# filename changes when the contents do. The corpus under `/birdy` is the opposite case: the
+	# filenames are stable across rebuilds (`points.json` is always `points.json`) and the
+	# contents change whenever the pipeline runs, so caching them by name would serve last
+	# week's galaxy against this week's manifest. The app already appends the build stamp as a
+	# query string for exactly this reason (`assetUrl` in src/lib/data/assets.ts), which is what
+	# makes a short max-age safe here rather than merely optimistic.
+	@immutable path /_app/immutable/*
+	header @immutable Cache-Control "public, max-age=31536000, immutable"
+
+	@corpus path /birdy/*
+	header @corpus Cache-Control "public, max-age=300, must-revalidate"
+
+	# `adapter-static` is configured with `fallback: '404.html'` (see vite.config.ts), so an
+	# unknown path is a real 404 with the app's own error page rather than a silent rewrite to
+	# the index. Deliberately NOT `try_files {path} /index.html`: this app has one route, so a
+	# deep link that does not resolve is a mistake worth reporting, and an SPA-style fallback
+	# would answer every typo with a working-looking galaxy at the wrong URL.
+	handle_errors {
+		rewrite * /404.html
+		file_server
+	}
+
+	file_server
+}

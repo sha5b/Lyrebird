@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 64" role="img"
+     aria-label="Lyrebird">
+  <!--
+    The horizontal lockup: the solid mark, then the wordmark.
+
+    **The wordmark is live text and must be converted to outlines before this leaves the
+    repository.** It is set in a serif stack; on a machine with none of those fonts it
+    reflows, and a logo that reflows is not a logo. There is no font-embedding step here, so
+    it is kept editable on purpose — `README.md` has the conversion command.
+
+    The mark is inlined rather than referenced, so changing `lyrebird-mark-solid.svg` means
+    re-pasting the group below. The trade is that this file has no external dependency and
+    renders identically wherever it is dropped.
+
+    Baseline at y = 41 rather than the mark's centre at 32: capitals have no descenders, so
+    centring them on the mark's axis makes them sit visibly high.
+  -->
+  <circle cx="32" cy="32" r="31" fill="currentColor"/>
+
+  <g fill="none" stroke="var(--paper, #fafbfc)" stroke-width="4.1" stroke-linecap="round">
+    <path d="M31 49.5 V36.8"/>
+    <path d="M31 36.8 C31 27 26.2 24.2 21.3 19.4"/>
+    <path d="M31 36.8 C33 30 37.8 29.1 43.6 26.2"/>
+  </g>
+  <circle cx="20.3" cy="17.5" r="4.1" fill="var(--paper, #fafbfc)"/>
+  <circle cx="45.5" cy="25.2" r="3.1" fill="var(--paper, #fafbfc)"/>
+
+  <text x="76" y="41" fill="currentColor"
+        font-family="Iowan Old Style, Palatino Linotype, Palatino, Georgia, serif"
+        font-size="27" letter-spacing="4.2">LYREBIRD</text>
+</svg>

@@ -103,24 +103,28 @@ export function vertexShader(): string {
 		 */
 		attribute float aDense;
 		/**
-		 * How many of this point's ten drawn neighbours share its type, 0..1.
+		 * The two doubts, as one attribute: **x = neighbour agreement, y = recording SNR.**
 		 *
-		 * points.knnAgreement — shipped for every point since the channel existed and
-		 * read by nothing until now, so ~2 MB of the asset was downloaded every load and
-		 * discarded. It is the one number that scores *this* mark's own position rather
-		 * than the corpus's: faithfulness correlates random pairs and is dominated by far
-		 * ones, so a point can sit in a perfectly faithful map among strangers.
+		 * **A vec2 rather than two floats, and rather than one float taking turns.** Attribute
+		 * slots are vec4-sized, so a vec2 costs exactly what the float did — one slot — and the
+		 * budget note on aMisc below is untouched. This channel was a single float that got
+		 * rewritten in place when the reader switched sources, which meant the two doubts could
+		 * never be on screen together; the owner asked for the overlay and it turned out to cost
+		 * nothing (2026-08-06).
 		 *
-		 * The mean on this build is **0.4574** — between four and five of a point's ten
-		 * nearest marks on screen share its type — and 109 293 points, 24.6 % of the corpus,
-		 * sit among ten strangers. Off by default because it recolours a quarter of the
-		 * cloud, and that quarter is the finding: those are the marks whose drawn position
-		 * is standing on nothing.
+		 * **x — points.knnAgreement.** How many of this point's ten drawn neighbours share its
+		 * type. The one number that scores *this* mark's own position rather than the corpus's:
+		 * faithfulness correlates random pairs and is dominated by far ones, so a point can sit
+		 * in a perfectly faithful map among strangers. Mean on this build **0.4574**, and
+		 * 109 293 points (24.6 %) sit among ten strangers.
 		 *
-		 * 1 where the build shipped no measurement, so a missing number draws as the
-		 * cloud always drew rather than as a mark to distrust. Same rule as aDense.
+		 * **y — points.snr**, on the corpus's own p5..p95 ramp (see SNR_CLAMP in doubt.ts; the
+		 * raw array reaches 166.95 dB on syllables whose noise floor came out near zero).
+		 *
+		 * 1 on either channel where the build shipped no measurement, so a missing number draws
+		 * as the cloud always drew rather than as a mark to distrust. Same rule as aDense.
 		 */
-		attribute float aTrust;
+		attribute vec2 aTrust;
 		/** 1 while a scheduled orphan note — a type with points but no cluster — sounds. */
 		attribute float aOrphan;
 		/**
@@ -294,8 +298,8 @@ export function vertexShader(): string {
 		varying float vUnassigned;
 		/** 1 where a density clustering refused this sound — either map's verdict. */
 		varying float vRefused;
-		/** Share of this point's ten drawn neighbours that share its type (see aTrust). */
-		varying float vTrust;
+		/** The two doubts, carried through unchanged: x agreement, y SNR (see aTrust). */
+		varying vec2 vTrust;
 		/** 0..1 while a newly added point is arriving. */
 		varying float vArrive;
 		/** 0..1 across the level-of-detail frontier's fade band (see aRank/uLod). */
@@ -554,12 +558,21 @@ export function vertexShader(): string {
 			// not structure, and at the same weight a third of the corpus in no cluster
 			// reads as a cloud that has one.
 			//
-			// uUnheard inverts exactly that judgement, and the two ends are one mix so
-			// there is only one place the size of a refused mark is decided. At 1 the placed
-			// sounds fall to 0.55 and the refused ones rise to 1.6 — the figure/ground
-			// discipline of docs/25 §25.2, applied to the one channel that can answer
-			// "none of these".
-			float refusedSize = mix(1.0 - 0.35 * vRefused, mix(0.55, 1.6, vRefused), uUnheard);
+			// **uUnheard promotes the CONFIRMED set, not the refused one, and the flip is the
+			// fix.** It used to raise the refused marks to 1.6 and drop the placed ones to
+			// 0.55 -- figure/ground applied to the channel that can answer "none of these".
+			// The trouble is arithmetic rather than taste: 79.5 % of this corpus is refused, so
+			// promoting the refused set promoted four fifths of the cloud and the reader was
+			// left looking at almost everything, in one colour, with no way to tell what had
+			// been singled out. Owner, on seeing it: *"if i activate the unclaimed ALL color ..
+			// how should i know what is unclaimed now?!"*
+			//
+			// So the minority carries the ink. The 20.5 % that a second, independent clustering
+			// actually placed rise to 1.6; the refused four fifths fall to 0.55 and become
+			// ground. What is unclaimed is then readable by complement -- everything that stayed
+			// faint -- and the marks that changed are few enough to point at.
+			float placed = 1.0 - vRefused;
+			float refusedSize = mix(1.0 - 0.35 * vRefused, mix(0.55, 1.6, placed), uUnheard);
 			float size = uPointSize * (1.0 + grow) * (1.0 + 0.7 * vChosen)
 				* refusedSize * mix(0.35, 1.0, vArrive) * mix(0.35, 1.0, vLod);
 			// uHighlight idles at -1 in silence, which is also the unassigned marker: without
@@ -634,19 +647,35 @@ export const fragmentShader = /* glsl */ `
 	/** 0..1 figure/ground swap for the density verdict; see the vertex stage. */
 	uniform float uUnheard;
 	/**
-	 * 0..1: how far the neighbour-agreement channel is applied (see aTrust).
+	 * How far each doubt ramp has taken over the identity colour: **x agreement, y SNR.**
 	 *
-	 * **It spends saturation and nothing else, and that is the whole design.** Size and
-	 * ink weight are taken — activation owns them, and the figure/ground swap owns them
-	 * for the refused marks — but more than that, drawing a low-agreement point smaller or
-	 * fainter would say "this sound matters less", which is a claim about the sound. What
-	 * is actually in doubt is the *position*: a mark among strangers may be a real rarity
-	 * or a projection artefact, and the map cannot tell you which. Draining the hue toward
-	 * the mark's own grey says "the colour here is standing on less" and leaves the mark
-	 * exactly as present as it was. Nothing moves, so it can be compared frame to frame
-	 * with the channel on and off.
+	 * **It spends hue, not saturation, and it is the third colour language** — one of
+	 * provenance / bird / doubt, because hue answers one question at a time. The two DOUBTS
+	 * are the exception to that rule and they are allowed to overlay each other, because
+	 * together they are a bivariate scheme with a defined corner rather than two languages
+	 * competing: see the composition in palette.ts.
+	 *
+	 * It spent saturation until 2026-08-06, draining each mark toward its own luminance by
+	 * 1 - aTrust. That was a defensible encoding and an unreadable picture: mean
+	 * agreement on this corpus is 0.4574, so the *average* mark arrived already half
+	 * drained and the whole visible range of the channel was the drain's second half
+	 * applied to a cloud that is grey at rest anyway. Owner, on seeing it: *"nearly not
+	 * visible … it would be better if that would be a colour option like birds and
+	 * provenance."*
+	 *
+	 * What survives from the old design is the part that was right: **size, weight and
+	 * position do not move.** A doubtful mark is exactly as present as a confident one —
+	 * drawing it smaller would say "this sound matters less", which is a claim about the
+	 * sound rather than about the map. Only the hue changes, so the same frame can still be
+	 * compared with the channel on and off.
 	 */
-	uniform float uTrust;
+	uniform vec2 uTrust;
+	/** The ramps' ends, from palette.ts so the tags and the points share them. */
+	uniform vec3 uDoubtAgree;
+	uniform vec3 uDoubtSnr;
+	uniform vec3 uDoubtQuiet;
+	/** What a sound no dense region claims is drawn in; see UNCLAIMED_TINT in palette.ts. */
+	uniform vec3 uUnclaimed;
 	/** The same clock the vertex stage pulses by; the orphan pulse breathes on it. */
 	uniform float uTime;
 	/** Live input level, 0..1 — drives the pulse and the growth in the vertex stage. */
@@ -692,7 +721,7 @@ export const fragmentShader = /* glsl */ `
 	varying float vUnassigned;
 	varying float vRefused;
 	/** Share of this point's ten drawn neighbours that share its type (see aTrust). */
-	varying float vTrust;
+	varying vec2 vTrust;
 	varying float vArrive;
 	/** 0..1 across the level-of-detail frontier's fade band; 1 in the active pass. */
 	varying float vLod;
@@ -858,12 +887,65 @@ export const fragmentShader = /* glsl */ `
 		float hueTurns = (vHue - ${HUE_FLOOR}) / (1.0 - ${HUE_FLOOR});
 		vec3 birdCol = speciesHueColour(hueTurns);
 		float bird = uBird * step(0.0001, vHue);
-		vec3 ink = mix(mix(classCol, vec3(0.13, 0.16, 0.21), uPlain), birdCol, bird);
-		vec3 rest = mix(
-			uSurface,
-			mix(mix(classCol, vec3(0.45, 0.47, 0.50), uPlain), birdCol, bird),
-			0.5
+		// **The doubt ramps are the third identity colour, laid over whichever of the other
+		// two is active.** doubtColourScaled in palette.ts runs the identical arithmetic on
+		// the identical constants, so a tag and the points under it cannot disagree about
+		// what a value looks like.
+		//
+		// Loud at 0 (every reason to doubt) and quiet at 1 (none) on both channels, which is
+		// the inverse of the saturation drain this replaced: the drain made the doubtful marks
+		// the faintest things on screen, and finding them is the only reason to turn either
+		// channel on.
+		//
+		// Subtractive and symmetric, so neither channel is privileged by being applied second:
+		// one on gives that channel's plain ramp, both on gives a bivariate scheme whose far
+		// corner -- bad position AND bad recording -- is the darkest thing in the frame.
+		// uTrust eases each channel 0 -> 1 independently, and at (0,0) every expression below
+		// is exactly the colour that was there before the mode existed.
+		// Named doubts, not d: plain d is the sprite mask's distance from the point's centre,
+		// declared earlier in this same scope. Calling it d compiled fine in TypeScript and
+		// failed to link on the GPU with "'d' : redefinition" -- which draws a fallback material
+		// rather than throwing, so check and build both passed and only probe:trust caught it.
+		vec2 doubts = (vec2(1.0) - clamp(vTrust, 0.0, 1.0)) * clamp(uTrust, 0.0, 1.0);
+		vec3 doubtCol = clamp(
+			uDoubtQuiet
+				- (uDoubtQuiet - uDoubtAgree) * doubts.x
+				- (uDoubtQuiet - uDoubtSnr) * doubts.y,
+			0.0,
+			1.0
 		);
+		// How much of the identity colour the ramps have taken over at all: the larger of the
+		// two switches, so turning the second channel on does not dilute the first.
+		float doubtOn = max(uTrust.x, uTrust.y);
+		vec3 inkId = mix(mix(classCol, vec3(0.13, 0.16, 0.21), uPlain), birdCol, bird);
+		vec3 restId = mix(mix(classCol, vec3(0.45, 0.47, 0.50), uPlain), birdCol, bird);
+		vec3 ink = mix(inkId, doubtCol, doubtOn);
+		// **The resting wash steps back while the doubt mode is on, from 0.5 to 0.9.**
+		//
+		// The 0.5 above it is calibrated for the two CATEGORICAL languages, where every mark
+		// has to carry equal weight whatever class it is, and the wash is what holds provenance,
+		// bird and ink at one lightness. A sequential ramp does not want that: it recedes at its
+		// own quiet end by construction, so washing it as well halves the only thing it has.
+		// Measured, the first version of this mode moved mean chroma over the frame by 7.5 %
+		// with the wash left at 0.5 -- indistinguishable from the drain it replaced, which is
+		// exactly the complaint it was built to answer.
+		vec3 restMix = mix(restId, doubtCol, doubtOn);
+		vec3 rest = mix(uSurface, restMix, 0.5 + 0.4 * doubtOn);
+		// **The confirmed set takes its own hue, over whichever language is running.**
+		//
+		// Gated on the placed share, so it paints a subset -- the 20.5 % a density clustering
+		// agreed on -- and every refused point keeps the colour it had. That is why this one is
+		// allowed to coexist with provenance, bird and doubt while those three exclude each
+		// other: two hues on two different sets of marks is a legend, two hues on one mark is
+		// a lie.
+		//
+		// It colours the same set the size and ink swap promotes, which is the whole point of
+		// moving it here from vRefused: one set changes weight AND hue together, so a reader
+		// looking at a teal mark and a reader looking at a heavy mark are looking at the same
+		// finding.
+		float marked = clamp(1.0 - vRefused, 0.0, 1.0) * uUnheard;
+		ink = mix(ink, uUnclaimed, marked);
+		rest = mix(rest, mix(uSurface, uUnclaimed, 0.72), marked);
 		// **The accent is this knot's bird, not the frame's loudest bird.**
 		//
 		// uAccent is one eased colour for the whole stage, chosen from whichever knot
@@ -926,18 +1008,10 @@ export const fragmentShader = /* glsl */ `
 		// brightness walk, no halo, a fifth of the ripple's tone swing at most.
 		colour = mix(colour, vec3(0.45, 0.48, 0.53), clamp(vUnmatchedRing, 0.0, 1.0) * 0.28);
 
-		// **Neighbour agreement, spent as saturation.** A mark whose ten drawn neighbours
-		// mostly do not share its type keeps its size, its weight and its position and
-		// loses its colour toward its own luminance — the one channel that can say "read
-		// this position with less confidence" without saying "this sound is less
-		// important". Held at 0 until asked for, and at 0 the expression below is exactly
-		// the colour that was there before the channel existed.
-		//
-		// Luminance-matched grey rather than uSurface or ink: mixing toward either would
-		// also move the mark lighter or darker, which is the depth cue, and two channels
-		// competing for tone is how the SNR row in docs/25 ended up unreadable.
-		float agreed = clamp(vTrust, 0.0, 1.0);
-		colour = mix(colour, vec3(dot(colour, vec3(0.2126, 0.7152, 0.0722))), (1.0 - agreed) * uTrust);
+		// The saturation drain that used to sit here is gone; vTrust is now spent on hue,
+		// up where ink and rest are built. It is deliberately NOT applied twice: a mark
+		// that is already wearing its doubt as a colour must not also be drained, or the
+		// doubtful end of the ramp loses the ink the ramp just gave it.
 
 		// Aerial perspective: far points wash toward the paper and thin out, near ones keep
 		// their weight. This is what makes a rotating scatter read as a volume rather than
@@ -975,7 +1049,9 @@ export const fragmentShader = /* glsl */ `
 		// The ink half of the figure/ground swap, mirroring refusedSize in the vertex
 		// stage: at rest a refused mark keeps 55 % of the ink, and with uUnheard up the
 		// placed ones drop to 30 % while the refused ones go to full weight.
-		float refusedInk = mix(1.0 - 0.45 * vRefused, mix(0.30, 1.0, vRefused), uUnheard);
+		// Same flip as the size, and for the same reason: the confirmed minority takes the ink
+		// and the refused majority becomes ground. See refusedSize in the vertex stage.
+		float refusedInk = mix(1.0 - 0.45 * vRefused, mix(0.30, 1.0, 1.0 - vRefused), uUnheard);
 		float alpha =
 			uOpacity * mask * (0.62 + vAct * 0.38) * vFocus * (1.0 + 0.35 * vChosen) *
 			(1.0 - fog * 0.58) * refusedInk * vArrive * vLod;

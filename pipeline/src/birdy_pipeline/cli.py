@@ -1153,6 +1153,118 @@ def cmd_subset(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_synthesise(args: argparse.Namespace) -> int:
+    """Place the types `learn` has fitted since the last build, without rebuilding.
+
+    A fitted type has no position until the synthetic source renders it, and that source
+    runs inside `build` over the whole inventory. This renders only the types the galaxy
+    has no knot for and grows those in through the frozen projection basis, which is what
+    that basis is for.
+
+    **The placement is cheaper and weaker than a build's, and both halves matter.** Cheaper
+    because a handful of types is rendered instead of the entire inventory; weaker because
+    the projection is not refitted, so the type arrives in a frame fitted before it existed.
+    `drift` still measures that and a rising figure still means rebuild. Points and knots
+    placed this way are marked `route: "fit"` so nobody later averages them together with
+    build-placed ones and reports the mean of two different measurements.
+    """
+    from . import grow
+
+    grow.self_test(verbose=False)
+
+    out = Path(args.out)
+    inventory_path = Path(args.inventory)
+    if not (out / "centroids.json").exists():
+        log(f"{out} holds no built galaxy; there is nothing to add types to")
+        return 1
+    if not inventory_path.exists():
+        log(f"no inventory at {inventory_path}")
+        return 1
+
+    inventory = load_inventory(inventory_path)
+    centroids = json.loads((out / "centroids.json").read_text(encoding="utf-8"))
+    manifest = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
+    pending = grow.unbuilt_types(inventory, centroids)
+    if not pending:
+        log(f"every fitted type in {inventory_path.name} already has a knot; nothing to do")
+        return 0
+    log(f"{len(pending)} fitted type(s) have no knot: "
+        + ", ".join(f"{sp}/{sy}" for sp, sy in pending[:6])
+        + (" ..." if len(pending) > 6 else ""))
+
+    # **A large fraction unbuilt is a mismatched inventory, not a productive pass.** This
+    # exists for the handful of types that appeared since the last build; when most of the
+    # inventory reads as missing, the likelier reading is that the ids do not correspond to
+    # the ones the galaxy was built from — pairing the shipped v10 build with
+    # `learned-inventory-final.json` reports 8 474 of 12 724 types unbuilt, while its own
+    # inventory reports none. Rendering those would graft thousands of knots that duplicate
+    # structure the galaxy already holds under other names, and a rebuild is both cheaper
+    # and correct at that size.
+    total_types = sum(len(sp.get("syllables", [])) for sp in inventory.get("species", []))
+    share = len(pending) / max(1, total_types)
+    if share > 0.2 and not args.force:
+        log(f"{len(pending)} of {total_types} types ({share:.0%}) have no knot. That is the "
+            "signature of an inventory whose ids do not match the one this galaxy was "
+            f"built from, not of incremental fitting — the galaxy's own is "
+            f"{out / 'inventory.json'}. Rebuild to take a repertoire this different in, or "
+            "pass --force to render them anyway.")
+        return 2
+    if args.dry_run:
+        if getattr(args, "json", None):
+            Path(args.json).write_text(
+                json.dumps({"types": [f"{sp}/{sy}" for sp, sy in pending],
+                            "rendered": 0, "added": 0, "dryRun": True}, indent=1),
+                encoding="utf-8",
+            )
+        return 0
+
+    space = manifest.get("space", "descriptor")
+    embedder = None
+    if space == "embed":
+        trained = load_critic(
+            getattr(args, "critic", None)
+            or (str(DEFAULT_CRITIC) if DEFAULT_CRITIC.exists() else None)
+        )
+        if trained is None:
+            log(f"{out} was built in the critic's embedding space, so a rendered type can "
+                "only be placed through the critic that defines it. Pass --critic (or "
+                "train one) — there is no 28-d fallback that lands in the right place.")
+            return 2
+
+        def embedder(clip: Any) -> np.ndarray | None:
+            # The same `mel_patch` the field side is measured with. Measuring the two
+            # sides differently is the one bug that would invalidate the space.
+            return trained.embed(features.mel_patch(peak_normalise(clip.audio)))[0]
+
+    calibration = ensure_calibration(out)
+    result = grow.render_unbuilt(
+        out,
+        inventory_path,
+        calibration=calibration,
+        variants=args.variants,
+        seed=args.seed,
+        embedder=embedder,
+        limit=args.limit,
+    )
+    log(f"rendered {result['rendered']} clips for {len(result['types'])} type(s); "
+        f"added {result['added']} points, generation {result.get('generation', '?')}")
+    if result.get("foundedFromTypes"):
+        log(f"{len(result['foundedFromTypes'])} knot(s) founded from fitted types: "
+            + ", ".join(result["foundedFromTypes"][:6])
+            + (" ..." if len(result["foundedFromTypes"]) > 6 else ""))
+    if result.get("deferred"):
+        log(f"{len(result['deferred'])} type(s) deferred to the next pass by --limit: "
+            + ", ".join(result["deferred"][:6])
+            + (" ..." if len(result["deferred"]) > 6 else ""))
+    drift_report = result.get("drift") or {}
+    if float(drift_report.get("unmatched", 0.0)) > 0.35:
+        log("more than a third of the new renders matched no existing knot — the frame no "
+            "longer describes its own contents; rebuild rather than growing again")
+    if getattr(args, "json", None):
+        Path(args.json).write_text(json.dumps(result, indent=1), encoding="utf-8")
+    return 0
+
+
 def cmd_grow(args: argparse.Namespace) -> int:
     """Add the harvest store's newest descriptors to the built galaxy, in place.
 
@@ -1169,6 +1281,9 @@ def cmd_grow(args: argparse.Namespace) -> int:
     from datetime import datetime, timezone
 
     from . import grow
+
+    grow.self_test(verbose=False)
+    log("grow self-test ok")
 
     out = Path(args.out)
     store_path = Path(args.harvest_store or DEFAULT_HARVEST_STORE)
@@ -4337,6 +4452,40 @@ def build_parser() -> argparse.ArgumentParser:
              "galaxy's current count",
     )
     g.set_defaults(func=cmd_grow, only_new=True)
+
+    sy = sub.add_parser(
+        "synthesise",
+        help="render the fitted types the galaxy has no knot for and grow them in, "
+             "without a full rebuild",
+    )
+    sy.add_argument("--out", default=str(DEFAULT_OUT), help="built asset directory")
+    sy.add_argument(
+        "--inventory",
+        default=str(DEFAULT_LEARNED_INVENTORY),
+        help="the fitted inventory whose new types are rendered. Defaults to the learned "
+             "one, because a type that appeared since the last build is what `learn` fits",
+    )
+    sy.add_argument("--variants", type=int, default=24,
+                    help="renders per new type; the same count a build uses")
+    sy.add_argument("--seed", type=int, default=0)
+    sy.add_argument(
+        "--limit", type=int, default=None,
+        help="render at most this many new types this pass. What is left over is named "
+             "in the output rather than silently dropped",
+    )
+    sy.add_argument(
+        "--critic", default=None,
+        help="critic that embeds the renders when the galaxy was built in the embedding "
+             "space (default: out/critic.pt when it exists)",
+    )
+    sy.add_argument("--json", default=None, metavar="PATH",
+                    help="also write the result to this JSON file")
+    sy.add_argument("--dry-run", action="store_true",
+                    help="name the types that would be rendered and write nothing")
+    sy.add_argument("--force", action="store_true",
+                    help="render even when most of the inventory reads as unbuilt, which "
+                         "usually means the inventory does not match this galaxy")
+    sy.set_defaults(func=cmd_synthesise)
 
     s = sub.add_parser(
         "serve", help="local control surface for the app's Learn tab (loopback only)"

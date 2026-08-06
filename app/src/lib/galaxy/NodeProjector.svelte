@@ -21,9 +21,10 @@
 	import { T, useTask, useThrelte } from '@threlte/core';
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
-	import { buildSpeciesIndex, clusterProvenance, knotHeat } from '$lib/data/assets';
+	import { buildSpeciesIndex, clusterProvenance, knotDoubt, knotHeat } from '$lib/data/assets';
 	import type { BirdyAssets } from '$lib/data/types';
-	import { provenanceColourScaled, speciesColourScaled } from './palette';
+	import { doubtColourScaled, provenanceColourScaled, speciesColourScaled } from './palette';
+	import type { DoubtRange } from './doubt';
 	import { LABEL_SLOTS, MAX_LABELS } from './labels';
 	import type { LayoutView } from './layouts';
 	import type { VisualSignal } from './shaders';
@@ -45,6 +46,16 @@
 		view: LayoutView;
 		/** Provenance language for the tag accent, matching the points and threads. */
 		prov?: boolean;
+	/**
+	 * Colour the tags by neighbour agreement (rose) and/or recording SNR (amber), matching the
+	 * points. Either overrides `prov` and the species hue; both together compose into the
+	 * bivariate scheme in `palette.ts`, whose worst corner is bad on both counts.
+	 */
+	doubtAgree?: boolean;
+	doubtSnr?: boolean;
+	/** The SNR ramp's ends, so a tag clamps before averaging exactly as the buffer does. */
+	doubtRange?: DoubtRange;
+
 		/**
 		 * Knots the selection's relations end at (RelationThreads' set), allowed a tag
 		 * while the selection stands even though the focus dimms their species. Low
@@ -65,6 +76,9 @@
 		pinned = -1,
 		view,
 		prov = false,
+		doubtAgree = false,
+		doubtSnr = false,
+		doubtRange = undefined,
 		related = [],
 		stats
 	}: Props = $props();
@@ -109,10 +123,27 @@
 	 */
 	let heat: Float32Array | null = null;
 	let knotClass: Float32Array | null = null;
+	/**
+	 * Each knot's mean doubt per channel, built lazily and kept: two passes over the corpus
+	 * at most, and only for a channel the reader actually switched on.
+	 */
+	let knotAgree: Float32Array | null = null;
+	let knotSnr: Float32Array | null = null;
+	const doubtOf = (i: number) => {
+		if (doubtAgree) knotAgree ??= knotDoubt(assets, assets.points.knnAgreement);
+		if (doubtSnr) knotSnr ??= knotDoubt(assets, assets.points.snr, doubtRange);
+		return {
+			agree: doubtAgree ? (knotAgree?.[i] ?? 1) : undefined,
+			snr: doubtSnr ? (knotSnr?.[i] ?? 1) : undefined
+		};
+	};
 	let colourKey = '';
 	const colourCache = new Map<number, string>();
 	function knotColour(i: number): string {
-		const key = prov ? 'prov' : 'hue';
+		// The key carries both doubt switches as well, because there are five languages rather
+		// than two and two of them compose: a two-value key would have served an
+		// agreement-only tag out of the cache after SNR was added on top of it.
+		const key = doubtAgree || doubtSnr ? `doubt:${doubtAgree}:${doubtSnr}` : prov ? 'prov' : 'hue';
 		if (key !== colourKey) {
 			colourKey = key;
 			colourCache.clear();
@@ -122,7 +153,9 @@
 		heat ??= knotHeat(assets);
 		const light = 0.9 + (heat[i] ?? 0.5) * 0.2;
 		let out: string;
-		if (prov) {
+		if (doubtAgree || doubtSnr) {
+			out = doubtColourScaled(doubtOf(i), light);
+		} else if (prov) {
 			knotClass ??= clusterProvenance(assets);
 			out = provenanceColourScaled(knotClass[i] ?? 4, light);
 		} else {
@@ -179,6 +212,16 @@
 		hot: boolean;
 		open: boolean;
 	}
+	/**
+	 * The least a pointed-at tag may fade to with distance.
+	 *
+	 * 0.8 rather than 1: it still reads as further away than a near tag, which is the point
+	 * of the fade, but at the resting 0.35 base it lands at 0.28 — above the 0.45-alpha
+	 * hairline that is pointing at it once that hairline is itself washed by the same depth,
+	 * so the mark is at least as present as the line. Not higher, because a far tag at full
+	 * strength puts a name in front of the cloud it belongs behind.
+	 */
+	const POINTED_NEAR_FLOOR = 0.8;
 	const chosen: Chosen[] = [];
 	const world = new THREE.Vector3();
 	/** Projected position per candidate, index-aligned with `candidates`. */
@@ -374,7 +417,31 @@
 			// reading. `p.z` is normalised device depth, -1 at the near plane to 1 at the
 			// far one, so this is the same curve the aerial perspective in the shader uses.
 			const depth = Math.min(1, Math.max(0, (p.z + 1) * 0.5));
-			chosen.push({ ci: i, x, y, near: 1 - 0.65 * depth * depth, z: p.z, hot, open });
+			// **A tag something is pointing at does not get to fade into the paper.**
+			//
+			// Owner, 2026-08-06: *"sometimes these centroids when at the end of a line are
+			// nearly not visible."* They were, and the arithmetic says so exactly: a knot at
+			// the far plane takes `near = 0.35`, and a knot nobody is singing takes
+			// `linger = 0`, so the tag was written at `0.35 × 0.35 = 0.12` — while the
+			// relation thread ending on it is drawn at 0.45. The line was four times the ink
+			// of the thing it was pointing at, which reads as a line going nowhere.
+			//
+			// The depth fade itself is right and stays: it is the same cue the cloud has. What
+			// was wrong is applying it at full strength to the one class of tag that is on
+			// screen *because* the picture is pointing at it — a relation partner, the pinned
+			// knot, or a knot that is answering. Those get a floor; every other tag fades
+			// exactly as before, so the depth cue over the corpus is unchanged.
+			const pointedAt = hot || open || i === pinned || relatedSet.has(i);
+			const fade = 1 - 0.65 * depth * depth;
+			chosen.push({
+				ci: i,
+				x,
+				y,
+				near: pointedAt ? Math.max(POINTED_NEAR_FLOOR, fade) : fade,
+				z: p.z,
+				hot,
+				open
+			});
 			// The pool is two above the budget, so this can only bite if the budget itself
 			// is raised past it; stopping is better than evicting a tag being read.
 			if (chosen.length >= LABEL_SLOTS) break;
@@ -418,7 +485,12 @@
 			if (!node) continue;
 			const i = ch.ci;
 			node.style.transform = `translate3d(${ch.x.toFixed(1)}px, ${ch.y.toFixed(1)}px, 0)`;
-			node.style.opacity = String(Math.min(1, (0.35 + linger[i] * 3) * ch.near));
+			// 0.44 rather than 0.35 at rest. The base is what a tag is worth when its knot is
+			// silent, and at 0.35 a silent tag on the far side sat under the ink of its own
+			// thread even with the floor above; the two together are what make the far end of
+			// a relation readable. Response still triples it, so nothing about "a tag brightens
+			// when its knot answers" changes — the floor moved, not the ramp.
+			node.style.opacity = String(Math.min(1, (0.44 + linger[i] * 3) * ch.near));
 			if (wasVisible[s] !== 1) {
 				node.style.visibility = 'visible';
 				wasVisible[s] = 1;

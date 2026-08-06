@@ -1,3 +1,343 @@
+# Lyrebird — READ THIS FIRST (2026-08-06, later): synthesis at fit time is possible and the machinery is already written; the whitepaper's open list was two days stale; the mark is redrawn flat
+
+Continues the entry below, which is from earlier the same day and still current. Nothing here
+contradicts it.
+
+```
+DESIGN, not built  synthesis at FIT time instead of build time. Possible, and three of the
+                   four parts exist: the frozen projection basis, grow's knot founding, and
+                   server.py's _unbuilt_types(). See section 1 — read it before starting
+QUORUM DECIDED     found by route: a fitted type founds its knot on arrival (it cleared
+                   OBS_PER_TYPE=12 upstream), an ingest-flagged syllable keeps the quorum
+                   of 8. Section 1a, which also corrects 1's framing: a pooled point
+                   already renders at clusterId -1, so both options were on screen
+BUILT              `birdy-pipeline synthesise`. Section 1b. Building it found grow could
+                   not READ a galaxy built since 2026-08-01 (sidecar move, wrong error
+                   message) and that founding a knot CORRUPTED the sidecar. Both fixed
+T3 ARMED           w6_t3 fires automatically when critic groupings exits — out/t3-chain.log
+GROUPINGS SLOWER   grouping 2 of 11 at 1h39m, ~15 % by cost. n=435 630 and the kNN is
+                   brute-force O(n^2); six of the eleven are full-corpus. Hours, not
+                   minutes. Sampler: pipeline/out/groupings-progress.log
+whitepaper         its README's "what is still missing" list was resolved 08-04..08-06 and
+                   the README did not keep up. Bibliography exists, all six FIGURE WANTED
+                   answered, spectrograms present, two-start numbers filled
+zero \todo left    DOI resolved as an honest absence; acknowledgements and Funding: none
+                   written. 44 pp, 0 errors. PDF was OLDER than its own main.tex; shipped
+NEW in the paper   a production-scale measurement of the discovery mode (the mcs sweep and
+                   AMI 0.8013), and the duplicate-recording finding
+two caption bugs   tonal-pin and avex are subplots(1,3) and their captions described two
+                   panels. avex's said "Both panels"
+Perch T1 RE-RUN    critic 0.0885 vs Perch 0.0789 recordist lift (-10.8 %), failing the -30 %
+                   gate as the published -16.5 % did. Produced the MISSING artefact
+brand              mark redrawn FLAT: four strokes and a circle. Four failure modes measured
+                   and recorded, so nobody re-adds one. Barb generator deleted
+STILL RUNNING      critic groupings on the production store, 52 min at last check. Finding #6
+app has 4 errors   NOT mine — another agent's in-flight UNCLAIMED_TINT work. See section 7
+```
+
+## 1. Synthesis at fit time: possible, and most of it is already written
+
+Owner's question: *"can we make it on fit time?"* — today a fitted syllable type has no
+position in the galaxy until the next full build, because `corpus.py`'s synthetic source is
+what renders the inventory into points, and that runs inside `build`.
+
+**It is possible, and the reason is that the projection was designed for it.** `grow.py` keeps
+a frozen `projection-basis.json` — landmark coordinates, their eigenvalues, and the corpus-to-
+landmark centring term — so a new point is placed from its distances to a fixed landmark set
+rather than by refitting the projection. Out-of-sample placement is the whole purpose of that
+file.
+
+**Three of the four parts exist:**
+
+```
+frozen projection      grow.ProjectionBasis + assign_clusters: place a point, find its
+                       nearest existing centroid
+founding a knot        grow already does it for novel FIELD syllables, with a quorum
+                       (MIN_NOVEL_CLUSTER) and a cohesion floor, appending to
+                       centroids.json as "unheard syllable" — so the append-a-centroid
+                       path, including the binary sidecar, is written
+which types are new    server.py `_unbuilt_types()` already returns the fitted types the
+                       built galaxy has no cluster for. It is what triggers the loop's
+                       rebuild today, and it is exactly the render queue
+MISSING                the path that renders those types and pushes them through
+                       extend_build instead of waiting for a rebuild
+```
+
+So the work is narrow: after a fit, render only `_unbuilt_types()`, descriptor-and-embed them,
+and hand them to `grow.extend_build`. **Rendering only the new types is what makes it cheap** —
+a build renders the whole inventory, and this renders the handful that just appeared.
+
+**Three costs, and they are why it is not already done this way.**
+
+- **A grown point lands in the old frame.** The projection is not refitted, so a new type is
+  placed relative to structure fitted before it existed. That is the compromise `grow` already
+  makes and `drift` is the measurement of it. **Keep the drift trigger.** This is a shortcut
+  for the common case, not a replacement for rebuilding.
+- **A genuinely novel type may belong nowhere near an existing knot.** It then either founds
+  one — which needs a quorum, so a single new type cannot — or is force-assigned to the
+  nearest, which would be wrong. The quorum rule exists to stop exactly that.
+- **Purity and coverage stop being comparable across generations** if types arrive by two
+  routes. Whatever is built here has to record which route each point came by, or the next
+  reader compares two numbers that were never the same measurement.
+
+**One decision to take before writing any of it:** what a single new type does when it cannot
+reach quorum. Either hold it in the pending pool until more of its kind arrive, which is what
+the novel-field path already does, or place it and mark it provisional. The first is
+consistent with the existing rule; the second gets it on screen immediately, which is the
+point of the exercise.
+
+### 1a. That decision is taken: found by route (2026-08-06, later still)
+
+**Owner's answer: a fitted type founds its knot on arrival; an ingest-flagged novel syllable
+keeps the quorum of 8.** Two things found in the code before asking are why the choice is that
+way round, and both correct the framing above.
+
+**The two options were closer together than the framing above implies, and the stated argument
+for placing does not separate them.** A pooled point is already on screen. `grow`'s docstring
+says an unassigned novel point "joins the cloud unassigned (`clusterId -1`, which the renderer
+already tolerates from the density-clustering path)", and `extend_build` appends it to
+`points.json` alongside every other row; `embed()` handles `-1` by skipping the cluster shift.
+So holding for quorum renders the point and withholds its *knot*. "Gets it on screen
+immediately" was true of both options, and the real difference is only whether a centroid is
+appended.
+
+**The quorum was written for a different kind of arrival, and that is the actual reason to
+split.** `MIN_NOVEL_CLUSTER = 8` governs syllables flagged novel individually at ingest —
+points carrying no upstream grouping whatever. Its comment justifies the 8 by `fit_novelty`,
+and that checks out: `critic.py` computes `k = max(1, min(per_species_types, len(rows) // 8))`,
+one centroid per 8 syllables. But **a fitted type is already a group.** It cleared
+`OBS_PER_TYPE = 12` on the learn side (`ceiling = max(2, min(MAX_TYPES, n // OBS_PER_TYPE))`)
+to exist at all. Requiring it to re-clear 8 at grow time asks it to prove by a looser floor
+what it proved upstream by a stricter one, in a space where its evidence has already been
+discarded.
+
+```
+ingest-flagged novel syllable   ungrouped, evidence = 1 point       -> quorum 8 applies
+fitted type from learn          grouped upstream, evidence >= 12    -> founds on arrival
+```
+
+**What this obliges the implementation to carry.** Each point must record which route founded
+it. Without that, purity and coverage stop being the same measurement across generations — the
+third cost listed above, now load-bearing rather than advisory. **And the frozen-frame
+compromise now applies to knots, not only to points**: a knot founded at fit time is centred in
+a frame fitted before its type existed, which is a larger claim than placing a point in that
+frame. Keep the drift trigger, and treat a rising drift as the signal that founded knots need
+re-centring, not only that points have moved.
+
+### 1b. It is built, and building it found that `grow` had been broken since 2026-08-01
+
+`birdy-pipeline synthesise` renders the fitted types the galaxy has no knot for and grows
+them in. 20 module self-tests pass, 0 failures, `grow` among them for the first time.
+
+```
+grow.unbuilt_types()      one definition of "which types are missing", shared. server's
+                          _unbuilt_types now delegates: the rebuild trigger and the
+                          render queue cannot disagree about whether a galaxy is current
+corpus.synthetic_corpus   `only={(sp,syl)}` renders a subset. The enumeration is NOT
+  (only=...)              filtered — `_rng` is keyed on (seed, si, yi, v), so filtering
+                          first would renumber survivors and give a type different audio
+                          depending on what else was unbuilt. Verified byte-identical
+grow.render_unbuilt()     render -> descriptors -> embed -> extend_build, route-marked
+PointSet.route            "" build-placed, "fit" grown from a fitted type. Written to
+  points.json "route"     points.json and onto the knot, so the two placements stay
+                          separable and nobody averages them
+CLI                       synthesise --dry-run --limit --force --json
+```
+
+**Two defects found on the way, both shipped, both silent.**
+
+**`grow` could not read a galaxy built since 2026-08-01, and said the wrong thing about
+why.** That day the per-cluster arrays moved out of `centroids.json` into
+`centroid-vectors.f32`, and `galaxy.centroid_vectors` was written to read both layouts.
+`extend_build` never used it — it read `c["vector32"]` off the item, found nothing, and
+raised *"built in the embedding space but its centroids carry no vector32 — rebuild it
+with `build --space embed`"*. The galaxy **is** embed-space; a rebuild would write the same
+sidecar and fail identically. Confirmed against the shipped v10 build: the old path failed,
+the new one loads all 15 341 centroids. The same read for `featuresLo` failed *quietly* —
+`lo_dims` came out 0, so grown points got no 8-d row and lit identically, which is the
+outcome that block's own comment says it exists to prevent.
+
+**Founding a knot made the asset set unreadable.** `extend_build` writes `"k": len(items)`
+but never appended to the sidecar, and `centroid_vectors` checks the binary against `k`. One
+founded knot therefore left them disagreeing and every later reader — `verify`,
+`thresholds`, any analysis — raising. Not a failed operation: a corrupted one. Both halves
+are fixed and pinned by `grow.self_test`.
+
+**And knot ids skipped when more than one was founded in a pass.** `new_id = len(items) +
+len(founded)` counted each previous knot twice, allocating 5, 7, 9 for the knots at
+positions 5, 6, 7 — after which the positional count fixup credited the wrong knots. A knot's
+id is its position, so `len(items)` is the whole rule. One founded knot per pass hid it.
+
+**One guard added.** A large unbuilt fraction means the ids do not correspond, not that a
+lot was fitted: the shipped v10 build reports 8 474 of 12 724 types unbuilt against
+`learned-inventory-final.json` and **0** against its own. Above 20 % it refuses and names
+the galaxy's own inventory, because rendering those would graft thousands of knots
+duplicating structure already there under other names. `--force` overrides.
+
+**Still not done:** nothing calls `synthesise` automatically. The learning loop still
+rebuilds when `_unbuilt_types()` is non-empty. Wiring it in is a policy decision — when to
+grow and when to rebuild — and `drift` is the number that decides it.
+
+## 2. The whitepaper's open list was stale, and most of it was already done
+
+`docs/whitepaper/arxiv/README.md` carries a "what is still missing" list dated 2026-08-04.
+Working through it found that nearly all of it had been resolved by 08-05 and the README had
+not kept up. A status banner is now at the top of that file so it stops sending people after
+finished work. Specifically:
+
+- **The bibliography exists.** `docs/whitepaper/references/references.bib`, 59 kB, and
+  `\bibliography{../references/references}` resolves to it. The README's "action required"
+  section is done.
+- **All six `% FIGURE WANTED` items are answered** and the comments are gone from `main.tex`.
+  `figures.py`'s own reconciliation table is the authority on this, not the README.
+- **The paper has spectrograms.** `spectral-examples` is three real dB spectrograms at the
+  top, median and bottom of the cosine ordering, and `gestures` carries the fitted pressure
+  and tension contours. The README's claim that the paper "contains no spectrogram of any
+  kind" — which it calls the biggest gap — stopped being true on 08-04.
+- **The two-start descent numbers are in** the body and the ledger (arm D: median 0.7410 ->
+  0.7740, +0.0330, 858 of 1 661 improved, none worse).
+- **It compiles**: `tectonic -X compile main.tex --outdir build`, 44 pages, 0 errors, 0
+  undefined references or citations.
+
+**Correcting something I got wrong in the same session.** I first reported the paper's corpus
+figures as stale because it quotes 348 461 and 214 154 points against a shipped 444 213. That
+was wrong: 348 461 appears only in a provenance *comment* naming the build a number came from,
+and 214 154 is an explicitly marked debug-scale matrix. Both are correct attribution. The
+paper's provenance discipline is sound and I misread a grep for the context.
+
+## 3. What was added to the paper
+
+**A production-scale measurement of the discovery mode, which the paper did not have.**
+HDBSCAN* was mentioned once in passing. New subsection, `sec:density`, with a table:
+
+```
+mcs    k     unassigned  median   largest   ARI(placed) AMI(placed)  AMI(all)
+ 25   1128     79.3 %       58       719      0.4436      0.8013      0.1580
+100      2     36.8 %   137652    275175      0.0000      0.0006      0.0434
+```
+
+plus the reconstruction check against the build's own manifest, the two independent
+corroborations that the refusal is not a recording-quality artefact (kNN agreement 0.8505
+placed against 0.3562 refused; SNR 18.67 against 17.27 dB), and the MST-implementation
+reproducibility note.
+
+**The duplicate-recording finding**, in the corpus appendix, framed as an exposure any
+archive-scale comparative claim shares: a distance of exactly zero between two species is the
+symptom to look for.
+
+**Two caption defects.** `tonal-pin` and `avex` are both `subplots(1, 3)` and their captions
+described two panels; `avex`'s literally said "Both panels". Both now describe all three.
+`figures.py`'s reconciliation table had flagged both and it was the only place that had.
+
+**A provenance correction.** The `+0.488` / `+0.196` confound headline is quoted in five
+places and its comment said "production store". `WHITEPAPER-FINDINGS` #6 records it as the
+121-species store with an un-retrained 16-species critic read off-distribution. Those cannot
+both be true; the comment now says so and names re-running `critic groupings` as the fix.
+
+## 4. Front and back matter, at the owner's direction
+
+- **Deleted**: the repository-naming and provenance note under the keywords, and the "Three
+  things changed recently enough to matter" subsection. Both verified absent from the rendered
+  PDF, not just the source.
+- **Deleting the second one orphaned two citations** — `xenocanto` and `inatsounds2024`, the
+  two archives the entire corpus comes from. Their only remaining appearances were in
+  comments. Re-attached at the harvester description: dropping data-source attribution from a
+  paper built on licensed archive audio is not a thing to do silently.
+- **The repository is `Lyrebird`, not `Birdy`.** Reproducibility now gives
+  `https://github.com/sha5b/Lyrebird` and the running application at
+  `https://lyrebird.variable.gallery`. Both are for a repository that is not public yet.
+- **Funding: none.** Its own section: independent work by an artist, at the boundary of art
+  and science, no grant, institutional or commercial support.
+- **Acknowledgements**: the open-source and open-data ecosystem, named specifically — the
+  published normal-form syrinx model used term for term, the recordists who uploaded under
+  licences permitting derived measurement, the five external models whose open weights are the
+  only reason the central negative result could be contradicted from outside, and the borrowed
+  methods.
+- **The DOI** is resolved as an honest absence rather than a marker: no archived release,
+  because the work is a moving record and minting one would date a repository still being
+  measured. **All `\todo{}` markers are now zero.**
+
+The shipped PDF was **older than its own `main.tex`** (08-04 against 08-05). Rebuilt and
+copied to `docs/whitepaper/arxiv/lyrebird-whitepaper.pdf` and
+`app/static/lyrebird-whitepaper.pdf`.
+
+**Still open in the paper:** `main-docx.tex` and the `.docx`/`.odt` remain four findings
+behind. Do not regenerate them from `main.tex` with pandoc — they are a curated parallel copy,
+not an export, and doing so replaces a hand-maintained document with a machine translation.
+
+## 5. Perch T1 re-run, and the artefact that was missing
+
+`analysis/w6_t1_perch_recordist.json` did not exist, although the T1 row of the paper's
+external-model table depends on it. Re-run (needs `uv sync --extra perch`; the 415 MB weights
+were already cached in `out/perch`):
+
+```
+critic 32-d      recordist lift 0.0885     coverage 0.9708
+Perch 1536-d     recordist lift 0.0789     coverage 0.9708     1 642 recordings, 118 recordists
+```
+
+Perch carries 89 % of our critic's recordist lift, so it **fails** the pre-registered "at
+least 30 % below" gate, as the published $-16.5\,\%$ did on its own draw. Same conclusion,
+independently reproduced: the confound is in the archives, not in our loss. `species` is null
+in both arms because T1's population selects for recordists and leaves almost no species at
+`geometry.MIN_GROUP`; that is what T3 exists for. **`analysis/w6_t3.json` is still missing**
+and is the next artefact to restore — the script is `w6_t3_perch_species.py` and it reuses
+T1's store and helpers.
+
+## 6. The brand mark, and four failure modes worth not repeating
+
+`app/static/brand/`. The subject is the **tail**, not the bird: the Australian ten-cent piece
+shows the tail alone, no body, no head, no legs, and that is the part a person recognises.
+Three attempts drew a standing bird with a lyre-shaped tail behind it before the owner sent
+the coin.
+
+The final mark is **four strokes and a circle** — three plumes fanning and one longer feather
+whose tip curls over. The curl is the entire identity; a plume fan on its own is a palm, a
+shell or a sunburst. Recorded in `brand/README.md` because without it somebody will helpfully
+add one back:
+
+- **Two mirrored arms bowing outward from one point make a heart.** Exactly, not
+  approximately. Two attempts closed the arms at the top and both read as a heart at every
+  size.
+- **A symmetric radial fan is a sunburst.** Equal angular spacing from one origin looked
+  rigorous and read as a palm frond.
+- **A curl blobs when its radius is near the stroke width.** Radius 6 at stroke 4.6 filled in
+  solid; radius 7 at stroke 3.3 leaves a 10.7-unit hole that survives 32 px.
+- **A curl past about 220 degrees reads as a letter or a digit.** Three hundred looked like a 6.
+
+An earlier version computed a hundred tangent-following barbs per frond to imitate the coin's
+engraving. **It photographed well at 512 px and was an even grey smudge at 32**, which is the
+size a favicon is actually seen at; its generator is deleted and the mark is now simple enough
+to edit by hand. That also removed the need for a separate small variant.
+
+Two treatments (`lyrebird-mark.svg`, `lyrebird-mark-solid.svg`), a lockup, `favicon.svg`,
+`favicon.ico` and PNGs at 16/32/48/180/192/512. **The logo's wordmark is live text and must be
+converted to outlines before it leaves this repository** — there is no font-embedding step, so
+it reflows on any machine without the serif stack. `app/src/app.html` is deliberately
+untouched; the three `<link>` lines are in `brand/README.md`.
+
+## 7. Test state, and four app errors that are not from this work
+
+**Pipeline: 21 modules, every `self_test` passes, 0 failures.** That includes `learn`, whose
+self-test was failing on main earlier today and blocking `birdy-pipeline learn` outright — see
+the entry below for the density-backend cause and the `FAST_PATH_MIN_ROWS` fix.
+
+**`npm run check` reports 4 errors, and none of them are in files this work authored or
+touched meaningfully.** They are another agent's in-flight edits, made concurrently: an
+`UNCLAIMED_TINT` constant imported in `PointCloud.svelte` and `+page.svelte` and referenced in
+a `shaders.ts` comment, but not yet exported from `palette.ts`, plus two `{agree?, snr?}` type
+errors in `NodeLabels.svelte` and `NodeProjector.svelte`. The count moved from 7 to 4 between
+two consecutive runs, which is how it was identified as work in progress rather than a
+regression. **Left alone deliberately** — fixing another agent's half-landed feature collides
+with it. Every file this session authored (`PipelineVerbs.svelte`, `ReportTable.svelte`,
+`data/pipeline.ts`, `pages/LearnPage.svelte`, `galaxy/layouts.ts`) reports zero.
+
+**Also still running at the time of writing:** `critic groupings` on the production store, 52
+minutes in, ~7.4 GB resident. It is finding #6 — the production measurement that replaces the
+`+0.488` / `+0.196` pair. Its report lands at `out/reports/critic-groupings.json` and the five
+places to write it into are the `0.488` hits in `main.tex`.
+
+
 # Lyrebird — READ THIS FIRST (2026-08-06): the sweep says 79.5 % noise is not a tunable number, the two maps agree far more than the last entry could see, and `learn` was broken on main
 
 The sweep the last entry left ready is run. Two of its numbers change what the previous
@@ -243,10 +583,11 @@ Everything in this entry is **uncommitted**, on top of `2078e1a`.
 
 ## 10. FIRST THING TO DO
 
-**The join with `--enrich`, which the last entry deliberately held back until the curve was
-visible.** It is visible, and it says the refusal is real rather than a parameter artefact
-(mcs=100 is worse in every way that matters), so the verdict can now be written into the
-shipped asset:
+**DONE, 2026-08-06.** The join ran with `--enrich` against both `pipeline/out/v10/assets/`
+and `app/static/birdy/`, and it took **22 seconds** each — the 90 minutes was the second
+`--clustering hdbscan` build, which was already on disk at `pipeline/out/v10/assets-unknown/`.
+`npm run verify:unheard` passes on all eleven checks. The Display panel's **"What nothing
+claims"** checkbox is live.
 
 ```bash
 cd pipeline
@@ -254,7 +595,12 @@ uv run python analysis/v10_unknown_join.py --enrich ../app/static/birdy/points.j
 cd ../app && npm run verify:unheard
 ```
 
-That is what un-disables the Display panel's **"What nothing claims"** checkbox.
+Shipped verdict: **353 285 of 444 213 (79.5 %) in no dense region**, 1 151 regions against
+15 341 label knots. The one number worth carrying forward is the cross-tab the join prints:
+**kNN agreement is 0.8505 on the placed points and 0.3562 on the refused ones.** A channel
+that already ships per point separates the density verdict that cleanly, which is the
+argument for costing any further geometry channel (local density, distance to nearest knot)
+as an analysis script over `positions.f32` rather than as a third build.
 
 **Then, with the AMI 0.8013 finding in hand,** reconsider how the `unassigned` column is
 described in the interface. The copy written for it was drafted against "two unrelated

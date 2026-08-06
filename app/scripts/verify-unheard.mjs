@@ -126,5 +126,43 @@ if (unidentified.length) {
 	);
 }
 
+// **Which set the control promotes, asserted on the source, because it has been both ways.**
+//
+// The figure/ground swap originally raised the REFUSED marks and dropped the placed ones. On
+// this corpus that promotes 79.5 % of the cloud, so almost every mark changed at once and the
+// reader was left looking at nearly everything in one colour with nothing singled out — owner,
+// 2026-08-06: *"if i activate the unclaimed ALL color .. how should i know what is unclaimed
+// now?!"* It promotes the confirmed minority instead, and "unclaimed" reads as the complement.
+//
+// This is checked here rather than in `verify:trust` because it is a claim about THIS channel,
+// and it is checked at all because the inversion is one character in two places and a revert
+// would look like a tidy-up.
+const shaders = readFileSync('src/lib/galaxy/shaders.ts', 'utf8');
+const pageSrc = readFileSync('src/routes/+page.svelte', 'utf8');
+console.log('\nwhich set the swap promotes');
+ok(
+	'size and ink promote the placed share, not the refused one',
+	/float placed = 1\.0 - vRefused;/.test(shaders) &&
+		/mix\(0\.55, 1\.6, placed\), uUnheard\)/.test(shaders) &&
+		/mix\(0\.30, 1\.0, 1\.0 - vRefused\), uUnheard\)/.test(shaders),
+	`promoting the refused set would promote ${(share * 100).toFixed(1)} % of this corpus`
+);
+ok(
+	'and the tint marks that same set',
+	/float marked = clamp\(1\.0 - vRefused, 0\.0, 1\.0\) \* uUnheard;/.test(shaders),
+	'weight and hue must single out one set, or a heavy mark and a coloured mark are different findings'
+);
+// The old name is asserted absent from the MARKUP rather than from the file: the comment above
+// the control documents the rename and has to be allowed to quote what it renamed. Stripping
+// `<!-- -->` first is the difference between checking what renders and checking what was typed.
+const rendered = pageSrc.replace(/<!--[\s\S]*?-->/g, '');
+ok(
+	'the label says what it marks, and the panel names the complement',
+	/Mark the dense regions/.test(rendered) &&
+		!/What nothing claims/.test(rendered) &&
+		/Coloured: in a dense region\. Faint: unclaimed\./.test(rendered),
+	'a control that colours four fifths of the cloud has to say which fifth it did not'
+);
+
 console.log(failures ? `\n${failures} check(s) failed` : '\nall unheard checks passed');
 process.exit(failures ? 1 : 0);

@@ -12,8 +12,13 @@
  * Measured on the composited frame, decoded in the page rather than in Node so no image
  * library is needed:
  *
- *   - **mean chroma over the ink** must FALL when either source comes up. That is the whole
- *     claim: colour drains where a mark has a recorded reason to be doubted.
+ *   - **mean chroma over the ink** must RISE when either source comes up, and by a lot.
+ *     This assertion was inverted until 2026-08-06, when the channel stopped draining
+ *     saturation and became the third colour mode: doubtful marks now take the ink instead
+ *     of losing it. The old direction is what the owner saw as "nearly not visible", and it
+ *     is worth stating plainly why the old check passed anyway — it asserted a 5 % move on
+ *     a cloud that is grey at rest, which a barely perceptible drain clears easily. The
+ *     threshold here is set from the measured rise, not from what is easy to pass.
  *   - **the two sources must draw different pictures.** Agreement and SNR share one
  *     attribute, rewritten in place when the switch moves, so if the two frames matched it
  *     would mean the rewrite never happened and the second control is decorative — a
@@ -66,11 +71,15 @@ if (await viewBtn.count()) {
 	await page.waitForTimeout(800);
 }
 
-// Provenance colours on, or there is no chroma to drain and the test would pass on a black
-// and white picture for the wrong reason.
+// **The baseline is the default ink cloud, and provenance is forced OFF to get it.**
+//
+// It used to be forced ON, because a drain needs chroma to take away. The ramp needs the
+// opposite: doubt is now one of three mutually exclusive colour modes, so ticking it clears
+// provenance by design — and measuring off-with-provenance against on-with-doubt would
+// compare two changes at once and call the sum of them the channel's effect.
 const prov = page.locator('label.check:has-text("Provenance colours") input').first();
-if ((await prov.count()) && !(await prov.isChecked())) {
-	await prov.check({ force: true });
+if ((await prov.count()) && (await prov.isChecked())) {
+	await prov.uncheck({ force: true });
 	await page.waitForTimeout(3000);
 }
 // **Rotation off, or nothing below is a comparison.** The galaxy drifts continuously, so two
@@ -98,6 +107,7 @@ const frame = async () => {
 		ctx.drawImage(bmp, 0, 0);
 		const { data } = ctx.getImageData(0, 0, bmp.width, bmp.height);
 		let sat = 0;
+		let lum = 0;
 		let ink = 0;
 		const satMap = new Array(data.length / 4).fill(0);
 		for (let i = 0; i < data.length; i += 4) {
@@ -108,10 +118,12 @@ const frame = async () => {
 				const v = max === 0 ? 0 : (max - min) / max;
 				sat += v;
 				satMap[i / 4] = v;
+				// Rec.709, so "darker" means darker to the eye rather than in one channel.
+				lum += (0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]) / 255;
 				ink++;
 			}
 		}
-		return { chroma: ink ? sat / ink : 0, ink, sat: satMap };
+		return { chroma: ink ? sat / ink : 0, lum: ink ? lum / ink : 1, ink, sat: satMap };
 	}, shot);
 };
 
@@ -158,28 +170,50 @@ const measure = async (box, name) => {
 };
 
 const onAgree = await measure(agree, 'agreement');
-// **The switch, which is the point of sharing the channel.** Ticking SNR must clear
-// agreement — one channel cannot carry both doubts at once — and the frame must change
-// again, or the second source is wired to a buffer that never got rewritten.
+await agree.uncheck({ force: true });
+await page.waitForTimeout(4000);
 const onSnr = await measure(noisy, 'snr');
-ok('choosing SNR cleared agreement', !(await agree.isChecked()));
+// **The overlay, which is the point of the vec2.** The two doubts shared one float and had to
+// take turns; ticking one must no longer clear the other, and the both-on frame must differ from
+// each single-channel frame or the second ramp is being drawn over the first rather than with it.
+await agree.check({ force: true });
+await page.waitForTimeout(4000);
+const onBoth = await frame();
+await page.screenshot({ path: `${SHOT}/trust-both.png` });
+ok('both channels stay on together', (await agree.isChecked()) && (await noisy.isChecked()));
 
-const pct = (a, b) => (a ? (100 * (a - b)) / a : 0);
-const dropAgree = pct(off.chroma, onAgree.chroma);
-const dropSnr = pct(off.chroma, onSnr.chroma);
+// Rise as a share of the baseline. The baseline is a near-neutral cloud, so this is a
+// large number by construction — which is the point: the mode has to be unmistakable.
+const pct = (a, b) => (a ? (100 * (b - a)) / a : 0);
+const riseAgree = pct(off.chroma, onAgree.chroma);
+const riseSnr = pct(off.chroma, onSnr.chroma);
 const inkDrift = off.ink ? Math.abs(100 * (onSnr.ink - off.ink)) / off.ink : 0;
 const between = Math.abs(pct(onAgree.chroma, onSnr.chroma));
 
 ok('no shader errors', shaderErrors.length === 0, `${shaderErrors.length}`);
+// **The direction is half the assertion and the size is the other half**, and the floor is
+// set from three measurements rather than from a round number:
+//
+//   7.5 %       the first version of the ramp, ends #9d1240/#8fa2b8 with the resting wash
+//               left at 0.5 — indistinguishable by eye from the drain it replaced
+//   21.7-35.2 % the shipped version, over two runs of this probe, both sources
+//
+// So 15 %, not 20: the shipped range is wide because the cloud is live — the chorus is
+// playing, the level-of-detail frontier is still settling, and the same build measured 35.2 %
+// and then 21.7 % on consecutive runs. A floor inside that spread would fail on the run
+// rather than on the code. 15 % still fails the 7.5 % version by a factor of two, which is
+// the regression this number exists to catch. The drain-era check used 5 %, which the 7.5 %
+// version cleared — which is why the measurements are written down beside the threshold
+// instead of the threshold being written down alone.
 ok(
-	'agreement drains chroma',
-	dropAgree > 5,
-	`${off.chroma.toFixed(4)} -> ${onAgree.chroma.toFixed(4)}, ${dropAgree.toFixed(1)} % down`
+	'agreement colours the cloud, and visibly',
+	riseAgree > 15,
+	`${off.chroma.toFixed(4)} -> ${onAgree.chroma.toFixed(4)}, ${riseAgree.toFixed(1)} % up`
 );
 ok(
-	'SNR drains chroma too, from its own buffer',
-	dropSnr > 5,
-	`${off.chroma.toFixed(4)} -> ${onSnr.chroma.toFixed(4)}, ${dropSnr.toFixed(1)} % down`
+	'SNR colours it too, from its own buffer',
+	riseSnr > 15,
+	`${off.chroma.toFixed(4)} -> ${onSnr.chroma.toFixed(4)}, ${riseSnr.toFixed(1)} % up`
 );
 // If the two sources drew identically the attribute was never rewritten and the second
 // switch is decorative. Measured per pixel against the same frame with the channel off, so
@@ -197,6 +231,41 @@ ok(
 	'neither spends anything else: the ink area holds',
 	inkDrift < 5,
 	`${off.ink.toLocaleString()} -> ${onSnr.ink.toLocaleString()} px, ${inkDrift.toFixed(1)} % drift`
+);
+// The overlay has to be a third picture, not a copy of either half. Measured per pixel against
+// both singles: if `both` matched one of them, the other channel is contributing nothing.
+const bothVsAgree = perPixel(onBoth, onAgree);
+const bothVsSnr = perPixel(onBoth, onSnr);
+ok(
+	'the overlay is its own picture, not one of the two halves',
+	bothVsAgree > 0.2 * moveAgree && bothVsSnr > 0.2 * moveSnr,
+	`per-pixel: both sits ${bothVsAgree.toFixed(4)} from agreement-only and ` +
+		`${bothVsSnr.toFixed(4)} from snr-only`
+);
+// **Measured as darkness, not as chroma, and the first version of this check had it wrong.**
+//
+// It asserted that both-on is at least as *chromatic* as either half, which sounds right and is
+// not: the composition subtracts toward two different hues, so a mark bad on both counts lands
+// between rose and amber — nearer neutral, and therefore LESS saturated than either pure ramp
+// while being further from the quiet end. Measured: chroma both 0.0505 against agreement 0.0607.
+// The code was correct and the expectation was not.
+//
+// What the subtraction does guarantee is monotone darkening: each channel moves the colour away
+// from the shared pale quiet end, so two channels move it further than one. That is the property
+// worth protecting, because losing it would mean the two ramps are cancelling rather than
+// accumulating — which is exactly what a sign error or a nested mix would produce.
+ok(
+	'and it is at least as dark as either half',
+	onBoth.lum <= Math.min(onAgree.lum, onSnr.lum) + 0.004,
+	`mean ink luminance: both ${onBoth.lum.toFixed(4)}, agreement ${onAgree.lum.toFixed(4)}, ` +
+		`snr ${onSnr.lum.toFixed(4)}, off ${off.lum.toFixed(4)}`
+);
+// And both halves must darken the frame relative to no channel at all, or "accumulating" is
+// being asserted about two channels that individually do nothing.
+ok(
+	'each half darkens the frame on its own',
+	onAgree.lum < off.lum && onSnr.lum < off.lum,
+	`off ${off.lum.toFixed(4)} -> agreement ${onAgree.lum.toFixed(4)}, snr ${onSnr.lum.toFixed(4)}`
 );
 
 console.log(`\n  screenshots: ${SHOT}/trust-off.png, trust-agreement.png, trust-snr.png`);

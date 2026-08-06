@@ -1,5 +1,51 @@
 # Lyrebird — arXiv manuscript
 
+> **STATUS, 2026-08-06.** Most of the "what is still missing" list below was resolved
+> between 2026-08-04 and 2026-08-06 and this file did not keep up. Read this banner first;
+> the sections below are kept for their reasoning, not as a task list.
+>
+> **Resolved since this README was written:**
+> - The bibliography exists. `docs/whitepaper/references/references.bib` (59 kB) is on disk
+>   and `\bibliography{../references/references}` resolves to it. The "action required"
+>   section below is done.
+> - **All six `% FIGURE WANTED` items are answered**, and the comments are gone from
+>   `main.tex`. See `figures.py`'s own reconciliation table. That includes the one this file
+>   calls "the biggest gap in the paper" — the manuscript now carries `spectral-examples`
+>   (three real spectrograms in dB, at the top, median and bottom of the cosine ordering)
+>   and `gestures` (the fitted pressure and tension contours). **The claim that the paper
+>   "contains no spectrogram of any kind" is no longer true.**
+> - The two-start descent numbers are in the body and in the ledger (arm D: median
+>   $0.7410 \to 0.7740$, $+0.0330$, 858/1661 improved, none worse).
+> - **It compiles.** `tectonic -X compile main.tex --outdir build`, 44 pages, 0 errors,
+>   0 undefined references. The shipped `lyrebird-whitepaper.pdf` is built from the current
+>   `main.tex`.
+> - Only **two** `\todo{}`s remain, and neither is a measurement: the archived release DOI
+>   and the acknowledgements/funding statement. Both need a person, not a command.
+>
+> **Added 2026-08-06:**
+> - A new subsection, *The discovery mode at production scale*, with the first
+>   production-scale measurement of the HDBSCAN* build: the `min_cluster_size` sweep, the
+>   collapse at 100, and the agreement-over-placed-rows figure (AMI 0.8013) that the
+>   all-rows figure (0.1580) hides.
+> - The duplicate-recording data-integrity finding, in the corpus appendix.
+> - `tonal-pin` and `avex` captions now describe their third panels. `avex` previously said
+>   "Both panels" of a three-panel figure.
+> - `analysis/w6_t1_perch_recordist.json` now exists — the artefact behind the T1 row of
+>   Table `tab:external` was missing. A fresh draw gives critic 0.0885 against Perch 0.0789
+>   ($-10.8\%$), which fails the $-30\%$ gate as the published $-16.5\%$ did.
+>
+> **Still genuinely open:**
+> - The two `\todo{}`s above.
+> - Finding #6: the $+0.488$ / $+0.196$ confound headline is still quoted in five places
+>   from `docs/14`'s store-and-critic pairing. Its provenance comment in `main.tex` says
+>   "production store"; finding #6 says it was the 121-species store with an un-retrained
+>   16-species critic read off-distribution. Those cannot both be right.
+> - `analysis/w6_t3.json` is still missing (the T3 row's artefact; the result is published).
+> - `main-docx.tex` and the `.docx`/`.odt` remain four findings behind — see the last
+>   section. Do not regenerate them from `main.tex` without deciding what the Word route is
+>   for; they are a curated parallel copy, not an export.
+
+
 `main.tex` is a self-contained LaTeX manuscript, written to replace
 `docs/whitepaper/build_whitepaper.py`. It is arXiv-native: standard `article` class,
 conventional preprint layout, `natbib` citations, figures pulled from

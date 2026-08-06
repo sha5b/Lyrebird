@@ -73,12 +73,22 @@ def synthetic_corpus(
     jitter: Jitter | None = None,
     verbose: bool = True,
     should_stop: Callable[[], bool] | None = None,
+    only: set[tuple[str, str]] | None = None,
 ) -> list[Clip]:
     """`variants` renders of every syllable + `song_variants` of every song.
 
     `should_stop` is polled per species. A build that is asked to stop raises rather
     than returning what it has: half a corpus embeds into a galaxy that looks finished
     and is not, and the assets on disk are still a complete older build.
+
+    `only` restricts the render to those `(speciesId, syllableId)` pairs and skips songs,
+    which is what makes fit-time synthesis cheap: the handful of types that just appeared
+    instead of the whole inventory. **The enumeration is deliberately not filtered.** Every
+    species and syllable still takes its index and the skip happens inside the loop,
+    because `_rng` is keyed on `(seed, si, yi, v)` — filtering the lists first would
+    renumber the survivors and give a type different audio depending on what else happened
+    to be unbuilt that pass. Rendering a type must depend on the type, not on its company,
+    or the same syllable is a different point every time it is grown.
     """
     jit = Jitter() if jitter is None else jitter
     clips: list[Clip] = []
@@ -89,6 +99,8 @@ def synthetic_corpus(
         table = syllable_table(species)
         n_before = len(clips)
         for yi, syl in enumerate(table.values()):
+            if only is not None and (sid, syl.id) not in only:
+                continue
             for v in range(variants):
                 rng = _rng(seed, si, yi, v)
                 audio = render_syllable(
@@ -110,6 +122,11 @@ def synthetic_corpus(
                     )
                 )
         for gi, song in enumerate(species.get("songs", [])):
+            # A song is a sequence of syllables, not a type, so it never joins the render
+            # queue: `unbuilt_types` answers in syllables, and a song has no centroid of
+            # its own that could be missing.
+            if only is not None:
+                break
             for v in range(song_variants):
                 rng = _rng(seed, si, 1000 + gi, v)
                 audio = render_song(
@@ -131,11 +148,16 @@ def synthetic_corpus(
                         source="synthetic-song",
                     )
                 )
-        if verbose:
+        if verbose and (only is None or len(clips) > n_before):
+            rendered = (
+                len(table) if only is None
+                else sum(1 for s in table.values() if (sid, s.id) in only)
+            )
+            songs = 0 if only is not None else len(species.get("songs", []))
             print(
                 f"  {sid:24} {len(clips) - n_before:4d} clips "
-                f"({len(table)} syllables x {variants} + "
-                f"{len(species.get('songs', []))} songs x {song_variants})",
+                f"({rendered} syllables x {variants} + "
+                f"{songs} songs x {song_variants})",
                 file=sys.stderr,
             )
     return clips

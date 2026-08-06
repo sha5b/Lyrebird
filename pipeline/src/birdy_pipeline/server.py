@@ -32,7 +32,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Callable
 
-from . import harvest, learn
+from . import grow, harvest, learn
 from . import verbs as verbs_mod
 from .corpus import load_inventory
 
@@ -1118,18 +1118,10 @@ class Pipeline:
         except (OSError, ValueError):
             # No galaxy, or an unreadable one: rebuilding is the only way forward.
             return ["<no galaxy>"]
-        placed = {
-            (c.get("speciesId"), c.get("syllableId"))
-            for c in centroids.get("items", [])
-            if c.get("syllableId")
-        }
-        missing = [
-            f"{sp['id']}/{y['id']}"
-            for sp in doc.get("species", [])
-            for y in sp.get("syllables", [])
-            if (sp["id"], y["id"]) not in placed
-        ]
-        return missing
+        # One definition, shared with `grow.render_unbuilt`, which renders exactly this set.
+        # Kept in `grow` rather than here because the rebuild trigger and the render queue
+        # answering differently is the failure worth designing out.
+        return [f"{sp}/{sy}" for sp, sy in grow.unbuilt_types(doc, centroids)]
 
     def _rebuild(self, job: Job) -> None:
         """A full build from the fitted inventory, cancellable like any other step.

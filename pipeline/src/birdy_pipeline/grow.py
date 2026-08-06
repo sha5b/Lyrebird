@@ -44,12 +44,21 @@ from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from collections.abc import Sequence
+from typing import Any, Callable
 
 import numpy as np
 
 #: Filename inside the built asset directory.
 BASIS_FILE = "projection-basis.json"
+
+#: The route mark carried by a point rendered from a newly fitted type and grown in without
+#: a rebuild. A build-placed point carries `""`. **These are not the same measurement**: a
+#: build re-fits the projection around every point it places, while this one is placed
+#: through a basis frozen before its type existed, so purity and coverage computed over a
+#: mixture of the two are an average of two different things. Recording the route is what
+#: lets a reader hold it constant instead.
+ROUTE_FIT = "fit"
 
 #: Filename next to the grown assets holding the pending pool of unassigned novel
 #: points — new sounds waiting for enough company to found a knot of their own.
@@ -275,6 +284,153 @@ def _write_f32(path: Path, rows: np.ndarray) -> None:
     path.write_bytes(rows.astype("<f4", copy=False).ravel(order="C").tobytes())
 
 
+# --- which fitted types the galaxy has no knot for ---------------------------------------
+
+
+def unbuilt_types(
+    inventory: dict[str, Any], centroids: dict[str, Any]
+) -> list[tuple[str, str]]:
+    """The `(speciesId, syllableId)` pairs the fitted inventory has and the galaxy does not.
+
+    **Two callers must agree on this set or they disagree about what needs doing.** The
+    learning loop uses it to decide a rebuild is owed (`server._unbuilt_types`), and
+    `render_unbuilt` uses it as the render queue. Two copies of the rule would drift into
+    two different answers to "is this galaxy current?", so there is one.
+
+    Only a centroid that names a syllable counts as placing it. A knot founded from the
+    novel pool carries an empty `syllableId` — it is a sound nobody has named — so it
+    places nothing, which is what keeps a founded-but-unnamed knot from being mistaken for
+    coverage of a fitted type.
+    """
+    placed = {
+        (c.get("speciesId"), c.get("syllableId"))
+        for c in centroids.get("items", [])
+        if c.get("syllableId")
+    }
+    return [
+        (sp["id"], y["id"])
+        for sp in inventory.get("species", [])
+        for y in sp.get("syllables", [])
+        if (sp["id"], y["id"]) not in placed
+    ]
+
+
+def render_unbuilt(
+    out_dir: Path,
+    inventory_path: Path,
+    *,
+    calibration: Any = None,
+    variants: int = 24,
+    seed: int = 0,
+    embedder: Callable[[Any], np.ndarray | None] | None = None,
+    stamp: str | None = None,
+    verbose: bool = True,
+    should_stop: Callable[[], bool] | None = None,
+    limit: int | None = None,
+) -> dict[str, Any]:
+    """Render the fitted types this galaxy has no knot for, and grow them in.
+
+    **This is synthesis at fit time rather than at build time.** Today a type that `learn`
+    has just fitted has no position until the next full build, because the synthetic source
+    renders the whole inventory and that runs inside `build`. Everything needed to place one
+    sooner already existed: the projection basis is frozen precisely so a point can be
+    placed out-of-sample, `unbuilt_types` already names which types are missing, and
+    `extend_build` already appends points and founds knots. This joins them.
+
+    **Rendering only the missing types is the whole economy of it.** A build renders every
+    syllable in the inventory; this renders the handful that just appeared, and
+    `synthetic_corpus(only=...)` keeps their audio byte-identical to what a full render
+    would have produced.
+
+    Three things this does not do, and they are the honest cost. The projection is *not*
+    refitted, so a type arrives in a frame fitted before it existed — `drift` remains the
+    measurement of how much that matters and the rebuild trigger stays. Knots founded here
+    carry `route: "fit"` and their points carry the same mark, so nobody averages a
+    fit-placed purity against a build-placed one without seeing that they differ. And a
+    galaxy with no projection basis cannot be grown at all, which `extend_build` says.
+    """
+    from . import galaxy as galaxy_mod
+    from .corpus import load_inventory, synthetic_corpus
+
+    out_dir = Path(out_dir)
+    inventory = load_inventory(Path(inventory_path))
+    centroids = json.loads((out_dir / "centroids.json").read_text(encoding="utf-8"))
+    manifest = json.loads((out_dir / "manifest.json").read_text(encoding="utf-8"))
+
+    pairs = unbuilt_types(inventory, centroids)
+    deferred: list[tuple[str, str]] = []
+    if limit is not None and len(pairs) > limit:
+        # Say what was left behind. A cap that quietly truncates reads afterwards as "all
+        # the new types are placed" when they are not, and the next reader has no way to
+        # tell the difference from the assets.
+        deferred = pairs[limit:]
+        pairs = pairs[:limit]
+        if verbose:
+            print(
+                f"rendering {len(pairs)} of {len(pairs) + len(deferred)} unbuilt types; "
+                f"{len(deferred)} deferred to the next pass",
+                file=sys.stderr,
+            )
+    if not pairs:
+        return {"types": [], "rendered": 0, "added": 0, "deferred": []}
+
+    clips = synthetic_corpus(
+        inventory,
+        calibration,
+        variants=variants,
+        seed=seed,
+        verbose=verbose,
+        should_stop=should_stop,
+        only=set(pairs),
+    )
+    if not clips:
+        return {"types": [], "rendered": 0, "added": 0, "deferred": _fmt(deferred)}
+
+    new = galaxy_mod.descriptors(
+        clips, verbose=verbose, should_stop=should_stop, embedder=embedder
+    )
+    space = manifest.get("space", "descriptor")
+    descriptors28: np.ndarray | None = None
+    if space == "embed":
+        if new.embeddings is None:
+            raise RuntimeError(
+                "this galaxy was built in the embedding space, so rendering into it needs "
+                "an embedder — pass one, or rebuild the galaxy in the descriptor space"
+            )
+        # A clip the critic could not embed is a NaN row, which the embed-space build
+        # excludes and counts. Growing one in would place a point from nothing.
+        keep = np.all(np.isfinite(new.embeddings), axis=1)
+        if not keep.any():
+            raise RuntimeError("no rendered clip could be embedded; nothing to grow in")
+        descriptors28 = np.asarray(new.x, dtype=np.float64)[keep]
+        new = galaxy_mod.PointSet(
+            x=np.asarray(new.embeddings, dtype=np.float64)[keep],
+            species_id=[v for v, k in zip(new.species_id, keep) if k],
+            syllable_id=[v for v, k in zip(new.syllable_id, keep) if k],
+            song_id=[v for v, k in zip(new.song_id, keep) if k],
+            duration=[v for v, k in zip(new.duration, keep) if k],
+            source=[v for v, k in zip(new.source, keep) if k],
+        )
+    new.route = [ROUTE_FIT] * len(new)
+
+    result = extend_build(
+        out_dir,
+        new,
+        stamp or datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        verbose=verbose,
+        inventory_path=Path(inventory_path),
+        descriptors28=descriptors28,
+    )
+    result["types"] = _fmt(pairs)
+    result["rendered"] = len(clips)
+    result["deferred"] = _fmt(deferred)
+    return result
+
+
+def _fmt(pairs: Sequence[tuple[str, str]]) -> list[str]:
+    return [f"{sp}/{sy}" for sp, sy in pairs]
+
+
 # --- the novel pool: new sounds waiting for a quorum ------------------------------------
 
 
@@ -409,15 +565,27 @@ def extend_build(
     # basis's landmark width is the ground truth for what `new.x` must contain.
     space = manifest.get("space", "descriptor")
     dims = int(basis.landmarks.shape[1])
-    if space == "embed":
-        if not all("vector32" in c for c in items):
-            raise RuntimeError(
-                "this galaxy was built in the embedding space but its centroids carry "
-                "no vector32 — rebuild it with `build --space embed`"
-            )
-        cent = np.asarray([c["vector32"] for c in items], dtype=np.float64)
-    else:
-        cent = np.asarray([c["vector"] for c in items], dtype=np.float64)
+    # **Through the one reader that knows both layouts.** Since 2026-08-01 a build ships the
+    # per-cluster arrays in `centroid-vectors.f32` and leaves no `vector` / `vector32` /
+    # `featuresLo` key on the item at all. Reading them off the item therefore found nothing
+    # on every asset set built since — an embed-space galaxy was reported as carrying no
+    # `vector32` and the operator was told to rebuild it with `--space embed`, which would
+    # have written the same sidecar again and failed the same way. `galaxy.centroid_vectors`
+    # reads the sidecar and still reads an older inline build.
+    from .galaxy import CENTROID_VECTORS_NAME, centroid_vectors
+
+    blocks = {k: np.asarray(v, dtype=np.float64) for k, v in
+              centroid_vectors(out_dir, centroids).items()}
+    #: How many knots the galaxy had before this grow — the boundary between rows that come
+    #: from the sidecar and rows founded below.
+    n_knots_before = len(items)
+    want = "vector32" if space == "embed" else "vector"
+    if want not in blocks:
+        raise RuntimeError(
+            f"this galaxy's centroids carry no {want}, in centroids.json or in "
+            f"{CENTROID_VECTORS_NAME} — it cannot be grown, only rebuilt"
+        )
+    cent = blocks[want]
 
     x = np.asarray(new.x, dtype=np.float64)
     if x.ndim != 2 or x.shape[1] != dims:
@@ -445,6 +613,29 @@ def extend_build(
     if any(novel_flags):
         ids = ids.copy()
         ids[np.asarray(novel_flags)] = -1
+
+    # Rows rendered from a newly fitted type found a knot of their own rather than joining
+    # the nearest existing one. **They are held back for the opposite reason to the novel
+    # pool.** A pooled point is anonymous — the detector knows only that it is unlike
+    # everything known — so it must wait for `MIN_NOVEL_CLUSTER` of its kind to prove it is
+    # a type at all. A fitted type arrives already named and already grouped: `learn` gave
+    # it an id and it cleared that module's own floor of `OBS_PER_TYPE` observations to
+    # exist. Re-testing it here would ask it to prove by a looser rule what it proved
+    # upstream by a stricter one, so the quorum does not apply and grouping is by label
+    # rather than by discovered cohesion.
+    route_flags = [str(v) for v in new.route] if new.route is not None else [""] * len(x)
+    placed_types = {
+        (c.get("speciesId"), c.get("syllableId"))
+        for c in items
+        if c.get("syllableId")
+    }
+    fit_flags = [
+        r == ROUTE_FIT and (sp, sy) not in placed_types
+        for r, sp, sy in zip(route_flags, new.species_id, new.syllable_id)
+    ]
+    if any(fit_flags):
+        ids = ids.copy()
+        ids[np.asarray(fit_flags)] = -1
     pos_new = embed(basis, x, ids)
 
     n_old = int(points["n"])
@@ -457,11 +648,17 @@ def extend_build(
     # carry their own 8-d rows, so a new point's is the unit-normalised projection onto
     # the basis those rows span. Approximating it as its cluster's row would light every
     # member of a knot identically and undo the per-point response entirely.
+    #
+    # This read has the same sidecar dependency as the centroid vectors above, but it failed
+    # *quietly*: `items[0].get("featuresLo")` is absent on every sidecar build, so `lo_dims`
+    # came out 0 and the whole per-point feature update was skipped without a word. The
+    # grown points then carried no 8-d row and lit identically, which is the exact outcome
+    # the comment above says this block exists to prevent.
     lo_path = out_dir / "point-features.f32"
-    lo_dims = len(items[0].get("featuresLo") or [])
+    lo_cent = blocks.get("featuresLo")
+    lo_dims = 0 if lo_cent is None else int(lo_cent.shape[1])
     lo_new: np.ndarray | None = None
     if lo_dims and lo_path.exists():
-        lo_cent = np.asarray([c["featuresLo"] for c in items], dtype=np.float64)
         z_cent = (cent - basis.mean) / np.maximum(basis.std, 1.0e-6)
         # Least-squares map from the standardised space onto the shipped 8-d rows,
         # fitted on the centroids, which are the only paired examples the assets carry.
@@ -484,6 +681,11 @@ def extend_build(
             "durations": list(points["durations"]) + [float(v) for v in new.duration],
             "source": list(points["source"]) + list(new.source),
             "generation": grown,
+            # Which route placed each point. Existing rows are build-placed and say so
+            # with `""`, so the column is never ambiguous between "came by a build" and
+            # "written before the column existed" — a galaxy grown by this path always
+            # rewrites the whole column.
+            "route": list(points.get("route") or [""] * n_old) + route_flags,
         }
     )
 
@@ -520,6 +722,100 @@ def extend_build(
         pool.append(entry)
 
     founded: list[int] = []
+
+    # --- fitted types found their own, named knots ---------------------------------------
+    #
+    # Grouped by label rather than by cohesion, which is the whole difference from the pool
+    # below: these points already know what they are. The knot is therefore *named* — it
+    # takes the same label, function, confidence and refs a rebuild would give it, from the
+    # same `_inventory_index` — where a pool-founded knot can only be called "unheard
+    # syllable" because nobody knows what it is.
+    fit_founded: list[str] = []
+    if any(fit_flags):
+        from .galaxy import _inventory_index, function_class
+
+        inv_doc: dict[str, Any] = {}
+        if inventory_path is not None and Path(inventory_path).exists():
+            inv_doc = json.loads(Path(inventory_path).read_text(encoding="utf-8"))
+        index = _inventory_index(inv_doc)
+
+        by_type: dict[tuple[str, str], list[int]] = {}
+        for i, flag in enumerate(fit_flags):
+            if flag:
+                by_type.setdefault(
+                    (new.species_id[i], new.syllable_id[i]), []
+                ).append(i)
+
+        for (sp_id, sy_id), local_idx in sorted(by_type.items()):
+            point_idx = [n_old + i for i in local_idx]
+            new_id = len(items)
+            for idx in point_idx:
+                points["clusterId"][idx] = new_id
+            member_pos = pos_all[np.asarray(point_idx, dtype=int)]
+            position = member_pos.mean(axis=0)
+            rows = _unit_rows(u_new[np.asarray(local_idx, dtype=int)])
+            centre = rows.mean(axis=0)
+            centre_u = centre / max(float(np.linalg.norm(centre)), 1.0e-12)
+            # The same statistic the pool's `cohesion_floor` is measured against, so the
+            # field means one thing across both founding routes and a reader can compare
+            # a fit-founded knot's tightness with a pool-founded one's.
+            cohesion = float(np.mean(rows @ centre_u))
+            meta = index.get((sp_id, sy_id, ""), {})
+            item = {
+                "id": new_id,
+                "label": meta.get("label", f"{sp_id} - {sy_id}"),
+                "speciesId": sp_id,
+                "syllableId": sy_id,
+                "function": meta.get("function", ""),
+                "confidence": meta.get("confidence", "") or "unlabelled",
+                "refs": list(meta.get("refs", [])),
+                "position": [round(float(v), 6) for v in position],
+                "functionClass": function_class(meta.get("function", "")),
+                "count": len(point_idx),
+                "meanDuration": round(
+                    float(np.mean([points["durations"][i] for i in point_idx])), 4
+                ),
+                "radius": round(
+                    float(np.mean(np.linalg.norm(member_pos - position, axis=1))), 4
+                ),
+                "cohesion": round(cohesion, 4),
+                "speciesMix": [{"speciesId": sp_id, "count": len(point_idx)}],
+                "sources": {
+                    s: int(n)
+                    for s, n in Counter(points["source"][i] for i in point_idx).most_common()
+                },
+                # Which route founded the knot, for the same reason each point carries it:
+                # this centroid was placed in a frame fitted before its type existed, and a
+                # reader comparing knot geometry across generations has to be able to see
+                # that. A rebuild re-fits and drops the mark.
+                "route": ROUTE_FIT,
+            }
+            if space == "embed":
+                item["vector32"] = [round(float(v), 6) for v in centre_u]
+                if z28_new is not None:
+                    v28 = z28_new[np.asarray(local_idx, dtype=int)].mean(axis=0)
+                    item["vector"] = [round(float(v), 6) for v in v28]
+            else:
+                item["vector"] = [round(float(v), 6) for v in centre_u]
+            if lo_new is not None:
+                item["featuresLo"] = [
+                    round(float(v), 6)
+                    for v in _unit_rows(
+                        lo_new[np.asarray(local_idx, dtype=int)].mean(axis=0, keepdims=True)
+                    )[0]
+                ]
+            items.append(item)
+            founded.append(new_id)
+            fit_founded.append(f"{sp_id}/{sy_id}")
+        if fit_founded and verbose:
+            print(
+                f"{len(fit_founded)} knot(s) founded from newly fitted types: "
+                + ", ".join(fit_founded[:6])
+                + ("..." if len(fit_founded) > 6 else ""),
+                file=sys.stderr,
+            )
+
+    from_pool: list[int] = []
     if pool:
         vectors = _unit_rows(np.asarray([e["vector"] for e in pool], dtype=np.float64))
         groups = _novel_groups(vectors)
@@ -527,7 +823,13 @@ def extend_build(
         for members, centre, cohesion in groups:
             point_idx = [int(pool[m]["point"]) for m in members]
             consumed.update(int(m) for m in members)
-            new_id = len(items) + len(founded)
+            # `len(items)`, not `len(items) + len(founded)`. A knot's id *is* its position
+            # in `items` — `assign_clusters` argmaxes over the centroid array and the count
+            # fixup below indexes it positionally — and `items` is appended once per knot
+            # in this same loop, so adding `founded` counted every previous knot twice.
+            # Founding three knots in one grow allocated ids 5, 7, 9 for the knots at
+            # positions 5, 6, 7, after which every count landed on the wrong knot.
+            new_id = len(items)
             for idx in point_idx:
                 points["clusterId"][idx] = new_id
             member_pos = pos_all[np.asarray(point_idx, dtype=int)]
@@ -586,11 +888,15 @@ def extend_build(
                 ]
             items.append(item)
             founded.append(new_id)
+            from_pool.append(new_id)
         pool = [e for j, e in enumerate(pool) if j not in consumed]
-        if founded and verbose:
+        # `from_pool`, not `founded`: since fitted types found knots above, `founded` also
+        # holds named ones, and reporting those as "unheard syllable" would say the
+        # opposite of the truth about a knot that arrived with a name.
+        if from_pool and verbose:
             print(
-                f"{len(founded)} new knot(s) founded from the novel pool: "
-                + ", ".join(f"#{i} unheard syllable" for i in founded),
+                f"{len(from_pool)} new knot(s) founded from the novel pool: "
+                + ", ".join(f"#{i} unheard syllable" for i in from_pool),
                 file=sys.stderr,
             )
     _save_pool(out_dir, pool)
@@ -603,6 +909,38 @@ def extend_build(
     added = np.bincount(ids[ids >= 0], minlength=len(items))
     for i, item in enumerate(items[: len(added)]):
         item["count"] = int(item.get("count", 0)) + int(added[i])
+
+    # **A founded knot has to reach the sidecar, or the galaxy stops loading.** `k` below is
+    # rewritten to `len(items)`, and `galaxy.centroid_vectors` checks the binary against it:
+    # appending an item without appending its row left `centroid-vectors.f32` one row short
+    # and every later reader — `verify`, `thresholds`, any analysis — raising "the sidecar
+    # and centroids.json disagree". Founding a knot on a shipped asset set did not fail
+    # loudly, it made the asset set unreadable.
+    vec_block = centroids.get("vectors")
+    if vec_block and len(items) > n_knots_before:
+        order = list(vec_block["order"])
+        widths = {n: int(w) for n, w in vec_block["dims"].items()}
+        rows: list[list[float]] = []
+        for i, item in enumerate(items):
+            row: list[float] = []
+            for name in order:
+                w = widths[name]
+                if i < n_knots_before and name in blocks:
+                    row.extend(float(v) for v in blocks[name][i])
+                else:
+                    v = list(item.get(name) or [])
+                    row.extend([float(t) for t in v[:w]] + [0.0] * max(0, w - len(v)))
+            rows.append(row)
+        (out_dir / vec_block["file"]).write_bytes(
+            np.asarray(rows, dtype="<f4").ravel(order="C").tobytes()
+        )
+        vec_block = {**vec_block, "bytes": len(items) * sum(widths[n] for n in order) * 4}
+        centroids = {**centroids, "vectors": vec_block}
+        # The inline copies are dropped on the knots that carry them, so a sidecar galaxy
+        # never holds the same array twice with two chances to disagree.
+        for item in items[n_knots_before:]:
+            for name in order:
+                item.pop(name, None)
     (out_dir / "centroids.json").write_text(
         json.dumps({**centroids, "k": len(items), "items": items}, indent=1),
         encoding="utf-8",
@@ -685,4 +1023,118 @@ def extend_build(
             file=sys.stderr,
         )
     return {"added": int(len(x)), "points": n_old + int(len(x)),
-            "generation": generation, "drift": report, "founded": founded}
+            "generation": generation, "drift": report, "founded": founded,
+            # Split by route, because the caller's message differs: a pool-founded knot is
+            # an unnamed sound heard enough times, a fit-founded one is a named type that
+            # just took its place.
+            "foundedFromPool": from_pool, "foundedFromTypes": fit_founded}
+
+
+def self_test(verbose: bool = True) -> None:
+    """Grow a two-species galaxy, then place two types that were fitted after it was built.
+
+    The scenario is the one the module exists for: build without two syllables, hand the
+    full inventory back, and check that the types take their place without a rebuild. It
+    also pins the three failures found while writing it, each of which was silent —
+    knot ids that skipped, a sidecar the grow never appended to, and per-point features
+    quietly not written.
+    """
+    import copy
+    import shutil
+    import tempfile
+
+    from . import galaxy as galaxy_mod
+    from .corpus import load_inventory, synthetic_corpus
+
+    # --- unbuilt_types is the one definition the loop and the renderer share -------------
+    inv_toy = {"species": [
+        {"id": "sp1", "syllables": [{"id": "A"}, {"id": "B"}]},
+        {"id": "sp2", "syllables": [{"id": "C"}]},
+    ]}
+    cen_toy = {"items": [
+        {"speciesId": "sp1", "syllableId": "A"},
+        # A pool-founded knot names no syllable, so it places none.
+        {"speciesId": "", "syllableId": ""},
+    ]}
+    assert unbuilt_types(inv_toy, cen_toy) == [("sp1", "B"), ("sp2", "C")]
+
+    root = Path(__file__).resolve().parents[3] / "data" / "inventory.json"
+    if not root.exists():  # a checkout without the data directory: the toy case still ran
+        if verbose:
+            print("grow: inventory.json absent, skipped the end-to-end case", file=sys.stderr)
+        return
+
+    tmp = Path(tempfile.mkdtemp(prefix="grow-selftest-"))
+    try:
+        full = load_inventory(root)
+        fitted = {"species": copy.deepcopy(full["species"][:2])}
+        built_inv = copy.deepcopy(fitted)
+        # Hold two syllables back, and with them any song that would reference a syllable
+        # the build no longer has.
+        held = [built_inv["species"][0]["syllables"].pop() for _ in range(2)]
+        held_ids = {h["id"] for h in held}
+        built_inv["species"][0]["songs"] = [
+            s for s in built_inv["species"][0].get("songs", [])
+            if not {str(e) for e in s.get("sequence", [])} & held_ids
+        ]
+
+        clips = synthetic_corpus(
+            built_inv, None, variants=6, song_variants=1, seed=0, verbose=False
+        )
+        points = galaxy_mod.descriptors(clips, verbose=False)
+        old_path = tmp / "built-inventory.json"
+        old_path.write_text(json.dumps(built_inv), encoding="utf-8")
+        galaxy_mod.build_galaxy(
+            points, built_inv, out_dir=tmp, inventory_path=old_path,
+            clustering="label", projection="cmds", compare_projections=False,
+            test_relations=False, verbose=False,
+        )
+
+        fitted_path = tmp / "fitted-inventory.json"
+        fitted_path.write_text(json.dumps(fitted), encoding="utf-8")
+        before = json.loads((tmp / "centroids.json").read_text(encoding="utf-8"))
+        assert len(unbuilt_types(fitted, before)) == 2
+
+        result = render_unbuilt(tmp, fitted_path, variants=6, seed=0, verbose=False)
+        assert len(result["foundedFromTypes"]) == 2, result["foundedFromTypes"]
+
+        after = json.loads((tmp / "centroids.json").read_text(encoding="utf-8"))
+        pts = json.loads((tmp / "points.json").read_text(encoding="utf-8"))
+
+        # The galaxy now covers every fitted type, which is what stops the rebuild trigger.
+        assert unbuilt_types(fitted, after) == []
+
+        # A knot's id is its position. `len(items) + len(founded)` allocated 5, 7, 9 for the
+        # knots at 5, 6, 7, after which the count fixup credited the wrong knots.
+        assert [c["id"] for c in after["items"]] == list(range(len(after["items"])))
+
+        # The sidecar has to grow with the knots or `centroid_vectors` refuses the galaxy.
+        blocks = galaxy_mod.centroid_vectors(tmp, after)
+        assert all(v.shape[0] == after["k"] == len(after["items"]) for v in blocks.values())
+        for c in after["items"]:
+            if c.get("route") == ROUTE_FIT:
+                assert float(np.linalg.norm(blocks["vector"][c["id"]])) > 0.0
+
+        # Per-point features are written for grown points, not skipped for want of a key.
+        assert "featuresLo" in blocks
+        lo = _read_f32(tmp / "point-features.f32", blocks["featuresLo"].shape[1])
+        assert lo.shape[0] == pts["n"], (lo.shape, pts["n"])
+
+        # Route is recorded on every point, or the two placements are not separable later.
+        assert set(pts["route"]) == {"", ROUTE_FIT}
+        fit_knots = {c["id"] for c in after["items"] if c.get("route") == ROUTE_FIT}
+        assert len(fit_knots) == 2
+        for i, r in enumerate(pts["route"]):
+            if r == ROUTE_FIT:
+                assert pts["clusterId"][i] in fit_knots
+
+        # A named type founds a *named* knot; only the anonymous pool says "unheard".
+        for c in after["items"]:
+            if c.get("route") == ROUTE_FIT:
+                assert c["speciesId"] and c["syllableId"] in held_ids
+                assert c["label"] and c["label"] != "unheard syllable"
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    if verbose:
+        print("grow: ok", file=sys.stderr)

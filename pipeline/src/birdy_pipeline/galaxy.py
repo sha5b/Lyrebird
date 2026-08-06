@@ -246,6 +246,17 @@ class PointSet:
     #: was never measured — both are "no evidence", which the pipeline carries as neutral
     #: and never as bad (`learn.SyllableObservation.snr`).
     snr: list[float | None] | None = None
+    #: How each point came to be placed: `""` for a point a build placed, `"fit"` for one
+    #: rendered from a newly fitted type and grown in without a rebuild (`grow.ROUTE_FIT`).
+    #:
+    #: **Purity and coverage are only comparable across generations if this is recorded.**
+    #: A build places every point by re-fitting the projection; fit-time synthesis places
+    #: one through a frozen basis fitted before its type existed. Both produce a point in
+    #: `points.json` and the two are not the same measurement, so a reader comparing a
+    #: generation-3 purity against a generation-1 purity needs to be able to hold the route
+    #: constant. `None` on a corpus where every point came the same way, which is every
+    #: build.
+    route: list[str] | None = None
 
     def __len__(self) -> int:
         return int(self.x.shape[0])
@@ -288,6 +299,13 @@ class PointSet:
             if any(p.snr is not None for p in kept)
             else None
         )
+        # `any`, for the same reason as `snr`: a part with no route is not an unknown
+        # route, it is the build route, which `""` says exactly.
+        route = (
+            [v for p in kept for v in (p.route or [""] * len(p))]
+            if any(p.route is not None for p in kept)
+            else None
+        )
         return PointSet(
             x=np.concatenate([p.x for p in kept], axis=0),
             species_id=[v for p in kept for v in p.species_id],
@@ -298,6 +316,7 @@ class PointSet:
             embeddings=embeddings,
             novel=novel,
             snr=snr,
+            route=route,
         )
 
 

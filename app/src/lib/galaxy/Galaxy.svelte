@@ -6,7 +6,7 @@
 	import type { OrbitControls as OrbitControlsInstance } from 'three/examples/jsm/controls/OrbitControls.js';
 	import type { BirdyAssets } from '$lib/data/types';
 	import { biplotAxes, type ScreenReading } from './biplot';
-	import type { DoubtSource } from './doubt';
+	import { doubtRange } from './doubt';
 	import { TARGET_PX, gridOffsetPx, tickStep } from './ticks';
 	import ContextPaths from './ContextPaths.svelte';
 	import Framing from './Framing.svelte';
@@ -88,11 +88,24 @@
 		 */
 		unheard?: boolean;
 		/**
-		 * Which doubt drains each mark's colour — neighbour agreement, recording SNR, or
-		 * none. Passed straight through to PointCloud, which owns the easing, the ramp and
-		 * the absent-channel guard. See `doubt.ts` for why the two share one channel.
+		 * The most of the corpus the adaptive governor may draw, 0.1..1. Only consulted while
+		 * `adaptive` is on — off, the camera decides alone and the ceiling is 1 by definition.
 		 */
-		trust?: DoubtSource;
+		detailCeiling?: number;
+		/**
+		 * The two doubt colourings — neighbour agreement (rose) and recording SNR (amber).
+		 *
+		 * **Independent, and they overlay.** They shared one channel and took turns until
+		 * 2026-08-06; `aTrust` is a vec2 now, which costs the same one attribute slot, so both
+		 * can be resident and the pair reads as a bivariate scheme (`palette.ts`).
+		 *
+		 * They are the third identity colour rather than a tint on the other two, so they reach
+		 * the tags as well as the points: PointCloud owns the easing and the absent-channel
+		 * guard, and the two label components take the same switches and average their own knots
+		 * from the same arrays the points are drawn from.
+		 */
+		trustAgree?: boolean;
+		trustSnr?: boolean;
 		/**
 		 * The two-level arrangement (layouts.ts `localShapes`): knot centres from the
 		 * global projection, members from a local projection of their own features.
@@ -140,8 +153,10 @@
 		birdColours = false,
 		provShown = [true, true, true, true, true],
 		adaptive = true,
+		detailCeiling = 1,
 		unheard = false,
-		trust = '',
+		trustAgree = false,
+		trustSnr = false,
 		localKnots = false,
 		selectedSpecies = '',
 		onpick,
@@ -165,6 +180,17 @@
 	let labelSlots = $state<number[]>(Array.from({ length: LABEL_SLOTS }, () => -1));
 	// The corpus does not change while this is mounted, so the view is sized once.
 	const view = untrack(() => createLayoutView(assets));
+
+	/**
+	 * The SNR ramp's ends, resolved once here rather than in each label component so the
+	 * percentiles are computed a single time for the build.
+	 *
+	 * There is no equivalent for agreement on purpose: it is already a share, and rescaling it
+	 * to its own percentiles would make a corpus that agrees nowhere look half-agreed (see
+	 * `toDoubtBuffer`). The label components read the arrays themselves — they already hold
+	 * `assets` — so only this measured pair has to travel.
+	 */
+	const snrRamp = untrack(() => (assets.points.snr ? doubtRange(assets.points.snr) : undefined));
 
 	/**
 	 * The partner knots the label pool may consider while a species is selected:
@@ -313,10 +339,10 @@
 			<GridBurst {assets} {signal} {view} prov={!plain} />
 			<ContextPaths {assets} {signal} {view} prov={!plain} />
 			<RelationThreads {assets} {view} speciesId={selectedSpecies} />
-			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} {birdColours} {provShown} {adaptive} {unheard} {trust} {localKnots} bind:knotSpacing {stats} />
+			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} {birdColours} {provShown} {adaptive} {detailCeiling} {unheard} {trustAgree} {trustSnr} {localKnots} bind:knotSpacing {stats} />
 			<Trajectory {assets} {signal} {view} {spread} {pointSize} prov={!plain} />
 			{#if labels}
-				<NodeProjector {assets} {signal} elements={labelElements} bind:slots={labelSlots} {focus} {pinned} {view} prov={!plain} related={relatedKnots} {stats} />
+				<NodeProjector {assets} {signal} elements={labelElements} bind:slots={labelSlots} {focus} {pinned} {view} prov={!plain} doubtAgree={trustAgree} doubtSnr={trustSnr} doubtRange={snrRamp} related={relatedKnots} {stats} />
 			{/if}
 		</Spinner>
 	</Canvas>
@@ -327,6 +353,9 @@
 			slots={labelSlots}
 			bind:elements={labelElements}
 			prov={!plain}
+			doubtAgree={trustAgree}
+			doubtSnr={trustSnr}
+			doubtRange={snrRamp}
 			{pxPerKnot}
 			{onpick}
 		/>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  One URL, and that is the whole site.
+
+  Lyrebird is a single route: the reading panel, the info page and the learn page are overlays on
+  the same document rather than separate addresses, because they are parts of one instrument
+  rather than pages of a site. A sitemap listing fragment identifiers would be listing the same
+  URL several times, which helps nobody.
+
+  The two files beside it are here because they are the readable substance a crawler can use
+  without executing anything: the paper, and the plain-text summary written for language models.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://lyrebird.variable.gallery/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://lyrebird.variable.gallery/lyrebird-whitepaper.pdf</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lyrebird.variable.gallery/llms.txt</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+</urlset>

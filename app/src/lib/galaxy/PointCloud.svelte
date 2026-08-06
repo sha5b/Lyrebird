@@ -30,6 +30,10 @@
 		PROV_DOCUMENTED,
 		PROV_FIELD,
 		PROV_LEARNED,
+		DOUBT_AGREE,
+		DOUBT_QUIET,
+		DOUBT_SNR,
+		UNCLAIMED_TINT,
 		provenanceColour,
 		speciesColour,
 		speciesHue
@@ -116,15 +120,35 @@
 		 */
 		unheard?: boolean;
 		/**
-		 * Which doubt drains each mark's colour, or `''` for none. See `doubt.ts` for why
-		 * the two sources share one channel and take turns on it.
+		 * How dense the picture is allowed to get while the governor is running, 0.1..1.
 		 *
-		 * `'agreement'` is `points.knnAgreement` — doubt about where the map put the mark.
-		 * `'snr'` is `points.snr` on a p5..p95 ramp — doubt about the recording it came
-		 * from. Off by default either way: agreement alone drains a quarter of the cloud,
-		 * which is the finding rather than a reason to hide it.
+		 * The governor already had a *floor* of 0.10 so the representatives can never thin out
+		 * entirely; this is the ceiling at the other end, and it is the reader's rather than the
+		 * frame timer's (owner, 2026-08-06: "on the adaptive details can we also have a slider
+		 * when activated to say how dense"). At 1 the governor behaves exactly as it did.
+		 *
+		 * Only consulted while `adaptive` is on. Off, the cap is pinned at 1 and the camera
+		 * decides alone — a ceiling on a governor that is not running would be a second, silent
+		 * detail control, which is the thing this makes visible rather than adds.
 		 */
-		trust?: DoubtSource;
+		detailCeiling?: number;
+		/**
+		 * Colour every mark by how few of its ten drawn neighbours share its type
+		 * (`points.knnAgreement`) — doubt about where the map put it. Rose ramp.
+		 *
+		 * Off by default: it recolours a quarter of the cloud, and that quarter is the
+		 * finding rather than a reason to hide it.
+		 */
+		trustAgree?: boolean;
+		/**
+		 * Colour every mark by how noisy the recording it came from was (`points.snr` on a
+		 * p5..p95 ramp) — doubt about the measurement rather than about the position. Amber.
+		 *
+		 * **Composes with `trustAgree` rather than replacing it.** The two used to take turns
+		 * because they shared one float; they are a vec2 now, and together they are a
+		 * bivariate scheme with a defined worst corner. See `palette.ts`.
+		 */
+		trustSnr?: boolean;
 		/** Written, never read: how many points each pass actually drew. See stats.ts. */
 		stats?: GalaxyStats;
 	}
@@ -142,9 +166,11 @@
 		birdColours = false,
 		provShown = [true, true, true, true, true],
 		adaptive = true,
+		detailCeiling = 1,
 		localKnots = false,
 		unheard = false,
-		trust = '',
+		trustAgree = false,
+		trustSnr = false,
 		knotSpacing = $bindable(),
 		stats
 	}: Props = $props();
@@ -277,24 +303,35 @@
 		new THREE.BufferAttribute(misc, 4).setUsage(THREE.DynamicDrawUsage)
 	);
 
-	/**
-	 * Per-point doubt, 0..1 (see `doubt.ts`). Held here rather than inside the geometry
-	 * block because the switch rewrites it: the resting cells and the active pass copy this
-	 * geometry's attribute *objects* at construction, so rewriting this one array reaches
-	 * every pass, while a replacement attribute would reach none of them.
-	 */
-	const trustAttribute = untrack(() =>
-		new THREE.BufferAttribute(
-			toDoubtBuffer(assets.points.n, assets.points.knnAgreement),
-			1
-		).setUsage(THREE.DynamicDrawUsage)
-	);
-	/** Which source the attribute currently holds, so the rewrite happens once per switch. */
-	let trustDrawn: DoubtSource = 'agreement';
 	/** The SNR ramp's ends in dB, measured once from the shipped values. */
 	const snrRange = untrack(() =>
 		assets.points.snr ? doubtRange(assets.points.snr) : null
 	);
+	/**
+	 * Both doubts, interleaved: **x agreement, y SNR** (see `doubt.ts`).
+	 *
+	 * **Static now, and that is the change.** It was a one-component buffer rewritten in
+	 * place whenever the reader switched sources — 1.8 MB an upload — because one float could
+	 * only carry one doubt at a time and the two took turns. An attribute slot is vec4-sized,
+	 * so a vec2 costs the same single slot the float did (the budget note on `aTrust` in
+	 * `shaders.ts` is unchanged), and with both values resident the switch is two uniforms
+	 * rather than a re-upload. So this is built once and never touched again: no
+	 * DynamicDrawUsage, no `needsUpdate`, nothing per frame.
+	 *
+	 * Still held out here rather than inside the geometry block, for the reason it always was:
+	 * the resting cells and the active pass copy this geometry's attribute *objects* at
+	 * construction, so a replacement attribute would reach none of them.
+	 */
+	const trustAttribute = untrack(() => {
+		const agree = toDoubtBuffer(assets.points.n, assets.points.knnAgreement);
+		const snr = toDoubtBuffer(assets.points.n, assets.points.snr, snrRange ?? undefined);
+		const pair = new Float32Array(assets.points.n * 2);
+		for (let i = 0; i < assets.points.n; i++) {
+			pair[i * 2] = agree[i];
+			pair[i * 2 + 1] = snr[i];
+		}
+		return new THREE.BufferAttribute(pair, 2);
+	});
 
 	const geometry = untrack(() => {
 		const g = new THREE.BufferGeometry();
@@ -331,16 +368,15 @@
 		const refused = assets.points.unassigned;
 		if (refused) for (let i = 0; i < assets.points.n; i++) dense[i] = refused[i] ? 1 : 0;
 		g.setAttribute('aDense', new THREE.BufferAttribute(dense, 1));
-		// The doubt channel, filled with 1 — "no recorded reason to doubt this position" — so
-		// a build that ships no measurement draws exactly as it did before the channel
-		// existed. The reason absent is 1 here and 0 in aDense is that the two say opposite
-		// things: aDense absent means "not refused", aTrust absent means "nothing measured".
+		// Both doubt channels, each filled with 1 — "no recorded reason to doubt this" — where
+		// the build ships no measurement, so an absent channel draws exactly as the cloud drew
+		// before it existed. The reason absent is 1 here and 0 in aDense is that the two say
+		// opposite things: aDense absent means "not refused", aTrust absent means "nothing
+		// measured".
 		//
-		// Dynamic, and rewritten in place when the source switches. One attribute rather
-		// than one per source: the vertex program is at eleven attributes and Mesa's Intel
-		// driver in Firefox failed to link the fifteen-attribute version, so a 1.8 MB
-		// re-upload on a control change is the cheaper side of that trade — the same
-		// judgement `aMisc`'s LOD rank already makes at 5.6 MB.
+		// One vec2 rather than two floats: the vertex program is at eleven attributes and
+		// Mesa's Intel driver in Firefox failed to link the fifteen-attribute version, and a
+		// vec2 fits in the slot the float already had.
 		g.setAttribute('aTrust', trustAttribute);
 		g.setAttribute('aOrphan', orphanAttribute);
 		g.computeBoundingSphere();
@@ -487,9 +523,18 @@
 			// The figure/ground swap on the density verdict, eased rather than switched —
 			// see uUnheard in shaders.ts for why a cut is the wrong transition here.
 			uUnheard: { value: 0 },
-			// Eased for the same reason as uUnheard: a cut between two colourings of the
-			// whole cloud loses the reader's place in it.
-			uTrust: { value: 0 }
+			// One strength per doubt channel — x agreement, y SNR — eased for the same reason
+			// as uUnheard: a cut between two colourings of the whole cloud loses the reader's
+			// place in it. Mutated in place each frame, like uAccent's Color.
+			uTrust: { value: new THREE.Vector2(0, 0) },
+			// Where each ramp goes. Constants, set once — the modes are `uTrust` — and taken
+			// from palette.ts so the tags (doubtColourScaled) and the points cannot drift apart.
+			uDoubtAgree: { value: new THREE.Color(DOUBT_AGREE) },
+			uDoubtSnr: { value: new THREE.Color(DOUBT_SNR) },
+			uDoubtQuiet: { value: new THREE.Color(DOUBT_QUIET) },
+			// What a refused sound is drawn in. A constant like the ramp ends; `uUnheard` is
+			// the switch, and it already eases.
+			uUnclaimed: { value: new THREE.Color(UNCLAIMED_TINT) }
 		},
 		transparent: true,
 		depthWrite: false,
@@ -1456,23 +1501,18 @@
 		// a picture that has no data behind it.
 		const wantUnheard = unheard && assets.points.unassigned ? 1 : 0;
 		u.uUnheard.value += (wantUnheard - u.uUnheard.value) * (1 - Math.pow(0.02, delta));
-		// Held at 0 on a build that ships no measurement for the chosen source, so the
-		// control cannot recolour a picture with nothing behind it.
-		const hasSource =
-			trust === 'snr' ? !!assets.points.snr : trust === 'agreement' ? !!assets.points.knnAgreement : false;
-		const source: DoubtSource = hasSource ? trust : '';
-		if (source && source !== trustDrawn) {
-			// Rewritten in place, on a control change and never on a frame.
-			trustAttribute.array.set(
-				source === 'snr'
-					? toDoubtBuffer(assets.points.n, assets.points.snr, snrRange ?? undefined)
-					: toDoubtBuffer(assets.points.n, assets.points.knnAgreement)
-			);
-			trustAttribute.needsUpdate = true;
-			trustDrawn = source;
-		}
-		const wantTrust = source ? 1 : 0;
-		u.uTrust.value += (wantTrust - u.uTrust.value) * (1 - Math.pow(0.02, delta));
+		// **Two channels, eased independently, and no upload at all.** Both doubts are
+		// resident in the vec2 attribute, so switching one on is a uniform moving and nothing
+		// else — where it used to be a 1.8 MB re-upload of the whole corpus.
+		//
+		// Each is held at 0 on a build that ships no measurement for it, so neither control
+		// can recolour a picture with nothing behind it.
+		const wantAgree = trustAgree && assets.points.knnAgreement ? 1 : 0;
+		const wantSnr = trustSnr && assets.points.snr ? 1 : 0;
+		const easeTrust = 1 - Math.pow(0.02, delta);
+		const trustNow = u.uTrust.value as THREE.Vector2;
+		trustNow.x += (wantAgree - trustNow.x) * easeTrust;
+		trustNow.y += (wantSnr - trustNow.y) * easeTrust;
 
 		// **Silent frames upload nothing — after the ring-down has finished.** The four
 		// GPU writes below — three corpus-length attributes (activation, orphan, front
@@ -1557,9 +1597,14 @@
 			if (/intel/i.test(stats.renderer) && !/arc/i.test(stats.renderer)) densityCap = 0.55;
 		}
 		if (adaptive) {
+			// The reader's ceiling, clamped into the governor's own band. Applied to the rise
+			// AND as a hard clamp afterwards, so dragging the slider down takes effect on the
+			// next frame rather than only once the frame timer next asks for less.
+			const ceiling = Math.min(1, Math.max(0.1, detailCeiling));
 			const ms = stats?.frameMs ?? 0;
 			if (ms > 20) densityCap = Math.max(0.1, densityCap - delta * 0.8);
-			else if (ms > 0 && ms < 13) densityCap = Math.min(1, densityCap + delta * 0.15);
+			else if (ms > 0 && ms < 13) densityCap = Math.min(ceiling, densityCap + delta * 0.15);
+			if (densityCap > ceiling) densityCap = ceiling;
 		} else if (densityCap !== 1) {
 			densityCap = 1;
 		}

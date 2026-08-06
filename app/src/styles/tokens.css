@@ -45,6 +45,17 @@
 	/* real audio that was typed but never given a species — the arrivals pool */
 	--arrival: #db2777;
 
+	/* The doubt ramps' ends, kept in step with `palette.ts` by hand for the same reason
+	   `--signal` is: the shader needs numbers and CSS needs a string. Loud is the doubtful end
+	   on both — the reason either mode exists is to find those marks — and the quiet end is
+	   shared, because the two channels disagree about what to doubt, not about what confidence
+	   looks like. */
+	--doubt-agree: #8f0f3c;
+	--doubt-snr: #8a5200;
+	--doubt-quiet: #c3ced9;
+	/* A sound a density clustering placed in a region. Cyan is the gap in the set above. */
+	--unclaimed: #0e7490;
+
 	/* Two typefaces, two jobs. Plex Sans for prose and controls; Plex Mono for every
 	   figure, id and log line — the lab-instrument half of the pairing. Both fall back
 	   to the system stack when the webfonts have not loaded (or never do). */

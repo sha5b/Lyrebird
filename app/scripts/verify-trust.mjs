@@ -23,9 +23,11 @@
  *      recorded to doubt any position), the control disables, and the uniform is held at 0.
  *      Absent must never render as "these marks are untrustworthy".
  *
- * What this cannot check is that the desaturation is *visible*, which is what
- * `probe:stage` is for — it compiles the real program on a real GPU and reports shader
- * errors. Run both.
+ * What this cannot check is that the colouring is *visible*, which is what `probe:trust` is
+ * for — it measures chroma over a real composited frame — and `probe:stage`, which compiles the
+ * real program on a real GPU and reports shader errors. Run all three; the reason the middle one
+ * exists is that a uniform can be wired, compiled, eased and then multiplied by something that
+ * happens to be zero, and that draws an identical frame with every check here passing.
  *
  * Run with `npm run verify:trust`. Exits non-zero on any disagreement.
  */
@@ -49,20 +51,110 @@ const doubt = readFileSync('src/lib/galaxy/doubt.ts', 'utf8');
 const cloud = readFileSync('src/lib/galaxy/PointCloud.svelte', 'utf8');
 const galaxy = readFileSync('src/lib/galaxy/Galaxy.svelte', 'utf8');
 const page = readFileSync('src/routes/+page.svelte', 'utf8');
+const palette = readFileSync('src/lib/galaxy/palette.ts', 'utf8');
+const labels = readFileSync('src/lib/galaxy/NodeLabels.svelte', 'utf8');
+const projector = readFileSync('src/lib/galaxy/NodeProjector.svelte', 'utf8');
+const assetsTs = readFileSync('src/lib/data/assets.ts', 'utf8');
 
 console.log(`the reader, on src/`);
 
-// The half that was missing. Each of these five lines is one link in the chain from the
-// asset to a pixel, and the channel was dead because the chain was empty end to end.
-ok('the vertex stage declares the attribute', /attribute float aTrust;/.test(shaders));
+// The half that was missing. Each of these lines is one link in the chain from the asset to a
+// pixel, and the channel was dead because the chain was empty end to end.
+//
+// **A vec2, and the width is the assertion.** The two doubts took turns on one float until
+// 2026-08-06 and could never be on screen together. Attribute slots are vec4-sized, so a vec2
+// costs exactly what the float did — which is why this is a widening rather than a second
+// attribute, and why the budget note below still holds.
+ok('the vertex stage declares both doubts in one attribute', /attribute vec2 aTrust;/.test(shaders));
 ok('the vertex stage passes it on', /vTrust = clamp\(aTrust/.test(shaders));
-ok('the fragment stage declares the uniform', /uniform float uTrust;/.test(shaders));
+ok('the fragment stage takes one strength per channel', /uniform vec2 uTrust;/.test(shaders));
+// **The invariant this check protects has not changed; the mechanism has twice.**
+//
+// It asserted the saturation drain literally (`mix(colour, vec3(dot(colour…`), then one hue
+// ramp, and now two. What it exists for is the same through all three and still worth failing
+// over: a doubtful mark must keep its size, its weight and its place, because moving any of
+// those says "this sound matters less", which is a claim about the sound rather than about the
+// map. So: the ramp is what uTrust drives, and uTrust appears on no size, alpha or position.
 ok(
-	'and spends it on saturation, not on size or ink',
-	/colour = mix\(colour, vec3\(dot\(colour/.test(shaders) &&
+	'it spends hue, and nothing else',
+	/vec3 doubtCol = clamp\(\s*uDoubtQuiet/.test(shaders) &&
+		/mix\(inkId, doubtCol, doubtOn\)/.test(shaders) &&
 		!/refusedSize[^\n]*uTrust/.test(shaders) &&
-		!/alpha[^\n]*uTrust/.test(shaders),
+		!/alpha[^\n]*uTrust/.test(shaders) &&
+		!/gl_PointSize[^\n]*[vu]Trust/.test(shaders),
 	'a low-agreement mark must keep its size, weight and place'
+);
+// **The composition must stay symmetric.** Applying one channel and then mixing the second
+// on top of the result privileges whichever went second, which would make "agreement + noise"
+// and "noise + agreement" two different pictures of the same two numbers. Subtracting both
+// from the shared quiet end is the form that cannot do that.
+ok(
+	'the two ramps compose symmetrically',
+	/uDoubtQuiet\s*- \(uDoubtQuiet - uDoubtAgree\) \* doubts\.x\s*- \(uDoubtQuiet - uDoubtSnr\) \* doubts\.y/.test(
+		shaders
+	),
+	'a nested mix would make the second channel win, so the pair would not commute'
+);
+// Turning the second channel on must not dilute the first: the takeover is the MAX of the two
+// switches, not their sum or their product.
+ok(
+	'either channel alone takes over the identity colour fully',
+	/float doubtOn = max\(uTrust\.x, uTrust\.y\);/.test(shaders)
+);
+ok(
+	'and the drain it replaced is not still applied on top',
+	!/mix\(colour, vec3\(dot\(colour/.test(shaders),
+	'draining a mark that is already wearing its doubt as a colour takes back the ink the ramp just gave it'
+);
+// **Loud at the doubtful end, and this is the check that says so.** The whole reason the drain
+// was replaced is that it made the doubtful marks the faintest things on screen, which is
+// backwards for a channel whose only job is to make them findable. `vTrust` is 1 for "no reason
+// to doubt", so the doubt is `1 - vTrust`; an accidental un-inversion here would reproduce the
+// original bug in a new colour, with the marks worth finding becoming the quiet ones.
+ok(
+	'doubt is measured from the loud end',
+	/vec2 doubts = \(vec2\(1\.0\) - clamp\(vTrust, 0\.0, 1\.0\)\) \* clamp\(uTrust/.test(shaders),
+	'vTrust 1 means no reason to doubt, so the quiet end must be the 1 end'
+);
+ok(
+	'the two ramps have different loud ends',
+	/export const DOUBT_AGREE = '#[0-9a-f]{6}'/.test(palette) &&
+		/export const DOUBT_SNR = '#[0-9a-f]{6}'/.test(palette) &&
+		palette.match(/export const DOUBT_AGREE = '(#[0-9a-f]{6})'/)[1] !==
+			palette.match(/export const DOUBT_SNR = '(#[0-9a-f]{6})'/)[1],
+	'two channels the reader can overlay must not be the same hue, or the overlay says nothing'
+);
+ok(
+	'the ramp ends live in palette.ts and reach both the points and the tags',
+	/export const DOUBT_QUIET/.test(palette) &&
+		/uDoubtAgree: \{ value: new THREE\.Color\(DOUBT_AGREE\)/.test(cloud) &&
+		/uDoubtSnr: \{ value: new THREE\.Color\(DOUBT_SNR\)/.test(cloud) &&
+		/doubtColourScaled/.test(labels) &&
+		/doubtColourScaled/.test(projector),
+	'a tag drawn from different constants than its own points is the one disagreement a reader can see'
+);
+// The per-knot half of the mode. A tag is per knot and the attribute is per point, so the
+// two need a defined relationship or the tag is decoration.
+ok(
+	'a tag averages its own knot from the same values, per channel',
+	/export function knotDoubt/.test(assetsTs) &&
+		/toDoubtBuffer\(assets\.points\.n, values, range\)/.test(assetsTs) &&
+		/knotDoubt\(assets, assets\.points\.knnAgreement\)/.test(labels) &&
+		/knotDoubt\(assets, assets\.points\.snr, doubtRange\)/.test(labels) &&
+		/knotDoubt\(assets, assets\.points\.knnAgreement\)/.test(projector) &&
+		/knotDoubt\(assets, assets\.points\.snr, doubtRange\)/.test(projector)
+);
+ok(
+	'an empty knot claims nothing',
+	/new Float32Array\(count\)\.fill\(NO_DOUBT\)/.test(assetsTs),
+	'a knot with no members has nothing measured, so it must not read as fully doubtful or fully trusted'
+);
+// The projector caches colour strings per knot and clears on a language change. With four
+// languages and a two-value key, switching agreement -> snr served the stale colour.
+ok(
+	"the projector's colour cache keys on both doubt switches",
+	/`doubt:\$\{doubtAgree\}:\$\{doubtSnr\}`/.test(projector),
+	'a key that dropped one switch would serve an agreement-only tag after SNR was added on top'
 );
 ok('PointCloud fills the attribute from the asset', /setAttribute\('aTrust'/.test(cloud));
 ok('PointCloud reads points.knnAgreement to do it', /points\.knnAgreement/.test(cloud));
@@ -76,14 +168,22 @@ ok('PointCloud reads points.knnAgreement to do it', /points\.knnAgreement/.test(
 ok('SNR shares the channel rather than taking a new one', /points\.snr/.test(cloud));
 ok(
 	'only one doubt attribute exists',
-	(shaders.match(/attribute float aTrust;/g) ?? []).length === 1 && !/aSnr/.test(shaders),
+	(shaders.match(/attribute vec2 aTrust;/g) ?? []).length === 1 && !/aSnr/.test(shaders),
 	'a second attribute would spend a vertex slot the program cannot afford'
 );
-ok('the buffer is rewritten in place, not replaced', /trustAttribute\.needsUpdate = true/.test(cloud));
+// With both values resident there is nothing to re-upload on a switch, so the buffer is
+// static. A DynamicDrawUsage here would be a leftover promising traffic that no longer happens.
 ok(
-	'and only when the source changes, never per frame',
-	/source !== trustDrawn/.test(cloud),
-	'444 213 floats is 1.8 MB an upload'
+	'both doubts are resident, so a switch uploads nothing',
+	/pair\[i \* 2\] = agree\[i\]/.test(cloud) &&
+		/pair\[i \* 2 \+ 1\] = snr\[i\]/.test(cloud) &&
+		!/trustAttribute[\s\S]{0,200}DynamicDrawUsage/.test(cloud),
+	'the old design re-uploaded 1.8 MB whenever the reader changed source'
+);
+ok(
+	'nothing about the channel is written per frame except two uniforms',
+	!/trustAttribute\.needsUpdate/.test(cloud) && /trustNow\.x \+=/.test(cloud) && /trustNow\.y \+=/.test(cloud),
+	'444 213 floats is 1.8 MB an upload, and it no longer happens at all'
 );
 ok('both the buffer and the panel normalise through doubt.ts', /toDoubtBuffer/.test(cloud) && /doubtRange/.test(page));
 ok(
@@ -97,14 +197,57 @@ ok(
 	"a render has no noise floor; 0 would call our own synthesis the noisiest audio here"
 );
 ok('the panel prints the ramp ends it draws with', /snrStats\.lo/.test(page) && /snrStats\.hi/.test(page));
+// **The two doubts must NOT clear each other** — that is the whole point of the widening, and
+// it is the one place this file's rule is deliberately inverted. If a future edit reintroduced
+// mutual exclusion the overlay would silently stop working while every other check passed.
 ok(
-	'choosing one source clears the other',
-	/trustColour = e\.currentTarget\.checked \? 'agreement' : ''/.test(page) &&
-		/trustColour = e\.currentTarget\.checked \? 'snr' : ''/.test(page)
+	'the two doubts are independent switches',
+	/bind:checked=\{trustAgree\}/.test(page) &&
+		/bind:checked=\{trustSnr\}/.test(page) &&
+		!/function useDoubtColour[^}]*trustSnr = false/s.test(page) &&
+		!/function useDoubtColour[^}]*trustAgree = false/s.test(page),
+	'they shared one attribute and had to take turns; a vec2 costs the same and does not'
 );
-ok('the uniform is eased, not cut', /uTrust\.value \+=/.test(cloud));
-ok('Galaxy passes the switch through', /\{trust\}/.test(galaxy));
-ok('the page owns the switch and passes it', /trust=\{trustColour\}/.test(page));
+// **Three colour modes, not two plus a tint.** A drain could sit on top of provenance or
+// bird colour because it spent a different channel. A ramp cannot: it spends hue, and hue
+// answers one question at a time. Both directions are asserted, because getting only one
+// of them right leaves a state with two hue languages on screen at once.
+ok(
+	'the doubt ramps exclude provenance and bird colour',
+	/function useDoubtColour[^}]*provColours = false;[^}]*birdColours = false;/s.test(page),
+	'two hue languages over the same mark invite the reading that the colours are related'
+);
+ok(
+	'and those two clear the doubt ramps',
+	/function useProvColours\(\) \{[^}]*clearDoubt\(\);/s.test(page) &&
+		/function useBirdColours\(\) \{[^}]*clearDoubt\(\);/s.test(page) &&
+		/function clearDoubt\(\) \{\s*trustAgree = false;\s*trustSnr = false;/s.test(page)
+);
+// A sequential ramp whose ends are unnamed invites "rose" to be read as a category — and with
+// two ramps that can overlay, the mixed state needs a sentence of its own or a dark mark is
+// unreadable.
+ok(
+	'each ramp names its ends, and the overlay says what a mixed mark means',
+	/rampkey/.test(page) &&
+		/DOUBT_AGREE/.test(page) &&
+		/DOUBT_SNR/.test(page) &&
+		/DOUBT_QUIET/.test(page) &&
+		/\{#if trustAgree && trustSnr\}/.test(page)
+);
+// The tags only react if the source actually reaches them.
+ok(
+	'Galaxy passes both switches and the SNR ramp to both label components',
+	(galaxy.match(/doubtAgree=\{trustAgree\}/g) ?? []).length === 2 &&
+		(galaxy.match(/doubtSnr=\{trustSnr\}/g) ?? []).length === 2 &&
+		(galaxy.match(/doubtRange=\{snrRamp\}/g) ?? []).length === 2,
+	'a mode the points speak and the tags do not is two languages on one stage'
+);
+ok('each channel is eased, not cut', /trustNow\.x \+= \(wantAgree/.test(cloud) && /trustNow\.y \+= \(wantSnr/.test(cloud));
+ok('Galaxy passes both switches through', /\{trustAgree\}/.test(galaxy) && /\{trustSnr\}/.test(galaxy));
+ok(
+	'the page owns the switches and passes them',
+	/\{trustAgree\}/.test(page) && /\{trustSnr\}/.test(page)
+);
 ok(
 	'each control is disabled with no measurement of its own',
 	/disabled=\{trustStats === null\}/.test(page) && /disabled=\{snrStats === null\}/.test(page)
@@ -120,9 +263,13 @@ ok(
 		(cloud.match(/toDoubtBuffer\(/g) ?? []).length >= 2,
 	'both the initial fill and the switch go through toDoubtBuffer'
 );
+// Per channel now, and the `&&` on the array is the guard: a build that ships no SNR must not
+// be able to turn the amber ramp on, however the control is clicked, or the picture would
+// assert a measurement over a buffer full of the absent-value fill.
 ok(
-	'and the uniform is held at 0 without the array',
-	/const wantTrust = source \? 1 : 0;/.test(cloud) && /hasSource \? trust : ''/.test(cloud)
+	'each channel is held at 0 without its own array',
+	/const wantAgree = trustAgree && assets\.points\.knnAgreement \? 1 : 0;/.test(cloud) &&
+		/const wantSnr = trustSnr && assets\.points\.snr \? 1 : 0;/.test(cloud)
 );
 
 console.log(`\nthe number, on ${ASSETS}`);

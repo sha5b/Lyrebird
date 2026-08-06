@@ -175,9 +175,9 @@ table used to name only the pipeline half.
 
 | step | pipeline half | view half | asset cost |
 |---|---|---|---|
-| unknown map | none — `--clustering both` | `uUnheard` figure/ground swap **BUILT**; needs the joined `unassigned` | a second asset set |
-| SNR | **BUILT** — `PointSet.snr` -> `points.json` | **BUILT** as saturation on a p5..p95 ramp, not brightness — "Recording is noisy" | ~0.4 MB |
-| kNN agreement | **BUILT** — `points.knnAgreement` | **BUILT** as saturation — `aTrust`/`uTrust`, "Neighbours disagree" | ~0.4 MB |
+| unknown map | **BUILT** — a second `--clustering hdbscan` build, joined in by `analysis/v10_unknown_join.py --enrich` | **BUILT** — `uUnheard` figure/ground swap, "What nothing claims" (live: 353 285 of 444 213, 79.5 %, in no dense region) | a second asset set |
+| SNR | **BUILT** — `PointSet.snr` -> `points.json` | **BUILT** as the doubt *colour ramp* on a p5..p95 ramp — "Recording is noisy". Was a saturation drain until 2026-08-06; it moved the frame 7.5 % and read as nothing | ~0.4 MB |
+| kNN agreement | **BUILT** — `points.knnAgreement` | **BUILT** as the doubt colour ramp — `aTrust`/`uTrust`, "Neighbours disagree", on the points AND the tags (`knotDoubt`) | ~0.4 MB |
 | attribute panel | 3-4 arrays for the brushed fields | not started | ~1.5 MB |
 | density contours | none, view-side | not started | none |
 | relations arcs | **BUILT** — `relations.json`, 14 488 pairs | **BUILT** — `RelationThreads`, "Sounds like" chips | none |

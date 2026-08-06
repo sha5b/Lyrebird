@@ -220,3 +220,120 @@ export function speciesColourScaled(id: string, lightScale: number): string {
 	const scale = Math.min(1.2, Math.max(0.8, lightScale));
 	return `hsl(${speciesHue(id).toFixed(1)}, ${speciesSaturation(id)}%, ${(45 * scale).toFixed(1)}%)`;
 }
+
+/**
+ * The colour of a sound a density clustering agreed on.
+ *
+ * **It marks the confirmed minority, not the refused majority, and the name is now the only
+ * thing left over from when it was the other way round.** 79.5 % of this corpus is refused, so
+ * colouring the refused set coloured almost every mark and singled out nothing — owner, on
+ * seeing it: *"if i activate the unclaimed ALL color .. how should i know what is unclaimed
+ * now?!"* The 20.5 % that a second, independent clustering placed take the ink and this hue
+ * instead, and "unclaimed" becomes readable as the complement: everything that stayed faint.
+ *
+ * Cyan is the one clear gap in the palette this app already spends: the provenance set holds
+ * blue (#1d4fd8), amber, emerald (#059669), magenta and grey; the doubt ramps are rose and
+ * amber; the accent is violet. A deep cyan is far from all of them in hue and dark enough to
+ * read as ink on near-white paper rather than as a wash.
+ *
+ * **It does not exclude the other colour modes, unlike those three exclude each other.** It
+ * paints a *subset*, and leaves every other point in whatever language it was already
+ * speaking, so "which sounds are confirmed" and "where did these sounds come from" can be
+ * asked in one picture. That is only honest because the two questions are about different
+ * marks; two hues over the *same* mark is the thing `useDoubtColour` and its two siblings
+ * forbid.
+ */
+export const UNCLAIMED_TINT = '#0e7490';
+
+/**
+ * The doubt ramps: two independent questions, two hues, and a corner where both are bad.
+ *
+ * This channel used to spend saturation — every mark kept its class or species colour and had
+ * the colour drained out of it by `1 - value`. That reading was correct and unusable (owner,
+ * 2026-08-06: *"nearly not visible"*): mean agreement on this corpus is 0.4574, so the typical
+ * mark arrived already half-drained and the whole visible range was the drain's second half
+ * applied to a cloud that is grey at rest anyway.
+ *
+ * Then the two doubts took turns on ONE hue ramp, because they shared one vertex attribute.
+ * That was a self-imposed limit and the owner named it: *"neighbourhood colour and recording
+ * noise should be different colour ramps and also we want to be able to activate both to
+ * overlay."* Both now ship at once — `aTrust` went from `float` to `vec2`, which costs the
+ * same single attribute slot (slots are vec4-sized), so the budget note in `shaders.ts` is
+ * untouched and nothing had to be given up for it.
+ *
+ * **Two hues, chosen to survive being mixed.** Rose for "the map may have put this in the
+ * wrong place", amber for "the recording it came from was noisy". They are far enough apart
+ * that a rose mark and an amber mark are never confused, and a mark that is bad on *both*
+ * lands dark and desaturated — which is the correct reading, because it is the worst case.
+ *
+ * **Loud is the doubtful end, on both.** The reason to turn either on is to find the marks the
+ * map is least sure about, so those get the ink; a confident mark recedes to a quiet slate.
+ * The old drain did the exact opposite, which is why it read as nothing.
+ *
+ * **The composition is subtractive and symmetric**, so neither channel is privileged by being
+ * applied second:
+ *
+ *     colour = QUIET − (QUIET − ROSE)·dAgree − (QUIET − AMBER)·dSnr
+ *
+ * with `d = (1 − value)` for a channel that is on and 0 for one that is off. One channel on
+ * gives that channel's plain ramp; both on gives a bivariate scheme whose far corner is the
+ * darkest thing in the frame. `shaders.ts` runs the identical arithmetic on the identical
+ * constants, so a tag and the points under it cannot disagree about what a value looks like.
+ *
+ * The quiet end is shared. Two different "no reason to doubt" colours would imply the two
+ * channels disagree about what confidence looks like, and they do not — they disagree about
+ * what to be doubtful *of*.
+ */
+
+/** Full doubt about where the map put this sound. */
+export const DOUBT_AGREE = '#8f0f3c';
+/** Full doubt about the recording the measurement came from. */
+export const DOUBT_SNR = '#8a5200';
+/**
+ * No recorded reason to doubt, on either channel.
+ *
+ * A mid slate rather than something near the paper. Both ends were moved outward once the mode
+ * was measured rather than looked at: the first pair raised mean chroma over the frame by only
+ * 7.5 % (`probe:trust`), which is the same "nearly not visible" the drain was replaced for,
+ * because the resting cloud is washed halfway to the paper and the ramp arrived halved. The
+ * wash is now pulled back while a doubt mode is on (see `rest` in `shaders.ts`), which is what
+ * lets the loud ends go deep and the quiet end stay pale at the same time.
+ */
+export const DOUBT_QUIET = '#c3ced9';
+
+/** Kept for the one caller that wants the rose end by name; the ramp is the pair above. */
+export const DOUBT_LOUD = DOUBT_AGREE;
+
+const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+const DOUBT_ENDS = {
+	quiet: rgb(DOUBT_QUIET),
+	agree: rgb(DOUBT_AGREE),
+	snr: rgb(DOUBT_SNR)
+};
+
+/**
+ * One or both doubts to a colour.
+ *
+ * `agree` and `snr` are the same 0..1 the shader's `aTrust` carries: **1 is "no recorded reason
+ * to doubt this", 0 is "every reason"** (see `doubt.ts`). `undefined` or `null` means that
+ * channel is switched off and contributes nothing — which is why a caller passes the value
+ * only for the channels the reader asked for, rather than passing 1 and hoping.
+ *
+ * `lightScale` is the same 0.8..1.2 the species and provenance versions take, so a knot's
+ * slight per-knot lightness walk survives the mode change and the tags keep reading as tags.
+ */
+export function doubtColourScaled(
+	doubts: { agree?: number | null; snr?: number | null },
+	lightScale = 1
+): string {
+	const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+	const dAgree = typeof doubts.agree === 'number' ? 1 - clamp01(doubts.agree) : 0;
+	const dSnr = typeof doubts.snr === 'number' ? 1 - clamp01(doubts.snr) : 0;
+	const scale = Math.min(1.2, Math.max(0.8, lightScale));
+	const channels = DOUBT_ENDS.quiet.map((q, i) => {
+		const c = q - (q - DOUBT_ENDS.agree[i]) * dAgree - (q - DOUBT_ENDS.snr[i]) * dSnr;
+		const lit = scale <= 1 ? c * scale : c + (1 - c) * (scale - 1);
+		return Math.round(255 * clamp01(lit));
+	});
+	return `rgb(${channels[0]}, ${channels[1]}, ${channels[2]})`;
+}

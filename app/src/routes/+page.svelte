@@ -16,6 +16,7 @@
 		clusterIndexFor,
 		clusterIndicesFor,
 		detectGalaxyMaps,
+		LOAD_STAGES,
 		loadAssets,
 		pointProvenance,
 		songSyllables,
@@ -61,11 +62,17 @@
 	import { createSignal, type ContextPath, type VisualSignal } from '$lib/galaxy/shaders';
 	import { createStats, type GalaxyStats } from '$lib/galaxy/stats';
 	import {
+		DOUBT_AGREE,
+		DOUBT_QUIET,
+		DOUBT_SNR,
 		MONO_HOT,
+		UNCLAIMED_TINT,
 		PROV_NAMES,
 		provenanceColour,
 		speciesColour as speciesHue
 	} from '$lib/galaxy/palette';
+	import favicon from '$lib/assets/favicon.svg';
+	import { SEO_GRAPH } from '$lib/data/seo';
 	import { PipelineClient, type PipelineStatus } from '$lib/data/pipeline';
 	import type { BirdyAssets, SongType, Species, SpeciesRelation } from '$lib/data/types';
 
@@ -73,6 +80,18 @@
 	// into the AudioWorklet, and there is nothing here that benefits from deep reactivity.
 	let assets = $state.raw<BirdyAssets | null>(null);
 	let loadError = $state<string | null>(null);
+	/**
+	 * What the asset loader is doing, for the first-load screen.
+	 *
+	 * A step counter rather than a byte count, for the reason `LOAD_STAGES` gives: most of the
+	 * wait is JSON parsing of files already received, so bytes would read 90 % for the whole of
+	 * it. Seeded with the first stage's own name so the screen never shows an empty label.
+	 */
+	let loadStage = $state<string>(LOAD_STAGES[0]);
+	let loadDone = $state(0);
+	// Annotated, because `LOAD_STAGES` is `as const` and its `.length` is the literal 10 — an
+	// unannotated `$state` would take that literal as its type and refuse the callback's number.
+	let loadTotal = $state<number>(LOAD_STAGES.length);
 	let engine = $state<BirdyEngine | null>(null);
 	let listener = $state<Listener | null>(null);
 	// The renderer reads `signal` every frame and mutates it in place, so it must not be a
@@ -196,6 +215,17 @@
 	let recordings = $state<{ url: string; name: string }[]>([]);
 	let viewOpen = $state(false);
 	/**
+	 * Which Display sections are open. One bit each, so folding one leaves the others alone.
+	 *
+	 * `filter` starts shut and the rest start open: it is the longest list in the panel and
+	 * the one a reader least often needs, which is the same thing the owner asked for from
+	 * two directions ("minimize each and every panel", "we want the filters to be a drawer").
+	 *
+	 * Not persisted. A fold is a reading posture rather than a setting — restoring yesterday's
+	 * collapsed panel would hide a control the reader has no memory of closing.
+	 */
+	let viewFold = $state({ view: true, colour: true, filter: false, unclaimed: true });
+	/**
 	 * Which full-stage page is open, or `''` for the galaxy.
 	 *
 	 * These are pages, not panels. The legend used to live in a 16 rem popover hanging off a
@@ -295,10 +325,41 @@
 	 * immediately satisfies the condition that turns it off again.
 	 */
 	function useProvColours() {
-		if (provColours) birdColours = false;
+		if (provColours) {
+			birdColours = false;
+			clearDoubt();
+		}
 	}
 	function useBirdColours() {
-		if (birdColours) provColours = false;
+		if (birdColours) {
+			provColours = false;
+			clearDoubt();
+		}
+	}
+	function clearDoubt() {
+		trustAgree = false;
+		trustSnr = false;
+	}
+	/**
+	 * The doubt ramps joined this set on 2026-08-06, when they stopped being a saturation drain
+	 * and became the third identity colour (see `palette.ts`, `doubtColourScaled`). A drain
+	 * could sit on top of either of the other two because it spent a different channel; a ramp
+	 * cannot, because it spends hue.
+	 *
+	 * **The two doubts do NOT clear each other**, which is the one exception to the rule above.
+	 * They shared a single vertex attribute and so had to take turns; `aTrust` is a vec2 now, so
+	 * both are resident and together they compose into a bivariate scheme with a defined worst
+	 * corner rather than two languages competing for the same mark. Owner asked for the overlay
+	 * and it cost nothing.
+	 *
+	 * Called after the bind has already written the box's new value, so an untick simply leaves
+	 * both other modes as they were — turning doubt off must not silently turn provenance on.
+	 */
+	function useDoubtColour() {
+		if (trustAgree || trustSnr) {
+			provColours = false;
+			birdColours = false;
+		}
 	}
 	/**
 	 * Per-class point visibility in PROVENANCE order (documented, learned, field,
@@ -307,6 +368,13 @@
 	 * Hiding removes points from the picture, never from the corpus.
 	 */
 	let provShown = $state<boolean[]>([true, true, true, true, true]);
+	/**
+	 * How many provenance classes are hidden right now, printed on the filter's own fold
+	 * header — the one thing a shut drawer has to be able to say, because a filter that is
+	 * hiding four fifths of the cloud from behind a closed header is indistinguishable from
+	 * a corpus that does not hold those points.
+	 */
+	const hiddenClasses = $derived(provShown.filter((v) => !v).length);
 	/**
 	 * What the stage costs, and whether to show it.
 	 *
@@ -324,15 +392,37 @@
 	 */
 	let costOpen = $state(false);
 	/**
-	 * The density governor's switch: on, the measured frame time may hold the level of
-	 * detail back; off, the camera alone decides how much draws. The answer for an
-	 * integrated GPU is on — see the governor in PointCloud.
+	 * The density governor's switch: on, the measured frame time may hold the level of detail
+	 * back; off, the camera alone decides how much draws.
+	 *
+	 * **Off by default since 2026-08-06** (owner: "we dont want adaptive details active as
+	 * default"). It was on because the answer for an integrated GPU is on — and it still is, but
+	 * a governor that starts enabled means the first thing a reader sees is a *thinned* corpus
+	 * with no indication that anything was withheld. Off, the arrival frame is the whole corpus
+	 * the camera allows; a reader whose machine cannot hold it has one switch, and the
+	 * Statistics panel names the cost in frames per second either way.
 	 */
-	let adaptiveDetail = $state(true);
+	let adaptiveDetail = $state(false);
 	/**
-	 * Figure and ground, swapped on the density verdict. Off by default: the cloud's
-	 * subject at rest is the structure that was found, and this makes its subject the
-	 * sounds nothing claims.
+	 * The ceiling the governor may rise to, as a share of the corpus — the reader's own limit
+	 * rather than the frame timer's (owner: "on the adaptive details can we also have a slider
+	 * when activated to say how dense").
+	 *
+	 * 1 by default, which is the behaviour the governor had before the slider existed: it may
+	 * rise all the way when frames are cheap. Shown only while `adaptiveDetail` is on, because
+	 * off, the cap is pinned at 1 and a visible ceiling that changed nothing would imply a
+	 * measurement.
+	 */
+	let detailCeiling = $state(1);
+	/**
+	 * Figure and ground, swapped on the density verdict: the sounds a second, independent
+	 * clustering *confirmed* take the ink and their own hue, and the ones it refused fall back
+	 * to faint ground.
+	 *
+	 * **It promotes the confirmed minority rather than the refused majority, and the flip is a
+	 * fix.** See `refusedSize` in `shaders.ts` for the arithmetic — 79.5 % of this corpus is
+	 * refused, so promoting the refused set promoted almost the whole cloud and singled out
+	 * nothing.
 	 */
 	let unheardFigure = $state(false);
 	/**
@@ -353,11 +443,17 @@
 	const unheardShare = $derived(
 		unheardCount !== null && assets ? unheardCount / assets.points.n : null
 	);
+	/** Colour every mark by how few of its ten drawn neighbours share its type. Rose ramp. */
+	let trustAgree = $state(false);
+	/** Colour every mark by how noisy its recording was, on a p5..p95 ramp. Amber. */
+	let trustSnr = $state(false);
 	/**
-	 * The Display panel's neighbour-agreement switch: drain each mark's colour by how few
-	 * of its ten drawn neighbours share its type.
+	 * How many sounds a density clustering placed — the complement of `unheardCount`, and the
+	 * number the unclaimed control is actually about now that it marks the confirmed set.
 	 */
-	let trustColour = $state<DoubtSource>('');
+	const placedCount = $derived(
+		unheardCount !== null && assets ? assets.points.n - unheardCount : null
+	);
 	/**
 	 * The per-point agreement, summarised over the points themselves rather than read from
 	 * the manifest — and the difference matters, because the manifest's mean is the only
@@ -841,7 +937,11 @@
 
 
 	onMount(() => {
-		loadAssets()
+		loadAssets(fetch, '', '', (stage, done, total) => {
+			loadStage = stage;
+			loadDone = done;
+			loadTotal = total;
+		})
 			.then((loaded) => {
 				assets = loaded;
 				signal = createSignal(loaded.centroids.items.length, loaded.points.n);
@@ -2291,13 +2391,142 @@
 	const speciesColour = $derived(speciesColourOf(currentSpecies?.id ?? ''));
 </script>
 
+<!--
+	**The head, and the one thing about it that cannot be fixed here.**
+
+	This app sets `ssr = false` (see `+layout.ts`) because every measurement and every note is
+	computed on the reader's machine, and that is a design commitment rather than a default. The
+	cost is that the prerendered HTML is an empty shell — grep the built `index.html` for any of
+	the figures below and you get nothing. Meta tags do not repair that: a crawler that does not
+	execute JavaScript sees a title, a description and no content at all.
+
+	So the indexable substance lives in three places that do not need the app to run, and each
+	one is doing a job the other two cannot:
+
+	  1. **The JSON-LD graph below** — the entity register. Person, artwork, dataset, source and
+	     paper, with `sameAs` links so the artist resolves to one identity rather than five.
+	     This is what AI crawlers and search engines read to decide what the page IS.
+	  2. **`static/llms.txt`** — the whole project as prose, for LLM retrieval. Plain markdown at
+	     a stable path, no execution required.
+	  3. **The `<noscript>` block further down** — the honest fallback for a reader (or crawler)
+	     with no JavaScript, saying what the thing is and where the writing about it lives.
+
+	The figures are hardcoded rather than read from `assets`, and that is deliberate: this head
+	is emitted before the corpus is fetched, so an interpolated count would render as blank in
+	the served HTML — which is exactly the failure mode the three mechanisms above exist to
+	avoid. They are checked against the manifest by `verify:seo`.
+-->
 <svelte:head>
-	<title>Lyrebird — what birds have been saying all along</title>
+	<!--
+		**The title is the project's own claim, not a keyword string.** It was "what birds have
+		been saying all along", which is the one sentence this project spends its whole interface
+		refusing to make — it does not translate birdsong and says so in six places. A title that
+		contradicts the artwork is worse than a dull one.
+	-->
+	<title>Lyrebird — a physical syrinx model for 2,650 wild bird species</title>
 	<meta
 		name="description"
-		content="Record real birds, match their calls to documented functions, and sing back scientifically grounded synthetic birdsong inside an audio-reactive embedding galaxy."
+		content="An art–science instrument by Shahab Nedaei. Lyrebird measures 444,213 syllables from wild bird recordings, fits a Laje–Mindlin syrinx oscillator to each of 15,341 call types, and sings them back in the browser inside an audio-reactive 3D embedding of the corpus. No audio is sampled or shipped: every note is integrated from the two parameters real birds control, air-sac pressure and syringeal tension. It does not translate birdsong into language, and it states where each claim comes from."
 	/>
+	<link rel="canonical" href="https://lyrebird.variable.gallery/" />
+	<meta name="author" content="Shahab Nedaei" />
+	<meta name="theme-color" content="#fafbfc" />
+	<!--
+		Still read by several AI crawlers even though Google has ignored it since 2009 — cheap,
+		and the terms here are the ones a bioacoustics reader would actually search.
+	-->
+	<meta
+		name="keywords"
+		content="birdsong, bioacoustics, syrinx model, Laje-Mindlin oscillator, physical modelling synthesis, xeno-canto, audio embedding, art and science, media art, Shahab Nedaei, variable.gallery, generative sound, WebAudio, AudioWorklet"
+	/>
+
+	<!-- Open Graph, for link unfurls and for the crawlers that prefer it to the description. -->
+	<meta property="og:type" content="website" />
+	<meta property="og:site_name" content="Lyrebird" />
+	<meta property="og:url" content="https://lyrebird.variable.gallery/" />
+	<meta property="og:title" content="Lyrebird — a physical syrinx model for 2,650 wild bird species" />
+	<meta
+		property="og:description"
+		content="444,213 measured syllables, 15,341 fitted call types, and a syrinx oscillator that sings them in your browser. No audio sampled. An art–science instrument by Shahab Nedaei."
+	/>
+	<meta property="og:image" content="https://lyrebird.variable.gallery/brand/og-card.png" />
+	<meta property="og:image:width" content="1200" />
+	<meta property="og:image:height" content="630" />
+	<meta
+		property="og:image:alt"
+		content="The Lyrebird mark — a bifurcating syrinx — beside the project name and its figures: 444,213 measured syllables, 2,650 species, 15,341 call types, no audio shipped."
+	/>
+	<meta property="og:locale" content="en_GB" />
+
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:title" content="Lyrebird — a physical syrinx model for 2,650 wild bird species" />
+	<meta
+		name="twitter:description"
+		content="444,213 measured syllables, 15,341 fitted call types, and a syrinx oscillator that sings them in your browser. No audio sampled."
+	/>
+	<meta name="twitter:image" content="https://lyrebird.variable.gallery/brand/og-card.png" />
+
+	<!--
+		**The entity register.** One `@graph` rather than several disconnected blocks, so the
+		artist, the artwork, the corpus, the code and the paper are stated as one set of related
+		entities with `@id`s that reference each other. That relatedness is the part a knowledge
+		graph can use; five isolated snippets describing the same thing are five guesses.
+
+		`Dataset` earns its place: the corpus is the substance of the work, it has a licence and a
+		measurable size, and dataset markup is the one type that gets bioacoustics work surfaced
+		to people looking for bioacoustics work rather than for art.
+	-->
+	{@html `<script type="application/ld+json">${JSON.stringify(SEO_GRAPH)}</${'script'}>`}
 </svelte:head>
+
+<!--
+	**The only prose in the served HTML, and the reason it is a `<noscript>`.**
+
+	`ssr = false`, so nothing else on this page exists until JavaScript runs — which is correct
+	for an instrument whose whole argument is that the computation happens on the reader's own
+	machine, and which leaves the served document with no readable content at all.
+
+	This is the honest repair rather than the SEO one. A hidden div of keywords would be
+	invisible to a reader and would be cloaking; a `<noscript>` is shown to exactly the audience
+	that cannot see the app — a reader with scripting off, and a crawler that does not execute —
+	and it tells them what the thing is and where the writing about it lives. Nothing here is
+	hidden from anybody who can see the app; they get the app instead, which says more.
+-->
+<noscript>
+	<div class="centred">
+		<div class="card">
+			<h1>Lyrebird</h1>
+			<p class="strap">syrinx model · documented call functions · no samples</p>
+			<p>
+				<b>Lyrebird measures wild birdsong and sings it back from a physical model of the
+					syrinx.</b>
+				It is an art–science instrument by <a href="https://shahabnedaei.variable.gallery/"
+					>Shahab Nedaei</a
+				>. Every note is integrated in your browser from the Laje–Mindlin oscillator, driven by
+				the two parameters real birds control: air-sac pressure and syringeal tension. No audio
+				is sampled and none is shipped.
+			</p>
+			<p>
+				The corpus holds <b>444,213 measured syllables</b> from <b>2,489 species</b>, grouped
+				into <b>15,341 call types</b> and projected into a three-dimensional embedding that
+				flares where a live sound lands in it.
+			</p>
+			<p>
+				<b>It does not translate birdsong into language, and it says so in the interface.</b>
+				Machine learning can characterise a repertoire and link calls to behaviour; it cannot
+				recover propositional meaning. Every phrase carries a label naming where its claim came
+				from — playback-verified, documented, inferred, field recording, or invented.
+			</p>
+			<p class="faint">
+				This page needs JavaScript, because there is no server here to do the work: the
+				measurement, the clustering read-out and the synthesis all run locally. The writing is
+				readable without it — <a href="/lyrebird-whitepaper.pdf">the paper</a>,
+				<a href="/llms.txt">a plain-text summary</a>, and
+				<a href="https://github.com/sha5b/Birdy">the source</a>.
+			</p>
+		</div>
+	</div>
+</noscript>
 
 {#if loadError}
 	<div class="centred">
@@ -2315,13 +2544,67 @@ uv run birdy-pipeline build</pre>
 		</div>
 	</div>
 {:else if !assets}
-	<div class="centred"><p class="faint mono">loading corpus…</p></div>
+	<!--
+		**The first load is slow enough that a single grey line reads as a failure** (owner,
+		2026-08-06: "at the start it takes a while till the first load, it looks like a mistake").
+
+		It is slow for a reason nothing was saying: this build ships about 60 MB of asset —
+		444 213 points, 15 341 knots, an inventory, two binary sidecars — and every byte of it is
+		fetched and parsed in the browser, because there is no server here to do it (`ssr = false`,
+		`adapter-static`). So the wait is real work rather than a stall, and the screen now says
+		which of the ten stages it is on.
+
+		Same materials as the rest of the interface and no new ones: the brand block from the HUD,
+		the `axis mono` label the panels use for their headers, and a rule-thin bar in the signal
+		colour. The mark spins slowly — the one moving thing, so "working" is visible without a
+		spinner ornament — and the stage list is the loader's own `LOAD_STAGES`, so the words here
+		cannot drift from the steps they name.
+	-->
+	<div class="centred">
+		<div class="loading">
+			<img class="loadmark" src={favicon} alt="" width="44" height="44" />
+			<div class="loadtext">
+				<h1>Lyrebird</h1>
+				<p class="strap">syrinx model · documented call functions · no samples</p>
+			</div>
+			<div class="loadbar" role="progressbar" aria-valuenow={loadDone} aria-valuemin="0" aria-valuemax={loadTotal}>
+				<span style:width={`${(loadTotal ? loadDone / loadTotal : 0) * 100}%`}></span>
+			</div>
+			<p class="axis mono loadstage">{loadStage}</p>
+			<!--
+				The size, stated. A reader waiting on a bar with no quantity behind it cannot tell a
+				slow connection from a broken build, and this app's whole argument is that it states
+				what it is doing.
+			-->
+			<p class="note faint">
+				The corpus is measured offline and drawn here: about 60 MB of points, knots and
+				inventory, fetched and parsed in this browser. There is no server doing any of it.
+			</p>
+		</div>
+	</div>
 {:else}
 	<div class="bench">
 		<header class="hud">
-			<div class="brand">
+		<div class="brand">
 				<h1>Lyrebird</h1>
-				<p class="strap">syrinx model · documented call functions · no samples</p>
+				<!--
+					**The strap says what the thing refuses, and now also what it is.**
+
+					"syrinx model · documented call functions · no samples" is three disclaimers. Each is
+					load-bearing and none of them tells a first-time reader what they are looking at, which
+					was the gap — the same gap the old `<title>` filled by claiming the one thing this
+					project does not do ("what birds have been saying all along").
+
+					So the first clause is now the subject and the three disclaimers follow it, still in
+					the same terse register and the same one line. `title` carries the long form for a
+					reader who wants it, because a strap that grows to a sentence stops being a strap.
+				-->
+				<p
+					class="strap"
+					title="444,213 syllables measured from wild recordings, 15,341 fitted call types, and a Laje–Mindlin syrinx oscillator that sings them in this browser. No audio is sampled and none is shipped."
+				>
+					wild birdsong, measured and resynthesized · syrinx model · no samples
+				</p>
 			</div>
 			<dl class="readings mono">
 				<!--
@@ -2406,7 +2689,9 @@ uv run birdy-pipeline build</pre>
 				{birdColours}
 				adaptive={adaptiveDetail}
 				unheard={unheardFigure}
-				trust={trustColour}
+				{trustAgree}
+				{trustSnr}
+				{detailCeiling}
 				selectedSpecies={focus >= 0 ? (currentSpecies?.id ?? '') : ''}
 				{provShown}
 				pinned={pinnedCluster}
@@ -2497,315 +2782,479 @@ uv run birdy-pipeline build</pre>
 						>
 					</div>
 				{/if}
-				<button
-					class="viewbtn"
-					class:open={viewOpen}
-					aria-label="Display settings"
-					aria-expanded={viewOpen}
-					onclick={() => (viewOpen = !viewOpen)}
-				>
-					<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
-						<circle cx="8" cy="8" r="2.4" fill="none" stroke="currentColor" stroke-width="1.3" />
-						<path
-							d="M8 1.2v2M8 12.8v2M1.2 8h2M12.8 8h2M3.2 3.2l1.4 1.4M11.4 11.4l1.4 1.4M12.8 3.2l-1.4 1.4M4.6 11.4l-1.4 1.4"
-							stroke="currentColor"
-							stroke-width="1.3"
-							stroke-linecap="round"
-						/>
-					</svg>
-				</button>
+				<!--
+					**Two icon buttons, not one panel with a performance section inside it.**
+
+					The frame cost is a different KIND of thing from every other control here: those
+					change what the picture says, this one reports what drawing it costs. It sat as a
+					checkbox at the bottom of the display panel, which meant reading the frame rate
+					required opening the panel that was covering the thing whose frame rate you wanted.
+					Owner, 2026-08-06: "the costs should be its own icon besides the view".
+				-->
+				<div class="viewbtns">
+					<button
+						class="viewbtn"
+						class:open={viewOpen}
+						aria-label="Display settings"
+						aria-expanded={viewOpen}
+						onclick={() => (viewOpen = !viewOpen)}
+					>
+						<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+							<circle cx="8" cy="8" r="2.4" fill="none" stroke="currentColor" stroke-width="1.3" />
+							<path
+								d="M8 1.2v2M8 12.8v2M1.2 8h2M12.8 8h2M3.2 3.2l1.4 1.4M11.4 11.4l1.4 1.4M12.8 3.2l-1.4 1.4M4.6 11.4l-1.4 1.4"
+								stroke="currentColor"
+								stroke-width="1.3"
+								stroke-linecap="round"
+							/>
+						</svg>
+					</button>
+					<!-- Three ascending bars: a measurement, not a setting. -->
+					<button
+						class="viewbtn"
+						class:open={costOpen}
+						aria-label="What this costs"
+						aria-expanded={costOpen}
+						title="Frame rate, how many points and tags the stage actually drew, and which GPU the browser gave us."
+						onclick={() => (costOpen = !costOpen)}
+					>
+						<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+							<path
+								d="M3 13V9.5M8 13V6M13 13V3.5"
+								stroke="currentColor"
+								stroke-width="1.5"
+								stroke-linecap="round"
+							/>
+						</svg>
+					</button>
+				</div>
 				{#if viewOpen}
 					<div class="panel viewpanel">
 						<h2>Display</h2>
 						<div class="cardbody">
-							<section class="block">
-								<label class="field">
-									<span class="lbl">Point size <b class="mono">{pointSize.toFixed(1)}</b></span>
-									<input type="range" min="1" max="10" step="0.1" bind:value={pointSize} />
-								</label>
-								<div class="checks">
-									<label class="check" title="Slow drift of the whole galaxy, so depth stays readable while you listen.">
-										<input type="checkbox" bind:checked={spin} /> Rotate
-									</label>
-									<label class="check" title="Name tags on the knots a syllable can be sung into.">
-										<input type="checkbox" bind:checked={showLabels} /> Labels
-									</label>
-										<!--
-										One bit, one checkbox, sitting with the other two display bits — it was
-										a two-row radio group folded inside a disclosure, which is three clicks
-										and a paragraph to flip a boolean.
+							<!--
+								**Every section folds, and the header is the whole click target** (owner,
+								2026-08-06: "i want to be able to minimize each and every panel when clicking
+								in it anywhere"). `viewFold` holds one bit per section; `filter` starts shut
+								because it is the longest list here and the one a reader least often needs —
+								which is the same request read from the other side ("we want the filters to be
+								a drawer to open and close").
 
-										Why it is off by default, measured on the shipped build: 93.9 % of points
-										are field recordings and 99 % of knots carry a field plurality, so the
-										classes say nearly one thing everywhere. The colouring carries about 3
-										points of information over the base rates (91.5 % same-class nearest
-										neighbour against 88.2 % from the rates alone) — it answers "what is this"
-										per point, not "where is it" on the map.
-									-->
-									<label
-										class="check"
-										title="Colour every point, tag and thread by where its sound came from. Off, the points are neutral ink and hue is left to say which bird. On this build 94 % of the points are field recordings, so expect one class to dominate."
-									>
-										<input
-											type="checkbox"
-											bind:checked={provColours}
-											onchange={useProvColours}
-										/> Provenance colours
+								A `<button>` rather than a div with a handler, so the fold is reachable by
+								keyboard and announces its state without any extra wiring.
+							-->
+							<section class="block fold" class:shut={!viewFold.view}>
+								<button class="foldhead" aria-expanded={viewFold.view} onclick={() => (viewFold.view = !viewFold.view)}>
+									<span class="axis mono">view</span>
+									<i class="chev" aria-hidden="true"></i>
+								</button>
+								{#if viewFold.view}
+									<label class="field">
+										<span class="lbl">Point size <b class="mono">{pointSize.toFixed(1)}</b></span>
+										<input type="range" min="1" max="10" step="0.1" bind:value={pointSize} />
 									</label>
+									<div class="checks">
+										<label class="check" title="Slow drift of the whole galaxy, so depth stays readable while you listen.">
+											<input type="checkbox" bind:checked={spin} /> Rotate
+										</label>
+										<label class="check" title="Name tags on the knots a syllable can be sung into.">
+											<input type="checkbox" bind:checked={showLabels} /> Labels
+										</label>
+										<!-- Moved up from the old cost section (owner: "the adaptive details should be
+										     up by the fontsize"). It belongs here on its own merits: it changes how much
+										     of the corpus is drawn, which is the same axis as the point size beside it,
+										     and it is not a measurement like the readout it used to sit with. -->
+										<label
+											class="check"
+											title="Hold the level of detail back when the measured frame time says the GPU cannot keep up. On an integrated chip this is what keeps the close view smooth."
+										>
+											<input type="checkbox" bind:checked={adaptiveDetail} /> Adaptive detail
+										</label>
+									</div>
 									<!--
-										The third language, and it is opt-in for a measured reason rather than a
-										cautious one: thousands of species share one hue circle, so at this density the
-										cloud reads as confetti and no reader can hold the key. What it is good
-										for is one *genus* against the rest, since the hue is the genus's — and
-										for that it is the only channel that answers over the whole corpus at
-										once. Mutually exclusive with the tint above: hue cannot answer two
-										questions in one picture.
+										The reader's ceiling on the governor, shown only while the governor runs —
+										off, the cap is pinned at 1 and a visible slider that changed nothing would
+										imply a measurement. The floor is 0.1 because that is the governor's own
+										floor (see PointCloud): below it the representatives thin out entirely and
+										the cloud stops being a cloud.
 									-->
-									<label
-										class="check"
-										title="Colour every point by its bird — the same genus hue the tags carry, so a species' points and its labels agree. Hue is the genus and shade the species within it. Turns the provenance tint off: colour says one thing at a time."
-									>
-										<input
-											type="checkbox"
-											bind:checked={birdColours}
-											onchange={useBirdColours}
-										/> Bird colours
-									</label>
-								</div>
+									{#if adaptiveDetail}
+										<label class="field indent">
+											<span class="lbl"
+												>Density ceiling <b class="mono">{Math.round(detailCeiling * 100)}%</b></span
+											>
+											<input
+												type="range"
+												min="0.1"
+												max="1"
+												step="0.05"
+												bind:value={detailCeiling}
+												title="The most of the corpus the governor may draw when frames are cheap. It may still draw less than this when they are not — the Statistics panel reports what it settled on."
+											/>
+										</label>
+									{/if}
+								{/if}
 							</section>
-							<section class="block">
-								<!--
-									Per-class visibility. The two-class isolate is the arrivals live
-									view: only the sounds nobody has named — unlabelled field audio
-									and the candidates the novelty pass grouped — stay on screen, so
-									"what don't we know" is a picture, not a count. Hiding a class
-									removes its points from the picture, never from the corpus.
-								-->
-								<p class="axis mono">points, by where the sound came from</p>
-								<p class="note faint">
-									{provColours ? 'Key and filter.' : 'Filter only — the points are neutral ink.'}
-								</p>
-								<div class="checks">
-									{#each provFilterOrder as cls (cls)}
-										{@const share = provShare[cls] ?? 0}
+							<!--
+								**One section for every question hue can answer** (owner, 2026-08-06: "the
+								dimming color should be with the other colors, make a new colour section and
+								bring all colour options there").
+
+								They were in two places for a historical reason that had stopped being true:
+								provenance and bird were "colour modes" while doubt was a saturation drain that
+								sat on top of either. Doubt is a hue ramp now, so all four are the same kind of
+								control — mutually exclusive readings of one channel — and `useProvColours`,
+								`useBirdColours` and `useTrustColour` enforce that between them. Off on all four
+								is the fifth reading: neutral ink, hue left to the tags.
+							-->
+							<section class="block fold" class:shut={!viewFold.colour}>
+								<button class="foldhead" aria-expanded={viewFold.colour} onclick={() => (viewFold.colour = !viewFold.colour)}>
+									<span class="axis mono">colour · one question at a time</span>
+									<i class="chev" aria-hidden="true"></i>
+								</button>
+								{#if viewFold.colour}
+									<div class="checks">
 										<!--
-											A class with no points on the loaded build gets a disabled toggle
-											rather than a live one that cannot do anything. On a W5 build
-											"synthesized" is empty by construction — a type with member
-											observations renders no synthetic copy — so the control existed and
-											could never change the picture.
+											Why provenance is off by default, measured on the shipped build: 93.9 % of
+											points are field recordings and 99 % of knots carry a field plurality, so the
+											classes say nearly one thing everywhere. The colouring carries about 3 points
+											of information over the base rates (91.5 % same-class nearest neighbour
+											against 88.2 % from the rates alone) — it answers "what is this" per point,
+											not "where is it" on the map.
 										-->
-										<label class="check" class:absent={share === 0}>
+										<label
+											class="check"
+											title="Colour every point, tag and thread by where its sound came from. Off, the points are neutral ink and hue is left to say which bird. On this build 94 % of the points are field recordings, so expect one class to dominate."
+										>
+											<input type="checkbox" bind:checked={provColours} onchange={useProvColours} />
+											Provenance colours
+										</label>
+										<!--
+											Opt-in for a measured reason rather than a cautious one: thousands of species
+											share one hue circle, so at this density the cloud reads as confetti and no
+											reader can hold the key. What it is good for is one *genus* against the rest,
+											since the hue is the genus's — and for that it is the only channel that
+											answers over the whole corpus at once.
+										-->
+										<label
+											class="check"
+											title="Colour every point by its bird — the same genus hue the tags carry, so a species' points and its labels agree. Hue is the genus and shade the species within it."
+										>
+											<input type="checkbox" bind:checked={birdColours} onchange={useBirdColours} />
+											Bird colours
+										</label>
+										<!--
+											**The two doubts are the one pair here that may be on together.** Each has
+											its own hue — rose for "the map may have put this in the wrong place", amber
+											for "the recording was noisy" — and with both on they compose subtractively,
+											so a mark that is bad on both counts is the darkest thing in the frame.
+											`palette.ts` has the arithmetic and the reason it is symmetric.
+										-->
+										<label
+											class="check"
+											title="Colour every point and tag by how few of its ten drawn neighbours share its type — doubt about where the map put it. Loud rose is doubtful, quiet slate is not. Nothing moves and nothing changes size, so the same frame can be compared with the mode on and off. Can be combined with the noise ramp below."
+										>
 											<input
 												type="checkbox"
-												bind:checked={provShown[cls]}
-												disabled={share === 0}
+												bind:checked={trustAgree}
+												disabled={trustStats === null}
+												onchange={useDoubtColour}
 											/>
-											<!--
-												**The swatch is only a colour when the points are wearing it.**
-												This list is two things at once — the visibility filter, and the
-												legend for the provenance colouring — and in ink mode the legend
-												half was a lie: five class colours printed beside a cloud drawn
-												entirely in neutral grey. Off, the mark goes hollow and says
-												only "a class you can hide"; on, it is the key to the picture.
-											-->
-											<i
-												class="swatch"
-												class:hollow={!provColours}
-												style:background={provColours ? provenanceColour(cls) : 'transparent'}
-											></i>
-											{PROV_NAMES[cls]}
-											<!-- "of points", for the same reason the chorus list now says "songs":
-											     these two lists share five words and count different things. -->
-											<span class="mono faint"
-												>{share === 0
-													? 'no points'
-													: `${(share * 100).toFixed(share < 0.01 ? 2 : 0)}% of points`}</span
-											>
+											<i class="swatch ramp agree" class:hollow={!trustAgree}></i>
+											Neighbours disagree
 										</label>
-									{/each}
-								</div>
-								<button
-									class="link"
-									onclick={() => {
-										provShown = [false, false, false, true, true];
-									}}>only the unidentified</button
-								>
-								{#if provShown.some((v) => !v)}
-									<button
-										class="link"
-										onclick={() => {
-											provShown = [true, true, true, true, true];
-										}}>show everything</button
-									>
+										<label
+											class="check"
+											title="Colour every point and tag by how noisy the recording it came from was, on a 5th-to-95th-percentile ramp — doubt about the measurement rather than about its position. Loud amber is noisy. Can be combined with the agreement ramp above."
+										>
+											<input
+												type="checkbox"
+												bind:checked={trustSnr}
+												disabled={snrStats === null}
+												onchange={useDoubtColour}
+											/>
+											<i class="swatch ramp snr" class:hollow={!trustSnr}></i>
+											Recording is noisy
+										</label>
+									</div>
+									<!--
+										One key per ramp that is on, with that ramp's own figures under it: a
+										sequential ramp whose ends are unnamed invites "rose" to be read as a
+										category, and a clamped scale whose ends are unstated invites "fully
+										coloured" to mean "cleanest in the corpus" when it means "at or above p95".
+										The third line only appears with both on, because that is the only state in
+										which a reader has to be told what a mixed colour means.
+									-->
+									{#if trustAgree && trustStats}
+										<p class="note faint rampkey">
+											<b style:color={DOUBT_AGREE}>disagrees</b> → <b style:color={DOUBT_QUIET}
+												>agrees</b
+											>
+											· mean <b>{(trustStats.mean * 100).toFixed(0)} %</b>,
+											<b>{trustStats.alone.toLocaleString()}</b> among ten strangers
+										</p>
+									{/if}
+									{#if trustSnr && snrStats}
+										<p class="note faint rampkey">
+											<b style:color={DOUBT_SNR}>noisy</b> → <b style:color={DOUBT_QUIET}>clean</b>
+											· <b>{snrStats.lo.toFixed(1)}</b>–<b>{snrStats.hi.toFixed(1)} dB</b> (p5–p95),
+											{snrStats.absent.toLocaleString()} unmeasured
+										</p>
+									{/if}
+									{#if trustAgree && trustSnr}
+										<p class="note faint rampkey">
+											Both: the darkest marks are the ones where the map is unsure <i>and</i> the
+											recording was poor.
+										</p>
+									{/if}
+								{/if}
+							</section>
+							<!--
+								Per-class visibility, shut by default. Hiding a class removes its points from the
+								picture, never from the corpus.
+
+								**"only the unidentified" is gone** (owner, 2026-08-06). It wrote a fixed
+								five-value array, so it was a saved view masquerading as an action — and the one
+								view it saved is two clicks away from the list right below it, while its own
+								label named a class ("unidentified") that the list also names, so the two disagreed
+								about whether it was a filter or a preset. "show everything" stays: a filter that
+								can hide four fifths of the cloud needs one visible way back.
+							-->
+							<section class="block fold" class:shut={!viewFold.filter}>
+								<button class="foldhead" aria-expanded={viewFold.filter} onclick={() => (viewFold.filter = !viewFold.filter)}>
+									<span class="axis mono">filter · where the sound came from</span>
+									{#if hiddenClasses > 0}
+										<span class="mono faint tally">{hiddenClasses} hidden</span>
+									{/if}
+									<i class="chev" aria-hidden="true"></i>
+								</button>
+								{#if viewFold.filter}
+									<p class="note faint">
+										{provColours ? 'Key and filter.' : 'Filter only — the points are neutral ink.'}
+									</p>
+									<div class="checks">
+										{#each provFilterOrder as cls (cls)}
+											{@const share = provShare[cls] ?? 0}
+											<!--
+												A class with no points on the loaded build gets a disabled toggle rather
+												than a live one that cannot do anything. On a W5 build "synthesized" is
+												empty by construction — a type with member observations renders no
+												synthetic copy — so the control existed and could never change the picture.
+											-->
+											<label class="check" class:absent={share === 0}>
+												<input type="checkbox" bind:checked={provShown[cls]} disabled={share === 0} />
+												<!--
+													**The swatch is only a colour when the points are wearing it.** This list
+													is two things at once — the visibility filter, and the legend for the
+													provenance colouring — and in ink mode the legend half was a lie: five
+													class colours printed beside a cloud drawn entirely in neutral grey.
+												-->
+												<i
+													class="swatch"
+													class:hollow={!provColours}
+													style:background={provColours ? provenanceColour(cls) : 'transparent'}
+												></i>
+												{PROV_NAMES[cls]}
+												<!-- "of points", for the same reason the chorus list says "songs": the two
+												     lists share words and count different things. -->
+												<span class="mono faint"
+													>{share === 0
+														? 'no points'
+														: `${(share * 100).toFixed(share < 0.01 ? 2 : 0)}% of points`}</span
+												>
+											</label>
+										{/each}
+									</div>
+									{#if hiddenClasses > 0}
+										<button
+											class="link"
+											onclick={() => {
+												provShown = [true, true, true, true, true];
+											}}>show everything</button
+										>
+									{/if}
 								{/if}
 							</section>
 							<!--
 								The one question this map cannot answer for itself.
 
-								Its clustering is `label`: every point gets a knot, so "none of these"
-								is not in its output space and `manifest.unassigned` is 0. The verdict
-								is joined in from a separate hdbscan build of the same point set
-								(`analysis/v10_unknown_join.py`), and the control is disabled outright
-								on a build that has no such channel — a switch that moves nothing is
-								worse than an absent one, because it implies a measurement.
+								Its clustering is `label`: every point gets a knot, so "none of these" is not in
+								its output space and `manifest.unassigned` is 0. The verdict is joined in from a
+								separate hdbscan build of the same point set (`analysis/v10_unknown_join.py`), and
+								the control is disabled outright on a build carrying no such channel — a switch
+								that moves nothing is worse than an absent one, because it implies a measurement.
+
+							**Renamed from "What nothing claims"** (owner, 2026-08-06: "a stupid
+								formulation"). It was trying to be evocative about a boolean.
+
+								**And then inverted, which was the real problem.** Ticking it coloured the refused
+								set — 79.5 % of the corpus — so almost every mark changed at once and nothing was
+								singled out. Owner: *"if i activate the unclaimed ALL color .. how should i know
+								what is unclaimed now?!"* Exactly right, and it is arithmetic rather than taste.
+								The control now marks the **confirmed minority**: the 20.5 % that a second,
+								independent clustering placed in a dense region take the ink and the teal, and the
+								refused four fifths stay as faint ground. What is unclaimed is then readable as the
+								complement — everything that did not light up — and the marks that changed are few
+								enough to point at.
 							-->
-							<section class="block">
-								<p class="axis mono">unclaimed</p>
-								<p class="note faint">
+							<section class="block fold" class:shut={!viewFold.unclaimed}>
+								<button
+									class="foldhead"
+									aria-expanded={viewFold.unclaimed}
+									onclick={() => (viewFold.unclaimed = !viewFold.unclaimed)}
+								>
+									<span class="axis mono">unclaimed</span>
 									{#if unheardShare !== null}
-										<b>{unheardCount?.toLocaleString()}</b> of {assets.points.n.toLocaleString()}
-										({(unheardShare * 100).toFixed(1)} %) in no dense region.
-									{:else}
-										No density verdict on this build. Needs a
-										<code>--clustering hdbscan</code> join.
+										<span class="mono faint tally">{(unheardShare * 100).toFixed(1)} %</span>
 									{/if}
-								</p>
-								<div class="checks">
-									<label
-										class="check"
-										title="Draw the sounds a density clustering refused as the picture, and the ones it placed as faint ground. Off, the cloud's subject is the structure that was found; on, it is what nothing claims."
-									>
-										<input
-											type="checkbox"
-											bind:checked={unheardFigure}
-											disabled={unheardShare === null}
-										/> What nothing claims
-									</label>
-								</div>
-							</section>
-							<!--
-								**The per-point half of a number that has only ever shipped as a mean.**
-								`points.knnAgreement` has been in the asset at one value per point since
-								the channel existed and nothing read it, so the HUD could say the corpus
-								averages 46 % while no mark on the stage could be asked whether it was
-								one of the ones standing on nothing. Same absent-channel discipline as
-								the block above: disabled when the build carries no measurement.
-							-->
-							<section class="block">
-								<!--
-									**The prose here was four times this long and it was the reason the panel
-									read as overwhelming** (owner, 2026-08-05: streamline it, keep the text
-									short). The figures stay — this project does not ship an unlabelled control
-									— but the sentences that explained *why* the channel is saturation and what
-									the clamp protects against belong in `doubt.ts`, where a reader who wants
-									them is already looking, not in a card someone is trying to skim. Each
-									`title` carries the one-line version.
-								-->
-								<p class="axis mono">doubt · colour drains</p>
-								<p class="note faint">
-									{#if trustStats}
-										Neighbours agree <b>{(trustStats.mean * 100).toFixed(0)} %</b>;
-										<b>{trustStats.alone.toLocaleString()}</b> among strangers.
-									{:else}
-										No per-point agreement on this build.
-									{/if}
-									{#if snrStats}
-										SNR ramp <b>{snrStats.lo.toFixed(1)}</b>–<b>{snrStats.hi.toFixed(1)} dB</b>
-										(p5–p95); {snrStats.absent.toLocaleString()} renders unmeasured.
-									{/if}
-								</p>
-								<!--
-									**One channel, two numbers, taking turns** — the pattern the provenance and
-									bird-colour switches already use. Saturation is the last free channel (hue is
-									provenance or genus, size and ink are activation and the figure/ground swap,
-									tone is depth, the inner gradient is pitch, the edge is pinned at one pixel),
-									so the two doubts share it rather than one of them going undrawn. Choosing one
-									clears the other, and the same frame can be compared under both.
-								-->
-								<div class="checks">
-									<label
-										class="check"
-										title="Drain each mark's colour by how few of its ten drawn neighbours share its type — doubt about where the map put it. Nothing moves and nothing changes size, so the same frame can be compared with the channel on and off."
-									>
-										<input
-											type="checkbox"
-											checked={trustColour === 'agreement'}
-											disabled={trustStats === null}
-											onchange={(e) =>
-												(trustColour = e.currentTarget.checked ? 'agreement' : '')}
-										/> Neighbours disagree
-									</label>
-									<label
-										class="check"
-										title="Drain each mark's colour by how noisy the recording it came from was, on a 5th-to-95th-percentile ramp — doubt about the measurement rather than about its position."
-									>
-										<input
-											type="checkbox"
-											checked={trustColour === 'snr'}
-											disabled={snrStats === null}
-											onchange={(e) => (trustColour = e.currentTarget.checked ? 'snr' : '')}
-										/> Recording is noisy
-									</label>
-								</div>
-							</section>
-							<!--
-								The cost of the picture, measured. Not decoration: the two renderer
-								regressions this project has had were both invisible from inside the
-								app, and both are one number here.
-							-->
-							<section class="block">
-								<div class="checks">
-									<label
-										class="check"
-										title="Hold the level of detail back when the measured frame time says the GPU cannot keep up. On an integrated chip this is what keeps the close view smooth."
-									>
-										<input type="checkbox" bind:checked={adaptiveDetail} /> Adaptive detail
-									</label>
-									<label
-										class="check"
-										title="Frame rate, how many points and tags the stage actually drew, and which GPU the browser gave us."
-									>
-										<input type="checkbox" bind:checked={costOpen} /> What this costs
-									</label>
-								</div>
-								{#if costOpen}
-									{#if cost}
-										<dl class="cost mono">
-											<div>
-												<dt>frame</dt>
-												<dd>{cost.fps.toFixed(0)} fps · {cost.frameMs.toFixed(1)} ms</dd>
-											</div>
-											<div>
-												<dt>points</dt>
-												<dd>
-													{cost.pointsDrawn.toLocaleString()} of {cost.pointsTotal.toLocaleString()}{#if cost.pointsResponding > 0}
-														· {cost.pointsResponding.toLocaleString()} responding{/if}{#if cost.pointsRevealed > 0}
-													· {cost.pointsRevealed.toLocaleString()} revealed{/if}
-												</dd>
-											</div>
-											<div>
-												<dt>detail</dt>
-												<dd>
-													<!-- stats.lod is now the continuous frontier (0..1 of the corpus), not a level -->
-													{cost.lod < 0 ? 'settling' : `${Math.round(cost.lod * 100)}% of the points`}
-												</dd>
-											</div>
-											{#if cost.densityCap < 0.99}
-												<div>
-													<dt>density</dt>
-													<dd>held at {Math.round(cost.densityCap * 100)}% for framerate</dd>
-												</div>
-											{/if}
-											<div>
-												<dt>tags</dt>
-												<dd>{cost.tagsDrawn} of {cost.clusters.toLocaleString()} knots</dd>
-											</div>
-											<div>
-												<dt>gpu</dt>
-												<dd class="gpu">{cost.renderer || 'not reported'}</dd>
-											</div>
-										</dl>
+									<i class="chev" aria-hidden="true"></i>
+								</button>
+								{#if viewFold.unclaimed}
+									{#if unheardShare !== null}
 										<p class="note faint">
-											The point count is the level of detail's answer, not the corpus size:
-											back away and the cloud draws one point per knot. If the GPU line names
-											an integrated chip on a machine that has a discrete one, the browser
-											chose it, and the fill rate is a fraction of what it could be.
+											A second clustering of these same points found
+											<b>{placedCount?.toLocaleString()}</b> of {assets.points.n.toLocaleString()} in a
+											dense region and refused the other
+											<b>{unheardCount?.toLocaleString()}</b>. This map places every point by the type
+											it already carries, so it cannot answer that question for itself.
 										</p>
-									{:else}
-										<p class="note faint">Waiting for the first frame.</p>
+									{/if}
+									<div class="checks">
+										<label
+											class="check"
+											title="Draw the sounds a density clustering agreed on in their own colour, at full weight, and let the ones it refused fall back to faint ground. What stays faint is the unclaimed four fifths."
+										>
+											<input type="checkbox" bind:checked={unheardFigure} disabled={unheardShare === null} />
+											<i
+												class="swatch"
+												class:hollow={!unheardFigure}
+												style:background={unheardFigure ? UNCLAIMED_TINT : 'transparent'}
+											></i>
+											Mark the dense regions
+										</label>
+									</div>
+									{#if unheardFigure}
+										<p class="note faint rampkey">
+											Coloured: in a dense region. Faint: unclaimed.
+										</p>
 									{/if}
 								{/if}
+							</section>
+						</div>
+					</div>
+				{/if}
+				<!--
+					**Statistics, on its own panel** (owner, 2026-08-06: "redesign the what cost panel and
+					call it statistics please" · "look please padding margin and so on make it nicer design
+					like the rest").
+
+					Two fixes, one structural and one naming.
+
+					The `dl` sat directly in `.cardbody`, which supplies no padding — every other panel in
+					this app puts its content in a `section.block`, which is where the 0.9rem/1rem rhythm and
+					the separating rule come from. It is in one now, so the panel matches the left column and
+					the Display card instead of being the one card whose text touches its own border.
+
+					And it is two groups rather than one, because "Statistics" over five frame-timing numbers
+					would be a promise the panel does not keep. **The frame** is what drawing this costs right
+					now; **the corpus** is what is being drawn, and every figure in it is already derived on
+					this page for some other control — nothing is measured here that was not measured anyway.
+				-->
+				{#if costOpen}
+					<div class="panel viewpanel statspanel">
+						<h2>Statistics</h2>
+						<div class="cardbody">
+							<section class="block">
+								<p class="axis mono">the frame</p>
+								{#if cost}
+									<dl class="cost mono">
+										<div>
+											<dt>rate</dt>
+											<dd>{cost.fps.toFixed(0)} fps · {cost.frameMs.toFixed(1)} ms</dd>
+										</div>
+										<div>
+											<dt>drawn</dt>
+											<dd
+												title="The level of detail's answer, not the corpus size: back away and the cloud draws one point per knot."
+											>
+												{cost.pointsDrawn.toLocaleString()} of {cost.pointsTotal.toLocaleString()} points{#if cost.pointsResponding > 0}
+													· {cost.pointsResponding.toLocaleString()} responding{/if}{#if cost.pointsRevealed > 0}
+												· {cost.pointsRevealed.toLocaleString()} revealed{/if}
+											</dd>
+										</div>
+										<div>
+											<dt>detail</dt>
+											<dd>
+												<!-- stats.lod is the continuous frontier (0..1 of the corpus), not a level -->
+												{cost.lod < 0 ? 'settling' : `${Math.round(cost.lod * 100)} % of the points`}
+											</dd>
+										</div>
+										{#if cost.densityCap < 0.99}
+											<div>
+												<dt>held</dt>
+												<!-- Two reasons the cap can be below 1 and they are different facts: the reader
+												     set a ceiling, or the frame timer took one. Saying "for framerate" in the
+												     first case would blame the GPU for the reader's own slider. -->
+												<dd>
+													at {Math.round(cost.densityCap * 100)} %
+													{detailCeiling < 0.99 && cost.densityCap >= detailCeiling - 0.02
+														? 'by the density ceiling'
+														: 'for framerate'}
+												</dd>
+											</div>
+										{/if}
+										<div>
+											<dt>tags</dt>
+											<dd>{cost.tagsDrawn} of {cost.clusters.toLocaleString()} knots</dd>
+										</div>
+										<div>
+											<dt>gpu</dt>
+											<dd
+												class="gpu"
+												title="If this names an integrated chip on a machine that has a discrete one, the browser chose it, and the fill rate is a fraction of what it could be."
+											>
+												{cost.renderer || 'not reported'}
+											</dd>
+										</div>
+									</dl>
+								{:else}
+									<p class="note faint">Waiting for the first frame.</p>
+								{/if}
+							</section>
+							<section class="block">
+								<p class="axis mono">the corpus</p>
+								<dl class="cost mono">
+									<div>
+										<dt>sounds</dt>
+										<dd>{assets.points.n.toLocaleString()}</dd>
+									</div>
+									<div>
+										<dt>knots</dt>
+										<dd>{assets.centroids.items.length.toLocaleString()} call types</dd>
+									</div>
+									{#if trustStats}
+										<div>
+											<dt>agree</dt>
+											<dd
+												title="Averaged over every point: how many of its ten nearest marks on screen share its type. Chance on this corpus is far under one percent."
+											>
+												{(trustStats.mean * 100).toFixed(0)} % of neighbours ·
+												{trustStats.alone.toLocaleString()} alone
+											</dd>
+										</div>
+									{/if}
+									{#if unheardShare !== null}
+										<div>
+											<dt>dense</dt>
+											<dd
+												title="How many of these same points a second, independent density clustering placed in a region. This map places everything by the type it already carries, so it cannot answer that itself."
+											>
+												{placedCount?.toLocaleString()} in a region ·
+												{unheardCount?.toLocaleString()} unclaimed
+											</dd>
+										</div>
+									{/if}
+								</dl>
 							</section>
 						</div>
 					</div>
@@ -3304,22 +3753,40 @@ uv run birdy-pipeline build</pre>
 						{/if}
 						{#if chorus !== 'off'}
 							<!--
-								Named, because this filter and the points' one share three words and
-								answer different questions: this is songs by how strong the claim on
-								them is, that is sounds by where the audio came from. On this corpus
-								they nearly invert — nearly every song is our arrangement, nearly every
-								point is real recorded audio — so an unlabelled pair of filters reads as
-								one axis contradicting itself.
+								**Two filters, two vocabularies — because sharing one made them read as a single
+								broken control** (owner, 2026-08-06: "we have different counts in synthetic and
+								documented than we have in the chorus … something is wrong piped here").
+
+								Nothing is mispiped. This list counts SONGS by how strong the claim on them is;
+								the Display panel's list counts SOUNDS by where the audio came from. Two
+								populations (2 867 songs against 444 213 points), two taxonomies, and on this
+								corpus they nearly invert — almost every song is our arrangement while almost
+								every point is real field audio. `documented` at 0.6 % of songs and at 0.25 % of
+								points is two true figures about two different things.
+
+								The previous attempt printed the unit on each number ("16 songs", "0.25 % of
+								points") and it was not enough, because the two lists still shared three words
+								AND the same swatch colours — and a coloured swatch in this app means one
+								specific thing: the key to the point cloud. A song class has no points to be the
+								key to. So the swatch is gone from here and the shared words are replaced by the
+								claim each class makes. The filtering is untouched: `chorusClasses` still keys on
+								the old words, which is what `CHORUS_CLASS_CONFIDENCE` maps to song confidences.
 							-->
 							<p class="axis mono">songs, by how strong the claim is</p>
 							<div class="checks">
-								{#each ['documented', 'synthesized', 'recorded'] as cls, i (cls)}
+								{#each ['documented', 'synthesized', 'recorded'] as cls (cls)}
+									{@const name =
+										cls === 'documented'
+											? 'from the literature'
+											: cls === 'synthesized'
+												? 'our arrangement'
+												: 'unlabelled audio'}
 									{@const hint =
 										cls === 'documented'
-											? 'A person named this song — described in the literature or established by playback experiments.'
+											? 'Songs a person named — described in the literature or established by playback experiments. This counts songs; the Display panel’s “documented” is a share of the 444 213 points, which is a different population.'
 											: cls === 'synthesized'
-												? 'Our own mapping: fitted from recordings or composed from them. Not a claim about real birds.'
-												: 'Real audio with no documented function attached. Empty in this build by construction: the pipeline writes `unlabelled` onto syllables and knots, never onto a song, so no song can carry this word however many recordings are loaded.'}
+												? 'Songs that are our own mapping: fitted from recordings or composed from them. Not a claim about real birds. This counts songs, not sounds.'
+												: 'Songs with no documented function attached. Empty in this build by construction: the pipeline writes `unlabelled` onto syllables and knots, never onto a song, so no song can carry this word however many recordings are loaded.'}
 									{@const have = chorusClassSongs === null ? null : chorusClassSongs.counts[cls]}
 									{@const settled = chorusClassSongs !== null && !chorusClassSongs.partial}
 									{@const share =
@@ -3332,13 +3799,9 @@ uv run birdy-pipeline build</pre>
 											bind:checked={chorusClasses[cls]}
 											disabled={settled && have === 0}
 										/>
-										<i
-											class="swatch"
-											style:background={provenanceColour(
-												[PROVENANCE.documented, PROVENANCE.learned, PROVENANCE.field][i]
-											)}
-										></i>
-										{cls}
+										<!-- No swatch. A coloured square in this interface is the key to the point cloud,
+										     and this row names a class of songs, which owns no points. -->
+										{name}
 										<!--
 											**The share, not just the count.** On this corpus 99.3 % of songs are
 											`invented` and so fall under `synthesized`, `documented` covers 16 and
@@ -3371,18 +3834,16 @@ uv run birdy-pipeline build</pre>
 									</label>
 								{/each}
 							</div>
+							<!--
+								**Three sentences of arithmetic, moved to where the arithmetic is.** This
+								paragraph explained that `synthesized` is almost the whole pool and that
+								`recorded` is empty by construction — both of which the per-row counts and
+								the row's own `title` now say, next to the number they are about. What is
+								left is the one thing the counts cannot say: what turning a box off does.
+							-->
 							<p class="note faint">
-								Which songs the chorus may draw from. Off re-pools the next song;
-								nothing already playing is cut.
-								{#if chorusClassSongs && !chorusClassSongs.partial}
-									Nearly every song in this corpus is our own arrangement, so
-									<b>synthesized</b> is almost the whole pool — switching the other two off
-									is a real filter with almost nothing to remove. <b>recorded</b> is empty
-									because song confidence is derived from syllables and no song is ever
-									written <i>unlabelled</i>, not because this corpus happens to hold none.
-								{:else if chorusClassSongs?.partial}
-									Counts are over the birds loaded so far.
-								{/if}
+								Off re-pools the next song; nothing already playing is cut.
+								{#if chorusClassSongs?.partial}Counts are over the birds loaded so far.{/if}
 							</p>
 						{/if}
 					</section>
@@ -3825,23 +4286,19 @@ uv run birdy-pipeline build</pre>
 								than promising one up front.
 							-->
 							{#if inputVia === 'monitor'}
-								<p class="note faint">
-									Listening to this computer's own output through its monitor device. Nothing
-									is shared and no screen is captured.
-								</p>
+								<p class="note faint">Through this computer's monitor device — nothing is shared.</p>
 							{:else if inputVia === 'display'}
 								<p class="note faint">
-									This machine exposes no monitor device, so the browser's screen-capture
-									dialog is the only route to computer audio. The video is discarded the
-									instant it arrives — only the sound is read.
+									No monitor device on this machine, so the browser's screen-capture dialog is the
+									only route. The video is discarded on arrival — only the sound is read.
 								</p>
 							{:else}
+								<!-- The PipeWire/PulseAudio explanation was three sentences about which of two
+								     routes a given desktop takes. The two branches above already say which route
+								     THIS machine took, once it is known; before that, one line is enough. -->
 								<p class="note faint">
-									Reads what this computer is playing. Where the sound system offers a
-									monitor of the output — every PipeWire and PulseAudio desktop — it is
-									captured directly and <b>nothing is shared</b>. Only on machines without
-									one does the browser fall back to its screen-capture dialog, where
-									<b>share audio</b> has to be ticked.
+									Reads what this computer is playing. Captured directly where the sound system
+									offers a monitor of the output, otherwise through the browser's share dialog.
 								</p>
 							{/if}
 						{/if}
@@ -4068,6 +4525,14 @@ uv run birdy-pipeline build</pre>
 		gap: 0.4rem;
 	}
 
+	/* The two openers sit side by side above the panel they open. A row inside the grid
+	   rather than two grid children, so `justify-items: end` keeps the pair flush right
+	   and the panel below still spans the full width it wants. */
+	.viewbtns {
+		display: flex;
+		gap: 0.4rem;
+	}
+
 	.viewbtn {
 		display: grid;
 		place-items: center;
@@ -4075,6 +4540,72 @@ uv run birdy-pipeline build</pre>
 		height: 2rem;
 		padding: 0;
 		color: var(--ink-dim);
+	}
+
+	/* --- folding sections ---
+
+	   The header is the entire click target, which is what "minimize when clicking in it
+	   anywhere" asks for, and it is a button so the fold is keyboard-reachable and
+	   announces its own state through aria-expanded. Full width, no button chrome: it has
+	   to read as the section heading it replaced, not as a control sitting above one. */
+	.foldhead {
+		display: flex;
+		align-items: baseline;
+		gap: 0.4rem;
+		width: 100%;
+		padding: 0;
+		border: 0;
+		background: none;
+		text-align: left;
+		cursor: pointer;
+		color: inherit;
+	}
+
+	.foldhead:hover .axis,
+	.foldhead:focus-visible .axis {
+		color: var(--ink-dim);
+	}
+
+	/* The share or the hidden count, pushed to the right of the header so a shut drawer
+	   still reports the one number that says whether it is doing anything. */
+	.foldhead .tally {
+		margin-left: auto;
+	}
+
+	/* A chevron drawn in borders rather than shipped as an icon: two edges of a square,
+	   rotated. Points down when the section is open and right when it is shut, which is
+	   the direction the content will appear from. */
+	.chev {
+		flex: none;
+		width: 0.36rem;
+		height: 0.36rem;
+		border-right: 1px solid var(--ink-faint);
+		border-bottom: 1px solid var(--ink-faint);
+		transform: rotate(45deg);
+		transform-origin: center;
+		transition: transform 140ms ease;
+	}
+
+	.fold.shut .chev {
+		transform: rotate(-45deg);
+	}
+
+	/* A shut section is a header and nothing else, so it gives back the padding it was
+	   using to separate content that is no longer there. */
+	.fold.shut {
+		padding-bottom: 0;
+	}
+
+	/* Same shell as the display panel — the rule above it sets position and width for both —
+	   and it opens under it, so the two read as a stack of cards rather than as one panel with
+	   a performance section inside it.
+
+	   No `.cost { margin: 0 }` override here any more. That existed because the `dl` sat
+	   directly in `.cardbody` and had to fake its own spacing; it is inside a `section.block`
+	   now, which is where every other panel in this app gets its padding and its rules from,
+	   so the shared rhythm applies and there is nothing to correct. */
+	.statspanel .axis {
+		margin-bottom: 0.1rem;
 	}
 
 	.viewbtn.open {
@@ -4624,6 +5155,40 @@ uv run birdy-pipeline build</pre>
 		color: var(--ink-faint);
 	}
 
+	/* **The doubt swatch is the ramp itself, not one of its ends.** The provenance
+	   swatches are categorical, so a single fill is the whole key; this mode is
+	   sequential, and picking either end to stand for it would say the mode means one
+	   thing rather than a scale. Same size and shape as the class swatches so the two
+	   lists still read as one kind of control, and the same `hollow` rule: off, it
+	   states only "a mode you can turn on". The gradient direction matches the key
+	   printed under the pair — loud first, because that is the end you turn it on for. */
+	/* One gradient per ramp, so the two rows are told apart by the same thing that tells their
+	   marks apart on the stage. Loud end first, because that is the end you turn it on for. */
+	.swatch.ramp.agree {
+		background: linear-gradient(90deg, var(--doubt-agree), var(--doubt-quiet));
+	}
+
+	.swatch.ramp.snr {
+		background: linear-gradient(90deg, var(--doubt-snr), var(--doubt-quiet));
+	}
+
+	.swatch.ramp.hollow {
+		background: none;
+	}
+
+	/* A control that only exists while the one above it is on reads as subordinate to it, so
+	   it is inset by the width of that checkbox rather than sitting at the section's margin
+	   as a peer. */
+	.field.indent {
+		padding-left: 1.35rem;
+	}
+
+	/* The ramp's two ends named in words, tight under the toggles they belong to. */
+	.rampkey {
+		margin-top: 0.15rem;
+		font-size: 0.68rem;
+	}
+
 	.swatch {
 		flex: none;
 		width: 9px;
@@ -4640,6 +5205,74 @@ uv run birdy-pipeline build</pre>
 		display: grid;
 		place-items: center;
 		padding: 1.5rem;
+	}
+
+	/* --- the first-load screen ---
+
+	   Built from parts the interface already has: the brand block from the HUD, `axis mono` for
+	   the stage label, `note faint` for the sentence under it. The only new shapes are the bar
+	   and the mark's rotation, and both are one rule each. */
+	.loading {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: 0.5rem 0.9rem;
+		align-items: center;
+		max-width: 25rem;
+	}
+
+	/* Slow, and counter-clockwise to nothing in particular — it is the one moving thing on the
+	   screen, so "working" reads without a spinner ornament. 9s rather than 1s because a fast
+	   spin says "this should already be done"; this load is a minute's honest work. */
+	.loadmark {
+		grid-row: span 2;
+		animation: loadspin 9s linear infinite;
+	}
+
+	@keyframes loadspin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	.loadtext h1 {
+		margin: 0;
+		font-size: 1rem;
+		font-weight: 600;
+		letter-spacing: 0.01em;
+	}
+
+	.loadtext .strap {
+		margin: 0.1rem 0 0;
+	}
+
+	/* Full width under the mark and the name, so the bar measures the whole card rather than
+	   the column the text happens to occupy. */
+	.loadbar {
+		grid-column: 1 / -1;
+		height: 2px;
+		margin-top: 0.5rem;
+		background: var(--rule);
+		overflow: hidden;
+	}
+
+	.loadbar span {
+		display: block;
+		height: 100%;
+		background: var(--signal);
+		/* Eased, because the stages complete in bursts: three of the ten land within a few
+		   hundred milliseconds of each other and an unanimated bar jumps past a third of its
+		   length in one frame. */
+		transition: width 320ms ease;
+	}
+
+	.loadstage {
+		grid-column: 1 / -1;
+		margin: 0;
+	}
+
+	.loading .note {
+		grid-column: 1 / -1;
+		margin: 0;
 	}
 
 	.overlay {

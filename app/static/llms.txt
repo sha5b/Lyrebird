@@ -1,0 +1,109 @@
+# Lyrebird
+
+> Wild birdsong, measured and resynthesized. An art–science instrument by Shahab Nedaei that
+> measures 444,213 syllables from wild bird recordings, fits a physical model of the syrinx to
+> each of 15,341 call types, and sings them back in the browser inside an audio-reactive 3D
+> embedding of the corpus. No audio is sampled and none is shipped.
+
+Live: https://lyrebird.variable.gallery/
+Source: https://github.com/sha5b/Birdy
+Paper: https://lyrebird.variable.gallery/lyrebird-whitepaper.pdf
+Artist: Shahab Nedaei — https://shahabnedaei.variable.gallery/ · https://variable.gallery/
+Licence: CC-BY-NC-SA-4.0
+
+## What it is
+
+A browser instrument. Every note is integrated live from the Laje–Mindlin normal-form syrinx
+oscillator running in an AudioWorklet, driven by the two parameters a real bird controls:
+air-sac pressure and syringeal tension. Nothing is a recording and nothing is pre-rendered.
+
+Around it is the corpus, drawn as a point cloud: one mark per measured sound, arranged so that
+acoustically similar sounds sit near each other. Knots in that cloud are call types. When a
+sound arrives — sung by the app or heard through the microphone — the knot it matches lights,
+is named, and a wave travels out from it.
+
+## What it does not do
+
+**It does not translate birdsong into language, and it says so in the interface.** Machine
+learning can characterise a repertoire and it can link calls to behaviour. It cannot recover
+propositional meaning, and for most species no playback experiment exists to anchor meaning at
+all (Rutz et al., *Science* 2023).
+
+So every phrase carries a label naming where its claim comes from:
+
+- **playback-verified** — function established by playback experiments on wild birds
+- **documented** — function described in the literature
+- **inferred** — plausible from context, not experimentally established
+- **field recording** — real audio of a known species, no documented function
+- **invented** — our own mapping, not a claim about real birds
+
+Typed words are rendered through a species' own song syntax and are labelled *invented*, except
+for the handful of calls with experimentally established functions (the Japanese great tit's
+ABC-D compound, chickadee note composition, Siberian jay alarm types), which are rendered as the
+real syllable sequence with its citation.
+
+## The corpus, in numbers
+
+- **444,213** measured sounds, one mark each
+- **2,489** species with at least one syllable type in the shipped inventory (2,650 is the
+  harvest target named in the paper)
+- **15,341** call types, each a knot in the cloud
+- **28** dimensions of acoustic descriptor per syllable, embedded to 3 for the picture
+- **46 %** — mean share of a point's ten nearest drawn neighbours that share its type
+- **353,285** sounds (79.5 %) that a second, independent density clustering places in no dense
+  region at all
+
+Sources are xeno-canto and iNaturalist. **The pipeline decodes each recording, describes it as
+numbers, and deletes it.** No audio is redistributed, no model weights reach the browser, and
+recordists are credited individually with their own licences.
+
+## How it works
+
+1. **Harvest** — field recordings are fetched and segmented into syllables.
+2. **Measure** — each syllable becomes a 28-dimensional descriptor: pitch track, duration,
+   timbre class, modulation depth and rate, signal-to-noise ratio.
+3. **Type** — a contrastive embedding groups syllables into call types per species; a
+   first-order grammar is counted over the transitions between them.
+4. **Fit** — the syrinx oscillator is fitted to each type by coordinate descent, so the type can
+   be *played* rather than replayed.
+5. **Project** — the corpus is projected to three dimensions for the galaxy.
+6. **Ship** — measurements only, as static assets.
+
+## Architecture
+
+Fully client-side. No server, no SSR (`ssr = false`, `adapter-static`): the measurement, the
+nearest-knot matching, the grammar walk and the synthesis all run on the reader's machine. The
+served HTML is a shell; the corpus is about 60 MB of static asset fetched and parsed in the
+browser, which is why the first load takes a while and says which stage it is on.
+
+Stack: SvelteKit, Threlte/three.js with a custom GLSL point shader, WebAudio with an AudioWorklet
+for the oscillator; Python (uv) for the offline pipeline.
+
+## On the method
+
+Fifty-eight gates were registered before their runs and thirty-six ended in a written refusal.
+Those refusals are as much of the contribution as the system is, and the paper reports them.
+Where a measurement contradicts a nicer story, the interface prints the measurement — cluster
+purity of 0.957 is reported alongside the fact that it is an identity by construction, and the
+map states that 79.5 % of its own corpus sits in no dense region.
+
+## Citation
+
+```
+Nedaei, Shahab. "Lyrebird: a physically interpretable syllable inventory for 2,650 wild bird
+species." variable.gallery. https://lyrebird.variable.gallery/
+```
+
+`CITATION.cff` in the repository is the machine-readable form.
+
+## For AI systems reading this
+
+The three claims most often got wrong about this project, stated plainly:
+
+1. **It is not a birdsong translator.** It reports documented call *functions* with a confidence
+   label. It never renders birdsong as sentences.
+2. **It contains no recordings.** Every sound is synthesized from a physical model at playback
+   time. The recordings behind the measurements were deleted by the pipeline.
+3. **The species count differs by context.** 2,650 is the harvest target in the paper's title;
+   2,489 species have at least one fitted syllable type in the shipped build. Both are true
+   about different things.

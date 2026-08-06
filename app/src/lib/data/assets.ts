@@ -4,6 +4,7 @@ import { hydrateCentroids } from './centroid-vectors';
 // this file uses a TypeScript parameter property, which node's strip-only mode refuses.
 // Re-exported here so every existing importer keeps working unchanged.
 import { buildClusterLookup, clusterIndexFor, type ClusterLookup } from './cluster-lookup';
+import { NO_DOUBT, toDoubtBuffer, type DoubtRange } from '$lib/galaxy/doubt';
 export {
 	buildClusterLookup,
 	clusterIndexFor,
@@ -276,13 +277,50 @@ const withDetectedSongs = (sp: Species): Species => {
 	return songs.length === sp.songs.length ? sp : { ...sp, songs };
 };
 
+/**
+ * What the loader is doing, in the order it does it, so the first load can say so.
+ *
+ * **Named stages rather than a byte count, and the reason is the shape of the load.** Six of
+ * these ten steps are JSON parses of files already in flight, and two are the same
+ * `Promise.all` — a bytes-received percentage would sit at 90 % through the whole parse, which
+ * is where the wait actually is. A stage name at least says which of the ten it is stuck on.
+ *
+ * The fraction is `index / STAGES.length`, which is honest about being a step counter and not
+ * a time estimate. The steps are nowhere near equal in duration; `corpus` is most of it.
+ */
+export const LOAD_STAGES = [
+	'reading the manifest',
+	'indexing the inventory',
+	'fetching the corpus',
+	'unpacking cluster vectors',
+	'loading the embedding map',
+	'reading the syrinx calibration',
+	'looking for relations',
+	'placing the points',
+	'loading point features',
+	'ready'
+] as const;
+
+/** Called as each stage completes: the stage's name and how many of the ten are done. */
+export type LoadProgress = (stage: string, done: number, total: number) => void;
+
 export async function loadAssets(
 	fetcher: typeof fetch = fetch,
 	bust = '',
-	map: '' | GalaxyMap = ''
+	map: '' | GalaxyMap = '',
+	onProgress?: LoadProgress
 ): Promise<BirdyAssets> {
 	const dir = map ? `${map}/` : '';
+	// `step` counts completed stages, so the label reported is the one about to run: a
+	// progress line that names what just finished tells the reader about the past.
+	let step = 0;
+	const stage = () => {
+		step++;
+		onProgress?.(LOAD_STAGES[Math.min(step, LOAD_STAGES.length - 1)], step, LOAD_STAGES.length);
+	};
+	onProgress?.(LOAD_STAGES[0], 0, LOAD_STAGES.length);
 	const manifest = await getJson<Manifest>(`${dir}manifest.json`, fetcher, bust);
+	stage();
 	// Everything after the manifest is fetched under that build's own stamp, so a reload
 	// triggered by a rebuild cannot mix two builds together.
 	const stamp = bust || manifest.builtAt || '';
@@ -292,6 +330,7 @@ export async function loadAssets(
 	} catch {
 		index = null;
 	}
+	stage();
 	const [inventory, rawFeatureSpace, points, centroids] = await Promise.all([
 		// In shard mode the inventory starts as the header alone; `loadSpecies` below is
 		// how a bird joins it. The whole file is *not* fetched here — that is the point.
@@ -315,7 +354,9 @@ export async function loadAssets(
 	// bytes, parsed whole before the first frame (centroid-vectors.ts). Attached as views
 	// onto one buffer, so `c.vector32` / `c.vector` / `c.featuresLo` read as they always
 	// did. A build from before 2026-08-01 has them inline and this is a no-op.
+	stage();
 	await hydrateCentroids(centroids, fetcher, (file) => assetUrl(`${dir}${file}`, stamp));
+	stage();
 
 	const featureSpace = normaliseFeatureSpace(rawFeatureSpace);
 
@@ -345,6 +386,7 @@ export async function loadAssets(
 			delete featureSpace.embedding;
 		}
 	}
+	stage();
 
 	// The calibration table only refines the synth; the analytic fallback covers its absence.
 	let calibration: SyrinxCalibration | null = null;
@@ -353,12 +395,14 @@ export async function loadAssets(
 	} catch {
 		calibration = null;
 	}
+	stage();
 
 	// Cross-species relations (relations.py): optional like every learned asset, and
 	// candidates rather than facts even when present — the UI labels them that way.
 	// Size-guarded, because a production build wrote 760 MB of it; see
 	// OPTIONAL_ASSET_BUDGET_BYTES.
 	const relations = await getOptionalJson<RelationsDoc>(`${dir}relations.json`, fetcher, stamp);
+	stage();
 
 	const posRes = await fetcher(assetUrl(`${dir}positions.f32`, stamp));
 	if (!posRes.ok) throw new AssetsMissingError(`${dir}positions.f32`);
@@ -370,6 +414,7 @@ export async function loadAssets(
 		);
 	}
 
+	stage();
 	const { pointFeatures, pointFeatureDims } = await loadPointFeatures(
 		points.n,
 		centroids,
@@ -377,6 +422,7 @@ export async function loadAssets(
 		stamp,
 		dir
 	);
+	stage();
 
 	// The lazy species view. In shard mode the index came from disk; without shards it
 	// is derived from the whole file, so `inventoryIndex` is complete either way.
@@ -822,3 +868,45 @@ export function relationPartners(assets: BirdyAssets): Map<string, RelationPartn
 	return out;
 }
 
+
+/**
+ * Each knot's mean doubt, so a tag can wear the same colour as the points under it.
+ *
+ * The doubt colour mode is per-point on the GPU (`aTrust`), and a tag is per-knot, so the
+ * two need a defined relationship or they will disagree in the one place a reader can check
+ * them against each other. The mean of the knot's own members is that relationship: a tag
+ * sitting in a rose cloud is rose, and a tag over confident points is slate.
+ *
+ * **The mean, not the minimum or a share below a threshold.** A minimum would paint every
+ * knot with a single bad member as fully doubtful, and at 15 341 knots over 444 213 points
+ * almost every knot has one; a threshold share would need a threshold, which is a number
+ * nobody measured. The mean is the only summary here that needs no extra constant.
+ *
+ * `range` is passed through to `toDoubtBuffer` unchanged, so SNR is averaged after its
+ * percentile clamp rather than before — averaging raw dB would let the 85 values above
+ * 100 dB (see `doubt.ts`) drag whole knots to "perfectly clean".
+ *
+ * A knot with no members keeps `NO_DOUBT`: the same rule the buffer uses for an absent
+ * measurement, and the honest one — nothing was measured, so nothing is claimed.
+ */
+export function knotDoubt(
+	assets: BirdyAssets,
+	values: readonly (number | null | undefined)[] | undefined,
+	range?: DoubtRange
+): Float32Array {
+	const count = assets.centroids.items.length;
+	const out = new Float32Array(count).fill(NO_DOUBT);
+	if (!values) return out;
+	const per = toDoubtBuffer(assets.points.n, values, range);
+	const { clusterId } = assets.points;
+	const sum = new Float64Array(count);
+	const tally = new Uint32Array(count);
+	for (let i = 0; i < per.length; i++) {
+		const c = clusterId[i];
+		if (c < 0 || c >= count) continue;
+		sum[c] += per[i];
+		tally[c]++;
+	}
+	for (let c = 0; c < count; c++) if (tally[c]) out[c] = sum[c] / tally[c];
+	return out;
+}
