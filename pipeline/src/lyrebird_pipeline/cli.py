@@ -1866,6 +1866,7 @@ _CRITIC_FALLBACK_DEFAULTS: dict[str, Any] = {
     "mixstyle_alpha": 0.0,
     "w_record": 0.0,
     "recordist_min_patches": 20,
+    "record_within_species": False,
 }
 
 
