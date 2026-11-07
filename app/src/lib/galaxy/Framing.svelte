@@ -106,10 +106,15 @@
 	/** Points spill past their centroids; the frame has to allow for the knot's own size. */
 	const POINT_MARGIN = 1.18;
 
-	useTask((delta) => {
-		const cam = camera.current;
-		if (!frame.length || !group || !controls || !cam) return;
+	/** Where the framed set sits and how far it reaches, in the group's own space. */
+	const centre = new THREE.Vector3();
+	let reach = 0;
+	let measuredFrame: readonly number[] | null = null;
+	let measuredView: typeof view | null = null;
+	let measuredVersion = -1;
+	let measureOk = false;
 
+	function measure(): boolean {
 		// The centre is a per-axis median, not a mean. One cluster stranded on the far side
 		// of the galaxy drags a mean a long way toward itself and the camera then centres
 		// on empty space between the bird and its stray; a median ignores it entirely.
@@ -128,7 +133,7 @@
 			axis[1].push(view.centroids[c * 3 + 1]);
 			axis[2].push(view.centroids[c * 3 + 2]);
 		}
-		if (!axis[0].length) return;
+		if (!axis[0].length) return false;
 		// `median` sorts in place, so the extremes are the ends afterwards.
 		const mx = median(axis[0]);
 		const my = median(axis[1]);
@@ -153,13 +158,13 @@
 		 */
 		const total = view.centroids.length / 3;
 		if (total > 0 && axis[0].length >= total * 0.9) {
-			wanted.set(
+			centre.set(
 				(axis[0][0] + axis[0][axis[0].length - 1]) / 2,
 				(axis[1][0] + axis[1][axis[1].length - 1]) / 2,
 				(axis[2][0] + axis[2][axis[2].length - 1]) / 2
 			);
 		} else {
-			wanted.set(mx, my, mz);
+			centre.set(mx, my, mz);
 		}
 
 		// How far the framed set reaches from its own centre, in the group's space. One
@@ -168,15 +173,35 @@
 		reaches.length = 0;
 		for (const c of frame) {
 			if (c < 0 || c * 3 + 2 >= view.centroids.length) continue;
-			const dx = view.centroids[c * 3] - wanted.x;
-			const dy = view.centroids[c * 3 + 1] - wanted.y;
-			const dz = view.centroids[c * 3 + 2] - wanted.z;
+			const dx = view.centroids[c * 3] - centre.x;
+			const dy = view.centroids[c * 3 + 1] - centre.y;
+			const dz = view.centroids[c * 3 + 2] - centre.z;
 			reaches.push(Math.sqrt(dx * dx + dy * dy + dz * dz));
 		}
 		reaches.sort((a, b) => a - b);
 		const q = reachQuantile(reaches.length, view.centroids.length / 3);
-		const reach =
+		reach =
 			reaches[Math.min(reaches.length - 1, Math.floor((reaches.length - 1) * q))] * POINT_MARGIN;
+		return true;
+	}
+
+	useTask((delta) => {
+		const cam = camera.current;
+		if (!frame.length || !group || !controls || !cam) return;
+
+		// **Measured once per framed set, not once per frame.** The camera chases this answer
+		// every frame, but the answer moves only when the set or the layout does. Measuring
+		// sorted all 15 341 knots four times a frame in the default view, about 10 ms of a
+		// 16.7 ms frame, with the same result each time.
+		if (frame !== measuredFrame || view !== measuredView || view.version !== measuredVersion) {
+			measuredFrame = frame;
+			measuredView = view;
+			measuredVersion = view.version;
+			measureOk = measure();
+		}
+		if (!measureOk) return;
+		wanted.copy(centre);
+
 		// The centroids are in the group's own space: it is rotating and scaled, so the
 		// same phrase is somewhere else in the world every frame.
 		group.updateWorldMatrix(true, false);

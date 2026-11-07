@@ -292,17 +292,53 @@ export const LOAD_STAGES = [
 	'reading the manifest',
 	'indexing the inventory',
 	'fetching the corpus',
-	'unpacking cluster vectors',
-	'loading the embedding map',
-	'reading the syrinx calibration',
-	'looking for relations',
-	'placing the points',
-	'loading point features',
+	// Six requests in flight together, finishing in any order, so one name covers them all.
+	'loading the galaxy',
+	'loading the galaxy',
+	'loading the galaxy',
+	'loading the galaxy',
+	'loading the galaxy',
+	'loading the galaxy',
 	'ready'
 ] as const;
 
 /** Called as each stage completes: the stage's name and how many of the ten are done. */
 export type LoadProgress = (stage: string, done: number, total: number) => void;
+
+/**
+ * The rff-ridge map's weights ship in a binary sidecar (123 k floats are nobody's JSON). Fetched
+ * under the same build stamp, checked against the declared layout, and treated as absent on any
+ * mismatch: a wrong map is worse than no map, because the 28-d fallback is honest and a mismatched
+ * one lights the wrong knots.
+ */
+async function loadEmbeddingMap(
+	featureSpace: FeatureSpace,
+	dir: string,
+	stamp: string,
+	fetcher: typeof fetch
+): Promise<void> {
+	const embMap = featureSpace.embedding?.map;
+	if (!(embMap && 'kind' in embMap && embMap.kind === 'rff-ridge' && !embMap.rff)) return;
+	try {
+		const res = await fetcher(assetUrl(`${dir}${embMap.file}`, stamp));
+		if (!res.ok) throw new Error(embMap.file);
+		const raw = new Float32Array(await res.arrayBuffer());
+		const D = embMap.D;
+		const dims = featureSpace.embedding?.dims ?? 0;
+		const want = 28 * D + D + D * dims + dims;
+		if (raw.length !== want || dims <= 0) {
+			throw new Error(`${embMap.file} holds ${raw.length} floats, expected ${want}`);
+		}
+		embMap.rff = {
+			R: raw.subarray(0, 28 * D),
+			phase: raw.subarray(28 * D, 28 * D + D),
+			w: raw.subarray(28 * D + D, 28 * D + D + D * dims),
+			b: raw.subarray(28 * D + D + D * dims, want)
+		};
+	} catch {
+		delete featureSpace.embedding;
+	}
+}
 
 export async function loadAssets(
 	fetcher: typeof fetch = fetch,
@@ -355,74 +391,49 @@ export async function loadAssets(
 	// onto one buffer, so `c.vector32` / `c.vector` / `c.featuresLo` read as they always
 	// did. A build from before 2026-08-01 has them inline and this is a no-op.
 	stage();
-	await hydrateCentroids(centroids, fetcher, (file) => assetUrl(`${dir}${file}`, stamp));
-	stage();
-
 	const featureSpace = normaliseFeatureSpace(rawFeatureSpace);
 
-	// The rff-ridge map's weights ship in a binary sidecar (123 k floats are nobody's
-	// JSON). Fetched under the same build stamp, checked against the declared layout,
-	// and treated as absent on any mismatch — a wrong map is worse than no map, because
-	// the 28-d fallback is honest and a mismatched one lights the wrong knots.
-	const embMap = featureSpace.embedding?.map;
-	if (embMap && 'kind' in embMap && embMap.kind === 'rff-ridge' && !embMap.rff) {
-		try {
-			const res = await fetcher(assetUrl(`${dir}${embMap.file}`, stamp));
-			if (!res.ok) throw new Error(embMap.file);
-			const raw = new Float32Array(await res.arrayBuffer());
-			const D = embMap.D;
-			const dims = featureSpace.embedding?.dims ?? 0;
-			const want = 28 * D + D + D * dims + dims;
-			if (raw.length !== want || dims <= 0) {
-				throw new Error(`${embMap.file} holds ${raw.length} floats, expected ${want}`);
-			}
-			embMap.rff = {
-				R: raw.subarray(0, 28 * D),
-				phase: raw.subarray(28 * D, 28 * D + D),
-				w: raw.subarray(28 * D + D, 28 * D + D + D * dims),
-				b: raw.subarray(28 * D + D + D * dims, want)
-			};
-		} catch {
-			delete featureSpace.embedding;
-		}
-	}
-	stage();
-
-	// The calibration table only refines the synth; the analytic fallback covers its absence.
-	let calibration: SyrinxCalibration | null = null;
-	try {
-		calibration = await getJson<SyrinxCalibration>(`${dir}syrinx-calibration.json`, fetcher, stamp);
-	} catch {
-		calibration = null;
-	}
-	stage();
-
-	// Cross-species relations (relations.py): optional like every learned asset, and
-	// candidates rather than facts even when present — the UI labels them that way.
-	// Size-guarded, because a production build wrote 760 MB of it; see
-	// OPTIONAL_ASSET_BUDGET_BYTES.
-	const relations = await getOptionalJson<RelationsDoc>(`${dir}relations.json`, fetcher, stamp);
-	stage();
-
-	const posRes = await fetcher(assetUrl(`${dir}positions.f32`, stamp));
-	if (!posRes.ok) throw new AssetsMissingError(`${dir}positions.f32`);
-	const positions = new Float32Array(await posRes.arrayBuffer());
+	// Everything from here is independent of everything else, so it is all requested at once.
+	// These used to be awaited one after another, and the slowest link paid for each round
+	// trip in turn. Only the point features need the hydrated centroids.
+	const counted = <T>(work: Promise<T>): Promise<T> =>
+		work.then((value) => {
+			stage();
+			return value;
+		});
+	const hydrated = counted(
+		hydrateCentroids(centroids, fetcher, (file) => assetUrl(`${dir}${file}`, stamp))
+	);
+	const [, , calibration, relations, positions, { pointFeatures, pointFeatureDims }] =
+		await Promise.all([
+			hydrated,
+			counted(loadEmbeddingMap(featureSpace, dir, stamp, fetcher)),
+			// The calibration table only refines the synth; the analytic fallback covers its absence.
+			counted(
+				getJson<SyrinxCalibration>(`${dir}syrinx-calibration.json`, fetcher, stamp).catch(
+					() => null
+				)
+			),
+			// Cross-species relations (relations.py): optional like every learned asset, and
+			// candidates rather than facts even when present — the UI labels them that way.
+			// Size-guarded, because a production build wrote 760 MB of it; see
+			// OPTIONAL_ASSET_BUDGET_BYTES.
+			counted(getOptionalJson<RelationsDoc>(`${dir}relations.json`, fetcher, stamp)),
+			counted(
+				(async () => {
+					const posRes = await fetcher(assetUrl(`${dir}positions.f32`, stamp));
+					if (!posRes.ok) throw new AssetsMissingError(`${dir}positions.f32`);
+					return new Float32Array(await posRes.arrayBuffer());
+				})()
+			),
+			counted(hydrated.then(() => loadPointFeatures(points.n, centroids, fetcher, stamp, dir)))
+		]);
 
 	if (positions.length !== points.n * 3) {
 		throw new Error(
 			`positions.f32 holds ${positions.length / 3} points but points.json declares ${points.n}`
 		);
 	}
-
-	stage();
-	const { pointFeatures, pointFeatureDims } = await loadPointFeatures(
-		points.n,
-		centroids,
-		fetcher,
-		stamp,
-		dir
-	);
-	stage();
 
 	// The lazy species view. In shard mode the index came from disk; without shards it
 	// is derived from the whole file, so `inventoryIndex` is complete either way.
@@ -460,6 +471,7 @@ export async function loadAssets(
 		}
 		return pending;
 	};
+	let wholeInventory: Promise<void> | null = null;
 	const ensureSpecies = async (ids?: string[]): Promise<void> => {
 		if (!index) return; // whole-file mode: every species is already here
 		if (ids) {
@@ -468,11 +480,20 @@ export async function loadAssets(
 		}
 		// Every bird at once is the one case where the whole file is the lazy unit:
 		// a single fetch beats one request per species.
-		const whole = await getJson<Inventory>(`${dir}inventory.json`, fetcher, stamp);
-		const held = new Set(inventory.species.map((s) => s.id));
-		inventory.species.push(
-			...whole.species.filter((s) => !held.has(s.id)).map(withDetectedSongs)
-		);
+		// Memoised: every re-pool of the aviary asks again, and this file is about 22 MB. A
+		// failure clears the promise so the next start can try the network again.
+		wholeInventory ??= getJson<Inventory>(`${dir}inventory.json`, fetcher, stamp)
+			.then((whole) => {
+				const held = new Set(inventory.species.map((s) => s.id));
+				inventory.species.push(
+					...whole.species.filter((s) => !held.has(s.id)).map(withDetectedSongs)
+				);
+			})
+			.catch((err) => {
+				wholeInventory = null;
+				throw err;
+			});
+		await wholeInventory;
 	};
 	const speciesCommon = (id: string): string => commonById.get(id) ?? id;
 
@@ -869,6 +890,12 @@ export function relationPartners(assets: LyrebirdAssets): Map<string, RelationPa
 }
 
 
+interface KnotDoubtEntry {
+	range: DoubtRange | undefined;
+	means: Float32Array;
+}
+const knotDoubtCache = new WeakMap<LyrebirdAssets, Map<object, KnotDoubtEntry>>();
+
 /**
  * Each knot's mean doubt, so a tag can wear the same colour as the points under it.
  *
@@ -897,6 +924,13 @@ export function knotDoubt(
 	const count = assets.centroids.items.length;
 	const out = new Float32Array(count).fill(NO_DOUBT);
 	if (!values) return out;
+	// Kept per asset set and channel: the tags and all four path layers ask for the same
+	// answer, and each answer is a pass over every point. Callers only read the result.
+	const channels = knotDoubtCache.get(assets) ?? new Map<object, KnotDoubtEntry>();
+	knotDoubtCache.set(assets, channels);
+	const kept = channels.get(values);
+	if (kept && kept.range === range) return kept.means;
+	channels.set(values, { range, means: out });
 	const per = toDoubtBuffer(assets.points.n, values, range);
 	const { clusterId } = assets.points;
 	const sum = new Float64Array(count);

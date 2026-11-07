@@ -1216,6 +1216,8 @@ export interface VisualSignal {
 	 * from a cluster answering and must not share its look (§8.5).
 	 */
 	orphanPulse: Float32Array;
+	/** Any orphan pulse is up, so the renderer knows whether that buffer needs uploading. */
+	orphanLit: boolean;
 	level: number;
 	f0: number;
 	/** 0..1 — how well the live input matches anything in the corpus. */
@@ -1266,6 +1268,7 @@ export function createSignal(clusterCount: number, pointCount = 0): VisualSignal
 		sung: new Float32Array(Math.max(1, clusterCount)),
 		pointActivation: new Float32Array(Math.max(1, pointCount)),
 		orphanPulse: new Float32Array(Math.max(1, pointCount)),
+		orphanLit: false,
 		level: 0,
 		f0: 0,
 		strength: 0,
@@ -1595,7 +1598,7 @@ export const trajectoryPointsVertexShader = /* glsl */ `
 		// It has to be the same or the thread comes loose from the points it connects:
 		// under true 1/z the beads shrank twice as fast as the knots they run between, so
 		// backing off to hold the whole galaxy left visible nodes joined by nothing.
-		float persp = pow(uSizeScale / max(0.001, -mv.z), 0.7);
+		float persp = pow(uSizeScale / max(0.001, -mv.z), 0.82);
 		float bead = uPointSize * (0.85 + vPeak * 2.4);
 		// **The floor rises with the travelling peak, and that is the whole fix.**
 		//

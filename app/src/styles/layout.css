@@ -407,10 +407,8 @@ a.chip {
 	justify-content: space-between;
 	align-items: baseline;
 	gap: 0.5rem;
-	font-size: 0.58rem;
-	text-transform: uppercase;
-	letter-spacing: 0.11em;
-	color: var(--ink-faint);
+	font-size: 0.74rem;
+	color: var(--ink-dim);
 	font-weight: 600;
 }
 
@@ -424,17 +422,13 @@ a.chip {
 	justify-content: space-between;
 	align-items: baseline;
 	gap: 0.5rem;
-	font-size: 0.6rem;
-	color: var(--ink-faint);
-	text-transform: uppercase;
-	letter-spacing: 0.08em;
+	font-size: 0.72rem;
+	color: var(--ink-dim);
 }
 
 .lbl b {
-	color: var(--ink-dim);
-	font-weight: 500;
-	text-transform: none;
-	letter-spacing: 0;
+	color: var(--ink-faint);
+	font-weight: 400;
 }
 
 .sliders {
@@ -496,12 +490,23 @@ button.wide {
 	gap: 0.5rem 1rem;
 }
 
+.checks.column {
+	flex-direction: column;
+	gap: 0.4rem;
+}
+
 .check {
 	display: flex;
 	align-items: center;
-	gap: 0.4rem;
-	font-size: 0.76rem;
-	color: var(--ink-dim);
+	gap: 0.45rem;
+	font-size: 0.8rem;
+	color: var(--ink);
+}
+
+/* A row's figure sits at the far edge, so a column of them lines up. */
+.checks.column .check > .mono,
+.viewpanel .check > .mono {
+	margin-left: auto;
 }
 
 .check input {
@@ -535,7 +540,7 @@ button.wide {
 
 .note {
 	margin: 0;
-	font-size: 0.74rem;
+	font-size: 0.8rem;
 	line-height: 1.5;
 	color: var(--ink-dim);
 }
@@ -642,9 +647,9 @@ button.wide {
 }
 
 .chip {
-	font-size: 0.66rem;
-	padding: 0.08rem 0.35rem;
-	border-radius: 2px;
+	font-size: 0.72rem;
+	padding: 0.1rem 0.45rem;
+	border-radius: 999px;
 	background: var(--paper);
 	border: 1px solid var(--rule);
 	color: var(--ink-dim);
@@ -714,7 +719,7 @@ button.link {
 	padding: 0.05rem 0.3rem;
 	border: 1px solid var(--rule);
 	border-radius: 999px;
-	font-size: 0.56rem;
+	font-size: 0.64rem;
 	color: var(--ink-faint);
 	cursor: help;
 }
@@ -740,18 +745,17 @@ button.link {
    and printing it always was more than half the Learn tab. */
 
 .rollup > summary {
-	font-size: 0.6rem;
+	font-size: 0.72rem;
 	cursor: pointer;
 	list-style: none;
 }
 
+.rollup[open] > summary {
+	margin-bottom: 0.45rem;
+}
+
 /* The manual steps folded behind one line: they are the same cycle the switch above
    runs, done by hand, and they should not be the first thing the tab shows. */
-
-.rollup.block > summary {
-	text-transform: uppercase;
-	letter-spacing: 0.09em;
-}
 
 /* The steps sit inside a `.block`, so their own block padding would double the
    parent's. Strip the sides and let the rules between them do the separating. */

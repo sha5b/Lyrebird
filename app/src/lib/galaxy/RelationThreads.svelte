@@ -21,10 +21,11 @@
 	import { T } from '@threlte/core';
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
-	import { relationPartners } from '$lib/data/assets';
+	import { clusterProvenance, relationPartners } from '$lib/data/assets';
 	import type { LyrebirdAssets } from '$lib/data/types';
 	import type { LayoutView } from './layouts';
-	import { speciesColourScaled } from './palette';
+	import { doubtKnotColour, doubtLayerOn, NO_DOUBT_LAYER, type DoubtLayer } from './doubt-paths';
+	import { provenanceColourScaled, speciesColourScaled } from './palette';
 
 	interface Props {
 		assets: LyrebirdAssets;
@@ -32,14 +33,20 @@
 		view: LayoutView;
 		/** The selected species' id; empty draws nothing. */
 		speciesId?: string;
+		/** Provenance layer: each thread end takes its knot's class colour. */
+		prov?: boolean;
+		/** Doubt layer: each thread end takes its knot's doubt, ahead of provenance. */
+		doubt?: DoubtLayer;
 	}
 
-	let { assets, view, speciesId = '' }: Props = $props();
+	let { assets, view, speciesId = '', prov = false, doubt = NO_DOUBT_LAYER }: Props = $props();
 
 	const MAX_THREADS = 64;
 	const NEUTRAL = new THREE.Color('#8595ae');
 
 	const partners = untrack(() => relationPartners(assets));
+	/** Built on the first use: most sessions never open this layer with a bird chosen. */
+	let klass: Float32Array | undefined;
 
 	const geometry = new THREE.BufferGeometry();
 	const material = new THREE.LineBasicMaterial({
@@ -70,6 +77,17 @@
 				view.centroids[a], view.centroids[a + 1], view.centroids[a + 2],
 				view.centroids[b], view.centroids[b + 1], view.centroids[b + 2]
 			);
+			if (doubtLayerOn(doubt) || prov) {
+				for (const knot of [t.from, t.to]) {
+					if (doubtLayerOn(doubt)) c.setStyle(doubtKnotColour(assets, knot, doubt));
+					else {
+						klass ??= clusterProvenance(assets);
+						c.setStyle(provenanceColourScaled(klass[knot] ?? 4, 1.0));
+					}
+					colors.push(c.r, c.g, c.b);
+				}
+				continue;
+			}
 			colors.push(NEUTRAL.r, NEUTRAL.g, NEUTRAL.b);
 			c.setStyle(speciesColourScaled(t.partner, 1.0));
 			colors.push(c.r, c.g, c.b);

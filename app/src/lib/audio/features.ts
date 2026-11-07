@@ -228,18 +228,6 @@ export function standardise(desc: Float32Array, spec: FeatureSpace): Float32Arra
 	return out;
 }
 
-function cosine(a: Float32Array | number[], b: Float32Array | number[]): number {
-	let dot = 0;
-	let na = 0;
-	let nb = 0;
-	for (let i = 0; i < a.length; i++) {
-		dot += a[i] * b[i];
-		na += a[i] * a[i];
-		nb += b[i] * b[i];
-	}
-	return dot / (Math.sqrt(na) * Math.sqrt(nb) + 1e-12);
-}
-
 /**
  * How well the best centroid has to match before anything is allowed to light up.
  *
@@ -418,6 +406,10 @@ export class ActivationTracker {
 	readonly activations: Float32Array;
 	readonly similarity: Float32Array;
 	private readonly vectors: Float32Array[];
+	/** Each vector's norm over the first `normsFor` components. */
+	private readonly vectorNorms: Float32Array;
+	private normsFor = -1;
+	private readonly softmaxScratch: Float32Array;
 	private readonly temperature: number;
 	/** The sparse-input smoothing rate: the flicker-killer the EMA exists for. */
 	private readonly smoothingBase: number;
@@ -528,6 +520,8 @@ export class ActivationTracker {
 		}
 		this.activations = new Float32Array(centroids.items.length);
 		this.similarity = new Float32Array(centroids.items.length);
+		this.vectorNorms = new Float32Array(centroids.items.length);
+		this.softmaxScratch = new Float32Array(centroids.items.length);
 	}
 
 	/**
@@ -582,8 +576,25 @@ export class ActivationTracker {
 		}
 		const k = this.vectors.length;
 		let max = -Infinity;
+		// The centroids never change, so their norms are kept rather than recomputed per knot
+		// per frame. Over the query's own length, which is what the cosine compares.
+		if (this.normsFor !== query.length) {
+			this.normsFor = query.length;
+			for (let i = 0; i < k; i++) {
+				const v = this.vectors[i];
+				let nv = 0;
+				for (let j = 0; j < query.length; j++) nv += v[j] * v[j];
+				this.vectorNorms[i] = Math.sqrt(nv);
+			}
+		}
+		let nq = 0;
+		for (let j = 0; j < query.length; j++) nq += query[j] * query[j];
+		nq = Math.sqrt(nq);
 		for (let i = 0; i < k; i++) {
-			this.similarity[i] = cosine(query, this.vectors[i]);
+			const v = this.vectors[i];
+			let dot = 0;
+			for (let j = 0; j < query.length; j++) dot += query[j] * v[j];
+			this.similarity[i] = dot / (nq * this.vectorNorms[i] + 1e-12);
 			if (this.similarity[i] > max) max = this.similarity[i];
 		}
 		// Two tests, and both have to pass: how close the nearest cluster is, and whether
@@ -596,7 +607,7 @@ export class ActivationTracker {
 		this.strength = smoothing * this.strength + (1 - smoothing) * target;
 
 		let sum = 0;
-		const exp = new Float32Array(k);
+		const exp = this.softmaxScratch;
 		for (let i = 0; i < k; i++) {
 			exp[i] = Math.exp((this.similarity[i] - max) / this.temperature);
 			sum += exp[i];
@@ -646,7 +657,7 @@ export class ActivationTracker {
 	 * The floor keeps a duplicated timestamp from freezing the fade, and a non-finite `dt`
 	 * falls back to one reference frame rather than poisoning every activation with NaN.
 	 */
-	private static overTime(coeff: number, dt: number): number {
+	static overTime(coeff: number, dt: number): number {
 		const seconds = Number.isFinite(dt)
 			? Math.max(1 / 1000, dt)
 			: 1 / ActivationTracker.REFERENCE_FPS;
@@ -729,6 +740,10 @@ export class PointTracker {
 	private readonly features: Float32Array | null;
 	private readonly dims: number;
 	private readonly clusterOf: Int32Array;
+	private readonly memberStart: Int32Array;
+	private readonly members: Int32Array;
+	/** False once a decay has found every point at zero, so silence costs nothing. */
+	private lit = false;
 	private readonly centroidsLo: Float32Array | null;
 	private readonly zLo: Float32Array;
 	private readonly smoothing: number;
@@ -742,6 +757,22 @@ export class PointTracker {
 		this.features = assets.pointFeatures;
 		this.clusterOf = Int32Array.from(assets.points.clusterId);
 		this.zLo = new Float32Array(this.dims);
+
+		// Members per cluster, so a pulse touches its own points instead of scanning the corpus.
+		// `clusterId` is -1 for an unclustered point, which no pulse can name.
+		const k = assets.centroids.items.length;
+		this.memberStart = new Int32Array(k + 1);
+		for (let i = 0; i < n; i++) {
+			const c = this.clusterOf[i];
+			if (c >= 0 && c < k) this.memberStart[c + 1]++;
+		}
+		for (let c = 0; c < k; c++) this.memberStart[c + 1] += this.memberStart[c];
+		this.members = new Int32Array(this.memberStart[k]);
+		const cursor = this.memberStart.slice();
+		for (let i = 0; i < n; i++) {
+			const c = this.clusterOf[i];
+			if (c >= 0 && c < k) this.members[cursor[c]++] = i;
+		}
 
 		const lo = assets.centroids.items.map((c) => c.featuresLo);
 		this.centroidsLo =
@@ -765,20 +796,25 @@ export class PointTracker {
 	 * projection matrix is not shipped — only the projected vectors are — so this
 	 * reconstructs the query from the same k anchors both sides already agree on.
 	 */
-	update(activations: Float32Array, strength = 1): Float32Array {
+	update(activations: Float32Array, strength = 1, dt = 1 / 60): Float32Array {
 		const n = this.activation.length;
 		const d = this.dims;
+		// Per-second, like the tracker above: both rates were tuned per frame at 60 Hz, so the
+		// points faded at less than half that speed on a 144 Hz display.
+		const smoothing = ActivationTracker.overTime(this.smoothing, dt);
+		const release = ActivationTracker.overTime(PointTracker.RELEASE, dt);
 		const centroids = this.centroidsLo;
 		// Below this there is nothing to show, and continuing would be actively wrong:
 		// the query direction below is renormalised, so a vanishing activation still
 		// yields a full-length unit vector and would keep the last matched knot glowing.
-		if (strength < 1e-3) return this.decay();
+		if (strength < 1e-3) return this.decay(dt);
 
 		if (!centroids) {
+			this.lit = true;
 			for (let i = 0; i < n; i++) {
 				const act = activations[this.clusterOf[i]] ?? 0;
 				const target = act * (0.35 + 0.65 * this.affinity[i]);
-				this.activation[i] = this.smoothing * this.activation[i] + (1 - this.smoothing) * target;
+				this.activation[i] = smoothing * this.activation[i] + (1 - smoothing) * target;
 			}
 			return this.activation;
 		}
@@ -794,8 +830,9 @@ export class PointTracker {
 		let norm = 0;
 		for (let j = 0; j < d; j++) norm += this.zLo[j] * this.zLo[j];
 		norm = Math.sqrt(norm);
-		if (norm < 1e-6) return this.decay();
+		if (norm < 1e-6) return this.decay(dt);
 		for (let j = 0; j < d; j++) this.zLo[j] /= norm;
+		this.lit = true;
 
 		// Both sides are unit vectors, so the dot product is the cosine directly. Mapped
 		// through a steep ramp: below 0.9 a point is not really this sound, and without the
@@ -826,17 +863,25 @@ export class PointTracker {
 				Math.max(clusterAct * 0.45, affinity * affinity) * (0.08 + clusterAct * 3) * strength
 			);
 			const current = this.activation[i];
-			const rate = target < current ? PointTracker.RELEASE : this.smoothing;
+			const rate = target < current ? release : smoothing;
 			this.activation[i] = rate * current + (1 - rate) * target;
 		}
 		return this.activation;
 	}
 
-	decay(): Float32Array {
+	decay(dt = 1 / 60): Float32Array {
+		if (!this.lit) return this.activation;
+		const smoothing = ActivationTracker.overTime(this.smoothing, dt);
+		let any = false;
 		for (let i = 0; i < this.activation.length; i++) {
-			const v = this.activation[i] * this.smoothing;
-			this.activation[i] = v < 2e-3 ? 0 : v;
+			const v = this.activation[i] * smoothing;
+			if (v < 2e-3) this.activation[i] = 0;
+			else {
+				this.activation[i] = v;
+				any = true;
+			}
 		}
+		this.lit = any;
 		return this.activation;
 	}
 
@@ -849,10 +894,13 @@ export class PointTracker {
 	 * rest of the visualisation shows a spray of individual points.
 	 */
 	pulseCluster(cluster: number, strength: number): void {
-		for (let i = 0; i < this.activation.length; i++) {
-			if (this.clusterOf[i] !== cluster) continue;
+		if (cluster < 0 || cluster + 1 >= this.memberStart.length) return;
+		const end = this.memberStart[cluster + 1];
+		for (let m = this.memberStart[cluster]; m < end; m++) {
+			const i = this.members[m];
 			const jitter = 0.15 + 0.85 * (((i * 2654435761) % 1000) / 1000);
 			this.activation[i] = Math.max(this.activation[i], strength * jitter);
 		}
+		this.lit = true;
 	}
 }

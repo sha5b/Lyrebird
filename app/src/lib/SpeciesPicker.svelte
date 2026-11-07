@@ -57,9 +57,11 @@
 	function onkeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
 			close();
-		} else if (e.key === 'Enter' && filtered.length) {
-			// The search has already said which bird is meant; Enter just confirms it.
-			choose(filtered[0].id);
+		} else if (e.key === 'Enter') {
+			// A search has said which bird is meant, and Enter confirms it. With nothing typed
+			// nobody has said anything, and Enter used to pick whichever bird sorted first.
+			if (query.trim() && filtered.length) choose(filtered[0].id);
+			else close();
 		}
 	}
 </script>

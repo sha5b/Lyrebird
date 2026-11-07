@@ -5,11 +5,12 @@
 	import type * as THREE from 'three';
 	import type { OrbitControls as OrbitControlsInstance } from 'three/examples/jsm/controls/OrbitControls.js';
 	import type { LyrebirdAssets } from '$lib/data/types';
-	import { biplotAxes, type ScreenReading } from './biplot';
+	import { biplotAxes } from './biplot';
 	import { doubtRange } from './doubt';
 	import { TARGET_PX, gridOffsetPx, tickStep } from './ticks';
 	import ContextPaths from './ContextPaths.svelte';
 	import Framing from './Framing.svelte';
+	import StagePause from './StagePause.svelte';
 	import GridBurst from './GridBurst.svelte';
 	import NodeLabels from './NodeLabels.svelte';
 	import NodeProjector from './NodeProjector.svelte';
@@ -28,6 +29,8 @@
 
 	interface Props {
 		assets: LyrebirdAssets;
+		/** A page covers the stage, so nothing behind it needs drawing. */
+		paused?: boolean;
 		signal: VisualSignal;
 		pointSize?: number;
 		spin?: boolean;
@@ -139,6 +142,7 @@
 
 	let {
 		assets,
+		paused = false,
 		signal,
 		pointSize = 3,
 		spin = true,
@@ -191,6 +195,7 @@
 	 * `assets` — so only this measured pair has to travel.
 	 */
 	const snrRamp = untrack(() => (assets.points.snr ? doubtRange(assets.points.snr) : undefined));
+	const doubtLayer = $derived({ agree: trustAgree, snr: trustSnr, range: snrRamp });
 
 	/**
 	 * The partner knots the label pool may consider while a species is selected:
@@ -235,13 +240,11 @@
 	 * actually changes — and read by the ruler bands outside it.
 	 */
 	let pxPerKnot = $state(0);
-	let widthKnots = $state(0);
 	/**
 	 * What the screen's directions currently mean, from `biplot.ts` — rewritten whenever
 	 * the camera settles, so the ruler's caption can name a direction instead of leaving
 	 * "left" and "up" as the only two channels a viewer has and neither of them readable.
 	 */
-	let reading = $state<ScreenReading[]>([]);
 	/**
 	 * Fitted once per build: the direction each nameable acoustic quantity increases
 	 * fastest in, and how much of it that direction explains. Over knots, because the 28-d
@@ -277,7 +280,10 @@
 	style:--grid-coarse-px={`${gridCoarsePx}px`}
 	style:--grid-coarse-at={`${gridOffsetPx(gridCoarsePx)}px`}
 >
-	<Canvas>
+	<!-- [0, 2]: the display's ratio, capped where the shaders' `uPixelRatio` caps it. Above 2 the
+	     buffer grew with the square of the ratio while the points kept their size in pixels. -->
+	<Canvas dpr={[0, 2]}>
+		<StagePause {paused} />
 		<!--
 			Opened from above the equator rather than on it. At the old near-level elevation
 			the ground plane was edge-on and collapsed to a line, so the one reference that
@@ -330,19 +336,17 @@
 			{axes}
 			onscale={(s) => {
 				pxPerKnot = s.pxPerKnot;
-				widthKnots = s.widthKnots;
-				reading = s.reading ?? [];
 			}}
 		/>
 
 		<Spinner {spin} scale={spread} bind:group={cloud}>
-			<GridBurst {assets} {signal} {view} prov={!plain} />
-			<ContextPaths {assets} {signal} {view} prov={!plain} />
-			<RelationThreads {assets} {view} speciesId={selectedSpecies} />
+			<GridBurst {assets} {signal} {view} prov={!plain} doubt={doubtLayer} />
+			<ContextPaths {assets} {signal} {view} prov={!plain} doubt={doubtLayer} />
+			<RelationThreads {assets} {view} speciesId={selectedSpecies} prov={!plain} doubt={doubtLayer} />
 			<PointCloud {assets} {signal} {pointSize} {focus} {speed} {view} {spread} {learning} {plain} {birdColours} {provShown} {adaptive} {detailCeiling} {unheard} {trustAgree} {trustSnr} {localKnots} bind:knotSpacing {stats} />
-			<Trajectory {assets} {signal} {view} {spread} {pointSize} prov={!plain} />
+			<Trajectory {assets} {signal} {view} {spread} {pointSize} prov={!plain} doubt={doubtLayer} />
 			{#if labels}
-				<NodeProjector {assets} {signal} elements={labelElements} bind:slots={labelSlots} {focus} {pinned} {view} prov={!plain} doubtAgree={trustAgree} doubtSnr={trustSnr} doubtRange={snrRamp} related={relatedKnots} {stats} />
+				<NodeProjector {provShown} {assets} {signal} elements={labelElements} bind:slots={labelSlots} {focus} {pinned} {view} prov={!plain} doubtAgree={trustAgree} doubtSnr={trustSnr} doubtRange={snrRamp} related={relatedKnots} {stats} />
 			{/if}
 		</Spinner>
 	</Canvas>

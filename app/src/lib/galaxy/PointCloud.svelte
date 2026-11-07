@@ -227,7 +227,7 @@
 	 * ITS hue on a neutral field, which is how the response says "who" without
 	 * painting the whole cloud in hues that cannot be told apart at this density
 	 * (the bird-colour point mode did exactly that, and is gone). With no
-	 * identifiable species the violet stands in.
+	 * identifiable species the black stands in.
 	 *
 	 * What the accent *means* is untouched either way: it is still "this is the one you
 	 * asked for", and it is still the only thing on the field wearing it.
@@ -245,7 +245,7 @@
 			if (cls >= 0) hue = provenanceColour(cls);
 		} else {
 			// Ink mode: the subject's own hue — the selected bird, or whoever the
-			// sounding knot belongs to. Empty stays violet: no claim about who.
+			// sounding knot belongs to. Empty stays black: no claim about who.
 			let subject = '';
 			if (focus >= 0) subject = speciesIdByIndex[focus] ?? '';
 			else if (waveClaim(signal)) subject = assets.centroids.items[signal.best]?.speciesId ?? '';
@@ -1118,6 +1118,7 @@
 	 * left behind.
 	 */
 	let wasQuiet = false;
+	let orphanShown = false;
 	/**
 	 * Consecutive silent frames, and the settle window the freeze waits for. The
 	 * trackers' release is a ~0.4 s half-life ring-down (features.ts, RELEASE), so a
@@ -1215,7 +1216,12 @@
 				revealed++;
 			}
 		}
-		activeIndexAttribute.needsUpdate = true;
+		// Only the part of the index in use. It is a corpus-sized buffer that a sounding frame
+		// fills a sliver of, and the whole of it went to the GPU each time.
+		if (n > 0) {
+			activeIndexAttribute.addUpdateRange(0, n);
+			activeIndexAttribute.needsUpdate = true;
+		}
 		activeGeometry.setDrawRange(0, n);
 		if (stats) {
 			stats.pointsResponding = n - revealed;
@@ -1556,8 +1562,13 @@
 
 			activation.set(signal.pointActivation.subarray(0, activation.length));
 			activationAttribute.needsUpdate = true;
-			orphan.set(signal.orphanPulse.subarray(0, orphan.length));
-			orphanAttribute.needsUpdate = true;
+			// Once more after the last pulse, to clear it, then nothing: orphans are a rare case
+			// and this is a corpus-sized upload.
+			if (signal.orphanLit || orphanShown) {
+				orphan.set(signal.orphanPulse.subarray(0, orphan.length));
+				orphanAttribute.needsUpdate = true;
+				orphanShown = signal.orphanLit;
+			}
 			updateFronts(delta * speed);
 			updateActiveIndex();
 		} else if (!wasQuiet) {
@@ -1575,6 +1586,7 @@
 			activationAttribute.needsUpdate = true;
 			orphan.fill(0);
 			orphanAttribute.needsUpdate = true;
+			orphanShown = false;
 			front.fill(0);
 			frontAttribute.needsUpdate = true;
 			// The front bookkeeping resets with the channel: a stale prevAct would
@@ -1603,7 +1615,9 @@
 			const ceiling = Math.min(1, Math.max(0.1, detailCeiling));
 			const ms = stats?.frameMs ?? 0;
 			if (ms > 20) densityCap = Math.max(0.1, densityCap - delta * 0.8);
-			else if (ms > 0 && ms < 13) densityCap = Math.min(ceiling, densityCap + delta * 0.15);
+			// 18 rather than 13: a 60 Hz display reports 16.7 ms however light the scene is, so
+			// at 13 one slow moment lowered the density and nothing ever raised it again.
+			else if (ms > 0 && ms < 18) densityCap = Math.min(ceiling, densityCap + delta * 0.15);
 			if (densityCap > ceiling) densityCap = ceiling;
 		} else if (densityCap !== 1) {
 			densityCap = 1;

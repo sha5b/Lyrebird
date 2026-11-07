@@ -11,6 +11,8 @@
  */
 import type { Confidence, Grammar, Inventory, Species, Syllable } from '$lib/data/types';
 import { songSyllables, speciesById, syllableById } from '$lib/data/assets';
+import { transposedVoices } from '$lib/audio/individual';
+import { hasPhrase } from './functions';
 
 export interface Phrase {
 	speciesId: string;
@@ -175,7 +177,8 @@ function applyProsody(syllable: Syllable, p: Prosody): Syllable {
 		dur: Math.max(0.03, syllable.dur * p.stretch),
 		level: Math.min(1, syllable.level * p.level),
 		timbre: p.timbre ?? syllable.timbre,
-		contour: syllable.contour.map(([t, hz]) => [t, Math.min(9000, Math.max(180, hz * p.pitch))] as [number, number])
+		contour: syllable.contour.map(([t, hz]) => [t, Math.min(9000, Math.max(180, hz * p.pitch))] as [number, number]),
+		voices: transposedVoices(syllable, (hz) => Math.min(9000, Math.max(180, hz * p.pitch)))
 	};
 }
 
@@ -217,7 +220,7 @@ function matchDocumented(text: string): { entry: DocumentedEntry; matched: strin
 	const hits: { entry: DocumentedEntry; matched: string[]; score: number }[] = [];
 	for (const entry of DOCUMENTED) {
 		const matched = entry.keywords.filter((k) =>
-			k.includes(' ') ? norm.includes(k) : words.has(k)
+			k.includes(' ') ? hasPhrase(norm, k) : words.has(k)
 		);
 		if (matched.length) hits.push({ entry, matched, score: matched.join('').length });
 	}

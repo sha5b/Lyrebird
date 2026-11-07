@@ -335,11 +335,14 @@ const DEFAULT_GAP = 0.06;
 export function tokensToPhrase(species: Species, tokens: Token[], provenance: Provenance): Phrase | null {
 	const syllables: Syllable[] = [];
 	const gaps: number[] = [];
-	for (let i = 0; i < tokens.length; i++) {
-		const syllable = syllableById(species, tokens[i].typeId);
+	// A token whose type is gone is skipped with its gap. Gaps were taken from the *next* token,
+	// so a skip gave the following syllable the missing one's gap, and a trailing skip left a
+	// gap with nothing after it.
+	for (const token of tokens) {
+		const syllable = syllableById(species, token.typeId);
 		if (!syllable) continue;
+		if (syllables.length) gaps.push(token.gapBefore ?? DEFAULT_GAP);
 		syllables.push(syllable);
-		if (i < tokens.length - 1) gaps.push(tokens[i + 1].gapBefore ?? DEFAULT_GAP);
 	}
 	if (!syllables.length) return null;
 

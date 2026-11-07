@@ -292,6 +292,7 @@ export class Listener {
 			if (this.orphanWasActive) {
 				out.fill(0);
 				this.orphanWasActive = false;
+				this.signal.orphanLit = false;
 			}
 			return;
 		}
@@ -308,6 +309,7 @@ export class Listener {
 		}
 		this.orphanPulses = kept;
 		this.orphanWasActive = true;
+		this.signal.orphanLit = true;
 	}
 
 	/** The faint backdrop around this bird; drops nodes the corpus lacks. */
@@ -452,7 +454,7 @@ export class Listener {
 			// The pitch readout is a live measurement, not a last-known-good value. Left
 			// latched it reports several kHz over a silent aviary, which is a lie the HUD
 			// has no way to qualify.
-			this.signal.f0 = this.signal.f0 > 1 ? this.signal.f0 * 0.9 : 0;
+			this.signal.f0 = this.signal.f0 > 1 ? this.signal.f0 * 0.9 ** (dt * 60) : 0;
 		}
 		this.signal.strength = this.tracker.strength;
 		if (this.tracker.strength < 1e-3) this.signal.best = -1;
@@ -466,7 +468,7 @@ export class Listener {
 		// While Lyrebird sings, it knows the score, so the trajectories are driven by the
 		// schedule rather than by matching — a cluster lights exactly on the note instead
 		// of a feature-window later. Listening still relies on the tracker above.
-		const singing = this.advancePaths();
+		const singing = this.advancePaths(dt);
 
 		// Rebuilt from scratch each frame: a note that has finished is no longer being
 		// sung, and a stale flag would leave a cluster wearing its species colour long
@@ -523,7 +525,7 @@ export class Listener {
 
 		// A scheduled note is known, not matched, so it lights at full strength; anything
 		// arriving through the microphone has to earn it.
-		this.points.update(this.signal.activations, singing ? 1 : this.tracker.strength);
+		this.points.update(this.signal.activations, singing ? 1 : this.tracker.strength, dt);
 		if (singing) this.pulseScheduledPoints(this.engine.ctx.currentTime);
 		this.signal.pointActivation.set(this.points.activation);
 		this.stepOrphans();
@@ -566,7 +568,7 @@ export class Listener {
 	}
 
 	/** Moves every live path along, retires the finished ones. True if any is playing. */
-	private advancePaths(): boolean {
+	private advancePaths(dt: number): boolean {
 		const time = this.engine.ctx.currentTime;
 		let anySinging = false;
 		for (const path of this.live) {
@@ -578,7 +580,7 @@ export class Listener {
 			} else if (path.started) {
 				// A phrase that has finished fades out rather than vanishing mid-frame, so a
 				// chorus leaves a decaying trace of what has just been sung.
-				path.alpha -= 0.012;
+				path.alpha -= 0.012 * dt * 60;
 			}
 		}
 		// Only a phrase that has actually been sung can be finished with. A queued one is

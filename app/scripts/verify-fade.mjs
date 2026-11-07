@@ -19,7 +19,7 @@
  *
  * Run with `npm run verify:fade`. Exits non-zero on any disagreement.
  */
-import { ActivationTracker } from '../src/lib/audio/features.ts';
+import { ActivationTracker, PointTracker } from '../src/lib/audio/features.ts';
 
 let failures = 0;
 const ok = (name, cond, detail = '') => {
@@ -188,6 +188,44 @@ console.log('\nthe edges');
 		prev = t.activations[0];
 	}
 	ok('the release never brightens', !rose);
+}
+
+// --- the points' tracker: the same rule, and a pulse that touches its own cluster only ------
+{
+	const clusterId = [0, 1, 0, 2, 1, 0, -1];
+	const make = () =>
+		new PointTracker({
+			points: { n: clusterId.length, clusterId },
+			pointFeatureDims: 0,
+			pointFeatures: null,
+			centroids: { items: [{}, {}, {}] }
+		});
+	const p = make();
+	p.pulseCluster(0, 1);
+	const lit = [...p.activation].map((v, i) => (v > 0 ? i : -1)).filter((i) => i >= 0);
+	ok('a pulse lights exactly its members', lit.join() === '0,2,5', lit.join());
+	p.pulseCluster(99, 1);
+	p.pulseCluster(-1, 1);
+	ok('an unknown cluster lights nothing', p.activation[1] === 0 && p.activation[6] === 0);
+	const after = (hz, seconds) => {
+		const t = make();
+		t.pulseCluster(0, 1);
+		const start = t.activation[2];
+		for (let i = 0; i < Math.round(seconds * hz); i++) t.decay(1 / hz);
+		return t.activation[2] / start;
+	};
+	const at60 = after(60, 0.05);
+	const at144 = after(144, 0.05);
+	ok('the points fade alike at 60 and 144 Hz', Math.abs(at60 - at144) < 0.02, `${at60.toFixed(3)} vs ${at144.toFixed(3)}`);
+	const t = make();
+	t.pulseCluster(1, 1);
+	for (let i = 0; i < 600 && t.activation[1] > 0; i++) t.decay(1 / 60);
+	ok('the fade reaches exactly zero', t.activation.every((v) => v === 0));
+	t.pulseCluster(2, 1);
+	ok('a pulse after silence still lights', t.activation[3] > 0);
+	const faded = t.activation[3];
+	t.decay(1 / 60);
+	ok('and decays again', t.activation[3] < faded);
 }
 
 console.log(failures ? `\n${failures} check(s) failed` : '\nall fade checks passed');

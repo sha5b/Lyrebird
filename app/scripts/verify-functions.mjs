@@ -38,6 +38,7 @@ import {
 	callsFor,
 	categoriesFor,
 	classify,
+	hasPhrase,
 	intensityNote,
 	refusal,
 	speciesWithFunctions
@@ -217,6 +218,14 @@ console.log('\nintensity — the one graded case, and it stays one');
 			.every((s) => CATEGORIES.every((c) => intensityNote(s.id, c.id) === null)));
 	ok('the gradient names its source',
 		intensityNote('poecile_atricapillus', 'alarm').includes('Templeton'));
+}
+
+// --- a multi-word term matches on word boundaries ---------------------------------------
+{
+	ok('a phrase matches whole words', hasPhrase('please look out now', 'look out'));
+	ok('not across a word boundary', !hasPhrase('overlook outside', 'look out'));
+	ok('"overlook outside" is not an alarm', classify('overlook outside')?.category !== 'alarm');
+	ok('"look out" still is', classify('look out')?.category === 'alarm');
 }
 
 console.log(failures ? `\n${failures} failure(s)` : '\nall checks passed');

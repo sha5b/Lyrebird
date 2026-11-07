@@ -46,6 +46,8 @@
 		view: LayoutView;
 		/** Provenance language for the tag accent, matching the points and threads. */
 		prov?: boolean;
+		/** Which provenance classes the points are drawing. A tag follows its knot's class. */
+		provShown?: boolean[];
 	/**
 	 * Colour the tags by neighbour agreement (rose) and/or recording SNR (amber), matching the
 	 * points. Either overrides `prov` and the species hue; both together compose into the
@@ -76,6 +78,7 @@
 		pinned = -1,
 		view,
 		prov = false,
+		provShown,
 		doubtAgree = false,
 		doubtSnr = false,
 		doubtRange = undefined,
@@ -123,6 +126,11 @@
 	 */
 	let heat: Float32Array | null = null;
 	let knotClass: Float32Array | null = null;
+	function classShown(i: number): boolean {
+		if (!provShown || provShown.every(Boolean)) return true;
+		knotClass ??= clusterProvenance(assets);
+		return provShown[knotClass[i] ?? 4] ?? true;
+	}
 	/**
 	 * Each knot's mean doubt per channel, built lazily and kept: two passes over the corpus
 	 * at most, and only for a channel the reader actually switched on.
@@ -191,6 +199,8 @@
 	 */
 	const LINGER_SECONDS = 2.6;
 	const linger = new Float32Array(centroids.length);
+	/** This knot's current glow began as a scheduled note. Cleared when it returns to rest. */
+	const scheduled = new Uint8Array(centroids.length);
 	/** Below this, an envelope is snapped to zero so the scan's skip test stays true. */
 	const REST_EPSILON = 1e-4;
 
@@ -205,6 +215,8 @@
 	/** Scratch: one entry per tag that survived culling, in draw order. */
 	interface Chosen {
 		ci: number;
+		/** The knot and which of its patches: `ci * 2 + lobe`. A torn knot has two. */
+		site: number;
 		x: number;
 		y: number;
 		near: number;
@@ -242,6 +254,20 @@
 	 * frame it changes rather than every frame. -1 unwritten, 0 right, 1 left.
 	 */
 	const wasFlipped = new Int8Array(LABEL_SLOTS).fill(-1);
+	/** What a tag's figure shows other than a percentage. `matchShown` starts at -1, unwritten. */
+	const FIGURE_NONE = -2;
+	const FIGURE_SUNG = -3;
+	/**
+	 * What each slot last wrote, six properties a slot. A silent, still view changes none of
+	 * them, and writing them anyway dirtied the style of every visible tag on every frame.
+	 */
+	const written: string[] = new Array(LABEL_SLOTS * 6).fill('');
+	function put(slot: number, prop: number, node: HTMLElement, name: string, value: string) {
+		const at = slot * 6 + prop;
+		if (written[at] === value) return;
+		written[at] = value;
+		node.style.setProperty(name, value);
+	}
 	/**
 	 * **The card hangs to the left when there is no room on the right, and on a phone there
 	 * usually is not.**
@@ -333,6 +359,9 @@
 		 * position differs.
 		 */
 		const addSite = (i: number) => {
+			// A hidden class hides its tags too, or "match 79 %" names a patch of empty paper.
+			// The pinned knot stays: pinning it was a direct request to see it.
+			if (i !== pinned && !classShown(i)) return;
 			candidates.push(i);
 			candidateLobe.push(0);
 			if (view.lobes.has[i]) {
@@ -344,6 +373,7 @@
 			const act = acts[i] ?? 0;
 			if (act === 0 && shown[i] === 0 && linger[i] === 0) continue;
 			shown[i] += (act - shown[i]) * ease;
+			if (signal.sung[i] > 0) scheduled[i] = 1;
 			const decayed = linger[i] - delta / LINGER_SECONDS;
 			linger[i] = Math.max(shown[i], decayed > 0 ? decayed : 0);
 			if (linger[i] > 0) {
@@ -352,6 +382,7 @@
 				// Snap to exact rest so the skip test above catches this knot from now on.
 				shown[i] = 0;
 				linger[i] = 0;
+				scheduled[i] = 0;
 			}
 		}
 		// A chosen bird's knots and a pinned knot get a tag whether or not they are
@@ -367,7 +398,11 @@
 		// selection, so the Set is rebuilt by the derivation above, never per frame.
 		if (relatedSet.size) {
 			for (const i of relatedSet) {
-				if (i < shown.length && (linger[i] ?? 0) <= 0 && i !== pinned) candidates.push(i);
+				if (i >= shown.length || (linger[i] ?? 0) > 0 || i === pinned) continue;
+				// The focus loop above already added this bird's own knots. Through `addSite`,
+				// because a bare push left `candidateLobe` shorter than `candidates` and every
+				// later site read the wrong knot's lobe.
+				if (focus < 0 || speciesOf[i] !== focus) addSite(i);
 			}
 		}
 		if (pinned >= 0 && pinned < shown.length && linger[pinned] <= 0) addSite(pinned);
@@ -487,6 +522,7 @@
 			const fade = 1 - 0.65 * depth * depth;
 			chosen.push({
 				ci: i,
+				site: i * 2 + candidateLobe[c],
 				x,
 				y,
 				near: pointedAt ? Math.max(POINTED_NEAR_FLOOR, fade) : fade,
@@ -502,12 +538,15 @@
 		// **Pass four: bind the winners to slots**, keeping a knot in the slot it already
 		// has. Stability is not cosmetic: a rebind re-renders the tag's text and restarts
 		// its CSS transitions, so a tag that stayed on screen must keep its element.
+		// Slots are held by site, not by knot: a torn knot has two patches and two tags, and
+		// keyed by knot both landed in one slot, so the farther patch overwrote the nearer
+		// one's position and the budget still paid for two.
 		for (let s = 0; s < LABEL_SLOTS; s++) {
 			const held = bound[s];
 			if (held < 0) continue;
 			let stillWanted = false;
 			for (const ch of chosen) {
-				if (ch.ci === held) {
+				if (ch.site === held) {
 					stillWanted = true;
 					break;
 				}
@@ -520,10 +559,10 @@
 			}
 		}
 		for (const ch of chosen) {
-			if (bound.includes(ch.ci)) continue;
+			if (bound.includes(ch.site)) continue;
 			const s = bound.indexOf(-1);
 			if (s < 0) break;
-			bound[s] = ch.ci;
+			bound[s] = ch.site;
 			slots[s] = ch.ci;
 			matchEls[s] = null;
 			matchShown[s] = -1;
@@ -531,7 +570,7 @@
 
 		// **Pass five: write the styles**, at most `LABEL_SLOTS` elements' worth.
 		for (const ch of chosen) {
-			const s = bound.indexOf(ch.ci);
+			const s = bound.indexOf(ch.site);
 			if (s < 0) continue;
 			const node = el[s];
 			if (!node) continue;
@@ -544,7 +583,7 @@
 			// only if the left can. Without the second, a knot in the middle of a phone screen
 			// flipped a card straight off the other edge.
 			const flip = ch.x > width - tagW && ch.x >= tagW ? 1 : 0;
-			node.style.transform = `translate3d(${ch.x.toFixed(1)}px, ${ch.y.toFixed(1)}px, 0)${flip ? ' translateX(-100%)' : ''}`;
+			put(s, 0, node, 'transform', `translate3d(${ch.x.toFixed(1)}px, ${ch.y.toFixed(1)}px, 0)${flip ? ' translateX(-100%)' : ''}`);
 			if (wasFlipped[s] !== flip) {
 				node.classList.toggle('flip', flip === 1);
 				wasFlipped[s] = flip;
@@ -554,34 +593,43 @@
 			// thread even with the floor above; the two together are what make the far end of
 			// a relation readable. Response still triples it, so nothing about "a tag brightens
 			// when its knot answers" changes — the floor moved, not the ramp.
-			node.style.opacity = String(Math.min(1, (0.44 + linger[i] * 3) * ch.near));
+			put(s, 1, node, 'opacity', Math.min(1, (0.44 + linger[i] * 3) * ch.near).toFixed(3));
 			if (wasVisible[s] !== 1) {
 				node.style.visibility = 'visible';
 				wasVisible[s] = 1;
 			}
 			// Depth ordering so a near label draws over a far one.
-			node.style.zIndex = String(Math.round((1 - (ch.z + 1) / 2) * 1000) + (ch.hot ? 2000 : 0));
-			node.style.setProperty('--hot', ch.open ? '1' : '0');
-			node.style.setProperty('--act', shown[i].toFixed(3));
+			put(s, 2, node, 'z-index', String(Math.round((1 - (ch.z + 1) / 2) * 1000) + (ch.hot ? 2000 : 0)));
+			put(s, 3, node, '--hot', ch.open ? '1' : '0');
+			put(s, 4, node, '--act', shown[i].toFixed(3));
 			// The tag's accent is the identity colour in both languages — the bird's
 			// hue in ink mode, the knot's class colour in provenance — at rest and hot
 			// alike; how much of it shows is --hot's job, not the colour's. It is also
 			// the same hue the cloud's response accent lights in (easeAccent), so a
 			// singing knot and its tag can never disagree about who is sounding.
-			node.style.setProperty('--accent', knotColour(i));
+			put(s, 5, node, '--accent', knotColour(i));
 
 			// The one piece of text that changes while running. Written only when the
 			// rounded percentage actually moves, and only for a label that is open.
 			if (ch.open) {
+				// **"match" is a claim, and a scheduled note has not been matched.** The chorus
+				// lights its knots at full strength because it knows the score, so these tags read
+				// "match 90 %" while the header's match meter sat at zero. Only the listener's own
+				// strength can back the word.
 				const pct = Math.round(shown[i] * 100);
-				if (pct !== matchShown[s]) {
+				// `scheduled`, not this frame's `sung`: the fade outlives the note, and the
+				// listener can hear our own reverb during it.
+				const scored = signal.strength >= 1e-3 && !scheduled[i];
+				const figure = pct === 0 ? FIGURE_NONE : scored ? pct : FIGURE_SUNG;
+				if (figure !== matchShown[s]) {
 					// Re-queried after a rebind: the span belongs to the knot now in the slot,
 					// and on the frame of the rebind Svelte has not rendered it yet, so a null
 					// here simply means "try again next frame".
 					matchEls[s] ??= node.querySelector('[data-match]');
 					if (matchEls[s]) {
-						matchEls[s]!.textContent = `match ${pct}%`;
-						matchShown[s] = pct;
+						matchEls[s]!.textContent =
+							figure === FIGURE_NONE ? '—' : figure === FIGURE_SUNG ? 'sung' : `match ${figure}%`;
+						matchShown[s] = figure;
 					}
 				}
 			}
@@ -592,7 +640,7 @@
 			const node = el[s];
 			if (!node) continue;
 			node.style.visibility = 'hidden';
-			node.style.opacity = '0';
+			put(s, 1, node, 'opacity', '0');
 			wasVisible[s] = 0;
 		}
 

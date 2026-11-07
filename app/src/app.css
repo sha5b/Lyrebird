@@ -1,15 +1,7 @@
 /**
  * Laboratory light. The reference is a printed specimen sheet, not a dark synth UI:
- * paper ground, hairline rules instead of boxes and shadows, monospace for every figure
- * that is a measurement, and exactly one saturated colour reserved for live response.
- * Everything else is graphite so that colour always means something.
- *
- * That colour is a blue-leaning violet. It replaces an orange, and the change is not only
- * taste: the accent has to work as *ink in the galaxy* as well as on a button, and on a
- * paper ground orange is the one hue that competes with the marks instead of picking them
- * out. Violet sits far from every hue in Tol's muted species set, so a selection reads as
- * a selection rather than as another bird, and it stays distinguishable under deutan and
- * protan vision where an orange collapses toward the browns.
+ * paper ground, hairline rules, monospace for every figure that is a measurement, and
+ * exactly one colour that moves (`--signal`, see `$lib/accent.ts`).
  *
  * **This file is now an index.** It was one 183-line block holding four different kinds of
  * thing; each is its own module, in the order a stylesheet has to be read: values, then the

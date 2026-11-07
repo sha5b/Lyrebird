@@ -6,6 +6,7 @@
 export class RealFft {
 	private readonly n: number;
 	private readonly levels: number;
+	private readonly reversed: Uint32Array;
 	private readonly cos: Float64Array;
 	private readonly sin: Float64Array;
 	private readonly re: Float64Array;
@@ -23,6 +24,13 @@ export class RealFft {
 		}
 		this.re = new Float64Array(n);
 		this.im = new Float64Array(n);
+		// The permutation is fixed by `n`, and rebuilding it bit by bit cost a loop per sample.
+		this.reversed = new Uint32Array(n);
+		for (let i = 0; i < n; i++) {
+			let rev = 0;
+			for (let b = 0; b < this.levels; b++) rev |= ((i >>> b) & 1) << (this.levels - 1 - b);
+			this.reversed[i] = rev;
+		}
 	}
 
 	/**
@@ -30,11 +38,9 @@ export class RealFft {
 	 * normalisation, matching `numpy.abs(numpy.fft.rfft(x))[:n/2]`.
 	 */
 	magnitude(input: Float32Array, out: Float32Array): Float32Array {
-		const { n, re, im, cos, sin, levels } = this;
+		const { n, re, im, cos, sin, reversed } = this;
 		for (let i = 0; i < n; i++) {
-			// bit-reversal permutation
-			let rev = 0;
-			for (let b = 0; b < levels; b++) rev |= ((i >>> b) & 1) << (levels - 1 - b);
+			const rev = reversed[i];
 			re[rev] = input[i] ?? 0;
 			im[rev] = 0;
 		}
@@ -53,7 +59,8 @@ export class RealFft {
 				}
 			}
 		}
-		for (let k = 0; k < n / 2; k++) out[k] = Math.hypot(re[k], im[k]);
+		// `sqrt` rather than `hypot`, which is far slower and guards an overflow audio cannot reach.
+		for (let k = 0; k < n / 2; k++) out[k] = Math.sqrt(re[k] * re[k] + im[k] * im[k]);
 		return out;
 	}
 }

@@ -72,8 +72,20 @@ export function readActivations(
 	} = { active: false }
 ): Reading {
 	const strength = options.strength ?? (options.active ? 1 : 0);
-	const ranked: Candidate[] = centroids.items
-		.map((centroid, i) => ({
+	// The best four by one pass, in the order a stable sort would give. This runs eight times a
+	// second, and building and sorting an object per knot was 15 341 of each to keep four.
+	const top: number[] = [];
+	for (let i = 0; i < centroids.items.length; i++) {
+		const p = activations[i] ?? 0;
+		if (top.length === 4 && p <= (activations[top[3]] ?? 0)) continue;
+		let at = top.length;
+		while (at > 0 && p > (activations[top[at - 1]] ?? 0)) at--;
+		top.splice(at, 0, i);
+		if (top.length > 4) top.pop();
+	}
+	const ranked: Candidate[] = top.map((i) => {
+		const centroid = centroids.items[i];
+		return {
 			centroid,
 			probability: activations[i] ?? 0,
 			similarity: similarity[i] ?? 0,
@@ -81,9 +93,8 @@ export function readActivations(
 				options.speciesName?.(centroid.speciesId) ??
 				speciesById(inventory, centroid.speciesId)?.common ??
 				centroid.speciesId
-		}))
-		.sort((a, b) => b.probability - a.probability)
-		.slice(0, 4);
+		};
+	});
 
 	// Call rate and pitch both scale with threat in the species that have been tested
 	// (chickadee D-note count, tit alarm rate) — reported as an axis, never as words.

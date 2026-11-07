@@ -119,6 +119,10 @@ export type Event =
 	| { k: 'selectSung'; sungId: number; speciesId: string }
 	/** A chorus button. Asking for the mode already running stops it. */
 	| { k: 'pressChorus'; mode: 'solo' | 'global' }
+	/** A solo-mode button: stops the mode sounding, switches from the other, starts from silence. */
+	| { k: 'pressSolo'; mode: SoloMode }
+	/** A bird chosen where the chorus has no controls: recorded, and silent if it was silent. */
+	| { k: 'noteBird'; id: string }
 	/** A programmatic move into a mode. Never stops anything by being asked twice. */
 	| { k: 'setChorus'; mode: Chorus }
 	/** The Songs / Improvise pair. */
@@ -227,7 +231,18 @@ export function reduce(s: Performance, e: Event): Step {
 		case 'chooseSong': {
 			// The pin and the history phrase both outrank a call, so leaving either in place
 			// would make choosing a call do visibly nothing.
-			const state = { ...s, songId: e.id, sungId: null, knot: -1, epoch: s.epoch + 1 };
+			//
+			// The epoch moves only when a new start is issued here. It used to move always, and
+			// a call chosen while the aviary's whole-corpus fetch was in flight voided that start
+			// with nothing to replace it: the chorus read as running and stayed silent.
+			const repools = s.chorus === 'solo' && !!s.speciesId;
+			const state = {
+				...s,
+				songId: e.id,
+				sungId: null,
+				knot: -1,
+				epoch: repools ? s.epoch + 1 : s.epoch
+			};
 			const commands: Command[] = [];
 			// Releasing a pin has to redraw the backdrop by hand: `showContext` narrows to the
 			// pinned knot's own threads and nothing else recomputes it once the pin is gone.
@@ -235,7 +250,7 @@ export function reduce(s: Performance, e: Event): Step {
 				commands.push({ k: 'showContext', speciesId: state.speciesId });
 			}
 			// The pool follows the chosen call, so a running solo chorus re-pools.
-			if (state.chorus === 'solo' && state.speciesId) {
+			if (repools) {
 				commands.push({ k: 'startSolo', speciesId: state.speciesId, epoch: state.epoch });
 			}
 			commands.push({ k: 'refreshSelection' });
@@ -253,13 +268,36 @@ export function reduce(s: Performance, e: Event): Step {
 		case 'pressChorus':
 			return s.chorus === e.mode ? reduce(s, { k: 'stop' }) : enter(s, e.mode);
 
+		case 'pressSolo':
+			// A button per solo mode. The one sounding stops; the other one switches. These
+			// were `setSoloMode` + `pressChorus` in the template, and from improvise that read
+			// "already solo, so stop": the Songs button silenced what it was asked to replace.
+			if (s.chorus === 'solo' && s.soloMode === e.mode) return reduce(s, { k: 'stop' });
+			return enter({ ...s, soloMode: e.mode }, 'solo');
+
+		case 'noteBird': {
+			// Choosing a bird from a tab with no chorus controls. In silence it records the
+			// choice and takes no air. Over a running chorus it cannot just record: the old
+			// path wrote `speciesId` by hand and left the old bird singing under the new name,
+			// or a global chorus holding a selection, which `enter` promises never happens.
+			if (!e.id || s.chorus !== 'off') return reduce(s, { k: 'chooseBird', id: e.id });
+			if (e.id === s.speciesId) return { state: s, commands: [] };
+			return {
+				state: { ...s, speciesId: e.id, songId: '', sungId: null, knot: -1 },
+				commands: [{ k: 'refreshSelection' }]
+			};
+		}
+
 		case 'setChorus':
 			return enter(s, e.mode);
 
 		case 'setSoloMode': {
 			if (s.soloMode === e.mode) return { state: s, commands: [] };
+			// Same rule as `chooseSong`: no new start, no new epoch, or a pending start dies.
+			if (s.chorus !== 'solo' || !s.speciesId) {
+				return { state: { ...s, soloMode: e.mode }, commands: [] };
+			}
 			const state = { ...s, soloMode: e.mode, epoch: s.epoch + 1 };
-			if (state.chorus !== 'solo' || !state.speciesId) return { state, commands: [] };
 			// Switching mode has to stop the ambient scheduler in one direction and start it
 			// in the other; `startSolo` does nothing for `improvise`, whose phrases are driven
 			// by a timer in the page rather than by the engine's own scheduler.

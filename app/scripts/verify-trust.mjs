@@ -55,6 +55,13 @@ const palette = readFileSync('src/lib/galaxy/palette.ts', 'utf8');
 const labels = readFileSync('src/lib/galaxy/NodeLabels.svelte', 'utf8');
 const projector = readFileSync('src/lib/galaxy/NodeProjector.svelte', 'utf8');
 const assetsTs = readFileSync('src/lib/data/assets.ts', 'utf8');
+const doubtPaths = readFileSync('src/lib/galaxy/doubt-paths.ts', 'utf8');
+const pathLayers = Object.fromEntries(
+	['Trajectory', 'ContextPaths', 'GridBurst', 'RelationThreads'].map((n) => [
+		n,
+		readFileSync(`src/lib/galaxy/${n}.svelte`, 'utf8')
+	])
+);
 
 console.log(`the reader, on src/`);
 
@@ -144,6 +151,29 @@ ok(
 		/knotDoubt\(assets, assets\.points\.knnAgreement\)/.test(projector) &&
 		/knotDoubt\(assets, assets\.points\.snr, doubtRange\)/.test(projector)
 );
+// Paths used to keep the bird's hue under both doubts, so a rose tag ended a thread that said
+// nothing about that knot. They read the tags' own function on the tags' own per-knot mean.
+ok(
+	'a path end takes the doubt colour its tag takes',
+	/knotDoubt\(assets, assets\.points\.knnAgreement\)/.test(doubtPaths) &&
+		/knotDoubt\(assets, assets\.points\.snr, layer\.range\)/.test(doubtPaths) &&
+		/doubtColourScaled\(/.test(doubtPaths)
+);
+for (const [name, source] of Object.entries(pathLayers)) {
+	ok(
+		`${name} is told the doubt layer and asks for it`,
+		new RegExp(`<${name} [^>]*doubt=\\{doubtLayer\\}`).test(galaxy) &&
+			/doubtKnotColour\(assets,/.test(source),
+		'a layer that is not wired keeps the bird hue under a doubt mode'
+	);
+	ok(
+		`${name} answers doubt before provenance`,
+		source.search(/doubtLayerOn\(doubt\)|doubtOn\s*\n?\s*\?/) >= 0 &&
+			source.search(/doubtLayerOn\(doubt\)|doubtOn\s*\n?\s*\?/) <
+				source.search(/provenanceColour(Scaled)?\(klass|provenanceColour\(cls|\? knotPalettes\.provenance/),
+		'the tags resolve doubt first, so a thread that did not would disagree with its tag'
+	);
+}
 ok(
 	'an empty knot claims nothing',
 	/new Float32Array\(count\)\.fill\(NO_DOUBT\)/.test(assetsTs),

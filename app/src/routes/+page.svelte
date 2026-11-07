@@ -72,7 +72,8 @@
 		speciesColour as speciesHue
 	} from '$lib/galaxy/palette';
 	import favicon from '$lib/assets/favicon.svg';
-	import { PipelineClient, type PipelineStatus } from '$lib/data/pipeline';
+	import { AccentDriver } from '$lib/accent';
+import { PipelineClient, type PipelineStatus } from '$lib/data/pipeline';
 	import type { LyrebirdAssets, SongType, Species, SpeciesRelation } from '$lib/data/types';
 
 	// $state.raw, not $state: a deep reactive proxy of the corpus cannot be structured-cloned
@@ -96,8 +97,24 @@
 	// The renderer reads `signal` every frame and mutates it in place, so it must not be a
 	// reactive proxy; the meters the UI shows come from the listener's callback instead.
 	let signal = $state.raw<VisualSignal>(createSignal(1));
-	let reading = $state<Reading | null>(null);
 	/**
+	 * The page accent: black at rest, the chosen bird's colour, moving with what sings. It reads
+	 * `signal` directly each frame, so loudness never passes through a reactive value.
+	 */
+	const accent = new AccentDriver(
+		{ level: () => signal.level, f0Hz: () => signal.f0 },
+		document.documentElement
+	);
+	let pulseEl = $state<HTMLElement | null>(null);
+	$effect(() => {
+		accent.start();
+		return () => accent.stop();
+	});
+	$effect(() => {
+		accent.pulse = pulseEl;
+	});
+	let reading = $state<Reading | null>(null);
+/**
 	 * The last reading that named something, kept on screen for a few seconds after the
 	 * sound that produced it has stopped.
 	 *
@@ -134,8 +151,7 @@
 	const panelReading = $derived(reading?.best ? reading : heldReading);
 	const readingIsLive = $derived(Boolean(reading?.best));
 	let audioError = $state<string | null>(null);
-	let level = $state(0);
-	let pitch = $state(0);
+let pitch = $state(0);
 	let strength = $state(0);
 	/** The docs/20 session gate's live state, null when the assets ship no gate. */
 	let sessionGate = $state<{ flagged: boolean; score: number; threshold: number } | null>(
@@ -849,14 +865,9 @@
 		return map;
 	});
 	/** The first row: the bird as a whole. One line, because `<option>` cannot wrap. */
-	const allSongsOption = $derived(
-		`all songs · ${songs.length === 1 ? '1 call' : `${songs.length} calls`} — the whole repertoire`
-	);
-	/** The dropdown row: what it is called, how much of the galaxy it touches, what it is. */
-	function songOption(song: { id: string; label: string; gloss: string }): string {
-		const knots = songKnots.get(song.id)?.length ?? 0;
-		const place = knots === 1 ? '1 knot' : `${knots} knots`;
-		return `${song.label} · ${place}${song.gloss ? ` — ${song.gloss}` : ''}`;
+	const allSongsOption = $derived(`All calls (${songs.length})`);
+	function songOption(song: { label: string; gloss: string }): string {
+		return `${song.label}${song.gloss ? ` — ${song.gloss}` : ''}`;
 	}
 
 	/**
@@ -908,15 +919,6 @@
 			clusters,
 			currentSpecies.id,
 			resolved.syllables.map((s) => s.id)
-		);
-	});
-	/** The same question for the whole repertoire, which is what a selection lights up. */
-	const repertoireCoverage = $derived.by(() => {
-		if (!clusters || !currentSpecies) return null;
-		return syllableCoverage(
-			clusters,
-			currentSpecies.id,
-			currentSpecies.syllables.map((s) => s.id)
 		);
 	});
 	/**
@@ -974,12 +976,8 @@
 	 * rather than living inside the reducer.
 	 */
 	function chooseBird(id: string) {
-		if (tab !== 'sing') {
-			// Still record the choice; just do not let it take the air.
-			perf = { ...perf, speciesId: id, songId: '' };
-			return;
-		}
-		dispatch({ k: 'chooseBird', id });
+		// Off the Sing tab the choice is recorded without taking the air.
+		dispatch({ k: tab === 'sing' ? 'chooseBird' : 'noteBird', id });
 	}
 	/** Cluster ids per species, for framing a whole repertoire at once. */
 	const clustersOfSpecies = $derived.by(() => {
@@ -1126,8 +1124,9 @@
 	 */
 	let galaxyVersion = $state(0);
 	let reloading = $state(false);
-	async function reloadGalaxy(stamp: string) {
-		if (reloading) return;
+	/** True if the new galaxy is in. A failure leaves the one on screen working. */
+	async function reloadGalaxy(stamp: string): Promise<boolean> {
+		if (reloading) return false;
 		reloading = true;
 		const wasSinging = chorus;
 		const hadMic = micOn;
@@ -1138,6 +1137,7 @@
 			listener = null;
 			engine = null;
 			micOn = false;
+			recording = false;
 			reading = null;
 			// The held reading outlives the live one by design, and a reload is the one moment
 			// that is wrong: it names a cluster from a galaxy that no longer exists.
@@ -1169,10 +1169,21 @@
 			// and by here there has been one. It restores the whole-corpus chorus itself.
 			if (wasSinging !== 'off' || hadMic) {
 				await enter();
-				if (wasSinging === 'solo') dispatch({ k: 'setChorus', mode: 'solo' });
+				// `enter` starts the aviary, which clears the selection. Put back what was there:
+				// the same bird singing, or a stopped chorus staying stopped. Asking for solo
+				// directly came back as a solo chorus with no bird in it.
+				if (wasSinging === 'solo' && keepBird) dispatch({ k: 'chooseBird', id: keepBird });
+				else if (wasSinging === 'off') {
+					dispatch({ k: 'stop' });
+					if (keepBird) dispatch({ k: 'noteBird', id: keepBird });
+				}
 			}
+			return true;
 		} catch (err) {
-			loadError = err instanceof Error ? err.message : String(err);
+			// Not `loadError`, which replaces the whole app: the old galaxy is still in place,
+			// because nothing above touches it until the new one has arrived.
+			audioError = `Could not load the new galaxy: ${err instanceof Error ? err.message : String(err)}`;
+			return false;
 		} finally {
 			reloading = false;
 		}
@@ -1191,10 +1202,11 @@
 	 */
 	async function switchMap(kind: GalaxyMap) {
 		if (reloading || !mapsAvailable || kind === mapKind) return;
+		const before = mapDir;
 		mapDir = kind;
 		// No stamp: the sub-build's own manifest supplies it, the same way the initial
 		// load's does.
-		await reloadGalaxy('');
+		if (!(await reloadGalaxy(''))) mapDir = before;
 	}
 
 	$effect(() => {
@@ -1218,8 +1230,12 @@
 	});
 
 	/** Audio can only start from a user gesture, so the whole audio side begins here. */
+	let entering = false;
 	async function enter() {
-		if (!assets || engine) return;
+		// A second click during the await would build a second engine, and the first would
+		// never be disposed.
+		if (!assets || engine || entering) return;
+		entering = true;
 		try {
 			const created = await LyrebirdEngine.create(assets);
 			await created.resume();
@@ -1228,11 +1244,13 @@
 			created.onState = (s) => {
 				voices = s.voices;
 			};
+			created.onInputEnded = () => void closeInput();
 			// The chorus schedules its own songs, so the picture follows the engine rather
 			// than the menus: whatever sings next draws its own trajectory.
 			created.onScheduled = ({ speciesId: singing, songId, scheduled, voice }) => {
 				singer = voice?.label ?? null;
-				addLive(singing, scheduled, voice?.label ?? '');
+				accent.singerId = singing;
+addLive(singing, scheduled, voice?.label ?? '');
 				recordSung(singing, songId, scheduled, voice?.label ?? '');
 				// **A new song makes the held reading stale.** The hold exists so a name stays
 				// readable for six seconds after the sound that produced it stops — but it was
@@ -1254,10 +1272,15 @@
 			live.onReading = (r) => {
 				reading = r;
 				if (r.best) holdReading(r);
-			};
+				// Live input has no schedule to name a singer, so the match stands in for the colour.
+				// Unmatched room noise with no chorus is nobody, so it must not wear the last singer.
+				if (micOn) {
+					if (r.best) accent.singerId = r.best.centroid.speciesId;
+					else if (chorus === 'off') accent.singerId = '';
+				}
+};
 			live.onMeters = (m) => {
-				level = m.level;
-				pitch = m.f0;
+pitch = m.f0;
 				strength = m.strength;
 				sessionGate = m.session ?? null;
 			};
@@ -1274,6 +1297,8 @@
 			}
 		} catch (err) {
 			audioError = err instanceof Error ? err.message : String(err);
+		} finally {
+			entering = false;
 		}
 	}
 
@@ -1286,7 +1311,7 @@
 	) {
 		if (!assets || !clusters || !scheduled.length) return;
 		const sp = speciesById(assets.inventory, id);
-		history = [
+		const next = [
 			{
 				id: ++sungCounter,
 				speciesId: id,
@@ -1298,7 +1323,14 @@
 					.filter((n) => n >= 0)
 			},
 			...history
-		].slice(0, HISTORY_CAP);
+		];
+		// The oldest goes first, unless it is the phrase being looked at: dropping that one
+		// left the selection naming a chip that no longer existed.
+		while (next.length > HISTORY_CAP) {
+			const oldest = next.findLastIndex((h) => h.id !== selectedSung);
+			next.splice(oldest, 1);
+		}
+		history = next;
 	}
 
 
@@ -1561,7 +1593,9 @@
 			note:
 				song.confidence === 'invented'
 					? 'Sampled from a first-order syntax measured from this species’ field recordings. The syllables are measured; the order is ours.'
-					: 'Rendered from this species’ documented syllable inventory.'
+					: song.confidence === 'documented' || song.confidence === 'experimental'
+						? 'Rendered from this species’ documented syllable inventory.'
+						: 'Rendered from this species’ syllable inventory. The function of this call is not documented.'
 		};
 	}
 
@@ -1686,15 +1720,23 @@
 		return currentSpecies?.syllables.find((s) => s.id === typeId)?.learned?.resynthesisCosine;
 	}
 
+	/** Ends the input, keeping what was being recorded. Also runs when a device goes away. */
+	async function closeInput() {
+		if (!engine) return;
+		if (engine.recording) await toggleRecording();
+		engine.stopInput();
+		micOn = false;
+	}
+
 	async function toggleMic() {
 		if (!engine) return;
 		audioError = null;
 		try {
 			if (engine.micActive) {
-				engine.stopInput();
-				micOn = false;
+				await closeInput();
 			} else {
-				await engine.startInput(inputSource, inputDeviceId || undefined);
+				// False when something else closed the input during the browser's prompt.
+				if (!(await engine.startInput(inputSource, inputDeviceId || undefined))) return;
 				micOn = true;
 				inputVia = engine.inputVia;
 				// Device labels are withheld until permission has been granted once, so the
@@ -1738,7 +1780,7 @@
 		audioError = null;
 		try {
 			if (engine.recording) await toggleRecording();
-			await engine.startInput(inputSource, inputDeviceId || undefined);
+			if (!(await engine.startInput(inputSource, inputDeviceId || undefined))) return;
 			inputVia = engine.inputVia;
 			inputDevices = await LyrebirdEngine.inputDevices();
 		} catch (err) {
@@ -1862,8 +1904,10 @@
 				// Every bird's songs is the one thing a whole-corpus chorus cannot get lazily,
 				// and exactly what the whole file is for: one fetch, then every shard lookup
 				// is a cache hit.
+				const held = loaded.inventory.species.length;
 				await loaded.ensureSpecies();
-				inventoryVersion++;
+				// Only when it grew: this bump rebuilds the Learn table, and re-pooling lands here.
+				if (loaded.inventory.species.length !== held) inventoryVersion++;
 				if (perf.epoch !== command.epoch) return;
 				engine.startAmbient(
 					loaded.inventoryIndex.map((s) => s.id),
@@ -1900,13 +1944,23 @@
 	 * Floored at 1.5 s between phrases: an improvised bout runs about a second, and asking
 	 * for them faster than they finish stacks voices instead of making a chorus.
 	 */
+	const improviseGapSeconds = $derived(
+		Math.max(1.5, 60 / (12 * Math.max(0.05, tempo) * Math.max(0.05, songRate)))
+	);
 	$effect(() => {
 		if (chorus !== 'solo' || soloMode !== 'improvise') return;
 		if (!engine || !currentSpecies) return;
-		const every = Math.max(1500, 60_000 / (12 * tempo));
-		untrack(() => singImprovisation());
-		const id = setInterval(() => untrack(() => singImprovisation()), every);
-		return () => clearInterval(id);
+		// A chain rather than an interval, with the pace read at each phrase. In the interval
+		// the Gap slider did nothing here, and moving Tempo tore the timer down, which sang a
+		// new first phrase for every step of the drag.
+		let id: ReturnType<typeof setTimeout>;
+		const next = () =>
+			untrack(() => {
+				singImprovisation();
+				id = setTimeout(next, improviseGapSeconds * 1000);
+			});
+		next();
+		return () => clearTimeout(id);
 	});
 	/**
 	 * The chorus buttons.
@@ -1919,7 +1973,7 @@
 	 * `verify:performance` sweeps 512 programmatic sequences to assert none of them can reach
 	 * silence.
 	 */
-	function toggleChorus(mode: 'solo' | 'global') {
+	function toggleChorus(mode: 'global') {
 		dispatch({ k: 'pressChorus', mode });
 	}
 
@@ -2036,9 +2090,16 @@
 		// released, the sung phrase cleared, the epoch bumped, a running solo chorus
 		// re-pooled), and reproducing any of that inside `pickKnot` would be the second copy
 		// of a rule that this machine exists to have exactly one of.
-		if (releasing) return;
-		const song = songThrough(owner, centroid?.syllableId ?? '');
-		if (song) dispatch({ k: 'chooseSong', id: song });
+		//
+		// After the bird's shard: `songThrough` found nothing on a bird not loaded yet, so the
+		// first click on a new bird pinned while the same click on a loaded bird chose a song.
+		if (releasing || !owner) return;
+		void assets.loadSpecies(owner).then(() => {
+			// A later click has already moved on, and this answer is about the old one.
+			if (perf.knot !== index || perf.speciesId !== owner) return;
+			const song = songThrough(owner, centroid?.syllableId ?? '');
+			if (song) dispatch({ k: 'chooseSong', id: song });
+		});
 	}
 
 	// --- the optional local pipeline control surface ---
@@ -2329,7 +2390,9 @@
 	 * 12/min one bird), both already scaled by tempo where they are set.
 	 */
 	const songGapSeconds = $derived(
-		60 / ((chorus === 'solo' ? 12 : 22) * Math.max(0.05, tempo) * Math.max(0.05, songRate))
+		chorus === 'solo' && soloMode === 'improvise'
+			? improviseGapSeconds
+			: 60 / ((chorus === 'solo' ? 12 : 22) * Math.max(0.05, tempo) * Math.max(0.05, songRate))
 	);
 	/**
 	 * Which provenance classes the loaded galaxy actually holds, and how much of it each
@@ -2375,6 +2438,12 @@
 			PROVENANCE.candidate
 		].sort((a, b) => (provShare[b] ?? 0) - (provShare[a] ?? 0))
 	);
+	/** What the running chorus was last pooled from. Not state: only that effect reads it. */
+	let pooled: { rate: number; allowed: unknown; songs: unknown } = {
+		rate: NaN,
+		allowed: null,
+		songs: null
+	};
 	$effect(() => {
 		// Tempo is one control over the whole aviary: the drift, the pulse, how long each
 		// syllable lasts and how often a bird starts. Restarting the scheduler is what
@@ -2386,11 +2455,17 @@
 		// passed the confidence filter to the aviary; `setChorus` did not). Re-pooling is a
 		// re-entry into the mode already running, which is exactly the event `setChorus` is:
 		// the reducer re-emits the start command and the executor is the single copy.
+		//
+		// Only when one of the pool's inputs moved. A start is issued by the reducer already,
+		// and this effect used to read `perf` too, so every dispatch of any kind restarted the
+		// scheduler and, for the aviary, fetched the whole inventory again.
 		const rate = tempo;
-		void chorusConfidence;
-		void soloSongIds;
+		const allowed = chorusConfidence;
+		const songs = soloSongIds;
 		if (engine) engine.tempo = rate;
-		if (perf.chorus === 'off') return;
+		const moved = rate !== pooled.rate || allowed !== pooled.allowed || songs !== pooled.songs;
+		pooled = { rate, allowed, songs };
+		if (!moved || untrack(() => perf.chorus) === 'off') return;
 		// **Re-issue the start command; do not dispatch a transition.** Re-pooling is not a
 		// state change, and routing it through `setChorus` moved the epoch — which invalidated
 		// the very start command the transition had just emitted, because that one was still
@@ -2517,9 +2592,9 @@
 	function speciesColourOf(id: string): string {
 		return id ? speciesHue(id) : MONO_HOT;
 	}
-	// The hue of the *selected* bird, which is not the same as the focused one: during a
-	// global chorus nothing is focused, but the selection still has a colour in the cloud.
-	const speciesColour = $derived(speciesColourOf(currentSpecies?.id ?? ''));
+	$effect(() => {
+		accent.birdId = currentSpecies?.id ?? '';
+	});
 </script>
 
 <!--
@@ -2539,37 +2614,17 @@
 <svelte:window bind:innerWidth={winW} />
 
 <!--
-	The live figures, defined once and rendered in whichever surface has room for them: the
-	header's readings row on a bench, the Reading drawer on a phone. See the row itself for why
-	they had to become movable.
+	The live figures, defined once: the header on a bench, the Reading drawer on a phone.
+	Figures about the build (points, knots, map quality) are in the Statistics panel.
 -->
 {#snippet liveReadings()}
 	{#if assets}
-		<div><dt>points</dt><dd>{assets.points.n.toLocaleString()}</dd></div>
-		<div><dt>clusters</dt><dd>{assets.centroids.k}</dd></div>
-		<!--
-			Both halves, because the projector was chosen on the second and reading only
-			the first would say this build got worse. `distance r` is global and
-			dominated by far pairs; `neighbours` is the share of a point's ten drawn
-			neighbours that share its type, which is what proximity on screen claims.
-		-->
-		<div><dt>distance r</dt><dd>{faithfulness?.toFixed(3) ?? '—'}</dd></div>
-		{#if projQuality?.knn != null}
-			<div title="Share of a point's {projQuality.knnK} nearest neighbours ON SCREEN that carry its own syllable type. Chance on this corpus is far under one percent, so anything here is real structure — but it is also the honest limit on reading two nearby marks as the same sound.">
-				<dt>neighbours</dt>
-				<dd>{Math.round(projQuality.knn * 100)} %</dd>
-			</div>
-		{/if}
 		<div><dt>voices</dt><dd>{voices}</dd></div>
-		<div><dt>f0</dt><dd>{pitch > 20 ? Math.round(pitch) : '—'}<span class="unit">Hz</span></dd></div>
-		<div class="meter">
-			<dt>level</dt>
-			<dd><span class="level"><span style:width={`${Math.min(100, level * 100)}%`}></span></span></dd>
-		</div>
-		<div class="meter">
+		<div><dt>pitch</dt><dd>{pitch > 20 ? Math.round(pitch) : '—'}<span class="unit">Hz</span></dd></div>
+		<div class="meter" title="How closely the sound matches a knot in the map.">
 			<dt>match</dt>
 			<dd>
-				<span class="level"><span class="hot" style:width={`${strength * 100}%`}></span></span>
+				<span class="level"><span style:width={`${strength * 100}%`}></span></span>
 			</dd>
 		</div>
 	{/if}
@@ -2629,96 +2684,51 @@ uv run lyrebird-pipeline build</pre>
 			<img class="loadmark" src={favicon} alt="" width="44" height="44" />
 			<div class="loadtext">
 				<h1>Lyrebird</h1>
-				<p class="strap">syrinx model · documented call functions · no samples</p>
-			</div>
+</div>
 			<div class="loadbar" role="progressbar" aria-valuenow={loadDone} aria-valuemin="0" aria-valuemax={loadTotal}>
 				<span style:width={`${(loadTotal ? loadDone / loadTotal : 0) * 100}%`}></span>
 			</div>
 			<p class="axis mono loadstage">{loadStage}</p>
-			<!--
-				The size, stated. A reader waiting on a bar with no quantity behind it cannot tell a
-				slow connection from a broken build, and this app's whole argument is that it states
-				what it is doing.
-			-->
-			<p class="note faint">
-				The corpus is measured offline and drawn here: about 60 MB of points, knots and
-				inventory, fetched and parsed in this browser. There is no server doing any of it.
-			</p>
 		</div>
 	</div>
 {:else}
 	<div class="bench" style:--hud-h={`${hudH}px`}>
 		<header class="hud" bind:clientHeight={hudH}>
-		<div class="brand">
+		<div
+				class="brand"
+				title="{assets.points.n.toLocaleString()} syllables measured from wild recordings, {assets.centroids.items.length.toLocaleString()} call types, and a physical syrinx model that sings them in this browser. No audio is sampled or shipped."
+			>
+				<i class="brandmark" aria-hidden="true"></i>
 				<h1>Lyrebird</h1>
-				<!--
-					**The strap says what the thing refuses, and now also what it is.**
-
-					"syrinx model · documented call functions · no samples" is three disclaimers. Each is
-					load-bearing and none of them tells a first-time reader what they are looking at, which
-					was the gap — the same gap the old `<title>` filled by claiming the one thing this
-					project does not do ("what birds have been saying all along").
-
-					So the first clause is now the subject and the three disclaimers follow it, still in
-					the same terse register and the same one line. `title` carries the long form for a
-					reader who wants it, because a strap that grows to a sentence stops being a strap.
-				-->
-				<p
-					class="strap"
-					title="444,213 syllables measured from wild recordings, 15,341 fitted call types, and a Laje–Mindlin syrinx oscillator that sings them in this browser. No audio is sampled and none is shipped."
-				>
-					wild birdsong, measured and resynthesized · syrinx model · no samples
-				</p>
 			</div>
+			<!-- The figures render in the Reading drawer on a phone; the two page doors stay here. -->
 			<dl class="readings mono">
-				<!--
-					**The figures are a snippet because on a phone they are somewhere else.**
-
-					Eight cells of monospaced instrument readout do not fit beside the name on a
-					375 px screen, and the rule that used to handle that was `display: none` on the
-					whole row — which took the Info and Learn openers with it, because they live in
-					this row. Both pages were then unreachable on a phone, silently: the buttons
-					were in the DOM, sized zero, and every check we have passed.
-
-					So the openers stay in the header at every width (they are doors, and a door
-					has to be where you can see it), and the figures render inside the Reading
-					drawer instead, which is where a phone reader goes to ask what is sounding.
-					One definition, two places, so the two cannot drift.
-				-->
 				{#if !narrow}{@render liveReadings()}{/if}
 				<button
 					class="reading-open"
 					class:on={page === 'info'}
 					aria-pressed={page === 'info'}
-					title="The paper, what this is, and what every mark on the stage means."
+					title="The paper, and what every mark on the stage means."
 					onclick={() => openPage('info')}
 				>
-					<dt>info</dt>
-					<dd>{page === 'info' ? 'close' : 'open'}</dd>
+					Info
 				</button>
-				<!--
-					The second page, beside the first. It reports a running job, so it says so
-					here rather than only behind the click: a learning loop outlives whatever
-					you go and do next, and a dot on the opener is the only place the app can
-					admit that while the galaxy is what you are looking at.
-				-->
+				<!-- A learning run outlives any selection, so its clock shows here on the opener. -->
 				<button
 					class="reading-open"
 					class:on={page === 'learn'}
 					aria-pressed={page === 'learn'}
-					title="Harvest, fit and rebuild — and every syllable type the pipeline has fitted, as a table that follows what is singing."
+					title="Harvest, fit and rebuild, and every fitted syllable type."
 					onclick={() => openPage('learn')}
 				>
-					<dt>learn</dt>
-					<dd>
-						{#if jobRunning}
-							<span class="joblive" aria-hidden="true"></span>{job?.seconds ?? 0}s
-						{:else}
-							{page === 'learn' ? 'close' : 'open'}
-						{/if}
-					</dd>
+					Learn
+					{#if jobRunning}
+						<span class="joblive" aria-hidden="true"></span>{job?.seconds ?? 0}s
+					{/if}
 				</button>
 			</dl>
+			<!-- The loudness of what is sounding, as a line under the header, in the accent. -->
+			<span class="pulse" aria-hidden="true" bind:this={pulseEl}></span>
 		</header>
 
 		<!--
@@ -2738,6 +2748,7 @@ uv run lyrebird-pipeline build</pre>
 				{spin}
 				{focus}
 				{spread}
+				paused={page !== ''}
 				speed={tempo}
 				labels={showLabels}
 				plain={!provColours}
@@ -2893,17 +2904,6 @@ uv run lyrebird-pipeline build</pre>
 						{#if narrow}{@render sheetHandle('display')}{/if}
 						<h2>Display</h2>
 						<div class="cardbody">
-							<!--
-								**Every section folds, and the header is the whole click target** (owner,
-								2026-08-06: "i want to be able to minimize each and every panel when clicking
-								in it anywhere"). `viewFold` holds one bit per section; `filter` starts shut
-								because it is the longest list here and the one a reader least often needs —
-								which is the same request read from the other side ("we want the filters to be
-								a drawer to open and close").
-
-								A `<button>` rather than a div with a handler, so the fold is reachable by
-								keyboard and announces its state without any extra wiring.
-							-->
 							<section class="block fold" class:shut={!viewFold.view}>
 								<button class="foldhead" aria-expanded={viewFold.view} onclick={() => (viewFold.view = !viewFold.view)}>
 									<span class="axis mono">view</span>
@@ -2921,10 +2921,6 @@ uv run lyrebird-pipeline build</pre>
 										<label class="check" title="Name tags on the knots a syllable can be sung into.">
 											<input type="checkbox" bind:checked={showLabels} /> Labels
 										</label>
-										<!-- Moved up from the old cost section (owner: "the adaptive details should be
-										     up by the fontsize"). It belongs here on its own merits: it changes how much
-										     of the corpus is drawn, which is the same axis as the point size beside it,
-										     and it is not a measurement like the readout it used to sit with. -->
 										<label
 											class="check"
 											title="Hold the level of detail back when the measured frame time says the GPU cannot keep up. On an integrated chip this is what keeps the close view smooth."
@@ -2932,13 +2928,6 @@ uv run lyrebird-pipeline build</pre>
 											<input type="checkbox" bind:checked={adaptiveDetail} /> Adaptive detail
 										</label>
 									</div>
-									<!--
-										The reader's ceiling on the governor, shown only while the governor runs —
-										off, the cap is pinned at 1 and a visible slider that changed nothing would
-										imply a measurement. The floor is 0.1 because that is the governor's own
-										floor (see PointCloud): below it the representatives thin out entirely and
-										the cloud stops being a cloud.
-									-->
 									{#if adaptiveDetail}
 										<label class="field indent">
 											<span class="lbl"
@@ -2956,64 +2945,31 @@ uv run lyrebird-pipeline build</pre>
 									{/if}
 								{/if}
 							</section>
-							<!--
-								**One section for every question hue can answer** (owner, 2026-08-06: "the
-								dimming color should be with the other colors, make a new colour section and
-								bring all colour options there").
-
-								They were in two places for a historical reason that had stopped being true:
-								provenance and bird were "colour modes" while doubt was a saturation drain that
-								sat on top of either. Doubt is a hue ramp now, so all four are the same kind of
-								control — mutually exclusive readings of one channel — and `useProvColours`,
-								`useBirdColours` and `useTrustColour` enforce that between them. Off on all four
-								is the fifth reading: neutral ink, hue left to the tags.
-							-->
 							<section class="block fold" class:shut={!viewFold.colour}>
 								<button class="foldhead" aria-expanded={viewFold.colour} onclick={() => (viewFold.colour = !viewFold.colour)}>
-									<span class="axis mono">colour · one question at a time</span>
+									<span class="axis mono">colour</span>
 									<i class="chev" aria-hidden="true"></i>
 								</button>
 								{#if viewFold.colour}
 									<div class="checks">
-										<!--
-											Why provenance is off by default, measured on the shipped build: 93.9 % of
-											points are field recordings and 99 % of knots carry a field plurality, so the
-											classes say nearly one thing everywhere. The colouring carries about 3 points
-											of information over the base rates (91.5 % same-class nearest neighbour
-											against 88.2 % from the rates alone) — it answers "what is this" per point,
-											not "where is it" on the map.
-										-->
 										<label
 											class="check"
-											title="Colour every point, tag and thread by where its sound came from. Off, the points are neutral ink and hue is left to say which bird. On this build 94 % of the points are field recordings, so expect one class to dominate."
+											title="Colour every point and path by where its sound came from. Nearly all points are field recordings, so one class dominates."
 										>
 											<input type="checkbox" bind:checked={provColours} onchange={useProvColours} />
 											Provenance colours
 										</label>
-										<!--
-											Opt-in for a measured reason rather than a cautious one: thousands of species
-											share one hue circle, so at this density the cloud reads as confetti and no
-											reader can hold the key. What it is good for is one *genus* against the rest,
-											since the hue is the genus's — and for that it is the only channel that
-											answers over the whole corpus at once.
-										-->
 										<label
 											class="check"
-											title="Colour every point by its bird — the same genus hue the tags carry, so a species' points and its labels agree. Hue is the genus and shade the species within it."
+											title="Colour every point by its bird. Hue is the genus, shade the species."
 										>
 											<input type="checkbox" bind:checked={birdColours} onchange={useBirdColours} />
 											Bird colours
 										</label>
-										<!--
-											**The two doubts are the one pair here that may be on together.** Each has
-											its own hue — rose for "the map may have put this in the wrong place", amber
-											for "the recording was noisy" — and with both on they compose subtractively,
-											so a mark that is bad on both counts is the darkest thing in the frame.
-											`palette.ts` has the arithmetic and the reason it is symmetric.
-										-->
+										<!-- The two doubts may be on together; `palette.ts` has the arithmetic. -->
 										<label
 											class="check"
-											title="Colour every point and tag by how few of its ten drawn neighbours share its type — doubt about where the map put it. Loud rose is doubtful, quiet slate is not. Nothing moves and nothing changes size, so the same frame can be compared with the mode on and off. Can be combined with the noise ramp below."
+											title="Colour every point and path by how few of its ten drawn neighbours share its type. Combines with the noise ramp."
 										>
 											<input
 												type="checkbox"
@@ -3026,7 +2982,7 @@ uv run lyrebird-pipeline build</pre>
 										</label>
 										<label
 											class="check"
-											title="Colour every point and tag by how noisy the recording it came from was, on a 5th-to-95th-percentile ramp — doubt about the measurement rather than about its position. Loud amber is noisy. Can be combined with the agreement ramp above."
+											title="Colour every point and path by how noisy its recording was. Combines with the neighbour ramp."
 										>
 											<input
 												type="checkbox"
@@ -3038,14 +2994,7 @@ uv run lyrebird-pipeline build</pre>
 											Recording is noisy
 										</label>
 									</div>
-									<!--
-										One key per ramp that is on, with that ramp's own figures under it: a
-										sequential ramp whose ends are unnamed invites "rose" to be read as a
-										category, and a clamped scale whose ends are unstated invites "fully
-										coloured" to mean "cleanest in the corpus" when it means "at or above p95".
-										The third line only appears with both on, because that is the only state in
-										which a reader has to be told what a mixed colour means.
-									-->
+									<!-- A clamped ramp needs its ends named, or "rose" reads as a category. -->
 									{#if trustAgree && trustStats}
 										<p class="note faint rampkey">
 											<b style:color={DOUBT_AGREE}>disagrees</b> → <b style:color={DOUBT_QUIET}
@@ -3070,58 +3019,31 @@ uv run lyrebird-pipeline build</pre>
 									{/if}
 								{/if}
 							</section>
-							<!--
-								Per-class visibility, shut by default. Hiding a class removes its points from the
-								picture, never from the corpus.
-
-								**"only the unidentified" is gone** (owner, 2026-08-06). It wrote a fixed
-								five-value array, so it was a saved view masquerading as an action — and the one
-								view it saved is two clicks away from the list right below it, while its own
-								label named a class ("unidentified") that the list also names, so the two disagreed
-								about whether it was a filter or a preset. "show everything" stays: a filter that
-								can hide four fifths of the cloud needs one visible way back.
-							-->
+							<!-- Hiding a class removes its points from the picture, never from the corpus. -->
 							<section class="block fold" class:shut={!viewFold.filter}>
 								<button class="foldhead" aria-expanded={viewFold.filter} onclick={() => (viewFold.filter = !viewFold.filter)}>
-									<span class="axis mono">filter · where the sound came from</span>
+									<span class="axis mono">sources</span>
 									{#if hiddenClasses > 0}
 										<span class="mono faint tally">{hiddenClasses} hidden</span>
 									{/if}
 									<i class="chev" aria-hidden="true"></i>
 								</button>
 								{#if viewFold.filter}
-									<p class="note faint">
-										{provColours ? 'Key and filter.' : 'Filter only — the points are neutral ink.'}
-									</p>
 									<div class="checks">
 										{#each provFilterOrder as cls (cls)}
 											{@const share = provShare[cls] ?? 0}
-											<!--
-												A class with no points on the loaded build gets a disabled toggle rather
-												than a live one that cannot do anything. On a W5 build "synthesized" is
-												empty by construction — a type with member observations renders no
-												synthetic copy — so the control existed and could never change the picture.
-											-->
 											<label class="check" class:absent={share === 0}>
 												<input type="checkbox" bind:checked={provShown[cls]} disabled={share === 0} />
-												<!--
-													**The swatch is only a colour when the points are wearing it.** This list
-													is two things at once — the visibility filter, and the legend for the
-													provenance colouring — and in ink mode the legend half was a lie: five
-													class colours printed beside a cloud drawn entirely in neutral grey.
-												-->
 												<i
 													class="swatch"
 													class:hollow={!provColours}
 													style:background={provColours ? provenanceColour(cls) : 'transparent'}
 												></i>
 												{PROV_NAMES[cls]}
-												<!-- "of points", for the same reason the chorus list says "songs": the two
-												     lists share words and count different things. -->
 												<span class="mono faint"
 													>{share === 0
-														? 'no points'
-														: `${(share * 100).toFixed(share < 0.01 ? 2 : 0)}% of points`}</span
+														? '—'
+: `${(share * 100).toFixed(share < 0.01 ? 2 : 0)}%`}</span
 												>
 											</label>
 										{/each}
@@ -3136,28 +3058,7 @@ uv run lyrebird-pipeline build</pre>
 									{/if}
 								{/if}
 							</section>
-							<!--
-								The one question this map cannot answer for itself.
-
-								Its clustering is `label`: every point gets a knot, so "none of these" is not in
-								its output space and `manifest.unassigned` is 0. The verdict is joined in from a
-								separate hdbscan build of the same point set (`analysis/v10_unknown_join.py`), and
-								the control is disabled outright on a build carrying no such channel — a switch
-								that moves nothing is worse than an absent one, because it implies a measurement.
-
-							**Renamed from "What nothing claims"** (owner, 2026-08-06: "a stupid
-								formulation"). It was trying to be evocative about a boolean.
-
-								**And then inverted, which was the real problem.** Ticking it coloured the refused
-								set — 79.5 % of the corpus — so almost every mark changed at once and nothing was
-								singled out. Owner: *"if i activate the unclaimed ALL color .. how should i know
-								what is unclaimed now?!"* Exactly right, and it is arithmetic rather than taste.
-								The control now marks the **confirmed minority**: the 20.5 % that a second,
-								independent clustering placed in a dense region take the ink and the teal, and the
-								refused four fifths stay as faint ground. What is unclaimed is then readable as the
-								complement — everything that did not light up — and the marks that changed are few
-								enough to point at.
-							-->
+							<!-- Joined from a separate density clustering, since this map assigns every point. -->
 							<section class="block fold" class:shut={!viewFold.unclaimed}>
 								<button
 									class="foldhead"
@@ -3171,19 +3072,10 @@ uv run lyrebird-pipeline build</pre>
 									<i class="chev" aria-hidden="true"></i>
 								</button>
 								{#if viewFold.unclaimed}
-									{#if unheardShare !== null}
-										<p class="note faint">
-											A second clustering of these same points found
-											<b>{placedCount?.toLocaleString()}</b> of {assets.points.n.toLocaleString()} in a
-											dense region and refused the other
-											<b>{unheardCount?.toLocaleString()}</b>. This map places every point by the type
-											it already carries, so it cannot answer that question for itself.
-										</p>
-									{/if}
 									<div class="checks">
 										<label
 											class="check"
-											title="Draw the sounds a density clustering agreed on in their own colour, at full weight, and let the ones it refused fall back to faint ground. What stays faint is the unclaimed four fifths."
+											title="A second clustering placed {placedCount?.toLocaleString() ?? 'some'} of these sounds in a dense region and refused {unheardCount?.toLocaleString() ?? 'the rest'}. Coloured marks are placed, faint marks are unclaimed."
 										>
 											<input type="checkbox" bind:checked={unheardFigure} disabled={unheardShare === null} />
 											<i
@@ -3204,23 +3096,6 @@ uv run lyrebird-pipeline build</pre>
 						</div>
 					</div>
 				{/if}
-				<!--
-					**Statistics, on its own panel** (owner, 2026-08-06: "redesign the what cost panel and
-					call it statistics please" · "look please padding margin and so on make it nicer design
-					like the rest").
-
-					Two fixes, one structural and one naming.
-
-					The `dl` sat directly in `.cardbody`, which supplies no padding — every other panel in
-					this app puts its content in a `section.block`, which is where the 0.9rem/1rem rhythm and
-					the separating rule come from. It is in one now, so the panel matches the left column and
-					the Display card instead of being the one card whose text touches its own border.
-
-					And it is two groups rather than one, because "Statistics" over five frame-timing numbers
-					would be a promise the panel does not keep. **The frame** is what drawing this costs right
-					now; **the corpus** is what is being drawn, and every figure in it is already derived on
-					this page for some other control — nothing is measured here that was not measured anyway.
-				-->
 				{#if costOpen}
 					<div
 						class="panel viewpanel statspanel"
@@ -3299,7 +3174,43 @@ uv run lyrebird-pipeline build</pre>
 										<dt>knots</dt>
 										<dd>{assets.centroids.items.length.toLocaleString()} call types</dd>
 									</div>
-									{#if trustStats}
+									<div>
+										<dt>map</dt>
+										<dd
+											title={assets.manifest.clustering === 'label'
+												? 'One knot per type, taken from the type each sound already carries. The knots are the labels, not a second finding, so this view cannot report an unidentified sound.'
+												: mapKind === 'known'
+													? 'One knot per type, every sound assigned. This view cannot report an unidentified sound.'
+													: 'Dense regions only. Sounds in no region are unidentified: real acoustics, no documented function.'}
+										>
+											{assets.manifest.clustering === 'label'
+												? 'knots are the labels'
+												: mapKind === 'known'
+													? 'one knot per type'
+													: `dense regions, ${assets.manifest.unassigned?.toLocaleString() ?? 'some'} unassigned`}
+										</dd>
+									</div>
+									{#if faithfulness !== undefined}
+										<div>
+											<dt>distance</dt>
+											<dd title="Correlation between distances on screen and in the feature space.">
+												r {faithfulness.toFixed(3)}
+											</dd>
+										</div>
+									{/if}
+									{#if assets.featureSpace.embedding?.mapQuality?.centroidAgreement !== undefined}
+										{@const mq = assets.featureSpace.embedding.mapQuality}
+										<div>
+											<dt>live</dt>
+											<dd
+												title="How often a live sound lights the same knot through the browser's map as through the critic. Knot-level answers mean nearest of several close knots."
+											>
+												knot {((mq.centroidAgreement as number) * 100).toFixed(0)} %{#if mq.speciesAgreement !== undefined}
+													· species {((mq.speciesAgreement as number) * 100).toFixed(0)} %{/if}
+											</dd>
+										</div>
+									{/if}
+{#if trustStats}
 										<div>
 											<dt>agree</dt>
 											<dd
@@ -3328,35 +3239,10 @@ uv run lyrebird-pipeline build</pre>
 				{/if}
 			</div>
 
-			<!--
-				There was a "Now singing" roster pinned across the top of the stage here.
-				It has been removed: the history strip below is the same chip in the same
-				shape, and it names the call as well as the bird.
-			-->
 			{#if history.length}
 				<!--
-					Newest sits against the reading panel and the run extends left, clipping at
-					the far end: what just happened is where your eye already is.
-				-->
-				<!--
-					**Frozen while the pointer is over it.** The newest phrase is prepended, so
-					every chip shifts one place right as the chorus sings — measured at about one
-					every two seconds during a whole-aviary chorus. Reaching for a chip therefore
-					selected whichever phrase had slid under the cursor by the time the click
-					landed, and the camera flew to a bird the user had not asked for. That is the
-					owner's *"the cam sometimes doesn't focus"*: it focused correctly, on the wrong
-					bird.
-
-					`history` keeps filling; this only holds the *rendered* list still while a
-					pointer is inside the strip, and releases it on the way out. Freezing the
-					display rather than the data means nothing is dropped and the strip needs no
-					memory of its own.
-				-->
-				<!-- `group`, not `list`: these are controls, and each one selects the phrase it names. -->
-				<!--
-					`tucked` while a drawer is open on a phone: the strip lives a finger's width above
-					the dock, which is exactly where a drawer's lid lands. Hidden rather than pushed,
-					because a strip that moves whenever a panel opens is a strip you cannot aim at.
+					The rendered list freezes while the pointer is inside, because the newest chip shifts
+					every other one and a click would otherwise land on whatever slid under the cursor.
 				-->
 				<div
 					class="history"
@@ -3382,18 +3268,7 @@ uv run lyrebird-pipeline build</pre>
 				</div>
 			{/if}
 
-			<!--
-				The reading, always. It used to answer to the tab — the learning run displaced it
-				whenever Learn was selected — and the learning run is on its own page now, which
-				is where a thing that outlives every selection belongs. The panel beside the
-				stage is for what is sounding on the stage.
-			-->
-			<!--
-				On a phone this is a drawer the dock opens, and it is the drawer the live figures
-				move into: `narrow` renders the readings row at the top of its body, so "what is
-				sounding" and "what the instrument reads" are one surface rather than one surface
-				and one deleted row.
-			-->
+			<div class="leftcol">
 			{#if !narrow || sheet === 'reading'}
 			<aside
 				class="panel readout"
@@ -3412,6 +3287,39 @@ uv run lyrebird-pipeline build</pre>
 				{#if narrow}
 					<dl class="readings mono inpanel">{@render liveReadings()}</dl>
 				{/if}
+				{#if pinned}
+					<section class="block">
+						<div class="pinhead">
+							<span class="badge {pinned.confidence}">{confidenceLabel(pinned.confidence).text}</span>
+							<button
+								class="link"
+								onclick={() => dispatch({ k: 'pickKnot', knot: pinnedCluster, speciesId: '' })}
+								>Unpin</button
+							>
+						</div>
+						<p class="strong">{pinned.label}</p>
+						{#if pinned.function}<p class="note">{pinned.function}</p>{/if}
+						<dl class="facts mono">
+							<div><dt>points</dt><dd>{pinned.count}</dd></div>
+							{#if pinned.cohesion !== undefined}<div><dt>cohesion</dt><dd>{pinned.cohesion.toFixed(3)}</dd></div>{/if}
+							{#if pinned.meanDuration}<div><dt>duration</dt><dd>{Math.round(pinned.meanDuration * 1000)} ms</dd></div>{/if}
+							{#if pinned.functionClass}<div><dt>class</dt><dd>{pinned.functionClass}</dd></div>{/if}
+							<!-- Whether the mark is in one piece. Unmeasured is printed as unmeasured. -->
+							<div>
+								<dt>drawn in</dt>
+								<dd>
+									{#if pinned.tearing === undefined}
+										not measured
+									{:else if pinned.tearing > 5}
+										two places
+									{:else}
+										one place
+									{/if}
+								</dd>
+							</div>
+						</dl>
+					</section>
+				{/if}
 				{#if sessionGate?.flagged && reading?.active}
 					<!--
 						The docs/20 session gate, first in the chain: when the live session
@@ -3424,19 +3332,14 @@ uv run lyrebird-pipeline build</pre>
 					-->
 					<div class="best">
 						<span class="badge unlabelled">off the map</span>
-						<h3 class="strong">This session is off everything the galaxy knows</h3>
-						<p class="accent">positions are guesses — nothing here is a documented call</p>
-						<p class="note">
-							This sound sits past the calibrated line
-							({sessionGate.score.toFixed(2)} &gt; {sessionGate.threshold.toFixed(2)}).
-							Usual causes: an unusual recorder, heavy background, or a sound kind
-							the corpus does not cover. Where it lights means little.
+						<h3 class="strong">Off the map</h3>
+						<p class="accent">Positions are guesses. Nothing here is a documented call.</p>
+<p
+							class="note faint"
+							title={assets.featureSpace.embedding?.sessionGate?.calibration ?? ''}
+						>
+							Score {sessionGate.score.toFixed(2)}, line {sessionGate.threshold.toFixed(2)}.
 						</p>
-						{#if assets.featureSpace.embedding?.sessionGate?.calibration}
-							<p class="note faint">
-								{assets.featureSpace.embedding.sessionGate.calibration}
-							</p>
-						{/if}
 					</div>
 				{:else if panelReading?.best}
 					{@const best = panelReading.best}
@@ -3463,11 +3366,14 @@ uv run lyrebird-pipeline build</pre>
 							>
 						</div>
 						{#if best.centroid.refs.length}
-							<ul class="refs">
-								{#each citationsFor(assets.inventory, best.centroid.refs) as ref (ref)}
-									<li class="note faint">{ref}</li>
-								{/each}
-							</ul>
+							<details class="rollup">
+								<summary class="mono faint">sources</summary>
+								<ul class="refs">
+									{#each citationsFor(assets.inventory, best.centroid.refs) as ref (ref)}
+										<li class="note faint">{ref}</li>
+									{/each}
+								</ul>
+							</details>
 						{/if}
 					</div>
 					<div class="candidates" class:past={!readingIsLive}>
@@ -3482,17 +3388,14 @@ uv run lyrebird-pipeline build</pre>
 					{#if assets.relations}
 						{@const rels = relationsOf(best.centroid.speciesId)}
 						{#if rels.length}
-							<!--
-								relations.json's cross-species pairs, shown where the matched bird
-								is reported. The copy carries the honesty line with it — a shared
-								call shape in the embedding is a candidate (ancestry, convergence,
-								or artifact), never a documented relationship (§8.5).
-							-->
-							<p class="note faint">
-								Shares call shapes with {rels
+							<!-- A shared call shape is a candidate, never a documented relationship (§8.5). -->
+							<p
+								class="note faint"
+								title="Measured in the embedding. Candidates, not documented relationships."
+							>
+								Similar calls: {rels
 									.map((p) => relationPartner(p, best.centroid.speciesId))
-									.join(', ')} — measured in the embedding; candidates, not documented
-								relationships.
+									.join(', ')} (candidates)
 							</p>
 						{/if}
 					{/if}
@@ -3509,23 +3412,14 @@ uv run lyrebird-pipeline build</pre>
 					{@const nearest = reading.candidates[0]}
 					<div class="best">
 						<span class="badge unlabelled">field recording</span>
-						<h3 class="strong">Heard, but not in this corpus</h3>
-						<p class="accent">unlabelled: real acoustics, no documented function</p>
-						<p class="note">
-							{#if nearest}
-								Nearest knot: {nearest.centroid.label} at
-								{(nearest.similarity * 100).toFixed(0)} % similarity — below the
-								match floor, so this is not a claim it was that call.
-							{:else}
-								Nothing in the galaxy is close enough to name.
-							{/if}
-							{#if reading.strength > 0.01}
-								It may be a sound form the corpus has too little of — the
-								current build places {assets.manifest.typeCoverage
-									? `${assets.manifest.typeCoverage.withCluster} of ${assets.manifest.typeCoverage.types}`
-									: 'just over half of its'} learned types.
-							{/if}
-						</p>
+						<h3 class="strong">Not in this corpus</h3>
+<p class="accent">unlabelled: real acoustics, no documented function</p>
+						{#if nearest}
+							<p class="note faint">
+								Nearest: {nearest.centroid.label}, {(nearest.similarity * 100).toFixed(0)} %, below the
+								match floor.
+							</p>
+						{/if}
 					</div>
 				{:else if lastPhrase}
 					<div class="best">
@@ -3546,94 +3440,43 @@ uv run lyrebird-pipeline build</pre>
 						{#if singer}<p class="accent">sung by {singer}</p>{/if}
 						<p class="accent">“{lastPhrase.gloss}”</p>
 						<p class="note">{lastPhrase.function}</p>
-						<p class="note faint">{lastPhrase.note}</p>
-						{#if lastPhrase.refs.length}
-							<ul class="refs">
-								{#each citationsFor(assets.inventory, lastPhrase.refs) as ref (ref)}
-									<li class="note faint">{ref}</li>
-								{/each}
-							</ul>
+						{#if lastPhrase.note || lastPhrase.refs.length}
+							<details class="rollup">
+								<summary class="mono faint">sources</summary>
+								{#if lastPhrase.note}<p class="note faint">{lastPhrase.note}</p>{/if}
+								{#if lastPhrase.refs.length}
+									<ul class="refs">
+										{#each citationsFor(assets.inventory, lastPhrase.refs) as ref (ref)}
+											<li class="note faint">{ref}</li>
+										{/each}
+									</ul>
+								{/if}
+							</details>
 						{/if}
 					</div>
 				{:else if namedTypes === 0}
-					<!--
-						A galaxy built from field audio alone has no cluster carrying a syllable name,
-						and every response in this interface goes through one: the trajectory, the node
-						tag, the reported match. So the app sings, the cloud drifts, and nothing else
-						happens — which looks exactly like a bug and was reported as one. It is a
-						property of the build, and the build now records it, so the panel can say which
-						of the two it is instead of leaving a silent picture to be interpreted.
-					-->
+					<!-- A field-only build has no named cluster, so nothing can light. Say so instead of looking broken. -->
 					<p class="note">
-						<strong>This galaxy cannot respond.</strong> It was built from field audio only,
-						so no cluster carries a syllable name. A sung phrase has nothing to light,
-						label or draw a path through. Rebuild with the rendered inventory included
-						(<span class="mono">Learn → build</span>).
+						This build has no named clusters, so a sung phrase cannot light anything. Rebuild it with
+						the inventory on the Learn page.
+					</p>
+				{:else if voices > 0}
+					<p class="note quiet">
+						{singer ?? 'A bird'} is singing. Rendered from its inventory, so nothing is being matched.
 					</p>
 				{:else}
-					<p class="note faint">
-						Sing something, or turn on the microphone. Clusters flare where the sound lands in
-						the corpus — and stay dark when it lands nowhere.
-					</p>
+					<p class="note faint quiet">Nothing sounding.</p>
 				{/if}
-				{#if mapKind}
-					<!--
-						Which map is showing, stated where the reading lives. In the
-						density map the unassigned share is the headline honesty number: those are
-						real sounds the build refused to place, and the panel says so in the
-						interface's own unidentified language (§8.5) rather than letting the gaps
-						read as empty space. Gated on the loaded map's own kind, not on both maps
-						existing — a single-map build needs the line just as much (a hdbscan-only
-						build is exactly the build whose honesty number this is).
-					-->
-					<p class="caveat note">
-						{#if assets.manifest.clustering === 'label'}
-							<!--
-								A label build does not cluster the named 96 % at all — it puts every
-								sound in the knot of the type it already carries (docs/22 §22.5). The
-								knots are then the labels, not a separate finding that agrees with
-								them, and saying "one knot per type" without saying that would claim
-								a measurement the build did not make.
-							-->
-							Map: one knot per type, taken from the type each sound already carries — the
-							knots are the labels, not a second finding. This view cannot report an
-							unidentified sound.
-						{:else if mapKind === 'known'}
-							Map: one knot per type, every sound assigned — this view cannot report an
-							unidentified sound.
-						{:else}
-							Map: dense regions only. {assets.manifest.unassigned?.toLocaleString() ?? 'Some'}
-							of {assets.points.n.toLocaleString()} sounds sit in no region — unidentified:
-							real acoustics, no documented function.
-						{/if}
-					</p>
-					{#if assets.featureSpace.embedding?.mapQuality?.centroidAgreement !== undefined}
-						<!--
-							The map's own measured honesty, where the build recorded it (docs/20):
-							how often a live sound would light the same knot through the browser's
-							28-d -> 32-d bridge as through the critic — raw, tie-adjusted (near-ties
-							excluded), and at species level, which is the claim the panel makes.
-						-->
-						{@const mq = assets.featureSpace.embedding.mapQuality}
-						<p class="caveat note faint">
-							Live matching: knot
-							<b class="mono">{((mq.centroidAgreement as number) * 100).toFixed(0)}%</b>
-							{#if mq.centroidAgreementTieAdjusted !== undefined}
-								· near-ties free
-								<b class="mono">{((mq.centroidAgreementTieAdjusted as number) * 100).toFixed(0)}%</b>
-							{/if}
-							{#if mq.speciesAgreement !== undefined}
-								· species
-								<b class="mono">{((mq.speciesAgreement as number) * 100).toFixed(0)}%</b>
-							{/if}
-							— knot-level answers are "nearest of several close knots".
+				{#if panelReading?.best || reading?.active || lastPhrase}
+					<!-- The standing caveat, one click away while there is a claim for it to qualify. -->
+					<details class="rollup caveat">
+						<summary class="mono faint">what this can claim</summary>
+						<p class="note faint">
+							{reading?.caveat ??
+								'Lyrebird reports documented call functions with a confidence label. Machine learning can characterise repertoires and link calls to behaviour. It cannot translate them into sentences.'}
 						</p>
-					{/if}
+					</details>
 				{/if}
-				<p class="caveat note">
-					{reading?.caveat ??
-						'Lyrebird reports documented call functions with a confidence label. Machine learning can characterise repertoires and link calls to behaviour. It cannot translate them into sentences.'}
-				</p>
 				</div>
 			</aside>
 			{/if}
@@ -3664,53 +3507,24 @@ uv run lyrebird-pipeline build</pre>
 				{#if tab === 'sing'}
 					<section class="block">
 						<div class="field">
-							<span class="lbl">
-								Species
-								<!-- the hue this bird carries in the galaxy, so the two are connected -->
-								<span class="swatch" style:background={speciesColour}></span>
-								<!--
-									Coverage as a tally rather than a paragraph. It answers "why is so much of
-									this bird lit when so little of it sings", which is worth having on screen
-									permanently — but as three characters with the explanation on hover, not as
-									four lines of prose in a panel that already has too many.
-								-->
-								{#if repertoireCoverage && repertoireCoverage.placed < repertoireCoverage.total}
-									<span
-										class="tally mono"
-										title="{repertoireCoverage.placed} of this bird's {repertoireCoverage.total} syllables won a cluster. Selecting it lights all of its points, including harvested field audio and fitted types that no note can reach."
-									>{repertoireCoverage.placed}/{repertoireCoverage.total}</span>
-								{/if}
-							</span>
 							<SpeciesPicker
 								options={speciesOptions}
 								value={speciesId}
 								onchange={chooseBird}
 							/>
 						</div>
-						<!--
-							"All birds" is a place in the list, not an absence of one, so it gets the same
-							shape as every other entry: a description, a thing to play, and the transport.
-							The old version left the call menu sitting there empty — a control with no
-							options, for a selection that has no single call — and put the aviary chorus in
-							a separate block that only ever applied to this one case. Folding the chorus in
-							as the action of "all birds" makes the panel say the same thing whichever entry
-							is chosen, and removes the button that could contradict the selection.
-						-->
 						{#if currentSpecies}
 							<p class="note">{currentSpecies.summary}</p>
 							{#if assets.relations}
 								{@const rels = relationsOf(currentSpecies.id, 6)}
 								{#if rels.length}
-									<!--
-										The relations graph as a chooser: each partner is one
-										click away, in its own hue (the same hash the tags and
-										threads use), and the honesty line rides underneath —
-										a shared call shape is a distance, never a claim of
-										borrowing or kinship (§8.5).
-									-->
-									<p class="note faint sounds-like">
-										Sounds like:
-										{#each rels as p (p.a + '/' + p.b)}
+									<!-- A shared call shape is a distance, never a claim of kinship (§8.5). -->
+									<p
+										class="note faint sounds-like"
+										title="Nearer than two types of one bird usually are. A distance, not a claim of borrowing or kinship."
+									>
+										Sounds like
+{#each rels as p (p.a + '/' + p.b)}
 											{@const partner = p.a === currentSpecies.id ? p.b : p.a}
 											<button
 												class="chip"
@@ -3720,36 +3534,15 @@ uv run lyrebird-pipeline build</pre>
 											>{relationPartner(p, currentSpecies.id)}</button>
 										{/each}
 									</p>
-									<p class="note faint">
-										Nearer than two types of one bird usually are — a distance,
-										not a claim of borrowing or kinship.
-									</p>
 								{/if}
 							{/if}
 							<label class="field">
 								<span class="lbl">
-										Call or song
-										{#if songCoverage && songCoverage.placed < songCoverage.total}
-											<span
-												class="tally mono"
-												class:none={songCoverage.placed < 2}
-												title={songCoverageHint}
-											>{songCoverage.placed}/{songCoverage.total}</span>
-										{/if}
-									</span>
-								<!--
-									One control for the whole question. The first row is the bird as a
-									whole — every song in the chorus, the repertoire framed — and every
-									row under it is one call: the chorus sings only that, the camera goes
-									only there. Each row carries how many knots the call touches, because
-									a one-token repeat class and a three-syllable song are otherwise the
-									same line of text.
-
-									`value` + `onchange` rather than `bind:value`: choosing a call by hand
-									is an act with consequences, and the effect that resets the selection
-									when the bird changes writes the same variable meaning none of them.
-									The binding could not tell the two apart.
-								-->
+									Call
+									{#if songCoverage && songCoverage.placed < 2}
+										<span class="tally mono none" title={songCoverageHint}>not on the map</span>
+									{/if}
+								</span>
 								<select value={songId} onchange={(e) => chooseSong(e.currentTarget.value)}>
 									<option value="">{allSongsOption}</option>
 									{#each songs as s (s.id)}
@@ -3757,20 +3550,6 @@ uv run lyrebird-pipeline build</pre>
 									{/each}
 								</select>
 							</label>
-							<p class="note faint">
-								{currentSong
-									? 'This call only: the chorus sings nothing else and the view is on its knots.'
-									: 'Every call this bird has, and the whole repertoire in frame. Choose one to hear and see it alone.'}
-							</p>
-							<!--
-								Two rows, not four buttons across. Four never fitted the panel and the
-								last of them was pushed past its right edge, which is why the chorus
-								looked like it did nothing: it was still there, just not clickable.
-							-->
-							<!--
-								What each button does is written on the button, and again on hover. It was
-								set out a third time in a paragraph underneath; that paragraph is gone.
-							-->
 							<div class="row">
 								<button
 									class="primary"
@@ -3779,7 +3558,7 @@ uv run lyrebird-pipeline build</pre>
 									title={currentSong
 										? 'Play the chosen call once.'
 										: 'Play one of this bird’s calls once — drawn at random, the way the chorus draws. Choose a call above to fix which.'}
-									>Sing it</button
+									>Sing once</button
 								>
 								<button
 									disabled={!engine}
@@ -3788,172 +3567,74 @@ uv run lyrebird-pipeline build</pre>
 										? `Walk this bird's measured grammar — the transitions fitted to its own field recordings. ${grammarCoverage.placed} of its ${grammarCoverage.total} fitted types won a cluster, so the thread shows those and skips the rest.`
 										: "Walk this bird's measured grammar — the transitions fitted to its own field recordings."}
 								>
-									Improvise
-									{#if grammarCoverage && grammarCoverage.placed < grammarCoverage.total}
-										<span class="tally inline mono" class:none={grammarCoverage.placed < 2}
-											>{grammarCoverage.placed}/{grammarCoverage.total}</span
-										>
-									{/if}
+									Improvise once
 								</button>
 							</div>
-						<!--
-								**Two choruses for one bird, and no Stop.** The modes are different
-								claims about what you are hearing, not two speeds of the same thing:
-								`Songs` plays back a repertoire, `Improvise` samples the measured
-								grammar and produces phrases nobody recorded. So they are a segmented
-								pair, and each one stops the chorus when it is the one already running.
-
-								Stop is gone on the owner's call — *"it stops anyway when we deselect"* —
-								and that is true: clicking the stage clears the bird, and the effect on
-								`speciesId` hands the air back to whatever had it. A third button whose
-								whole job was already done by two other gestures was one more thing
-								that could disagree with them.
-							-->
+							<!-- Two claims about what is heard: its repertoire, or phrases sampled from its grammar.
+							     Each stops the chorus when it is the one already running. -->
+							<span class="lbl">Keep singing</span>
 							<div class="segmented">
 								<button
 									class:on={chorus === 'solo' && soloMode === 'songs'}
 									disabled={!engine}
-									onclick={() => {
-										dispatch({ k: 'setSoloMode', mode: 'songs' });
-										toggleChorus('solo');
-									}}
-									title="Three individuals of this bird answer each other at random intervals, drawing from its repertoire. Each voice keeps its own pitch, timing and position."
+									onclick={() => dispatch({ k: 'pressSolo', mode: 'songs' })}
+									title="Three individuals of this bird answer each other, drawing from its repertoire."
 									>Songs</button
 								>
 								<button
 									class:on={chorus === 'solo' && soloMode === 'improvise'}
 									disabled={!engine}
-									onclick={() => {
-										// Pressing the mode that is already sounding stops it, the same as the
-										// Songs button beside it; asking for a mode you are not in starts it.
-										const wasOn = chorus === 'solo' && soloMode === 'improvise';
-										dispatch({ k: 'setSoloMode', mode: 'improvise' });
-										if (wasOn) silence();
-										else dispatch({ k: 'setChorus', mode: 'solo' });
-									}}
-									title={grammarCoverage
-										? `The same three voices, walking this bird's measured grammar instead of its repertoire — transitions counted from its own field recordings, sampled fresh each phrase. ${grammarCoverage.placed} of its ${grammarCoverage.total} fitted types won a cluster, so the thread shows those and skips the rest.`
-										: "The same three voices, walking this bird's measured grammar instead of its repertoire. Every phrase is sampled fresh, so none of them is one anybody recorded."}
-									>Improvise</button
-								>
+									onclick={() => dispatch({ k: 'pressSolo', mode: 'improvise' })}
+									title="The same three voices, walking this bird's measured grammar. Every phrase is sampled fresh."
+									>Improvised</button
+>
 							</div>
 						{:else}
 							<div class="row">
-								<!--
-									Not `primary`: this is a toggle, and the filled style is reserved
-									for one-shot actions — on a toggle it made the *off* state render
-									black, which reads as pressed. `.on` carries the active look.
-								-->
 								<button
 									class:on={chorus === 'global'}
 									disabled={!engine}
 									onclick={() => toggleChorus('global')}
-									title="The whole aviary at once. Every species draws its own trajectory as it sings. Choose a bird to narrow the labels to its repertoire."
+									title="The whole aviary at once. Press again to stop."
 								>
 									Chorus
 								</button>
 							</div>
 						{/if}
 						{#if chorus !== 'off'}
-							<!--
-								**Two filters, two vocabularies — because sharing one made them read as a single
-								broken control** (owner, 2026-08-06: "we have different counts in synthetic and
-								documented than we have in the chorus … something is wrong piped here").
-
-								Nothing is mispiped. This list counts SONGS by how strong the claim on them is;
-								the Display panel's list counts SOUNDS by where the audio came from. Two
-								populations (2 867 songs against 444 213 points), two taxonomies, and on this
-								corpus they nearly invert — almost every song is our arrangement while almost
-								every point is real field audio. `documented` at 0.6 % of songs and at 0.25 % of
-								points is two true figures about two different things.
-
-								The previous attempt printed the unit on each number ("16 songs", "0.25 % of
-								points") and it was not enough, because the two lists still shared three words
-								AND the same swatch colours — and a coloured swatch in this app means one
-								specific thing: the key to the point cloud. A song class has no points to be the
-								key to. So the swatch is gone from here and the shared words are replaced by the
-								claim each class makes. The filtering is untouched: `chorusClasses` still keys on
-								the old words, which is what `CHORUS_CLASS_CONFIDENCE` maps to song confidences.
-							-->
-							<p class="axis mono">songs, by how strong the claim is</p>
-							<div class="checks">
-								{#each ['documented', 'synthesized', 'recorded'] as cls (cls)}
-									{@const name =
-										cls === 'documented'
-											? 'from the literature'
-											: cls === 'synthesized'
-												? 'our arrangement'
-												: 'unlabelled audio'}
-									{@const hint =
-										cls === 'documented'
-											? 'Songs a person named — described in the literature or established by playback experiments. This counts songs; the Display panel’s “documented” is a share of the 444 213 points, which is a different population.'
-											: cls === 'synthesized'
-												? 'Songs that are our own mapping: fitted from recordings or composed from them. Not a claim about real birds. This counts songs, not sounds.'
-												: 'Songs with no documented function attached. Empty in this build by construction: the pipeline writes `unlabelled` onto syllables and knots, never onto a song, so no song can carry this word however many recordings are loaded.'}
-									{@const have = chorusClassSongs === null ? null : chorusClassSongs.counts[cls]}
-									{@const settled = chorusClassSongs !== null && !chorusClassSongs.partial}
-									{@const share =
-										have !== null && chorusClassSongs && chorusClassSongs.songs > 0
-											? (100 * have) / chorusClassSongs.songs
-											: null}
-									<label class="check" class:absent={settled && have === 0} title={hint}>
-										<input
-											type="checkbox"
-											bind:checked={chorusClasses[cls]}
-											disabled={settled && have === 0}
-										/>
-										<!-- No swatch. A coloured square in this interface is the key to the point cloud,
-										     and this row names a class of songs, which owns no points. -->
-										{name}
-										<!--
-											**The share, not just the count.** On this corpus 99.3 % of songs are
-											`invented` and so fall under `synthesized`, `documented` covers 16 and
-											`recorded` none at all — so switching two of the three off changes
-											nothing anybody can hear, which reads exactly like a broken control.
-											The number is what tells you a working toggle has almost nothing to
-											act on.
-										-->
-										<!--
-											**The unit, on the number** (owner, 2026-08-05: "why is the number in
-											the chorus another than the view? shouldn't it be the same!"). It should
-											not be the same and it cannot be: this list counts *songs by claim
-											strength* and the provenance list counts *points by origin* — 2 851
-											songs against 2 % of 444 213 sounds. Both were right and neither said
-											what it was counting, so two unrelated quantities wearing the same five
-											words read as one quantity reported inconsistently. Naming the axis in a
-											header six lines up was not enough; the unit has to sit on the figure.
-										-->
-										{#if have !== null}
-											<span class="mono faint">
-												{have === 0
-													? chorusClassSongs?.partial
-														? '…'
-														: 'no songs'
-													: share !== null && share < 99.5
-														? `${have} songs · ${share < 1 ? share.toFixed(1) : Math.round(share)}%`
-														: `${have} songs`}
-											</span>
+							<!-- Songs by claim strength, a different axis and population from the Display sources. -->
+							<details class="rollup">
+								<summary class="mono faint">which songs</summary>
+								<div class="checks column">
+									{#each ['documented', 'synthesized', 'recorded'] as cls (cls)}
+										{@const have = chorusClassSongs === null ? null : chorusClassSongs.counts[cls]}
+										{@const settled = chorusClassSongs !== null && !chorusClassSongs.partial}
+										{#if !(settled && have === 0)}
+											<label
+												class="check"
+												title={cls === 'documented'
+													? 'Songs described in the literature or established by playback.'
+													: cls === 'synthesized'
+														? 'Our own ordering of syllables fitted from recordings. Not a claim about real birds.'
+														: 'Songs with no documented function attached.'}
+											>
+												<input type="checkbox" bind:checked={chorusClasses[cls]} />
+												{cls === 'documented'
+													? 'From the literature'
+													: cls === 'synthesized'
+														? 'Our arrangement'
+														: 'Unlabelled audio'}
+												{#if have}<span class="mono faint">{have}</span>{/if}
+											</label>
 										{/if}
-									</label>
-								{/each}
-							</div>
-							<!--
-								**Three sentences of arithmetic, moved to where the arithmetic is.** This
-								paragraph explained that `synthesized` is almost the whole pool and that
-								`recorded` is empty by construction — both of which the per-row counts and
-								the row's own `title` now say, next to the number they are about. What is
-								left is the one thing the counts cannot say: what turning a box off does.
-							-->
-							<p class="note faint">
-								Off re-pools the next song; nothing already playing is cut.
-								{#if chorusClassSongs?.partial}Counts are over the birds loaded so far.{/if}
-							</p>
+									{/each}
+								</div>
+							</details>
 						{/if}
 					</section>
 
-
 					<section class="block">
-						<div class="sliders">
+						<div class="sliders two">
 							<label class="field">
 								<span class="lbl">Distance <b class="mono">{distance.toFixed(2)}</b></span>
 								<input
@@ -3962,28 +3643,13 @@ uv run lyrebird-pipeline build</pre>
 									max="1"
 									step="0.01"
 									bind:value={distance}
-									title="How far away the birds sound and look: air absorption, reverb and the viewing scale move together."
+									title="How far away the birds sound and look."
 								/>
 							</label>
 							<label class="field">
 								<span class="lbl">Volume <b class="mono">{volume.toFixed(2)}</b></span>
-								<!--
-									**Ceiling raised past unity, which is only safe because of the limiter.**
-									A master gain of 1.0 was the loudest the app could go, and it was not loud:
-									every note is normalised by `ampPP` so no syllable ever approaches full
-									scale, and the reverb split takes another chunk. Above 1.0 the sum of a
-									twelve-voice chorus would hard-clip at the output, so `LyrebirdEngine` now
-									ends in a limiter and the extra headroom is usable rather than distorted.
-								-->
 								<input type="range" min="0" max="3" step="0.02" bind:value={volume} />
 							</label>
-							<!--
-								**Tempo belongs to the birds, so it lives with them.** It sat in the display
-								panel and multiplied the cloud's rotation as well as the song rate, which made
-								it read as a view setting: slowing the birds down to hear a call also froze the
-								picture, and the one control did two unrelated jobs. Here it does one — how
-								fast the aviary sings — and `Rotate` under display does the other.
-							-->
 							<label class="field">
 								<span class="lbl">Tempo <b class="mono">{tempo.toFixed(2)}×</b></span>
 								<input
@@ -3992,18 +3658,18 @@ uv run lyrebird-pipeline build</pre>
 									max="2"
 									step="0.05"
 									bind:value={tempo}
-									title="How fast the birds sing: syllable length, start rate, trill and vibrato rate. Pitch does not change — a slowed bird sings longer, not lower."
+									title="How fast the birds sing. Pitch does not change."
 								/>
 							</label>
 							<label class="field">
-								<span class="lbl">Song gap <b class="mono">~{songGapSeconds.toFixed(1)} s</b></span>
+								<span class="lbl">Gap <b class="mono">~{songGapSeconds.toFixed(1)} s</b></span>
 								<input
 									type="range"
 									min="0.25"
 									max="3"
 									step="0.05"
 									bind:value={songRate}
-									title="Mean pause between songs. Gaps scatter around the mean — arrivals are Poisson. Applies to the next gap; songs already playing are untouched."
+									title="Mean pause between songs."
 								/>
 							</label>
 						</div>
@@ -4011,26 +3677,17 @@ uv run lyrebird-pipeline build</pre>
 				{:else if tab === 'words'}
 					<section class="block">
 						<label class="field">
-							<span class="lbl">Species</span>
-						<!-- One-way plus an event, because `speciesId` is a projection of `perf` now and
-							     only `dispatch` may write it. `chooseBird` is also where the tab guard lives:
-							     a pick on this tab records the bird and does not take the air, because this
-							     tab has no chorus controls to give it back with. -->
-						<!-- All 2 489 stay in the list. Narrowing it to the 12 with authored
-							     functions would work nearly always and would quietly present the best
-							     0.48 % of the corpus as if it were the corpus. The dot marks them
-							     instead, so the working set is findable without the scale being lost. -->
+							<span
+								class="lbl"
+								title="• marks the {speciesHasFunctions.size} species with a call whose function is described in the literature. The others have measured syllables and no documented function."
+								>Species</span
+							>
 							<select value={speciesId} onchange={(e) => chooseBird(e.currentTarget.value)}>
 								{#each species as s (s.id)}
 									<option value={s.id}>{speciesHasFunctions.has(s.id) ? '• ' : ''}{s.common}</option>
 								{/each}
 							</select>
 						</label>
-						<p class="note faint">
-							• marks the {speciesHasFunctions.size} species with a call whose function is
-							described in the literature. The other {species.length - speciesHasFunctions.size}
-							have measured syllables and no documented function — real audio, no meaning attached.
-						</p>
 						<!--
 							Text survives as rhythm only. splitSyllables yields the token count and
 							word boundaries; syllable choice comes from the measured grammar, never
@@ -4038,17 +3695,10 @@ uv run lyrebird-pipeline build</pre>
 							keyword path below is unchanged and still renders the real call.
 						-->
 						<label class="field">
-							<span class="lbl">Words for the bird to sing</span>
+							<span class="lbl">Words</span>
 							<textarea bind:value={text} placeholder="danger — come here"></textarea>
 						</label>
-						<!--
-							The functional reading. Two links, shown separately and never merged:
-							the reading of the words is ours and says so in its own line; each call
-							underneath keeps its own evidence badge and citations. When the species
-							has nothing in the read category, the refusal *is* the answer — it is the
-							majority case (99.55 % on a randomly picked bird), so it is designed
-							rather than defaulted.
-						-->
+						<!-- The reading of the words is ours; each call under it keeps its own evidence badge. -->
 						{#if text.trim()}
 							<div class="callout reading">
 								{#if readCategory}
@@ -4060,13 +3710,10 @@ uv run lyrebird-pipeline build</pre>
 										<span class="badge invented">{confidenceLabel('invented').text}</span>
 									</p>
 								{:else}
-									<p class="note">These words do not read as any function this build holds.</p>
-								{/if}
-								<!-- The override is the honest half of the classifier: the machine's
-									     reading is a guess, so the human gets the last word, and every
-									     correction is a labelled datum for the lexicon. -->
+									<p class="note">No function matches these words.</p>
+{/if}
 								<p class="note faint">
-									That reading is ours, not the bird's. Meant something else?
+									Change:
 									{#each CATEGORIES as c (c.id)}
 										<button
 											class="link"
@@ -4076,11 +3723,7 @@ uv run lyrebird-pipeline build</pre>
 										>{c.label}{speciesCategories.includes(c.id) ? '' : '*'}</button>
 									{/each}
 								</p>
-								<!-- The asterisk was unreadable without this: a tooltip is not a legend,
-									     and a reader seeing `contact*` has no way to guess what it marks. -->
-								<p class="note faint">
-									* this bird has no documented call in that category
-								</p>
+								<p class="note faint">* no documented call in that category</p>
 
 								{#if readCalls.length}
 									{#each readCalls as call (call.song.id)}
@@ -4105,33 +3748,21 @@ uv run lyrebird-pipeline build</pre>
 									{#if readIntensity}
 										<p class="note faint">{readIntensity}</p>
 									{/if}
+									<!-- Kept through the cull: this is the claim's own qualifier (docs/08 §8.5). -->
 									<p class="note faint">
-										The category is the bird's; the decision that your words belong in it is
-										ours. We are not claiming these are the words the bird would be saying.
+										The category is the bird's. The assignment of your words to it is ours, and
+										these are not words the bird would say.
 									</p>
 								{:else if readRefusal}
 									<p class="note faint">{readRefusal}</p>
 								{/if}
 							</div>
 						{/if}
-						<!--
-							The old keyword branch is gone: the reading above subsumes it, and it
-							renders the same authored calls by a route that also has a refusal state.
-							What is left here is the invented-rendering notice, which still applies
-							whenever there is a phrase and no authored call was offered.
-						-->
 						{#if preview && preview.source !== 'documented' && !readCalls.length}
-							<!--
-								The "no documented call matches / what plays is rhythm" callout that
-								used to sit here has gone: the reading above now says both, and the
-								browser probe's refusal shot showed it said them twice in a row. What
-								is still worth keeping is the offer of a bird that *does* have the
-								call, which is the one thing the reading cannot say for itself.
-							-->
 							{#if preview.documentedElsewhere?.length}
 								<p class="note faint">
-									A documented call for this exists, but not for this bird:
-									{#each preview.documentedElsewhere as other (other)}
+									Documented for:
+{#each preview.documentedElsewhere as other (other)}
 										<button class="link" onclick={() => chooseBird(other)}>
 											{assets.speciesCommon(other)}
 										</button>
@@ -4139,17 +3770,12 @@ uv run lyrebird-pipeline build</pre>
 								</p>
 							{/if}
 						{/if}
-						<!--
-							The primary path: one click turns the words into a strip (their
-							rhythm, this bird's syllables) and plays it. The strip stays
-							editable afterwards — the button is a starting point, not a lock.
-						-->
 						<div class="row">
 							<button
 								class="primary"
 								disabled={!engine || !currentSpecies || !text.trim()}
 								onclick={singWordsRhythm}
-								title="Fill the strip to the words' rhythm — syllable count and word breaks; the words choose nothing else — and play it straight away."
+								title="Only the words' rhythm is used. The syllables are this bird's own."
 							>Sing the words</button>
 						</div>
 
@@ -4189,25 +3815,10 @@ uv run lyrebird-pipeline build</pre>
 									>{composeCoverage.placed}/{composeCoverage.total}</span>
 								{/if}
 							</div>
-						{:else}
-							<p class="note faint">
-								{#if composeMode === 'types'}
-									Pick a song type from "Build the strip by hand" — the strip shows what played.
-								{:else}
-									The strip is empty. Write words above, or open "Build the strip by hand".
-								{/if}
-							</p>
 						{/if}
 
-						<!--
-							The manual machinery — mode switch, suggestions, motif offers,
-							song types, the keyboard — folds behind one line: the words are the
-							primary input now, and three ways to fill a strip by hand should not be
-							the first thing the tab shows. Nothing inside changed; only its place
-							in the markup moved.
-						-->
 						<details class="rollup block">
-							<summary class="mono faint">build the strip by hand</summary>
+							<summary class="mono faint">build by hand</summary>
 							<!--
 								Three ways to fill one strip. The mode changes only what the context
 								row offers; every mode ends in the same singPhrase, so badge, note, galaxy
@@ -4233,11 +3844,8 @@ uv run lyrebird-pipeline build</pre>
 
 						{#if composeMode === 'types'}
 							{#if composeTyping}
-								<p class="note faint">
-									{composeTyping.inTypes} of {composeTyping.bouts} recorded
-									<b class="term" title={BOUT_GLOSS}>bouts</b> — bursts of singing, syllables
-									less than a second apart — fall into {composeTyping.types} types;
-									{composeTyping.unplaced} were heard once. Type ids renumber on every refit.
+								<p class="note faint" title={BOUT_GLOSS}>
+									{composeTyping.inTypes} of {composeTyping.bouts} bouts fall into {composeTyping.types} types.
 								</p>
 							{/if}
 							{#if composeTypes.length}
@@ -4294,9 +3902,9 @@ uv run lyrebird-pipeline build</pre>
 								{:else}
 									<p class="note faint">
 										{composeTokens.length
-											? 'No measured transition continues from here — the burst of singing ends, or pick any chip below.'
-											: 'No grammar fitted for this bird — the chips below are unranked.'}
-									</p>
+											? 'No measured transition continues from here.'
+: 'No grammar fitted for this bird.'}
+</p>
 								{/if}
 								{#if composeChunks.length}
 									<div class="suggestions">
@@ -4317,7 +3925,7 @@ uv run lyrebird-pipeline build</pre>
 									disabled={!engine}
 									onclick={singImprovisation}
 									title="Let the measured grammar walk itself — the same sampler as the Sing tab's Improvise."
-								>Auto: let the grammar walk</button>
+								>Improvise</button>
 							{/if}
 							<!--
 								The keyboard is every fitted type, suggestion or not: the grammar is
@@ -4372,37 +3980,11 @@ uv run lyrebird-pipeline build</pre>
 									{/each}
 								</select>
 							</label>
-							{#if !inputDevices.length}
-								<p class="note faint">
-									No input devices reported yet. They appear once the browser has been granted
-									microphone access — start the input once, or check that one is plugged in.
-								</p>
-							{:else if !inputDevices[0].label}
-								<p class="note faint">
-									Device names appear once you have granted microphone permission once.
-								</p>
-							{/if}
 						{:else}
-							<!--
-								Two different mechanisms wear one button, and which one ran decides what
-								the user should expect — so the panel says which, after the fact, rather
-								than promising one up front.
-							-->
 							{#if inputVia === 'monitor'}
-								<p class="note faint">Through this computer's monitor device — nothing is shared.</p>
+								<p class="note faint">Using this computer's monitor device.</p>
 							{:else if inputVia === 'display'}
-								<p class="note faint">
-									No monitor device on this machine, so the browser's screen-capture dialog is the
-									only route. The video is discarded on arrival — only the sound is read.
-								</p>
-							{:else}
-								<!-- The PipeWire/PulseAudio explanation was three sentences about which of two
-								     routes a given desktop takes. The two branches above already say which route
-								     THIS machine took, once it is known; before that, one line is enough. -->
-								<p class="note faint">
-									Reads what this computer is playing. Captured directly where the sound system
-									offers a monitor of the output, otherwise through the browser's share dialog.
-								</p>
+								<p class="note faint">Using the share dialog. Video is discarded.</p>
 							{/if}
 						{/if}
 						<div class="row">
@@ -4410,7 +3992,7 @@ uv run lyrebird-pipeline build</pre>
 								class:on={micOn}
 								disabled={!engine}
 								onclick={toggleMic}
-								title="The same analysis the synthetic bird gets: one 28-d descriptor per frame, matched to the nearest cluster. Audio stays on your device. Below about 25 % match, nothing is reported."
+								title="Audio stays on your device."
 							>
 								{micOn ? 'Stop input' : 'Start input'}
 							</button>
@@ -4437,58 +4019,9 @@ uv run lyrebird-pipeline build</pre>
 									</div>
 								</div>
 							{/each}
-							<p class="note faint">
-								{#if pipelineStatus}
-									Segmented into syllables and folded into the learning store; fit them on the
-									<b>learn</b> page, from the header.
-								{:else}
-									Start <span class="mono">lyrebird-pipeline serve</span> to send a recording into
-									the learning store.
-								{/if}
-							</p>
-						</section>
-					{/if}
-					{#if pinned}
-						<section class="block">
-							<h3 class="blocktitle">Pinned cluster</h3>
-							<p class="strong">{pinned.label}</p>
-							<dl class="facts mono">
-								<div><dt>points</dt><dd>{pinned.count}</dd></div>
-								{#if pinned.cohesion !== undefined}<div><dt>cohesion</dt><dd>{pinned.cohesion.toFixed(3)}</dd></div>{/if}
-								<!--
-									**Where the knot says whether the picture can be trusted about it.** The
-									manifest has always carried the aggregate — 2 035 of 6 316 measured knots
-									drawn in two places, on a map whose distance faithfulness is 0.43 — and the
-									per-knot ratios were computed and thrown away, so this panel could describe
-									a knot's cohesion and radius while staying silent about whether its mark is
-									in one piece. Unmeasured is printed as unmeasured: 9 025 of 15 341 knots
-									have no value, and only 6 771 of those are the small ones.
-								-->
-								<div>
-									<dt>drawn in</dt>
-									<dd>
-										{#if pinned.tearing === undefined}
-											<!-- The two causes are distinguishable from the knot's own count, and
-											     they are different claims: one is "too small to ask", the other is
-											     "asked, and its own split was degenerate". Neither is "one place". -->
-											{pinned.count < 12
-												? 'not measured — fewer than 12 points'
-												: 'not measured — its own split isolates one point'}
-										{:else if pinned.tearing > 8}
-											two places, far apart ({pinned.tearing.toFixed(1)})
-										{:else if pinned.tearing > 5}
-											two places ({pinned.tearing.toFixed(1)})
-										{:else}
-											one place ({pinned.tearing.toFixed(1)})
-										{/if}
-									</dd>
-								</div>
-								{#if pinned.meanDuration}<div><dt>duration</dt><dd>{Math.round(pinned.meanDuration * 1000)} ms</dd></div>{/if}
-								{#if pinned.functionClass}<div><dt>class</dt><dd>{pinned.functionClass}</dd></div>{/if}
-							</dl>
-							<p class="note">{pinned.function || 'No documented function.'}</p>
-							<button onclick={() => dispatch({ k: 'pickKnot', knot: pinnedCluster, speciesId: '' })}
-								>Unpin</button>
+							{#if !pipelineStatus}
+								<p class="note faint">Start <span class="mono">lyrebird-pipeline serve</span> to learn from these.</p>
+							{/if}
 						</section>
 					{/if}
 				{/if}
@@ -4498,6 +4031,7 @@ uv run lyrebird-pipeline build</pre>
 			{#if audioError}<p class="error note pad">{audioError}</p>{/if}
 			</aside>
 			{/if}
+			</div>
 		</div>
 
 		<!--
@@ -4537,15 +4071,7 @@ uv run lyrebird-pipeline build</pre>
 		<div class="centred overlay">
 			<div class="card">
 				<h1>Enter the aviary</h1>
-				<p>
-					Every note here is synthesised from a physical model of the syrinx — the two-parameter
-					oscillator real birds drive with air-sac pressure and syringeal tension. Nothing is
-					sampled, nothing is pre-rendered.
-				</p>
-				<p class="faint">
-					Audio needs a click to start. Headphones are a good idea if you plan to use the
-					microphone.
-				</p>
+				<p>Every note is synthesised from a physical model of the syrinx. Nothing is sampled.</p>
 				<button class="primary" onclick={enter}>Start listening</button>
 				{#if audioError}<p class="error">{audioError}</p>{/if}
 			</div>
@@ -4579,48 +4105,70 @@ uv run lyrebird-pipeline build</pre>
 		justify-content: space-between;
 		align-items: center;
 		gap: 1rem;
-		padding: 0.55rem 1rem;
+		position: relative;
+		padding: 0.6rem 1rem;
 		background: var(--paper-raised);
 		border-bottom: 1px solid var(--rule);
 		z-index: 4;
 	}
 
+	.brand {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.brandmark {
+		width: 0.7rem;
+		height: 0.7rem;
+		border-radius: 50%;
+		background: var(--signal);
+	}
+
 	.hud h1 {
-		font-size: 0.95rem;
+		margin: 0;
+		font-size: 1.05rem;
 		font-weight: 600;
 		letter-spacing: -0.01em;
 	}
 
-	/* Every live figure in one strip, labelled, monospaced, tabular — an instrument
-	   readout rather than a status bar. */
-	.readings {
-		display: flex;
-		margin: 0;
-		font-size: 0.68rem;
+	/* The loudness of what is sounding, along the header's bottom edge. Scaled, never resized,
+	   so it stays on the compositor. `accent.ts` writes the transform. */
+	.pulse {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: -1px;
+		height: 2px;
+		background: var(--signal);
+		transform: scaleX(0);
+		will-change: transform;
+		pointer-events: none;
 	}
 
-	/* Every cell of the row, including the two that open a page.
-	   **The openers used to be excluded from this**, because a `> div` selector does not
-	   match a `<button>` — so they had no padding and no divider, and `info close` ran
-	   straight into `learn open` as one word. A cell of the readings row is a cell of the
-	   readings row whichever element it is. */
-	.readings > div,
-	.readings > .reading-open {
-		display: grid;
-		gap: 0.1rem;
-		padding: 0 0.75rem;
-		border-left: 1px solid var(--rule);
+	.readings {
+		display: flex;
+		align-items: center;
+		margin: 0;
+		font-size: 0.72rem;
+	}
+
+	.readings > div {
+		display: flex;
+		align-items: baseline;
+		gap: 0.4rem;
+		padding: 0 0.8rem;
 	}
 
 	.readings dt {
 		color: var(--ink-faint);
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		font-size: 0.56rem;
+		font-family: var(--font-sans);
+		font-size: 0.72rem;
 	}
 
 	.readings dd {
 		margin: 0;
+		min-width: 2.2rem;
 		color: var(--ink);
 		font-size: 0.8rem;
 	}
@@ -4634,7 +4182,8 @@ uv run lyrebird-pipeline build</pre>
 	.readings .meter dd {
 		display: flex;
 		align-items: center;
-		height: 1.1rem;
+		align-self: center;
+		height: 1rem;
 	}
 
 	.stage-wrap {
@@ -4757,6 +4306,7 @@ uv run lyrebird-pipeline build</pre>
 	.viewbtn.open {
 		border-color: var(--signal);
 		color: var(--signal);
+		transition: none;
 	}
 
 	/* The map switcher is the Learn tab's segmented control moved onto the view: same
@@ -4798,40 +4348,37 @@ uv run lyrebird-pipeline build</pre>
 		}
 	}
 
-	/* A page opener wearing a reading's clothes: same stack, same type, no button chrome
-	   until it is hovered or open, so the header row stays a row of facts. */
+	/* A page door: text until it is open, so the row stays quiet. */
 	.reading-open {
-		display: block;
 		flex: initial;
-		padding: 0;
+		margin-left: 0.2rem;
+		padding: 0.3rem 0.65rem;
 		border: 0;
 		background: none;
-		text-align: left;
-		font: inherit;
-		color: inherit;
-		cursor: pointer;
+		font-family: var(--font-sans);
+		font-size: 0.8rem;
+		font-weight: 500;
+		color: var(--ink-dim);
 	}
 
-	.reading-open dt {
-		text-decoration: underline;
-		text-underline-offset: 0.2em;
-		text-decoration-color: var(--rule);
+	.reading-open:first-of-type {
+		margin-left: 0.8rem;
 	}
 
-	.reading-open:hover dt,
-	.reading-open.on dt {
-		color: var(--signal);
-		text-decoration-color: var(--signal);
+	.reading-open:hover:not(:disabled) {
+		background: var(--paper);
 	}
 
-	.reading-open.on dd {
+	.reading-open.on {
+		background: var(--signal-soft);
 		color: var(--signal);
 	}
 
 	.level {
 		display: block;
-		width: 5rem;
+		width: 4.5rem;
 		height: 3px;
+		border-radius: 999px;
 		background: var(--rule);
 		overflow: hidden;
 	}
@@ -4839,12 +4386,8 @@ uv run lyrebird-pipeline build</pre>
 	.level span {
 		display: block;
 		height: 100%;
-		background: var(--ink-dim);
-		transition: width 80ms linear;
-	}
-
-	.level span.hot {
 		background: var(--signal);
+		transition: width 80ms linear;
 	}
 
 	/* --- panels --- */
@@ -4862,35 +4405,60 @@ uv run lyrebird-pipeline build</pre>
 		background: var(--paper-raised);
 		border: 1px solid var(--rule);
 		border-radius: var(--radius);
+		box-shadow: var(--lift);
 		overflow: hidden;
 	}
 
-	.controls {
-		top: calc(var(--ruler) + 1rem);
-		left: calc(var(--ruler) + 1rem);
-		width: 20rem;
-		/* **Percentages, not a pixel budget** — see `.readout`. The two cards share the
-		   left column and this is the half that decides they cannot collide at any window
-		   height. `.cardbody` scrolls, so a squeezed tab loses no content. */
-		max-height: calc(58% - var(--ruler));
+	/* On a bench the controls and the reading stack as one column, each as tall as what it
+	   holds, and either scrolls when the two together outgrow the window. On a phone the
+	   column dissolves and each card is a drawer. */
+	.leftcol {
+		display: contents;
 	}
 
-	/* **The reading moved from bottom-right to under the controls** (owner, 2026-08-05).
-	   It used to float over the specimen, on the argument that a report belongs next to the
-	   thing it reports on. Against that: it shared the right-hand side with the Display
-	   panel dropping from the button above it, so the one card that changes on every sound
-	   was the one competing for space with a card you open on purpose. On the left it sits
-	   under the controls that caused the sound, which is the order they happen in.
+	@media (min-width: 861px) {
+		.leftcol {
+			position: absolute;
+			top: calc(var(--ruler) + 1rem);
+			left: calc(var(--ruler) + 1rem);
+			bottom: 1rem;
+			z-index: 3;
+			display: flex;
+			flex-direction: column;
+			gap: 0.6rem;
+			width: 20rem;
+			pointer-events: none;
+		}
 
-	   Fixed to the same left edge and width as `.controls` so the two read as one column
-	   rather than two cards that happen to be near each other. */
-	.readout {
-		bottom: 1rem;
-		left: calc(var(--ruler) + 1rem);
-		width: min(20rem, calc(100% - 2rem));
-		/* 38 + 58 leaves the gap between them. The body scrolls, so this costs nothing but
-		   the illusion that a long reading has to be read all at once. */
-		max-height: 38%;
+		.leftcol > .panel {
+			position: static;
+			flex: 0 1 auto;
+			min-height: 0;
+			max-height: none;
+			width: 100%;
+			pointer-events: auto;
+		}
+
+		.leftcol > .controls {
+			order: 0;
+			flex-shrink: 2;
+		}
+
+		.leftcol > .readout {
+			order: 1;
+			max-height: 45%;
+		}
+	}
+
+	.readout .quiet {
+		padding: 0.6rem 1rem;
+	}
+
+	.pinhead {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
 	}
 
 	.readout .best,
@@ -4923,11 +4491,9 @@ uv run lyrebird-pipeline build</pre>
 
 	.tabs button {
 		flex: 1;
-		padding: 0.65rem 0.3rem 0.55rem;
-		font-size: 0.62rem;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.12em;
+		padding: 0.7rem 0.3rem 0.6rem;
+		font-size: 0.8rem;
+		font-weight: 500;
 		color: var(--ink-faint);
 		background: none;
 		border: none;
@@ -4943,6 +4509,7 @@ uv run lyrebird-pipeline build</pre>
 	.tabs button.active {
 		color: var(--ink);
 		border-bottom-color: var(--signal);
+		transition: none;
 	}
 
 	.clip {
@@ -4960,12 +4527,17 @@ uv run lyrebird-pipeline build</pre>
 		justify-content: space-between;
 		align-items: baseline;
 		gap: 0.5rem;
-		font-size: 0.58rem;
-		text-transform: uppercase;
-		letter-spacing: 0.11em;
-		color: var(--ink-faint);
-		padding: 0.85rem 1rem 0.6rem;
+		margin: 0;
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: var(--ink);
+		padding: 0.65rem 1rem;
 		border-bottom: 1px solid var(--rule);
+	}
+
+	.readout h2 .link {
+		font-size: 0.72rem;
+		font-weight: 400;
 	}
 
 	/* Which question a filter answers. The chorus filter and the point filter share three
@@ -4973,10 +4545,11 @@ uv run lyrebird-pipeline build</pre>
 	   source. */
 	.axis {
 		margin: 0 0 0.3rem;
-		font-size: 0.6rem;
-		letter-spacing: 0.04em;
-		text-transform: lowercase;
-		color: var(--ink-faint);
+		font-family: var(--font-sans);
+		font-size: 0.74rem;
+		font-weight: 500;
+		color: var(--ink-dim);
+		text-transform: capitalize;
 	}
 
 
@@ -4990,21 +4563,20 @@ uv run lyrebird-pipeline build</pre>
 
 	.cost div {
 		display: grid;
-		grid-template-columns: 3.2rem minmax(0, 1fr);
+		grid-template-columns: 3.6rem minmax(0, 1fr);
 		gap: 0.5rem;
 		align-items: baseline;
 	}
 
 	.cost dt {
-		font-size: 0.62rem;
+		font-size: 0.7rem;
 		color: var(--ink-faint);
-		letter-spacing: 0.04em;
 	}
 
 	.cost dd {
 		margin: 0;
-		font-size: 0.68rem;
-		color: var(--ink-dim);
+		font-size: 0.74rem;
+		color: var(--ink);
 	}
 
 	/* Vendor strings run long ("ANGLE (Intel, Mesa Intel(R) Graphics (RPL-S), OpenGL
@@ -5106,11 +4678,10 @@ uv run lyrebird-pipeline build</pre>
 
 	.badge {
 		justify-self: start;
-		font-size: 0.56rem;
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		padding: 0.1rem 0.35rem;
-		border-radius: 2px;
+		font-size: 0.66rem;
+		font-weight: 500;
+		padding: 0.08rem 0.45rem;
+		border-radius: 999px;
 		border: 1px solid currentColor;
 	}
 
@@ -5137,7 +4708,7 @@ uv run lyrebird-pipeline build</pre>
 	.bar span {
 		display: block;
 		height: 100%;
-		background: var(--ink-dim);
+		background: var(--signal);
 		transition: width 120ms linear;
 	}
 
@@ -5176,7 +4747,7 @@ uv run lyrebird-pipeline build</pre>
 		vertical-align: middle;
 	}
 
-	.quality.mid { background: var(--ink-dim); }
+	.quality.mid { background: color-mix(in srgb, var(--signal) 50%, var(--rule)); }
 	.quality.low { background: var(--rule); }
 
 	.suggestions {
@@ -5217,10 +4788,8 @@ uv run lyrebird-pipeline build</pre>
 	}
 
 	.caveat {
-		padding: 0.7rem 1rem;
+		padding: 0.5rem 1rem;
 		border-top: 1px solid var(--rule);
-		color: var(--ink-faint);
-		font-size: 0.68rem;
 	}
 
 	/* --- what has been sung --- */
@@ -5235,7 +4804,7 @@ uv run lyrebird-pipeline build</pre>
 		   middle of the stage. It still clips at the left rather than sliding under the left
 		   column, and `row-reverse` already packs the newest chip at the right end, so the
 		   strip now grows leftwards out of the corner and the mask fades its old end. */
-		left: calc(var(--ruler) + 20rem + 3rem);
+		left: calc(var(--ruler) + 20rem + 2rem);
 		right: 1rem;
 		z-index: 2;
 		display: flex;
@@ -5273,13 +4842,13 @@ uv run lyrebird-pipeline build</pre>
 	}
 
 	.sung-name {
-		font-size: 0.68rem;
+		font-size: 0.72rem;
 		color: var(--ink);
 		white-space: nowrap;
 	}
 
 	.sung-label {
-		font-size: 0.62rem;
+		font-size: 0.66rem;
 		color: var(--ink-faint);
 		white-space: nowrap;
 		overflow: hidden;
@@ -5387,10 +4956,6 @@ uv run lyrebird-pipeline build</pre>
 		letter-spacing: 0.01em;
 	}
 
-	.loadtext .strap {
-		margin: 0.1rem 0 0;
-	}
-
 	/* Full width under the mark and the name, so the bar measures the whole card rather than
 	   the column the text happens to occupy. */
 	.loadbar {
@@ -5416,14 +4981,9 @@ uv run lyrebird-pipeline build</pre>
 		margin: 0;
 	}
 
-	.loading .note {
-		grid-column: 1 / -1;
-		margin: 0;
-	}
-
+	/* No backdrop blur: it would re-blur the whole canvas every frame behind a card. */
 	.overlay {
-		background: rgba(250, 251, 252, 0.72);
-		backdrop-filter: blur(2px);
+		background: rgba(250, 251, 252, 0.8);
 		z-index: 6;
 	}
 
@@ -5432,6 +4992,7 @@ uv run lyrebird-pipeline build</pre>
 		background: var(--paper-raised);
 		border: 1px solid var(--rule);
 		border-radius: var(--radius);
+		box-shadow: var(--lift);
 		padding: 1.6rem;
 		display: grid;
 		gap: 0.8rem;
@@ -5506,10 +5067,8 @@ uv run lyrebird-pipeline build</pre>
 		border: 0;
 		border-radius: 0;
 		background: none;
-		font-size: 0.64rem;
-		font-weight: 600;
-		letter-spacing: 0.09em;
-		text-transform: uppercase;
+		font-size: 0.8rem;
+		font-weight: 500;
 		color: var(--ink-faint);
 		/* The open drawer's item, marked on the edge the drawer comes from. */
 		border-top: 2px solid transparent;
@@ -5543,16 +5102,9 @@ uv run lyrebird-pipeline build</pre>
 			grid-template-rows: auto 1fr auto;
 		}
 
-		/* The header gives back everything it can. The strap is three disclaimers in a
-		   9 px face — unreadable at this width and two lines tall — and `title` still
-		   carries it for anyone who asks. What stays is the name and the two page doors. */
 		.hud {
 			padding: 0.4rem 0.7rem;
 			gap: 0.5rem;
-		}
-
-		.brand .strap {
-			display: none;
 		}
 
 		.readings {
@@ -5561,8 +5113,6 @@ uv run lyrebird-pipeline build</pre>
 
 		/* A door, at a size a thumb can hit. */
 		.readings > .reading-open {
-			display: grid;
-			align-content: center;
 			min-height: 2.6rem;
 			padding: 0 0.6rem;
 		}
@@ -5621,7 +5171,6 @@ uv run lyrebird-pipeline build</pre>
 
 		.readings.inpanel > div {
 			padding: 0;
-			border-left: 0;
 		}
 
 		/* The corner pair keeps its place — how the picture is drawn is a property of the
@@ -5747,13 +5296,4 @@ uv run lyrebird-pipeline build</pre>
 		}
 	}
 
-	/* The bench, once there is room for a column beside the stage but not for a second card
-	   under it. Unchanged behaviour, stated as a range rather than as a ceiling: below
-	   861 px the reading is a drawer the dock opens, and a bare `max-width` here would
-	   `display: none` it out of that drawer. */
-	@media (min-width: 861px) and (max-width: 1180px) {
-		.readout {
-			display: none;
-		}
-	}
 </style>

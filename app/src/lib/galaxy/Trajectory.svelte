@@ -4,6 +4,7 @@
 	import * as THREE from 'three';
 	import { clusterProvenance, knotHeat } from '$lib/data/assets';
 	import type { LyrebirdAssets } from '$lib/data/types';
+	import { doubtKnotColour, doubtLayerOn, NO_DOUBT_LAYER, type DoubtLayer } from './doubt-paths';
 	import { ACCENT, provenanceColourScaled, speciesColourScaled } from './palette';
 	import type { LayoutView } from './layouts';
 	import {
@@ -29,9 +30,19 @@
 		pointSize?: number;
 		/** Colour the threads by the knot's provenance class instead of leaving them neutral. */
 		prov?: boolean;
+		/** Colour the threads by the knot's doubt, ahead of provenance. */
+		doubt?: DoubtLayer;
 	}
 
-	let { assets, signal, view, spread = 1, pointSize = 3, prov = false }: Props = $props();
+	let {
+		assets,
+		signal,
+		view,
+		spread = 1,
+		pointSize = 3,
+		prov = false,
+		doubt = NO_DOUBT_LAYER
+	}: Props = $props();
 
 	/** Samples per segment: enough that the travelling highlight moves smoothly. */
 	const SUBDIVISIONS = 14;
@@ -50,10 +61,10 @@
 	 * the tags and the response accent, and on every thread at once it read as the
 	 * ball of wool the crowd factor below exists to prevent.
 	 */
+	const heat = untrack(() => knotHeat(assets));
+	const light = (i: number) => 0.9 + (heat[i] ?? 0.5) * 0.2;
 	const knotPalettes = untrack(() => {
-		const heat = knotHeat(assets);
 		const classes = clusterProvenance(assets);
-		const light = (i: number) => 0.9 + (heat[i] ?? 0.5) * 0.2;
 		return {
 			provenance: centroids.map(
 				(_, i) => new THREE.Color(provenanceColourScaled(classes[i] ?? 4, light(i)))
@@ -78,7 +89,17 @@
 			)
 		};
 	});
-	const knotColours = $derived(prov ? knotPalettes.provenance : knotPalettes.ink);
+	// Doubt is built on each switch rather than up front: its pair of channels has four
+	// states, nearly every session stays in the other two languages, and a switch is a click
+	// rather than a note. Doubt comes first, as it does on the tags.
+	const doubtOn = $derived(doubtLayerOn(doubt));
+	const knotColours = $derived(
+		doubtOn
+			? centroids.map((_, i) => new THREE.Color(doubtKnotColour(assets, i, doubt, light(i))))
+			: prov
+				? knotPalettes.provenance
+				: knotPalettes.ink
+	);
 	// Preallocated to every path we will ever draw at once, then a draw range is set per
 	// rebuild — reallocating buffers on every note would churn GPU memory during a chorus.
 	// Line *segments* rather than a strip, so separate paths are never joined together.
@@ -221,6 +242,7 @@
 	// what was baked. Without this the threads keep the old hues until the next note.
 	$effect(() => {
 		void prov;
+		void doubt;
 		builtVersion = -1;
 	});
 
@@ -240,7 +262,10 @@
 	 * the live position.
 	 */
 	$effect(() => {
-		(beadMaterial.uniforms.uColdColor.value as THREE.Color).set(prov ? '#9aa6b8' : ACCENT);
+		// Doubt needs the same hand-over: at rest a bead is mostly its cold colour.
+		(beadMaterial.uniforms.uColdColor.value as THREE.Color).set(
+			prov || doubtOn ? '#9aa6b8' : ACCENT
+		);
 	});
 
 	/** Lays every active path out as a run of short segments between cluster centroids. */
@@ -313,6 +338,9 @@
 
 	useTask((delta) => {
 		syncResolution();
+		// Set once at construction, this left the beads the wrong size after a drag to a monitor
+		// with another ratio, while the cloud they run between corrected itself every frame.
+		beadMaterial.uniforms.uPixelRatio.value = Math.min(2, window.devicePixelRatio || 1);
 		// Rebuild when the set of paths changes, and on every frame of a rearrangement —
 		// otherwise the threads stay behind while the knots they connect move away.
 		if (signal.pathsVersion !== builtVersion || view.version !== builtLayout) {

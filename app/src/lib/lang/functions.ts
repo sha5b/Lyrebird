@@ -185,6 +185,11 @@ function normalise(text: string): string {
 		.trim();
 }
 
+/** A phrase on word boundaries: "no hawk" is not in "piano hawks". */
+export function hasPhrase(norm: string, phrase: string): boolean {
+	return ` ${norm} `.includes(` ${phrase} `);
+}
+
 export interface FunctionReading {
 	category: FunctionCategory;
 	/** The lexicon terms that produced this reading, for the UI to show. */
@@ -208,7 +213,7 @@ export function classify(text: string): FunctionReading | null {
 	const scored: { category: FunctionCategory; matched: string[]; score: number }[] = [];
 	for (const category of Object.keys(LEXICON) as FunctionCategory[]) {
 		const matched = LEXICON[category].filter((term) =>
-			term.includes(' ') ? norm.includes(term) : words.has(term)
+			term.includes(' ') ? hasPhrase(norm, term) : words.has(term)
 		);
 		if (matched.length) {
 			scored.push({ category, matched, score: matched.join('').length });

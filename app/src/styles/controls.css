@@ -18,11 +18,10 @@ button {
 	background: var(--paper-raised);
 	border: 1px solid var(--rule);
 	border-radius: var(--radius);
-	padding: 0.4rem 0.7rem;
-	font-size: 0.76rem;
+	padding: 0.45rem 0.75rem;
+	font-size: 0.8rem;
 	font-weight: 500;
-	letter-spacing: 0.015em;
-	color: var(--ink-dim);
+	color: var(--ink);
 	transition:
 		background 110ms ease,
 		border-color 110ms ease,
@@ -44,17 +43,19 @@ button:disabled {
 	cursor: not-allowed;
 }
 
-/* The primary action is the only filled control on the page. */
+/* The primary action is the only filled control on the page, and it wears the accent.
+   No transition on these two: `--signal` moves at 30 Hz while a bird sings, and a colour
+   transition would restart on every write. */
 button.primary {
-	background: var(--ink);
-	border-color: var(--ink);
-	color: var(--paper-raised);
-	font-weight: 500;
+	background: var(--signal);
+	border-color: var(--signal);
+	color: #fff;
+	transition: none;
 }
 
 button.primary:hover:not(:disabled) {
-	background: var(--signal);
-	border-color: var(--signal);
+	background: color-mix(in srgb, var(--signal) 82%, #fff);
+	border-color: color-mix(in srgb, var(--signal) 82%, #fff);
 	color: #fff;
 }
 
@@ -62,6 +63,7 @@ button.on {
 	border-color: var(--signal);
 	color: var(--signal);
 	background: var(--signal-soft);
+	transition: none;
 }
 
 select,
@@ -71,7 +73,8 @@ textarea {
 	background: var(--paper-raised);
 	border: 1px solid var(--rule);
 	border-radius: var(--radius);
-	padding: 0.35rem 0.45rem;
+	padding: 0.4rem 0.5rem;
+	font-size: 0.8rem;
 	color: var(--ink);
 }
 
@@ -86,6 +89,45 @@ textarea:focus-visible {
 input[type='range'] {
 	width: 100%;
 	accent-color: var(--signal);
+}
+
+/* `accent-color` is not enough in Firefox: it paints the filled part and leaves the knob a
+   fixed grey, so the largest part of every slider ignored the accent while Chromium's
+   followed it. Firefox drops its native drawing for the whole control as soon as one part
+   has an author background, which is why the track and the fill are stated too. Chromium
+   ignores these rules and keeps `accent-color`. Each stays a separate rule because one
+   unknown pseudo-element invalidates a whole selector list. */
+input[type='range']::-moz-range-track {
+	height: 0.5rem;
+	background: var(--rule-strong);
+	border-radius: 999px;
+}
+
+input[type='range']::-moz-range-progress {
+	height: 0.5rem;
+	background: var(--signal);
+	border-radius: 999px;
+}
+
+input[type='range']::-moz-range-thumb {
+	width: 1rem;
+	height: 1rem;
+	background: var(--signal);
+	border: none;
+	border-radius: 50%;
+}
+
+input[type='range']:focus-visible::-moz-range-thumb {
+	outline: 2px solid var(--signal);
+	outline-offset: 2px;
+}
+
+input[type='range']:disabled::-moz-range-thumb {
+	background: var(--rule-strong);
+}
+
+input[type='range']:disabled::-moz-range-progress {
+	background: var(--rule-strong);
 }
 
 input[type='checkbox'] {

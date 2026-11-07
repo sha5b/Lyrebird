@@ -99,11 +99,6 @@
 	// that bird's shard first.
 	const centroids = untrack(() => assets.centroids.items);
 	const speciesName = (id: string) => assets.speciesCommon(id);
-	// What a knot's extent is made of: real field syllables, or our own renders. The
-	// ρ and r figures next to it measure that extent, so the tag says which it is.
-	const evidenceLabel = (c: Centroid): string =>
-		c.sources ? ((c.sources['field'] ?? 0) > 0 ? 'measured' : 'invented') : '';
-
 	/**
 	 * Whether this knot's own tag should admit that the projection draws it in two places.
 	 *
@@ -232,13 +227,11 @@
 						that line.
 					-->
 					<div class="head">
-						<span class="id mono">C{String(centroid.id).padStart(2, '0')}</span>
 						<span class="name">{speciesName(centroid.speciesId)}</span>
 					</div>
 					<div class="meta mono">
 						<!-- full stored label on hover, so a fitted type's id is one gesture away -->
 						<span class="sound" title={centroid.label}>{tagName(centroid)}</span>
-						<span>n={centroid.count}</span>
 						{#if centroid.meanDuration}<span>{Math.round(centroid.meanDuration * 1000)} ms</span>{/if}
 					</div>
 					<div class="detail">
@@ -246,9 +239,6 @@
 						<div class="figures mono">
 							<!-- written by NodeProjector, and only when the rounded value changes -->
 							<span class="match" data-match>—</span>
-							{#if centroid.cohesion !== undefined}<span>ρ {centroid.cohesion.toFixed(2)}</span>{/if}
-							{#if centroid.radius !== undefined}<span>r {centroid.radius.toFixed(2)}</span>{/if}
-							{#if evidenceLabel(centroid)}<span class="evidence">{evidenceLabel(centroid)}</span>{/if}
 							{#if tearingLabel(centroid)}<span
 									class="torn"
 									title="This knot's members are drawn in two separate places, so its tag sits between them rather than on its points. Gap between its halves over their own spread: {centroid.tearing?.toFixed(
@@ -500,13 +490,6 @@
 		gap: 0.35rem;
 	}
 
-	.id {
-		flex: none;
-		font-size: 0.6rem;
-		color: var(--ink-faint);
-		letter-spacing: 0.04em;
-	}
-
 	.name {
 		font-size: 0.72rem;
 		letter-spacing: 0.01em;
@@ -582,8 +565,7 @@
 		color: var(--accent, var(--signal));
 	}
 
-	.figures .conf,
-	.figures .evidence {
+	.figures .conf {
 		color: var(--ink-faint);
 		font-style: italic;
 	}

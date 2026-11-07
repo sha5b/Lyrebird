@@ -115,6 +115,25 @@ export function applyVoice(syllable: Syllable, bird: Individual, tremor = 0.006)
 		vib: syllable.vib
 			? { rate: syllable.vib.rate * bird.vibScale, depth: syllable.vib.depth }
 			: undefined,
-		contour: syllable.contour.map(([t, hz]) => [t, hz * pitch] as [number, number])
+		contour: syllable.contour.map(([t, hz]) => [t, hz * pitch] as [number, number]),
+		voices: transposedVoices(syllable, (hz) => hz * pitch)
+	};
+}
+
+/**
+ * The second voice under the same pitch change as the first.
+ *
+ * Its contour is the first voice's shifted by a measured ratio (docs/15 §5), so moving only the
+ * first voice changes that ratio. Formants stay: they belong to the tract, not to the pitch.
+ */
+export function transposedVoices(
+	syllable: Syllable,
+	move: (hz: number) => number
+): Syllable['voices'] {
+	const second = syllable.voices;
+	if (!second) return second;
+	return {
+		...second,
+		contour: second.contour.map(([t, hz]) => [t, move(hz)] as [number, number])
 	};
 }

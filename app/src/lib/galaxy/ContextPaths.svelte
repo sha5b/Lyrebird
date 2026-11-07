@@ -38,6 +38,7 @@
 	import * as THREE from 'three';
 	import { clusterProvenance } from '$lib/data/assets';
 	import type { LyrebirdAssets } from '$lib/data/types';
+	import { doubtKnotColour, doubtLayerOn, NO_DOUBT_LAYER, type DoubtLayer } from './doubt-paths';
 	import { provenanceColourScaled } from './palette';
 	import { contextSegments, grammarEnds, type ThreadSegment } from './context-threads';
 	import type { LayoutView } from './layouts';
@@ -50,9 +51,11 @@
 		view: LayoutView;
 		/** Provenance language: each segment takes its knot's class colour. */
 		prov?: boolean;
+		/** Doubt layer: each segment end takes its knot's doubt, ahead of provenance. */
+		doubt?: DoubtLayer;
 	}
 
-	let { assets, signal, view, prov = false }: Props = $props();
+	let { assets, signal, view, prov = false, doubt = NO_DOUBT_LAYER }: Props = $props();
 
 	const centroids = untrack(() => assets.centroids.items);
 	const klass = untrack(() => clusterProvenance(assets));
@@ -112,7 +115,8 @@
 				? grammarEnds(centroids[seg.a]?.speciesId || centroids[seg.b]?.speciesId || '')
 				: null;
 			for (const [end, knot] of [seg.a, seg.b].entries()) {
-				if (prov) c.setStyle(provenanceColourScaled(klass[knot] ?? 4, 1.0));
+				if (doubtLayerOn(doubt)) c.setStyle(doubtKnotColour(assets, knot, doubt));
+				else if (prov) c.setStyle(provenanceColourScaled(klass[knot] ?? 4, 1.0));
 				else if (ends) c.setStyle(end === 0 ? ends.from : ends.to);
 				else c.copy(NEUTRAL);
 				colors.push(c.r, c.g, c.b);
@@ -146,6 +150,7 @@
 	$effect(() => {
 		// A language switch does not bump the context version; force the repaint.
 		void prov;
+		void doubt;
 		builtVersion = -1;
 	});
 

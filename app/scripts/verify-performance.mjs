@@ -217,6 +217,52 @@ console.log('\nsongs and improvise');
 	// The mode is remembered across a stop, which is what a segmented control implies.
 	const back = run([{ k: 'stop' }, { k: 'chooseBird', id: 'sp_b' }], imp.state);
 	ok('the mode survives a stop', back.state.soloMode === 'improvise', back.state.soloMode);
+
+	// The Songs button from improvise: it switches, and only its own mode stops.
+	const sw = reduce(imp.state, { k: 'pressSolo', mode: 'songs' });
+	ok('Songs from improvise keeps singing', sw.state.chorus === 'solo', sw.state.chorus);
+	ok('Songs from improvise switches mode', sw.state.soloMode === 'songs', sw.state.soloMode);
+	ok('and starts the pool', has(sw, 'startSolo'), cmds(sw));
+	const off = reduce(sw.state, { k: 'pressSolo', mode: 'songs' });
+	ok('the mode sounding stops when pressed', off.state.chorus === 'off', off.state.chorus);
+	const fresh = reduce(off.state, { k: 'pressSolo', mode: 'improvise' });
+	ok('a mode starts from silence', fresh.state.chorus === 'solo' && fresh.state.soloMode === 'improvise');
+}
+
+// --- a pending start survives what does not replace it --------------------------------
+console.log('\na start awaiting a fetch');
+
+{
+	const aviary = run([{ k: 'setChorus', mode: 'global' }]);
+	const start = aviary.commands.find((c) => c.k === 'startGlobal');
+	ok('the aviary issues a start', !!start);
+	const song = reduce(aviary.state, { k: 'chooseSong', id: 'song1' });
+	ok('choosing a call leaves its epoch', song.state.epoch === start.epoch, `${song.state.epoch}`);
+	const mode = reduce(aviary.state, { k: 'setSoloMode', mode: 'improvise' });
+	ok('changing solo mode leaves its epoch', mode.state.epoch === start.epoch, `${mode.state.epoch}`);
+	ok('and the mode is still recorded', mode.state.soloMode === 'improvise');
+	const solo = run([{ k: 'chooseBird', id: 'sp_a' }]);
+	const repool = reduce(solo.state, { k: 'chooseSong', id: 'song1' });
+	const issued = repool.commands.find((c) => c.k === 'startSolo');
+	ok('a solo re-pool still moves it', repool.state.epoch > solo.state.epoch);
+	ok('and its start carries the new one', issued?.epoch === repool.state.epoch);
+}
+
+// --- a bird chosen off the Sing tab ---------------------------------------------------
+console.log('\na bird chosen with no chorus controls in view');
+
+{
+	const quiet = reduce(initialPerformance(), { k: 'noteBird', id: 'sp_a' });
+	ok('in silence it records the bird', quiet.state.speciesId === 'sp_a');
+	ok('and takes no air', quiet.state.chorus === 'off' && !has(quiet, 'startSolo'), cmds(quiet));
+	const pinned = reduce({ ...quiet.state, knot: 4, sungId: 2 }, { k: 'noteBird', id: 'sp_b' });
+	ok('it drops the old bird\'s pin and phrase', pinned.state.knot === -1 && pinned.state.sungId === null);
+	const solo = run([{ k: 'chooseBird', id: 'sp_a' }]);
+	const next = reduce(solo.state, { k: 'noteBird', id: 'sp_b' });
+	ok('over a solo chorus the pool follows', has(next, 'startSolo') && next.state.speciesId === 'sp_b');
+	const aviary = run([{ k: 'setChorus', mode: 'global' }]);
+	const taken = reduce(aviary.state, { k: 'noteBird', id: 'sp_b' });
+	ok('a global chorus never holds a selection', !(taken.state.chorus === 'global' && taken.state.speciesId));
 }
 
 // --- every command a transition asks for is one the executor knows -------------------
@@ -231,7 +277,7 @@ console.log('\ncommands');
 		{ k: 'selectSung', sungId: 1, speciesId: 'sp_a' }, { k: 'pressChorus', mode: 'solo' },
 		{ k: 'pressChorus', mode: 'global' }, { k: 'setChorus', mode: 'off' },
 		{ k: 'setChorus', mode: 'solo' }, { k: 'setChorus', mode: 'global' },
-		{ k: 'setSoloMode', mode: 'improvise' }, { k: 'stop' }
+		{ k: 'setSoloMode', mode: 'improvise' }, { k: 'pressSolo', mode: 'songs' }, { k: 'noteBird', id: 'sp_b' }, { k: 'stop' }
 	];
 	let unknown = [], epochBad = [];
 	for (const a of ALL) for (const b of ALL) {
@@ -271,7 +317,7 @@ console.log('\ntotality');
 		{ k: 'chooseBird', id: 'sp_a' }, { k: 'chooseBird', id: '' }, { k: 'releaseSelection' },
 		{ k: 'pickKnot', knot: 2, speciesId: '' }, { k: 'chooseSong', id: '' },
 		{ k: 'selectSung', sungId: 3, speciesId: 'sp_c' }, { k: 'pressChorus', mode: 'solo' },
-		{ k: 'setChorus', mode: 'off' }, { k: 'setSoloMode', mode: 'songs' }, { k: 'stop' }
+		{ k: 'setChorus', mode: 'off' }, { k: 'setSoloMode', mode: 'songs' }, { k: 'pressSolo', mode: 'improvise' }, { k: 'noteBird', id: 'sp_a' }, { k: 'stop' }
 	];
 	let bad = 0, threw = 0, epochs = 0;
 	for (const a of ALL) for (const b of ALL) for (const c of ALL) {

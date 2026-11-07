@@ -22,6 +22,7 @@
 	import * as THREE from 'three';
 	import { clusterProvenance } from '$lib/data/assets';
 	import type { LyrebirdAssets } from '$lib/data/types';
+	import { doubtKnotColour, doubtLayerOn, NO_DOUBT_LAYER, type DoubtLayer } from './doubt-paths';
 	import { provenanceColour, speciesColour } from './palette';
 	import type { LayoutView } from './layouts';
 	import { waveClaim, type VisualSignal } from './shaders';
@@ -37,6 +38,8 @@
 		 * it takes the knot's own bird hue — see `strikeColour`.
 		 */
 		prov?: boolean;
+		/** Doubt layer: strike each cross in its knot's doubt, ahead of provenance. */
+		doubt?: DoubtLayer;
 		/**
 		 * Half-length of each rule as a share of the visible height, rather than a fixed
 		 * distance in the cloud's units. A fixed length is only right at one zoom: framed
@@ -61,6 +64,7 @@
 		view,
 		colour = '#8e9bab',
 		prov = false,
+		doubt = NO_DOUBT_LAYER,
 		reachOfView = 1.2
 	}: Props = $props();
 
@@ -157,6 +161,7 @@
 	 */
 	const scratch = new THREE.Color();
 	function strikeColour(cluster: number): THREE.Color {
+		if (doubtLayerOn(doubt)) return scratch.set(doubtKnotColour(assets, cluster, doubt));
 		if (prov) {
 			const cls = knotClass[cluster] ?? -1;
 			return scratch.set(cls >= 0 ? provenanceColour(cls) : colour);

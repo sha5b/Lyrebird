@@ -220,6 +220,121 @@ console.log('\nstate 4 — the strip must not be one token stamped N times');
 	ok('the same words give the same bout', a === b, `${a} | ${b}`);
 }
 
+// Logic that imports through `$lib`, so it runs in the page, where Vite resolves that.
+console.log('\nphrase and reading logic');
+{
+	const gaps = await page.evaluate(async () => {
+		const { tokensToPhrase } = await import('/src/lib/lang/compose.ts');
+		const syl = (id) => ({ id, label: id, dur: 0.1, level: 1, contour: [[0, 1000]] });
+		const species = { id: 'x', common: 'x', syllables: [syl('a'), syl('b'), syl('c')], songs: [] };
+		const token = (typeId, gapBefore) => ({ typeId, source: 'text', gapBefore });
+		const sung = (tokens) => tokensToPhrase(species, tokens, { kind: 'free' });
+		return {
+			middle: sung([token('a'), token('gone', 0.9), token('b', 0.2)]).gaps,
+			last: sung([token('a'), token('b', 0.2), token('gone', 0.9)]).gaps,
+			first: sung([token('gone', 0.9), token('a', 0.2), token('b', 0.3)]).gaps
+		};
+	});
+	ok('a missing type takes its gap with it', gaps.middle.join() === '0.2', gaps.middle.join());
+	ok('a trailing one leaves no spare gap', gaps.last.join() === '0.2', gaps.last.join());
+	ok('a leading one leaves no spare gap', gaps.first.join() === '0.3', gaps.first.join());
+
+	const tops = await page.evaluate(async () => {
+		const { readActivations } = await import('/src/lib/lang/translate.ts');
+		const k = 500;
+		const activations = new Float32Array(k);
+		for (let i = 0; i < k; i++) activations[i] = ((i * 2654435761) % 97) / 97;
+		const items = Array.from({ length: k }, (_, i) => ({ speciesId: `s${i}`, id: i }));
+		const read = readActivations(
+			{ species: [] },
+			{ items },
+			activations,
+			new Float32Array(k),
+			{ active: true, strength: 1 }
+		);
+		const want = items
+			.map((c, i) => ({ c, p: activations[i] }))
+			.sort((a, b) => b.p - a.p)
+			.slice(0, 4)
+			.map((x) => x.c.id);
+		const got = read.candidates.map((x) => x.centroid.id);
+		return { want, got };
+	});
+	ok('the top four match a stable sort', tops.want.join() === tops.got.join(), `${tops.got} vs ${tops.want}`);
+}
+
+// A real track and a real recorder, driven through the engine's own methods.
+console.log('\ninput lifecycle');
+{
+	const life = await page.evaluate(async () => {
+		const { LyrebirdEngine } = await import('/src/lib/audio/engine.ts');
+		const audio = new AudioContext();
+		const make = () => {
+			const engine = Object.create(LyrebirdEngine.prototype);
+			Object.assign(engine, {
+				ctx: {
+					createMediaStreamSource: () => ({ connect() {}, disconnect() {} }),
+					resume: async () => {}
+				},
+				analysisBus: {},
+				recorder: null,
+				recordChunks: [],
+				inputToken: 0,
+				micStream: null,
+				micSource: null,
+				inputSource: null,
+				inputVia: null,
+				onInputEnded: null
+			});
+			const stream = audio.createMediaStreamDestination().stream;
+			engine.attachInput(stream, 'microphone', 'microphone');
+			return { engine, track: stream.getAudioTracks()[0] };
+		};
+		const out = {};
+		// Ended during a recording, with a handler: the page's `closeInput` in miniature.
+		const a = make();
+		out.started = a.engine.startRecording();
+		let heldAtHandler = null;
+		let blob = null;
+		const handled = new Promise((resolve) => {
+			a.engine.onInputEnded = async () => {
+				heldAtHandler = a.engine.recording;
+				blob = await a.engine.stopRecording();
+				a.engine.stopInput();
+				resolve();
+			};
+		});
+		a.track.dispatchEvent(new Event('ended'));
+		await handled;
+		out.heldAtHandler = heldAtHandler;
+		out.gotBlob = blob instanceof Blob;
+		out.closed = !a.engine.micActive && !a.engine.recording;
+		// No handler: the engine closes itself.
+		const b = make();
+		b.track.dispatchEvent(new Event('ended'));
+		out.selfClosed = !b.engine.micActive;
+		// A recorder the stream already ended: stop must answer, not throw.
+		const c = make();
+		c.engine.startRecording();
+		c.engine.recorder.stop();
+		out.lateStop = (await c.engine.stopRecording()) instanceof Blob && !c.engine.recording;
+		// stopInput during a recording leaves nothing that blocks the next one.
+		const d = make();
+		d.engine.startRecording();
+		d.engine.stopInput();
+		out.clean = !d.engine.recording && (await d.engine.stopRecording()) === null;
+		await audio.close();
+		return out;
+	});
+	ok('a recording starts', life.started === true);
+	ok('the handler runs with the recorder still held', life.heldAtHandler === true);
+	ok('the take is filed', life.gotBlob === true);
+	ok('and the input is closed', life.closed === true);
+	ok('with no handler the engine closes itself', life.selfClosed === true);
+	ok('stopping an ended recorder answers', life.lateStop === true);
+	ok('stopInput leaves no stuck recorder', life.clean === true);
+}
+
 console.log('\nconsole');
 ok('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
 console.log(`  404s (reported, not failed): ${[...missing].join(', ') || 'none'}`);

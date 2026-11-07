@@ -1,7 +1,7 @@
 import workletUrl from './worklets/syrinx-processor.js?url';
 import type { LyrebirdAssets, Species, Syllable } from '$lib/data/types';
 import { songSyllables, speciesById } from '$lib/data/assets';
-import { applyVoice, createPopulation, type Individual } from './individual.ts';
+import { applyVoice, createPopulation, transposedVoices, type Individual } from './individual.ts';
 
 export interface PlayOptions {
 	/** AudioContext time to start at; defaults to "just now". */
@@ -60,7 +60,8 @@ function jitterSyllable(syllable: Syllable, amount: number): Syllable {
 		dur: syllable.dur * r(0.08),
 		level: Math.min(1, syllable.level * r(0.1)),
 		am: syllable.am ? syllable.am * r(0.06) : syllable.am,
-		contour: syllable.contour.map(([t, hz]) => [t, hz * pitch] as [number, number])
+		contour: syllable.contour.map(([t, hz]) => [t, hz * pitch] as [number, number]),
+		voices: transposedVoices(syllable, (hz) => hz * pitch)
 	};
 }
 
@@ -85,6 +86,13 @@ export class LyrebirdEngine {
 	private micSource: MediaStreamAudioSourceNode | null = null;
 	private inputSource: 'microphone' | 'system' | null = null;
 	private recorder: MediaRecorder | null = null;
+	/** Moved by every stop, so a `startInput` that was waiting on a prompt knows it is stale. */
+	private inputToken = 0;
+	/**
+	 * The input ended by itself: a device unplugged, or the browser's "stop sharing". Whoever
+	 * sets this owns the rest, including `stopInput`.
+	 */
+	onInputEnded: (() => void) | null = null;
 	private recordChunks: Blob[] = [];
 	private ambientTimer: ReturnType<typeof setInterval> | null = null;
 	private ambientUntil = 0;
@@ -202,7 +210,12 @@ export class LyrebirdEngine {
 
 	static async create(assets: LyrebirdAssets): Promise<LyrebirdEngine> {
 		const ctx = new AudioContext({ sampleRate: assets.featureSpace.sampleRate, latencyHint: 'interactive' });
-		await ctx.audioWorklet.addModule(workletUrl);
+		try {
+			await ctx.audioWorklet.addModule(workletUrl);
+		} catch (err) {
+			await ctx.close().catch(() => {});
+			throw err;
+		}
 		const synth = new AudioWorkletNode(ctx, 'syrinx-processor', {
 			numberOfInputs: 0,
 			numberOfOutputs: 1,
@@ -348,7 +361,11 @@ export class LyrebirdEngine {
 		this.ambientUntil = this.ctx.currentTime;
 		const rate = songsPerMinute / 60;
 		this.ambientTimer = setInterval(() => {
-			const horizon = this.ctx.currentTime + 0.5;
+			const now = this.ctx.currentTime;
+			const horizon = now + 0.5;
+			// A throttled tab ticks about once a second or slower, and catching up from the old
+			// position would start every missed song at once, in the past.
+			if (this.ambientUntil < now) this.ambientUntil = now;
 			while (this.ambientUntil < horizon) {
 				// exponential inter-arrival times = Poisson process. `songRate` is read
 				// here, per gap, so the slider retunes the next pause live.
@@ -477,8 +494,16 @@ export class LyrebirdEngine {
 	 * tuned for speech: they gate exactly the quiet broadband texture a distant bird is
 	 * made of, and AGC would rescale the level the descriptor depends on.
 	 */
-	async startInput(source: 'microphone' | 'system', deviceId?: string): Promise<void> {
+	async startInput(source: 'microphone' | 'system', deviceId?: string): Promise<boolean> {
 		this.stopInput();
+		// A newer start or a stop while the browser's prompt is open makes this one stale, and a
+		// stream that nothing holds would keep the microphone on for the page's whole life.
+		const token = this.inputToken;
+		const claim = (s: MediaStream): boolean => {
+			if (token === this.inputToken) return true;
+			s.getTracks().forEach((t) => t.stop());
+			return false;
+		};
 		const constraints: MediaTrackConstraints = {
 			echoCancellation: false,
 			noiseSuppression: false,
@@ -501,13 +526,10 @@ export class LyrebirdEngine {
 				stream = await navigator.mediaDevices.getUserMedia({
 					audio: { ...constraints, deviceId: { exact: monitor.deviceId } }
 				});
-				this.micStream = stream;
-				this.inputSource = source;
-				this.inputVia = 'monitor';
-				this.micSource = this.ctx.createMediaStreamSource(stream);
-				this.micSource.connect(this.analysisBus);
+				if (!claim(stream)) return false;
+				this.attachInput(stream, source, 'monitor');
 				await this.resume();
-				return;
+				return true;
 			}
 			if (!navigator.mediaDevices.getDisplayMedia) {
 				throw new Error('This browser cannot capture computer audio.');
@@ -530,19 +552,41 @@ export class LyrebirdEngine {
 					'No audio came with that capture. Tick "share audio" when choosing the tab or screen.'
 				);
 			}
-			this.inputVia = 'display';
+			if (!claim(stream)) return false;
+			this.attachInput(stream, source, 'display');
 		} else {
 			stream = await navigator.mediaDevices.getUserMedia({
 				audio: deviceId ? { ...constraints, deviceId: { exact: deviceId } } : constraints
 			});
-			this.inputVia = 'microphone';
+			if (!claim(stream)) return false;
+			this.attachInput(stream, source, 'microphone');
 		}
+		await this.resume();
+		return true;
+	}
+
+	private attachInput(
+		stream: MediaStream,
+		source: 'microphone' | 'system',
+		via: 'monitor' | 'display' | 'microphone'
+	): void {
 		this.micStream = stream;
 		this.inputSource = source;
+		this.inputVia = via;
 		this.micSource = this.ctx.createMediaStreamSource(stream);
 		// analysis only — never routed to the speakers, which would feed back
 		this.micSource.connect(this.analysisBus);
-		await this.resume();
+		// The device unplugged, or the browser's own "stop sharing" pressed.
+		const [track] = stream.getAudioTracks();
+		if (track) {
+			track.onended = () => {
+				if (this.micStream !== stream) return;
+				// The handler first, while the recorder is still held: it has a take to file,
+				// and `stopInput` would drop that.
+				if (this.onInputEnded) this.onInputEnded();
+				else this.stopInput();
+			};
+		}
 	}
 
 	/** Input devices the browser will name. Labels stay blank until permission is given. */
@@ -553,6 +597,12 @@ export class LyrebirdEngine {
 	}
 
 	stopInput(): void {
+		this.inputToken++;
+		// Before the tracks go: a stopped stream ends the recorder on its own, and `recorder`
+		// staying set then made the next stop throw and every later start refuse.
+		const recorder = this.recorder;
+		this.recorder = null;
+		if (recorder && recorder.state !== 'inactive') recorder.stop();
 		this.micSource?.disconnect();
 		this.micSource = null;
 		this.micStream?.getTracks().forEach((t) => t.stop());
@@ -585,11 +635,14 @@ export class LyrebirdEngine {
 	async stopRecording(): Promise<Blob | null> {
 		const recorder = this.recorder;
 		if (!recorder) return null;
+		this.recorder = null;
+		const finish = () => new Blob(this.recordChunks, { type: recorder.mimeType });
+		// The stream can end first (a device unplugged), and `stop` then throws.
+		if (recorder.state === 'inactive') return finish();
 		const done = new Promise<Blob>((resolve) => {
-			recorder.onstop = () => resolve(new Blob(this.recordChunks, { type: recorder.mimeType }));
+			recorder.onstop = () => resolve(finish());
 		});
 		recorder.stop();
-		this.recorder = null;
 		return done;
 	}
 

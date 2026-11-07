@@ -23,7 +23,7 @@
  *   what the accent means everywhere else in the interface too.
  *
  * Because the accent is never a category, spending it this way contradicts nothing. A
- * violet knot is not a kind of bird; it is the place the sound is.
+ * lit knot is not a kind of bird; it is the place the sound is.
  */
 
 /**
@@ -35,12 +35,12 @@
 export const MONO_HOT = '#1e2836';
 
 /**
- * The interface accent, and the only colour in the galaxy.
+ * The accent when no bird is the subject: black, the resting value of `--signal`.
  *
- * Kept in step with `--signal` in `app.css` by hand, because the shader needs a number
- * and a CSS custom property is a string resolved at paint time.
+ * Kept in step with `tokens.css` by hand, because the shader needs a number and a CSS
+ * custom property is a string resolved at paint time.
  */
-export const ACCENT = '#5b3fd6';
+export const ACCENT = '#000000';
 
 /**
  * The provenance set, used by the "colour: provenance" mode and by the orphan pulse.
